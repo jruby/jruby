@@ -199,14 +199,7 @@ public final class Util {
     }
 
     public static int roundUpToPowerOfTwo(int v) {
-        if (v < 1) return 1;
-        v--;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-
-        return v + 1;
+        if (v <= 1) return 1;
+        return Integer.MIN_VALUE >>> Integer.numberOfLeadingZeros(v - 1) << 1;
     }
 }

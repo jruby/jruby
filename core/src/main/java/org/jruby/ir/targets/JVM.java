@@ -24,7 +24,7 @@ import static org.objectweb.asm.Opcodes.*;
 
 // This class represents JVM as the target of compilation
 // and outputs bytecode
-public abstract class JVM {
+public class JVM {
     //private static final Logger LOG = LoggerFactory.getLogger(JVM.class);
 
     Stack<ClassData> clsStack = new Stack();
@@ -32,8 +32,6 @@ public abstract class JVM {
 
     public JVM() {
     }
-
-    public static final int CMP_EQ = 0;
 
     public byte[] code() {
         return writer.toByteArray();
@@ -51,7 +49,13 @@ public abstract class JVM {
         return clsData().methodData();
     }
 
-    public abstract void pushscript(String clsName, String filename);
+    public void pushscript(JVMVisitor visitor, String clsName, String filename) {
+        writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        clsStack.push(new ClassData(clsName, writer, visitor));
+
+        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, clsName, null, p(Object.class), null);
+        cls().visitSource(filename, null);
+    }
 
     public void popclass() {
         clsStack.pop();
@@ -61,8 +65,8 @@ public abstract class JVM {
         return clsData().method();
     }
 
-    public void pushmethod(String name, IRScope scope, Signature signature, boolean specificArity) {
-        clsData().pushmethod(name, scope, signature, specificArity);
+    public void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity) {
+        clsData().pushmethod(name, scope, scopeField, signature, specificArity);
         method().startMethod();
     }
 

@@ -3,7 +3,6 @@ package org.jruby.runtime;
 import java.io.ByteArrayOutputStream;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
@@ -25,11 +24,13 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     private int callCount = 0;
     private InterpreterContext interpreterContext;
     private InterpreterContext fullInterpreterContext;
+    private IRClosure closure;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
         this.pushScope = true;
         this.reuseParentScope = false;
+        this.closure = closure;
 
         // -1 jit.threshold is way of having interpreter not promote full builds
         // regardless of compile mode (even when OFF full-builds are promoted)
@@ -165,6 +166,11 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     public RubyModule getImplementationClass() {
         return null;
+    }
+
+    @Override
+    public IRClosure getScope() {
+        return closure;
     }
 
 }

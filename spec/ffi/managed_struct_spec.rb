@@ -38,7 +38,8 @@ describe "Managed Struct" do
     expect(ClassWithSelfRef.new(ManagedStructTestLib.ptr_from_address(0x12345678)).class).to eq(ClassWithSelfRef)
   end
 
-  it "should release memory properly" do
+  # see #427
+  it "should release memory properly", :broken => true do
     class PleaseReleaseMe < FFI::ManagedStruct
       layout :i, :int
       @@count = 0

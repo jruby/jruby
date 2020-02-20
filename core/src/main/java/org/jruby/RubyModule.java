@@ -86,7 +86,7 @@ import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
-import org.jruby.ir.targets.Bootstrap;
+import org.jruby.ir.targets.indy.Bootstrap;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
@@ -104,7 +104,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
@@ -840,8 +839,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "using", required = 1, visibility = PRIVATE, reads = {SELF, SCOPE})
     public IRubyObject using(ThreadContext context, IRubyObject refinedModule) {
         if (context.getFrameSelf() != this) throw context.runtime.newRuntimeError("Module#using is not called on self");
-        // FIXME: This is a lame test and I am unsure it works with JIT'd bodies...
-        if (context.getCurrentStaticScope().getIRScope() instanceof IRMethod) {
+        if (context.getCurrentStaticScope().isWithinMethod()) {
             throw context.runtime.newRuntimeError("Module#using is not permitted in methods");
         }
 
@@ -2307,12 +2305,15 @@ public class RubyModule extends RubyObject {
             IRBlockBody body = (IRBlockBody) block.getBody();
             IRClosure closure = body.getScope();
 
-            // Ask closure to give us a method equivalent.
-            IRMethod method = closure.convertToMethod(name.getBytes());
-            if (method != null) {
-                newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
-                return name;
+            // closure may be null from AOT scripts
+            if (closure != null) {
+                // Ask closure to give us a method equivalent.
+                IRMethod method = closure.convertToMethod(name.getBytes());
+                if (method != null) {
+                    newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
+                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+                    return name;
+                }
             }
         }
 
@@ -5114,7 +5115,7 @@ public class RubyModule extends RubyObject {
         while (cls != null) {
             Map<String, DynamicMethod> methods = cls.getNonIncludedClass().getMethodLocation().getMethods();
 
-            methods.forEach((name, method) -> set.addAll(method.getMethodData().getIvarNames()));
+            methods.forEach((name, method) -> set.addAll(method.getInstanceVariableNames()));
 
             cls = cls.getSuperClass();
         }

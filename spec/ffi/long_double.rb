@@ -19,8 +19,8 @@ describe ":long_double arguments and return values" do
   end
 
   it "returns first parameter with high precision" do
-    ld =        BigDecimal.new("1.234567890123456789")
-    tolerance = BigDecimal.new("0.0000000000000000001")
+    ld =        BigDecimal("1.234567890123456789")
+    tolerance = BigDecimal("0.0000000000000000001")
     expect(LibTest.ret_f128(ld)).to be_within(tolerance).of(ld)
   end
 

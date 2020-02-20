@@ -13,6 +13,11 @@ describe "Function with variadic arguments" do
     enum :enum_type2, [:c3, 42, :c4]
     attach_function :pack_varargs, [ :buffer_out, :string, :varargs ], :void
     attach_function :pack_varargs2, [ :buffer_out, :enum_type1, :string, :varargs ], :enum_type1
+
+    attach_function :testBlockingOpen, [ ], :pointer
+    attach_function :testBlockingRWva, [ :pointer, :char, :varargs ], :char, :blocking => true
+    attach_function :testBlockingWRva, [ :pointer, :char, :varargs ], :char, :blocking => true
+    attach_function :testBlockingClose, [ :pointer ], :void
   end
 
   it "takes enum arguments" do
@@ -25,6 +30,20 @@ describe "Function with variadic arguments" do
   it "returns symbols for enums" do
     buf = FFI::Buffer.new :long_long, 2
     expect(LibTest.pack_varargs2(buf, :c1, "ii", :int, :c3, :int, :c4)).to eq(:c2)
+  end
+
+  it 'can wrap a blocking function with varargs' do
+    pending("not supported in 1.8") if RUBY_VERSION =~ /^1\.8\..*/
+    handle = LibTest.testBlockingOpen
+    expect(handle).not_to be_null
+    begin
+      thWR = Thread.new { LibTest.testBlockingWRva(handle, 63, :int, 40, :int, 23, :int, 0) }
+      thRW = Thread.new { LibTest.testBlockingRWva(handle, 64, :int, 40, :int, 24, :int, 0) }
+      expect(thWR.value).to eq(64)
+      expect(thRW.value).to eq(63)
+    ensure
+      LibTest.testBlockingClose(handle)
+    end
   end
 
   [ 0, 127, -128, -1 ].each do |i|

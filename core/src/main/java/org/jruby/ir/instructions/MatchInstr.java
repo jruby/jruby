@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -45,8 +46,11 @@ public class MatchInstr extends CallInstr implements FixedArityInstr {
                 getArg1().cloneForInlining(ii), getCallSite(), getCallSiteId());
     }
 
+    // We do not call super here to bypass having to pass this exaclty like a call.
     @Override
     public void encode(IRWriterEncoder e) {
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Instr(" + getOperation() + "): " + this);
+
         e.encode(getOperation());
         e.encode(getResult());
         e.encode(getReceiver());

@@ -15,6 +15,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.*;
+import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -97,7 +98,7 @@ public abstract class IRScope implements ParseResult {
 
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
-    private List<IRScope> lexicalChildren;
+    private final List<IRScope> lexicalChildren = Collections.synchronizedList(new ArrayList<>());
 
     /** Parser static-scope that this IR scope corresponds to */
     private final StaticScope staticScope;
@@ -142,6 +143,10 @@ public abstract class IRScope implements ParseResult {
         this.scopeId = globalScopeCount.getAndIncrement();
 
         setupLexicalContainment();
+
+        if (staticScope != null && !(this instanceof IRScriptBody) && !(this instanceof IREvalScript)) {
+            staticScope.setFile(getFile());
+        }
     }
 
     public IRScope(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope staticScope) {
@@ -166,10 +171,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void setupLexicalContainment() {
-        if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING || RubyInstanceConfig.RECORD_LEXICAL_HIERARCHY) {
-            lexicalChildren = new ArrayList<>(1);
-            if (lexicalParent != null) lexicalParent.addChildScope(this);
-        }
+        if (lexicalParent != null) lexicalParent.addChildScope(this);
     }
 
     public int getScopeId() {
@@ -190,13 +192,11 @@ public abstract class IRScope implements ParseResult {
         return (other != null) && (getClass() == other.getClass()) && (scopeId == ((IRScope) other).scopeId);
     }
 
-    protected void addChildScope(IRScope scope) {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
+    protected synchronized void addChildScope(IRScope scope) {
         lexicalChildren.add(scope);
     }
 
-    public List<IRScope> getLexicalScopes() {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
+    public synchronized List<IRScope> getLexicalScopes() {
         return lexicalChildren;
     }
 
@@ -406,6 +406,21 @@ public abstract class IRScope implements ParseResult {
 
     public boolean usesEval() {
         return flags.contains(USES_EVAL);
+    }
+
+    public boolean anyUsesEval() {
+        // Currently methods are only lazy scopes so we need to build them if we decide to persist them.
+        if (this instanceof IRMethod) {
+            ((IRMethod) this).lazilyAcquireInterpreterContext();
+        }
+
+        boolean usesEval = usesEval();
+
+        for (IRScope child : getLexicalScopes()) {
+            usesEval |= child.anyUsesEval();
+        }
+
+        return usesEval;
     }
 
     public boolean usesZSuper() {
@@ -697,7 +712,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private static final EnumSet<IRFlags> DEFAULT_SCOPE_FLAGS =
-            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, USES_EVAL, REQUIRES_BACKREF,
+            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, REQUIRES_BACKREF,
                     REQUIRES_LASTLINE, REQUIRES_DYNSCOPE, USES_ZSUPER);
 
     private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
@@ -966,7 +981,6 @@ public abstract class IRScope implements ParseResult {
         flags.remove(FLAGS_COMPUTED);
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
         flags.add(BINDING_HAS_ESCAPED);
-        flags.add(USES_EVAL);
         flags.add(USES_ZSUPER);
 
         flags.remove(HAS_BREAK_INSTRS);
@@ -1190,19 +1204,7 @@ public abstract class IRScope implements ParseResult {
      */
     public void captureParentRefinements(ThreadContext context) {
         if (maybeUsingRefinements()) {
-            for (IRScope cur = this.getLexicalParent(); cur != null; cur = cur.getLexicalParent()) {
-                RubyModule overlay = cur.staticScope.getOverlayModuleForRead();
-                if (overlay != null && !overlay.getRefinements().isEmpty()) {
-                    // capture current refinements at definition time
-                    RubyModule myOverlay = staticScope.getOverlayModuleForWrite(context);
-
-                    // FIXME: MRI does a copy-on-write thing here with the overlay
-                    myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
-
-                    // only search until we find an overlay
-                    break;
-                }
-            }
+            getStaticScope().captureParentRefinements(context);
         }
     }
 
@@ -1222,12 +1224,13 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void persistScopeHeader(IRWriterEncoder file) {
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("IRScopeType = " + getScopeType());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: type       = " + getScopeType());
         file.encode(getScopeType()); // type is enum of kind of scope
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Line # = " + getLine());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: line       = " + getLine());
         file.encode(getLine());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + getTemporaryVariablesCount());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: temp count = " + getTemporaryVariablesCount());
         file.encode(getTemporaryVariablesCount());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: next label = " + getTemporaryVariablesCount());
         file.encode(getNextLabelIndex());
     }
 }

@@ -34,6 +34,11 @@ describe "MemoryPointer" do
     m = FFI::MemoryPointer.from_string("FFI is Awesome")
     expect(m.read_string).to eq("FFI is Awesome")
   end
+
+  it "reads back an empty string" do
+    expect(FFI::Pointer::NULL.read_string(0)).to eq('')
+    expect(FFI::Pointer::NULL.read_string(0).encoding).to eq(Encoding::BINARY)
+  end
   
   it "makes a pointer for a certain number of bytes" do
     m = FFI::MemoryPointer.new(8)
@@ -52,22 +57,86 @@ describe "MemoryPointer" do
     m = FFI::MemoryPointer.new(:int)
     m.write_int(1)
     expect(m.read_int).to eq(1)
+    expect(m.read :int).to eq(1)
+    expect(m.read FFI::Type::INT).to eq(1)
   end
-  
+
+  it "allows writing as a sized int" do
+    m = FFI::MemoryPointer.new(:uint32)
+    m.write_uint32(1)
+    expect(m.read_uint32).to eq(1)
+    expect(m.read :uint32).to eq(1)
+    expect(m.read FFI::Type::UINT32).to eq(1)
+
+    m = FFI::MemoryPointer.new(:uint32)
+    m.write :uint32, 1
+    expect(m.read :uint32).to eq(1)
+
+    m = FFI::MemoryPointer.new(:int64)
+    m.write_int64(1)
+    expect(m.read_int64).to eq(1)
+    expect(m.read :int64).to eq(1)
+    expect(m.read FFI::Type::INT64).to eq(1)
+
+    m = FFI::MemoryPointer.new(:int64)
+    m.write :int64, 1
+    expect(m.read :int64).to eq(1)
+  end
+
   it "allows writing as a long" do
     m = FFI::MemoryPointer.new(:long)
     m.write_long(10)
     expect(m.read_long).to eq(10)
+    expect(m.read :long).to eq(10)
+    expect(m.read FFI::Type::LONG).to eq(10)
+
+    m.write :long, 10
+    expect(m.read :long).to eq(10)
   end
-  
+
+  it "allows writing as a size_t" do
+    m = FFI::MemoryPointer.new(:size_t)
+    m.write(:size_t, 10)
+    expect(m.read :size_t).to eq(10)
+  end
+
+  it "allows writing as a bool" do
+    m = FFI::MemoryPointer.new(:bool)
+    m.write(:bool, true)
+    expect(m.read :bool).to eq(true)
+    expect(m.read FFI::Type::BOOL).to eq(true)
+
+    m.write(:bool, false)
+    expect(m.read :bool).to eq(false)
+    expect(m.read FFI::Type::BOOL).to eq(false)
+  end
+
+  it "allows writing a custom typedef" do
+    FFI.typedef :uint, :fubar_t
+    FFI.typedef :size_t, :fubar2_t
+
+    m = FFI::MemoryPointer.new(:fubar_t)
+    m.write(:fubar_t, 10)
+    expect(m.read :fubar_t).to eq(10)
+
+    m = FFI::MemoryPointer.new(:fubar2_t)
+    m.write(:fubar2_t, 10)
+    expect(m.read :fubar2_t).to eq(10)
+  end
+
+  it "raises an error if you try to read an undefined type" do
+    m = FFI::MemoryPointer.new(:long)
+    expect { m.read(:undefined_type) }.to raise_error(ArgumentError)
+  end
+
   it "raises an error if you try putting a long into a pointer of size 1" do
     m = FFI::MemoryPointer.new(1)
-    expect { m.write_long(10) }.to raise_error
+    expect { m.write_long(10) }.to raise_error(IndexError)
   end
-  
+
   it "raises an error if you try putting an int into a pointer of size 1" do
     m = FFI::MemoryPointer.new(1)
-    expect { m.write_int(10) }.to raise_error
+    expect { m.write_int(10) }.to raise_error(IndexError)
   end
 #  it "does not raise IndexError for opaque pointers" do
 #    m = FFI::MemoryPointer.new(8)

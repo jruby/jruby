@@ -483,7 +483,7 @@ public final class JITRuntime {
                 }
             
             } else {
-                throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+                throw parameter.getRuntime().newArgumentError("cannot convert parameter to native pointer");
             }
         }
 
@@ -533,7 +533,7 @@ public final class JITRuntime {
             return new DelegatingPointerParameterStrategy(ptr, pointerParameterStrategy(ptr));
 
         } else {
-            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+            throw parameter.getRuntime().newArgumentError("cannot convert parameter to native pointer");
         }
     }
 

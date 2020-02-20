@@ -1,7 +1,9 @@
 #
-# Copyright (C) 2008, 2009 Wayne Meissner
-# Copyright (C) 2009 Luc Heinrich
+# Copyright (C) 2008-2010 Wayne Meissner
 # Copyright (c) 2007, 2008 Evan Phoenix
+#
+# This file is part of ruby-ffi.
+#
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -12,7 +14,7 @@
 # * Redistributions in binary form must reproduce the above copyright notice
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-# * Neither the name of the Evan Phoenix nor the names of its contributors
+# * Neither the name of the Ruby FFI project nor the names of its contributors
 #   may be used to endorse or promote products derived from this software
 #   without specific prior written permission.
 #
@@ -26,18 +28,31 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
+# see {file:README}
 module FFI
 
+  # @param [Type, DataConverter, Symbol] old type definition used by {FFI.find_type}
+  # @param [Symbol] add new type definition's name to add
+  # @return [Type]
+  # Add a definition type to type definitions.
   def self.typedef(old, add)
     TypeDefs[add] = self.find_type(old)
   end
 
+  # (see FFI.typedef)
   def self.add_typedef(old, add)
     typedef old, add
   end
 
 
+  # @param [Type, DataConverter, Symbol] name
+  # @param [Hash] type_map if nil, {FFI::TypeDefs} is used
+  # @return [Type]
+  # Find a type in +type_map+ ({FFI::TypeDefs}, by default) from
+  # a type objet, a type name (symbol). If +name+ is a {DataConverter},
+  # a new {Type::Mapped} is created.
   def self.find_type(name, type_map = nil)
     if name.is_a?(Type)
       name
@@ -50,12 +65,12 @@ module FFI
 
     elsif name.is_a?(DataConverter)
       (type_map || TypeDefs)[name] = Type::Mapped.new(name)
-
     else
       raise TypeError, "unable to resolve type '#{name}'"
     end
   end
 
+  # List of type definitions
   TypeDefs.merge!({
       # The C void type; only useful for function return types
       :void => Type::VOID,
@@ -99,6 +114,9 @@ module FFI
       # C double precision float
       :double => Type::DOUBLE,
 
+      # C long double
+      :long_double => Type::LONGDOUBLE,
+
       # Native memory address
       :pointer => Type::POINTER,
 
@@ -130,19 +148,31 @@ module FFI
       :varargs => Type::VARARGS,
   })
 
-  # Returns a [ String, Pointer ] tuple so the C memory for the string can be freed
+  # This will convert a pointer to a Ruby string (just like `:string`), but
+  # also allow to work with the pointer itself. This is useful when you want
+  # a Ruby string already containing a copy of the data, but also the pointer
+  # to the data for you to do something with it, like freeing it, in case the
+  # library handed the memory off to the caller (Ruby-FFI).
+  #
+  # It's {typedef}'d as +:strptr+.
   class StrPtrConverter
     extend DataConverter
     native_type Type::POINTER
 
+    # @param [Pointer] val
+    # @param ctx not used
+    # @return [Array(String, Pointer)]
+    # Returns a [ String, Pointer ] tuple so the C memory for the string can be freed
     def self.from_native(val, ctx)
       [ val.null? ? nil : val.get_string(0), val ]
     end
-
   end
 
   typedef(StrPtrConverter, :strptr)
 
+  # @param type +type+ is an instance of class accepted by {FFI.find_type}
+  # @return [Numeric]
+  # Get +type+ size, in bytes.
   def self.type_size(type)
     find_type(type).size
   end

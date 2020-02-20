@@ -172,6 +172,10 @@ public final class StringSupport {
         return new StringBuilder(str1.length() + str2.length()).append(str1).append(str2);
     }
 
+    public static String concat(final String str1, final String str2) {
+        return new StringBuilder(str1.length() + str2.length()).append(str1).append(str2).toString();
+    }
+
     public static String delete(final String str, final char c) { // str.replaceAll(c.toString(), "")
         char[] ary = null; int end = 0, s = 0;
         for (int i = 0; i < str.length(); i++) {
@@ -762,7 +766,7 @@ public final class StringSupport {
 
     /**
      * Check whether input object's string value contains a null byte, and if so
-     * throw SecurityError.
+     * throw ArgumentError.
      * @param runtime
      * @param value
      */
@@ -773,7 +777,7 @@ public final class StringSupport {
         final int end = bl.length();
         for (int i = bl.begin(); i < end; ++i) {
             if (array[i] == (byte) 0) {
-                throw runtime.newSecurityError("string contains null byte");
+                throw runtime.newArgumentError("string contains null byte");
             }
         }
     }
