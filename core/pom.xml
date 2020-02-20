@@ -367,7 +367,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>create</goal>
             </goals>
             <configuration>
-              <shortRevisionLength>7</shortRevisionLength>
+              <shortRevisionLength>10</shortRevisionLength>
               <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
             </configuration>
           </execution>

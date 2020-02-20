@@ -40,6 +40,8 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.stringio.StringIO;
 
+import java.util.Arrays;
+
 public final class Constants {
     public static final String PLATFORM = "java";
 
@@ -100,12 +102,14 @@ public final class Constants {
     @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
 
+    public static final String BOGUS_REVISION = "ffffffffff";
+
     static {
         // This is populated here to avoid javac propagating the value to consumers
         // Broken apart like this to prevent substitution
         if (jruby_revision.equals("@" + "jruby.revision" + "@")) {
             // use a bogus revision
-            REVISION = "fffffff";
+            REVISION = BOGUS_REVISION;
         } else {
             REVISION = jruby_revision;
         }
