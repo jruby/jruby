@@ -260,7 +260,7 @@ project 'JRuby Core' do
   end
 
   plugin :resources do
-    execute_goals('copy-resources', phase: :initialize,
+    execute_goals('copy-resources', phase: 'process-resources',
                   outputDirectory: '${basedir}',
                   resources: [
                     {
