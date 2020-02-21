@@ -297,7 +297,7 @@ public class StaticScope implements Serializable {
     }
 
     public String[] getVariables() {
-        return variableNames.clone();
+        return variableNames;
     }
 
     public int getNumberOfVariables() {
