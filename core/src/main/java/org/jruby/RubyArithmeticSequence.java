@@ -32,15 +32,23 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.RubyFixnum;
 
+import org.jruby.runtime.callsite.GeCallSite;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
+import org.jruby.util.Numeric;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
+
+import static org.jruby.RubyNumeric.floatStep;
+import static org.jruby.RubyNumeric.floatStepSize;
+import static org.jruby.RubyNumeric.dbl2num;
+import static org.jruby.RubyNumeric.int2fix;
+import static org.jruby.RubyNumeric.num2dbl;
 
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -89,6 +97,60 @@ public class RubyArithmeticSequence extends RubyObject {
 
     public static RubyArithmeticSequence newArithmeticSequence(ThreadContext context, IRubyObject begin, IRubyObject end, IRubyObject step, IRubyObject excludeEnd) {
         return new RubyArithmeticSequence(context.runtime, context.runtime.getArithmeticSequence(), begin, end, step, excludeEnd);
+    }
+
+    // arith_seq_each
+    @JRubyMethod
+    public IRubyObject each(ThreadContext context, Block block) {
+        IRubyObject c = begin;
+        IRubyObject e = end;
+        IRubyObject s = step;
+        IRubyObject len_1, last;
+
+        if (!block.isGiven()) {
+            return this;
+        }
+
+        if (!(step instanceof RubyComplex) && floatStep(context, c, e, s, excludeEnd.isTrue(), true, block)) {
+            return this;
+        }
+
+        if (end.isNil()) {
+            while (true) {
+                block.yield(context, c);
+                c = ((RubyNumeric)c).op_plus(context, s);
+            }
+            //FIXME : unreachable statement
+            //return this;
+        }
+
+        if (Helpers.rbEqual(context, step, int2fix(context.runtime, 0)).isTrue()) {
+            while (true) {
+                block.yield(context, c);
+            }
+            //FIXME : unreachable statement
+            //return this;
+        }
+
+        len_1 = ((RubyNumeric)((RubyNumeric)e).op_minus(context, c)).idiv(context, s);
+        last = ((RubyNumeric)c).op_plus(context, Numeric.f_mul(context, s, len_1));
+        if (excludeEnd.isTrue() && Helpers.rbEqual(context, last, e).isTrue()) {
+            last = ((RubyNumeric)last).op_minus(context, s);
+        }
+
+        if (Numeric.f_negative_p(context, s)) {
+            while (RubyNumeric.numFuncall(context, c, new GeCallSite(), last).isTrue()) {
+                block.yield(context, c);
+                c = ((RubyNumeric)c).op_plus(context, s);
+            }
+        } else {
+            while (RubyNumeric.numFuncall(context, last, new GeCallSite(), c).isTrue()) {
+                block.yield(context, c);
+                c = ((RubyNumeric)c).op_plus(context, s);
+            }
+        }
+
+        return this;
     }
 
     // arith_seq_eq
@@ -165,5 +227,62 @@ public class RubyArithmeticSequence extends RubyObject {
     @JRubyMethod(name = "exclude_end?")
     public IRubyObject exclude_end(ThreadContext context) {
         return excludeEnd;
+    }
+
+    @JRubyMethod
+    public IRubyObject size(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        IRubyObject len_1, len, last;
+        int x;
+
+        if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
+            double ee, n;
+
+            if (end.isNil()) {
+                if (Numeric.f_negative_p(context, step)) {
+                    ee = Double.NEGATIVE_INFINITY;
+                } else {
+                    ee = Double.POSITIVE_INFINITY;
+                }
+            } else {
+                ee = num2dbl(end);
+            }
+
+            n = floatStepSize(num2dbl(begin), ee, num2dbl(step), excludeEnd.isTrue());
+            if (Double.isInfinite(n)) {
+                return dbl2num(runtime, n);
+            }
+            if (RubyNumeric.posFixable(n)) {
+                return int2fix(runtime, (long)n);
+            }
+
+            return RubyBignum.newBignorm(runtime, n);
+        }
+
+        if (end.isNil()) {
+            return dbl2num(runtime, Double.POSITIVE_INFINITY);
+        }
+
+        if(!(step instanceof RubyNumeric)) {
+            step = step.convertToInteger();
+        }
+
+        if (Helpers.rbEqual(context, step, int2fix(runtime, 0)).isTrue()) {
+            return dbl2num(runtime, Double.POSITIVE_INFINITY);
+        }
+
+        len_1 = ((RubyNumeric)((RubyNumeric)end).op_minus(context, begin)).idiv(context, step);
+        if (Numeric.f_negative_p(context, len_1)) {
+            return int2fix(runtime, 0);
+        }
+
+        last = ((RubyNumeric)begin).op_plus(context, Numeric.f_mul(context, step, len_1));
+        if (excludeEnd.isTrue() && Helpers.rbEqual(context, last, end).isTrue()) {
+            len = len_1;
+        } else {
+            len = ((RubyNumeric)len_1).op_plus(context, int2fix(runtime, 1));
+        }
+
+        return len;
     }
 }

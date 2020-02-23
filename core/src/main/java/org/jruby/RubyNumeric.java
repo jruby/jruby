@@ -712,6 +712,11 @@ public class RubyNumeric extends RubyObject {
         return coerceBin(context, sites(context).op_plus, other);
     }
 
+    // MRI: rb_int_minus
+    public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
+        return coerceBin(context, sites(context).op_minus, other);
+    }
+
     /** num_cmp
      *
      */
@@ -1260,6 +1265,40 @@ public class RubyNumeric extends RubyObject {
             scanStepArgs(context, args1, newArgs);
             return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
         };
+    }
+    
+    // ruby_float_step
+    public static boolean floatStep(ThreadContext context, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, boolean allowEndless, Block block) {
+        if (from instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
+            double beg = num2dbl(from);
+            double end = (allowEndless && to.isNil()) ? Double.POSITIVE_INFINITY : num2dbl(to);
+            double unit = num2dbl(step);
+            double n = floatStepSize(beg, end, unit, excl);
+
+            if (Double.isInfinite(unit)) {
+                /* if unit is infinity, i*unit+beg is NaN */
+                if (n > 0) {
+                    block.yield(context, dbl2num(context.runtime, beg));
+                }
+            } else if (unit == 0) {
+                IRubyObject val = dbl2num(context.runtime, beg);
+                for (;;) {
+                    block.yield(context, val);
+                }
+            } else {
+                for (long i=0; i < n; i++) {
+                    double d = i * unit + beg;
+                    if (unit >= 0 ? end < d : d < end) {
+                        d = end;
+                    }
+                    block.yield(context, dbl2num(context.runtime, d));
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
