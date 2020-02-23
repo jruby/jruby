@@ -2951,7 +2951,7 @@ public final class Ruby implements Constantizable {
         }
     };
 
-    private static final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
+    private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
 
     public synchronized void addEventHook(EventHook hook) {
         if (!RubyInstanceConfig.FULL_TRACE_ENABLED && hook.needsDebug()) {
