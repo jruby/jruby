@@ -30,7 +30,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
-import org.jruby.RubyFixnum;
 
 import org.jruby.runtime.callsite.GeCallSite;
 import org.jruby.runtime.Helpers;
@@ -65,6 +64,9 @@ public class RubyArithmeticSequence extends RubyObject {
     private IRubyObject end;
     private IRubyObject step;
     private IRubyObject excludeEnd;
+    private IRubyObject generatedBy;
+    private String method;
+    private IRubyObject [] args;
 
     public static RubyClass createArithmeticSequenceClass(Ruby runtime, RubyClass enumeratorModule) {
         RubyClass sequencec = runtime.defineClassUnder("ArithmeticSequence", runtime.getObject(), new ObjectAllocator() {
@@ -87,16 +89,19 @@ public class RubyArithmeticSequence extends RubyObject {
         super(runtime, klass);
     }
 
-    public RubyArithmeticSequence(Ruby runtime, RubyClass klass, IRubyObject begin, IRubyObject end, IRubyObject step, IRubyObject excludeEnd) {
+    public RubyArithmeticSequence(Ruby runtime, RubyClass klass, IRubyObject generatedBy, String method, IRubyObject [] args, IRubyObject begin, IRubyObject end, IRubyObject step, IRubyObject excludeEnd) {
         super(runtime, klass);
         this.begin = begin;
         this.end = end;
         this.step = step;
         this.excludeEnd = excludeEnd;
+        this.generatedBy = generatedBy;
+        this.method = method;
+        this.args = args;
     }
 
-    public static RubyArithmeticSequence newArithmeticSequence(ThreadContext context, IRubyObject begin, IRubyObject end, IRubyObject step, IRubyObject excludeEnd) {
-        return new RubyArithmeticSequence(context.runtime, context.runtime.getArithmeticSequence(), begin, end, step, excludeEnd);
+    public static RubyArithmeticSequence newArithmeticSequence(ThreadContext context, IRubyObject generatedBy, String method, IRubyObject [] args, IRubyObject begin, IRubyObject end, IRubyObject step, IRubyObject excludeEnd) {
+        return new RubyArithmeticSequence(context.runtime, context.runtime.getArithmeticSequence(), generatedBy, method, args, begin, end, step, excludeEnd);
     }
 
     // arith_seq_each
@@ -209,6 +214,73 @@ public class RubyArithmeticSequence extends RubyObject {
         return runtime.newFixnum(hash);
     }
 
+    @Override
+    public final IRubyObject inspect() {
+        return inspect(getRuntime().getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyString inspect(ThreadContext context) {
+        ByteList str = new ByteList();
+        boolean isRange = generatedBy instanceof RubyRange;
+        str.append('(');
+        if (isRange) {
+            str.append('(');
+        }
+        str.append(RubyObject.inspect(context, generatedBy).getByteList());
+        if (isRange) {
+            str.append(')');
+        }
+        str.append('.').append(method.getBytes());
+        if (args != null) {
+            int argc = args.length;
+
+            if (argc > 0) {
+                IRubyObject kwds = context.nil;
+
+                str.append('(');
+
+                if (args[argc - 1] instanceof RubyHash) {
+                    boolean allKey = true;
+                    IRubyObject [] keys = ((RubyHash)args[argc - 1]).keys().toJavaArray();
+                    for (IRubyObject key : keys) {
+                        if (!(key instanceof RubySymbol)) {
+                            allKey = false;
+                            break;
+                        }
+                    }
+                    if (allKey) {
+                        kwds = args[--argc];
+                    }
+                }
+
+                while (argc > 0) {
+                    str.append(RubyObject.inspect(context, args[args.length - argc]).getByteList());
+                    str.append(',').append(' ');
+                    --argc;
+                }
+                
+                if (!kwds.isNil()) {
+                    IRubyObject [] keys = ((RubyHash)kwds).keys().toJavaArray();
+                    for (IRubyObject key : keys) {
+                        IRubyObject value = ((RubyHash)kwds).fastARef(key);
+                        str.append(((RubySymbol)key).getBytes());
+                        str.append(':').append(' ');
+                        str.append(RubyObject.inspect(context, value).getByteList());
+                        str.append(',').append(' ');
+                    }
+                }
+
+                str = new ByteList(str, 0, str.length() - 2); /* drop the last ", " */
+                str.append(')');
+            }
+        }
+
+        str.append(')');
+
+        return RubyString.newStringLight(context.runtime, str);
+    }
+    
     @JRubyMethod
     public IRubyObject begin(ThreadContext context) {
         return begin;

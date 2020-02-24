@@ -598,7 +598,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject step(final ThreadContext context, IRubyObject step, final Block block) {
         if (!block.isGiven()) {
             if (begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) {
-                return RubyArithmeticSequence.newArithmeticSequence(context, begin, end, !step.isNil() ? step : RubyFixnum.one(context.runtime), isExclusive ? context.tru : context.fals);
+                return RubyArithmeticSequence.newArithmeticSequence(context, this, "step", !step.isNil() ? new IRubyObject[]{step} : null, begin, end, !step.isNil() ? step : RubyFixnum.one(context.runtime), isExclusive ? context.tru : context.fals);
             }
             if (step.isNil()) {
                 return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{step}, stepSizeFn());

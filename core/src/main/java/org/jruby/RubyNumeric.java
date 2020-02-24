@@ -969,7 +969,7 @@ public class RubyNumeric extends RubyObject {
                 step = RubyFixnum.one(context.runtime);
             }
             if ((to.isNil() || to instanceof RubyNumeric) && step instanceof RubyNumeric) {
-                return RubyArithmeticSequence.newArithmeticSequence(context, this, to, step, context.fals);
+                return RubyArithmeticSequence.newArithmeticSequence(context, this, "step", args, this, to, step, context.fals);
             }
 
             return enumeratorizeWithSize(context, this, "step", args, stepSizeFn(this, args));
