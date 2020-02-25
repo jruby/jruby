@@ -2924,6 +2924,16 @@ public final class Ruby implements Constantizable {
                 Ruby runtime = context.runtime;
                 RubyBinding binding = RubyBinding.newBinding(runtime, context.currentBinding());
 
+                // FIXME: Ultimately we should be getting proper string for this event type
+                switch(eventName) {
+                    case "c_return":
+                        eventName = "c-return";
+                        break;
+                    case "c_call":
+                        eventName = "c-call";
+                        break;
+                };
+
                 context.preTrace();
                 try {
                     traceFunc.call(context, new IRubyObject[]{
