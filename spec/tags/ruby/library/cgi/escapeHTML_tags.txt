@@ -1,0 +1,1 @@
+fails:CGI.escapeHTML escapes invalid encoding

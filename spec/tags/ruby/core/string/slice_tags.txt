@@ -1,0 +1,1 @@
+fails:String#slice with index, length returns nil if the offset falls outside of self
