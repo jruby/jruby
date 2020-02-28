@@ -213,12 +213,18 @@ public class JavaConstructor extends JavaCallable {
 
     @JRubyMethod(rest = true)
     public final IRubyObject new_instance(final IRubyObject[] args) {
-        return new_instance( convertArguments(args) );
+        checkArity(args.length);
+
+        return newInstanceExactArity( convertArguments(args) );
     }
 
     public final IRubyObject new_instance(final Object[] arguments) {
         checkArity(arguments.length);
 
+        return newInstanceExactArity(arguments);
+    }
+
+    private IRubyObject newInstanceExactArity(Object[] arguments) {
         try {
             Object result = constructor.newInstance(arguments);
             return JavaObject.wrap(getRuntime(), result);
