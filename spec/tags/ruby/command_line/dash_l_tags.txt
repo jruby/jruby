@@ -1,0 +1,1 @@
+fails:The -l command line option chomps last line based on $/
