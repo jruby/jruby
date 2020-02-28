@@ -1,7 +1,6 @@
 # The Ruby Spec Suite
 
-[![Actions Build Status](https://github.com/ruby/spec/workflows/CI/badge.svg?branch=master)](https://github.com/ruby/spec/actions)
-[![Windows Actions Build Status](https://github.com/ruby/spec/workflows/Windows/badge.svg?branch=master)](https://github.com/ruby/spec/actions)
+[![Actions Build Status](https://github.com/ruby/spec/workflows/CI/badge.svg)](https://github.com/ruby/spec/actions)
 [![Gitter](https://badges.gitter.im/ruby/spec.svg)](https://gitter.im/ruby/spec)
 
 The Ruby Spec Suite, abbreviated `ruby/spec`, is a test suite for the behavior of the Ruby programming language.
@@ -29,7 +28,7 @@ ruby/spec is known to be tested in these implementations for every commit:
 * [Opal](https://github.com/opal/opal/tree/master/spec)
 
 ruby/spec describes the behavior of Ruby 2.4 and more recent Ruby versions.
-More precisely, every latest stable MRI release should [pass](https://travis-ci.org/ruby/spec) all specs of ruby/spec (2.4.x, 2.5.x, 2.6.x, etc), and those are tested in TravisCI.
+More precisely, every latest stable MRI release should [pass](https://travis-ci.org/ruby/spec) all specs of ruby/spec (2.4.x, 2.5.x, 2.6.x, 2.7.x, etc), and those are tested in TravisCI.
 
 The specs are synchronized both ways around once a month by @eregon between ruby/spec, MRI, JRuby and TruffleRuby.
 Each of these repositories has a full copy of the specs under `spec/ruby` to ease editing specs.
