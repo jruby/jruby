@@ -19,11 +19,11 @@ GEM
       leafy-health (~> 0.6.2)
       leafy-logger (~> 0.6.2)
       leafy-metrics (~> 0.6.2)
-    puma (2.13.4-java)
+    puma (3.12.4-java)
     rack (1.6.11)
     rack-protection (1.5.5)
       rack
-    rake (10.4.2)
+    rake (12.3.3)
     sinatra (1.4.6)
       rack (~> 1.4)
       rack-protection (~> 1.4)
