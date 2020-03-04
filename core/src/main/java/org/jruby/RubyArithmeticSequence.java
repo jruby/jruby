@@ -43,11 +43,14 @@ import org.jruby.util.Numeric;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
 
+import static org.jruby.RubyNumeric.fixable;
+import static org.jruby.RubyNumeric.fix2long;
 import static org.jruby.RubyNumeric.floatStep;
 import static org.jruby.RubyNumeric.floatStepSize;
 import static org.jruby.RubyNumeric.dbl2num;
 import static org.jruby.RubyNumeric.int2fix;
 import static org.jruby.RubyNumeric.num2dbl;
+import static org.jruby.RubyNumeric.num2long;
 
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -57,7 +60,7 @@ import static org.jruby.runtime.Helpers.safeHash;
 /**
  * Implements Enumerator::ArithmeticSequence
  */
-@JRubyClass(name = "Enumerator::ArithmeticSequence")
+@JRubyClass(name = "Enumerator::ArithmeticSequence", parent = "Enumerator")
 public class RubyArithmeticSequence extends RubyObject {
 
     private IRubyObject begin;
@@ -156,6 +159,140 @@ public class RubyArithmeticSequence extends RubyObject {
         }
 
         return this;
+    }
+
+    // arith_seq_first
+    @JRubyMethod
+    public IRubyObject first(ThreadContext context) {
+        return first(context, null);
+    }
+
+    // arith_seq_first
+    @JRubyMethod
+    public IRubyObject first(ThreadContext context, IRubyObject num) {
+        Ruby runtime = context.runtime;
+        IRubyObject b = begin, e = end, s = step;
+        RubyArray ary;
+        long n;
+        boolean x;
+
+        if (num == null) {
+            if (!e.isNil()) {
+                IRubyObject zero = int2fix(runtime, 0);
+                int r = RubyComparable.cmpint(context, ((RubyNumeric)step).coerceCmp(context, context.sites.Numeric.op_cmp, zero), s, zero);
+                if (r > 0 && Helpers.invokePublic(context, b, ">", e).isTrue()) {
+                    return context.nil;
+                }
+
+                if (r < 0 && Helpers.invokePublic(context, b, "<", e).isTrue()) {
+                    return context.nil;
+                }
+            }
+            return b;
+        }
+
+        /* TODO: the following code should be extracted as arith_seq_take */
+        n = num2long(num);
+
+        if (n < 0) {
+            throw runtime.newArgumentError("attempt to take negative size");
+        }
+
+        if (n == 0) {
+            return runtime.newEmptyArray();
+        }
+
+        x = excludeEnd.isTrue();
+
+        if (b instanceof RubyFixnum && e.isNil() && s instanceof RubyFixnum) {
+            long i = fix2long(b);
+            long unit = fix2long(s);
+            ary = RubyArray.newArray(runtime, n);
+            while (n > 0 && fixable(runtime, i)) {
+                ary.append(RubyFixnum.newFixnum(runtime, i));
+                i += unit;  /* FIXABLE + FIXABLE never overflow; */
+                --n;
+            }
+            if (n > 0) {
+                b = RubyFixnum.newFixnum(runtime, i);
+                while (n > 0) {
+                    ary.append(b);
+                    b = ((RubyBignum)b).op_plus(context, s);
+                    --n;
+                }
+            }
+
+            return ary;
+        } else if (b instanceof RubyFixnum && e instanceof RubyFixnum && s instanceof RubyFixnum) {
+            long i = fix2long(b);
+            long end = fix2long(e);
+            long unit = fix2long(s);
+            long len;
+
+            if (unit >= 0) {
+                if (!x) end += 1;
+
+                len = end - i;
+                if (len < 0) len = 0;
+                ary = RubyArray.newArray(runtime, (n < len) ? n : len);
+                while (n > 0 && i < end) {
+                    ary.append(RubyFixnum.newFixnum(runtime, i));
+                    if (i + unit < i) break;
+                    i += unit;
+                    --n;
+                }
+            } else {
+                if (!x) end -= 1;
+
+                len = i - end;
+                if (len < 0) len = 0;
+                ary = RubyArray.newArray(runtime, (n < len) ? n : len);
+                while (n > 0 && i > end) {
+                    ary.append(RubyFixnum.newFixnum(runtime, i));
+                    if (i + unit > i) break;
+                    i += unit;
+                    --n;
+                }
+            }
+
+            return ary;
+        } else if (b instanceof RubyFloat || e instanceof RubyFloat || s instanceof RubyFloat) {
+            /* generate values like ruby_float_step */
+
+            double unit = num2dbl(s);
+            double beg = num2dbl(b);
+            double end = e.isNil() ? (unit < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY) : num2dbl(e);
+            double len = floatStepSize(beg, end, unit, x);
+            long i;
+
+            if (n > len) n = (long)len;
+
+            if (Double.isInfinite(unit)) {
+                if (len > 0) {
+                    ary = RubyArray.newArray(runtime, 1);
+                    ary.append(dbl2num(runtime, beg));
+                } else {
+                    ary = runtime.newEmptyArray();
+                }
+            } else if (unit == 0) {
+                IRubyObject val = dbl2num(runtime, beg);
+                ary = RubyArray.newArray(runtime, n);
+                for (i = 0; i < len; ++i) {
+                    ary.append(val);
+                }
+            } else {
+                ary = RubyArray.newArray(runtime, n);
+                for (i = 0; i < n; ++i) {
+                    double d = i * unit + beg;
+                    if (unit >= 0 ? end < d : d < end) d = end;
+                    ary.append(dbl2num(runtime, d));
+                }
+            }
+
+            return ary;
+        }
+
+        return Helpers.invokeSuper(context, this, runtime.getEnumerator(), "first", num, Block.NULL_BLOCK);
     }
 
     // arith_seq_eq
