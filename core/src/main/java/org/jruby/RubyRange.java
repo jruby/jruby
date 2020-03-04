@@ -40,7 +40,6 @@ package org.jruby;
 import java.io.IOException;
 import java.util.List;
 import org.jcodings.Encoding;
-import org.jruby.RubyArithmeticSequence;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
