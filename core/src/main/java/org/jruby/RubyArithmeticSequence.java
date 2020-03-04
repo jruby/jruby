@@ -438,6 +438,74 @@ public class RubyArithmeticSequence extends RubyObject {
         return excludeEnd;
     }
 
+    // arith_seq_last
+    @JRubyMethod
+    public IRubyObject last(ThreadContext context) {
+        return last(context, null);
+    }
+
+    // arith_seq_last
+    @JRubyMethod
+    public IRubyObject last(ThreadContext context, IRubyObject num) {
+        Ruby runtime = context.runtime;
+        IRubyObject b = begin, e = end, s = step, len_1, len, last, nv;
+        RubyArray ary;
+        boolean last_is_adjusted;
+        long n;
+
+        if (e.isNil()) {
+            throw runtime.newRangeError("cannot get the last element of endless arithmetic sequence");
+        }
+
+        len_1 = ((RubyNumeric)((RubyNumeric)e).op_minus(context, b)).idiv(context, s);
+        if (Numeric.f_negative_p(context, len_1)) {
+            if (num == null) {
+                return context.nil;
+            }
+
+            return runtime.newEmptyArray();
+        }
+
+        last = ((RubyNumeric)b).op_plus(context, Numeric.f_mul(context, s, len_1));
+        if ((last_is_adjusted = excludeEnd.isTrue()) && Helpers.rbEqual(context, last, e).isTrue()) {
+            last = ((RubyNumeric)last).op_minus(context, s);
+        }
+
+        if (num == null) {
+            return last;
+        }
+
+        if (last_is_adjusted) {
+            len = len_1;
+        } else {
+            len = ((RubyNumeric)len_1).op_plus(context, int2fix(runtime, 1));
+        }
+
+        nv = num;
+        if (!(nv instanceof RubyInteger)) {
+            nv = num.convertToInteger();
+        }
+
+        if (Helpers.invokePublic(context, nv, ">", len).isTrue()) {
+            nv = len;
+        }
+
+        n = num2long(nv);
+        if (n < 0) {
+            throw runtime.newArgumentError("negative array size");
+        }
+
+        ary = RubyArray.newArray(runtime, n);
+        b = ((RubyNumeric)last).op_minus(context, Numeric.f_mul(context, s, nv));
+        while (n > 0) {
+            b = ((RubyNumeric)b).op_plus(context, s);
+            ary.append(b);
+            --n;
+        }
+
+        return ary;
+    }
+
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
         Ruby runtime = context.runtime;
