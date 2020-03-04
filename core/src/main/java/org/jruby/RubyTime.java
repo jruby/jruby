@@ -832,7 +832,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"to_i", "tv_sec"})
     public RubyInteger to_i() {
-        return getRuntime().newFixnum(getTimeInMillis() / 1000);
+        return getRuntime().newFixnum(Math.floorDiv(getTimeInMillis(), (long) 1000));
     }
 
     /**
