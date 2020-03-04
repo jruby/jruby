@@ -884,6 +884,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return RubyArray.newArrayMayCopy(runtime, activeThreads);
     }
 
+    @JRubyMethod
+    public IRubyObject add_trace_func(ThreadContext context, IRubyObject trace_func, Block block) {
+        return getContext().addThreadTraceFunction(trace_func, false);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject add_trace_func(ThreadContext context, IRubyObject recv, IRubyObject trace_func, Block block) {
+        return context.addThreadTraceFunction(trace_func, false);
+    }
+
+    @JRubyMethod
+    public IRubyObject set_trace_func(ThreadContext context, IRubyObject trace_func, Block block) {
+        if (trace_func.isNil()) return getContext().clearThreadTraceFunctions();
+
+        return getContext().setThreadTraceFunction(trace_func);
+    }
+
     private void addToCorrectThreadGroup(ThreadContext context) {
         // JRUBY-3568, inherit threadgroup or use default
         IRubyObject group = context.getThread().group();
