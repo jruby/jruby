@@ -539,15 +539,14 @@ public class MethodGatherer {
             if (constant) {
                 constantFields.add(new ConstantField(field));
 
-                // If we already are adding it as a constant, make the accessors warn about deprecated behavior.
-                // See jruby/jruby#5730.
-                if (!isInterface) continue;
+                // If we are adding it as a constant,  do not add an accessor (jruby/jruby#5730)
+                continue;
             }
 
             if (isStatic) {
-                addField(getStaticInstallersForWrite(), staticNames, field, isFinal, true, constant);
+                addField(getStaticInstallersForWrite(), staticNames, field, isFinal, true);
             } else {
-                addField(getInstanceInstallersForWrite(), instanceNames, field, isFinal, false, false);
+                addField(getInstanceInstallersForWrite(), instanceNames, field, isFinal, false);
             }
         }
     }
@@ -619,15 +618,14 @@ public class MethodGatherer {
             final Map<String, AssignedName> names,
             final Field field,
             final boolean isFinal,
-            final boolean isStatic,
-            final boolean isConstant) {
+            final boolean isStatic) {
 
         final String name = field.getName();
 
         if ( Priority.FIELD.lessImportantThan( names.get(name) ) ) return;
 
         names.put(name, new AssignedName(name, Priority.FIELD));
-        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field, isConstant) :
+        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field) :
                 new InstanceFieldGetterInstaller(name, field));
 
         if (!isFinal) {
