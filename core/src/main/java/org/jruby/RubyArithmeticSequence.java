@@ -41,7 +41,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.RubyEnumerator.SizeFn;
 
 import static org.jruby.RubyNumeric.fixable;
 import static org.jruby.RubyNumeric.fix2long;
