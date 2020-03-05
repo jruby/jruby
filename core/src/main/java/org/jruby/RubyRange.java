@@ -421,13 +421,7 @@ public class RubyRange extends RubyObject {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block originalBlock) {
-            call(context, args[0]);
-            return context.nil;
-        }
-
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject arg, Block originalBlock) {
-            call(context, arg);
+            doCall(context, args[0]);
             return context.nil;
         }
 
