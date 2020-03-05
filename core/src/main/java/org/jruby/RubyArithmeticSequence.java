@@ -30,9 +30,9 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
-
-import org.jruby.runtime.callsite.GeCallSite;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites.NumericSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -107,6 +107,10 @@ public class RubyArithmeticSequence extends RubyObject {
         return new RubyArithmeticSequence(context.runtime, context.runtime.getArithmeticSequence(), generatedBy, method, args, begin, end, step, excludeEnd);
     }
 
+    private static NumericSites sites(ThreadContext context) {
+        return context.sites.Numeric;
+    }
+
     // arith_seq_each
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
@@ -142,13 +146,14 @@ public class RubyArithmeticSequence extends RubyObject {
             last = ((RubyNumeric)last).op_minus(context, s);
         }
 
+        CallSite op_ge = sites(context).op_ge;
         if (Numeric.f_negative_p(context, s)) {
-            while (RubyNumeric.numFuncall(context, c, new GeCallSite(), last).isTrue()) {
+            while (RubyNumeric.numFuncall(context, c, op_ge, last).isTrue()) {
                 block.yield(context, c);
                 c = ((RubyNumeric)c).op_plus(context, s);
             }
         } else {
-            while (RubyNumeric.numFuncall(context, last, new GeCallSite(), c).isTrue()) {
+            while (RubyNumeric.numFuncall(context, last, op_ge, c).isTrue()) {
                 block.yield(context, c);
                 c = ((RubyNumeric)c).op_plus(context, s);
             }
@@ -175,12 +180,15 @@ public class RubyArithmeticSequence extends RubyObject {
         if (num == null) {
             if (!e.isNil()) {
                 IRubyObject zero = int2fix(runtime, 0);
-                int r = RubyComparable.cmpint(context, ((RubyNumeric)step).coerceCmp(context, context.sites.Numeric.op_cmp, zero), s, zero);
-                if (r > 0 && Helpers.invokePublic(context, b, ">", e).isTrue()) {
+                CallSite op_cmp = sites(context).op_cmp;
+                CallSite op_gt = sites(context).op_gt;
+                CallSite op_lt = sites(context).op_lt;
+                int r = RubyComparable.cmpint(context, ((RubyNumeric)step).coerceCmp(context, op_cmp, zero), s, zero);
+                if (r > 0 && RubyNumeric.numFuncall(context, b, op_gt, e).isTrue()) {
                     return context.nil;
                 }
 
-                if (r < 0 && Helpers.invokePublic(context, b, "<", e).isTrue()) {
+                if (r < 0 && RubyNumeric.numFuncall(context, b, op_lt, e).isTrue()) {
                     return context.nil;
                 }
             }
@@ -482,7 +490,8 @@ public class RubyArithmeticSequence extends RubyObject {
             nv = num.convertToInteger();
         }
 
-        if (Helpers.invokePublic(context, nv, ">", len).isTrue()) {
+        CallSite op_gt = sites(context).op_gt;
+        if (RubyNumeric.numFuncall(context, nv, op_gt, len).isTrue()) {
             nv = len;
         }
 

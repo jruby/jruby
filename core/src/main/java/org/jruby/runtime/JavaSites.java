@@ -182,6 +182,8 @@ public class JavaSites {
         public final CallSite div = new FunctionalCachingCallSite("div");
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
+        public final CallSite op_ge = new FunctionalCachingCallSite(">=");
+        public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CachingCallSite op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite op_gt = new FunctionalCachingCallSite(">");
         public final CheckedSites op_lt_checked = new CheckedSites("<");
