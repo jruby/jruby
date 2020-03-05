@@ -75,7 +75,7 @@ public class RubyArithmeticSequence extends RubyObject {
         RubyClass sequencec = runtime.defineClassUnder(
                 "ArithmeticSequence",
                 runtime.getObject(),
-                RubyClass.UNDEFINED_ALLOCATOR,
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR,
                 enumeratorModule);
 
         sequencec.includeModule(runtime.getEnumerable());

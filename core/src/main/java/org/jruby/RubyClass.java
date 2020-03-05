@@ -131,10 +131,6 @@ public class RubyClass extends RubyModule {
         }
     };
 
-    public static final ObjectAllocator UNDEFINED_ALLOCATOR = (r, clazz) -> {
-        throw r.newTypeError("allocator undefined for " + clazz);
-    };
-
     public ObjectAllocator getAllocator() {
         return allocator;
     }
