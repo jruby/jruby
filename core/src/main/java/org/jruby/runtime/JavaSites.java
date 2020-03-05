@@ -434,6 +434,7 @@ public class JavaSites {
         public final CallSite begin = new FunctionalCachingCallSite("begin");
         public final CallSite end = new FunctionalCachingCallSite("end");
         public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
+        public final CallSite max = new FunctionalCachingCallSite("max");
     }
 
     public static class WarningSites {

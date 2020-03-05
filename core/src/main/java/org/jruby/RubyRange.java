@@ -42,6 +42,7 @@ import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.API;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -458,11 +459,18 @@ public class RubyRange extends RubyObject {
     }
 
     private static IRubyObject rangeLt(ThreadContext context, IRubyObject a, IRubyObject b) {
+        return rangeLess(context, a, b) < 0 ? context.tru : null;
+    }
+
+    // MRI: r_less
+    private static int rangeLess(ThreadContext context, IRubyObject a, IRubyObject b) {
         IRubyObject result = invokedynamic(context, a, MethodNames.OP_CMP, b);
+
         if (result.isNil()) {
-            return null;
+            return Integer.MAX_VALUE;
         }
-        return RubyComparable.cmpint(context, result, a, b) < 0 ? context.tru : null;
+
+        return RubyComparable.cmpint(context, result, a, b);
     }
 
     private static IRubyObject rangeLe(ThreadContext context, IRubyObject a, IRubyObject b) {
@@ -494,6 +502,40 @@ public class RubyRange extends RubyObject {
                 v = v.callMethod(context, "succ");
             }
         }
+    }
+
+    private boolean coverRange(ThreadContext context, RubyRange val) {
+        int cmpEnd;
+
+        IRubyObject valBeg = val.begin;
+        IRubyObject valEnd = val.end;
+
+        int excl = isExclusive ? 1 : 0;
+        int valExcl = val.isExclusive ? 1 : 0;
+
+        if (!end.isNil() && valEnd.isNil()) return false;
+
+        if (!valEnd.isNil() && rangeLess(context, valBeg, valEnd) > -valExcl) return false;
+
+        if (!cover_p(context, valBeg).isTrue()) return false;
+
+        cmpEnd = rangeLess(context, end, valEnd);
+
+        if (excl == valExcl) {
+            return cmpEnd >= 0;
+        } else if (excl != 0) {
+            return cmpEnd > 0;
+        } else if (cmpEnd >= 0) {
+            return true;
+        }
+
+        IRubyObject nil = context.nil;
+
+        IRubyObject valMax = API.rb_rescue_typeerror(context, nil, () -> sites(context).max.call(context, this, val));
+
+        if (valMax == nil) return false;
+
+        return rangeLess(context, end, valMax) >= 0;
     }
 
     @JRubyMethod
@@ -622,7 +664,7 @@ public class RubyRange extends RubyObject {
         if (step.isNil()) {
             return enumeratorizeWithSize(context, this, method, new IRubyObject[]{step}, stepSizeFn());
         }
-        
+
         return enumeratorizeWithSize(context, this, method, stepSizeFn());
     }
 
@@ -804,14 +846,25 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "cover?")
     public RubyBoolean cover_p(ThreadContext context, IRubyObject obj) {
-        if (rangeLe(context, begin, obj) == null) {
-            return context.fals; // obj < start...end
+        if (obj instanceof RubyRange) {
+            return RubyBoolean.newBoolean(context, coverRange(context, (RubyRange) obj));
         }
-        if (isEndless) return context.tru;
-        return RubyBoolean.newBoolean(context, isExclusive
-                ? // begin <= obj < end || begin <= obj <= end
-                rangeLt(context, obj, end) != null : rangeLe(context, obj, end) != null);
+
+        return RubyBoolean.newBoolean(context, rangeIncludes(context, obj));
     }
+
+    // MRI: r_cover_p
+    private boolean rangeIncludes(ThreadContext context, IRubyObject val) {
+        if (rangeLess(context, begin, val) <= 0) {
+            int excl = isExclusive ? 1 : 0;
+            if (end.isNil() || rangeLess(context, val, end) <= -excl) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, Block block) {
