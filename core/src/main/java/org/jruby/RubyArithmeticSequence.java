@@ -128,16 +128,12 @@ public class RubyArithmeticSequence extends RubyObject {
                 block.yield(context, c);
                 c = ((RubyNumeric)c).op_plus(context, s);
             }
-            //FIXME : unreachable statement
-            //return this;
         }
 
         if (Helpers.rbEqual(context, step, int2fix(context.runtime, 0)).isTrue()) {
             while (true) {
                 block.yield(context, c);
             }
-            //FIXME : unreachable statement
-            //return this;
         }
 
         len_1 = ((RubyNumeric)((RubyNumeric)e).op_minus(context, c)).idiv(context, s);
