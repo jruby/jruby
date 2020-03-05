@@ -3757,6 +3757,13 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
         Ruby runtime = context.runtime;
 
+        RubyModule privateConstReference = context.getPrivateConstantReference();
+
+        if (privateConstReference != null) {
+            context.setPrivateConstantReference(null);
+            throw getRuntime().newNameError("private constant " + privateConstReference + "::" + rubyName + " referenced", privateConstReference, rubyName);
+        }
+
         if (this != runtime.getObject()) {
             throw runtime.newNameError("uninitialized constant %2$s::%1$s", this, rubyName);
         } else {
@@ -4617,7 +4624,8 @@ public class RubyModule extends RubyObject {
         if (entry.hidden && !includePrivate) {
             RubyModule recv = this;
             if (recv.isIncluded()) recv = recv.getNonIncludedClass();
-            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", recv, name);
+            getRuntime().getCurrentContext().setPrivateConstantReference(recv);
+            return null;
         }
         if (entry.deprecated) {
             final Ruby runtime = getRuntime();

@@ -158,6 +158,8 @@ public final class ThreadContext {
     private static boolean tryPreferredPRNG = true;
     private static boolean trySHA1PRNG = true;
 
+    private RubyModule privateConstantReference;
+
     public final JavaSites sites;
 
     @SuppressWarnings("deprecation")
@@ -1249,6 +1251,14 @@ public final class ThreadContext {
     }
 
     private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;
+
+    public void setPrivateConstantReference(RubyModule privateConstantReference) {
+        this.privateConstantReference = privateConstantReference;
+    }
+
+    public RubyModule getPrivateConstantReference() {
+        return privateConstantReference;
+    }
 
     private static class RecursiveError extends Error implements Unrescuable {
         public RecursiveError(Object tag) {
