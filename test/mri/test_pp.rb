@@ -194,7 +194,7 @@ class PPFileStatTest < Test::Unit::TestCase
   end
 end
 
-unless RUBY_ENGINE == 'jruby'
+if defined?(RubyVM)
   class PPAbstractSyntaxTree < Test::Unit::TestCase
     AST = RubyVM::AbstractSyntaxTree
     def test_literal
@@ -203,6 +203,4 @@ unless RUBY_ENGINE == 'jruby'
       assert_equal(expected, PP.singleline_pp(ast, ''.dup), ast)
     end
   end
-end
-
 end
