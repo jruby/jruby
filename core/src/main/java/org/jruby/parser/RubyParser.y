@@ -1893,7 +1893,7 @@ f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
 lambda_body     : tLAMBEG compstmt tRCURLY {
                     $$ = $2;
                 }
-                | keyword_do_lambda compstmt keyword_end {
+                | keyword_do_lambda bodystmt keyword_end {
                     $$ = $2;
                 }
 
