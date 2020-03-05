@@ -72,12 +72,11 @@ public class RubyArithmeticSequence extends RubyObject {
     private IRubyObject [] args;
 
     public static RubyClass createArithmeticSequenceClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass sequencec = runtime.defineClassUnder("ArithmeticSequence", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new RubyArithmeticSequence(runtime, klazz);
-            }
-        }, enumeratorModule);
+        RubyClass sequencec = runtime.defineClassUnder(
+                "ArithmeticSequence",
+                runtime.getObject(),
+                RubyClass.UNDEFINED_ALLOCATOR,
+                enumeratorModule);
 
         sequencec.includeModule(runtime.getEnumerable());
         sequencec.defineAnnotatedMethods(RubyArithmeticSequence.class);
