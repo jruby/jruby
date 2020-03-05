@@ -145,10 +145,16 @@ public final class ArgsUtil {
 
     // not used
     public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String... validKeys) {
-        IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, args);
+        return extractKeywordArgs(context, ArgsUtil.getOptionsArg(context.runtime, args), validKeys);
+    }
+
+    public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject maybeKwargs, String... validKeys) {
+        IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, maybeKwargs);
+
         if (options instanceof RubyHash) {
             return extractKeywordArgs(context, (RubyHash) options, validKeys);
         }
+
         return null;
     }
 
