@@ -211,6 +211,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.lang.invoke.MethodHandles.explicitCastArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
@@ -2990,48 +2991,65 @@ public final class Ruby implements Constantizable {
 
     public static class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
+        private ThreadContext thread; // if non-null only call traceFunc if it is from this thread.
+
+        public CallTraceFuncHook(ThreadContext context) {
+            this.thread = context;
+        }
 
         public void setTraceFunc(RubyProc traceFunc) {
             this.traceFunc = traceFunc;
         }
 
         public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
-            if (!context.isWithinTrace()) {
-                if (file == null) file = "(ruby)";
-                if (type == null) type = context.nil;
+            if (context.isWithinTrace()) return;
+            if (thread != null && thread != context) return;
 
-                Ruby runtime = context.runtime;
-                RubyBinding binding = RubyBinding.newBinding(runtime, context.currentBinding());
+            if (file == null) file = "(ruby)";
+            if (type == null) type = context.nil;
 
-                // FIXME: Ultimately we should be getting proper string for this event type
-                switch(eventName) {
-                    case "c_return":
-                        eventName = "c-return";
-                        break;
-                    case "c_call":
-                        eventName = "c-call";
-                        break;
-                };
+            Ruby runtime = context.runtime;
+            RubyBinding binding = RubyBinding.newBinding(runtime, context.currentBinding());
 
-                context.preTrace();
-                try {
-                    traceFunc.call(context, new IRubyObject[]{
-                            runtime.newString(eventName), // event name
-                            runtime.newString(file), // filename
-                            runtime.newFixnum(line), // line numbers should be 1-based
-                            name != null ? runtime.newSymbol(name) : runtime.getNil(),
-                            binding,
-                            type
-                    });
-                } finally {
-                    context.postTrace();
-                }
+            // FIXME: Ultimately we should be getting proper string for this event type
+            switch(eventName) {
+                case "c_return":
+                    eventName = "c-return";
+                    break;
+                case "c_call":
+                    eventName = "c-call";
+                    break;
+            };
+
+            context.preTrace();
+            try {
+                traceFunc.call(context, new IRubyObject[]{
+                        runtime.newString(eventName), // event name
+                        runtime.newString(file), // filename
+                        runtime.newFixnum(line), // line numbers should be 1-based
+                        name != null ? runtime.newSymbol(name) : runtime.getNil(),
+                        binding,
+                        type
+                });
+            } finally {
+                context.postTrace();
             }
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof CallTraceFuncHook)) return false;
+
+            return super.equals(other) && thread == ((CallTraceFuncHook) other).thread;
         }
 
         @Override
         public boolean isInterestedInEvent(RubyEvent event) {
             return interest.contains(event);
+        }
+
+        public ThreadContext getThread() {
+            return thread;
         }
 
         @Override
@@ -3040,7 +3058,7 @@ public final class Ruby implements Constantizable {
         }
     };
 
-    private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
+    private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook(null);
 
     public synchronized void addEventHook(EventHook hook) {
         if (!RubyInstanceConfig.FULL_TRACE_ENABLED && hook.needsDebug()) {
@@ -3062,7 +3080,7 @@ public final class Ruby implements Constantizable {
 
         int pivot = -1;
         for (int i = 0; i < hooks.length; i++) {
-            if (hooks[i] == hook) {
+            if (hooks[i].equals(hook)) {
                 pivot = i;
                 break;
             }
@@ -3081,14 +3099,34 @@ public final class Ruby implements Constantizable {
     }
 
     public void setTraceFunction(RubyProc traceFunction) {
-        removeEventHook(callTraceFuncHook);
+        setTraceFunction(callTraceFuncHook, traceFunction);
+    }
 
-        if (traceFunction == null) {
-            return;
-        }
+    public void setTraceFunction(CallTraceFuncHook hook, RubyProc traceFunction) {
+        removeEventHook(hook);
 
-        callTraceFuncHook.setTraceFunc(traceFunction);
-        addEventHook(callTraceFuncHook);
+        if (traceFunction == null) return;
+
+        hook.setTraceFunc(traceFunction);
+        addEventHook(hook);
+    }
+
+    /**
+     * Remove all event hooks which are associated with a particular thread.
+     * @param context the context of the ruby thread we are interested in.
+     */
+    public void removeAllCallEventHooksFor(ThreadContext context) {
+        if (eventHooks.length == 0) return;
+
+        List<EventHook> hooks = new ArrayList<>(Arrays.asList(eventHooks));
+
+        hooks = hooks.stream().filter(hook ->
+                !(hook instanceof CallTraceFuncHook) || !((CallTraceFuncHook) hook).getThread().equals(context)
+        ).collect(Collectors.toList());
+
+        EventHook[] newHooks = new EventHook[hooks.size()];
+        eventHooks = hooks.toArray(newHooks);
+        hasEventHooks = hooks.size() > 0;
     }
 
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
