@@ -1486,7 +1486,7 @@ public class RubyLexer extends LexingCommon {
         last_state = lex_state;
 
         // methods 'foo!' and 'foo?' are possible but if followed by '=' it is relop
-        if (c == '!' || c == '?' && !peek('=')) {
+        if ((c == '!' || c == '?') && !peek('=')) {
             result = RubyParser.tFID;
             tempVal = createTokenByteList();
         } else if (c == '=' && isLexState(lex_state, EXPR_FNAME)) {
