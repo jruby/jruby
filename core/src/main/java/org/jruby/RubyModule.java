@@ -134,6 +134,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
+import static org.jruby.runtime.Visibility.UNDEFINED;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -3178,30 +3179,71 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "method_defined?", required = 1)
+    @JRubyMethod(name = "method_defined?")
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol) {
         return isMethodBound(TypeConverter.checkID(symbol).idString(), true) ? context.tru : context.fals;
     }
 
-    @JRubyMethod(name = "public_method_defined?", required = 1)
+    @JRubyMethod(name = "method_defined?")
+    public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
+        boolean parents = includeSuper.isTrue();
+
+        if (parents) return method_defined_p(context, symbol);
+
+        Visibility visibility = checkMethodVisibility(context, symbol, parents);
+        return RubyBoolean.newBoolean(context, visibility != UNDEFINED && visibility != PRIVATE);
+    }
+
+    @JRubyMethod(name = "public_method_defined?")
     public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
-
-        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PUBLIC);
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PUBLIC);
     }
 
-    @JRubyMethod(name = "protected_method_defined?", required = 1)
+    @JRubyMethod(name = "public_method_defined?")
+    public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
+        boolean parents = includeSuper.isTrue();
+
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PUBLIC);
+    }
+
+    @JRubyMethod(name = "protected_method_defined?")
     public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
-
-        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PROTECTED);
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PROTECTED);
     }
 
-    @JRubyMethod(name = "private_method_defined?", required = 1)
-    public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
+    @JRubyMethod(name = "protected_method_defined?")
+    public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
+        boolean parents = includeSuper.isTrue();
 
-        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PRIVATE);
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PROTECTED);
+    }
+
+    @JRubyMethod(name = "private_method_defined?")
+    public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol) {
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PRIVATE);
+    }
+
+    @JRubyMethod(name = "private_method_defined?")
+    public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
+        boolean parents = includeSuper.isTrue();
+
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PRIVATE);
+    }
+
+    private Visibility checkMethodVisibility(ThreadContext context, IRubyObject symbol, boolean parents) {
+        String name = TypeConverter.checkID(symbol).idString();
+
+        RubyModule mod = this;
+
+        if (!parents) mod = getMethodLocation();
+
+        DynamicMethod method = mod.searchMethod(name);
+
+        if (method.isUndefined()) return Visibility.UNDEFINED;
+
+        if (!parents && method.getDefinedClass() != mod) return Visibility.UNDEFINED;
+
+        return method.getVisibility();
     }
 
     @JRubyMethod(name = "public_class_method", rest = true)
