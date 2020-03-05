@@ -459,11 +459,13 @@ public final class Ruby implements Constantizable {
             generatorClass = RubyGenerator.createGeneratorClass(this, enumeratorClass);
             yielderClass = RubyYielder.createYielderClass(this);
             chainClass = RubyChain.createChainClass(this, enumeratorClass);
+            aseqClass = RubyArithmeticSequence.createArithmeticSequenceClass(this, enumeratorClass);
         } else {
             enumeratorClass = null;
             generatorClass = null;
             yielderClass = null;
             chainClass = null;
+            aseqClass = null;
         }
 
         continuationClass = initContinuation();
@@ -1944,6 +1946,10 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getChain() {
         return chainClass;
+    }
+
+    public RubyClass getArithmeticSequence() {
+        return aseqClass;
     }
 
     public RubyClass getFiber() {
@@ -5120,6 +5126,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass fiberClass;
     private final RubyClass generatorClass;
     private final RubyClass chainClass;
+    private final RubyClass aseqClass;
     private final RubyClass arrayClass;
     private final RubyClass hashClass;
     private final RubyClass rangeClass;
