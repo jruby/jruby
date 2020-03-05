@@ -589,27 +589,46 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step")
     public IRubyObject step(final ThreadContext context, IRubyObject step, final Block block) {
+        String method = "step";
         if (!block.isGiven()) {
-            if (begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) {
-                return RubyArithmeticSequence.newArithmeticSequence(context, this, "step", !step.isNil() ? new IRubyObject[]{step} : null, begin, end, !step.isNil() ? step : RubyFixnum.one(context.runtime), isExclusive ? context.tru : context.fals);
-            }
-            if (step.isNil()) {
-                return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{step}, stepSizeFn());
-            } else {
-                return enumeratorizeWithSize(context, this, "step", stepSizeFn());
-            }
+            return stepEnumeratorize(context, step, method);
         }
 
         if (!(step instanceof RubyNumeric)) {
             step = step.convertToInteger("to_int");
         }
         if (((RubyNumeric) step).isNegative()) {
-            throw context.runtime.newArgumentError("step can't be negative");
+            throw context.runtime.newArgumentError(method + " can't be negative");
         }
         if (((RubyNumeric) step).isZero()) {
-            throw context.runtime.newArgumentError("step can't be 0");
+            throw context.runtime.newArgumentError(method + " can't be 0");
         }
         return stepCommon(context, step, block);
+    }
+
+    private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
+        if (begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) {
+            return RubyArithmeticSequence.newArithmeticSequence(
+                    context,
+                    this,
+                    method,
+                    !step.isNil() ? new IRubyObject[]{step} : null,
+                    begin,
+                    end,
+                    !step.isNil() ? step : RubyFixnum.one(context.runtime),
+                    isExclusive ? context.tru : context.fals);
+        }
+
+        if (step.isNil()) {
+            return enumeratorizeWithSize(context, this, method, new IRubyObject[]{step}, stepSizeFn());
+        }
+        
+        return enumeratorizeWithSize(context, this, method, stepSizeFn());
+    }
+
+    @JRubyMethod(name = "%")
+    public IRubyObject op_mod(final ThreadContext context, IRubyObject step) {
+        return stepEnumeratorize(context, step, "%");
     }
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
