@@ -66,6 +66,8 @@ public class RootNode extends Node implements ParseResult {
         this.file = file;
         this.endPosition = endPosition;
         this.needsCodeCoverage = needsCodeCoverage;
+
+        staticScope.setFile(file);
     }
 
     @Deprecated

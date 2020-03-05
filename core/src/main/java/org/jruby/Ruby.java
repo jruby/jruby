@@ -73,6 +73,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.CommonByteLists;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
@@ -938,6 +939,15 @@ public final class Ruby implements Constantizable {
             return;
         }
 
+        if (Options.COMPILE_CACHE_CLASSES.load()) {
+            Script script = tryScriptFromClass(filename);
+
+            if (script != null) {
+                runScript(script);
+                return;
+            }
+        }
+
         ParseResult parseResult = parseFromMain(filename, inputStream);
 
         // if no DATA, we're done with the stream, shut it down
@@ -968,6 +978,31 @@ public final class Ruby implements Constantizable {
             // TODO: Only interpreter supported so far
             runInterpreter(parseResult);
         }
+    }
+
+    private Script tryScriptFromClass(String filename) {
+        // Try loading from precompiled class file
+        String clsName = JavaNameMangler.mangledFilenameForStartupClasspath(filename);
+        try {
+            ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+
+            if (systemClassLoader.getResource(clsName + ".class") == null) return null;
+
+            Class scriptClass = systemClassLoader.loadClass(clsName.replace("/", "."));
+
+            if (Options.COMPILE_CACHE_CLASSES_LOGGING.load()) {
+                System.err.println("found class " + scriptClass.getName() + " for " + filename);
+            }
+
+            return Compiler.getScriptFromClass(scriptClass);
+        } catch (ClassNotFoundException cnfe) {
+            // ignore and proceed to parse and execute
+            if (Options.COMPILE_CACHE_CLASSES_LOGGING.load()) {
+                System.err.println("no class found for script " + filename);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1115,6 +1150,10 @@ public final class Ruby implements Constantizable {
      * @return The result of executing the script
      */
     public IRubyObject runNormally(Node scriptNode, boolean wrap) {
+        return runNormally(scriptNode, getTopSelf(), wrap);
+    }
+
+    public IRubyObject runNormally(Node scriptNode, IRubyObject self, boolean wrap) {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
@@ -1129,7 +1168,7 @@ public final class Ruby implements Constantizable {
                 return getNil();
             }
 
-            return runScript(scriptAndCode.script(), wrap);
+            return runScript(scriptAndCode.script(), self, wrap);
         } else {
             // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
 //            failForcedCompile(scriptNode);
@@ -1206,7 +1245,11 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runScript(Script script, boolean wrap) {
-        return script.load(getCurrentContext(), getTopSelf(), wrap);
+        return runScript(script, getTopSelf(), wrap);
+    }
+
+    public IRubyObject runScript(Script script, IRubyObject self, boolean wrap) {
+        return script.load(getCurrentContext(), self, wrap);
     }
 
     /**
@@ -1226,7 +1269,7 @@ public final class Ruby implements Constantizable {
              * exit point.  We still raise when jump off point is anything else since that is a bug.
              */
             if (!ex.methodToReturnFrom.getStaticScope().getIRScope().isScriptScope()) {
-                System.err.println("Unexpected 'return' escaped the runtime from " + ex.returnScope + " to " + ex.methodToReturnFrom.getStaticScope().getIRScope());
+                System.err.println("Unexpected 'return' escaped the runtime from " + ex.returnScope.getIRScope() + " to " + ex.methodToReturnFrom.getStaticScope().getIRScope());
                 System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(ex, false));
                 Throwable t = ex;
                 while ((t = t.getCause()) != null) {
@@ -2785,6 +2828,16 @@ public final class Ruby implements Constantizable {
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
+
+        if (!wrap && Options.COMPILE_CACHE_CLASSES.load()) {
+            Script script = tryScriptFromClass(scriptName);
+
+            if (script != null) {
+                runScript(script, self, wrap);
+                return;
+            }
+        }
+
         ThreadContext context = getCurrentContext();
 
         try {
@@ -2801,7 +2854,7 @@ public final class Ruby implements Constantizable {
     }
 
     public void loadScope(IRScope scope, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
 
         if (wrap) {
             // toss an anonymous module into the search path
@@ -2814,6 +2867,15 @@ public final class Ruby implements Constantizable {
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
 
+        if (!wrap && Options.COMPILE_CACHE_CLASSES.load()) {
+            Script script = tryScriptFromClass(filename);
+
+            if (script != null) {
+                runScript(script, self, wrap);
+                return;
+            }
+        }
+
         ParseResult parseResult = parseFile(filename, in, null);
         RootNode root = (RootNode) parseResult;
 
@@ -2823,17 +2885,22 @@ public final class Ruby implements Constantizable {
             root.getStaticScope().setModule(getObject());
         }
 
-        runNormally(root, wrap);
+        runNormally(root, self, wrap);
     }
 
-    private void wrapWithModule(RubyBasicObject self, ParseResult result) {
+    public StaticScope setupWrappedToplevel(IRubyObject self, StaticScope top) {
         // toss an anonymous module into the search path
         RubyModule wrapper = RubyModule.newModule(this);
-        self.extend(new IRubyObject[] {wrapper});
-        StaticScope top = result.getStaticScope();
+        ((RubyBasicObject) self).extend(new IRubyObject[] {wrapper});
         StaticScope newTop = staticScopeFactory.newLocalScope(null);
         top.setPreviousCRefScope(newTop);
         top.setModule(wrapper);
+
+        return newTop;
+    }
+
+    private void wrapWithModule(RubyBasicObject self, ParseResult result) {
+        setupWrappedToplevel(self, result.getStaticScope());
     }
 
     public void loadScript(Script script) {
@@ -2936,6 +3003,16 @@ public final class Ruby implements Constantizable {
                 Ruby runtime = context.runtime;
                 RubyBinding binding = RubyBinding.newBinding(runtime, context.currentBinding());
 
+                // FIXME: Ultimately we should be getting proper string for this event type
+                switch(eventName) {
+                    case "c_return":
+                        eventName = "c-return";
+                        break;
+                    case "c_call":
+                        eventName = "c-call";
+                        break;
+                };
+
                 context.preTrace();
                 try {
                     traceFunc.call(context, new IRubyObject[]{
@@ -2963,7 +3040,7 @@ public final class Ruby implements Constantizable {
         }
     };
 
-    private static final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
+    private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
 
     public synchronized void addEventHook(EventHook hook) {
         if (!RubyInstanceConfig.FULL_TRACE_ENABLED && hook.needsDebug()) {

@@ -24,6 +24,7 @@ import org.jruby.util.ByteList;
  */
 public class IRReader implements IRPersistenceValues {
     public static IRScope load(IRManager manager, final IRReaderDecoder file) throws IOException {
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRReader.load");
         int version = file.decodeIntRaw();
 
         if (version != VERSION) {
@@ -35,7 +36,7 @@ public class IRReader implements IRPersistenceValues {
 
         file.seek(headersOffset);
         int scopesToRead  = file.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("scopes to read = " + scopesToRead);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("load: scopes to read = " + scopesToRead);
 
         IRScope firstScope = null;
         for (int i = 0; i < scopesToRead; i++) {
@@ -51,21 +52,30 @@ public class IRReader implements IRPersistenceValues {
     }
 
     private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader");
+
         IRScopeType type = decoder.decodeIRScopeType();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: type       = " + type);
         int line = decoder.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: line       = " + line);
         int tempVarsCount = decoder.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: temp count = " + tempVarsCount);
         int nextLabelInt = decoder.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: next label = " + tempVarsCount);
 
         boolean isEND = false;
+        if (type == IRScopeType.CLOSURE) {
+            isEND = decoder.decodeBoolean();
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: cl is end = " + isEND);
+        }
 
         Signature signature;
         if (type == IRScopeType.CLOSURE || type == IRScopeType.FOR) {
-            isEND = decoder.decodeBoolean();
             signature = Signature.decode(decoder.decodeLong());
         } else {
             signature = Signature.OPTIONAL;
         }
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: signature =  " + signature);
 
         // Wackiness we decode as bytelist when we encoded as symbol because currentScope is not defined yet on first
         // name of first scope.  We will use manager in this method to finish the job in constructing our symbol.
@@ -74,9 +84,12 @@ public class IRReader implements IRPersistenceValues {
         IRScope parent = null;
         if (type == IRScopeType.SCRIPT_BODY) {
             file = decoder.decodeString();
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: script file = " + file);
         } else {
             name = decoder.decodeByteList();
-            parent = decoder.decodeScope();
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: name = " + name);
+            parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: parent = " + parent);
         }
 
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
@@ -98,9 +111,18 @@ public class IRReader implements IRPersistenceValues {
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
-        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray(), decoder.decodeInt());
+        StaticScope.Type type = decoder.decodeStaticScopeType();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: type = " + type);
+        String file = decoder.decodeString();
+        String[] ids = decoder.decodeStringArray();
+        int firstKeywordIndex = decoder.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: keyword index = " + firstKeywordIndex);
 
-        scope.setSignature(decoder.decodeSignature());
+        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, type, file, ids, firstKeywordIndex);
+
+        Signature signature = decoder.decodeSignature();
+        scope.setSignature(signature);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: signature = " + signature);
 
         return scope;
     }

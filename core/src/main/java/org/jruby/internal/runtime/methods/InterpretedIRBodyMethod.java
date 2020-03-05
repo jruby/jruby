@@ -45,11 +45,11 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
         if (!hasExplicitCallProtocol) this.pre(ic, context, self, name, block, getImplementationClass());
 
         try {
-            switch (method.getScopeType()) {
-                case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, method.getId(), block);
-                case CLASS_BODY: return INTERPRET_CLASS(ic, context, self, clazz, method.getId(), block);
+            switch (getIRScope().getScopeType()) {
+                case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, getIRScope().getId(), block);
+                case CLASS_BODY: return INTERPRET_CLASS(ic, context, self, clazz, getIRScope().getId(), block);
                 case METACLASS_BODY: return INTERPRET_METACLASS(ic, context, self, clazz, "singleton class", block);
-                default: throw new RuntimeException("invalid body method type: " + method);
+                default: throw new RuntimeException("invalid body method type: " + getIRScope());
             }
         } finally {
             if (!hasExplicitCallProtocol) this.post(ic, context);

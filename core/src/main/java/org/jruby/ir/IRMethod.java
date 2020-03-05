@@ -37,7 +37,7 @@ public class IRMethod extends IRScope {
 
         if (needsCodeCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
 
-        if (!getManager().isDryRun() && staticScope != null) {
+        if (staticScope != null) {
             staticScope.setIRScope(this);
         }
     }

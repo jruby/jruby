@@ -49,9 +49,12 @@ module CGI::Util
       table = Hash[TABLE_FOR_ESCAPE_HTML__.map {|pair|pair.map {|s|s.encode(enc)}}]
       string = string.gsub(/#{"['&\"<>]".encode(enc)}/, table)
       string.encode!(origenc) if origenc
-      return string
+      string
+    else
+      string = string.b
+      string.gsub!(/['&\"<>]/, TABLE_FOR_ESCAPE_HTML__)
+      string.force_encoding(enc)
     end
-    string.gsub(/['&\"<>]/, TABLE_FOR_ESCAPE_HTML__)
   end
 
   begin

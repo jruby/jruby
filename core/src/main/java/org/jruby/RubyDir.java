@@ -239,20 +239,18 @@ public class RubyDir extends RubyObject implements Closeable {
             } else {
                 String[] keys = flags != null ? BASE_FLAGS : BASE;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
-                String base = rets[0] == null || rets[0] == context.nil ? "" : RubyFile.get_path(context, rets[0]).asJavaString();
+                if (rets[0] == null || rets[0].isNil()) return "";
+                RubyString path = RubyFile.get_path(context, rets[0]);
+                Encoding[] enc = {path.getEncoding()};
+                String base = path.getUnicodeValue();
 
                 // Deep down in glob things are unhappy if base is not absolute.
                 if (!base.isEmpty()) {
-                    JRubyFile file = new JRubyFile(base);
-
-                    // FIXME: This is a bit of a hot mess.  Deep down in the ancient caves of glob land we do not
-                    // like see a base which is not an absolute path.  JRubyFile by itself uses what I am guessing
-                    // is the JVM CWD and not the runtimes CWD so if path is not absolute I remake the thing again...
-                    if (!file.isAbsolute()) {
-                        base = new JRubyFile(runtime.getCurrentDirectory(), base).getAbsolutePath();
-                    }
+                    base = RubyFile.expandPath(context, base, enc, runtime.getCurrentDirectory(), true, false);
                 }
+
                 if (flags != null) flags[0] = rets[1] == null ? 0 : RubyNumeric.num2int(rets[1]);
+
                 return base;
             }
         }
@@ -302,7 +300,7 @@ public class RubyDir extends RubyObject implements Closeable {
         String base = globOptions(context, args, flags);
         List<ByteList> dirs;
 
-        if (!(base == null || base.isEmpty()) && !(new File(base).exists())){
+        if (base != null && !base.isEmpty() && !(JRubyFile.createResource(context, base).exists())){
             dirs = new ArrayList<ByteList>();
         } else {
             IRubyObject tmp = args[0].checkArrayType();

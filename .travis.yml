@@ -201,12 +201,15 @@ matrix:
         - source install-jdk.sh --url https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u202-b08_openj9-0.12.1/OpenJDK8U-jdk_x64_linux_openj9_8u202b08_openj9-0.12.1.tar.gz
         - tool/travis-script.sh
 
+    - name: Check Dependency Convergence
+      env: PHASE='-Pmain -Dinvoker.test=GH-6081* integration-test'
+
     - stage: deploy
       name: deploy snapshots
       script:
         - cp .travis-maven-settings.xml $HOME/.m2/settings.xml
         - ./mvnw clean deploy -Prelease
-      if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.1) # only master and maintenance pushes
+      if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.2) # only master and maintenance pushes
 
   allow_failures:
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'

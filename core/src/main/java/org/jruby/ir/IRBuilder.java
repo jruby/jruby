@@ -6,6 +6,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.ir.instructions.*;
@@ -537,7 +538,7 @@ public class IRBuilder {
 
     private InterpreterContext buildLambdaInner(LambdaNode node) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                // %current_scope/%current_module
+        addCurrentModule();                                        // %current_module
 
         receiveBlockArgs(node);
 
@@ -2057,7 +2058,6 @@ public class IRBuilder {
 
         // These instructions need to be toward the top of the method because they may both be needed for processing
         // optional arguments as in def foo(a = Object).
-        // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
         addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
@@ -2943,11 +2943,11 @@ public class IRBuilder {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
         }
 
-        if (!forNode) addCurrentModule();                                // %current_scope/%current_module
+        if (!forNode) addCurrentModule();                                // %current_module
         receiveBlockArgs(iterNode);
         // for adds these after processing binding block args because and operations at that point happen relative
         // to the previous scope.
-        if (forNode) addCurrentModule();                                // %current_scope/%current_module
+        if (forNode) addCurrentModule();                                 // %current_module
 
         // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
         afterPrologueIndex = instructions.size() - 1;
@@ -3388,7 +3388,7 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildPrePostExeInner(Node body) {
-        // Set up %current_scope and %current_module
+        // Set up %current_module
         addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
@@ -3408,8 +3408,12 @@ public class IRBuilder {
         IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(),
+        StaticScope parentScope = nearestLVarScope.getStaticScope();
+        StaticScope staticScope = parentScope.duplicate();
+        staticScope.setEnclosingScope(parentScope);
+        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), staticScope,
                 Signature.from(postExeNode), CommonByteLists._END_, true);
+        staticScope.setIRScope(endClosure);
         endClosure.setIsEND();
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
@@ -3732,7 +3736,7 @@ public class IRBuilder {
         addInstr(manager.newLineNumber(scope.getLine()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                // %current_scope/%current_module
+        addCurrentModule();                                        // %current_module
 
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
@@ -3756,7 +3760,7 @@ public class IRBuilder {
     private InterpreterContext buildRootInner(RootNode rootNode) {
         needsCodeCoverage = rootNode.needsCoverage();
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                // %current_scope/%current_module
+        addCurrentModule();                                        // %current_module
 
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
@@ -4057,7 +4061,7 @@ public class IRBuilder {
         addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine + 1));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentModule();                                // %current_scope/%current_module
+        addCurrentModule();                                        // %current_module
 
         Operand bodyReturnValue = build(bodyNode);
 
