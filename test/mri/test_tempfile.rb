@@ -417,13 +417,10 @@ puts Tempfile.new('foo').path
     else
       raise $!
     end
-<<<<<<< HEAD
   ensure
     if t
       t.close
       File.unlink(t.path)
     end
-=======
->>>>>>> master
   end
 end

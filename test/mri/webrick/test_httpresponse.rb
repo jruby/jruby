@@ -92,7 +92,6 @@ module WEBrick
       refute_match 'hack', io.string
     end
 
-<<<<<<< HEAD
     def test_set_redirect_response_splitting
       url = "malicious\r\nCookie: hack"
       assert_raises(URI::InvalidURIError) do
@@ -114,8 +113,6 @@ module WEBrick
       refute_match /<img/, io.string
     end
 
-=======
->>>>>>> master
     def test_304_does_not_log_warning
       res.status      = 304
       res.setup_header

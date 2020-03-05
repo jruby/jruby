@@ -195,7 +195,7 @@ class PPFileStatTest < Test::Unit::TestCase
 end
 
 class PPAbstractSyntaxTree < Test::Unit::TestCase
-  AST = RubyVM::AbstractSyntaxTree
+#  AST = RubyVM::AbstractSyntaxTree
   def test_literal
     ast = AST.parse("1")
     expected = "(SCOPE@1:0-1:1 tbl: [] args: nil body: (LIT@1:0-1:1 1))"

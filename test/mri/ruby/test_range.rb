@@ -201,11 +201,8 @@ class TestRange < Test::Unit::TestCase
     assert_kind_of(Integer, (0..1).hash)
     assert_equal((0..1).hash, (0..1).hash)
     assert_not_equal((0..1).hash, (0...1).hash)
-<<<<<<< HEAD
     assert_equal((0..nil).hash, (0..nil).hash)
     assert_not_equal((0..nil).hash, (0...nil).hash)
-=======
->>>>>>> master
     assert_kind_of(String, (0..1).hash.to_s)
   end
 
