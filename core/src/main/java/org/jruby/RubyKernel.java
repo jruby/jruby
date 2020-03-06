@@ -374,11 +374,6 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE)
-    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv) {
-        RubyClass rational = context.runtime.getRational();
-        return sites(context).convert_rational.call(context, rational, rational);
-    }
-    @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE)
     public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         RubyClass rational = context.runtime.getRational();
         return sites(context).convert_rational.call(context, rational, rational, arg0);
@@ -387,6 +382,11 @@ public class RubyKernel {
     public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         RubyClass rational = context.runtime.getRational();
         return sites(context).convert_rational.call(context, rational, rational, arg0, arg1);
+    }
+    @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE)
+    public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        RubyClass rational = context.runtime.getRational();
+        return sites(context).convert_rational.call(context, rational, rational, arg0, arg1, arg2);
     }
 
     @Deprecated
