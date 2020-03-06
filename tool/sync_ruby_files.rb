@@ -24,6 +24,7 @@ STDLIB_FILES = %w[
   optparse.rb
   pp.rb
   prettyprint.rb
+  prime.rb
   profile.rb
   profiler.rb
   pstore.rb
