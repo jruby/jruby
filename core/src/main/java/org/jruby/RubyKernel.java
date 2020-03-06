@@ -372,6 +372,11 @@ public class RubyKernel {
         RubyClass complex = context.runtime.getComplex();
         return sites(context).convert_complex.call(context, complex, complex, arg0, arg1);
     }
+    @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)
+    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        RubyClass complex = context.runtime.getComplex();
+        return sites(context).convert_complex.call(context, complex, complex, arg0, arg1, arg2);
+    }
 
     @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE)
     public static IRubyObject new_rational(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
