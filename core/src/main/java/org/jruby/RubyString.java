@@ -1162,7 +1162,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "-@") // -'foo' returns frozen string
     public final IRubyObject minus_at(ThreadContext context) {
-        return isFrozen() ? this : context.runtime.freezeAndDedupString(this);
+        Ruby runtime = context.runtime;
+
+        RubyString str = this;
+
+        if (!str.isBare(runtime) && !str.isFrozen()) str = str.strDup(runtime);
+
+        return runtime.freezeAndDedupString(str);
     }
 
     @JRubyMethod(name = "+@") // +'foo' returns modifiable string
@@ -6743,6 +6749,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int pp = nth(value.getEncoding(), value.unsafeBytes(), p, e, nth, singlebyte);
         if (pp == -1) return size;
         return pp - p;
+    }
+
+    /**
+     * Is this a "bare" string, i.e. has no instance vars and class == String.
+     */
+    private boolean isBare(Ruby runtime) {
+        return !hasVariables() && metaClass == runtime.getString();
     }
 
     private static StringSites sites(ThreadContext context) {
