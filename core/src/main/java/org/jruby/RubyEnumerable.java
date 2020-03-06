@@ -1902,7 +1902,7 @@ public class RubyEnumerable {
                         }
                     });
                 } else {
-                    callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                    callEach(context, self, Signature.OPTIONAL, new BlockCallback() {
                         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
                             checkContext(localContext, context, "any?");
                             IRubyObject larg = packEnumValues(context, largs);
