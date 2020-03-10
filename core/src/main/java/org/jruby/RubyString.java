@@ -63,12 +63,15 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.StringSites;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -6749,6 +6752,57 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int pp = nth(value.getEncoding(), value.unsafeBytes(), p, e, nth, singlebyte);
         if (pp == -1) return size;
         return pp - p;
+    }
+
+    // MRI: rb_str_include_range_p
+    public static IRubyObject includeRange(ThreadContext context, RubyString _beg, IRubyObject _end, IRubyObject _val, boolean exclusive) {
+        Ruby runtime = context.runtime;
+
+        final RubyString beg = _beg.newFrozen();
+        RubyString end = _end.convertToString().newFrozen();
+        if (_val.isNil()) return context.fals;
+        _val = TypeConverter.checkStringType(runtime, _val);
+        if (_val.isNil()) return context.fals;
+        RubyString val = _val.convertToString();
+        if (EncodingUtils.encAsciicompat(beg.getEncoding()) &&
+                EncodingUtils.encAsciicompat(end.getEncoding()) &&
+                EncodingUtils.encAsciicompat(val.getEncoding())) {
+            ByteList bByteList = beg.getByteList();
+            ByteList eByteList = end.getByteList();
+            ByteList vByteList = val.getByteList();
+
+            int bp = 0, ep = 0, vp = 0;
+            if (beg.length() == 1 && end.length() == 1) {
+                if (val.length() == 0 || val.length() > 1) {
+                    return context.fals;
+                } else {
+                    int b = bp;
+                    int e = ep;
+                    int v = vp;
+
+                    if (bByteList.get(b) < 128 &&
+                            eByteList.get(e) < 128 &&
+                            vByteList.get(v) < 128) {
+                        if (b <= v && v < e) return context.tru;
+                        if (!exclusive && v == e) return context.tru;
+                        return context.fals;
+                    }
+                }
+            }
+        }
+
+        IRubyObject uptoInclude = beg.uptoCommon(
+                context,
+                end,
+                exclusive,
+                CallBlock19.newCallClosure(
+                        beg,
+                        beg.getMetaClass(),
+                        Signature.ONE_ARGUMENT,
+                        (context1, args, block) -> beg.op_equal(context1, args[0]),
+                        context));
+
+        return uptoInclude.isNil() ? context.tru : context.fals;
     }
 
     /**

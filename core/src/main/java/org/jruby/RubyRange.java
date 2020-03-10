@@ -782,12 +782,12 @@ public class RubyRange extends RubyObject {
     // framed for invokeSuper
     @JRubyMethod(name = {"include?", "member?"}, frame = true)
     public IRubyObject include_p(ThreadContext context, final IRubyObject obj) {
-        IRubyObject result = includeCommon(context, obj);
+        IRubyObject result = includeCommon(context, obj, false);
         if (result != UNDEF) return result;
         return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
     }
 
-    private IRubyObject includeCommon(ThreadContext context, final IRubyObject obj) {
+    private IRubyObject includeCommon(ThreadContext context, final IRubyObject val, boolean useStringCover) {
         final Ruby runtime = context.runtime;
 
         boolean iterable = begin instanceof RubyNumeric || end instanceof RubyNumeric ||
@@ -796,27 +796,25 @@ public class RubyRange extends RubyObject {
         if (iterable
                 || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), sites(context).to_int_checked).isNil()
                 || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), sites(context).to_int_checked).isNil()) {
-            return cover_p(context, obj);
-        }
-
-        if ( begin instanceof RubyString && end instanceof RubyString
-            && ((RubyString) begin).getByteList().getRealSize() == 1
-            && ((RubyString) end).getByteList().getRealSize() == 1 ) {
-            if (obj.isNil()) return runtime.getFalse();
-            if (obj instanceof RubyString) {
-                ByteList objBytes = ((RubyString) obj).getByteList();
-                if (objBytes.getRealSize() != 1) return runtime.getFalse();
-                int v = objBytes.getUnsafeBytes()[objBytes.getBegin()] & 0xff;
-                ByteList begBytes = ((RubyString) begin).getByteList();
-                int b = begBytes.getUnsafeBytes()[begBytes.getBegin()] & 0xff;
-                ByteList endBytes = ((RubyString) end).getByteList();
-                int e = endBytes.getUnsafeBytes()[endBytes.getBegin()] & 0xff;
-                if (Encoding.isAscii(v) && Encoding.isAscii(b) && Encoding.isAscii(e)) {
-                    if ((b <= v && v < e) || (!isExclusive && v == e)) {
-                        return runtime.getTrue();
-                    }
-                    return runtime.getFalse();
+            return cover_p(context, val);
+        } else if ((begin instanceof RubyString) || (end instanceof RubyString)) {
+            if ((begin instanceof RubyString) && (end instanceof RubyString)) {
+                if (useStringCover) {
+                    return cover_p(context, val);
+                } else {
+                    return RubyString.includeRange(context, begin.convertToString(), end, val, isExclusive);
                 }
+            } else if (begin.isNil()) {
+                IRubyObject r = sites(context).op_cmp.call(context, val, val, end);
+                if (r.isNil()) return context.fals;
+                if (RubyComparable.cmpint(context, sites(context).op_gt, sites(context).op_lt, r, val, end) <= 0) return context.tru;
+                return context.fals;
+            }
+            else if (end.isNil()) {
+                IRubyObject r = sites(context).op_cmp.call(context, begin, begin, val);
+                if (r.isNil()) return context.fals;
+                if (RubyComparable.cmpint(context, sites(context).op_gt, sites(context).op_lt, r, begin, val) <= 0) return context.tru;
+                return context.fals;
             }
         }
 
@@ -839,7 +837,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "===")
     public IRubyObject eqq_p(ThreadContext context, IRubyObject obj) {
-        IRubyObject result = includeCommon(context, obj);
+        IRubyObject result = includeCommon(context, obj, true);
         if (result != UNDEF) return result;
         return callMethod(context, "cover?", obj);
     }
