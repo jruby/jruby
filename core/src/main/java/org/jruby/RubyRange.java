@@ -787,15 +787,18 @@ public class RubyRange extends RubyObject {
         return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
     }
 
+    // MRI: range_include_internal
     private IRubyObject includeCommon(ThreadContext context, final IRubyObject val, boolean useStringCover) {
         final Ruby runtime = context.runtime;
 
         boolean iterable = begin instanceof RubyNumeric || end instanceof RubyNumeric ||
                 linearObject(context, begin) || linearObject(context, end);
 
+        JavaSites.RangeSites sites = sites(context);
+        JavaSites.CheckedSites to_int_checked = sites.to_int_checked;
         if (iterable
-                || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), sites(context).to_int_checked).isNil()
-                || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), sites(context).to_int_checked).isNil()) {
+                || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), to_int_checked).isNil()
+                || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), to_int_checked).isNil()) {
             return cover_p(context, val);
         } else if ((begin instanceof RubyString) || (end instanceof RubyString)) {
             if ((begin instanceof RubyString) && (end instanceof RubyString)) {
@@ -805,15 +808,14 @@ public class RubyRange extends RubyObject {
                     return RubyString.includeRange(context, begin.convertToString(), end, val, isExclusive);
                 }
             } else if (begin.isNil()) {
-                IRubyObject r = sites(context).op_cmp.call(context, val, val, end);
+                IRubyObject r = sites.op_cmp.call(context, val, val, end);
                 if (r.isNil()) return context.fals;
-                if (RubyComparable.cmpint(context, sites(context).op_gt, sites(context).op_lt, r, val, end) <= 0) return context.tru;
+                if (RubyComparable.cmpint(context, sites.op_gt, sites.op_lt, r, val, end) <= 0) return context.tru;
                 return context.fals;
-            }
-            else if (end.isNil()) {
-                IRubyObject r = sites(context).op_cmp.call(context, begin, begin, val);
+            } else if (end.isNil()) {
+                IRubyObject r = sites.op_cmp.call(context, begin, begin, val);
                 if (r.isNil()) return context.fals;
-                if (RubyComparable.cmpint(context, sites(context).op_gt, sites(context).op_lt, r, begin, val) <= 0) return context.tru;
+                if (RubyComparable.cmpint(context, sites.op_gt, sites.op_lt, r, begin, val) <= 0) return context.tru;
                 return context.fals;
             }
         }
