@@ -2,6 +2,12 @@
 class Module
   private
 
+  # Import one or many Java classes as follows:
+  #
+  #   java_import java.lang.System
+  #   java_import java.lang.System, java.lang.Thread
+  #   java_import [java.lang.System, java.lang.Thread]
+  #
   def java_import(*import_classes)
     import_classes = import_classes.each_with_object([]) do |classes, flattened|
       if classes.is_a?(Array)
