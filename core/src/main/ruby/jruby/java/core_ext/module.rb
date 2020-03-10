@@ -2,6 +2,70 @@
 class Module
   private
 
+  def java_import(*import_classes)
+    import_classes = import_classes.each_with_object([]) do |classes, flattened|
+      if classes.is_a?(Array)
+        flattened.push(*classes)
+      else
+        flattened.push(classes)
+      end
+    end
+
+    import_classes.map do |import_class|
+      case import_class
+      when String
+        unless JavaUtilities.valid_java_identifier?(import_class)
+          raise ArgumentError.new "not a valid Java identifier: #{import_class}"
+        end
+        raise ArgumentError.new "must use jvm-style name: #{import_class}" if import_class.include?('::')
+        import_class = JavaUtilities.get_proxy_class(import_class)
+      when Module
+        if import_class.respond_to? "java_class"
+          # ok, it's a proxy
+        else
+          raise ArgumentError.new "not a Java class or interface: #{import_class}"
+        end
+      else
+        raise ArgumentError.new "invalid Java class or interface: #{import_class}"
+      end
+
+      java_class = import_class.java_class
+      class_name = java_class.simple_name
+
+      if block_given?
+        package = java_class.package
+
+        # package can be nil if it's default or no package was defined by the classloader
+        if package
+          package_name = package.name
+        elsif java_class.canonical_name =~ /(.*)\.[^.]$/
+          package_name = $1
+        else
+          package_name = ""
+        end
+
+        constant = yield(package_name, class_name)
+      else
+        constant = class_name
+
+        # Inner classes are separated with $, get last element
+        if constant =~ /\$([^$])$/
+          constant = $1
+        end
+      end
+
+      unless constant =~ /^[A-Z].*/
+        raise ArgumentError.new "cannot import class `" + java_class.name + "' as `" + constant + "'"
+      end
+
+      if !const_defined?(constant) || const_get(constant) != import_class
+        const_set(constant, import_class)
+      end
+
+      import_class
+    end
+  end
+
   ##
   # Includes a Java package into this class/module. The Java classes in the
   # package will become available in this class/module, unless a constant
