@@ -9,13 +9,7 @@ class Module
   #   java_import [java.lang.System, java.lang.Thread]
   #
   def java_import(*import_classes)
-    import_classes = import_classes.each_with_object([]) do |classes, flattened|
-      if classes.is_a?(Array)
-        flattened.push(*classes)
-      else
-        flattened.push(classes)
-      end
-    end
+    import_classes.flatten!
 
     import_classes.map do |import_class|
       case import_class
@@ -124,7 +118,7 @@ class Module
   # to try that package when constants are missing.
   def import(package_name, &block)
     if package_name.respond_to?(:java_class) || (String === package_name && package_name.split(/\./).last =~ /^[A-Z]/)
-      return super(package_name, &block)
+      return java_import(package_name, &block)
     end
     include_package(package_name, &block)
   end
