@@ -15,19 +15,24 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TimeArgs {
-    final int year, month;
-    final IRubyObject day, hour, minute, second, usec;
+    final int year, month, day, hour, minute;
+    final IRubyObject second, usec;
     final boolean dst;
 
     public TimeArgs(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day, IRubyObject hour, IRubyObject minute, IRubyObject second, IRubyObject usec, boolean dst) {
         this.year = parseYear(context, year);
         this.month = parseMonth(context, month);
-        this.day = parseIntArg(context, day);
-        this.hour = parseIntArg(context, hour);
-        this.minute = parseIntArg(context, minute);
+        this.day = parseIntOrDefault(context, day, 1);
+        this.hour = parseIntOrDefault(context, hour, 0);
+        this.minute = parseIntOrDefault(context, minute, 0);
+
         this.second = parseIntArg(context, second);
         this.usec = usec;
         this.dst = dst;
+    }
+
+    private static int parseIntOrDefault(ThreadContext context, IRubyObject obj, int def) {
+        return (obj = parseIntArg(context, obj)).isNil() ? def : RubyNumeric.num2int(obj);
     }
 
     public TimeArgs(ThreadContext context, IRubyObject[] args) {
@@ -74,9 +79,10 @@ public class TimeArgs {
 
         this.year = parseYear(context, year);
         this.month = parseMonth(context, month);
-        this.day = parseIntArg(context, day);
-        this.hour = parseIntArg(context, hour);
-        this.minute = parseIntArg(context, minute);
+        this.day = parseIntOrDefault(context, day, 1);
+        this.hour = parseIntOrDefault(context, hour, 0);
+        this.minute = parseIntOrDefault(context, minute, 0);
+
         this.second = parseIntArg(context, second);
         this.usec = usec;
         this.dst = dst;
@@ -165,10 +171,13 @@ public class TimeArgs {
     }
 
     public void initializeTime(ThreadContext context, RubyTime time, DateTimeZone dtz) {
-        int day = this.day.isNil() ? 1 : RubyNumeric.num2int(this.day);
-        int hour = this.hour.isNil() ? 0 : RubyNumeric.num2int(this.hour);
-        int minute = this.minute.isNil() ? 0 : RubyNumeric.num2int(this.minute);
-        int second = this.second.isNil() ? 0 : RubyNumeric.num2int(this.second);
+        int day = this.day;
+        int hour = this.hour;
+        int minute = this.minute;
+
+        IRubyObject secondObj = this.second;
+        boolean nilSecond = secondObj.isNil();
+        int second = nilSecond ? 0 : RubyNumeric.num2int(secondObj);
 
         // Validate the times
         // Complying with MRI behavior makes it a little bit complicated. Logic copied from:
@@ -196,9 +205,9 @@ public class TimeArgs {
             if (second != 0) instant = chrono.seconds().add(instant, second);
 
             // 1.9 will observe fractional seconds *if* not given usec
-            if (this.second != context.nil && usec == context.nil) {
-                if (this.second instanceof RubyRational) {
-                    RubyRational rat = (RubyRational) this.second;
+            if (!nilSecond && this.usec.isNil()) {
+                if (secondObj instanceof RubyRational) {
+                    RubyRational rat = (RubyRational) secondObj;
 
                     if (rat.isNegative()) {
                         throw context.runtime.newArgumentError("argument out of range.");
@@ -212,7 +221,7 @@ public class TimeArgs {
                     nanos = full_nanos - millis * 1_000_000;
                     instant = chrono.millis().add(instant, millis % 1000);
                 } else {
-                    double secs = RubyFloat.num2dbl(context, this.second);
+                    double secs = RubyFloat.num2dbl(context, secondObj);
 
                     if (secs < 0 || secs >= RubyTime.TIME_SCALE) {
                         throw context.runtime.newArgumentError("argument out of range.");
@@ -231,9 +240,11 @@ public class TimeArgs {
             throw context.runtime.newArgumentError("time out of range");
         }
 
-        if (usec != context.nil) {
-            if (usec instanceof RubyRational) {
-                RubyRational rat = (RubyRational) usec;
+        IRubyObject usecObj = this.usec;
+
+        if (usecObj != context.nil) {
+            if (usecObj instanceof RubyRational) {
+                RubyRational rat = (RubyRational) usecObj;
 
                 if (rat.isNegative()) {
                     throw context.runtime.newArgumentError("argument out of range.");
@@ -246,8 +257,8 @@ public class TimeArgs {
                 dt = dt.withMillis(dt.getMillis() + (tmpNanos / 1_000_000));
 
                 nanos = tmpNanos % 1_000_000;
-            } else if (usec instanceof RubyFloat) {
-                RubyFloat flo = (RubyFloat) usec;
+            } else if (usecObj instanceof RubyFloat) {
+                RubyFloat flo = (RubyFloat) usecObj;
 
                 if (flo.isNegative()) {
                     throw context.runtime.newArgumentError("argument out of range.");
@@ -259,7 +270,7 @@ public class TimeArgs {
 
                 nanos = (long) Math.rint((micros * 1000) % 1_000_000);
             } else {
-                int usec = parseIntArg(context, this.usec).isNil() ? 0 : RubyNumeric.num2int(this.usec);
+                int usec = parseIntArg(context, usecObj).isNil() ? 0 : RubyNumeric.num2int(usecObj);
 
                 if (usec < 0 || usec >= RubyTime.TIME_SCALE / 1000) {
                     throw context.runtime.newArgumentError("argument out of range.");
