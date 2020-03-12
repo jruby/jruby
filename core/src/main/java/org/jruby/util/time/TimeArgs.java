@@ -4,6 +4,7 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.IllegalFieldValueException;
+import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
@@ -15,8 +16,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TimeArgs {
-    final int year, month, day, hour, minute;
-    final IRubyObject second, usec;
+    final int year, month, day, hour, minute, second;
+    final IRubyObject secondObj, usecObj;
     final boolean dst;
 
     public TimeArgs(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day, IRubyObject hour, IRubyObject minute, IRubyObject second, IRubyObject usec, boolean dst) {
@@ -26,13 +27,13 @@ public class TimeArgs {
         this.hour = parseIntOrDefault(context, hour, 0);
         this.minute = parseIntOrDefault(context, minute, 0);
 
-        this.second = parseIntArg(context, second);
-        this.usec = usec;
-        this.dst = dst;
-    }
+        this.secondObj = parseIntArg(context, second);
+        this.second = parseIntOrDefault(context, secondObj, 0);
 
-    private static int parseIntOrDefault(ThreadContext context, IRubyObject obj, int def) {
-        return (obj = parseIntArg(context, obj)).isNil() ? def : RubyNumeric.num2int(obj);
+        validateDayHourMinuteSecond(context);
+
+        this.usecObj = usec;
+        this.dst = dst;
     }
 
     public TimeArgs(ThreadContext context, IRubyObject[] args) {
@@ -83,8 +84,12 @@ public class TimeArgs {
         this.hour = parseIntOrDefault(context, hour, 0);
         this.minute = parseIntOrDefault(context, minute, 0);
 
-        this.second = parseIntArg(context, second);
-        this.usec = usec;
+        this.secondObj = parseIntArg(context, second);
+        this.second = parseIntOrDefault(context, secondObj, 0);
+
+        validateDayHourMinuteSecond(context);
+
+        this.usecObj = usec;
         this.dst = dst;
     }
 
@@ -152,6 +157,24 @@ public class TimeArgs {
         return sites.to_i.call(context, arg, arg);
     }
 
+    private void validateDayHourMinuteSecond(ThreadContext context) {
+        if (day < 1 || day > 31) throw context.runtime.newArgumentError("argument out of range for day");
+
+        if (hour < 0 || hour > 24) throw context.runtime.newArgumentError("argument out of range for hour");
+
+        if ((minute < 0 || minute > 59) || (hour == 24 && minute > 0)) {
+            throw context.runtime.newArgumentError("argument out of range for minute");
+        }
+
+        if ((second < 0 || second > 60) || (hour == 24 && second > 0)) {
+            throw context.runtime.newArgumentError("argument out of range for second");
+        }
+    }
+
+    private static int parseIntOrDefault(ThreadContext context, IRubyObject obj, int def) {
+        return (obj = parseIntArg(context, obj)).isNil() ? def : RubyNumeric.num2int(obj);
+    }
+
     private static DateTime adjustZoneOffset(DateTimeZone dtz, DateTime dt, boolean dst) {
         // If we're at a DST boundary, we need to choose the correct side of the boundary
         final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
@@ -171,112 +194,85 @@ public class TimeArgs {
     }
 
     public void initializeTime(ThreadContext context, RubyTime time, DateTimeZone dtz) {
-        int day = this.day;
-        int hour = this.hour;
-        int minute = this.minute;
-
-        IRubyObject secondObj = this.second;
-        boolean nilSecond = secondObj.isNil();
-        int second = nilSecond ? 0 : RubyNumeric.num2int(secondObj);
-
-        // Validate the times
-        // Complying with MRI behavior makes it a little bit complicated. Logic copied from:
-        // https://github.com/ruby/ruby/blob/trunk/time.c#L2609
-        if (   (day < 1 || day > 31)
-                || (hour < 0 || hour > 24)
-                || (hour == 24 && (minute > 0 || second > 0))
-                || (minute < 0 || minute > 59)
-                || (second < 0 || second > 60)) {
-            throw context.runtime.newArgumentError("argument out of range.");
-        }
-
-        long nanos = 0;
-        int usecPart = 0;
+        Ruby runtime = context.runtime;
 
         // set up with min values and then add to allow rolling over
         DateTime dt = new DateTime(year, month, 1, 0, 0, 0, 0, DateTimeZone.UTC);
-        final Chronology chrono = dt.getChronology();
         long instant = dt.getMillis();
 
-        try {
-            instant = chrono.days().add(instant, day - 1);
-            if (hour != 0) instant = chrono.hours().add(instant, hour);
-            if (minute != 0) instant = chrono.minutes().add(instant, minute);
-            if (second != 0) instant = chrono.seconds().add(instant, second);
+        final Chronology chrono = dt.getChronology();
 
-            // 1.9 will observe fractional seconds *if* not given usec
-            if (!nilSecond && this.usec.isNil()) {
+        instant = chrono.days().add(instant, this.day - 1);
+        instant = chrono.hours().add(instant, this.hour);
+        instant = chrono.minutes().add(instant, this.minute);
+        instant = chrono.seconds().add(instant, this.second);
+
+        IRubyObject usecObj = this.usecObj;
+        IRubyObject secondObj = this.secondObj;
+
+        long millis = 0;
+        long nanos = 0;
+
+        if (usecObj.isNil()) {
+            if (!secondObj.isNil()) {
                 if (secondObj instanceof RubyRational) {
                     RubyRational rat = (RubyRational) secondObj;
 
                     if (rat.isNegative()) {
-                        throw context.runtime.newArgumentError("argument out of range.");
+                        throw runtime.newArgumentError("argument out of range.");
                     }
 
-                    RubyRational nsec = (RubyRational) rat.op_mul(context, context.runtime.newFixnum(1_000_000_000));
+                    RubyRational nsec = (RubyRational) rat.op_mul(context, runtime.newFixnum(1_000_000_000));
 
-                    long full_nanos = nsec.getLongValue();
-                    long millis = full_nanos / 1_000_000;
+                    long fullNanos = nsec.getLongValue();
+                    long fullMillis = fullNanos / 1_000_000;
 
-                    nanos = full_nanos - millis * 1_000_000;
-                    instant = chrono.millis().add(instant, millis % 1000);
+                    nanos = fullNanos - fullMillis * 1_000_000;
+                    millis = fullMillis % 1000;
                 } else {
                     double secs = RubyFloat.num2dbl(context, secondObj);
 
                     if (secs < 0 || secs >= RubyTime.TIME_SCALE) {
-                        throw context.runtime.newArgumentError("argument out of range.");
+                        throw runtime.newArgumentError("argument out of range.");
                     }
 
-                    int int_millis = (int) (secs * 1000) % 1000;
-                    instant = chrono.millis().add(instant, int_millis);
+                    millis = (int) (secs * 1000) % 1000;
                     nanos = ((long) (secs * 1000000000) % 1000000);
                 }
             }
-
-            dt = dt.withMillis(instant);
-            dt = dt.withZoneRetainFields(dtz);
-            dt = adjustZoneOffset(dtz, dt, dst);
-        } catch (IllegalFieldValueException e) {
-            throw context.runtime.newArgumentError("time out of range");
-        }
-
-        IRubyObject usecObj = this.usec;
-
-        if (usecObj != context.nil) {
+        } else {
             if (usecObj instanceof RubyRational) {
                 RubyRational rat = (RubyRational) usecObj;
 
                 if (rat.isNegative()) {
-                    throw context.runtime.newArgumentError("argument out of range.");
+                    throw runtime.newArgumentError("argument out of range.");
                 }
 
-                RubyRational nsec = (RubyRational) rat.op_mul(context, context.runtime.newFixnum(1000));
+                RubyRational nsec = (RubyRational) rat.op_mul(context, runtime.newFixnum(1000));
 
                 long tmpNanos = (long) nsec.getDoubleValue(context);
 
-                dt = dt.withMillis(dt.getMillis() + (tmpNanos / 1_000_000));
-
+                millis = tmpNanos / 1_000_000;
                 nanos = tmpNanos % 1_000_000;
             } else if (usecObj instanceof RubyFloat) {
                 RubyFloat flo = (RubyFloat) usecObj;
 
                 if (flo.isNegative()) {
-                    throw context.runtime.newArgumentError("argument out of range.");
+                    throw runtime.newArgumentError("argument out of range.");
                 }
 
                 double micros = flo.getDoubleValue();
 
-                dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
-
+                millis = (long) (micros / 1000);
                 nanos = (long) Math.rint((micros * 1000) % 1_000_000);
             } else {
                 int usec = parseIntArg(context, usecObj).isNil() ? 0 : RubyNumeric.num2int(usecObj);
 
                 if (usec < 0 || usec >= RubyTime.TIME_SCALE / 1000) {
-                    throw context.runtime.newArgumentError("argument out of range.");
+                    throw runtime.newArgumentError("argument out of range.");
                 }
 
-                usecPart = usec % 1000;
+                int usecPart = usec % 1000;
                 int msecPart = usec / 1000;
 
                 if (usec < 0) {
@@ -284,13 +280,23 @@ public class TimeArgs {
                     usecPart += 1000;
                 }
 
-                dt = dt.withMillis(dt.getMillis() + msecPart);
+                nanos = 1000 * usecPart;
+                millis = msecPart;
             }
+        }
+
+        instant = chrono.millis().add(instant, millis);
+
+        try {
+            dt = dt.withMillis(instant);
+            dt = dt.withZoneRetainFields(dtz);
+            dt = adjustZoneOffset(dtz, dt, dst);
+        } catch (IllegalFieldValueException e) {
+            throw runtime.newArgumentError("time out of range");
         }
 
         time.setDateTime(dt);
 
-        if (usecPart != 0) time.setUSec(usecPart);
         if (nanos != 0) time.setNSec(nanos);
     }
 
