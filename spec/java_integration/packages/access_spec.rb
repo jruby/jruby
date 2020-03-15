@@ -18,22 +18,22 @@ describe "java package" do
 
   it "can be imported using 'include_package package.module" do
     m = Module.new { include_package java.lang }
-    expect(m::System).to respond_to 'getProperty'
+    expect(System).to respond_to 'getProperty'
   end
 
   it "can be imported using 'include_package \"package.module\"'" do
     m = Module.new { include_package 'java.lang' }
-    expect(m::System).to respond_to :getProperty
+    expect(System).to respond_to :getProperty
   end
 
   it "can be imported using 'import package.module" do
     m = Module.new { import java.lang }
-    expect(m::System).to respond_to 'currentTimeMillis'
+    expect(System).to respond_to 'currentTimeMillis'
   end
 
   it "can be imported using 'import \"package.module\"'" do
     m = Module.new { import 'java.lang' }
-    m::System.currentTimeMillis
+    System.currentTimeMillis
   end
 
   it "supports const_get" do

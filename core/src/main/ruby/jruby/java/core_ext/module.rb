@@ -72,41 +72,47 @@ class Module
   # with the same name as a Java class is already defined.
   #
   def include_package(package)
-    package = package.package_name if package.respond_to?(:package_name)
+    Object.class_eval do
+      package = package.package_name if package.respond_to?(:package_name)
 
-    if defined? @included_packages
-      @included_packages << package
-      return
-    end
-
-    @included_packages = [ package ]
-    @java_aliases ||= {}
-
-    def self.const_missing(constant)
-      real_name = @java_aliases[constant] || constant
-
-      java_class = nil
-      last_error = nil
-
-      @included_packages.each do |package|
-          begin
-            java_class = JavaUtilities.get_java_class("#{package}.#{real_name}")
-          rescue NameError
-            # we only rescue NameError, since other errors should bubble out
-            last_error = $!
-          end
-          break if java_class
+      if defined? @@included_packages
+        @@included_packages << package
+        return
       end
+      require 'set'
+      @@included_packages = Set.new
+      @@included_packages << package
+      @@java_aliases ||= {}
 
-      if java_class
-        return JavaUtilities.create_proxy_class(constant, java_class, self)
-      else
-        # try to chain to super's const_missing
-        begin
-          return super
-        rescue NameError
-          # super didn't find anything either, raise our Java error
-          raise NameError.new("#{constant} not found in packages #{@included_packages.join(', ')}; last error: #{last_error.message}")
+      class << self
+        alias const_missing_without_jruby const_missing
+        def const_missing(constant)
+          real_name = @@java_aliases[constant] || constant
+
+          java_class = nil
+          last_error = nil
+
+          @@included_packages.each do |package|
+            begin
+              java_class = JavaUtilities.get_java_class("#{package}.#{real_name}")
+            rescue NameError
+              # we only rescue NameError, since other errors should bubble out
+              last_error = $!
+            end
+            break if java_class
+          end
+
+          if java_class
+            return JavaUtilities.create_proxy_class(constant, java_class, self)
+          else
+            # try to chain to super's const_missing
+            begin
+              return const_missing_without_jruby(constant)
+            rescue NameError
+              # super didn't find anything either, raise our Java error
+              raise NameError.new("#{constant} not found in packages #{@@included_packages.to_a.join(', ')}; last error: #{last_error.message}")
+            end
+          end
         end
       end
     end
@@ -124,7 +130,9 @@ class Module
   end
 
   def java_alias(new_id, old_id)
-    (@java_aliases ||= {})[new_id] = old_id
+    Object.class_eval do
+      (@@java_aliases ||= {})[new_id] = old_id
+    end
   end
 
 end
