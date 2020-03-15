@@ -1,5 +1,68 @@
 # Extensions to the standard Module package.
 class Module
+  def included_packages
+    @included_packages ||= []
+  end
+
+  def included_packages_from_namespaces
+    namespaces.uniq.map do |klass|
+      klass.method(:included_packages).call rescue []
+    end.map(&:to_a).reduce([], :+).uniq
+  end
+
+  def java_aliases
+    @java_aliases ||= {}
+  end
+
+  def java_aliases_from_namespaces
+    namespaces.uniq.map do |klass|
+      klass.method(:java_aliases).call rescue {}
+    end.reverse.reduce({}, :merge)
+  end
+
+  # Returns namespaces containing this module/class starting with self.
+  # Example: `Outer::Inner::Shape.namespaces` returns:
+  # => [Outer::Inner::Shape, Outer::Inner, Outer]
+  def namespaces
+    return [self] if name.nil?
+    constants = name.split(/::/).map(&:to_sym)
+    constants.reduce([Object]) do |output, constant|
+      output += [output.last.const_get(constant)]
+    end[1..-1].reverse
+  end
+
+  alias const_missing_without_jruby const_missing
+  def const_missing(constant)
+    all_included_packages = included_packages_from_namespaces
+    return const_missing_without_jruby(constant) if all_included_packages.empty?
+    real_name = java_aliases_from_namespaces[constant] || constant
+
+    java_class = nil
+    last_error = nil
+
+    all_included_packages.each do |package|
+      begin
+        java_class = JavaUtilities.get_java_class("#{package}.#{real_name}")
+      rescue NameError => e
+        # we only rescue NameError, since other errors should bubble out
+        last_error = e
+      end
+      break if java_class
+    end
+
+    if java_class
+      return JavaUtilities.create_proxy_class(constant, java_class, self)
+    else
+      # try to chain to super's const_missing
+      begin
+        return const_missing_without_jruby(constant)
+      rescue NameError => e
+        # super didn't find anything either, raise our Java error
+        raise NameError.new("#{constant} not found in packages #{all_included_packages.join(', ')}; last error: #{(last_error || e).message}")
+      end
+    end
+  end
+
   private
 
   # Import one or many Java classes as follows:
@@ -73,43 +136,7 @@ class Module
   #
   def include_package(package)
     package = package.package_name if package.respond_to?(:package_name)
-
-    if defined? @included_packages
-      @included_packages << package
-      return
-    end
-
-    @included_packages = [ package ]
-    @java_aliases ||= {}
-
-    def self.const_missing(constant)
-      real_name = @java_aliases[constant] || constant
-
-      java_class = nil
-      last_error = nil
-
-      @included_packages.each do |package|
-          begin
-            java_class = JavaUtilities.get_java_class("#{package}.#{real_name}")
-          rescue NameError
-            # we only rescue NameError, since other errors should bubble out
-            last_error = $!
-          end
-          break if java_class
-      end
-
-      if java_class
-        return JavaUtilities.create_proxy_class(constant, java_class, self)
-      else
-        # try to chain to super's const_missing
-        begin
-          return super
-        rescue NameError
-          # super didn't find anything either, raise our Java error
-          raise NameError.new("#{constant} not found in packages #{@included_packages.join(', ')}; last error: #{last_error.message}")
-        end
-      end
-    end
+    included_packages << package unless included_packages.include?(package)
     nil
   end
 
@@ -124,7 +151,6 @@ class Module
   end
 
   def java_alias(new_id, old_id)
-    (@java_aliases ||= {})[new_id] = old_id
+    java_aliases[new_id] = old_id
   end
-
 end
