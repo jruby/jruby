@@ -230,8 +230,13 @@ class Enumerator
         yielder.yield values if yield values
       end.__set_inspect :find_all
     end
-    alias_method :find_all, :select
-    alias_method :filter, :select
+    def filter
+      _block_error(:filter) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        values = values.first unless values.size > 1
+        yielder.yield values if yield values
+      end.__set_inspect :filter
+    end
 
     def reject
       _block_error(:reject) unless block_given?
