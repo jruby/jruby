@@ -1,53 +1,10 @@
 # Extensions to the standard Module package.
 class Module
-  def included_packages
-    @included_packages ||= []
-  end
-
-  def included_packages_from_namespaces
-    namespaces.map do |klass|
-      klass.method(:included_packages).call rescue []
-    end.map(&:to_a).reduce([], :+).uniq
-  end
-
-  def included_packages_from_ancestors
-    ancestors.map do |klass|
-      klass.method(:included_packages_from_namespaces).call rescue []
-    end.map(&:to_a).reduce([], :+).uniq
-  end
-
-  def java_aliases
-    @java_aliases ||= {}
-  end
-
-  def java_aliases_from_namespaces
-    namespaces.map do |klass|
-      klass.method(:java_aliases).call rescue {}
-    end.reverse.reduce({}, :merge)
-  end
-
-  def java_aliases_from_ancestors
-    ancestors.map do |klass|
-      klass.method(:java_aliases_from_namespaces).call rescue {}
-    end.reverse.reduce({}, :merge)
-  end
-
-  # Returns namespaces containing this module/class starting with self.
-  # Example: `Outer::Inner::Shape.namespaces` returns:
-  # => [Outer::Inner::Shape, Outer::Inner, Outer]
-  def namespaces
-    return [self] if name.nil?
-    constants = name.split(/::/).map(&:to_sym)
-    constants.reduce([Object]) do |output, constant|
-      output += [output.last.const_get(constant)]
-    end[1..-1].uniq.reverse
-  end
-
   alias const_missing_without_jruby const_missing
   def const_missing(constant)
-    all_included_packages = included_packages_from_ancestors
+    all_included_packages = included_packages_from_ancestors_namespaces
     return const_missing_without_jruby(constant) if all_included_packages.empty?
-    real_name = java_aliases_from_namespaces[constant] || constant
+    real_name = java_aliases_from_ancestors_namespaces[constant] || constant
 
     java_class = nil
     last_error = nil
@@ -165,4 +122,48 @@ class Module
   def java_alias(new_id, old_id)
     java_aliases[new_id] = old_id
   end
+
+  def included_packages_from_ancestors_namespaces
+    ancestors.map do |klass|
+      klass.method(:included_packages_from_namespaces).call rescue []
+    end.map(&:to_a).reduce([], :+).uniq
+  end
+
+  def included_packages_from_namespaces
+    namespaces.map do |klass|
+      klass.method(:included_packages).call rescue []
+    end.map(&:to_a).reduce([], :+).uniq
+  end
+
+  def included_packages
+    @included_packages ||= []
+  end
+
+  def java_aliases_from_ancestors_namespaces
+    ancestors.map do |klass|
+      klass.method(:java_aliases_from_namespaces).call rescue {}
+    end.reverse.reduce({}, :merge)
+  end
+
+  def java_aliases_from_namespaces
+    namespaces.map do |klass|
+      klass.method(:java_aliases).call rescue {}
+    end.reverse.reduce({}, :merge)
+  end
+
+  def java_aliases
+    @java_aliases ||= {}
+  end
+
+  # Returns namespaces containing this module/class starting with self.
+  # Example: `Outer::Inner::Shape.namespaces` returns:
+  # => [Outer::Inner::Shape, Outer::Inner, Outer]
+  def namespaces
+    return [self] if name.nil?
+    constants = name.split(/::/).map(&:to_sym)
+    constants.reduce([Object]) do |output, constant|
+      output += [output.last.const_get(constant)]
+    end[1..-1].uniq.reverse
+  end
+
 end
