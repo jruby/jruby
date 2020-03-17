@@ -505,7 +505,7 @@ public class RubyRange extends RubyObject {
     }
 
     private boolean coverRange(ThreadContext context, RubyRange val) {
-        int cmpEnd;
+        int cmp;
 
         IRubyObject valBeg = val.begin;
         IRubyObject valEnd = val.end;
@@ -519,14 +519,15 @@ public class RubyRange extends RubyObject {
 
         if (!cover_p(context, valBeg).isTrue()) return false;
 
-        cmpEnd = rangeLess(context, end, valEnd);
-
-        if (excl == valExcl) {
-            return cmpEnd >= 0;
-        } else if (excl != 0) {
-            return cmpEnd > 0;
-        } else if (cmpEnd >= 0) {
-            return true;
+        cmp = rangeLess(context, end, valEnd);
+        if (cmp != Integer.MAX_VALUE) {
+            if (excl == valExcl) {
+                return cmp >= 0;
+            } else if (excl != 0) {
+                return cmp > 0;
+            } else if (cmp >= 0) {
+                return true;
+            }
         }
 
         IRubyObject nil = context.nil;
@@ -535,7 +536,8 @@ public class RubyRange extends RubyObject {
 
         if (valMax == nil) return false;
 
-        return rangeLess(context, end, valMax) >= 0;
+        cmp = rangeLess(context, end, valMax);
+        return cmp >= 0 && cmp != Integer.MAX_VALUE;
     }
 
     @JRubyMethod
