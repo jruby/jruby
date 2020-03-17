@@ -1,6 +1,14 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "java package" do
+  after do
+    %w[
+      OuterClass
+      OuterModule
+    ].each do |constant|
+      Object.send(:remove_const, constant) if Object.const_defined?(constant)
+    end
+  end
   it 'is accessible directly when starting with java, javax, com, or org' do
     # Using static methods here for simplicity; avoiding construction.
     expect(java.lang).to eq(JavaUtilities.get_package_module_dot_format("java.lang"))
@@ -34,6 +42,48 @@ describe "java package" do
   it "can be imported using 'import \"package.module\"'" do
     m = Module.new { import 'java.lang' }
     m::System.currentTimeMillis
+  end
+
+  it "can be imported from an outer class container using 'include_package package.module" do
+    class OuterClass
+      include_package java.lang
+      class InnerClass
+        include_package java.util
+        class InnerInnerClass
+        end
+        module InnerInnerModule
+        end
+      end
+      module InnerModule
+      end
+    end
+    expect(OuterClass::InnerClass::System).to respond_to 'getProperty'
+    expect(OuterClass::InnerModule::System).to respond_to 'getProperty'
+    expect(OuterClass::InnerClass::InnerInnerClass::System).to respond_to 'getProperty'
+    expect(OuterClass::InnerClass::InnerInnerModule::System).to respond_to 'getProperty'
+    expect(OuterClass::InnerClass::InnerInnerClass::Arrays).to respond_to 'asList'
+    expect(OuterClass::InnerClass::InnerInnerModule::Arrays).to respond_to 'asList'
+  end
+
+  it "can be imported from an outer module container using 'include_package package.module" do
+    module OuterModule
+      include_package java.lang
+      class InnerClass
+      end
+      module InnerModule
+        include_package java.util
+        class InnerInnerClass
+        end
+        module InnerInnerModule
+        end
+      end
+    end
+    expect(OuterModule::InnerClass::System).to respond_to 'getProperty'
+    expect(OuterModule::InnerModule::System).to respond_to 'getProperty'
+    expect(OuterModule::InnerModule::InnerInnerClass::System).to respond_to 'getProperty'
+    expect(OuterModule::InnerModule::InnerInnerModule::System).to respond_to 'getProperty'
+    expect(OuterModule::InnerModule::InnerInnerClass::Arrays).to respond_to 'asList'
+    expect(OuterModule::InnerModule::InnerInnerModule::Arrays).to respond_to 'asList'
   end
 
   it "supports const_get" do
