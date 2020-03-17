@@ -5,8 +5,14 @@ class Module
   end
 
   def included_packages_from_namespaces
-    namespaces.uniq.map do |klass|
+    namespaces.map do |klass|
       klass.method(:included_packages).call rescue []
+    end.map(&:to_a).reduce([], :+).uniq
+  end
+
+  def included_packages_from_ancestors
+    ancestors.map do |klass|
+      klass.method(:included_packages_from_namespaces).call rescue []
     end.map(&:to_a).reduce([], :+).uniq
   end
 
@@ -15,8 +21,14 @@ class Module
   end
 
   def java_aliases_from_namespaces
-    namespaces.uniq.map do |klass|
+    namespaces.map do |klass|
       klass.method(:java_aliases).call rescue {}
+    end.reverse.reduce({}, :merge)
+  end
+
+  def java_aliases_from_ancestors
+    ancestors.map do |klass|
+      klass.method(:java_aliases_from_namespaces).call rescue {}
     end.reverse.reduce({}, :merge)
   end
 
@@ -28,12 +40,12 @@ class Module
     constants = name.split(/::/).map(&:to_sym)
     constants.reduce([Object]) do |output, constant|
       output += [output.last.const_get(constant)]
-    end[1..-1].reverse
+    end[1..-1].uniq.reverse
   end
 
   alias const_missing_without_jruby const_missing
   def const_missing(constant)
-    all_included_packages = included_packages_from_namespaces
+    all_included_packages = included_packages_from_ancestors
     return const_missing_without_jruby(constant) if all_included_packages.empty?
     real_name = java_aliases_from_namespaces[constant] || constant
 

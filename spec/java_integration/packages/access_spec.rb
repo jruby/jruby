@@ -5,6 +5,15 @@ describe "java package" do
     %w[
       OuterClass
       OuterModule
+      SuperClass
+      SubClass
+      SubSubClass
+      AnotherSuperClass
+      AnotherSubClass
+      SuperModule
+      AnotherSuperModule
+      SubModule
+      SubSubModule
     ].each do |constant|
       Object.send(:remove_const, constant) if Object.const_defined?(constant)
     end
@@ -84,6 +93,58 @@ describe "java package" do
     expect(OuterModule::InnerModule::InnerInnerModule::System).to respond_to 'getProperty'
     expect(OuterModule::InnerModule::InnerInnerClass::Arrays).to respond_to 'asList'
     expect(OuterModule::InnerModule::InnerInnerModule::Arrays).to respond_to 'asList'
+  end
+
+  it "can be imported from a superclass using 'include_package package.module" do
+    class SuperClass
+      include_package java.lang
+      class AnotherSuperClass
+      end
+    end
+    class SubClass < SuperClass
+      include_package java.util
+    end
+    class AnotherSubClass < SuperClass::AnotherSuperClass
+    end
+    class SubSubClass < SubClass
+    end
+    expect(SuperClass::System).to respond_to 'getProperty'
+    expect(SubClass::System).to respond_to 'getProperty'
+    expect(AnotherSubClass::System).to respond_to 'getProperty'
+    expect(SubSubClass::System).to respond_to 'getProperty'
+    expect(SubSubClass::Arrays).to respond_to 'asList'
+  end
+
+  it "can be imported from a supermodule using 'include_package package.module" do
+    module SuperModule
+      include_package java.lang
+      module AnotherSuperModule
+      end
+    end
+    class SuperClass
+      include SuperModule
+    end
+    class SubClass < SuperClass
+    end
+    class AnotherSuperClass
+      include SuperClass::AnotherSuperModule
+    end
+    class AnotherSubClass < AnotherSuperClass
+    end
+    module SubModule
+      include SuperModule
+      include_package java.util
+    end
+    module SubSubModule
+      include SubModule
+    end
+    expect(SuperModule::System).to respond_to 'getProperty'
+    expect(SuperClass::System).to respond_to 'getProperty'
+    expect(SubClass::System).to respond_to 'getProperty'
+    expect(AnotherSuperClass::System).to respond_to 'getProperty'
+    expect(AnotherSubClass::System).to respond_to 'getProperty'
+    expect(SubModule::System).to respond_to 'getProperty'
+    expect(SubSubModule::Arrays).to respond_to 'asList'
   end
 
   it "supports const_get" do
