@@ -805,7 +805,7 @@ public class RubyRange extends RubyObject {
                 if (useStringCover) {
                     return cover_p(context, val);
                 } else {
-                    return RubyString.includeRange(context, begin.convertToString(), end, val, isExclusive);
+                    return RubyString.includeRange(context, (RubyString) begin, (RubyString) end, val, isExclusive);
                 }
             } else if (begin.isNil()) {
                 IRubyObject r = sites.op_cmp.call(context, val, val, end);

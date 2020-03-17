@@ -60,6 +60,7 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -67,6 +68,7 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.StringSites;
@@ -6755,15 +6757,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_str_include_range_p
-    public static IRubyObject includeRange(ThreadContext context, RubyString _beg, IRubyObject _end, IRubyObject _val, boolean exclusive) {
-        Ruby runtime = context.runtime;
+    public static IRubyObject includeRange(ThreadContext context, RubyString _beg, RubyString _end, IRubyObject _val, boolean exclusive) {
+        if (_val.isNil()) return context.fals;
+        _val = TypeConverter.checkStringType(context.runtime, _val);
+        if (_val.isNil()) return context.fals;
 
+        final RubyString val = _val.convertToString();
         final RubyString beg = _beg.newFrozen();
-        RubyString end = _end.convertToString().newFrozen();
-        if (_val.isNil()) return context.fals;
-        _val = TypeConverter.checkStringType(runtime, _val);
-        if (_val.isNil()) return context.fals;
-        RubyString val = _val.convertToString();
+        final RubyString end = _end.newFrozen();
+
         if (EncodingUtils.encAsciicompat(beg.getEncoding()) &&
                 EncodingUtils.encAsciicompat(end.getEncoding()) &&
                 EncodingUtils.encAsciicompat(val.getEncoding())) {
@@ -6791,18 +6793,43 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
 
-        IRubyObject uptoInclude = beg.uptoCommon(
-                context,
-                end,
-                exclusive,
-                CallBlock19.newCallClosure(
-                        beg,
-                        beg.getMetaClass(),
-                        Signature.ONE_ARGUMENT,
-                        (context1, args, block) -> beg.op_equal(context1, args[0]),
-                        context));
+        try {
+            beg.uptoCommon(
+                    context,
+                    end,
+                    exclusive,
+                    CallBlock19.newCallClosure(
+                            beg,
+                            beg.getMetaClass(),
+                            Signature.ONE_ARGUMENT,
+                            new IncludeUpToCallback(beg),
+                            context), false);
+        } catch (JumpException.SpecialJump e) {
+            return context.tru;
+        }
+        return context.fals;
+    }
 
-        return uptoInclude.isNil() ? context.tru : context.fals;
+    private static class IncludeUpToCallback implements BlockCallback {
+
+        private final IRubyObject beg;
+
+        IncludeUpToCallback(IRubyObject beg) {
+            this.beg = beg;
+        }
+
+        @Override
+        public IRubyObject call(final ThreadContext context, final IRubyObject[] args, final Block block) {
+            return call(context, args[0]);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg0) {
+            if (beg.op_equal(context, arg0).isTrue()) {
+                throw JumpException.SPECIAL_JUMP; // return true
+            }
+            return arg0;
+        }
     }
 
     /**
