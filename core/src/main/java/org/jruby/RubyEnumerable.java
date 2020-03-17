@@ -2466,12 +2466,6 @@ public class RubyEnumerable {
             return context.nil;
         }
 
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
-            callImpl(context.runtime, arg);
-            return context.nil;
-        }
-
         private void callImpl(final Ruby runtime, IRubyObject value) {
             IRubyObject ary = TypeConverter.checkArrayType(runtime, value);
             if (ary.isNil()) throw runtime.newTypeError("wrong element type " + value.getMetaClass().getName() + " (expected array)");
