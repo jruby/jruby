@@ -1776,11 +1776,9 @@ public final class Ruby implements Constantizable {
 
         if (reflectionWorks) {
             new Java().load(this, false);
-            new JRubyLibrary().load(this, false);
             new JRubyUtilLibrary().load(this, false);
 
             loadService.provide("java", "java.rb");
-            loadService.provide("jruby", "jruby.rb");
             loadService.provide("jruby/util", "jruby/util.rb");
         }
     }
