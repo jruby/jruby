@@ -86,15 +86,22 @@ class Range
     end
 
     def self.integer_search(b, e, excl, &cond)
-      if b.is_a?(Integer) && e.is_a?(Integer)
-        binary_search(b, e, excl, &cond)
-      elsif b.is_a?(Integer) && e.nil?
-        integer_begin(b, &cond)
-      elsif b.nil? && e.is_a?(Integer)
-        integer_end(e, &cond)
-      else
-        raise TypeError, "can't do binary search for #{b.class}"
+      b_int = b.is_a?(Integer)
+      e_int = e.is_a?(Integer)
+
+      if b_int
+        if e_int
+          return binary_search(b, e, excl, &cond)
+        elsif e.nil?
+          return integer_begin(b, &cond)
+        end
+      elsif e_int
+        if b.nil?
+          return integer_end(e, &cond)
+        end
       end
+
+      raise TypeError, "can't do binary search for #{b.class}"
     end
 
     private
@@ -152,7 +159,7 @@ class Range
             cond_error(v)
           end
         end
-        
+
         return nil unless smaller
       end
 
@@ -182,9 +189,8 @@ class Range
           end
         end
 
-        if smaller
-          return binary_search(b, mid, false, &cond)
-        end
+        return binary_search(b, mid, false, &cond) if smaller
+
         diff *= 2
       end
     end
@@ -212,26 +218,30 @@ class Range
           end
         end
 
-        unless smaller
-          return binary_search(mid, e, false, &cond)
-        end
+        return binary_search(mid, e, false, &cond) unless smaller
 
         diff *= 2
       end
     end
 
     def self.double_as_long(double)
-      val = Double.doubleToLongBits(Math.abs(double))
-      double < 0 ? -val : val
+      below_zero = double < 0
+
+      double = Math.abs(double) if below_zero
+
+      long = Double.doubleToLongBits(double)
+
+      below_zero ? -long : long
     end
 
     def self.long_as_double(long)
-      if long < 0
-        long = -long
-        -(Double.longBitsToDouble(long))
-      else
-        Double.longBitsToDouble(long)
-      end
+      below_zero = long < 0
+
+      long = -long if below_zero
+
+      double = Double.longBitsToDouble(long)
+
+      below_zero ? -double : double
     end
 
     def self.cond_error(v)
