@@ -1,18 +1,13 @@
 class Range
   def bsearch(&cond)
-    BSearch.new.bsearch(self, &cond)
+    BSearch.bsearch(self, &cond)
   end
 
   class BSearch
     java_import java.lang.Double
     java_import java.lang.Math
 
-    def initialize
-      @satisfied = nil
-      @smaller = false
-    end
-
-    def bsearch(range, &cond)
+    def self.bsearch(range, &cond)
       b = range.begin
       e = range.end
       excl = range.exclude_end?
@@ -28,11 +23,29 @@ class Range
 
         elsif b.is_a?(Integer) && e.nil?
           diff = 1
+
           while true
             mid = b + diff
-            ret = check(mid, &cond)
-            return ret if ret
-            if @smaller
+
+            val = mid
+            begin # inlined bsearch check, keep these in sync
+              v = yield val
+              case v
+              when true
+                satisfied = val
+                smaller = true
+              when false, nil
+                smaller = false
+              when Numeric
+                cmp = v <=> 0
+                return val if cmp == 0
+                smaller = cmp < 0
+              else
+                cond_error(v)
+              end
+            end
+
+            if smaller
               return integer_search(b, mid, false, &cond)
             end
             diff *= 2
@@ -40,13 +53,32 @@ class Range
 
         elsif b.nil? && e.is_a?(Integer)
           diff = -1
+
           while true
             mid = b + diff
-            ret = check(mid, &cond)
-            return ret if ret
-            unless @smaller
+
+            val = mid
+            begin # inlined bsearch check, keep these in sync
+              v = yield val
+              case v
+              when true
+                satisfied = val
+                smaller = true
+              when false, nil
+                smaller = false
+              when Numeric
+                cmp = v <=> 0
+                return val if cmp == 0
+                smaller = cmp < 0
+              else
+                cond_error(v)
+              end
+            end
+
+            unless smaller
               return integer_search(mid, e, false, &cond)
             end
+            
             diff *= 2
           end
 
@@ -56,14 +88,18 @@ class Range
       end
     end
 
-    def float_search(b, e, excl, &cond)
+    private
+
+    def self.float_search(b, e, excl)
+      satisfied = nil
+
       low = double_as_long(b.nil? ? -(Float::INFINITY) : b)
       high = double_as_long(e.nil? ? Float::INFINITY : e)
 
-      if excl
-        high -= 1
-      end
+      high -= 1 if excl
+
       org_high = high
+
       while low < high
         mid = if (high < 0) == (low < 0)
                 low + ((high - low) / 2)
@@ -73,9 +109,25 @@ class Range
                 (low + high) / 2
               end
 
-        ret = check(long_as_double(mid), &cond)
-        return ret if ret
-        if @smaller
+        val = long_as_double(mid)
+        begin # inlined bsearch check, keep these in sync
+          v = yield val
+          case v
+          when true
+            satisfied = val
+            smaller = true
+          when false, nil
+            smaller = false
+          when Numeric
+            cmp = v <=> 0
+            return val if cmp == 0
+            smaller = cmp < 0
+          else
+            cond_error(v)
+          end
+        end
+
+        if smaller
           high = mid
         else
           low = mid + 1
@@ -83,41 +135,59 @@ class Range
       end
 
       if low == org_high
-        ret = check(long_as_double(low), &cond)
-        return ret if ret
-        return nil unless @smaller
+        val = long_as_double(low)
+        begin # inlined bsearch check, keep these in sync
+          v = yield val
+          case v
+          when true
+            satisfied = val
+            smaller = true
+          when false, nil
+            smaller = false
+          when Numeric
+            cmp = v <=> 0
+            return val if cmp == 0
+            smaller = cmp < 0
+          else
+            cond_error(v)
+          end
+        end
+
+        return nil unless smaller
       end
 
-      return @satisfied
+      satisfied
     end
 
-    def check(val)
-      v = yield val
-      if v == true
-        @satisfied = val
-        @smaller = true
-      elsif v == false || v == nil
-        @smaller = false
-      elsif v.is_a?(Numeric)
-        cmp = v <=> 0
-        return val if cmp == 0
-        @smaller = cmp < 0
-      else
-        raise TypeError, "wrong argument type #{v.class} (must be numeric, true, false or nil)"
-      end
-      false
-    end
+    def self.integer_search(low, high, excl)
+      satisfied = nil
 
-    def integer_search(low, high, excl, &cond)
       high -= 1 if excl
 
       org_high = high
 
       while (low <=> high) < 0
         mid = (high + low) / 2
-        ret = check(mid, &cond)
-        return ret if ret
-        if @smaller
+
+        val = mid
+        begin # inlined bsearch check, keep these in sync
+          v = yield val
+          case v
+          when true
+            satisfied = val
+            smaller = true
+          when false, nil
+            smaller = false
+          when Numeric
+            cmp = v <=> 0
+            return val if cmp == 0
+            smaller = cmp < 0
+          else
+            cond_error(v)
+          end
+        end
+
+        if smaller
           high = mid
         else
           low = mid + 1
@@ -125,26 +195,46 @@ class Range
       end
 
       if low == org_high
-        ret = check(low, &cond)
-        return ret if ret
-        return nil unless @smaller
+        val = low
+        begin # inlined bsearch check, keep these in sync
+          v = yield val
+          case v
+          when true
+            satisfied = val
+            smaller = true
+          when false, nil
+            smaller = false
+          when Numeric
+            cmp = v <=> 0
+            return val if cmp == 0
+            smaller = cmp < 0
+          else
+            cond_error(v)
+          end
+        end
+        
+        return nil unless smaller
       end
 
-      return @satisfied
+      satisfied
     end
 
-    def double_as_long(double)
+    def self.double_as_long(double)
       val = Double.doubleToLongBits(Math.abs(double))
       double < 0 ? -val : val
     end
 
-    def long_as_double(long)
+    def self.long_as_double(long)
       if long < 0
         long = -long
         -(Double.longBitsToDouble(long))
       else
         Double.longBitsToDouble(long)
       end
+    end
+
+    def self.cond_error(v)
+      raise TypeError, "wrong argument type #{v.class} (must be numeric, true, false or nil)"
     end
   end
   private_constant :BSearch
