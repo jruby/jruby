@@ -1,82 +1,79 @@
 class Range
-  def bsearch(&block)
-    BSearch.new(self, block).bsearch
+  def bsearch(&cond)
+    BSearch.new.bsearch(self, &cond)
   end
 
   class BSearch
     java_import java.lang.Double
     java_import java.lang.Math
 
-    def initialize(range, cond)
-      @begin = range.begin
-      @end = range.end
-      @excl = range.exclude_end?
-      @cond = cond
+    def initialize
       @satisfied = nil
       @smaller = false
     end
 
-    def double_as_long(double)
-      val = Double.doubleToLongBits(Math.abs(double))
-      double < 0 ? -val : val
-    end
+    def bsearch(range, &cond)
+      b = range.begin
+      e = range.end
+      excl = range.exclude_end?
 
-    def long_as_double(long)
-      if long < 0
-        long = -long
-        -(Double.longBitsToDouble(long))
+      return to_enum(:bsearch) unless cond
+
+      if b.is_a?(Float) || e.is_a?(Float)
+        return float_search(b, e, excl, &cond)
+
       else
-        Double.longBitsToDouble(long)
+        if b.is_a?(Integer) && e.is_a?(Integer)
+          return integer_search(b, e, excl, &cond)
+
+        elsif b.is_a?(Integer) && e.nil?
+          diff = 1
+          while true
+            mid = b + diff
+            ret = check(mid, &cond)
+            return ret if ret
+            if @smaller
+              return integer_search(b, mid, false, &cond)
+            end
+            diff *= 2
+          end
+
+        elsif b.nil? && e.is_a?(Integer)
+          diff = -1
+          while true
+            mid = b + diff
+            ret = check(mid, &cond)
+            return ret if ret
+            unless @smaller
+              return integer_search(mid, e, false, &cond)
+            end
+            diff *= 2
+          end
+
+        else
+          raise TypeError, "can't do binary search for #{b.class}"
+        end
       end
     end
 
-    def bsearch()
-      return to_enum(:bsearch) unless @cond
+    def float_search(b, e, excl, &cond)
+      low = double_as_long(b.nil? ? -(Float::INFINITY) : b)
+      high = double_as_long(e.nil? ? Float::INFINITY : e)
 
-      beg = @begin
-      endd = @end
-
-      if beg.is_a?(Float) || endd.is_a?(Float)
-        low = double_as_long(beg.nil? ? -(Float::INFINITY) : beg)
-        high = double_as_long(endd.nil? ? Float::INFINITY : endd)
-        return fast_search(low, high) {|i| long_as_double(i)}
-      elsif beg.is_a?(Integer) && endd.is_a?(Integer)
-        return integer_search(beg, endd, @excl)
-      elsif beg.is_a?(Integer) && endd.nil?
-        diff = 1
-        while true
-          mid = beg + diff
-          ret = check(mid)
-          return ret if ret
-          if @smaller
-            return integer_search(beg, mid, false)
-          end
-          diff *= 2
-        end
-      elsif beg.nil? && endd.is_a?(Integer)
-        diff = -1
-        while true
-          mid = beg + diff
-          ret = check(mid)
-          return ret if ret
-          unless @smaller
-            return integer_search(mid, endd, false)
-          end
-          diff *= 2
-        end
-      else
-        raise TypeError, "can't do binary search for #{beg.class}"
+      if excl
+        high -= 1
       end
-    end
-
-    def integer_search(low, high, excl)
-      high -= 1 if excl
-
       org_high = high
+      while low < high
+        mid = if (high < 0) == (low < 0)
+                low + ((high - low) / 2)
+              elsif low < -high
+                -((-1 - low - high) / 2 + 1)
+              else
+                (low + high) / 2
+              end
 
-      while (low <=> high) < 0
-        mid = (high + low) / 2
-        ret = check(mid)
+        ret = check(long_as_double(mid), &cond)
         return ret if ret
         if @smaller
           high = mid
@@ -86,16 +83,16 @@ class Range
       end
 
       if low == org_high
-        ret = check(low)
+        ret = check(long_as_double(low), &cond)
         return ret if ret
         return nil unless @smaller
       end
 
-      @satisfied
+      return @satisfied
     end
 
     def check(val)
-      v = @cond.call val
+      v = yield val
       if v == true
         @satisfied = val
         @smaller = true
@@ -111,21 +108,14 @@ class Range
       false
     end
 
-    def fast_search(low, high)
-      if @excl
-        high -= 1
-      end
-      org_high = high
-      while low < high
-        mid = if (high < 0) == (low < 0)
-                low + ((high - low) / 2)
-              elsif low < -high
-                -((-1 - low - high) / 2 + 1)
-              else
-                (low + high) / 2
-              end
+    def integer_search(low, high, excl, &cond)
+      high -= 1 if excl
 
-        ret = check(yield(mid))
+      org_high = high
+
+      while (low <=> high) < 0
+        mid = (high + low) / 2
+        ret = check(mid, &cond)
         return ret if ret
         if @smaller
           high = mid
@@ -135,12 +125,26 @@ class Range
       end
 
       if low == org_high
-        ret = check(yield(low))
+        ret = check(low, &cond)
         return ret if ret
         return nil unless @smaller
       end
 
-      @satisfied
+      return @satisfied
+    end
+
+    def double_as_long(double)
+      val = Double.doubleToLongBits(Math.abs(double))
+      double < 0 ? -val : val
+    end
+
+    def long_as_double(long)
+      if long < 0
+        long = -long
+        -(Double.longBitsToDouble(long))
+      else
+        Double.longBitsToDouble(long)
+      end
     end
   end
   private_constant :BSearch
