@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
@@ -69,13 +68,6 @@ public class Timeout {
                 new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
         executor.setRemoveOnCancelPolicy(true);
         timeout.setInternalVariable(EXECUTOR_VARIABLE, executor);
-        // shut down executor on runtime shutdown
-        timeout.getRuntime().addFinalizer(new Finalizable() {
-            @Override
-            public void finalize() throws Throwable {
-                executor.shutdown();
-            }
-        });
     }
 
 
