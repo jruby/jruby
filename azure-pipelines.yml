@@ -8,7 +8,7 @@ strategy:
     linux:
       imageName: 'Ubuntu-16.04'
     mac:
-      imageName: 'macos-10.13'
+      imageName: 'macos-10.14'
     windows:
       imageName: 'windows-2019'
 
