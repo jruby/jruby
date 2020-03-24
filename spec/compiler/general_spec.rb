@@ -1188,5 +1188,12 @@ modes.each do |mode|
         expect(x).to eq("global-variable")
       end
     end
+
+    it "handles method_missing dispatch forms" do
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1)') {|x| expect(x).to eq([:foo, 1])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2,3,4)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; ary = 1.upto(4).to_a; obj.foo(*ary)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; ary = 2.upto(4).to_a; obj.foo(1, *ary)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+    end
   end
 end
