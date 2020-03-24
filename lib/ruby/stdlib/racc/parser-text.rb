@@ -1,3 +1,5 @@
+module Racc
+  PARSER_TEXT = <<'__end_of_file__'
 # frozen_string_literal: false
 #--
 # Copyright (c) 1999-2006 Minero Aoki
@@ -629,4 +631,7 @@ module Racc
 
   end
 
+end
+
+__end_of_file__
 end

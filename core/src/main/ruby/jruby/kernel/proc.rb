@@ -88,7 +88,7 @@ class Proc
     end
 
     # Replace the curried proc's class with our prototype singleton class
-    JRuby.send(:set_meta_class, f, Curried)
+    JRuby::Util.send(:set_meta_class, f, Curried)
 
     f
   end
