@@ -53,7 +53,8 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.ext.jruby.JRubyLibrary;
+import org.jruby.exceptions.LocalJumpError;
+import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
@@ -196,10 +197,10 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Stack;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -210,6 +211,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -3148,13 +3150,25 @@ public final class Ruby implements Constantizable {
     }
 
     /**
+     * Add an exit function to be run on runtime exit. Functions are run in FILO order.
+     *
+     * @param func the function to be run
+     */
+    public void pushExitFunction(ExitFunction func) {
+        exitBlocks.add(0, func);
+    }
+
+    /**
      * Push block onto exit stack.  When runtime environment exits
      * these blocks will be evaluated.
      *
      * @return the element that was pushed onto stack
      */
     public IRubyObject pushExitBlock(RubyProc proc) {
-        atExitBlocks.push(proc);
+        ProcExitFunction func = new ProcExitFunction(proc);
+
+        pushExitFunction(func);
+
         return proc;
     }
 
@@ -3162,20 +3176,18 @@ public final class Ruby implements Constantizable {
      * It is possible for looping or repeated execution to encounter the same END
      * block multiple times.  Rather than store extra runtime state we will just
      * make sure it is not already registered.  at_exit by contrast can push the
-     * same block many times (and should use pushExistBlock).
+     * same block many times (and should use pushExitBlock).
      */
     public void pushEndBlock(RubyProc proc) {
-        if (alreadyRegisteredEndBlock(proc) != null) return;
+        if (alreadyRegisteredEndBlock(proc)) return;
         pushExitBlock(proc);
     }
 
-    private RubyProc alreadyRegisteredEndBlock(RubyProc newProc) {
-        Block block = newProc.getBlock();
-
-        for (RubyProc proc: atExitBlocks) {
-            if (block.equals(proc.getBlock())) return proc;
+    private boolean alreadyRegisteredEndBlock(RubyProc newProc) {
+        if (exitBlocks.stream().anyMatch((func) -> func.matches(newProc))) {
+            return true;
         }
-        return null;
+        return false;
     }
 
     // use this for JRuby-internal finalizers
@@ -3246,46 +3258,12 @@ public final class Ruby implements Constantizable {
             context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
         }
 
-        while (!atExitBlocks.empty()) {
-            RubyProc proc = atExitBlocks.pop();
-            // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
-            try {
-                proc.call(context, IRubyObject.NULL_ARRAY);
-            } catch (RaiseException rj) {
-                // END { return } can generally be statically determined during build time so we generate the LJE
-                // then.  This if captures the static side of this. See IReturnJump below for dynamic case
-                if (rj.getException() instanceof RubyLocalJumpError) {
-                    RubyLocalJumpError rlje = (RubyLocalJumpError) rj.getException();
-                    String filename = proc.getBlock().getBinding().filename;
-
-                    if (rlje.getReason() == RubyLocalJumpError.Reason.RETURN) {
-                        getWarnings().warn(filename, "unexpected return");
-                    } else {
-                        getWarnings().warn(filename, "break from proc-closure");
-                    }
-
-                } else {
-                    RubyException raisedException = rj.getException();
-                    if (!getSystemExit().isInstance(raisedException)) {
-                        status = 1;
-                        printError(raisedException);
-                    } else {
-                        IRubyObject statusObj = raisedException.callMethod(context, "status");
-                        if (statusObj != null && !statusObj.isNil()) {
-                            status = RubyNumeric.fix2int(statusObj);
-                        }
-                    }
-                    // Reset $! now that rj has been handled
-                    // context.runtime.getGlobalVariables().set("$!", oldExc);
-                }
-            }  catch (IRReturnJump e) {
-                // This capture dynamic returns happening in an end block where it cannot be statically determined
-                // (like within an eval.
-
-                // This is partially similar to code in eval_error.c:error_handle but with less actual cases.
-                // IR treats END blocks are closures and as such we see this special non-local return jump type
-                // bubble this far out as we exec each END proc.
-                getWarnings().warn(proc.getBlock().getBinding().filename, "unexpected return");
+        // Run all exit functions from at_exit, END, or Java code
+        while (!exitBlocks.isEmpty()) {
+            ExitFunction fun = exitBlocks.remove(0);
+            int ret = fun.applyAsInt(context);
+            if (ret != 0) {
+                status = ret;
             }
         }
 
@@ -5403,7 +5381,7 @@ public final class Ruby implements Constantizable {
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
-    private final Stack<RubyProc> atExitBlocks = new Stack<>();
+    private final List<ExitFunction> exitBlocks = Collections.synchronizedList(new LinkedList<>());
 
     private Profile profile;
 
@@ -5539,6 +5517,63 @@ public final class Ruby implements Constantizable {
 
     public void addToObjectSpace(boolean useObjectSpace, IRubyObject object) {
         objectSpacer.addToObjectSpace(this, useObjectSpace, object);
+    }
+
+    public interface ExitFunction extends ToIntFunction<ThreadContext> {
+        default boolean matches(Object o) { return o == this; }
+    }
+
+    private class ProcExitFunction implements ExitFunction {
+        private final RubyProc proc;
+
+        public ProcExitFunction(RubyProc proc) {
+            this.proc = proc;
+        }
+
+        public boolean matches(Object o) {
+            return (o instanceof RubyProc) && ((RubyProc) o).getBlock() == proc.getBlock();
+        }
+
+        @Override
+        public int applyAsInt(ThreadContext context) {
+            try {
+                // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
+                proc.call(context, IRubyObject.NULL_ARRAY);
+
+            } catch (LocalJumpError rj) {
+                // END { return } can generally be statically determined during build time so we generate the LJE
+                // then.  This if captures the static side of this. See IReturnJump below for dynamic case
+                RubyLocalJumpError rlje = (RubyLocalJumpError) rj.getException();
+                String filename = proc.getBlock().getBinding().filename;
+
+                if (rlje.getReason() == RubyLocalJumpError.Reason.RETURN) {
+                    Ruby.this.getWarnings().warn(filename, "unexpected return");
+                } else {
+                    Ruby.this.getWarnings().warn(filename, "break from proc-closure");
+                }
+
+            } catch (SystemExit exit) {
+                RubyException raisedException = exit.getException();
+                // adopt new exit code
+                // see jruby/jruby#5437 and related issues
+                return raisedException.callMethod(context, "status").convertToInteger().getIntValue();
+            } catch (RaiseException re) {
+                // display and set error result but do not propagate other errors raised during at_exit
+                Ruby.this.printError(re.getException());
+                return 1;
+
+            } catch (IRReturnJump e) {
+                // This capture dynamic returns happening in an end block where it cannot be statically determined
+                // (like within an eval.
+
+                // This is partially similar to code in eval_error.c:error_handle but with less actual cases.
+                // IR treats END blocks are closures and as such we see this special non-local return jump type
+                // bubble this far out as we exec each END proc.
+                Ruby.this.getWarnings().warn(proc.getBlock().getBinding().filename, "unexpected return");
+            }
+
+            return 0; // no errors
+        }
     }
 
     private final RubyArray emptyFrozenArray;
