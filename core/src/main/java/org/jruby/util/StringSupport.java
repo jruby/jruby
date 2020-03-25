@@ -627,6 +627,21 @@ public final class StringSupport {
         return p;
     }
 
+    /**
+     * Return the byte offset of the nth character {@code n} in the given byte array between {@code p} and {@code n} using
+     * {@code enc} as the encoding.
+     *
+     * Note that the resulting offset will absolute, and therefore >= {@code p}. Subtract {@code p} to get a relative
+     * offset.
+     *
+     * @param enc the encoding of the characters in the byte array
+     * @param bytes the byte array
+     * @param p starting offset
+     * @param end limit offset
+     * @param n character offset to find
+     * @return the byte offset of the requested character, or -1 if the requested character offset is outside
+     *         the given byte offset range
+     */
     public static int nth(Encoding enc, byte[]bytes, int p, int end, int n) {
         return nth(enc, bytes, p, end, n, enc.isSingleByte());
     }
