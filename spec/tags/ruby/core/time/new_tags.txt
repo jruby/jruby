@@ -8,3 +8,4 @@ fails(not implemented, jruby/jruby#5576):Time.new with a timezone argument Time-
 fails(not implemented, jruby/jruby#5576):Time.new with a timezone argument #name method uses the optional #name method for marshaling
 fails(not implemented, jruby/jruby#5576):Time.new with a timezone argument #name method cannot marshal Time if #name method isn't implemented
 fails(not implemented, jruby/jruby#5576):Time.new with a timezone argument subject's class implements .find_timezone method calls .find_timezone to build a time object at loading marshaled data
+fails(not implemented, jruby/jruby#5576):Time.new with a utc_offset argument raises ArgumentError if the String argument is not of the form (+|-)HH:MM
