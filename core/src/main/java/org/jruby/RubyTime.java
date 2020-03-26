@@ -498,6 +498,7 @@ public class RubyTime extends RubyObject {
         dt = originalTime.dt;
         nsec = originalTime.nsec;
         isTzRelative = originalTime.isTzRelative;
+        zone = originalTime.zone;
 
         return this;
     }
@@ -506,6 +507,7 @@ public class RubyTime extends RubyObject {
     public RubyTime succ() {
         RubyTime time = newTime(getRuntime(), dt.plusSeconds(1));
         time.setIsTzRelative(isTzRelative);
+        time.setZoneObject(zone);
         return time;
     }
 
@@ -714,6 +716,7 @@ public class RubyTime extends RubyObject {
         newTime.dt = new DateTime(newMillisPart, dt.getZone());
         newTime.setNSec(newNanosPart);
         newTime.setIsTzRelative(isTzRelative);
+        newTime.setZoneObject(zone);
 
         return newTime;
     }
@@ -760,6 +763,7 @@ public class RubyTime extends RubyObject {
         newTime.dt = new DateTime(time, dt.getZone());
         newTime.setNSec(nano);
         newTime.setIsTzRelative(isTzRelative);
+        newTime.setZoneObject(zone);
 
         return newTime;
     }
