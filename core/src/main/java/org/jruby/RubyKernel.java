@@ -1252,20 +1252,24 @@ public class RubyKernel {
             return warn(context, recv, new IRubyObject[] { arg });
         }
 
-        return warnObj(context, recv, arg);
+        if (!context.runtime.getVerbose().isNil()) {
+            warnObj(context, recv, arg);
+        }
+
+        return context.nil;
     }
 
-    private static IRubyObject warnObj(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+    private static void warnObj(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         if (arg instanceof RubyArray) {
             final RubyArray argAry = arg.convertToArray();
             for (int i = 0; i < argAry.size(); i++) warnObj(context, recv, argAry.eltOk(i));
-            return context.nil;
+            return;
         }
 
-        return warnStr(context, recv, arg.asString());
+        warnStr(context, recv, arg.asString());
     }
 
-    static IRubyObject warnStr(ThreadContext context, IRubyObject recv, RubyString message) {
+    static void warnStr(ThreadContext context, IRubyObject recv, RubyString message) {
         final Ruby runtime = context.runtime;
 
         if (!message.endsWithAsciiChar('\n')) {
@@ -1273,9 +1277,11 @@ public class RubyKernel {
         }
 
         if (recv == runtime.getWarning()) {
-            return RubyWarnings.warn(context, recv, message);
+            RubyWarnings.warn(context, recv, message);
+            return;
         }
-        return sites(context).warn.call(context, recv, runtime.getWarning(), message);
+
+        sites(context).warn.call(context, recv, runtime.getWarning(), message);
     }
 
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE, omit = true)
@@ -1302,13 +1308,15 @@ public class RubyKernel {
 
         int i = 0;
 
-        if (kwargs && argMessagesLen > 0) { // warn(uplevel: X) does nothing
-            warnStr(context, recv, buildWarnMessage(context, uplevel, args[0]));
-            i = 1;
-        }
+        if (!context.runtime.getVerbose().isNil() && argMessagesLen > 0) {
+            if (kwargs && argMessagesLen > 0) { // warn(uplevel: X) does nothing
+                warnStr(context, recv, buildWarnMessage(context, uplevel, args[0]));
+                i = 1;
+            }
 
-        for (; i < argMessagesLen; i++) {
-            warnObj(context, recv, args[i]);
+            for (; i < argMessagesLen; i++) {
+                warnObj(context, recv, args[i]);
+            }
         }
 
         return context.nil;
