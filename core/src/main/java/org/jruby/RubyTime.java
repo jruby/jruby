@@ -1574,8 +1574,11 @@ public class RubyTime extends RubyObject {
 
         if (zone.isNil()) {
             return initialize(context, year, month, day, hour, minute, second);
-        } else if (zone instanceof RubySymbol) {
-            dst = zone.toString().equals("dst");
+        } else if (zone == runtime.newSymbol("dst")) {
+            dst = true;
+            dtz = getLocalTimeZone(runtime);
+        } else if (zone == runtime.newSymbol("std")) {
+            dst = false;
             dtz = getLocalTimeZone(runtime);
         } else if (maybeTimezoneObject(zone)) {
             maybeZoneObj = true;
