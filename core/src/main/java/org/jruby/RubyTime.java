@@ -214,35 +214,76 @@ public class RubyTime extends RubyObject {
     }
 
     // MRI: utc_offset_arg
-    public static DateTimeZone getTimeZoneFromUtcOffset(ThreadContext context, IRubyObject utcOffset) {
+    public static DateTimeZone getTimeZoneFromUtcOffset(ThreadContext context, IRubyObject arg) {
         final Ruby runtime = context.runtime;
-        String strOffset = utcOffset.toString();
+
+        String strOffset = arg.toString();
 
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(strOffset);
         if (cachedZone != null) return cachedZone;
 
         DateTimeZone dtz;
-        if (utcOffset instanceof RubyString) {
-            if (!((RubyString) utcOffset).getEncoding().isAsciiCompatible()) {
-                return null;
-            }
+        IRubyObject tmp;
 
-            Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(strOffset);
-            if (!offsetMatcher.matches()) {
+        if (!(tmp = arg.checkStringType()).isNil()) {
+            RubyString tmpString = (RubyString) tmp;
+            ByteList tmpBytes = tmpString.getByteList();
+            int n = 0;
+            int s = 0;
+            if (!tmpBytes.getEncoding().isAsciiCompatible()) {
                 return null;
             }
-            String sign = offsetMatcher.group(1);
-            String hours = offsetMatcher.group(2);
-            String minutes = offsetMatcher.group(3);
-            String seconds = offsetMatcher.group(4);
-            dtz = getTimeZoneFromHHMM(runtime, "", !sign.equals("-"), hours, minutes, seconds);
+            switch (tmpBytes.realSize()) {
+                case 1:
+                    if (tmpBytes.get(s) == 'Z') {
+                        return DateTimeZone.UTC;
+                    }
+                    /* Military Time Zone Names */
+                    if (tmpBytes.get(s) >= 'A' && tmpBytes.get(s) <= 'I') {
+                        n = tmpBytes.get(s) - 'A' + 1;
+                    } else if (tmpBytes.get(s) >= 'K' && tmpBytes.get(s) <= 'M') {
+                        n = tmpBytes.get(s) - 'A';
+                    } else if (tmpBytes.get(s) >= 'N' && tmpBytes.get(s) <= 'Y') {
+                        n = 'M' - tmpBytes.get(s);
+                    } else {
+                        return null;
+                    }
+                    n *= 3600;
+                    dtz = getTimeZoneWithOffset(runtime, "", n * 1000);
+                    break;
+                case 3:
+                    if (tmpBytes.toByteString().equals("UTC")) {
+                        return DateTimeZone.UTC;
+                    }
+                    return null;
+                case 9:
+                    if (tmpBytes.get(s+6) != ':') return null;
+                    if (!Character.isDigit(tmpBytes.get(s+7)) || !Character.isDigit(tmpBytes.get(s+8))) return null;
+                    n += (tmpBytes.get(s+7) * 10 + tmpBytes.get(s+8) - '0' * 11);
+                    /* fall through */
+                case 6:
+                    if (tmpBytes.get(s) != '+' && tmpBytes.get(s+0) != '-') return null;
+                    if (!Character.isDigit(tmpBytes.get(s+1)) || !Character.isDigit(tmpBytes.get(s+2))) return null;
+                    if (tmpBytes.get(s+3) != ':') return null;
+                    if (!Character.isDigit(tmpBytes.get(s+4)) || !Character.isDigit(tmpBytes.get(s+5))) return null;
+                    if (tmpBytes.get(s+4) > '5') return null;
+                    break;
+                default:
+                    return null;
+            }
+            n += (tmpBytes.get(s+1) * 10 + tmpBytes.get(s+2) - '0' * 11) * 3600;
+            n += (tmpBytes.get(s+4) * 10 + tmpBytes.get(s+5) - '0' * 11) * 60;
+            if (tmpBytes.get(s+0) == '-')
+                n = -n;
+            dtz = getTimeZoneWithOffset(runtime, "", n * 1000);
         } else {
-            RubyNumeric numericOffset = numExact(context, utcOffset);
+            RubyNumeric numericOffset = numExact(context, arg);
             int newOffset = (int) Math.round(numericOffset.convertToFloat().value * 1000);
             dtz = getTimeZoneWithOffset(runtime, "", newOffset);
         }
 
         runtime.getTimezoneCache().put(strOffset, dtz);
+
         return dtz;
     }
 
