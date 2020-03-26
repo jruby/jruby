@@ -1165,7 +1165,12 @@ public class RubyKernel {
         } else if (level instanceof RubyRange) {
             RubyRange range = (RubyRange) level;
             lev = RubyNumeric.fix2int(range.first(context));
-            len = RubyNumeric.fix2int(range.last(context)) - lev;
+            IRubyObject last = range.end(context);
+            if (last.isNil()) {
+                len = 1 << 24;
+            } else {
+                len = RubyNumeric.fix2int(last) - lev;
+            }
             if (!range.isExcludeEnd()) len++;
             len = len < 0 ? 0 : len;
         } else if (level != null) {
