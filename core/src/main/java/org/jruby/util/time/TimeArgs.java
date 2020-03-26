@@ -10,10 +10,13 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
+import org.jruby.RubyStruct;
 import org.jruby.RubyTime;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.function.Function;
 
 public class TimeArgs {
     private final int year;
@@ -201,6 +204,32 @@ public class TimeArgs {
 
         time.setDateTime(dt);
         time.setNSec(nanos);
+    }
+
+    public boolean zoneTimeLocal(ThreadContext context, IRubyObject zone, RubyTime time) {
+        IRubyObject utc = zone.getMetaClass().finvokeChecked(context, zone, "local_to_utc", time);
+        if (utc == null) return false;
+        long s = extractTime(context, utc);
+        DateTime dt = time.getDateTime();
+        dt = dt.withZoneRetainFields(RubyTime.getTimeZoneWithOffset(context.runtime, "", (int) (dt.getMillis() - s)));
+        time.setDateTime(dt);
+        time.setZoneObject(zone);
+
+        return true;
+    }
+
+    private long extractTime(ThreadContext context, IRubyObject time) {
+        long t;
+
+        if (time instanceof RubyTime) {
+            return ((RubyTime) time).getDateTime().getMillis();
+        } else if (time instanceof RubyStruct) {
+            t = ((RubyStruct) time).aref(context.runtime.newSymbol("to_i")).convertToInteger().getLongValue();
+        } else {
+            t =  time.callMethod(context, "to_i").convertToInteger().getLongValue();
+        }
+
+        return t * 1000;
     }
 
     private static int parseYear(ThreadContext context, IRubyObject _year) {
