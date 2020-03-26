@@ -1702,23 +1702,7 @@ public class RubyKernel {
 //            chfunc = signal(SIGCHLD, SIG_DFL);
 //            #endif
             PopenExecutor executor = new PopenExecutor();
-            pid = executor.spawnInternal(context, args, null);
-//            #if defined(HAVE_FORK) || defined(HAVE_SPAWNV)
-            if (pid > 0) {
-                long ret;
-                ret = RubyProcess.waitpid(runtime, pid, 0);
-                if (ret == -1)
-                    throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "Another thread waited the process started by system().");
-            }
-//            #endif
-//            #ifdef SIGCHLD
-//            signal(SIGCHLD, chfunc);
-//            #endif
-            if (pid < 0) return context.nil;
-
-            status = (int)((RubyProcess.RubyStatus) context.getLastExitStatus()).getStatus();
-            if (status == 0) return runtime.getTrue();
-            return runtime.getFalse();
+            return executor.systemInternal(context, args, null);
         }
 
         // else old JDK logic
