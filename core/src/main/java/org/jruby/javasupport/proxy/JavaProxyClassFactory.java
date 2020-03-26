@@ -135,18 +135,18 @@ public class JavaProxyClassFactory {
     static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<>();
 
     public final JavaProxyClass genProxyClass(final Ruby runtime, ClassDefiningClassLoader loader,
-        String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
+        String targetClassName, Class superClass, Class[] interfaces, Set<String> names, Map<String, Class> fields, Map<String, Class[]> extraMethods)
         throws InvocationTargetException {
         final Ruby prev = runtimeTLS.get();
         runtimeTLS.set(runtime);
         try {
-            return newProxyClass(runtime, loader, targetClassName, superClass, interfaces, names);
+            return newProxyClass(runtime, loader, targetClassName, superClass, interfaces, names, fields, extraMethods);
         }
         finally { runtimeTLS.set(prev); }
     }
 
     public JavaProxyClass newProxyClass(final Ruby runtime, ClassDefiningClassLoader loader,
-        String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
+        String targetClassName, Class superClass, Class[] interfaces, Set<String> names, Map<String, Class> fields, Map<String, Class[]> extraMethods)
         throws InvocationTargetException {
 
         if (targetClassName == null) {
@@ -155,15 +155,25 @@ public class JavaProxyClassFactory {
         validateArgs(runtime, targetClassName, superClass);
 
         Type selfType = Type.getType('L' + toInternalClassName(targetClassName) + ';');
-        Map<MethodKey, MethodData> methods = collectMethods(superClass, interfaces, names);
+        Map<MethodKey, MethodData> methods = collectMethods(superClass, interfaces, names, extraMethods);
 
-        return generate(loader, targetClassName, superClass, interfaces, methods, selfType);
+        return generate(loader, targetClassName, superClass, interfaces, methods, selfType, fields);
     }
 
     private JavaProxyClass generate(ClassDefiningClassLoader loader, String targetClassName,
                                     Class superClass, Class[] interfaces,
-                                    Map<MethodKey, MethodData> methods, Type selfType) {
+                                    Map<MethodKey, MethodData> methods, Type selfType, Map<String, Class> fields) {
         ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces, loader);
+
+        if (fields != null) {
+            for (String key : fields.keySet()) {
+                // private final JavaProxyInvocationHandler __handler;
+                cw.visitField(Opcodes.ACC_PUBLIC,
+                        key,
+                        Type.getDescriptor(fields.get(key)), null, null
+                ).visitEnd();
+            }
+        }
 
         GeneratorAdapter clazzInit = createClassInitializer(selfType, cw);
 
@@ -502,7 +512,7 @@ public class JavaProxyClassFactory {
     private static Map<MethodKey, MethodData> collectMethods(
             final Class superClass,
             final Class[] interfaces,
-            final Set<String> names) {
+            final Set<String> names, Map<String, Class[]> extraMethods) {
 
         Map<MethodKey, MethodData> methods = new HashMap<>();
 
@@ -510,25 +520,23 @@ public class JavaProxyClassFactory {
         addClass(allClasses, methods, superClass, names);
         addInterfaces(allClasses, methods, interfaces, names);
 
+        if (extraMethods != null) {
+            for(Map.Entry<String, Class[]> javaSigs : extraMethods.entrySet()) {
+                MethodKey mk = new MethodKey(javaSigs.getKey(), javaSigs.getValue());
+                if (methods.containsKey(mk)) // already a proper java method there, don't disturb it
+                    continue;
+                MethodData method = new LocalMethodData(javaSigs.getKey(), javaSigs.getValue());
+                methods.put(mk, method);
+                // no need to call .add as java_signature doesn't support exceptions
+            }
+        }
+
         return methods;
     }
 
-    static final class MethodData {
+    static abstract class MethodData {
 
-        final Set<Method> methods = new HashSet<Method>();
-
-        final Method mostSpecificMethod;
-        final Class[] mostSpecificParameterTypes;
-
-        //private boolean hasPublicDecl = false;
-
-        MethodData(final Method method) {
-            this.mostSpecificMethod = method;
-            this.mostSpecificParameterTypes = mostSpecificMethod.getParameterTypes();
-            //hasPublicDecl = method.getDeclaringClass().isInterface() || Modifier.isPublic(method.getModifiers());
-        }
-
-        private StringBuilder scrambledSignature() {
+        protected StringBuilder scrambledSignature() {
             StringBuilder sb = new StringBuilder();
             for ( Class param : getParameterTypes() ) {
                 sb.append('$');
@@ -546,16 +554,12 @@ public class JavaProxyClassFactory {
             return sb;
         }
 
-        public Class getDeclaringClass() {
-            return mostSpecificMethod.getDeclaringClass();
-        }
-
-        private org.objectweb.asm.commons.Method getMethod() {
+        protected org.objectweb.asm.commons.Method getMethod() {
             return new org.objectweb.asm.commons.Method(getName(), Type
                     .getType(getReturnType()), getType(getParameterTypes()));
         }
 
-        private static Type[] getType(Class[] parameterTypes) {
+        public static Type[] getType(Class[] parameterTypes) {
             Type[] result = new Type[parameterTypes.length];
             for (int i = 0; i < parameterTypes.length; i++) {
                 result[i] = Type.getType(parameterTypes[i]);
@@ -563,15 +567,118 @@ public class JavaProxyClassFactory {
             return result;
         }
 
-        private String getName() {
+        protected abstract String getName();
+
+        protected abstract  Class[] getParameterTypes();
+
+        protected abstract Class[] getExceptions();
+
+        protected abstract boolean generateProxyMethod();
+
+        protected abstract void add(Method method);
+
+        abstract Class getReturnType();
+
+        abstract boolean isFinal();
+
+        abstract boolean isPrivate();
+
+        abstract boolean isImplemented();
+    }
+
+    /**
+     * Method data that is new (ie. we can't look it up in parent classes)
+     */
+    static final class LocalMethodData extends MethodData {
+
+        final private String name;
+        final private Class returnType;
+        final private Class[] paramTypes;
+
+        public LocalMethodData(final String name, final Class[] signature) {
+            this.name = name;
+            this.returnType = signature[0];
+            this.paramTypes = Arrays.copyOfRange(signature, 1, signature.length);
+        }
+
+        @Override
+        protected String getName() {
+            return name;
+        }
+
+        @Override
+        protected Class[] getParameterTypes() {
+            return paramTypes;
+        }
+
+        @Override
+        protected Class[] getExceptions(){
+            return EMPTY_CLASS_ARRAY;
+        }
+
+        @Override
+        protected boolean generateProxyMethod() {
+            return true;
+        }
+
+        @Override
+        protected void add(Method method) {
+            // Nothing to worry about here, non-overriden methods don't care about exceptions
+        }
+
+        @Override
+        Class getReturnType() {
+            return returnType;
+        }
+
+        @Override
+        boolean isFinal() {
+            return false;
+        }
+
+        @Override
+        boolean isPrivate() {
+            return false;
+        }
+
+        @Override
+        boolean isImplemented() {
+            return false;
+        }
+    }
+
+    /**
+     * Method data that comes from parent classes for methods we
+     * are overriding
+     */
+    static final class OverridedMethodData extends MethodData {
+
+        final Set<Method> methods = new HashSet<Method>();
+
+        final Method mostSpecificMethod;
+        final Class[] mostSpecificParameterTypes;
+
+        //private boolean hasPublicDecl = false;
+
+        OverridedMethodData(final Method method) {
+            this.mostSpecificMethod = method;
+            this.mostSpecificParameterTypes = mostSpecificMethod.getParameterTypes();
+            //hasPublicDecl = method.getDeclaringClass().isInterface() || Modifier.isPublic(method.getModifiers());
+        }
+
+//        protected Class getDeclaringClass() {
+//            return mostSpecificMethod.getDeclaringClass();
+//        }
+
+        protected String getName() {
             return mostSpecificMethod.getName();
         }
 
-        private Class[] getParameterTypes() {
+        protected Class[] getParameterTypes() {
             return mostSpecificParameterTypes;
         }
 
-        private Class[] getExceptions() {
+        protected Class[] getExceptions() {
             final IdentityHashMap<Class, ?> exceptions = new IdentityHashMap<>(8);
 
             for ( final Method method : this.methods ) {
@@ -602,11 +709,11 @@ public class JavaProxyClassFactory {
             return exceptions.isEmpty() ? EMPTY_CLASS_ARRAY : exceptions.keySet().toArray(new Class[ exceptions.size() ]);
         }
 
-        private boolean generateProxyMethod() {
+        protected boolean generateProxyMethod() {
             return ! isFinal() && ! isPrivate();
         }
 
-        private void add(Method method) {
+        protected void add(Method method) {
             methods.add(method);
             //hasPublicDecl |= Modifier.isPublic(method.getModifiers());
         }
@@ -645,6 +752,16 @@ public class JavaProxyClassFactory {
         MethodKey(final Method method) {
             this.name = method.getName();
             this.arguments = method.getParameterTypes();
+        }
+
+        /**
+         * Build a key from saved java_signature arguments
+         * @param name
+         * @param signature [return value, params...]
+         */
+        MethodKey(final String name, final Class[] signature) {
+            this.name = name;
+            this.arguments = Arrays.copyOfRange(signature, 1, signature.length);
         }
 
         @Override
@@ -718,7 +835,7 @@ public class JavaProxyClassFactory {
         MethodKey methodKey = new MethodKey(method);
         MethodData methodData = methods.get(methodKey);
         if (methodData == null) {
-            methodData = new MethodData(method);
+            methodData = new OverridedMethodData(method);
             methods.put(methodKey, methodData);
         }
         methodData.add(method);
@@ -799,10 +916,10 @@ public class JavaProxyClassFactory {
                                               String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
             throws InvocationTargetException {
         if (loader instanceof ClassDefiningClassLoader) {
-            return genProxyClass(runtime, (ClassDefiningClassLoader) loader, targetClassName, superClass, interfaces, names);
+            return genProxyClass(runtime, (ClassDefiningClassLoader) loader, targetClassName, superClass, interfaces, names, null, null);
         }
 
-        return genProxyClass(runtime, (ClassDefiningClassLoader) new OneShotClassLoader(loader), targetClassName, superClass, interfaces, names);
+        return genProxyClass(runtime, (ClassDefiningClassLoader) new OneShotClassLoader(loader), targetClassName, superClass, interfaces, names, null, null);
     }
 
     @Deprecated
@@ -810,10 +927,10 @@ public class JavaProxyClassFactory {
                                         String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
             throws InvocationTargetException {
         if (loader instanceof ClassDefiningClassLoader) {
-            return newProxyClass(runtime, (ClassDefiningClassLoader) loader, targetClassName, superClass, interfaces, names);
+            return newProxyClass(runtime, (ClassDefiningClassLoader) loader, targetClassName, superClass, interfaces, names, null, null);
         }
 
-        return newProxyClass(runtime, (ClassDefiningClassLoader) new OneShotClassLoader(loader), targetClassName, superClass, interfaces, names);
+        return newProxyClass(runtime, (ClassDefiningClassLoader) new OneShotClassLoader(loader), targetClassName, superClass, interfaces, names, null, null);
     }
 
 }
