@@ -340,7 +340,7 @@ describe :kernel_sprintf, shared: true do
       it "formats a partial substring without including omitted characters" do
         long_string = "aabbccddhelloddccbbaa"
         sub_string = long_string[8, 5]
-        sprintf("%.#{3}s", sub_string).should == "hel"
+        sprintf("%.#{1 * 3}s", sub_string).should == "hel"
       end
     end
 
