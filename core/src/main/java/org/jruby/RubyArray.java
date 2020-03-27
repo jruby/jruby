@@ -43,6 +43,7 @@ import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
@@ -765,13 +766,20 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public boolean includes(ThreadContext context, IRubyObject item) {
-        int myBegin = this.begin;
-        int end = myBegin + realLength;
-        IRubyObject[] values = this.values;
-        final Ruby runtime = context.runtime;
-        for (int i = myBegin; i < end; i++) {
-            final IRubyObject value = safeArrayRef(runtime, values, i);
+        int end = realLength;
+        for (int i = 0; i < end; i++) {
+            final IRubyObject value = eltOk(i);
             if (equalInternal(context, value, item)) return true;
+        }
+
+        return false;
+    }
+
+    public boolean includesByEql(ThreadContext context, IRubyObject item) {
+        int end = realLength;
+        for (int i = 0; i < end; i++) {
+            final IRubyObject value = eltOk(i);
+            if (eqlInternal(context, item, value)) return true;
         }
 
         return false;
@@ -3506,7 +3514,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "difference", rest = true)
     public IRubyObject difference(ThreadContext context, IRubyObject[] args) {
-        boolean[] isHash = new boolean[args.length];
+        BitSet isHash = new BitSet(args.length);
         RubyArray[] arrays = new RubyArray[args.length];
         RubyHash[] hashes = new RubyHash[args.length];
 
@@ -3514,18 +3522,18 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         for (int i = 0; i < args.length; i++) {
             arrays[i] = args[i].convertToArray();
-            isHash[i] = (realLength > ARRAY_DEFAULT_SIZE && arrays[i].realLength > ARRAY_DEFAULT_SIZE);
-            if (isHash[i]) hashes[i] = arrays[i].makeHash(context.runtime);
+            isHash.set(i, (realLength > ARRAY_DEFAULT_SIZE && arrays[i].realLength > ARRAY_DEFAULT_SIZE));
+            if (isHash.get(i)) hashes[i] = arrays[i].makeHash(context.runtime);
         }
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject elt = elt(i);
             int j;
             for (j = 0; j < args.length; j++) {
-                if (isHash[j]) {
+                if (isHash.get(j)) {
                     if (hashes[j].fastARef(elt) != null) break;
                 } else {
-                    if (arrays[j].includes(context, elt)) break;
+                    if (arrays[j].includesByEql(context, elt)) break;
                 }
             }
             if (j == args.length) diff.append(elt);
