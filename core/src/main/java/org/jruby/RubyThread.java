@@ -61,10 +61,11 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.thread.Mutex;
-import org.jruby.internal.runtime.NativeThread;
+import org.jruby.internal.runtime.RubyNativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
+import org.jruby.internal.runtime.AdoptedNativeThread;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -447,7 +448,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         RubyThread rubyThread = new RubyThread(runtime, threadClass, true);
 
         // TODO: need to isolate the "current" thread from class creation
-        rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
+        rubyThread.threadImpl = new AdoptedNativeThread(rubyThread, Thread.currentThread());
         runtime.getThreadService().setMainThread(Thread.currentThread(), rubyThread);
 
         // set to default thread group
@@ -592,7 +593,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                                           final RubyClass recv, final Thread thread) {
         final RubyThread rubyThread = new RubyThread(runtime, recv, true);
 
-        rubyThread.threadImpl = new NativeThread(rubyThread, thread);
+        rubyThread.threadImpl = new AdoptedNativeThread(rubyThread, thread);
         ThreadContext context = service.registerNewThread(rubyThread);
         service.associateThread(thread, rubyThread);
 
@@ -622,7 +623,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             this.file = context.getFile();
             this.line = context.getLine();
             initThreadName(runtime, thread, file, line);
-            threadImpl = new NativeThread(this, thread);
+            threadImpl = new RubyNativeThread(this, thread);
 
             addToCorrectThreadGroup(context);
 
@@ -1795,8 +1796,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public StackTraceElement[] javaBacktrace() {
-        if (threadImpl instanceof NativeThread) {
-            return ((NativeThread)threadImpl).getThread().getStackTrace();
+        if (threadImpl instanceof RubyNativeThread) {
+            return ((RubyNativeThread)threadImpl).getThread().getStackTrace();
         }
 
         // Future-based threads can't get a Java trace

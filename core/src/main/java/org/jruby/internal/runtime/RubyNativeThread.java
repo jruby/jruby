@@ -36,83 +36,65 @@ import org.jruby.RubyThread;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * @author cnutter
+ * A ThreadLike wrapped around a native Thread, for Ruby threads we start and control.
  */
-public class NativeThread implements ThreadLike {
-    private final Reference<Thread> nativeThread;
+public class RubyNativeThread implements ThreadLike {
+    private final Thread thread;
     public final RubyThread rubyThread;
     public String rubyName;
     
-    public NativeThread(RubyThread rubyThread, Thread nativeThread) {
+    public RubyNativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
-        this.nativeThread = new WeakReference<>(nativeThread);
+        this.thread = nativeThread;
         this.rubyName = null;
     }
     
     public void start() {
-        Thread thread = getThread();
-        
-        if (thread == null) {
-            throw new RuntimeException("BUG: thread was collected before start()");
-        }
-
         thread.start();
     }
     
     public void interrupt() {
-        Thread thread = getThread();
-        if (thread != null) thread.interrupt();
+        thread.interrupt();
     }
     
     public boolean isAlive() {
-        Thread thread = getThread();
-        if (thread != null) return thread.isAlive();
-        return false;
+        return thread.isAlive();
     }
     
     public void join() throws InterruptedException {
-        Thread thread = getThread();
-        if (thread != null) thread.join();
+        thread.join();
     }
     
     public void join(long timeoutMillis) throws InterruptedException {
-        Thread thread = getThread();
-        if (thread != null) thread.join(timeoutMillis);
+        thread.join(timeoutMillis);
     }
     
     public int getPriority() {
-        Thread thread = getThread();
-        if (thread != null) return thread.getPriority();
-        return 0;
+        return thread.getPriority();
     }
     
     public void setPriority(int priority) {
-        Thread thread = getThread();
-        if (thread != null) thread.setPriority(priority);
+        thread.setPriority(priority);
     }
     
     public boolean isCurrent() {
-        return getThread() == Thread.currentThread();
+        return thread == Thread.currentThread();
     }
     
     public boolean isInterrupted() {
-        Thread thread = getThread();
-        if (thread != null) {
-            return thread.isInterrupted();
-        }
-        return false;
+        return thread.isInterrupted();
     }
 
     public final Thread getThread() {
-        return nativeThread.get();
+        return thread;
     }
 
     public String toString() {
-        return String.valueOf(getThread());
+        return String.valueOf(thread);
     }
 
     public Thread nativeThread() {
-        return nativeThread.get();
+        return thread;
     }
 
     @Override
@@ -131,8 +113,7 @@ public class NativeThread implements ThreadLike {
     public String getReportName() {
         String nativeName = "";
 
-        Thread thread = getThread();
-        if (thread != null) nativeName = thread.getName();
+        nativeName = thread.getName();
 
         if (rubyName == null || rubyName.length() == 0) {
             return nativeName.equals("") ? "(unnamed)" :  nativeName;
