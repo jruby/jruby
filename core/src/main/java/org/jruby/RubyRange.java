@@ -955,18 +955,16 @@ public class RubyRange extends RubyObject {
                 int n = num;
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    if (n-- <= 0) {
-                        throw JumpException.SPECIAL_JUMP;
-                    }
-                    result.append(largs[0]);
-                    return ctx.nil;
+                    return call(ctx, largs[0], blk);
                 }
+
                 @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
                     if (n-- <= 0) {
                         throw JumpException.SPECIAL_JUMP;
                     }
-                    return call(ctx, larg, blk);
+                    result.append(larg);
+                    return ctx.nil;
                 }
             });
         } catch (JumpException.SpecialJump sj) {
