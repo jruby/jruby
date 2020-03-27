@@ -61,6 +61,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -4181,16 +4182,38 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return to_i(arg0);
     }
 
-    /** rb_str_to_inum
-     *
-     */
-    public IRubyObject stringToInum(int base, boolean badcheck) {
+    // rb_str_convert_to_inum
+    public IRubyObject stringConvertToInum(int base, boolean badcheck, boolean raiseException) {
+        IRubyObject ret;
         final ByteList str = this.value;
         if (!str.getEncoding().isAsciiCompatible()) {
             throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + str.getEncoding());
         }
 
-        return ConvertBytes.byteListToInum(getRuntime(), str, base, badcheck);
+        try {
+            ret = ConvertBytes.byteListToInum(getRuntime(), str, base, badcheck);
+        } catch(RaiseException e) {
+            ret = getRuntime().getNil();
+        }
+
+        if (ret.isNil()) {
+            if (badcheck) {
+                if (!raiseException) {
+                    return getRuntime().getNil();
+                }
+                throw getRuntime().newArgumentError("invalid value for Integer(): " + this);
+            }
+            ret = RubyNumeric.int2fix(getRuntime(), 0);
+        }
+
+        return ret;
+    }
+
+    /** rb_str_to_inum
+     *
+     */
+    public IRubyObject stringToInum(int base, boolean badcheck) {
+        return stringConvertToInum(base, badcheck, true);
     }
 
     public final IRubyObject stringToInum(int base) {

@@ -29,6 +29,7 @@ package org.jruby.util;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBignum;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -397,39 +398,62 @@ public class TypeConverter {
 
     // rb_convert_to_integer
     public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
+        return convertToInteger(context, val, base, true);
+    }
+
+    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base, boolean raiseException) {
         final Ruby runtime = context.runtime;
         IRubyObject tmp;
 
         for (;;) {
             switch (val.getMetaClass().getClassIndex()) {
                 case FLOAT:
-                    if (base != 0) raiseIntegerBaseError(context);
-                    return RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) val).getValue());
+                    double f;
+                    if (base != 0) return raiseIntegerBaseError(context, raiseException);
+                    f = ((RubyFloat)val).getValue();
+                    if (!raiseException && !Double.isFinite(f)) return context.nil;
+                    if (RubyNumeric.fixable(runtime, f)) return RubyFixnum.newFixnum(runtime, (long)f);
+                    return RubyBignum.newBignorm(runtime, f);
                 case INTEGER:
-                    if (base != 0) raiseIntegerBaseError(context);
+                    if (base != 0) return raiseIntegerBaseError(context, raiseException);
                     return val;
                 case STRING:
-                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
+                    return ((RubyString)val).stringConvertToInum(base, true, raiseException);
                 case NIL:
-                    if (base != 0) raiseIntegerBaseError(context);
+                    if (base != 0) return raiseIntegerBaseError(context, raiseException);
+                    if (!raiseException) return context.nil;
                     throw context.runtime.newTypeError("can't convert nil into Integer");
                 default: // MRI checks String sub-classes
                     if (val instanceof RubyString) {
-                        return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
+                        return ((RubyString)val).stringConvertToInum(base, true, raiseException);
                     }
             }
 
             if (base != 0) {
                 tmp = TypeConverter.checkStringType(context.runtime, val);
                 if (tmp != context.nil) continue;
-                raiseIntegerBaseError(context);
+                return raiseIntegerBaseError(context, raiseException);
             }
 
             break;
         }
 
-        tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
-        return (tmp != context.nil) ? tmp : TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked);
+        try {
+            tmp = TypeConverter.convertToTypeWithCheck(context, val, runtime.getInteger(), sites(context).to_int_checked);
+            if (tmp instanceof RubyInteger) return tmp;
+        } catch (RaiseException e) {
+
+        }
+
+        if (!raiseException) {
+            try {
+                return TypeConverter.convertToTypeWithCheck(context, val, runtime.getInteger(), sites(context).to_i_checked);
+            } catch (RaiseException e) {
+                return context.nil;
+            }
+        }
+
+        return TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked);
     }
 
     // MRI: rb_Array
@@ -451,8 +475,11 @@ public class TypeConverter {
         return (RubyArray) convertToType(context, ary, context.runtime.getArray(), sites(context).to_ary_checked);
     }
 
-    private static void raiseIntegerBaseError(ThreadContext context) {
-        throw context.runtime.newArgumentError("base specified for non string value");
+    private static IRubyObject raiseIntegerBaseError(ThreadContext context, boolean raiseException) {
+        if (raiseException) {
+            throw context.runtime.newArgumentError("base specified for non string value");
+        }
+        return context.nil;
     }
 
     private static TypeConverterSites sites(ThreadContext context) {

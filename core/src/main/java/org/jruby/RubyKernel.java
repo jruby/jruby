@@ -455,19 +455,45 @@ public class RubyKernel {
         return tmp;
     }
 
-    @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
-    public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return TypeConverter.convertToInteger(context, object, 0);
-    }
+    @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE, required = 1, optional = 2)
+    public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject arg = context.nil, opts = RubyHash.newHash(context.runtime);
+        int base = 0;
+        int numArgs = args.length;
+        if (numArgs > 1) {
+            int narg = 1;
+            IRubyObject vbase = TypeConverter.checkIntegerType(context, args[1]);
+            if (!vbase.isNil()) {
+                base = RubyNumeric.num2int(args[1]);
+                narg = 2;
+            }
+            if (args.length > narg) {
+                IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[numArgs-1]);
+                if (!hash.isNil()) {
+                    opts = args[args.length-1];
+                    --numArgs;
+                }
+            }
+        }
 
-    @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
-    public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base) {
-        return TypeConverter.convertToInteger(context, object, RubyNumeric.num2int(base));
+        //rb_check_arity(argc, 1, 2);
+        if (numArgs < 1 || numArgs > 2) {
+            Arity.raiseArgumentError(context, numArgs, 1, 2);
+        }
+
+        arg = args[0];
+        IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, opts, "exception");
+        boolean raiseException = true;
+        if (values.length == 1 && values[0] != null && !values[0].isTrue()) {
+            raiseException = false;
+        }
+
+        return TypeConverter.convertToInteger(context, arg, base, raiseException);
     }
 
     @Deprecated
     public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return new_integer(context, recv, object);
+        return new_integer(context, recv, new IRubyObject[]{object});
     }
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
