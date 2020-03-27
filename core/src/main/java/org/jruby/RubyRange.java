@@ -663,7 +663,7 @@ public class RubyRange extends RubyObject {
                     isExclusive ? context.tru : context.fals);
         }
 
-        if (step.isNil()) {
+        if (!step.isNil()) {
             return enumeratorizeWithSize(context, this, method, new IRubyObject[]{step}, stepSizeFn());
         }
 
