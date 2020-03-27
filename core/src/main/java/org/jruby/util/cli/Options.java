@@ -227,7 +227,7 @@ public class Options {
     public static final Option<Boolean> CLI_PROCESS_LINE_ENDS = bool(CLI, "cli.process.line.ends", false, "Enable line ending processing. Same as -l.");
     public static final Option<Boolean> CLI_ASSUME_LOOP = bool(CLI, "cli.assume.loop", false, "Wrap execution with a gets() loop. Same as -n.");
     public static final Option<Boolean> CLI_ASSUME_PRINT = bool(CLI, "cli.assume.print", false, "Print $_ after each execution of script. Same as -p.");
-    public static final Option<Boolean> CLI_VERBOSE = bool(CLI, "cli.verbose", null, "Verbose mode, as -w or -W2. Sets default for cli.warning.level.");
+    public static final Option<Boolean> CLI_VERBOSE = bool(CLI, "cli.verbose", false, "Verbose mode, as -w or -W2. Sets default for cli.warning.level.");
     public static final Option<Verbosity> CLI_WARNING_LEVEL = enumeration(CLI, "cli.warning.level", Verbosity.class, calculateVerbosityDefault(), "Warning level (off=0,normal=1,on=2). Same as -W.");
     public static final Option<Boolean> CLI_PARSER_DEBUG = bool(CLI, "cli.parser.debug", false, "Enable parser debug logging. Same as -y.");
     public static final Option<Boolean> CLI_VERSION = bool(CLI, "cli.version", false, "Print version to stderr. Same as --version.");
