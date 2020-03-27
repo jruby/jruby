@@ -4689,7 +4689,6 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject storeConstant(String name, IRubyObject value) {
         assert value != null : "value is null";
-        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
 
         ensureConstantsSettable();
         return constantTableStore(name, value);
@@ -4697,8 +4696,6 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden) {
         assert value != null : "value is null";
-        //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
-        // NOTE used to setup (store) Java class names
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden);
@@ -4707,7 +4704,6 @@ public class RubyModule extends RubyObject {
     // NOTE: private for now - not sure about the API - maybe an int mask would be better?
     private IRubyObject storeConstant(String name, IRubyObject value, boolean hidden, boolean deprecated) {
         assert value != null : "value is null";
-        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden, deprecated);
@@ -4720,7 +4716,6 @@ public class RubyModule extends RubyObject {
 
     // removes and returns the stored value without processing undefs (autoloads)
     public IRubyObject deleteConstant(String name) {
-        assert IdUtil.isConstant(name);
         ensureConstantsSettable();
         return constantTableRemove(name);
     }
