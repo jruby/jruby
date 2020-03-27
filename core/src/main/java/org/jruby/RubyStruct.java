@@ -188,7 +188,11 @@ public class RubyStruct extends RubyObject {
         if (args.length > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
             if (!firstArgAsString.isNil()) {
-                name = ((RubyString)firstArgAsString).getByteList().toString();
+                RubySymbol nameSym = ((RubyString)firstArgAsString).intern();
+                if (!nameSym.validConstantName()) {
+                    throw runtime.newNameError(IDENTIFIER_NEEDS_TO_BE_CONSTANT, recv, nameSym.toString());
+                }
+                name = nameSym.idString();
             } else if (args[0].isNil()) {
                 nilName = true;
             }
@@ -227,10 +231,6 @@ public class RubyStruct extends RubyObject {
             newStruct.makeMetaClass(superClass.metaClass);
             newStruct.inherit(superClass);
         } else {
-            if (!IdUtil.isConstant(name)) {
-                throw runtime.newNameError(IDENTIFIER_NEEDS_TO_BE_CONSTANT, recv, name);
-            }
-
             IRubyObject type = superClass.getConstantAt(name);
             if (type != null) {
                 ThreadContext context = runtime.getCurrentContext();

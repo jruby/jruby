@@ -2113,7 +2113,7 @@ public class RubyModule extends RubyObject {
             visibility = PRIVATE;
         }
 
-        if (!(IdUtil.isLocal(internedIdentifier) || IdUtil.isConstant(internedIdentifier))) {
+        if (!(IdUtil.isLocal(internedIdentifier) || identifier.validConstantName())) {
             throw runtime.newNameError("invalid attribute name", internedIdentifier);
         }
 
@@ -4761,7 +4761,7 @@ public class RubyModule extends RubyObject {
     protected final String validateConstant(IRubyObject name) {
         return RubySymbol.retrieveIDSymbol(name, (sym, newSym) -> {
             if (!sym.validConstantName()) {
-                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", name), sym.idString());
+                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym.idString());
             }
         }).idString();
     }
