@@ -31,8 +31,6 @@ package org.jruby.internal.runtime;
 import java.util.concurrent.ExecutionException;
 
 public interface ThreadLike {
-    public void start();
-    
     public void interrupt();
     
     public boolean isAlive();
@@ -58,9 +56,6 @@ public interface ThreadLike {
     public String getReportName();
 
     ThreadLike DUMMY = new ThreadLike() {
-        @Override
-        public void start() {}
-
         @Override
         public void interrupt() {}
 

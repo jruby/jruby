@@ -45,10 +45,6 @@ public class AdoptedNativeThread implements ThreadLike {
         this.nativeThread = new WeakReference<>(nativeThread);
     }
     
-    public void start() {
-        throw new RuntimeException("BUG: can't start an adopted thread");
-    }
-    
     public void interrupt() {
         Thread thread = getThread();
         if (thread != null) thread.interrupt();

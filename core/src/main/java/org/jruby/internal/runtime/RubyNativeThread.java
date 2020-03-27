@@ -49,10 +49,6 @@ public class RubyNativeThread implements ThreadLike {
         this.rubyName = null;
     }
     
-    public void start() {
-        thread.start();
-    }
-    
     public void interrupt() {
         thread.interrupt();
     }

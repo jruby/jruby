@@ -620,9 +620,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         try {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
+
             this.file = context.getFile();
             this.line = context.getLine();
+
             initThreadName(runtime, thread, file, line);
+            
             threadImpl = new RubyNativeThread(this, thread);
 
             addToCorrectThreadGroup(context);
@@ -633,6 +636,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // copy parent thread's interrupt masks
             copyInterrupts(context, context.getThread().interruptMaskStack, this.interruptMaskStack);
 
+            // start the native thread
             thread.start();
 
             // We yield here to hopefully permit the target thread to schedule
