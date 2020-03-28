@@ -562,7 +562,14 @@ public class RubyComplex extends RubyNumeric {
                     f_mul(context, a2, newComplexBang(context, runtime.getComplex(),
                             RubyFixnum.zero(runtime), RubyFixnum.one(runtime))));
         }
-        return newInstance(context, recv, a1, a2, raise);
+
+        if (a2.isNil()) {
+            return newInstance(context, recv, a1);
+        } else if (!raise && !(a2 instanceof RubyInteger) && !(a2 instanceof RubyFloat) && !(a2 instanceof RubyRational)) {
+            return context.nil;
+        }
+
+        return newInstance(context, recv, a1, a2, true);
     }
 
     /** nucomp_real
