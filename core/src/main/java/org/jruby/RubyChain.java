@@ -35,6 +35,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
@@ -75,8 +76,10 @@ public class RubyChain extends RubyObject {
     }
 
     //
-    @JRubyMethod(name = "initialize", rest = true)
+    @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
+
         enums = new IRubyObject[args.length];
         System.arraycopy(args, 0, enums, 0, args.length);
 
