@@ -411,18 +411,23 @@ public class RubyNumeric extends RubyObject {
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean strict) {
+    public static IRubyObject str2fnum(Ruby runtime, RubyString arg, boolean strict, boolean exception) {
         try {
             double value = ConvertDouble.byteListToDouble19(arg.getByteList(), strict);
             return RubyFloat.newFloat(runtime, value);
         }
         catch (NumberFormatException e) {
             if (strict) {
+                if (!exception) return runtime.getNil();
                 throw runtime.newArgumentError("invalid value for Float(): "
                         + arg.callMethod(runtime.getCurrentContext(), "inspect").toString());
             }
             return RubyFloat.newFloat(runtime, 0.0);
         }
+    }
+
+    public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean strict) {
+        return (RubyFloat) str2fnum(runtime, arg, strict, true);
     }
 
 

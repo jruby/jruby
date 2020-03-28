@@ -394,50 +394,67 @@ public class RubyKernel {
         return sites(context).convert_rational.call(context, rational, rational, arg0, arg1, arg2);
     }
 
-    @Deprecated
-    public static RubyFloat new_float19(IRubyObject recv, IRubyObject object) {
-        return new_float(recv, object);
+    @JRubyMethod(name = "Float", module = true, visibility = PRIVATE)
+    public static IRubyObject new_float(ThreadContext context, IRubyObject recv, IRubyObject object) {
+        return new_float(context, object, true);
     }
 
     @JRubyMethod(name = "Float", module = true, visibility = PRIVATE)
+    public static IRubyObject new_float(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject opts) {
+        return new_float(context, object, ArgsUtil.extractKeywordArg(context, "exception", opts).isTrue());
+    }
+
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
-        return new_float(recv.getRuntime(), object);
+        return (RubyFloat) new_float(recv.getRuntime().getCurrentContext(), object, true);
     }
 
     private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
 
     public static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
+        return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
+    }
+
+    public static IRubyObject new_float(ThreadContext context, IRubyObject object, boolean exception) {
+        Ruby runtime = context.runtime;
+
         if (object instanceof RubyInteger){
             return new_float(runtime, (RubyInteger) object);
         }
         if (object instanceof RubyFloat) {
-            return (RubyFloat) object;
+            return object;
         }
         if (object instanceof RubyString){
             RubyString str = (RubyString) object;
             ByteList bytes = str.getByteList();
             if (bytes.getRealSize() == 0){ // rb_cstr_to_dbl case
+                if (!exception) return runtime.getNil();
                 throw runtime.newArgumentError("invalid value for Float(): " + object.inspect());
             }
 
             if (bytes.startsWith(ZEROx)) { // startsWith("0x")
-                return ConvertBytes.byteListToInum(runtime, bytes, 16, true).toFloat();
+                IRubyObject inum = ConvertBytes.byteListToInum(runtime, bytes, 16, true, exception);
+                if (!exception && inum.isNil()) return inum;
+                return ((RubyInteger) inum).toFloat();
             }
-            return RubyNumeric.str2fnum(runtime, str, true);
+            return RubyNumeric.str2fnum(runtime, str, true, exception);
         }
         if (object.isNil()){
+            if (!exception) return object;
             throw runtime.newTypeError("can't convert nil into Float");
         }
-        ThreadContext context = runtime.getCurrentContext();
-        KernelSites sites = sites(context);
-        return (RubyFloat) TypeConverter.convertToType(context, object, runtime.getFloat(), sites.to_f_checked);
+        IRubyObject flote = TypeConverter.convertToType(context, object, runtime.getFloat(), sites(context).to_f_checked, false);
+        if (flote instanceof RubyFloat) return flote;
+
+        if (!exception) return runtime.getNil();
+
+        return TypeConverter.handleUncoercibleObject(runtime, object, runtime.getFloat(), true);
     }
 
     static RubyFloat new_float(final Ruby runtime, RubyInteger num) {
         if (num instanceof RubyBignum) {
             return RubyFloat.newFloat(runtime, RubyBignum.big2dbl((RubyBignum) num));
         }
-        return RubyFloat.newFloat(runtime, ((RubyFixnum) num).getDoubleValue());
+        return RubyFloat.newFloat(runtime, num.getDoubleValue());
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
@@ -2419,5 +2436,10 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object) {
         return new_integer(context, recv, object);
+    }
+
+    @Deprecated
+    public static RubyFloat new_float19(IRubyObject recv, IRubyObject object) {
+        return new_float(recv, object);
     }
 }
