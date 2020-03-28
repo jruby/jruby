@@ -870,7 +870,14 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, Block block) {
+        if (begin.isNil()) {
+            throw context.runtime.newRangeError("cannot get the minimum of beginless range");
+        }
+
         if (block.isGiven()) {
+            if (end.isNil()) {
+                throw context.runtime.newRangeError("cannot get the minimum of endless range with custom comparison method");
+            }
             return Helpers.invokeSuper(context, this, block);
         }
 
