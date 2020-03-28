@@ -4778,13 +4778,11 @@ public class RubyModule extends RubyObject {
         // MRI is more complicated than this and distinguishes between ID and non-ID.
         RubyString nameString = errorName.asString();
 
-        // MRI does strlen to check for \0 vs Ruby string length.
-        if ((nameString.getEncoding() != resultEncoding && !nameString.isAsciiOnly()) ||
-                nameString.toString().indexOf('\0') > -1 ) {
-            nameString = (RubyString) nameString.inspect();
-        }
-
-        throw getRuntime().newNameError("wrong constant name " + nameString, name);
+        return RubySymbol.retrieveIDSymbol(nameString, (sym, newSym) -> {
+            if (!sym.validConstantName()) {
+                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym.idString());
+            }
+        }).idString();
     }
 
     protected final void ensureConstantsSettable() {

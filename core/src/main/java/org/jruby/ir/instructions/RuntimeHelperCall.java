@@ -130,7 +130,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                 return IRRuntimeHelpers.isDefinedConstantOrMethod(
                         context,
                         (IRubyObject) arg1,
-                        ((FrozenString) operands[1]).getString(),
+                        ((FrozenString) operands[1]).retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_INSTANCE_VAR:
