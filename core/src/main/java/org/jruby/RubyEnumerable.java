@@ -1636,11 +1636,23 @@ public class RubyEnumerable {
         return RubyArray.newArrayMayCopy(context.runtime, result);
     }
 
-    @JRubyMethod(name = "none?", optional = 1)
-    public static IRubyObject none_p(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
+    @JRubyMethod(name = "none?")
+    public static IRubyObject none_p(ThreadContext context, IRubyObject self, final Block block) {
+        return none_pCommon(context, self, null, block);
+    }
+
+    @JRubyMethod(name = "none?")
+    public static IRubyObject none_p(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        return none_pCommon(context, self, arg, block);
+    }
+
+    public static IRubyObject none_pCommon(ThreadContext context, IRubyObject self, IRubyObject pattern, final Block block) {
         final ThreadContext localContext = context;
-        final IRubyObject pattern = (args.length > 0) ? args[0] : null;
         final boolean patternGiven = pattern != null;
+
+        if (block.isGiven() && patternGiven) {
+            context.runtime.getWarnings().warn("given block not used");
+        }
 
         try {
             if (block.isGiven() && !patternGiven) {
@@ -1679,57 +1691,24 @@ public class RubyEnumerable {
         return context.tru;
     }
 
-    public static IRubyObject none_p19(ThreadContext context, IRubyObject self, final Block block) {
-        return none_p(context, self, new IRubyObject[]{}, block);
+    @JRubyMethod(name = "one?")
+    public static IRubyObject one_p(ThreadContext context, IRubyObject self, final Block block) {
+        return one_pCommon(context, self, null, block);
     }
 
-    @Deprecated
-    public static IRubyObject none_p(final ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        try {
-            if (block.isGiven()) {
-                callEach(context.runtime, context, self, callbackArity, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(context, ctx, "none?");
-                        IRubyObject larg = packEnumValues(ctx, largs);
-                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return ctx.nil;
-                    }
-                    @Override
-                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
-                        checkContext(context, ctx, "none?");
-                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return ctx.nil;
-                    }
-                });
-            } else {
-                callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(context, ctx, "none?");
-                        IRubyObject larg = packEnumValues(ctx, largs);
-                        if (larg.isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return ctx.nil;
-                    }
-                    @Override
-                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
-                        checkContext(context, ctx, "none?");
-                        if (larg.isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return ctx.nil;
-                    }
-                });
-            }
-        } catch (JumpException.SpecialJump sj) {
-            return context.fals;
-        }
-        return context.tru;
+    @JRubyMethod(name = "one?")
+    public static IRubyObject one_p(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        return one_pCommon(context, self, arg, block);
     }
 
-    @JRubyMethod(name = "one?", optional = 1)
-    public static IRubyObject one_p(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        final Ruby runtime = context.runtime;
+    public static IRubyObject one_pCommon(ThreadContext context, IRubyObject self, IRubyObject pattern, final Block block) {
         final ThreadContext localContext = context;
         final boolean[] result = new boolean[] { false };
-        final IRubyObject pattern = (args.length > 0) ? args[0] : null;
         final boolean patternGiven = pattern != null;
+
+        if (block.isGiven() && patternGiven) {
+            context.runtime.getWarnings().warn("given block not used");
+        }
 
         try {
             if (block.isGiven() && !patternGiven) {
@@ -1785,98 +1764,36 @@ public class RubyEnumerable {
         return result[0] ? context.tru : context.fals;
     }
 
-    @Deprecated
-    public static IRubyObject one_p19(ThreadContext context, IRubyObject self, final Block block) {
-        return one_p(context, self, new IRubyObject[]{}, block);
+    @JRubyMethod(name = "all?")
+    public static IRubyObject all_p(ThreadContext context, IRubyObject self, final Block block) {
+        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, null, block);
+        return all_pCommon(context, self, null, block);
     }
 
-    @Deprecated
-    public static IRubyObject one_p(final ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        final Ruby runtime = context.runtime;
-        final boolean[] result = new boolean[] { false };
-
-        try {
-            if (block.isGiven()) {
-                callEach(runtime, context, self, callbackArity, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(context, ctx, "one?");
-                        IRubyObject larg = packEnumValues(ctx, largs);
-                        if (block.yield(ctx, larg).isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
-                            }
-                        }
-                        return ctx.nil;
-                    }
-                    @Override
-                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
-                        checkContext(context, ctx, "one?");
-                        if (block.yield(ctx, larg).isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
-                            }
-                        }
-                        return ctx.nil;
-                    }
-                });
-            } else {
-                callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(context, ctx, "one?");
-                        IRubyObject larg = packEnumValues(ctx, largs);
-                        if (larg.isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
-                            }
-                        }
-                        return ctx.nil;
-                    }
-                    @Override
-                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
-                        checkContext(context, ctx, "one?");
-                        if (larg.isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
-                            }
-                        }
-                        return ctx.nil;
-                    }
-                });
-            }
-        } catch (JumpException.SpecialJump sj) {
-            return runtime.getFalse();
-        }
-        return result[0] ? runtime.getTrue() : runtime.getFalse();
+    @JRubyMethod(name = "all?")
+    public static IRubyObject all_p(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, arg, block);
+        return all_pCommon(context, self, arg, block);
     }
 
-    @JRubyMethod(name = "all?", optional = 1)
     public static IRubyObject all_p(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, args, block);
-        return all_pCommon(context, self, args, block);
+        switch (args.length) {
+            case 0:
+                return all_p(context, self, block);
+            case 1:
+                return all_p(context, self, args[0], block);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
     }
 
-    @Deprecated
-    public static IRubyObject all_p19(ThreadContext context, IRubyObject self, final Block block) {
-        return all_p(context, self, new IRubyObject[]{}, block);
-    }
-
-    @Deprecated
-    public static IRubyObject all_pCommon(final ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        return all_pCommon(context, self, new IRubyObject[]{}, block);
-    }
-
-    public static IRubyObject all_pCommon(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
+    public static IRubyObject all_pCommon(ThreadContext context, IRubyObject self, IRubyObject pattern, final Block block) {
         final ThreadContext localContext = context;
-        final IRubyObject pattern = args.length > 0 ? args[0] : null;
         final boolean patternGiven = pattern != null;
+
+        if (block.isGiven() && patternGiven) {
+            context.runtime.getWarnings().warn("given block not used");
+        }
 
         try {
             if (block.isGiven() && !patternGiven) {
@@ -1919,6 +1836,7 @@ public class RubyEnumerable {
                             }
                             return context.nil;
                         }
+
                         @Override
                         public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
                             checkContext(localContext, context, "all?");
@@ -1928,7 +1846,7 @@ public class RubyEnumerable {
                             return context.nil;
                         }
                     });
-		}
+                }
             }
         } catch (JumpException.SpecialJump sj) {
             return context.fals;
@@ -1936,20 +1854,34 @@ public class RubyEnumerable {
         return context.tru;
     }
 
-    @JRubyMethod(name = "any?", optional = 1)
+    @JRubyMethod(name = "any?")
+    public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
+        return any_pCommon(context, self, null, block);
+    }
+
+    @JRubyMethod(name = "any?")
+    public static IRubyObject any_p(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        return any_pCommon(context, self, arg, block);
+    }
+
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        return any_pCommon(context, self, args, block);
+        switch (args.length) {
+            case 0:
+                return any_pCommon(context, self, null, block);
+            case 1:
+                return any_pCommon(context, self, args[0], block);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
     }
 
-    @Deprecated
-    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        return any_pCommon(context, self, new IRubyObject[]{}, block);
-    }
-
-    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        final IRubyObject pattern = (args.length > 0) ? args[0] : null;
+    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, IRubyObject pattern, final Block block) {
         final boolean patternGiven = pattern != null;
         final ThreadContext localContext = context;
+
+        if (block.isGiven() && patternGiven) {
+            context.runtime.getWarnings().warn("given block not used");
+        }
 
         try {
             if (block.isGiven() && !patternGiven) {
@@ -2476,6 +2408,138 @@ public class RubyEnumerable {
             result.fastASetCheckString(runtime, array.eltOk(0), array.eltOk(1));
         }
 
+    }
+
+    @Deprecated
+    public static IRubyObject all_p19(ThreadContext context, IRubyObject self, final Block block) {
+        return all_p(context, self, block);
+    }
+
+    @Deprecated
+    public static IRubyObject all_pCommon(final ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
+        return all_pCommon(context, self, null, block);
+    }
+
+    @Deprecated
+    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
+        return any_pCommon(context, self, null, block);
+    }
+
+    @Deprecated
+    public static IRubyObject none_p19(ThreadContext context, IRubyObject self, final Block block) {
+        return none_p(context, self, null, block);
+    }
+
+    @Deprecated
+    public static IRubyObject none_p(final ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
+        try {
+            if (block.isGiven()) {
+                callEach(context.runtime, context, self, callbackArity, new BlockCallback() {
+                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        checkContext(context, ctx, "none?");
+                        IRubyObject larg = packEnumValues(ctx, largs);
+                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                        return ctx.nil;
+                    }
+                    @Override
+                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
+                        checkContext(context, ctx, "none?");
+                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                        return ctx.nil;
+                    }
+                });
+            } else {
+                callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        checkContext(context, ctx, "none?");
+                        IRubyObject larg = packEnumValues(ctx, largs);
+                        if (larg.isTrue()) throw JumpException.SPECIAL_JUMP;
+                        return ctx.nil;
+                    }
+                    @Override
+                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
+                        checkContext(context, ctx, "none?");
+                        if (larg.isTrue()) throw JumpException.SPECIAL_JUMP;
+                        return ctx.nil;
+                    }
+                });
+            }
+        } catch (JumpException.SpecialJump sj) {
+            return context.fals;
+        }
+        return context.tru;
+    }
+
+    @Deprecated
+    public static IRubyObject one_p19(ThreadContext context, IRubyObject self, final Block block) {
+        return one_p(context, self, null, block);
+    }
+
+    @Deprecated
+    public static IRubyObject one_p(final ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
+        final Ruby runtime = context.runtime;
+        final boolean[] result = new boolean[] { false };
+
+        try {
+            if (block.isGiven()) {
+                callEach(runtime, context, self, callbackArity, new BlockCallback() {
+                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        checkContext(context, ctx, "one?");
+                        IRubyObject larg = packEnumValues(ctx, largs);
+                        if (block.yield(ctx, larg).isTrue()) {
+                            if (result[0]) {
+                                throw JumpException.SPECIAL_JUMP;
+                            } else {
+                                result[0] = true;
+                            }
+                        }
+                        return ctx.nil;
+                    }
+                    @Override
+                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
+                        checkContext(context, ctx, "one?");
+                        if (block.yield(ctx, larg).isTrue()) {
+                            if (result[0]) {
+                                throw JumpException.SPECIAL_JUMP;
+                            } else {
+                                result[0] = true;
+                            }
+                        }
+                        return ctx.nil;
+                    }
+                });
+            } else {
+                callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        checkContext(context, ctx, "one?");
+                        IRubyObject larg = packEnumValues(ctx, largs);
+                        if (larg.isTrue()) {
+                            if (result[0]) {
+                                throw JumpException.SPECIAL_JUMP;
+                            } else {
+                                result[0] = true;
+                            }
+                        }
+                        return ctx.nil;
+                    }
+                    @Override
+                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
+                        checkContext(context, ctx, "one?");
+                        if (larg.isTrue()) {
+                            if (result[0]) {
+                                throw JumpException.SPECIAL_JUMP;
+                            } else {
+                                result[0] = true;
+                            }
+                        }
+                        return ctx.nil;
+                    }
+                });
+            }
+        } catch (JumpException.SpecialJump sj) {
+            return runtime.getFalse();
+        }
+        return result[0] ? runtime.getTrue() : runtime.getFalse();
     }
 
     private static EnumerableSites sites(ThreadContext context) {

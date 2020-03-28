@@ -2167,6 +2167,11 @@ public class RubyHash extends RubyObject implements Map {
         if (isEmpty()) return context.fals;
 
         if (!block.isGiven() && !patternGiven) return context.tru;
+
+        if (block.isGiven() && patternGiven) {
+            context.runtime.getWarnings().warn("given block not used");
+        }
+
         if (patternGiven) return any_p_p(context, pattern);
 
         if (block.getSignature().arityValue() > 1) {

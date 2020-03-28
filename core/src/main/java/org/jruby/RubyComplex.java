@@ -225,7 +225,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     private static IRubyObject m_cos(ThreadContext context, IRubyObject x) {
-        if (f_real_p(context, x)) return RubyMath.cos(context, x, x);
+        if (!(x instanceof RubyComplex)) return RubyMath.cos(context, x, x);
         RubyComplex complex = (RubyComplex)x;
         return newComplex(context, context.runtime.getComplex(),
                           f_mul(context, RubyMath.cos(context, x, complex.real), RubyMath.cosh(context, x, complex.image)),
@@ -236,7 +236,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     private static IRubyObject m_sin(ThreadContext context, IRubyObject x) {
-        if (f_real_p(context, x)) return RubyMath.sin(context, x, x);
+        if (!(x instanceof RubyComplex)) return RubyMath.sin(context, x, x);
         RubyComplex complex = (RubyComplex)x;
         return newComplex(context, context.runtime.getComplex(),
                           f_mul(context, RubyMath.sin(context, x, complex.real), RubyMath.cosh(context, x, complex.image)),
