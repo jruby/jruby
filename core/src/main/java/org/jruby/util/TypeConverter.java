@@ -396,22 +396,25 @@ public class TypeConverter {
     }
 
     // rb_convert_to_integer
-    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
+    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base, boolean exception) {
         final Ruby runtime = context.runtime;
         IRubyObject tmp;
 
         for (;;) {
             switch (val.getMetaClass().getClassIndex()) {
                 case FLOAT:
-                    if (base != 0) raiseIntegerBaseError(context);
-                    return RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) val).getValue());
+                    if (base != 0) return raiseIntegerBaseError(context, exception);
+                    RubyFloat flote = (RubyFloat) val;
+                    if (!exception && !Double.isFinite(flote.getDoubleValue())) return context.nil;
+                    return RubyNumeric.dbl2ival(context.runtime, flote.getValue());
                 case INTEGER:
-                    if (base != 0) raiseIntegerBaseError(context);
+                    if (base != 0) return raiseIntegerBaseError(context, exception);
                     return val;
                 case STRING:
-                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
+                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true, exception);
                 case NIL:
-                    if (base != 0) raiseIntegerBaseError(context);
+                    if (base != 0) return raiseIntegerBaseError(context, exception);
+                    if (!exception) return context.nil;
                     throw context.runtime.newTypeError("can't convert nil into Integer");
                 default: // MRI checks String sub-classes
                     if (val instanceof RubyString) {
@@ -422,14 +425,28 @@ public class TypeConverter {
             if (base != 0) {
                 tmp = TypeConverter.checkStringType(context.runtime, val);
                 if (tmp != context.nil) continue;
-                raiseIntegerBaseError(context);
+                return raiseIntegerBaseError(context, exception);
             }
 
             break;
         }
 
         tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
-        return (tmp != context.nil) ? tmp : TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked);
+        if (tmp instanceof RubyInteger) {
+            return tmp;
+        }
+
+        if (!exception) {
+            IRubyObject ret = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked, false);
+            if (ret instanceof RubyInteger) return ret;
+            return context.nil;
+        }
+
+        return val.convertToInteger("to_i");
+    }
+
+    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
+        return convertToInteger(context, val, base, true);
     }
 
     // MRI: rb_Array
@@ -451,7 +468,9 @@ public class TypeConverter {
         return (RubyArray) convertToType(context, ary, context.runtime.getArray(), sites(context).to_ary_checked);
     }
 
-    private static void raiseIntegerBaseError(ThreadContext context) {
+    private static IRubyObject raiseIntegerBaseError(ThreadContext context, boolean exception) {
+        if (!exception) return context.nil;
+
         throw context.runtime.newArgumentError("base specified for non string value");
     }
 

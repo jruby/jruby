@@ -372,9 +372,13 @@ public class RubyNumeric extends RubyObject {
      *          the result of the conversion, which will be zero if the
      *          conversion failed.
      */
-    public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
+    public static IRubyObject str2inum(Ruby runtime, RubyString str, int base, boolean strict, boolean exception) {
         ByteList s = str.getByteList();
-        return ConvertBytes.byteListToInum(runtime, s, base, strict);
+        return ConvertBytes.byteListToInum(runtime, s, base, strict, exception);
+    }
+
+    public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
+        return (RubyInteger) str2inum(runtime, str, base, strict, true);
     }
 
     /**

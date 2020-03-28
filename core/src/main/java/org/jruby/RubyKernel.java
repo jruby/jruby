@@ -457,17 +457,37 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return TypeConverter.convertToInteger(context, object, 0);
+        return TypeConverter.convertToInteger(context, object, 0, true);
     }
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
-    public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base) {
-        return TypeConverter.convertToInteger(context, object, RubyNumeric.num2int(base));
+    public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject baseOrOpts) {
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, baseOrOpts);
+
+        if (maybeOpts.isNil()) {
+            return TypeConverter.convertToInteger(context, object, baseOrOpts.convertToInteger().getIntValue(), true);
+        }
+
+        return TypeConverter.convertToInteger(
+                context,
+                object,
+                0,
+                ArgsUtil.extractKeywordArg(context, "exception", maybeOpts).isTrue());
     }
 
-    @Deprecated
-    public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return new_integer(context, recv, object);
+    @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
+    public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base, IRubyObject opts) {
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts).isTrue();
+
+        IRubyObject baseInteger = TypeConverter.convertToInteger(context, base, 0, exception);
+
+        if (baseInteger.isNil()) return baseInteger;
+
+        return TypeConverter.convertToInteger(
+                context,
+                object,
+                ((RubyInteger) baseInteger).getIntValue(),
+                exception);
     }
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
@@ -2394,5 +2414,10 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return op_match(context, self, arg);
+    }
+
+    @Deprecated
+    public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object) {
+        return new_integer(context, recv, object);
     }
 }
