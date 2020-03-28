@@ -182,7 +182,7 @@ public class RubyRange extends RubyObject {
         if (end < 0) {
             end += len;
         }
-        if (!isExclusive) {
+        if (!isExclusive || isEndless) {
             end++;
         }
         len = end - beg;
@@ -212,7 +212,7 @@ public class RubyRange extends RubyObject {
         if (end < 0) {
             end += len;
         }
-        if (!isExclusive) {
+        if (!isExclusive || isEndless) {
             end++;
         }
         len = end - beg;
