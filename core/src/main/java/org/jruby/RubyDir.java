@@ -134,7 +134,7 @@ public class RubyDir extends RubyObject implements Closeable {
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
         Ruby runtime = context.runtime;
 
-        return initializeCommon(context, path, runtime.getDefaultFilesystemEncoding(), runtime);
+        return initializeCommon(context, path, runtime.getDefaultEncoding(), runtime);
     }
 
     /**
@@ -159,7 +159,7 @@ public class RubyDir extends RubyObject implements Closeable {
             }
         }
 
-        if (encoding == null) encoding = runtime.getDefaultFilesystemEncoding();
+        if (encoding == null) encoding = runtime.getDefaultEncoding();
 
         return initializeCommon(context, path, encoding, runtime);
     }
@@ -462,7 +462,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "children")
     public IRubyObject children(ThreadContext context) {
-        return children(context, this, path, context.nil);
+        return entriesCommon(context, path.asJavaString(), encoding, true);
     }
     
     @JRubyMethod(name = "children", meta = true)
@@ -800,8 +800,7 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(name = "each_child")
     public IRubyObject rb_each_child(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            each_child(context, block);
-            return context.nil;
+            return each_child(context, block);
         }
 
         return enumeratorize(context.runtime, children(context), "each");
