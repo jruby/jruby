@@ -3650,7 +3650,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < args.length; i++) {
             for (int j = 0; j < args[i].realLength; j++) {
                 IRubyObject elt = args[i].elt(j);
-                if (includes(context, elt)) continue;
+                if (includesByEql(context, elt)) continue;
                 append(elt);
             }
         }
