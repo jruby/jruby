@@ -455,6 +455,7 @@ public class RubyRational extends RubyNumeric {
             a1 = ((RubyFloat) a1).to_r(context); // f_to_r
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, (RubyString) a1, raise);
+            if (!raise && a1.isNil()) return a1;
         } else {
             if (a1 instanceof RubyObject && sites(context).respond_to_to_r.respondsTo(context, a1, a1)) {
                 a1 = f_to_r(context, a1);
@@ -465,6 +466,7 @@ public class RubyRational extends RubyNumeric {
             a2 = ((RubyFloat) a2).to_r(context); // f_to_r
         } else if (a2 instanceof RubyString) {
             a2 = str_to_r_strict(context, (RubyString) a2, raise);
+            if (!raise && a2.isNil()) return a2;
         }
 
         if (a1 instanceof RubyRational) {
