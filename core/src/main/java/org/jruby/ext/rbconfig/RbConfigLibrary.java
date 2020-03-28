@@ -395,6 +395,9 @@ public class RbConfigLibrary implements Library {
 
         rbConfig.defineConstant("MAKEFILE_CONFIG", mkmfHash);
 
+        rbConfig.defineConstant("UNICODE_VERSION", runtime.newString("12.1.0"));
+        rbConfig.defineConstant("UNICODE_EMOJI_VERSION", runtime.newString("12.0"));
+
         runtime.getLoadService().load("jruby/kernel/rbconfig.rb", false);
     }
 
