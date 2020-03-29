@@ -13,9 +13,6 @@ class Range
   end
 
   class BSearch
-    java_import java.lang.Double
-    java_import java.lang.Math
-
     def self.float_search(b, e, excl)
       satisfied = nil
 
@@ -227,9 +224,9 @@ class Range
     def self.double_as_long(double)
       below_zero = double < 0
 
-      double = Math.abs(double) if below_zero
+      double = abs(double) if below_zero
 
-      long = Double.doubleToLongBits(double)
+      long = double_to_long_bits(double)
 
       below_zero ? -long : long
     end
@@ -239,7 +236,7 @@ class Range
 
       long = -long if below_zero
 
-      double = Double.longBitsToDouble(long)
+      double = long_bits_to_double(long)
 
       below_zero ? -double : double
     end

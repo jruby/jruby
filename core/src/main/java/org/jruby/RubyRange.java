@@ -102,6 +102,13 @@ public class RubyRange extends RubyObject {
         result.includeModule(runtime.getEnumerable());
 
         result.defineAnnotatedMethods(RubyRange.class);
+
+        RubyClass bsearch = result.defineClassUnder("BSearch", runtime.getObject(), OBJECT_ALLOCATOR);
+
+        result.setConstantVisibility(runtime, "BSearch", true);
+
+        bsearch.defineAnnotatedMethods(BSearch.class);
+
         return result;
     }
 
@@ -1147,6 +1154,31 @@ public class RubyRange extends RubyObject {
     private static IRubyObject rangeBeginLengthError(ThreadContext context, int beg, int end, boolean excludeEnd, int err) {
         if (err != 0) throw context.runtime.newRangeError(beg + ".." + (excludeEnd ? "." : "") + end + " out of range");
         return context.nil;
+    }
+
+    public static class BSearch {
+        @JRubyMethod(meta = true)
+        public static IRubyObject double_to_long_bits(ThreadContext context, IRubyObject bsearch, IRubyObject flote) {
+            long longBits;
+
+            if (flote instanceof RubyFixnum) {
+                longBits = Double.doubleToLongBits(((RubyFixnum) flote).getDoubleValue());
+            } else {
+                longBits = Double.doubleToLongBits(((RubyFloat) flote).getDoubleValue());
+            }
+
+            return context.runtime.newFixnum(longBits);
+        }
+
+        @JRubyMethod(meta = true)
+        public static IRubyObject long_bits_to_double(ThreadContext context, IRubyObject bsearch, IRubyObject fixnum) {
+            return context.runtime.newFloat(Double.longBitsToDouble(((RubyFixnum) fixnum).getLongValue()));
+        }
+
+        @JRubyMethod(meta = true)
+        public static IRubyObject abs(ThreadContext context, IRubyObject bsearch, IRubyObject flote) {
+            return context.runtime.newFloat(Math.abs(((RubyFloat) flote).getDoubleValue()));
+        }
     }
 
     private static JavaSites.RangeSites sites(ThreadContext context) {
