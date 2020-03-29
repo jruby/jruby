@@ -648,7 +648,7 @@ public class RubyStruct extends RubyObject {
                 RubyArray ary = (RubyArray)key_value_pair;
 
                 if (ary.getLength() != 2) {
-                    throw context.runtime.newArgumentError("wrong array length at " + i + " (expected 2, was " + ary.getLength() + ")");
+                    throw context.runtime.newArgumentError("element has wrong array length (expected 2, was " + ary.getLength() + ")");
                 }
 
                 hash.op_aset(context, ary.eltInternal(0), ary.eltInternal(1));
