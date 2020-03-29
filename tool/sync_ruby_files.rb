@@ -39,6 +39,8 @@ STDLIB_FILES = %w[
   singleton.rb
   time.rb
   tmpdir.rb
+  tracer
+  tracer.rb
   tsort.rb
   un.rb
   unicode_normalize

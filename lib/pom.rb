@@ -37,7 +37,6 @@ default_gems = [
     ['shell', '0.7'],
     ['sync', '0.5.0'],
     ['thwait', '0.1.0'],
-    ['tracer', '0.0.1'],
     ['webrick', '1.4.2'],
 ]
 

@@ -94,7 +94,6 @@ lib/ruby/stdlib/rss*
 lib/ruby/stdlib/shell*
 lib/ruby/stdlib/sync.rb
 lib/ruby/stdlib/thwait*
-lib/ruby/stdlib/tracer*
 release.properties
 share
 spaces test
