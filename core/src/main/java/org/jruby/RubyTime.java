@@ -1325,6 +1325,66 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return at1(context, recv, arg);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        RubySymbol ms = context.runtime.newSymbol("microsecond");
+
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg2);
+
+        if (maybeOpts.isNil()) {
+            return atOpts(context, recv, arg1, arg2, ms, context.nil);
+        }
+
+        return atOpts(context, recv, arg1, context.nil, context.nil, maybeOpts);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg3);
+
+        if (maybeOpts.isNil()) {
+            return atOpts(context, recv, arg1, arg2, arg3, context.nil);
+        }
+
+        return atOpts(context, recv, arg1, arg2, context.nil, arg3);
+    }
+
+    @JRubyMethod(required = 1, optional = 3, meta = true)
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return at(context, recv, args[0]);
+            case 2:
+                return at(context, recv, args[0], args[1]);
+            case 3:
+                return at(context, recv, args[0], args[1], args[2]);
+            case 4:
+                return atOpts(context, recv, args[0], args[1], args[2], args[3]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 4);
+        }
+    }
+
+    private static IRubyObject atOpts(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject opts) {
+        IRubyObject zone = ArgsUtil.extractKeywordArg(context, "in", opts);
+
+        if (arg2.isNil() && arg3.isNil()) {
+            RubyTime time = at1(context, recv, arg1);
+
+            if (!zone.isNil()) {
+                zoneLocalTime(context, zone, time);
+            }
+
+            return time;
+        }
+
+        return atMulti(context, (RubyClass) recv, arg1, arg2, arg3, zone);
+    }
+
+    private static RubyTime at1(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         final Ruby runtime = context.runtime;
         final RubyTime time;
 
@@ -1375,7 +1435,7 @@ public class RubyTime extends RubyObject {
             try {
                 time = new RubyTime(runtime, (RubyClass) recv, new DateTime(millisecs, getLocalTimeZone(runtime)));
             }
-            catch (ArithmeticException|IllegalFieldValueException ex) {
+            catch (ArithmeticException| IllegalFieldValueException ex) {
                 throw runtime.newRangeError(ex.getMessage());
             }
 
@@ -1385,56 +1445,15 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    @JRubyMethod(meta = true)
-    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        RubySymbol ms = context.runtime.newSymbol("microsecond");
-        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg2);
-
-        if (maybeOpts.isNil()) {
-            return at(context, recv, arg1, arg2, ms, context.nil);
-        }
-
-        return at(context, recv, arg1, context.nil, ms, maybeOpts);
-    }
-
-    @JRubyMethod(meta = true)
-    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg3);
-
-        if (maybeOpts.isNil()) {
-            return at(context, recv, arg1, arg2, arg3, context.nil);
-        }
-
-        return at(context, recv, arg1, arg2, context.nil, (RubyHash) arg3);
-    }
-
-    @JRubyMethod(required = 1, optional = 3, meta = true)
-    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return at(context, recv, args[0]);
-            case 2:
-                return at(context, recv, args[0], args[1]);
-            case 3:
-                return at(context, recv, args[0], args[1], args[2]);
-            case 4:
-                return at(context, recv, args[0], args[1], args[2], args[3]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 1, 4);
-        }
-    }
-
-    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject opts) {
+    private static RubyTime atMulti(ThreadContext context, RubyClass recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject zone) {
         Ruby runtime = context.runtime;
 
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(0L, getLocalTimeZone(runtime)));
+        RubyTime time = new RubyTime(runtime, recv, new DateTime(0L, getLocalTimeZone(runtime)));
         long millisecs;
         long nanosecs = 0;
 
         arg1 = numExact(context, arg1);
         arg2 = numExact(context, arg2);
-
-        IRubyObject zone = ArgsUtil.extractKeywordArg(context, "in", opts);
 
         if (arg1 instanceof RubyFloat || arg1 instanceof RubyRational) {
             double dbl = RubyNumeric.num2dbl(context, arg1);
