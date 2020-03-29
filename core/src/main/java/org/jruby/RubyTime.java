@@ -47,6 +47,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
@@ -1387,11 +1388,43 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         RubySymbol ms = context.runtime.newSymbol("microsecond");
-        return at(context, recv, arg1, arg2, ms);
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg2);
+
+        if (maybeOpts.isNil()) {
+            return at(context, recv, arg1, arg2, ms, context.nil);
+        }
+
+        return at(context, recv, arg1, context.nil, ms, maybeOpts);
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg3);
+
+        if (maybeOpts.isNil()) {
+            return at(context, recv, arg1, arg2, arg3, context.nil);
+        }
+
+        return at(context, recv, arg1, arg2, context.nil, (RubyHash) arg3);
+    }
+
+    @JRubyMethod(required = 1, optional = 3, meta = true)
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return at(context, recv, args[0]);
+            case 2:
+                return at(context, recv, args[0], args[1]);
+            case 3:
+                return at(context, recv, args[0], args[1], args[2]);
+            case 4:
+                return at(context, recv, args[0], args[1], args[2], args[3]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 1, 4);
+        }
+    }
+
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject opts) {
         Ruby runtime = context.runtime;
 
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(0L, getLocalTimeZone(runtime)));
@@ -1400,6 +1433,8 @@ public class RubyTime extends RubyObject {
 
         arg1 = numExact(context, arg1);
         arg2 = numExact(context, arg2);
+
+        IRubyObject zone = ArgsUtil.extractKeywordArg(context, "in", opts);
 
         if (arg1 instanceof RubyFloat || arg1 instanceof RubyRational) {
             double dbl = RubyNumeric.num2dbl(context, arg1);
@@ -1453,6 +1488,10 @@ public class RubyTime extends RubyObject {
 
         time.setNSec(nanosecs % 1000000);
         time.dt = time.dt.withMillis(millisecs + nanosecOverflow);
+
+        if (!zone.isNil()) {
+            zoneLocalTime(context, zone, time);
+        }
 
         return time;
     }
@@ -1950,6 +1989,26 @@ public class RubyTime extends RubyObject {
         time.setZoneObject(zone);
 
         return true;
+    }
+
+    public static RubyTime timeZoneLocal(ThreadContext context, IRubyObject off, RubyTime time) {
+        IRubyObject zone = off;
+
+        DateTimeZone dtz;
+
+        if (zoneLocalTime(context, zone, time)) return time;
+
+        if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
+            if ((zone = time.findTimezone(context, zone)).isNil()) invalidUTCOffset(context.runtime);
+            if (!zoneLocalTime(context, zone, time)) invalidUTCOffset(context.runtime);
+            return time;
+        } else if (dtz == DateTimeZone.UTC) {
+            return time.gmtime();
+        }
+
+        time.adjustTimeZone(context.runtime, dtz, false);
+
+        return time;
     }
 
     private static long extractTime(ThreadContext context, IRubyObject time) {
