@@ -2566,7 +2566,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_collect
      *
      */
-    public RubyArray collect(ThreadContext context, Block block) {
+    public RubyArray collectCommon(ThreadContext context, Block block) {
         if (!block.isGiven()) return makeShared();
 
         final Ruby runtime = context.runtime;
@@ -2576,7 +2576,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
-            safeArraySet(runtime, arr, i, block.yield(context, eltOk(i))); // arr[i] = ...
+            safeArraySet(runtime, arr, i, block.yieldNonArray(context, eltOk(i), null)); // arr[i] = ...
         }
 
         // use iteration count as new size in case something was deleted along the way
@@ -2584,13 +2584,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     @JRubyMethod(name = {"collect"})
-    public IRubyObject collect19(ThreadContext context, Block block) {
-        return block.isGiven() ? collect(context, block) : enumeratorizeWithSize(context, this, "collect", enumLengthFn());
+    public IRubyObject collect(ThreadContext context, Block block) {
+        return block.isGiven() ? collectCommon(context, block) : enumeratorizeWithSize(context, this, "collect", enumLengthFn());
     }
 
     @JRubyMethod(name = {"map"})
-    public IRubyObject map19(ThreadContext context, Block block) {
-        return block.isGiven() ? collect(context, block) : enumeratorizeWithSize(context, this, "map", enumLengthFn());
+    public IRubyObject map(ThreadContext context, Block block) {
+        return block.isGiven() ? collectCommon(context, block) : enumeratorizeWithSize(context, this, "map", enumLengthFn());
     }
 
     /** rb_ary_collect_bang
@@ -5660,6 +5660,16 @@ float_loop:
     @Deprecated
     public IRubyObject flatten_bang19(ThreadContext context) {
         return flatten_bang(context);
+    }
+
+    @Deprecated
+    public IRubyObject map19(ThreadContext context, Block block) {
+        return map(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject collect19(ThreadContext context, Block block) {
+        return collect(context, block);
     }
 
     @Deprecated
