@@ -1097,6 +1097,7 @@ public class RubyRange extends RubyObject {
      * @return
      */
     public static boolean isRangeLike(ThreadContext context, IRubyObject obj, JavaSites.CheckedSites begin_checked, JavaSites.CheckedSites end_checked, JavaSites.CheckedSites exclude_end_checked) {
+        if (obj instanceof RubyArithmeticSequence) return false;
         return (obj.checkCallMethod(context, begin_checked) != null) &&
                 (obj.checkCallMethod(context, end_checked) != null) &&
                 (obj.checkCallMethod(context, exclude_end_checked) != null);
