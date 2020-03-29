@@ -1116,14 +1116,16 @@ public class RubyTime extends RubyObject {
     public IRubyObject zone() {
         if (this.zone != null) return zone;
 
-        if (isUTC()) return getRuntime().newString("UTC");
+        Ruby runtime = getRuntime();
 
-        if (isTzRelative) return getRuntime().getNil();
+        if (isUTC()) return RubyString.newUSASCIIString(runtime, "UTC");
+
+        if (isTzRelative) return runtime.getNil();
 
         String zoneName = getZoneName();
-        if ("".equals(zoneName)) return getRuntime().getNil();
+        if ("".equals(zoneName)) return runtime.getNil();
 
-        RubyString zone = getRuntime().newString(zoneName);
+        RubyString zone = runtime.newString(zoneName);
         if (zone.isAsciiOnly()) zone.setEncoding(USASCIIEncoding.INSTANCE);
         return zone;
     }
