@@ -260,9 +260,9 @@ public class TypeConverter {
     }
 
     public static RaiseException newTypeError(Ruby runtime, IRubyObject obj, RubyClass target, String methodName, IRubyObject val) {
-        IRubyObject className =  types(runtime, obj.getMetaClass());
+        IRubyObject className =  types(runtime, obj.getType());
         return runtime.newTypeError(str(runtime, "can't convert ", className, " to ", types(runtime, target), " (",
-                className, '#' + methodName + " gives ", types(runtime, val.getMetaClass()), ")"));
+                className, '#' + methodName + " gives ", types(runtime, val.getType()), ")"));
     }
 
     // rb_check_to_integer
