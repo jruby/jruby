@@ -1,1 +1,2 @@
 fails:NoMethodError#dup copies the name, arguments and receiver
+fails(not implemented, jruby/jruby#5576):NoMethodError.new accepts a :receiver keyword argument
