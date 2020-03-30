@@ -329,18 +329,18 @@ public class RubyComplex extends RubyNumeric {
         if (Numeric.CANON) {
             if (f_zero_p(context, image) && k_exact_p(image) && canonicalization) return (RubyNumeric) real;
         }
-        boolean realReal = f_real_p(context, real);
-        boolean imagReal = f_real_p(context, image);
-        if (realReal && imagReal) {
+        boolean realComplex = real instanceof RubyComplex;
+        boolean imageComplex = image instanceof RubyComplex;
+        if (!realComplex && !imageComplex) {
             return new RubyComplex(context.runtime, clazz, real, image);
         }
-        if (realReal) {
+        if (!realComplex) {
             RubyComplex complex = (RubyComplex)image;
             return new RubyComplex(context.runtime, clazz,
                                    f_sub(context, real, complex.image),
                                    f_add(context, RubyFixnum.zero(context.runtime), complex.real));
         }
-        if (imagReal) {
+        if (!imageComplex) {
             RubyComplex complex = (RubyComplex)real;
             return new RubyComplex(context.runtime, clazz,
                                    complex.real,
