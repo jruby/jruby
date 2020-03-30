@@ -251,12 +251,6 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(meta = true)
-    public static IRubyObject ver(ThreadContext context, IRubyObject recv) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.ver is deprecated; use BigDecimal::VERSION instead");
-        return RubyString.newStringShared(context.runtime, VERSION);
-    }
-
     @JRubyMethod
     public IRubyObject _dump(ThreadContext context) {
         return RubyString.newUnicodeString(context.runtime, "0:").append(asString());
@@ -2235,6 +2229,12 @@ public class RubyBigDecimal extends RubyNumeric {
             return ((RubyBignum) x).getBigIntegerValue().testBit(0) == false; // 0-th bit -> 0
         }
         return false;
+    }
+
+    @Deprecated
+    public static IRubyObject ver(ThreadContext context, IRubyObject recv) {
+        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.ver is deprecated; use BigDecimal::VERSION instead");
+        return RubyString.newStringShared(context.runtime, VERSION);
     }
 
     private static JavaSites.BigDecimalSites sites(ThreadContext context) {
