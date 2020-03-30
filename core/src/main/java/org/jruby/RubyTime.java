@@ -1376,8 +1376,10 @@ public class RubyTime extends RubyObject {
         if (arg2.isNil() && arg3.isNil()) {
             RubyTime time = at1(context, recv, arg1);
 
+            time = time.gmtime();
+
             if (!zone.isNil()) {
-                zoneLocalTime(context, zone, time);
+                timeZoneLocal(context, zone, time);
             }
 
             return time;
@@ -1511,7 +1513,7 @@ public class RubyTime extends RubyObject {
         time.dt = time.dt.withMillis(millisecs + nanosecOverflow);
 
         if (!zone.isNil()) {
-            zoneLocalTime(context, zone, time);
+            timeZoneLocal(context, zone, time);
         }
 
         return time;
@@ -2005,7 +2007,7 @@ public class RubyTime extends RubyObject {
         if (local == null) return false;
         long s = extractTime(context, local);
         DateTime dt = time.getDateTime();
-        dt = dt.withZoneRetainFields(getTimeZoneWithOffset(context.runtime, "", (int) (s - dt.getMillis())));
+        dt = dt.withZone(getTimeZoneWithOffset(context.runtime, "", (int) (s - dt.getMillis())));
         time.setDateTime(dt);
         time.setZoneObject(zone);
 
