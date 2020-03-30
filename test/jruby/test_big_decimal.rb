@@ -24,12 +24,6 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal java.lang.Long, 1000.to_java(number).class
   end if defined? JRUBY_VERSION
 
-  def test_no_singleton_methods_on_bigdecimal
-    num = BigDecimal("0.001")
-    assert_raise(TypeError) { class << num ; def amethod ; end ; end }
-    assert_raise(TypeError) { def num.amethod ; end }
-  end
-
   def test_can_instantiate_big_decimal
     assert_nothing_raised { BigDecimal("4") }
     assert_nothing_raised { BigDecimal("3.14159") }
