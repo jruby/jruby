@@ -70,7 +70,7 @@ public class OpenFile implements Finalizable {
     public static final int APPEND             = 0x00000040;
     public static final int CREATE             = 0x00000080;
     public static final int WSPLIT             = 0x00000200;
-    public static final int WSPLIT_INITIALIZED = 0x00000400;
+    public static final int EXCLUSIVE          = 0x00000400;
     public static final int TRUNC              = 0x00000800;
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
@@ -209,6 +209,7 @@ public class OpenFile implements Finalizable {
         return modeString;
     }
 
+    // MRI: rb_io_fmode_oflags
     public static int getModeFlagsAsIntFrom(int fmode) {
         int oflags = 0;
 
@@ -227,12 +228,16 @@ public class OpenFile implements Finalizable {
         if ((fmode & BINMODE) != 0) oflags |= ModeFlags.BINARY;
         if ((fmode & TEXTMODE) != 0) oflags |= ModeFlags.TEXT;
         if ((fmode & TRUNC) != 0) oflags |= ModeFlags.TRUNC;
+        if ((fmode & EXCLUSIVE) != 0) oflags |= ModeFlags.EXCL;
 
         return oflags;
     }
 
     // MRI: rb_io_oflags_modestr
     public static String ioOflagsModestr(Ruby runtime, int oflags) {
+        if ((oflags & OpenFlags.O_EXLOCK.intValue()) != 0) {
+            throw runtime.newArgumentError("exclusive access mode is not supported");
+        }
         int accmode = oflags & (OpenFlags.O_RDONLY.intValue()|OpenFlags.O_WRONLY.intValue()|OpenFlags.O_RDWR.intValue());
         if ((oflags & OpenFlags.O_APPEND.intValue()) != 0) {
             if (accmode == OpenFlags.O_WRONLY.intValue()) {
@@ -284,6 +289,9 @@ public class OpenFile implements Finalizable {
         if ((fmode & OpenFile.CREATE) != 0) {
             oflags |= OpenFlags.O_CREAT.intValue();
         }
+        if ((fmode & OpenFile.EXCLUSIVE) != 0) {
+            oflags |= OpenFlags.O_EXCL.intValue();
+        }
         if (OpenFlags.O_BINARY.defined()) {
             if ((fmode & OpenFile.BINMODE) != 0) {
                 oflags |= OpenFlags.O_BINARY.intValue();
@@ -325,14 +333,20 @@ public class OpenFile implements Finalizable {
                 case '+':
                     fmode |= OpenFile.READWRITE;
                     break;
-                default:
-                    throw runtime.newArgumentError("invalid access mode " + modestr);
+                case 'x':
+                    if (mChars[0] != 'w') {
+                        throw runtime.newArgumentError("invalid access mode " + modestr);
+                    }
+                    fmode |= OpenFile.EXCLUSIVE;
+                    break;
                 case ':':
                     pChars = mChars;
                     p = m;
                     if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0)
                         throw runtime.newArgumentError("invalid access mode " + modestr);
                     break loop;
+                default:
+                    throw runtime.newArgumentError("invalid access mode " + modestr);
             }
         }
 
