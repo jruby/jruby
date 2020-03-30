@@ -8,7 +8,7 @@ describe "Process.clock_getres" do
     # NOTE: Look at fixtures/clocks.rb for clock and OS-specific exclusions
     ProcessSpecs.clock_constants_for_resolution_checks.each do |name, value|
       it "matches the clock in practice for Process::#{name}" do
-        times = 10_000.times.map { Process.clock_gettime(value, :nanosecond) }
+        times = 100_000.times.map { Process.clock_gettime(value, :nanosecond) }
         reported = Process.clock_getres(value, :nanosecond)
 
         # The clock should not be more accurate than reported (times should be
@@ -24,7 +24,9 @@ describe "Process.clock_getres" do
         # The clock should not be less accurate than reported (times should
         # not all be a multiple of the next precision up, assuming precisions
         # are multiples of ten.)
-        times.select { |t| t % (reported * 10) == 0 }.size.should_not == times.size
+        if times.all? { |t| t % (reported * 10) == 0 }
+          times.uniq.should be_empty
+        end
       end
     end
   end

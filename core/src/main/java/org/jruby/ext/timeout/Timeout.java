@@ -68,6 +68,8 @@ public class Timeout {
                 new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
         executor.setRemoveOnCancelPolicy(true);
         timeout.setInternalVariable(EXECUTOR_VARIABLE, executor);
+
+        timeout.getRuntime().pushExitFunction((context) -> { executor.shutdown(); return 0;});
     }
 
 

@@ -1,1 +1,2 @@
 fails:RbConfig::CONFIG ['archdir'] returns the directory containing standard libraries C extensions
+fails:RbConfig::CONFIG libdir/LIBRUBY_SO is the path to libruby and it exists if and only if ENABLE_SHARED

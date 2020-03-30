@@ -602,10 +602,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
         if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 
-        return startThread(context, new RubyRunnable(this, args, block));
+        startThread(context, new RubyRunnable(this, args, block));
+
+        return context.nil;
     }
 
-    private IRubyObject startThread(ThreadContext context, Runnable runnable) throws RaiseException, OutOfMemoryError {
+    private Thread startThread(ThreadContext context, Runnable runnable) throws RaiseException, OutOfMemoryError {
         final Ruby runtime = context.runtime;
         try {
             Thread thread = new Thread(runnable);
@@ -623,13 +625,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // copy parent thread's interrupt masks
             copyInterrupts(context, context.getThread().interruptMaskStack, this.interruptMaskStack);
 
-            threadImpl.start();
+            thread.start();
 
             // We yield here to hopefully permit the target thread to schedule
             // MRI immediately schedules it, so this is close but not exact
             Thread.yield();
 
-            return this;
+            return thread;
         }
         catch (OutOfMemoryError oome) {
             if ("unable to create new native thread".equals(oome.getMessage())) {

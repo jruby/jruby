@@ -56,10 +56,6 @@ end
 # Load executor-based timeout logic into Timeout mod
 JRuby::Util.load_ext('org.jruby.ext.timeout.Timeout')
 
-at_exit do
-  Timeout.to_java.getInternalVariable('__executor__').shutdown
-end
-
 def timeout(*args, &block)
   warn "Object##{__method__} is deprecated, use Timeout.timeout instead.", uplevel: 1
   Timeout.timeout(*args, &block)
