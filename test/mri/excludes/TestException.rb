@@ -14,6 +14,8 @@ exclude :test_name_error_info_local_variables, "JRuby does not support extractin
 exclude :test_name_error_info_method, "method_missing errors do not have original call type available"
 exclude :test_name_error_info_method_missing, "method_missing errors do not have original call type available"
 exclude :test_name_error_info_parent_iseq_mark, "JRuby does not support extracting local variables from a NameError"
+exclude :test_name_error_new_receiver, "not implemented, jruby/jruby#5576"
+exclude :test_nomethod_error_new_receiver, "not implemented, jruby/jruby#5576"
 exclude :test_output_string_encoding, "Exception messages always go through Java String for us"
 exclude :test_redefined_backtrace, "Our backtrace is lazily set up and the flow does not work with this change"
 exclude :test_stackoverflow, reason
