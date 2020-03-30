@@ -475,7 +475,16 @@ public class RubyRational extends RubyNumeric {
 
         if (a2 == context.nil) {
             if (!(a1 instanceof RubyNumeric && f_integer_p(context, (RubyNumeric) a1))) {
-                return TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked, raise);
+                if (raise) {
+                    RubyClass rational = context.runtime.getRational();
+                    IRubyObject ret = TypeConverter.convertToTypeWithCheck(context, a1, rational, sites(context).to_r_checked);
+                    if (ret.isNil()) {
+                        throw TypeConverter.newTypeError(a1, rational, "to_r", ret);
+                    }
+                    return ret;
+                } else {
+                    return TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked, raise);
+                }
             }
             return newInstance(context, clazz, a1, raise);
         } else {
