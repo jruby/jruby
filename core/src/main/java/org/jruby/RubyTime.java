@@ -1908,7 +1908,7 @@ public class RubyTime extends RubyObject {
             }
         }
 
-        if ( seconds < 0 ) throw context.runtime.newArgumentError("time interval must be positive");
+        if ( seconds < 0 ) throw context.runtime.newArgumentError("time interval must not be negative");
 
         return seconds;
     }
