@@ -16,6 +16,7 @@ exclude :test_recursive_outer, "expected to be fixed by our change based on MRI 
 exclude :test_report_on_exception, "very sensitive to thread timing and parallelism"
 exclude :test_safe_level, "SAFE levels are unsupported"
 exclude :test_signal_at_join, "very timing-sensitive and very edge casey"
+exclude :test_thread_interrupt_for_killed_thread, "uses RubyVM"
 exclude :test_thread_join_in_trap, "fails intermittently (#4956)"
 exclude :test_thread_join_main_thread, "hangs"
 exclude :test_thread_setname_in_initialize, "needs investigation #4308"
@@ -23,3 +24,4 @@ exclude :test_thread_status_raise_after_kill, "aborting status does not show up 
 exclude :test_thread_timer_and_interrupt, "event statuses do not match expected"
 exclude :test_thread_value_in_trap, "fails intermittently (#4956)"
 exclude :test_thread_variable_in_enumerator, "fibers in JRuby have their own Thread.current"
+exclude :test_wakeup, "uses RubyVM"
