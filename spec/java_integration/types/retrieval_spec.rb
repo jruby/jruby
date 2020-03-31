@@ -135,6 +135,7 @@ describe "A Java class with inner classes" do
   end
 
   it "allows to retrieve non-public inner classes" do
+    InnerClasses.instance_exec(&Module::JRUBY_PRIVATE.method(:included_packages)).clear
     # InnerClasses::PackageInner
     expect( InnerClasses.const_get :PackageInner ).to_not be nil
     class InnerClasses

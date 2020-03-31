@@ -2,9 +2,9 @@
 class Module
   alias const_missing_without_jruby const_missing
   def const_missing(constant)
-    all_included_packages = included_packages_from_ancestors_namespaces
+    all_included_packages = instance_exec(&JRUBY_PRIVATE.method(:included_packages_from_ancestors_namespaces))
     return const_missing_without_jruby(constant) if all_included_packages.empty?
-    real_name = java_aliases_from_ancestors_namespaces[constant] || constant
+    real_name = instance_exec(&JRUBY_PRIVATE.method(:java_aliases_from_ancestors_namespaces))[constant] || constant
 
     java_class = nil
     last_error = nil
@@ -33,6 +33,42 @@ class Module
   end
 
   private
+
+  module JRUBY_PRIVATE
+    class << self
+      def included_packages_from_ancestors_namespaces
+        ancestors.map do |klass|
+          klass.instance_exec(&method(:included_packages_from_namespaces))
+        end.map(&:to_a).reduce([], :+).uniq
+      end
+
+      def included_packages_from_namespaces
+        self.class.nesting.map do |klass|
+          klass.instance_exec(&method(:included_packages))
+        end.map(&:to_a).reduce([], :+).uniq
+      end
+
+      def included_packages
+        @included_packages ||= []
+      end
+
+      def java_aliases_from_ancestors_namespaces
+        ancestors.map do |klass|
+          klass.instance_exec(&method(:java_aliases_from_namespaces))
+        end.reverse.reduce({}, :merge)
+      end
+
+      def java_aliases_from_namespaces
+        self.class.nesting.map do |klass|
+          klass.instance_exec(&method(:java_aliases))
+        end.reverse.reduce({}, :merge)
+      end
+
+      def java_aliases
+        @java_aliases ||= {}
+      end
+    end
+  end
 
   # Import one or many Java classes as follows:
   #
@@ -105,7 +141,8 @@ class Module
   #
   def include_package(package)
     package = package.package_name if package.respond_to?(:package_name)
-    included_packages << package unless included_packages.include?(package)
+    the_included_packages = instance_exec(&JRUBY_PRIVATE.method(:included_packages))
+    the_included_packages << package unless the_included_packages.include?(package)
     nil
   end
 
@@ -120,50 +157,7 @@ class Module
   end
 
   def java_alias(new_id, old_id)
-    java_aliases[new_id] = old_id
-  end
-
-  def included_packages_from_ancestors_namespaces
-    ancestors.map do |klass|
-      klass.method(:included_packages_from_namespaces).call rescue []
-    end.map(&:to_a).reduce([], :+).uniq
-  end
-
-  def included_packages_from_namespaces
-    namespaces.map do |klass|
-      klass.method(:included_packages).call rescue []
-    end.map(&:to_a).reduce([], :+).uniq
-  end
-
-  def included_packages
-    @included_packages ||= []
-  end
-
-  def java_aliases_from_ancestors_namespaces
-    ancestors.map do |klass|
-      klass.method(:java_aliases_from_namespaces).call rescue {}
-    end.reverse.reduce({}, :merge)
-  end
-
-  def java_aliases_from_namespaces
-    namespaces.map do |klass|
-      klass.method(:java_aliases).call rescue {}
-    end.reverse.reduce({}, :merge)
-  end
-
-  def java_aliases
-    @java_aliases ||= {}
-  end
-
-  # Returns namespaces containing this module/class starting with self.
-  # Example: `Outer::Inner::Shape.namespaces` returns:
-  # => [Outer::Inner::Shape, Outer::Inner, Outer]
-  def namespaces
-    return [self] if name.nil?
-    constants = name.split(/::/).map(&:to_sym)
-    constants.reduce([Object]) do |output, constant|
-      output += [output.last.const_get(constant)]
-    end[1..-1].uniq.reverse
+    instance_exec(&JRUBY_PRIVATE.method(:java_aliases))[new_id] = old_id
   end
 
 end
