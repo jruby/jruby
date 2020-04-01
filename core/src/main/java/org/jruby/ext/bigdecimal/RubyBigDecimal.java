@@ -141,7 +141,7 @@ public class RubyBigDecimal extends RubyNumeric {
         bigDecimal.defineAnnotatedMethods(RubyBigDecimal.class);
         bigDecimal.defineAnnotatedConstants(RubyBigDecimal.class);
 
-        bigDecimal.undefineMethod("allocate");
+        bigDecimal.getSingletonClass().undefineMethod("allocate");
 
         //RubyModule bigMath = runtime.defineModule("BigMath");
         // NOTE: BigMath.exp and BigMath.pow should be implemented as native
@@ -748,15 +748,23 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated // no to be used in user-lang
     @JRubyMethod(name = "new", meta = true)
-    public static RubyBigDecimal new_(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        context.runtime.getWarnings().warning(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated");
-        return newInstance(context, recv, arg);
+    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
+        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg);
     }
 
     @Deprecated // no to be used in user-lang
     @JRubyMethod(name = "new", meta = true)
-    public static RubyBigDecimal new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
-        return newInstance(context, recv, arg, mathArg);
+    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
+        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
+        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg);
+    }
+
+    @Deprecated // no to be used in user-lang
+    @JRubyMethod(name = "new", meta = true)
+    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg, IRubyObject opts) {
+        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
+        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg, opts);
     }
 
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
