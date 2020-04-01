@@ -485,41 +485,28 @@ command_asgn    : lhs '=' command_rhs {
                 }
                 | var_lhs tOP_ASGN command_rhs {
                     value_expr(lexer, $3);
-
-                    ISourcePosition pos = $1.getPosition();
-                    ByteList asgnOp = $2;
-                    if (asgnOp == lexer.OR_OR) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp == lexer.AMPERSAND_AMPERSAND) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $$ = support.new_op_assign($1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_rhs {
-  // FIXME: arg_concat logic missing for opt_call_args
-                    $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
+                    value_expr(lexer, $6);
+                    $$ = support.new_ary_op_assign($1, $5, $3, $6);
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_rhs {
                     ISourcePosition pos = $1.getPosition();
-                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $2), $4, $5);
+                    $$ = support.new_const_op_assign(pos, support.new_colon2(pos, $1, $2), $4, $5);
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | backref tOP_ASGN command_rhs {
                     support.backrefAssignError($1);
@@ -1118,49 +1105,34 @@ reswords        : keyword__LINE__ {
 
 arg             : lhs '=' arg_rhs {
                     $$ = support.node_assign($1, $3);
-                    // FIXME: Consider fixing node_assign itself rather than single case
-                    $<Node>$.setPosition(support.getPosition($1));
+                    $<Node>$.setPosition(support.getPosition($1)); // FIXME: Not in MRI
                 }
                 | var_lhs tOP_ASGN arg_rhs {
-                    value_expr(lexer, $3);
-
-                    ISourcePosition pos = $1.getPosition();
-                    ByteList asgnOp = $2;
-                    if (asgnOp == lexer.OR_OR) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp == lexer.AMPERSAND_AMPERSAND) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $$ = support.new_op_assign($1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
-  // FIXME: arg_concat missing for opt_call_args
-                    $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
+                    value_expr(lexer, $6);
+                    $$ = support.new_ary_op_assign($1, $5, $3, $6);
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = support.getPosition($1);
-                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
+                    $$ = support.new_const_op_assign(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = lexer.getPosition();
-                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, support.symbolID($2)), $3, $4);
+                    $$ = support.new_const_op_assign(pos, new Colon3Node(pos, support.symbolID($2)), $3, $4);
                 }
                 | backref tOP_ASGN arg_rhs {
                     support.backrefAssignError($1);
