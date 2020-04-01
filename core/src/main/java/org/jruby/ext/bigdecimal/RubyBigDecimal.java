@@ -526,7 +526,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
     }
 
-    private static RubyBigDecimal newInstance(ThreadContext context, RubyClass recv, RubyString arg, MathContext mathContext) {
+    private static IRubyObject newInstance(ThreadContext context, RubyClass recv, RubyString arg, MathContext mathContext, boolean strict) {
         // Convert String to Java understandable format (for BigDecimal).
 
         char[] str = arg.decodeString().toCharArray();
@@ -549,7 +549,8 @@ public class RubyBigDecimal extends RubyNumeric {
         int sign = 1;
         switch ( s <= e ? str[s] : ' ' ) {
             case '_' :
-                return newZero(context.runtime, 1); // leading "_" are not allowed
+                if (!strict) return context.nil;
+                throw invalidArgumentError(context, arg);
             case 'N' :
                 if ( contentEquals("NaN", str, s, e) ) return newNaN(context.runtime);
                 break;
@@ -569,7 +570,7 @@ public class RubyBigDecimal extends RubyNumeric {
         int exp = -1; int lastSign = -1;
         // 1. MRI allows d and D as exponent separators
         // 2. MRI allows underscores anywhere
-        while (i + off <= e) {
+        loop: while (i + off <= e) {
             switch (str[i + off]) {
                 case 'd': case 'D': // replaceFirst("[dD]", "E")
                     if (dD) {
@@ -584,7 +585,16 @@ public class RubyBigDecimal extends RubyNumeric {
                         i++; continue;
                     }
                 case '_': // replaceAll("_", "")
-                    str[i] = str[i+off]; off++; continue;
+                    if ((i + off) == e || Character.isDigit(str[i + off + 1])) {
+                        str[i] = str[i + off];
+                        off++;
+                        continue;
+                    }
+                    if (!strict) {
+                        e = i + off;
+                        break loop;
+                    }
+                    throw invalidArgumentError(context, arg);
                 // 3. MRI ignores the trailing junk
                 case '0': case '1': case '2': case '3': case '4':
                 case '5': case '6': case '7': case '8': case '9':
@@ -608,7 +618,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if ( exp != -1 ) {
             if (exp == e || (exp + 1 == e && (str[exp + 1] == '-' || str[exp + 1] == '+'))) {
-                throw context.runtime.newArgumentError("invalid value for BigDecimal(): \"" + arg + "\"");
+                if (!strict) return context.nil;
+                throw invalidArgumentError(context, arg);
             }
             else if (isExponentOutOfRange(str, exp + 1, e)) {
                 // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
@@ -625,16 +636,21 @@ public class RubyBigDecimal extends RubyNumeric {
             decimal = new BigDecimal(str, s, e - s + 1, mathContext);
         }
         catch (ArithmeticException ex) {
-            return checkOverUnderFlow(context.runtime, ex, false);
+            return checkOverUnderFlow(context.runtime, ex, false, strict);
         }
         catch (NumberFormatException ex) {
-            throw context.runtime.newArgumentError("invalid value for BigDecimal(): \"" + arg + "\"");
+            if (!strict) return context.nil;
+            throw invalidArgumentError(context, arg);
         }
 
         // MRI behavior: -0 and +0 are two different things
         if (decimal.signum() == 0) return newZero(context.runtime, sign);
 
         return new RubyBigDecimal(context.runtime, recv, decimal);
+    }
+
+    private static RaiseException invalidArgumentError(ThreadContext context, RubyString arg) {
+        return context.runtime.newArgumentError("invalid value for BigDecimal(): \"" + arg + "\"");
     }
 
     private static boolean contentEquals(final String str1, final char[] str2, final int s2, final int e2) {
@@ -719,7 +735,7 @@ public class RubyBigDecimal extends RubyNumeric {
             case BIGDECIMAL:
                 return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
         }
-        return newInstance(context, (RubyClass) recv, arg.convertToString(), MathContext.UNLIMITED);
+        return (RubyBigDecimal) newInstance(context, (RubyClass) recv, arg.convertToString(), MathContext.UNLIMITED, true);
     }
 
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
@@ -740,7 +756,7 @@ public class RubyBigDecimal extends RubyNumeric {
             case BIGDECIMAL:
                 return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
         }
-        return newInstance(context, (RubyClass) recv, arg.convertToString(), MathContext.UNLIMITED);
+        return (RubyBigDecimal) newInstance(context, (RubyClass) recv, arg.convertToString(), MathContext.UNLIMITED, true);
     }
 
     private static RubyBigDecimal newZero(final Ruby runtime, final int sign) {
@@ -918,19 +934,26 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, result).setResult();
     }
 
-    private static RubyBigDecimal checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex, boolean nullDefault) {
+    private static IRubyObject checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex, boolean nullDefault, boolean strict) {
         String message = ex.getMessage();
         if (message == null) message = "";
         message = message.toLowerCase(Locale.ENGLISH);
         if (message.contains("underflow")) {
-            if (isUnderflowExceptionMode(runtime)) throw runtime.newFloatDomainError(message);
+            if (isUnderflowExceptionMode(runtime)) {
+                if (!strict) return runtime.getNil();
+                throw runtime.newFloatDomainError(message);
+            }
             return newZero(runtime, 1);
         }
         if (message.contains("overflow")) {
-            if (isOverflowExceptionMode(runtime)) throw runtime.newFloatDomainError(message);
+            if (isOverflowExceptionMode(runtime)) {
+                if (!strict) return runtime.getNil();
+                throw runtime.newFloatDomainError(message);
+            }
             return newInfinity(runtime, 1); // TODO sign?
         }
         if (nullDefault) return null;
+        if (!strict) return runtime.getNil();
         throw runtime.newFloatDomainError(message);
     }
 
