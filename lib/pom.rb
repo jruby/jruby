@@ -16,7 +16,7 @@ end
 
 default_gems = [
     ['cmath', '1.0.0'],
-    ['csv', '3.0.9'],
+    ['csv', '3.1.2'],
     ['e2mmap', '0.1.0'],
     ['fileutils', '1.1.0'],
     ['forwardable', '1.2.0'],
