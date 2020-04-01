@@ -6,8 +6,6 @@
 #++
 
 require 'bigdecimal'
-# No native bigdecimal/util in JRuby
-require 'bigdecimal/util.so' unless RUBY_ENGINE == 'jruby'
 
 class Integer < Numeric
   # call-seq:
@@ -67,14 +65,8 @@ class String
   #
   # See also BigDecimal::new.
   #
-  if RUBY_ENGINE == 'jruby' # No native bigdecimal/util in JRuby
-    def to_d
-      begin
-        BigDecimal(self)
-      rescue ArgumentError
-        BigDecimal(0)
-      end
-    end
+  def to_d
+    BigDecimal.interpret_loosely(self)
   end
 end
 
