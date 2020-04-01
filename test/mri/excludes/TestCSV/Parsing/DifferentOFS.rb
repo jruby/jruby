@@ -1,1 +1,5 @@
+exclude :test_encoding_euc_jp, "needs investigation, #6157"
+exclude :test_encoding_is_upgraded_during_writing_as_needed, "needs investigation, #6157"
+exclude :test_encoding_is_upgraded_for_ascii_content_during_writing_as_needed, "needs investigation, #6157"
+exclude :test_encoding_utf8, "needs investigation, #6157"
 exclude :test_malformed_csv, "TODO: (line 4) isn't in brackets"
