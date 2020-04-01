@@ -856,6 +856,27 @@ public class ParserSupport {
         }
     }
 
+    public Node new_bodystmt(Node head, RescueBodyNode rescue, Node rescueElse, Node ensure) {
+        Node node = head;
+
+        if (rescue != null) {
+            node = new RescueNode(getPosition(head), head, rescue, rescueElse);
+        } else if (rescueElse != null) {
+            // FIXME: MRI removed this...
+            warn(ID.ELSE_WITHOUT_RESCUE, lexer.tokline, "else without rescue is useless");
+            node = appendToBlock(head, rescue);
+        }
+        if (ensure != null) {
+            if (node != null) {
+                node = new EnsureNode(getPosition(head), makeNullNil(node), ensure);
+            } else {
+                node = appendToBlock(ensure, NilImplicitNode.NIL);
+            }
+        }
+
+        fixpos(node, head);
+        return node;
+    }
 
     public RubySymbol symbolID(ByteList identifierValue) {
         return RubySymbol.newIDSymbol(getConfiguration().getRuntime(), identifierValue);

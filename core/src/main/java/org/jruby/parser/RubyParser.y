@@ -292,7 +292,7 @@ public class RubyParser {
 %type <ArgumentNode> f_arg_asgn
 %type <FCallNode> fcall
 %token <ByteList> tLABEL_END
-%type <ISourcePosition> k_return k_class k_module
+%type <ISourcePosition> k_return k_class k_module k_else
 
 /*
  *    precedence table
@@ -365,25 +365,13 @@ top_stmt      : stmt
                     $$ = null;
               }
 
-bodystmt      : compstmt opt_rescue opt_else opt_ensure {
-                  Node node = $1;
-
-                  if ($2 != null) {
-                      node = new RescueNode(support.getPosition($1), $1, $2, $3);
-                  } else if ($3 != null) {
-                      support.warn(ID.ELSE_WITHOUT_RESCUE, support.getPosition($1), "else without rescue is useless");
-                      node = support.appendToBlock($1, $3);
-                  }
-                  if ($4 != null) {
-                      if (node != null) {
-                          node = new EnsureNode(support.getPosition($1), support.makeNullNil(node), $4);
-                      } else {
-                          node = support.appendToBlock($4, NilImplicitNode.NIL);
-                      }
-                  }
-
-                  support.fixpos(node, $1);
-                  $$ = node;
+ bodystmt     : compstmt opt_rescue k_else {
+                   if ($2 == null) support.yyerror("else without rescue is useless"); 
+               } compstmt opt_ensure {
+                   $$ = support.new_bodystmt($1, $2, $5, $6);
+                }
+                | compstmt opt_rescue opt_ensure {
+                    $$ = support.new_bodystmt($1, $2, null, $3);
                 }
 
 compstmt        : stmts opt_terms {
@@ -1652,6 +1640,10 @@ k_class         : keyword_class {
                     $$ = $1;
                 }
 
+k_else          : keyword_else {
+                    $$ = $1;
+                }
+
 k_module        : keyword_module {
                     $$ = $1;
                 }
@@ -1676,7 +1668,7 @@ if_tail         : opt_else
                 }
 
 opt_else        : none
-                | keyword_else compstmt {
+                | k_else compstmt {
                     $$ = $2;
                 }
 
