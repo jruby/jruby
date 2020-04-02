@@ -307,8 +307,16 @@ public class TypeConverter {
 
     // rb_check_hash_type
     public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
+        return checkHashType(runtime, obj, true);
+    }
+
+    public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj, boolean raise) {
         if (obj instanceof RubyHash) return obj;
-        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
+        if (raise) {
+            return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
+        } else {
+            return TypeConverter.convertToType(obj, runtime.getHash(), "to_hash", false);
+        }
     }
 
     // rb_check_hash_type
@@ -431,14 +439,24 @@ public class TypeConverter {
             break;
         }
 
-        tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
-        if (tmp instanceof RubyInteger) {
-            return tmp;
+        try {
+            tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
+            if (tmp instanceof RubyInteger) {
+                return tmp;
+            }
+        } catch (RaiseException re) {
+            if (!exception) return context.nil;
+            throw re;
         }
 
         if (!exception) {
-            IRubyObject ret = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked, false);
-            if (ret instanceof RubyInteger) return ret;
+            try {
+                IRubyObject ret = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked, false);
+                if (ret instanceof RubyInteger) return ret;
+            } catch (RaiseException re) {
+                if (exception) throw re;
+            }
+
             return context.nil;
         }
 

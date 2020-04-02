@@ -388,7 +388,7 @@ public class RubyRational extends RubyNumeric {
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         Ruby runtime = context.runtime;
 
-        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2);
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
         boolean raise = true;
 
         IRubyObject nil = context.nil;
@@ -423,7 +423,7 @@ public class RubyRational extends RubyNumeric {
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, IRubyObject kwargs) {
         Ruby runtime = context.runtime;
 
-        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs);
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs, false);
         boolean raise;
 
         if (maybeKwargs.isNil()) {

@@ -476,7 +476,7 @@ public class RubyComplex extends RubyNumeric {
         boolean raise = true;
 
         if (a2 != null) {
-            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2);
+            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
 
             if (!maybeKwargs.isNil()) {
                 a2 = null;
@@ -497,7 +497,7 @@ public class RubyComplex extends RubyNumeric {
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, IRubyObject kwargs) {
         Ruby runtime = context.runtime;
 
-        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs);
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs, false);
         boolean raise;
 
         if (maybeKwargs.isNil()) {

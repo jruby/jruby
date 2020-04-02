@@ -401,7 +401,23 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Float", module = true, visibility = PRIVATE)
     public static IRubyObject new_float(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject opts) {
-        return new_float(context, object, ArgsUtil.extractKeywordArg(context, "exception", opts).isTrue());
+        boolean exception = checkExceptionOpt(context, opts);
+
+        return new_float(context, object, exception);
+    }
+
+    private static boolean checkExceptionOpt(ThreadContext context, IRubyObject opts) {
+        boolean exception = true;
+
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, opts, false);
+
+        if (!maybeOpts.isNil()) {
+            IRubyObject exObj = ArgsUtil.extractKeywordArg(context, "exception", opts);
+
+            exception = exObj.isNil() ? true : exObj.isTrue();
+        }
+
+        return exception;
     }
 
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
@@ -484,22 +500,28 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject baseOrOpts) {
-        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, baseOrOpts);
+        boolean exception = true;
+
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, baseOrOpts, false);
 
         if (maybeOpts.isNil()) {
             return TypeConverter.convertToInteger(context, object, baseOrOpts.convertToInteger().getIntValue(), true);
         }
 
+        IRubyObject exObj = ArgsUtil.extractKeywordArg(context, "exception", maybeOpts);
+
+        if (exObj == context.fals) exception = false;
+
         return TypeConverter.convertToInteger(
                 context,
                 object,
                 0,
-                ArgsUtil.extractKeywordArg(context, "exception", maybeOpts).isTrue());
+                exception);
     }
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base, IRubyObject opts) {
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts).isTrue();
+        boolean exception = checkExceptionOpt(context, opts);
 
         IRubyObject baseInteger = TypeConverter.convertToInteger(context, base, 0, exception);
 

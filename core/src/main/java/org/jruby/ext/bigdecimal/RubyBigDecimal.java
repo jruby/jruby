@@ -238,18 +238,34 @@ public class RubyBigDecimal extends RubyNumeric {
             Ruby runtime = context.runtime;
             RubyClass bigDecimal = runtime.getClass("BigDecimal");
 
-            IRubyObject maybeOpts = ArgsUtil.getOptionsArg(runtime, arg1);
+            IRubyObject maybeOpts = ArgsUtil.getOptionsArg(runtime, arg1, false);
 
             if (maybeOpts.isNil()) {
                 return newInstance(context, bigDecimal, arg0, arg1, true, true);
             }
 
-            return newInstance(context, bigDecimal, arg0, true, ArgsUtil.extractKeywordArg(context, "exception", maybeOpts).isTrue());
+            IRubyObject exObj = ArgsUtil.extractKeywordArg(context, "exception", maybeOpts);
+
+            boolean exception = exObj.isNil() ? true : exObj.isTrue();
+
+            return newInstance(context, bigDecimal, arg0, true, exception);
         }
 
         @JRubyMethod(name = "BigDecimal", module = true, visibility = Visibility.PRIVATE) // required = 1, optional = 1
         public static IRubyObject newBigDecimal(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject opts) {
-            return newInstance(context, context.runtime.getClass("BigDecimal"), arg0, arg1, true, ArgsUtil.extractKeywordArg(context, "exception", opts).isTrue());
+            Ruby runtime = context.runtime;
+
+            IRubyObject maybeOpts = ArgsUtil.getOptionsArg(runtime, arg1, false);
+
+            if (maybeOpts.isNil()) {
+                throw runtime.newArgumentError(3, 1, 2);
+            }
+
+            IRubyObject exObj = ArgsUtil.extractKeywordArg(context, "exception", maybeOpts);
+
+            boolean exception = exObj.isNil() ? true : exObj.isTrue();
+
+            return newInstance(context, context.runtime.getClass("BigDecimal"), arg0, arg1, true, exception);
         }
     }
 
