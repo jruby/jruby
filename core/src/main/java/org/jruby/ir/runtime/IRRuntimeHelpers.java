@@ -1890,17 +1890,7 @@ public class IRRuntimeHelpers {
 
         switch (block.type) {
             case LAMBDA:
-                // FIXME: passing a lambda to each_with_index via enumerator seems to need this.
-                // This is fairly complicated but we should try and eliminate needing this arg spreading
-                // here (test_enum.rb:test_cycle):
-                //     cond = ->(x, i) {a << x}
-                //     @obj.each_with_index.cycle(2, &cond)
-                org.jruby.runtime.Signature sig = block.getBody().getSignature();
-                if (sig.arityValue() != -1 && sig.required() != 1) {
-                    args = toAry(context, args);
-                }
-
-                sig.checkArity(context.runtime, args);
+                block.getBody().getSignature().checkArity(context.runtime, args);
                 return args;
             case PROC:
                 return prepareProcArgs(context, block, args);
