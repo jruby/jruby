@@ -400,7 +400,7 @@ public class JavaSites {
 
     public static class ComplexSites {
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
-        public final CallSite op_quo = new FunctionalCachingCallSite("/");
+        public final CallSite op_quo = new FunctionalCachingCallSite("quo");
         public final CallSite op_exp = new FunctionalCachingCallSite("**");
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
