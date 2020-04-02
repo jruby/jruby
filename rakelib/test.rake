@@ -14,12 +14,12 @@ if ENV['CI']
   ENV['TESTOPT'] = "-v --no-use-color"
 
   # extend timeouts in MRI tests
-  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '10'
+  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '20'
 else
   ADDITIONAL_TEST_OPTIONS = ""
 end
 
-AVAILABLE_PROCESSORS = (ENV['JOBS'] || java.lang.Runtime.runtime.available_processors).to_i
+AVAILABLE_PROCESSORS = (ENV['JOBS'] || java.lang.Runtime.runtime.available_processors.to_i / 2 + 1)
 
 namespace :test do
   desc "Compile test code"
