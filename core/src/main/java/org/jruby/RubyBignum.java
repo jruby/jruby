@@ -505,14 +505,13 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return op_mul(context, ((RubyFixnum) other).value);
-        }
-        if (other instanceof RubyBignum) {
-            return bignorm(context.runtime, value.multiply(((RubyBignum) other).value));
-        }
-        if (other instanceof RubyFloat) {
+        } else if (other instanceof RubyBignum) {
+        } else if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(context.runtime, big2dbl(this) * ((RubyFloat) other).value);
+        } else {
+            return coerceBin(context, sites(context).op_times, other);
         }
-        return coerceBin(context, sites(context).op_times, other);
+        return bignorm(context.runtime, value.multiply(((RubyBignum) other).value));
     }
 
     @Deprecated

@@ -350,6 +350,14 @@ public class RubyRational extends RubyNumeric {
         rat.setFrozen(true);
         return rat;
     }
+
+    public static IRubyObject rationalCanonicalize(ThreadContext context, IRubyObject x) {
+        if (x instanceof RubyRational) {
+            RubyRational rational = (RubyRational) x;
+            if (f_one_p(context, rational.den)) return rational.num;
+        }
+        return x;
+    }
     
     @Deprecated
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {

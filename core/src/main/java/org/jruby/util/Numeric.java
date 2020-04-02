@@ -473,6 +473,13 @@ public class Numeric {
         return x.quo(context, y);
     }
 
+    /**
+     * MRI: f_reciprocal
+     */
+    public static IRubyObject f_reciprocal(ThreadContext context, IRubyObject x) {
+        return f_quo(context, RubyFixnum.one(context.runtime), x);
+    }
+
     /** f_rshift
      *
      */
@@ -698,6 +705,7 @@ public class Numeric {
         return n < SQRT_LONG_MAX && n >= -SQRT_LONG_MAX;
     }
 
+    // MRI: rb_int_pow
     public static RubyNumeric int_pow(ThreadContext context, long x, long y) {
         boolean neg = x < 0;
         long z = 1;
@@ -731,6 +739,16 @@ public class Numeric {
         } while(--y != 0);
         if (neg) z = -z;
         return RubyFixnum.newFixnum(runtime, z);
+    }
+
+    // MRI: rb_num_pow
+    public static IRubyObject num_pow(ThreadContext context, IRubyObject x, IRubyObject y) {
+        if (x instanceof RubyInteger) return ((RubyInteger) x).pow(context, y);
+        if (x instanceof RubyFloat) return ((RubyFloat) x).op_pow(context, y);
+//        if (SPECIAL_CONST_P(x)) return Qnil;
+        if (x instanceof RubyComplex) return ((RubyComplex) x).op_expt(context, y);
+        if (x instanceof RubyRational) return ((RubyRational) x).op_expt(context, y);
+        return context.nil;
     }
 
     public static boolean multiplyOverflows(long a, long b) {
