@@ -57,6 +57,7 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyNumeric.dbl2num;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -1002,11 +1003,16 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
-        if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
-            return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
+        if (begin instanceof RubyNumeric) {
+            if (end instanceof RubyNumeric) {
+                return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
+            }
+            if (end.isNil()) {
+                return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
+            }
+        } else if (begin.isNil()) {
+            return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
         }
-
-        if (isEndless) return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
 
         return context.nil;
     }
