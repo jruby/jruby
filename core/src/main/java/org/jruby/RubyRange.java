@@ -417,7 +417,7 @@ public class RubyRange extends RubyObject {
         void doCall(ThreadContext context, IRubyObject arg);
     }
 
-    private static final class StepBlockCallBack implements RangeCallBack, BlockCallback {
+    private static class StepBlockCallBack implements RangeCallBack, BlockCallback {
 
         final Block block;
         IRubyObject iter;
@@ -445,9 +445,13 @@ public class RubyRange extends RubyObject {
             }
             IRubyObject i = this.iter;
             if ((i instanceof RubyInteger) && ((RubyInteger) i).isZero()) {
-                block.yield(context, arg);
+                doYield(context, arg);
                 iter = step;
             }
+        }
+
+        protected void doYield(ThreadContext context, IRubyObject arg) {
+            block.yield(context, arg);
         }
 
         transient RubyFixnum one;
@@ -460,6 +464,16 @@ public class RubyRange extends RubyObject {
             return one;
         }
 
+    }
+
+    private static class SymbolStepBlockCallBack extends StepBlockCallBack {
+        SymbolStepBlockCallBack(Block block, RubyFixnum iter, IRubyObject step) {
+            super(block, iter, step);
+        }
+
+        protected void doYield(ThreadContext context, IRubyObject arg) {
+            block.yield(context, ((RubyString) arg).intern());
+        }
     }
 
     private static boolean isZero(IRubyObject num) {
@@ -643,6 +657,12 @@ public class RubyRange extends RubyObject {
             return stepEnumeratorize(context, step, method);
         }
 
+        step = checkStepDomain(context, step, method);
+
+        return stepCommon(context, step, block);
+    }
+
+    private IRubyObject checkStepDomain(ThreadContext context, IRubyObject step, String method) {
         if (!(step instanceof RubyNumeric)) {
             step = step.convertToInteger("to_int");
         }
@@ -652,7 +672,7 @@ public class RubyRange extends RubyObject {
         if (((RubyNumeric) step).isZero()) {
             throw context.runtime.newArgumentError(method + " can't be 0");
         }
-        return stepCommon(context, step, block);
+        return step;
     }
 
     private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
@@ -682,12 +702,30 @@ public class RubyRange extends RubyObject {
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
         Ruby runtime = context.runtime;
-        if (begin instanceof RubyFixnum && isEndless && step instanceof RubyFixnum) {
-            ((RubyFixnum) begin).step(context, new IRubyObject[]{end, step}, block);
+        if (begin instanceof RubyFixnum && end.isNil() && step instanceof RubyFixnum) {
+            long i = begin.convertToInteger().getLongValue();
+            long unit = step.convertToInteger().getLongValue();
+            while (i < Long.MAX_VALUE) {
+                block.yield(context, RubyFixnum.newFixnum(context.runtime, i));
+                i += unit;
+            }
+            IRubyObject b = RubyFixnum.newFixnum(context.runtime, i);
+            for (;; b = ((RubyInteger) b).op_plus(context, step)) {
+                block.yield(context, b);
+            }
         } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
             fixnumStep(context, runtime, ((RubyFixnum) step).getLongValue(), block);
         } else if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
             RubyNumeric.floatStep(context, runtime, begin, end, step, isExclusive, isEndless, block);
+        } else if (begin instanceof RubySymbol && (end.isNil() || end instanceof RubySymbol)) { /* symbols are special */
+            RubyString b = begin.asString();
+            SymbolStepBlockCallBack callback = new SymbolStepBlockCallBack(block, RubyFixnum.one(runtime), step);
+            Block blockCallback = CallBlock.newCallClosure(context, this, Signature.ONE_ARGUMENT, callback);
+            if (end.isNil()) {
+                b.uptoEndless(context, blockCallback);
+            } else {
+                b.uptoCommon(context, end.asString(), isExclusive, blockCallback);
+            }
         } else if (begin instanceof RubyNumeric
                 || !TypeConverter.checkIntegerType(runtime, begin, "to_int").isNil()
                 || !TypeConverter.checkIntegerType(runtime, end, "to_int").isNil()) {
@@ -697,7 +735,7 @@ public class RubyRange extends RubyObject {
             if (!tmp.isNil()) {
                 StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
                 Block blockCallback = CallBlock.newCallClosure(context, this, Signature.ONE_ARGUMENT, callback);
-                if (isEndless) {
+                if (end.isNil()) {
                     ((RubyString) tmp).uptoEndless(context, blockCallback);
                 } else {
                     ((RubyString) tmp).uptoCommon(context, end, isExclusive, blockCallback);
