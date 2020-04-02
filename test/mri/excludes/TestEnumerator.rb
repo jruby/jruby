@@ -1,4 +1,6 @@
+exclude :test_each_arg, "unfinished in initial 2.6 work, #6161"
 exclude :test_generator, "needs investigation"
+exclude :test_inspect, "unfinished in initial 2.6 work, #6161"
 exclude :test_initialize_copy, "needs investigation"
 exclude :test_inspect_encoding, "needs investigation"
 exclude :test_peek_modify, "needs investigation"

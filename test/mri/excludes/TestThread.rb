@@ -17,6 +17,7 @@ exclude :test_report_on_exception, "very sensitive to thread timing and parallel
 exclude :test_safe_level, "SAFE levels are unsupported"
 exclude :test_signal_at_join, "very timing-sensitive and very edge casey"
 exclude :test_stack_size, "slow and unreliable"
+exclude :test_thread_interrupt_for_killed_thread, "unfinished in initial 2.6 work, #6161"
 exclude :test_thread_join_main_thread, "hangs"
 exclude :test_thread_setname_in_initialize, "needs investigation #4308"
 exclude :test_thread_timer_and_interrupt, "event statuses do not match expected"

@@ -4,4 +4,4 @@ fails:Time#getlocal raises ArgumentError if the argument represents a value less
 fails:Time#getlocal raises ArgumentError if the argument represents a value greater than or equal to 86400 seconds
 fails:Time#getlocal with an argument that responds to #to_r coerces using #to_r
 fails:Time#getlocal with an argument that responds to #to_str coerces using #to_str
-fails(not implemented, jruby/jruby#5576):Time#getlocal raises ArgumentError if the String argument is not of the form (+|-)HH:MM
+fails(not implemented, jruby/jruby#6161):Time#getlocal raises ArgumentError if the String argument is not of the form (+|-)HH:MM
