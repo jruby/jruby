@@ -1606,7 +1606,7 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: macro POSFIXABLE, RB_POSFIXABLE
     public static boolean posFixable(double l) {
-        return l <= RubyFixnum.MAX;
+        return l < RubyFixnum.MAX + 1;
     }
 
     // MRI: macro NEGFIXABLE, RB_NEGFIXABLE
