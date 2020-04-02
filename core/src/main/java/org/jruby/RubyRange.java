@@ -521,20 +521,17 @@ public class RubyRange extends RubyObject {
         int valExcl = val.isExclusive ? 1 : 0;
 
         if (!end.isNil() && valEnd.isNil()) return false;
-
-        if (!valEnd.isNil() && rangeLess(context, valBeg, valEnd) > -valExcl) return false;
-
-        if (!cover_p(context, valBeg).isTrue()) return false;
+        if (!begin.isNil() && valBeg.isNil()) return false;
+        if (!valBeg.isNil() && !valEnd.isNil() && rangeLess(context, valBeg, valEnd) > -valExcl) return false;
+        if (!valBeg.isNil() && !cover_p(context, valBeg).isTrue()) return false;
 
         cmp = rangeLess(context, end, valEnd);
-        if (cmp != Integer.MAX_VALUE) {
-            if (excl == valExcl) {
-                return cmp >= 0;
-            } else if (excl != 0) {
-                return cmp > 0;
-            } else if (cmp >= 0) {
-                return true;
-            }
+        if (excl == valExcl) {
+            return cmp >= 0;
+        } else if (excl != 0) {
+            return cmp > 0;
+        } else if (cmp >= 0) {
+            return true;
         }
 
         IRubyObject nil = context.nil;
