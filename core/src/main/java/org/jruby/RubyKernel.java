@@ -442,8 +442,13 @@ public class RubyKernel {
             if (!exception) return object;
             throw runtime.newTypeError("can't convert nil into Float");
         }
-        IRubyObject flote = TypeConverter.convertToType(context, object, runtime.getFloat(), sites(context).to_f_checked, false);
-        if (flote instanceof RubyFloat) return flote;
+        
+        try {
+            IRubyObject flote = TypeConverter.convertToType(context, object, runtime.getFloat(), sites(context).to_f_checked, false);
+            if (flote instanceof RubyFloat) return flote;
+        } catch (RaiseException re) {
+            if (exception) throw re;
+        }
 
         if (!exception) return runtime.getNil();
 
