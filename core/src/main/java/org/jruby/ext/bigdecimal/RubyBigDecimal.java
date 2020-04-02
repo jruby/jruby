@@ -255,7 +255,7 @@ public class RubyBigDecimal extends RubyNumeric {
         public static IRubyObject newBigDecimal(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject opts) {
             Ruby runtime = context.runtime;
 
-            IRubyObject maybeOpts = ArgsUtil.getOptionsArg(runtime, arg1, false);
+            IRubyObject maybeOpts = ArgsUtil.getOptionsArg(runtime, opts, false);
 
             if (maybeOpts.isNil()) {
                 throw runtime.newArgumentError(3, 1, 2);
