@@ -804,10 +804,38 @@ public class RubyRational extends RubyNumeric {
         }
 
         // General case
-        if (other instanceof RubyInteger) {
-            return fix_expt(context, (RubyInteger) other, ((RubyInteger) other).signum());
-        }
-        if (other instanceof RubyFloat || other instanceof RubyRational) {
+        if (other instanceof RubyFixnum) {
+            RubyFixnum otherFixnum = (RubyFixnum) other;
+
+            IRubyObject num, den;
+
+            IRubyObject selfNum = this.num;
+            IRubyObject selfDen = this.den;
+
+            if (otherFixnum.isPositive()) {
+                num = ((RubyInteger) selfNum).pow(context, other);
+                den = ((RubyInteger) selfDen).pow(context, other);
+            } else if (otherFixnum.isNegative()) {
+                num = ((RubyInteger) selfDen).pow(context, otherFixnum.negate());
+                den = ((RubyInteger) selfNum).pow(context, otherFixnum.negate());
+            } else {
+                num = den = RubyFixnum.one(context.runtime);
+            }
+            if (num instanceof RubyFloat) { /* infinity due to overflow */
+                if (den instanceof RubyFloat) {
+                    return dbl2num(context.runtime, Double.NaN);
+                }
+                return num;
+            }
+            if (den instanceof RubyFloat) { /* infinity due to overflow */
+                num = RubyFixnum.zero(context.runtime);
+                den = RubyFixnum.one(context.runtime);
+            }
+            return newInstance(context, getMetaClass(), num, den);
+        } else if (other instanceof RubyBignum) {
+            context.runtime.getWarnings().warn("in a**b, b may be too big");
+            return ((RubyFloat) to_f(context)).op_pow(context, other);
+        } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, r_to_f(context, this), other);
         }
         return coerceBin(context, sites(context).op_exp, other);
