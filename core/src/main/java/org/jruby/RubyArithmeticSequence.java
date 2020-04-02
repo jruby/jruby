@@ -219,7 +219,7 @@ public class RubyArithmeticSequence extends RubyObject {
                 b = RubyFixnum.newFixnum(runtime, i);
                 while (n > 0) {
                     ary.append(b);
-                    b = ((RubyBignum)b).op_plus(context, s);
+                    b = ((RubyInteger)b).op_plus(context, s);
                     --n;
                 }
             }
