@@ -124,13 +124,13 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     @Deprecated // renamed to newProxyClass
     public static JavaProxyClass getProxyClass(final Ruby runtime, Class superClass,
         Class[] interfaces, Set<String> names) throws InvocationTargetException {
-        return newProxyClass(runtime, superClass, interfaces, names, null, null);
+        return newProxyClass(runtime, superClass, interfaces, names, null, null, null);
     }
 
     @Deprecated // renamed to newProxyClass
     public static JavaProxyClass getProxyClass(Ruby runtime, Class superClass,
                                                Class[] interfaces) throws InvocationTargetException {
-        return newProxyClass(runtime, superClass, interfaces, null, null, null);
+        return newProxyClass(runtime, superClass, interfaces, null, null, null, null);
     }
 
     /**
@@ -141,11 +141,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
      * @param names
      * @param field 
      * @param extraMethods 
+     * @param clazz 
      * @return proxy class
      * @throws InvocationTargetException
      */
     public static JavaProxyClass newProxyClass(final Ruby runtime, Class superClass,
-        Class[] interfaces, Set<String> names, Map<String, Class> field, Map<String, Class[]> extraMethods) throws InvocationTargetException {
+        Class[] interfaces, Set<String> names, Map<String, Class> field, Map<String, Class[]> extraMethods, RubyClass clazz) throws InvocationTargetException {
 
         if (superClass == null) superClass = Object.class;
         if (interfaces == null) interfaces = EMPTY_CLASS_ARRAY;
@@ -157,13 +158,13 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         if ( proxyClass != null ) return proxyClass;
 
         final ClassLoader loader = runtime.getJRubyClassLoader();
-        proxyClass = runtime.getJavaProxyClassFactory().genProxyClass(runtime, (ClassDefiningClassLoader) loader, null, superClass, interfaces, names, field, extraMethods);
+        proxyClass = runtime.getJavaProxyClassFactory().genProxyClass(runtime, (ClassDefiningClassLoader) loader, null, superClass, interfaces, names, field, extraMethods, clazz);
         return JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
     }
 
     public static JavaProxyClass newProxyClass(Ruby runtime, Class superClass,
             Class[] interfaces) throws InvocationTargetException {
-        return newProxyClass(runtime, superClass, interfaces, null, null, null);
+        return newProxyClass(runtime, superClass, interfaces, null, null, null, null);
     }
 
     public static Object newProxyInstance(Ruby runtime, Class superClass, Class[] interfaces,
@@ -692,7 +693,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         Class<?>[] interfaces = interfaceList.isEmpty() ? EMPTY_CLASS_ARRAY : interfaceList.toArray(new Class<?>[interfaceList.size()]);
 
         try {
-            return newProxyClass(runtime, javaClass.javaClass(), interfaces, names, clazz.getFieldSignatures(), clazz.getMethodSignatures());
+            return newProxyClass(runtime, javaClass.javaClass(), interfaces, names, clazz.getFieldSignatures(), clazz.getMethodSignatures(), clazz);
         }
         catch (RaiseException e) {
             throw e;
