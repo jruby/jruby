@@ -41,8 +41,10 @@ module JRuby
     # {org.bukkit.event.EventHandler => {}, }
     def annotations
       annotations = @ast.modifiers.select(&:is_annotation?)
+      visitor = JavaSignatureVisitor.new {|name| as_java_type(name)}
       annotations.inject({}) do |hash, anno_node|
-        hash[as_java_type(anno_node.name)] = process_annotation_params(anno_node)
+        ((type, parsed)) = *anno_node.accept(visitor)
+        hash[type] = parsed
         hash
       end
     end
@@ -83,14 +85,6 @@ return_type: #{return_type}
 
     private
 
-    def process_annotation_params(anno_node)
-      anno_node.parameters.inject({}) do |hash, param|
-        # ??? default will be nil/null name here.
-      hash[param.name] = param.expression.accept(JavaSignatureVisitor.new{|name| as_java_type(name)})
-        hash
-      end
-    end
-
     # @deprecated
     def primitive?(str); self.class.primitive_type(str) end
 
@@ -121,32 +115,56 @@ return_type: #{return_type}
     include org.jruby.ast.java_signature.AnnotationVisitor
     def initialize &blk
        @lookup = blk
+       @target_type = []
     end
+    
+    def to_class(typename)
+      @lookup.call typename
+    end
+    
     def annotation(anno)
-        puts "annotation: #{anno.name}"
-        { anno.name =>
-        Hash[anno.parameters.map do |param|
-          puts "   #{param.name} =>"
-          [param.name, param.expression.accept(self)]
-        end].to_java}.to_java
+        clazz = to_class(anno.name)
+        java_clazz = clazz.java_class.to_java
+        { clazz =>
+          anno.parameters.inject({}) do |hash, param|
+          @target_type << java_clazz.get_method(param.name).return_type
+          hash[param.name] = param.expression.accept(self)
+          @target_type.pop
+          hash
+        end.to_java}.to_java
     end
 
     def annotation_array(aa)
-      puts "annoa: #{aa}"
       aa.expressions.map do |expr|
-        puts "  [] =>"
         expr.accept self
       end.to_java java.lang.Object
     end
-    
+
     def literal(lit)
-      puts "Literal: #{lit.literal}"
       lit.literal
+    end
+    
+    def number_literal(lit)
+      target = @target_type.last
+      if lit.float?
+        lit.literal.to_f.to_java target
+      else
+        str = lit.literal
+        base = str.start_with?("0x") ? 16 : 10
+        signed = str.start_with?("-")
+        str = str[2..-1] if base != 10 # strip off any base prefixes
+        jll = java.lang.Long 
+        longv = (signed ? jll.parseLong(str) : jll.parseUnsignedLong(str, base)).to_java :long
+        if target == jll
+           return longv
+        else
+          longv.send("#{target.simple_name.downcase}Value").to_java target
+        end
+      end
     end
 
     def type(type)
-      puts "type: #{type}"
-      @lookup.call type
+      to_class(type.wrapper_name).to_java
     end
   end
 end

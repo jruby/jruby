@@ -46,4 +46,5 @@ public interface AnnotationVisitor<T> {
 	T annotation_array(ArrayAnnotationExpression arrayAnnotationExpression);
 	T literal(Literal literal);
 	T type(TypeNode typeNode);
+	T number_literal(NumberLiteral numberLiteral);
 }
