@@ -116,6 +116,7 @@ return_type: #{return_type}
     def initialize &blk
        @lookup = blk
        @target_type = []
+       @antiwrap = nil # if we pass the number literals through the ruby/java interface, they are converted to Fixnums, and then Longs. Save them here to avoid conversion
     end
     
     def to_class(typename)
@@ -125,28 +126,30 @@ return_type: #{return_type}
     def annotation(anno)
         clazz = to_class(anno.name)
         java_clazz = clazz.java_class.to_java
-        { clazz =>
+        @antiwrap = { java_clazz =>
           anno.parameters.inject({}) do |hash, param|
           @target_type << java_clazz.get_method(param.name).return_type
-          hash[param.name] = param.expression.accept(self)
+          param.expression.accept(self)
+          hash[param.name] = @antiwrap
           @target_type.pop
           hash
         end.to_java}.to_java
     end
 
     def annotation_array(aa)
-      aa.expressions.map do |expr|
+      @antiwrap = aa.expressions.map do |expr|
         expr.accept self
+        @antiwrap
       end.to_java java.lang.Object
     end
 
     def literal(lit)
-      lit.literal
+      @antiwrap = lit.literal
     end
     
     def number_literal(lit)
       target = @target_type.last
-      if lit.float?
+      @antiwrap = if lit.float?
         lit.literal.to_f.to_java target
       else
         str = lit.literal
@@ -156,7 +159,7 @@ return_type: #{return_type}
         jll = java.lang.Long 
         longv = (signed ? jll.parseLong(str) : jll.parseUnsignedLong(str, base)).to_java :long
         if target == jll
-           return longv
+           longv
         else
           longv.send("#{target.simple_name.downcase}Value").to_java target
         end
@@ -164,7 +167,7 @@ return_type: #{return_type}
     end
 
     def type(type)
-      to_class(type.wrapper_name).to_java
+      @antiwrap = to_class(type.wrapper_name).to_java
     end
   end
 end
