@@ -329,6 +329,10 @@ public class RubyMath {
 
     @JRubyMethod(name = "exp", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat exp(ThreadContext context, IRubyObject recv, IRubyObject exponent) {
+        return exp(context, exponent);
+    }
+
+    public static RubyFloat exp(ThreadContext context, IRubyObject exponent) {
         return RubyFloat.newFloat(context.runtime, Math.exp(RubyNumeric.num2dbl(context, exponent)));
     }
 
@@ -348,6 +352,10 @@ public class RubyMath {
      */
     @JRubyMethod(name = "log", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject val) {
+        return log(context, val);
+    }
+
+    public static RubyFloat log(ThreadContext context, IRubyObject val) {
         double value = RubyNumeric.num2dbl(context, val);
         return logCommon(context, value, Math.E, "log");
     }

@@ -90,6 +90,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final int id;
     private final ByteList symbolBytes;
     private final int hashCode;
+    private String decodedString;
     private transient Object constant;
 
     /**
@@ -174,7 +175,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     @Override
     public final String toString() {
-        return RubyEncoding.decodeISO(symbolBytes);
+        String decoded = decodedString;
+        if (decoded == null) {
+            decodedString = decoded = RubyEncoding.decodeISO(symbolBytes);
+        }
+        return decoded;
     }
 
     public final ByteList getBytes() {

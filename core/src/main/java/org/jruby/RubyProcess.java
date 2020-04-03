@@ -277,7 +277,7 @@ public class RubyProcess {
         }
 
         // MRI: pst_message
-        private static String pst_message(String prefix, long pid, long status) {
+        public static String pst_message(String prefix, long pid, long status) {
             StringBuilder sb = new StringBuilder(prefix);
             sb
                     .append("pid ")

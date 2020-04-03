@@ -134,6 +134,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
+import static org.jruby.runtime.Visibility.UNDEFINED;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -2112,7 +2113,7 @@ public class RubyModule extends RubyObject {
             visibility = PRIVATE;
         }
 
-        if (!(IdUtil.isLocal(internedIdentifier) || IdUtil.isConstant(internedIdentifier))) {
+        if (!(IdUtil.isLocal(internedIdentifier) || identifier.validConstantName())) {
             throw runtime.newNameError("invalid attribute name", internedIdentifier);
         }
 
@@ -3178,30 +3179,71 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "method_defined?", required = 1)
+    @JRubyMethod(name = "method_defined?")
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol) {
         return isMethodBound(TypeConverter.checkID(symbol).idString(), true) ? context.tru : context.fals;
     }
 
-    @JRubyMethod(name = "public_method_defined?", required = 1)
+    @JRubyMethod(name = "method_defined?")
+    public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
+        boolean parents = includeSuper.isTrue();
+
+        if (parents) return method_defined_p(context, symbol);
+
+        Visibility visibility = checkMethodVisibility(context, symbol, parents);
+        return RubyBoolean.newBoolean(context, visibility != UNDEFINED && visibility != PRIVATE);
+    }
+
+    @JRubyMethod(name = "public_method_defined?")
     public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
-
-        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PUBLIC);
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PUBLIC);
     }
 
-    @JRubyMethod(name = "protected_method_defined?", required = 1)
+    @JRubyMethod(name = "public_method_defined?")
+    public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
+        boolean parents = includeSuper.isTrue();
+
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PUBLIC);
+    }
+
+    @JRubyMethod(name = "protected_method_defined?")
     public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
-
-        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PROTECTED);
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PROTECTED);
     }
 
-    @JRubyMethod(name = "private_method_defined?", required = 1)
-    public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
+    @JRubyMethod(name = "protected_method_defined?")
+    public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
+        boolean parents = includeSuper.isTrue();
 
-        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PRIVATE);
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PROTECTED);
+    }
+
+    @JRubyMethod(name = "private_method_defined?")
+    public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol) {
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PRIVATE);
+    }
+
+    @JRubyMethod(name = "private_method_defined?")
+    public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
+        boolean parents = includeSuper.isTrue();
+
+        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PRIVATE);
+    }
+
+    private Visibility checkMethodVisibility(ThreadContext context, IRubyObject symbol, boolean parents) {
+        String name = TypeConverter.checkID(symbol).idString();
+
+        RubyModule mod = this;
+
+        if (!parents) mod = getMethodLocation();
+
+        DynamicMethod method = mod.searchMethod(name);
+
+        if (method.isUndefined()) return Visibility.UNDEFINED;
+
+        if (!parents && method.getDefinedClass() != mod) return Visibility.UNDEFINED;
+
+        return method.getVisibility();
     }
 
     @JRubyMethod(name = "public_class_method", rest = true)
@@ -3756,6 +3798,13 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_missing", required = 1)
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
         Ruby runtime = context.runtime;
+
+        RubyModule privateConstReference = context.getPrivateConstantReference();
+
+        if (privateConstReference != null) {
+            context.setPrivateConstantReference(null);
+            throw getRuntime().newNameError("private constant " + privateConstReference + "::" + rubyName + " referenced", privateConstReference, rubyName);
+        }
 
         if (this != runtime.getObject()) {
             throw runtime.newNameError("uninitialized constant %2$s::%1$s", this, rubyName);
@@ -4617,7 +4666,8 @@ public class RubyModule extends RubyObject {
         if (entry.hidden && !includePrivate) {
             RubyModule recv = this;
             if (recv.isIncluded()) recv = recv.getNonIncludedClass();
-            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", recv, name);
+            getRuntime().getCurrentContext().setPrivateConstantReference(recv);
+            return null;
         }
         if (entry.deprecated) {
             final Ruby runtime = getRuntime();
@@ -4639,7 +4689,6 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject storeConstant(String name, IRubyObject value) {
         assert value != null : "value is null";
-        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
 
         ensureConstantsSettable();
         return constantTableStore(name, value);
@@ -4647,8 +4696,6 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden) {
         assert value != null : "value is null";
-        //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
-        // NOTE used to setup (store) Java class names
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden);
@@ -4657,7 +4704,6 @@ public class RubyModule extends RubyObject {
     // NOTE: private for now - not sure about the API - maybe an int mask would be better?
     private IRubyObject storeConstant(String name, IRubyObject value, boolean hidden, boolean deprecated) {
         assert value != null : "value is null";
-        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden, deprecated);
@@ -4670,7 +4716,6 @@ public class RubyModule extends RubyObject {
 
     // removes and returns the stored value without processing undefs (autoloads)
     public IRubyObject deleteConstant(String name) {
-        assert IdUtil.isConstant(name);
         ensureConstantsSettable();
         return constantTableRemove(name);
     }
@@ -4716,7 +4761,7 @@ public class RubyModule extends RubyObject {
     protected final String validateConstant(IRubyObject name) {
         return RubySymbol.retrieveIDSymbol(name, (sym, newSym) -> {
             if (!sym.validConstantName()) {
-                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", name), sym.idString());
+                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym.idString());
             }
         }).idString();
     }
@@ -4733,13 +4778,11 @@ public class RubyModule extends RubyObject {
         // MRI is more complicated than this and distinguishes between ID and non-ID.
         RubyString nameString = errorName.asString();
 
-        // MRI does strlen to check for \0 vs Ruby string length.
-        if ((nameString.getEncoding() != resultEncoding && !nameString.isAsciiOnly()) ||
-                nameString.toString().indexOf('\0') > -1 ) {
-            nameString = (RubyString) nameString.inspect();
-        }
-
-        throw getRuntime().newNameError("wrong constant name " + nameString, name);
+        return RubySymbol.retrieveIDSymbol(nameString, (sym, newSym) -> {
+            if (!sym.validConstantName()) {
+                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym.idString());
+            }
+        }).idString();
     }
 
     protected final void ensureConstantsSettable() {

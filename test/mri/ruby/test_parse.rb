@@ -14,13 +14,12 @@ class TestParse < Test::Unit::TestCase
   end
 
   def test_else_without_rescue
-    x = eval <<-END, nil, __FILE__, __LINE__+1
+    assert_syntax_error(<<-END, %r":#{__LINE__+2}: else without rescue"o, [__FILE__, __LINE__+1])
       begin
       else
         42
       end
     END
-    assert_equal(42, x)
   end
 
   def test_alias_backref
@@ -457,6 +456,30 @@ class TestParse < Test::Unit::TestCase
     end
   end
 
+  def test_op_asgn1_with_block
+    t = Object.new
+    a = []
+    blk = proc {|x| a << x }
+    def t.[](_)
+      yield(:aref)
+      nil
+    end
+    def t.[]=(_, _)
+      yield(:aset)
+    end
+    def t.dummy(_)
+    end
+    eval <<-END, nil, __FILE__, __LINE__+1
+      t[42, &blk] ||= 42
+    END
+    assert_equal([:aref, :aset], a)
+    a.clear
+    eval <<-END, nil, __FILE__, __LINE__+1
+    t[42, &blk] ||= t.dummy 42 # command_asgn test
+    END
+    assert_equal([:aref, :aset], a)
+  end
+
   def test_backquote
     t = Object.new
 
@@ -888,10 +911,8 @@ x = __ENCODING__
     assert_equal(expected, actual, bug5614)
   end
 
-  def test_shadowing_variable
-    assert_warning(/shadowing outer local variable/) {eval("a=1; tap {|a|}")}
-    a = "\u{3042}"
-    assert_warning(/#{a}/o) {eval("#{a}=1; tap {|#{a}|}")}
+  def test_no_shadowing_variable_warning
+    assert_no_warning(/shadowing outer local variable/) {eval("a=1; tap {|a|}")}
   end
 
   def test_unused_variable
@@ -1097,6 +1118,84 @@ x = __ENCODING__
     assert_raise(SyntaxError) { eval("def m\n\0""end") }
     assert_raise(SyntaxError) { eval("def m\n\C-d""end") }
     assert_raise(SyntaxError) { eval("def m\n\C-z""end") }
+  end
+
+  def test_location_of_invalid_token
+    assert_raise_with_message(SyntaxError, /^      \^~~\z/) do
+      eval('class xxx end')
+    end
+  end
+
+  def test_whitespace_warning
+    assert_raise_with_message(SyntaxError, /backslash/) do
+      eval("\\foo")
+    end
+    assert_raise_with_message(SyntaxError, /escaped space/) do
+      eval("\\ ")
+    end
+    assert_raise_with_message(SyntaxError, /escaped horizontal tab/) do
+      eval("\\\t")
+    end
+    assert_raise_with_message(SyntaxError, /escaped form feed/) do
+      eval("\\\f")
+    end
+    assert_raise_with_message(SyntaxError, /escaped carriage return/) do
+      assert_warn(/middle of line/) {eval("\\\r")}
+    end
+    assert_raise_with_message(SyntaxError, /escaped vertical tab/) do
+      eval("\\\v")
+    end
+  end
+
+  def test_command_def_cmdarg
+    assert_valid_syntax("\n#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      m def x(); end
+      1.tap do end
+    end;
+  end
+
+  NONASCII_CONSTANTS = [
+    *%W"\u{00de} \u{00C0}".flat_map {|c| [c, c.encode("iso-8859-15")]},
+    "\u{1c4}", "\u{1f2}", "\u{1f88}", "\u{370}",
+    *%W"\u{391} \u{ff21}".flat_map {|c| [c, c.encode("cp932"), c.encode("euc-jp")]},
+  ]
+
+  def assert_nonascii_const
+    assert_all_assertions_foreach("NONASCII_CONSTANTS", *NONASCII_CONSTANTS) do |n|
+      m = Module.new
+      assert_not_operator(m, :const_defined?, n)
+      assert_raise_with_message(NameError, /uninitialized/) do
+        m.const_get(n)
+      end
+      assert_nil(eval("defined?(m::#{n})"))
+
+      v = yield m, n
+
+      assert_operator(m, :const_defined?, n)
+      assert_equal("constant", eval("defined?(m::#{n})"))
+      assert_same(v, m.const_get(n))
+
+      m.__send__(:remove_const, n)
+      assert_not_operator(m, :const_defined?, n)
+      assert_nil(eval("defined?(m::#{n})"))
+    end
+  end
+
+  def test_nonascii_const_set
+    assert_nonascii_const do |m, n|
+      m.const_set(n, 42)
+    end
+  end
+
+  def test_nonascii_constant
+    assert_nonascii_const do |m, n|
+      m.module_eval("class #{n}; self; end")
+    end
+  end
+
+  def test_cdmarg_after_command_args_and_tlbrace_arg
+    assert_valid_syntax('let () { m(a) do; end }')
   end
 
 =begin

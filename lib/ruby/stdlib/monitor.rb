@@ -230,7 +230,7 @@ module MonitorMixin
   def mon_synchronize
     # Prevent interrupt on handling interrupts; for example timeout errors
     # it may break locking state.
-    Thread.handle_interrupt(Exception => :never){ mon_enter }
+    Thread.handle_interrupt(EXCEPTION_NEVER){ mon_enter }
     begin
       yield
     ensure
@@ -260,9 +260,13 @@ module MonitorMixin
   # Initializes the MonitorMixin after being included in a class or when an
   # object has been extended with the MonitorMixin
   def mon_initialize
+    if defined?(@mon_mutex) && @mon_mutex_owner_object_id == object_id
+      raise ThreadError, "already initialized"
+    end
+    @mon_mutex = Thread::Mutex.new
+    @mon_mutex_owner_object_id = object_id
     @mon_owner = nil
     @mon_count = 0
-    @mon_mutex = Thread::Mutex.new
   end
 
   def mon_check_owner

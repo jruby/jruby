@@ -20,6 +20,8 @@ class TestTmpdir < Test::Unit::TestCase
       tmpdir << "foo"
       assert_equal(tmpdir_org, Dir.tmpdir)
     }.join
+  ensure
+    $SAFE = 0
   end
 
   def test_world_writable
@@ -68,15 +70,17 @@ class TestTmpdir < Test::Unit::TestCase
 
   def test_mktmpdir_traversal
     expect = Dir.glob(TRAVERSAL_PATH + '*').count
-    Dir.mktmpdir(TRAVERSAL_PATH + 'foo')
-    actual = Dir.glob(TRAVERSAL_PATH + '*').count
-    assert_equal expect, actual
+    Dir.mktmpdir(TRAVERSAL_PATH + 'foo') do
+      actual = Dir.glob(TRAVERSAL_PATH + '*').count
+      assert_equal expect, actual
+    end
   end
 
   def test_mktmpdir_traversal_array
     expect = Dir.glob(TRAVERSAL_PATH + '*').count
-    Dir.mktmpdir([TRAVERSAL_PATH, 'foo'])
-    actual = Dir.glob(TRAVERSAL_PATH + '*').count
-    assert_equal expect, actual
+    Dir.mktmpdir([TRAVERSAL_PATH, 'foo']) do
+      actual = Dir.glob(TRAVERSAL_PATH + '*').count
+      assert_equal expect, actual
+    end
   end
 end

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'rdoc/test_case'
+require 'minitest_helper'
 
 class TestRDocRIDriver < RDoc::TestCase
 
@@ -243,6 +243,32 @@ class TestRDocRIDriver < RDoc::TestCase
     assert_equal expected, out
   end
 
+  def test_add_method_that_is_alias_for_original
+    util_store
+
+    out = doc
+
+    @driver.add_method out, 'Qux#aliased'
+
+    expected =
+      doc(
+        head(1, 'Qux#aliased'),
+        blank_line,
+        para('(from ~/.rdoc)'),
+        rule(1),
+        blank_line,
+        para('alias comment'),
+        blank_line,
+        blank_line,
+        para('(This method is an alias for Qux#original.)'),
+        blank_line,
+        para('original comment'),
+        blank_line,
+        blank_line)
+
+    assert_equal expected, out
+  end
+
   def test_add_method_attribute
     util_store
 
@@ -348,6 +374,22 @@ class TestRDocRIDriver < RDoc::TestCase
     assert_equal expected, out
   end
 
+  def test_output_width
+    @options[:width] = 10
+    driver = RDoc::RI::Driver.new @options
+
+    doc = @RM::Document.new
+    doc << @RM::IndentedParagraph.new(0, 'new, parse, foo, bar, baz')
+
+    out, = capture_io do
+      driver.display doc
+    end
+
+    expected = "new, parse, foo,\nbar, baz\n"
+
+    assert_equal expected, out
+  end
+
   def test_add_method_list_interative
     @options[:interactive] = true
     driver = RDoc::RI::Driver.new @options
@@ -390,6 +432,7 @@ class TestRDocRIDriver < RDoc::TestCase
       'Foo::Bar'  => [@store1],
       'Foo::Baz'  => [@store1, @store2],
       'Inc'       => [@store1],
+      'Qux'       => [@store1],
     }
 
     classes = @driver.classes
@@ -654,6 +697,21 @@ class TestRDocRIDriver < RDoc::TestCase
     end
 
     refute_match %r%must not be displayed%, out
+  end
+
+  def test_display_name
+    util_store
+
+    out, = capture_io do
+      assert_equal true, @driver.display_name('home:README.rdoc')
+    end
+
+    expected = <<-EXPECTED
+= README
+This is a README
+    EXPECTED
+
+    assert_equal expected, out
   end
 
   def test_display_name_not_found_class
@@ -923,6 +981,7 @@ Foo::Bar#bother
       [@store1, 'Foo::Bar',  'Foo::Bar',  :both, 'blah'],
       [@store1, 'Foo::Baz',  'Foo::Baz',  :both, 'blah'],
       [@store1, 'Inc',       'Inc',       :both, 'blah'],
+      [@store1, 'Qux',       'Qux',       :both, 'blah'],
     ]
 
     assert_equal expected, items
@@ -1056,7 +1115,7 @@ Foo::Bar#bother
       @driver.list_known_classes
     end
 
-    assert_equal "Ambiguous\nExt\nFoo\nFoo::Bar\nFoo::Baz\nInc\n", out
+    assert_equal "Ambiguous\nExt\nFoo\nFoo::Bar\nFoo::Baz\nInc\nQux\n", out
   end
 
   def test_list_known_classes_name
@@ -1127,7 +1186,7 @@ Foo::Bar#bother
     method = @driver.load_method(@store2, :instance_methods, 'Bar', '#',
                                  'inherit')
 
-    assert_equal nil, method
+    assert_nil method
   end
 
   def test_load_methods_matching
@@ -1232,7 +1291,7 @@ Foo::Bar#bother
 
     assert_equal 'ruby',   klass, 'ruby project'
     assert_equal ':',      type,  'ruby type'
-    assert_equal nil,      meth,  'ruby page'
+    assert_nil             meth,  'ruby page'
   end
 
   def test_parse_name_page_extenson
@@ -1247,26 +1306,26 @@ Foo::Bar#bother
     klass, type, meth = @driver.parse_name 'Foo'
 
     assert_equal 'Foo', klass, 'Foo class'
-    assert_equal nil,   type,  'Foo type'
-    assert_equal nil,   meth,  'Foo method'
+    assert_nil          type,  'Foo type'
+    assert_nil          meth,  'Foo method'
 
     klass, type, meth = @driver.parse_name 'Foo#'
 
     assert_equal 'Foo', klass, 'Foo# class'
     assert_equal '#',   type,  'Foo# type'
-    assert_equal nil,   meth,  'Foo# method'
+    assert_nil          meth,  'Foo# method'
 
     klass, type, meth = @driver.parse_name 'Foo::'
 
     assert_equal 'Foo', klass, 'Foo:: class'
     assert_equal '::',  type,  'Foo:: type'
-    assert_equal nil,   meth,  'Foo:: method'
+    assert_nil          meth,  'Foo:: method'
 
     klass, type, meth = @driver.parse_name 'Foo.'
 
     assert_equal 'Foo', klass, 'Foo. class'
     assert_equal '.',   type,  'Foo. type'
-    assert_equal nil,   meth,  'Foo. method'
+    assert_nil          meth,  'Foo. method'
 
     klass, type, meth = @driver.parse_name 'Foo#Bar'
 
@@ -1291,14 +1350,14 @@ Foo::Bar#bother
     klass, type, meth = @driver.parse_name 'Foo::Bar'
 
     assert_equal 'Foo::Bar', klass, 'Foo::Bar class'
-    assert_equal nil,        type,  'Foo::Bar type'
-    assert_equal nil,        meth,  'Foo::Bar method'
+    assert_nil               type,  'Foo::Bar type'
+    assert_nil               meth,  'Foo::Bar method'
 
     klass, type, meth = @driver.parse_name 'Foo::Bar#'
 
     assert_equal 'Foo::Bar', klass, 'Foo::Bar# class'
     assert_equal '#',        type,  'Foo::Bar# type'
-    assert_equal nil,        meth,  'Foo::Bar# method'
+    assert_nil               meth,  'Foo::Bar# method'
 
     klass, type, meth = @driver.parse_name 'Foo::Bar#baz'
 
@@ -1480,6 +1539,15 @@ Foo::Bar#bother
     @overridden = @cFoo.add_method RDoc::AnyMethod.new(nil, 'override')
     @overridden.comment = 'must not be displayed in Bar#override'
     @overridden.record_location @top_level
+
+    @cQux = @top_level.add_class RDoc::NormalClass, 'Qux'
+
+    @original = @cQux.add_method RDoc::AnyMethod.new(nil, 'original')
+    @original.comment = 'original comment'
+    @original.record_location @top_level
+
+    @aliased = @original.add_alias RDoc::Alias.new(nil, 'original', 'aliased', 'alias comment'), @cQux
+    @aliased.record_location @top_level
 
     @store1.save
 

@@ -98,7 +98,7 @@ public class CallBlock extends BlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
+        return callback.call(context, adjustArgs(block, args));
     }
 
     public StaticScope getStaticScope() {

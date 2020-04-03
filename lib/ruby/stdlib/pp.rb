@@ -386,7 +386,7 @@ class Range # :nodoc:
     q.breakable ''
     q.text(self.exclude_end? ? '...' : '..')
     q.breakable ''
-    q.pp self.end
+    q.pp self.end if self.end
   end
 end
 
@@ -510,6 +510,37 @@ class MatchData # :nodoc:
           q.pp self[i]
         end
       }
+    }
+  end
+end
+
+# RubyVM not defined outside of MRI
+defined?(RubyVM::AbstractSyntaxTree::Node) && class RubyVM::AbstractSyntaxTree::Node
+  def pretty_print_children(q, names = [])
+    children.zip(names) do |c, n|
+      if n
+        q.breakable
+        q.text "#{n}:"
+      end
+      q.group(2) do
+        q.breakable
+        q.pp c
+      end
+    end
+  end
+
+  def pretty_print(q)
+    q.group(1, "(#{type}@#{first_lineno}:#{first_column}-#{last_lineno}:#{last_column}", ")") {
+      case type
+      when :SCOPE
+        pretty_print_children(q, %w"tbl args body")
+      when :ARGS
+        pretty_print_children(q, %w[pre_num pre_init opt first_post post_num post_init rest kw kwrest block])
+      when :DEFN
+        pretty_print_children(q, %w[mid body])
+      else
+        pretty_print_children(q)
+      end
     }
   end
 end

@@ -53,6 +53,8 @@ class TestReadline < Test::Unit::TestCase
             end
           end
         }.join
+      ensure
+        $SAFE = 0
       end
     end
 
@@ -410,6 +412,7 @@ class TestReadline < Test::Unit::TestCase
   end if !/EditLine|\A4\.3\z/n.match(Readline::VERSION)
 
   def test_input_metachar
+    skip("Won't pass on mingw w/readline 7.0.005 [ruby-core:45682]") if mingw?
     bug6601 = '[ruby-core:45682]'
     Readline::HISTORY << "hello"
     wo = nil
@@ -419,7 +422,7 @@ class TestReadline < Test::Unit::TestCase
     end
     assert_equal("hello", line, bug6601)
   ensure
-    wo.close
+    wo&.close
     Readline.delete_text
     Readline::HISTORY.clear
   end if !/EditLine/n.match(Readline::VERSION)
@@ -550,6 +553,65 @@ class TestReadline < Test::Unit::TestCase
     Readline.completer_word_break_characters = saved_completer_word_break_characters
   end
 
+  def test_completion_quote_character_completing_unquoted_argument
+    return unless Readline.respond_to?(:completion_quote_character)
+
+    quote_character = "original value"
+    Readline.completion_proc = -> (_) do
+      quote_character = Readline.completion_quote_character
+      []
+    end
+    Readline.completer_quote_characters = "'\""
+
+    with_temp_stdio do |stdin, stdout|
+      replace_stdio(stdin.path, stdout.path) do
+        stdin.write("input\t")
+        stdin.flush
+        Readline.readline("> ", false)
+      end
+    end
+
+    assert_nil(quote_character)
+  end
+
+  def test_completion_quote_character_completing_quoted_argument
+    return unless Readline.respond_to?(:completion_quote_character)
+
+    quote_character = "original value"
+    Readline.completion_proc = -> (_) do
+      quote_character = Readline.completion_quote_character
+      []
+    end
+    Readline.completer_quote_characters = "'\""
+
+    with_temp_stdio do |stdin, stdout|
+      replace_stdio(stdin.path, stdout.path) do
+        stdin.write("'input\t")
+        stdin.flush
+        Readline.readline("> ", false)
+      end
+    end
+
+    assert_equal("'", quote_character)
+  end
+
+  def test_completion_quote_character_after_completion
+    return unless Readline.respond_to?(:completion_quote_character)
+
+    Readline.completion_proc = -> (_) { [] }
+    Readline.completer_quote_characters = "'\""
+
+    with_temp_stdio do |stdin, stdout|
+      replace_stdio(stdin.path, stdout.path) do
+        stdin.write("'input\t")
+        stdin.flush
+        Readline.readline("> ", false)
+      end
+    end
+
+    assert_nil(Readline.completion_quote_character)
+  end
+
   private
 
   def replace_stdio(stdin_path, stdout_path)
@@ -581,6 +643,11 @@ class TestReadline < Test::Unit::TestCase
     Tempfile.create("test_readline_stdin") {|stdin|
       Tempfile.create("test_readline_stdout") {|stdout|
         yield stdin, stdout
+        if windows?
+          # needed since readline holds refs to tempfiles, can't delete on Windows
+          Readline.input = STDIN
+          Readline.output = STDOUT
+        end
       }
     }
   end

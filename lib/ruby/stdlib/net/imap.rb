@@ -18,7 +18,7 @@ require "socket"
 require "monitor"
 require "digest/md5"
 require "strscan"
-require 'net/protocol'
+require_relative 'protocol'
 begin
   require "openssl"
 rescue LoadError
@@ -999,7 +999,7 @@ module Net
     def self.decode_utf7(s)
       return s.gsub(/&([^-]+)?-/n) {
         if $1
-          ($1.tr(",", "/") + "===").unpack("m")[0].encode(Encoding::UTF_8, Encoding::UTF_16BE)
+          ($1.tr(",", "/") + "===").unpack1("m").encode(Encoding::UTF_8, Encoding::UTF_16BE)
         else
           "&"
         end
@@ -1129,7 +1129,9 @@ module Net
     end
 
     def tcp_socket(host, port)
-      Socket.tcp(host, port, :connect_timeout => @open_timeout)
+      s = Socket.tcp(host, port, :connect_timeout => @open_timeout)
+      s.setsockopt(:SOL_SOCKET, :SO_KEEPALIVE, true)
+      s
     rescue Errno::ETIMEDOUT
       raise Net::OpenTimeout, "Timeout to open TCP connection to " +
         "#{host}:#{port} (exceeds #{@open_timeout} seconds)"

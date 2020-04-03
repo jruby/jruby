@@ -361,6 +361,9 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "joda-time.version", Constants.JODA_TIME_VERSION);
         setConfig(context, CONFIG, "tzdata.version",    Constants.TZDATA_VERSION);
 
+        setConfig(context, CONFIG, "UNICODE_VERSION", "12.1.0");
+        setConfig(context, CONFIG, "UNICODE_EMOJI_VERSION", "12.0");
+
         rbConfig.defineConstant("CONFIG", CONFIG);
 
 

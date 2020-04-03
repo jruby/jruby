@@ -95,6 +95,26 @@ class TestGemCommandsPushCommand < Gem::TestCase
                  @fetcher.last_request["Content-Type"]
   end
 
+  def test_execute_allowed_push_host
+    @spec, @path = util_gem "freebird", "1.0.1" do |spec|
+      spec.metadata['allowed_push_host'] = "https://privategemserver.example"
+    end
+
+    @response = "Successfully registered gem: freewill (1.0.0)"
+    @fetcher.data["#{@spec.metadata['allowed_push_host']}/api/v1/gems"] = [@response, 200, 'OK']
+    @fetcher.data["#{Gem.host}/api/v1/gems"] =
+      ['fail', 500, 'Internal Server Error']
+
+    @cmd.options[:args] = [@path]
+
+    @cmd.execute
+
+    assert_equal Net::HTTP::Post, @fetcher.last_request.class
+    assert_equal Gem.read_binary(@path), @fetcher.last_request.body
+    assert_equal "application/octet-stream",
+                 @fetcher.last_request["Content-Type"]
+  end
+
   def test_sending_when_default_host_disabled
     Gem.configuration.disable_default_gem_server = true
     response = "You must specify a gem server"
@@ -141,6 +161,7 @@ class TestGemCommandsPushCommand < Gem::TestCase
 
     @response = "Successfully registered gem: freebird (1.0.1)"
     @fetcher.data["#{@host}/api/v1/gems"]  = [@response, 200, 'OK']
+
     send_battery
   end
 
@@ -209,6 +230,7 @@ class TestGemCommandsPushCommand < Gem::TestCase
     @spec, @path = util_gem "freebird", "1.0.1" do |spec|
       spec.metadata['allowed_push_host'] = "https://privategemserver.example"
     end
+
 
     response = %{ERROR:  "#{@host}" is not allowed by the gemspec, which only allows "https://privategemserver.example"}
 
@@ -325,6 +347,43 @@ class TestGemCommandsPushCommand < Gem::TestCase
 
     assert_equal Gem.configuration.api_keys[:other],
                  @fetcher.last_request["Authorization"]
+  end
+
+  def test_otp_verified_success
+    response_fail = "You have enabled multifactor authentication but your request doesn't have the correct OTP code. Please check it and retry."
+    response_success = 'Successfully registered gem: freewill (1.0.0)'
+
+    @fetcher.data["#{Gem.host}/api/v1/gems"] = proc do
+      @call_count ||= 0
+      (@call_count += 1).odd? ? [response_fail, 401, 'Unauthorized'] : [response_success, 200, 'OK']
+    end
+
+    @otp_ui = Gem::MockGemUi.new "111111\n"
+    use_ui @otp_ui do
+      @cmd.send_gem(@path)
+    end
+
+    assert_match 'You have enabled multi-factor authentication. Please enter OTP code.', @otp_ui.output
+    assert_match 'Code: ', @otp_ui.output
+    assert_match response_success, @otp_ui.output
+    assert_equal '111111', @fetcher.last_request['OTP']
+  end
+
+  def test_otp_verified_failure
+    response = "You have enabled multifactor authentication but your request doesn't have the correct OTP code. Please check it and retry."
+    @fetcher.data["#{Gem.host}/api/v1/gems"] = [response, 401, 'Unauthorized']
+
+    @otp_ui = Gem::MockGemUi.new "111111\n"
+    assert_raises Gem::MockGemUi::TermError do
+      use_ui @otp_ui do
+        @cmd.send_gem(@path)
+      end
+    end
+
+    assert_match response, @otp_ui.output
+    assert_match 'You have enabled multi-factor authentication. Please enter OTP code.', @otp_ui.output
+    assert_match 'Code: ', @otp_ui.output
+    assert_equal '111111', @fetcher.last_request['OTP']
   end
 
 end

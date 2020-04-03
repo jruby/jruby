@@ -17,6 +17,7 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
@@ -625,6 +626,15 @@ public class IRBuilder {
                 }
                 return last;
             }
+            case ARGSCATNODE: {
+                ArgsCatNode argsCatNode = (ArgsCatNode)args;
+                Operand lhs = build(argsCatNode.getFirstNode());
+                Operand rhs = build(argsCatNode.getSecondNode());
+                Variable res = createTemporaryVariable();
+                addInstr(new BuildCompoundArrayInstr(res, lhs, rhs, false));
+                argsList.add(new Splat(res));
+                return rhs;
+            }
             case ARGSPUSHNODE:  { // a[1, *b] = 2
                 ArgsPushNode argsPushNode = (ArgsPushNode)args;
                 Operand lhs = build(argsPushNode.getFirstNode());
@@ -904,7 +914,8 @@ public class IRBuilder {
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
-        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
+        Operand block = setupCallClosure(attrAssignNode.getBlockNode());
+        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), block, scope.maybeUsingRefinements()));
         addInstr(new CopyInstr(result, lastArg));
 
         if (attrAssignNode.isLazy()) {
@@ -3324,12 +3335,13 @@ public class IRBuilder {
         Label endLabel = getNewLabel();
         Variable elt = createTemporaryVariable();
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, null));
+        Operand block = setupCallClosure(opElementAsgnNode.getBlockNode());
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, block));
         addInstr(createBranch(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
         argList = addArg(argList, value);
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.ASET), array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.ASET), array, argList, block));
         addInstr(new CopyInstr(elt, value));
 
         addInstr(new LabelInstr(endLabel));
@@ -3342,8 +3354,9 @@ public class IRBuilder {
         CallType callType = receiver instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
         Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
+        Operand block = setupCallClosure(opElementAsgnNode.getBlockNode());
         Variable elt = createTemporaryVariable();
-        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, null)); // elt = a[args]
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, block)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
         RubySymbol operation = opElementAsgnNode.getOperatorSymbolName();
         addInstr(CallInstr.create(scope, callType, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
@@ -3351,7 +3364,7 @@ public class IRBuilder {
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = createTemporaryVariable();
         argList = addArg(argList, elt);
-        addInstr(CallInstr.create(scope, callType, tmp, symbol(ArrayDerefInstr.ASET), array, argList, null));   // a[args] = elt
+        addInstr(CallInstr.create(scope, callType, tmp, symbol(ArrayDerefInstr.ASET), array, argList, block));   // a[args] = elt
         return elt;
     }
 

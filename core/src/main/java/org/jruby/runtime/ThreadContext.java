@@ -51,6 +51,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
+import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -78,6 +79,7 @@ import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -162,6 +164,8 @@ public final class ThreadContext {
 
     private static boolean tryPreferredPRNG = true;
     private static boolean trySHA1PRNG = true;
+
+    private RubyModule privateConstantReference;
 
     public final JavaSites sites;
 
@@ -1290,6 +1294,13 @@ public final class ThreadContext {
         return addThreadTraceFunction(trace_func, true);
     }
 
+    public void setPrivateConstantReference(RubyModule privateConstantReference) {
+        this.privateConstantReference = privateConstantReference;
+    }
+
+    public RubyModule getPrivateConstantReference() {
+        return privateConstantReference;
+    }
 
     private static class RecursiveError extends Error implements Unrescuable {
         public RecursiveError(Object tag) {

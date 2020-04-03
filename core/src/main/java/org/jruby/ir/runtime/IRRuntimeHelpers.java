@@ -846,8 +846,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
-        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name, definedConstantMessage, definedMethodMessage);
+    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, RubyString name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name.intern().idString(), definedConstantMessage, definedMethodMessage);
 
         return definedType == null ? context.nil : definedType;
     }

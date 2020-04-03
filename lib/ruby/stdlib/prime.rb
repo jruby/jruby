@@ -95,6 +95,9 @@ end
 #   has many prime factors. e.g. for Prime#prime? .
 
 class Prime
+
+  VERSION = "0.1.0"
+
   include Enumerable
   include Singleton
 
@@ -387,13 +390,6 @@ class Prime
       #   n < Math.sqrt(@@next_to_check) })
       @ulticheck_next_squared = 121   # @primes[@ulticheck_index + 1] ** 2
     end
-
-    # Returns the cached prime numbers.
-    def cache
-      @primes
-    end
-    alias primes cache
-    alias primes_so_far cache
 
     # Returns the +index+th prime number.
     #

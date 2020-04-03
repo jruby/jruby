@@ -134,7 +134,7 @@ public class RubyDir extends RubyObject implements Closeable {
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
         Ruby runtime = context.runtime;
 
-        return initializeCommon(context, path, runtime.getDefaultFilesystemEncoding(), runtime);
+        return initializeCommon(context, path, runtime.getDefaultEncoding(), runtime);
     }
 
     /**
@@ -159,7 +159,7 @@ public class RubyDir extends RubyObject implements Closeable {
             }
         }
 
-        if (encoding == null) encoding = runtime.getDefaultFilesystemEncoding();
+        if (encoding == null) encoding = runtime.getDefaultEncoding();
 
         return initializeCommon(context, path, encoding, runtime);
     }
@@ -460,6 +460,11 @@ public class RubyDir extends RubyObject implements Closeable {
     /**
      * Returns an array containing all of the filenames except for "." and ".." in the given directory.
      */
+    @JRubyMethod(name = "children")
+    public IRubyObject children(ThreadContext context) {
+        return entriesCommon(context, path.asJavaString(), encoding, true);
+    }
+    
     @JRubyMethod(name = "children", meta = true)
     public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return children(context, recv, arg, context.nil);
@@ -790,6 +795,15 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     public IRubyObject each_child(ThreadContext context, Block block) {
         return each_child(context, encoding, block);
+    }
+
+    @JRubyMethod(name = "each_child")
+    public IRubyObject rb_each_child(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            return each_child(context, block);
+        }
+
+        return enumeratorize(context.runtime, children(context), "each");
     }
 
     @Override

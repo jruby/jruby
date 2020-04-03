@@ -2795,8 +2795,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             fptr.checkByteReadable(context);
             if (b.isNil()) return context.nil;
-            if (b instanceof RubyFixnum) {
-                byte cc = (byte) RubyNumeric.fix2int(b);
+            if (b instanceof RubyInteger) {
+                byte cc = (byte) ((RubyInteger) b.convertToInteger().op_mod(context, 256)).getIntValue();
                 b = RubyString.newStringNoCopy(context.runtime, new byte[]{cc});
             } else {
                 b = b.convertToString();

@@ -179,4 +179,12 @@ public class RubyBinding extends RubyObject {
     public IRubyObject receiver(ThreadContext context) {
         return binding.getSelf();
     }
+
+    @JRubyMethod
+    public IRubyObject source_location(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        IRubyObject filename = runtime.newString(binding.getFile()).freeze(context);
+        RubyFixnum line = runtime.newFixnum(binding.getLine() + 1); /* zero-based */
+        return runtime.newArray(filename, line);
+    }
 }

@@ -71,8 +71,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'rspec-expectations.version' => '3.7.0',
               'rspec-mocks.version' => '3.7.0',
               'rspec-support.version' => '3.7.0',
-              'minitest.version' => '5.10.3',
-              'test-unit.version' => '3.2.8',
+              'minitest.version' => '5.11.3',
+              'test-unit.version' => '3.2.9',
               'power_assert.version' => '1.1.3',
 
               # versions for default gems with bin executables

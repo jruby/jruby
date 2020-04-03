@@ -60,15 +60,20 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.StringSites;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1162,7 +1167,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "-@") // -'foo' returns frozen string
     public final IRubyObject minus_at(ThreadContext context) {
-        return isFrozen() ? this : context.runtime.freezeAndDedupString(this);
+        Ruby runtime = context.runtime;
+
+        RubyString str = this;
+
+        if (!str.isBare(runtime) && !str.isFrozen()) str = str.strDup(runtime);
+
+        return runtime.freezeAndDedupString(str);
     }
 
     @JRubyMethod(name = "+@") // +'foo' returns modifiable string
@@ -4058,6 +4069,49 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
+    final IRubyObject uptoEndless(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+        StringSites sites = sites(context);
+        CallSite succ = sites.succ;
+
+        boolean isAscii = scanForCodeRange() == CR_7BIT;
+        RubyString current = strDup(context.runtime);
+
+        if (isAscii && ASCII.isDigit(value.getUnsafeBytes()[value.getBegin()])) {
+            IRubyObject b = stringToInum(10);
+            RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.length()), context.nil);
+            ByteList to;
+
+            if (b instanceof RubyFixnum) {
+                long bl = RubyNumeric.fix2long(b);
+
+                while (bl < RubyFixnum.MAX) {
+                    argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bl));
+                    to = new ByteList(value.length() + 5);
+                    Sprintf.sprintf(to, "%.*d", argsArr);
+                    current = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
+                    block.yield(context, current);
+                    bl++;
+                }
+
+                argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bl));
+                to = new ByteList(value.length() + 5);
+                Sprintf.sprintf(to, "%.*d", argsArr);
+                current = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
+            }
+        }
+
+        while (true) {
+            IRubyObject next = succ.call(context, current, current);
+            block.yield(context, current);
+            if (next == null) break;
+            current = next.convertToString();
+            if (current.getByteList().length() == 0) break;
+        }
+
+        return this;
+    }
+
     @Deprecated
     public final RubyBoolean include_p19(ThreadContext context, IRubyObject obj) {
         return include_p(context, obj);
@@ -4208,28 +4262,60 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
     public RubyArray split(ThreadContext context) {
         return split(context, context.nil);
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
     public RubyArray split(ThreadContext context, IRubyObject arg0) {
         return splitCommon(context, arg0, false, 0, 0, true);
     }
 
     @JRubyMethod(name = "split", writes = BACKREF)
+    public IRubyObject splitWithBlock(ThreadContext context, Block block) {
+        return splitWithBlock(context, context.nil, block);
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF)
+    public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, Block block) {
+        RubyArray array = split(context, arg0);
+        if (!block.isGiven()) {
+            return array;
+        }
+
+        for (int i = 0; i < array.getLength(); i++) {
+            block.yield(context, array.eltOk(i));
+        }
+
+        return this;
+    }
+
     public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int lim = RubyNumeric.num2int(arg1);
+        RubyArray array = null;
         if (lim <= 0) {
-            return splitCommon(context, arg0, false, lim, 1, true);
+            array = splitCommon(context, arg0, false, lim, 1, true);
+        } else if (lim == 1) {
+            Ruby runtime = context.runtime;
+            array = value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime));
         } else {
-            if (lim == 1) {
-                Ruby runtime = context.runtime;
-                return value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime));
-            }
-            return splitCommon(context, arg0, true, lim, 1, true);
+            array = splitCommon(context, arg0, true, lim, 1, true);
         }
+
+        return array;
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF)
+    public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyArray array = split(context, arg0, arg1);
+        if (!block.isGiven()) {
+            return array;
+        }
+
+        for (int i = 0; i < array.getLength(); i++) {
+            block.yield(context, array.eltOk(i));
+        }
+
+        return this;
     }
 
     @Deprecated
@@ -6668,6 +6754,82 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int pp = nth(value.getEncoding(), value.unsafeBytes(), p, e, nth, singlebyte);
         if (pp == -1) return size;
         return pp - p;
+    }
+
+    // MRI: rb_str_include_range_p
+    public static IRubyObject includeRange(ThreadContext context, RubyString _beg, RubyString _end, IRubyObject _val, boolean exclusive) {
+        if (_val.isNil()) return context.fals;
+        _val = TypeConverter.checkStringType(context.runtime, _val);
+        if (_val.isNil()) return context.fals;
+
+        final RubyString val = _val.convertToString();
+        final RubyString beg = _beg.newFrozen();
+        final RubyString end = _end.newFrozen();
+
+        if (EncodingUtils.encAsciicompat(beg.getEncoding()) &&
+                EncodingUtils.encAsciicompat(end.getEncoding()) &&
+                EncodingUtils.encAsciicompat(val.getEncoding())) {
+            ByteList bByteList = beg.getByteList();
+            ByteList eByteList = end.getByteList();
+            ByteList vByteList = val.getByteList();
+
+            if (beg.length() == 1 && end.length() == 1) {
+                if (val.length() != 1) return context.fals;
+                int b, e, v;
+                if ((b = bByteList.get(0)) < 128 &&
+                        (e = eByteList.get(0)) < 128 &&
+                        (v = vByteList.get(0)) < 128) {
+                    if (b <= v && v < e) return context.tru;
+                    if (!exclusive && v == e) return context.tru;
+                    return context.fals;
+                }
+            }
+        }
+
+        try {
+            beg.uptoCommon(
+                    context,
+                    end,
+                    exclusive,
+                    CallBlock19.newCallClosure(
+                            beg,
+                            beg.getMetaClass(),
+                            Signature.ONE_ARGUMENT,
+                            new IncludeUpToCallback(beg),
+                            context), false);
+        } catch (JumpException.SpecialJump e) {
+            return context.tru;
+        }
+        return context.fals;
+    }
+
+    private static class IncludeUpToCallback implements BlockCallback {
+
+        private final IRubyObject beg;
+
+        IncludeUpToCallback(IRubyObject beg) {
+            this.beg = beg;
+        }
+
+        @Override
+        public IRubyObject call(final ThreadContext context, final IRubyObject[] args, final Block block) {
+            return call(context, args[0]);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg0) {
+            if (beg.op_equal(context, arg0).isTrue()) {
+                throw JumpException.SPECIAL_JUMP; // return true
+            }
+            return arg0;
+        }
+    }
+
+    /**
+     * Is this a "bare" string, i.e. has no instance vars and class == String.
+     */
+    private boolean isBare(Ruby runtime) {
+        return !hasVariables() && metaClass == runtime.getString();
     }
 
     private static StringSites sites(ThreadContext context) {

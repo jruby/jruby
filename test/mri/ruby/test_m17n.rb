@@ -365,7 +365,10 @@ class TestM17N < Test::Unit::TestCase
       "\u3042".encode("UTF-16LE"),
       "\u3042".encode("UTF-16BE"),
     ].each do |str|
-      assert_equal(str, eval(str.dump), "[ruby-dev:33142]")
+      dump = str.dump
+      assert_equal(str, eval(dump), "[ruby-dev:33142]")
+      assert_equal(str, dump.undump)
+      assert_equal(str, eval("# frozen-string-literal: true\n#{dump}"), '[Bug #14687]')
     end
   end
 
@@ -1526,6 +1529,17 @@ class TestM17N < Test::Unit::TestCase
       t.setbyte(i, 0xe3)
       assert_not_predicate(t, :valid_encoding?, failure)
     }
+  end
+
+  def test_setbyte_range
+    s = u("\xE3\x81\x82\xE3\x81\x84")
+    assert_nothing_raised { s.setbyte(0, -1) }
+    assert_nothing_raised { s.setbyte(0, 0x00) }
+    assert_nothing_raised { s.setbyte(0, 0x7F) }
+    assert_nothing_raised { s.setbyte(0, 0x80) }
+    assert_nothing_raised { s.setbyte(0, 0xff) }
+    assert_nothing_raised { s.setbyte(0, 0x100) }
+    assert_nothing_raised { s.setbyte(0, 0x4f7574206f6620636861722072616e6765) }
   end
 
   def test_compatible

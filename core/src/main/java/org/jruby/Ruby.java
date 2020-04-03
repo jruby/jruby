@@ -399,6 +399,10 @@ public final class Ruby implements Constantizable {
         threadGroupClass = profile.allowClass("ThreadGroup") ? RubyThreadGroup.createThreadGroupClass(this) : null;
         threadClass = profile.allowClass("Thread") ? RubyThread.createThreadClass(this) : null;
         exceptionClass = profile.allowClass("Exception") ? RubyException.createExceptionClass(this) : null;
+
+        // this is used in some kwargs conversions for numerics below
+        hashClass = profile.allowClass("Hash") ? RubyHash.createHashClass(this) : null;
+
         numericClass = profile.allowClass("Numeric") ? RubyNumeric.createNumericClass(this) : null;
         integerClass = profile.allowClass("Integer") ? RubyInteger.createIntegerClass(this) : null;
         fixnumClass = profile.allowClass("Fixnum") ? RubyFixnum.createFixnumClass(this) : null;
@@ -413,7 +417,6 @@ public final class Ruby implements Constantizable {
 
         complexClass = profile.allowClass("Complex") ? RubyComplex.createComplexClass(this) : null;
         rationalClass = profile.allowClass("Rational") ? RubyRational.createRationalClass(this) : null;
-        hashClass = profile.allowClass("Hash") ? RubyHash.createHashClass(this) : null;
 
         if (profile.allowClass("Array")) {
             arrayClass = RubyArray.createArrayClass(this);
@@ -462,10 +465,14 @@ public final class Ruby implements Constantizable {
             enumeratorClass = RubyEnumerator.defineEnumerator(this, enumerableModule);
             generatorClass = RubyGenerator.createGeneratorClass(this, enumeratorClass);
             yielderClass = RubyYielder.createYielderClass(this);
+            chainClass = RubyChain.createChainClass(this, enumeratorClass);
+            aseqClass = RubyArithmeticSequence.createArithmeticSequenceClass(this, enumeratorClass);
         } else {
             enumeratorClass = null;
             generatorClass = null;
             yielderClass = null;
+            chainClass = null;
+            aseqClass = null;
         }
 
         continuationClass = initContinuation();
@@ -1982,6 +1989,14 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getGenerator() {
         return generatorClass;
+    }
+
+    public RubyClass getChain() {
+        return chainClass;
+    }
+
+    public RubyClass getArithmeticSequence() {
+        return aseqClass;
     }
 
     public RubyClass getFiber() {
@@ -5204,6 +5219,8 @@ public final class Ruby implements Constantizable {
     private final RubyClass yielderClass;
     private final RubyClass fiberClass;
     private final RubyClass generatorClass;
+    private final RubyClass chainClass;
+    private final RubyClass aseqClass;
     private final RubyClass arrayClass;
     private final RubyClass hashClass;
     private final RubyClass rangeClass;

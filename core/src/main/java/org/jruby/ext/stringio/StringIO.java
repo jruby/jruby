@@ -1153,8 +1153,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         checkModifiable();
 
-        if (arg instanceof RubyFixnum) {
-            ungetbyteCommon(RubyNumeric.fix2int(arg));
+        if (arg instanceof RubyInteger) {
+            ungetbyteCommon(((RubyInteger) ((RubyInteger) arg).op_mod(context, 256)).getIntValue());
         } else {
             ungetbyteCommon(arg.convertToString());
         }

@@ -2173,10 +2173,10 @@ public class JVMVisitor extends IRVisitor {
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((Stringable)runtimehelpercall.getArgs()[1]).getString());
+                visit(runtimehelpercall.getArgs()[1]);
                 visit(runtimehelpercall.getArgs()[2]);
                 visit(runtimehelpercall.getArgs()[3]);
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyString.class, IRubyObject.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_NTH_REF:

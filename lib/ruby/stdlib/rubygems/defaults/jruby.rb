@@ -31,15 +31,15 @@ module Gem
   # to preserve the old location: lib/ruby/gems.
   def self.default_dir
     dir = RbConfig::CONFIG["default_gem_home"]
-    dir ||= File.join(RbConfig::CONFIG['libdir'], 'ruby', 'gems', 'shared')
+    dir ||= File.join(ConfigMap[:libdir], 'ruby', 'gems', 'shared')
     dir
   end
 
   # Default locations for RubyGems' .rb and bin files
   def self.default_rubygems_dirs
     [
-        File.join(RbConfig::CONFIG['libdir'], 'ruby', 'stdlib'),
-        RbConfig::CONFIG['bindir']
+        File.join(ConfigMap[:libdir], 'ruby', 'stdlib'),
+        ConfigMap[:bindir]
     ]
   end
 

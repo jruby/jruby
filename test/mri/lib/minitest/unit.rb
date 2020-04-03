@@ -3,7 +3,7 @@
 
 require "optparse"
 require "rbconfig"
-#require "leakchecker"
+require "leakchecker"
 
 ##
 # Minimal (mostly drop-in) replacement for test-unit.
@@ -940,7 +940,7 @@ module MiniTest
         filter === m || filter === "#{suite}##{m}"
       }
 
-      # leakchecker = LeakChecker.new
+      leakchecker = LeakChecker.new
 
       assertions = filtered_test_methods.map { |method|
         inst = suite.new method
@@ -956,7 +956,9 @@ module MiniTest
         puts if @verbose
         $stdout.flush
 
-        # leakchecker.check("#{inst.class}\##{inst.__name__}")
+        unless defined?(RubyVM::MJIT) && RubyVM::MJIT.enabled? # compiler process is wrongly considered as leak
+          leakchecker.check("#{inst.class}\##{inst.__name__}")
+        end
 
         inst._assertions
       }
@@ -1169,6 +1171,14 @@ module MiniTest
       def windows? platform = RUBY_PLATFORM
         /mswin|mingw/ =~ platform
       end
+
+      ##
+      # Is this running on mingw?
+
+      def mingw? platform = RUBY_PLATFORM
+        /mingw/ =~ platform
+      end
+
     end
 
     ##

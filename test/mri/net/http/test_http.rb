@@ -529,6 +529,28 @@ module TestNetHTTP_version_1_1_methods
     assert_equal data, res.entity
   end
 
+  def test_timeout_during_HTTP_session_write
+    th = nil
+    # listen for connections... but deliberately do not read
+    TCPServer.open('localhost', 0) {|server|
+      port = server.addr[1]
+
+      conn = Net::HTTP.new('localhost', port)
+      conn.write_timeout = 0.01
+      conn.read_timeout = 0.01 if windows?
+      conn.open_timeout = 0.1
+
+      th = Thread.new do
+        err = !windows? ? Net::WriteTimeout : Net::ReadTimeout
+        assert_raise(err) { conn.post('/', "a"*50_000_000) }
+      end
+      assert th.join(10)
+    }
+  ensure
+    th&.kill
+    th&.join
+  end
+
   def test_timeout_during_HTTP_session
     bug4246 = "expected the HTTP session to have timed out but have not. c.f. [ruby-core:34203]"
 

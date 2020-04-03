@@ -17,7 +17,7 @@
 
 require "socket"
 require "monitor"
-require "net/protocol"
+require_relative "protocol"
 require "time"
 begin
   require "openssl"
@@ -230,6 +230,12 @@ module Net
         if defined?(VerifyCallbackProc)
           @ssl_context.verify_callback = VerifyCallbackProc
         end
+        # NOTE: session_cache_mode = has no effect on (current) JRuby-OpenSSL
+        # @ssl_context.session_cache_mode =
+        #   OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT |
+        #   OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
+        # SSLSocket#session= does nothing with JRuby-OpenSSL
+        # @ssl_context.session_new_cb = proc {|sock, sess| @ssl_session = sess }
         @ssl_session = nil
         if options[:private_data_connection].nil?
           @private_data_connection = true
@@ -349,7 +355,6 @@ module Net
       if @ssl_context.verify_mode != VERIFY_NONE
         ssl_sock.post_connection_check(@host)
       end
-      @ssl_session = ssl_sock.session
       return ssl_sock
     end
     private :start_tls_session

@@ -105,15 +105,28 @@ class OpenStruct
   end
 
   #
+  # call-seq:
+  #   ostruct.to_h                        -> hash
+  #   ostruct.to_h {|name, value| block } -> hash
+  #
   # Converts the OpenStruct to a hash with keys representing
   # each attribute (as symbols) and their corresponding values.
+  #
+  # If a block is given, the results of the block on each pair of
+  # the receiver will be used as pairs.
   #
   #   require "ostruct"
   #   data = OpenStruct.new("country" => "Australia", :capital => "Canberra")
   #   data.to_h   # => {:country => "Australia", :capital => "Canberra" }
+  #   data.to_h {|name, value| [name.to_s, value.upcase] }
+  #               # => {"country" => "AUSTRALIA", "capital" => "CANBERRA" }
   #
-  def to_h
-    @table.dup
+  def to_h(&block)
+    if block_given?
+      @table.to_h(&block)
+    else
+      @table.dup
+    end
   end
 
   #
@@ -156,7 +169,8 @@ class OpenStruct
     begin
       @modifiable = true
     rescue
-      raise RuntimeError, "can't modify frozen #{self.class}", caller(3)
+      exception_class = defined?(FrozenError) ? FrozenError : RuntimeError
+      raise exception_class, "can't modify frozen #{self.class}", caller(3)
     end
     @table
   end
@@ -294,7 +308,7 @@ class OpenStruct
   def delete_field(name)
     sym = name.to_sym
     begin
-      singleton_class.__send__(:remove_method, sym, "#{sym}=")
+      singleton_class.remove_method(sym, "#{sym}=")
     rescue NameError
     end
     @table.delete(sym) do

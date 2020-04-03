@@ -729,20 +729,30 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap(context.runtime).invert(context);
     }
 
+    @Deprecated
+    public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
+        return merge_bang(context, new IRubyObject[]{other}, block);
+    }
+
     /** rb_hash_merge_bang
      *
      */
-    @JRubyMethod(name = { "merge!", "update" }, required = 1)
-    public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
-        return getOrCreateRubyHashMap(context.runtime).merge_bang(context, other, block);
+    @JRubyMethod(name = { "merge!", "update" }, rest = true)
+    public RubyHash merge_bang(final ThreadContext context, final IRubyObject[] others, final Block block) {
+        return getOrCreateRubyHashMap(context.runtime).merge_bang(context, others, block);
+    }
+
+    @Deprecated
+    public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
+        return merge(context, new IRubyObject[]{other}, block);
     }
 
     /** rb_hash_merge
      *
      */
-    @JRubyMethod(name = { "merge", "ruby_merge" }) // collision with java.util.Map#merge on Java 8+
-    public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
-        return getOrCreateRubyHashMap(context.runtime).merge(context, other, block);
+    @JRubyMethod(name = { "merge", "ruby_merge" }, rest = true) // collision with java.util.Map#merge on Java 8+
+    public RubyHash merge(ThreadContext context, IRubyObject[] others, Block block) {
+        return getOrCreateRubyHashMap(context.runtime).merge(context, others, block);
     }
 
     /** rb_hash_initialize_copy
