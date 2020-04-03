@@ -75,7 +75,7 @@ module JRuby
       <<-EOS
 name       : #{name}
 modifiers  : #{modifiers.join(', ')}
-annotations: #{annotations.join(', ')}
+annotations: #{annotations.map{|k, v| "#{k}(#{v.inspect})"}.join(', ')}
 parameters : #{parameters.join(', ')}
 return_type: #{return_type}
     EOS
