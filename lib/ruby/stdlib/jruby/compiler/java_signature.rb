@@ -86,7 +86,7 @@ return_type: #{return_type}
     def process_annotation_params(anno_node)
       anno_node.parameters.inject({}) do |hash, param|
         # ??? default will be nil/null name here.
-        hash[param.name] = as_java_type(expr)
+      hash[param.name] = param.expression.accept(JavaSignatureVisitor.new{|name| as_java_type(name)})
         hash
       end
     end
@@ -115,5 +115,38 @@ return_type: #{return_type}
       "Java::#{list.join('')[1..-1]}"
     end
 
+  end
+  
+  class JavaSignatureVisitor
+    include org.jruby.ast.java_signature.AnnotationVisitor
+    def initialize &blk
+       @lookup = blk
+    end
+    def annotation(anno)
+        puts "annotation: #{anno.name}"
+        { anno.name =>
+        Hash[anno.parameters.map do |param|
+          puts "   #{param.name} =>"
+          [param.name, param.expression.accept(self)]
+        end].to_java}.to_java
+    end
+
+    def annotation_array(aa)
+      puts "annoa: #{aa}"
+      aa.expressions.map do |expr|
+        puts "  [] =>"
+        expr.accept self
+      end.to_java java.lang.Object
+    end
+    
+    def literal(lit)
+      puts "Literal: #{lit.literal}"
+      lit.literal
+    end
+
+    def type(type)
+      puts "type: #{type}"
+      @lookup.call type
+    end
   end
 end

@@ -74,6 +74,15 @@ public class TypeNode implements AnnotationExpression {
         return false;
     }
 
+    /**
+     * Accept for the visitor pattern.
+     * @param visitor the visitor
+     **/
+    @Override
+    public <T> T accept(AnnotationVisitor<T> visitor) {
+    	return visitor.type(this);
+    }
+
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof TypeNode)) return false;
