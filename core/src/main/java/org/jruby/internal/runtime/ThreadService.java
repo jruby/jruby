@@ -119,7 +119,7 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
      * distinct from the RubyThreadGroup, which is simply a mutable collection
      * of threads.
      */
-    private ThreadGroup rubyThreadGroup;
+    private final ThreadGroup rubyThreadGroup;
 
     /**
      * A map from a Java Thread or Future to its RubyThread instance. This is
@@ -136,13 +136,15 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
 
+        ThreadGroup rubyThreadGroup;
         try {
-            this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
-        } catch(SecurityException e) {
-            this.rubyThreadGroup = Thread.currentThread().getThreadGroup();
+            rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
+        } catch (SecurityException e) {
+            rubyThreadGroup = Thread.currentThread().getThreadGroup();
         }
+        this.rubyThreadGroup = rubyThreadGroup;
 
-        this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
+        this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
     public void teardown() {
