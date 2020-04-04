@@ -246,7 +246,7 @@ public class RubyHash extends RubyObject implements Map {
         this.ifNone = UNDEF;
         threshold = INITIAL_THRESHOLD;
         table = other.internalCopyTable(head);
-        size = other.size;
+        size = other.size();
     }
 
     public RubyHash(Ruby runtime, RubyClass klass) {
@@ -875,7 +875,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        if (size == 0) return RubyString.newUSASCIIString(context.runtime, "{}");
+        if (size() == 0) return RubyString.newUSASCIIString(context.runtime, "{}");
         if (context.runtime.isInspecting(this)) return RubyString.newUSASCIIString(context.runtime, "{...}");
 
         try {
@@ -1131,7 +1131,7 @@ public class RubyHash extends RubyObject implements Map {
 
         final RubyHash otherHash = (RubyHash) other;
 
-        if (this.size != otherHash.size) {
+        if (this.size() != otherHash.size()) {
             return context.fals;
         }
 
@@ -1667,7 +1667,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "keys")
     public RubyArray keys(final ThreadContext context) {
         try {
-            RubyArray keys = RubyArray.newBlankArrayInternal(context.runtime, size);
+            RubyArray keys = RubyArray.newBlankArrayInternal(context.runtime, size());
 
             visitAll(context, StoreKeyVisitor, keys);
 
@@ -1695,7 +1695,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "values")
     public RubyArray values(final ThreadContext context) {
         try {
-            RubyArray values = RubyArray.newBlankArrayInternal(context.runtime, size);
+            RubyArray values = RubyArray.newBlankArrayInternal(context.runtime, size());
 
             visitAll(context, StoreValueVisitor, values);
 
@@ -1885,9 +1885,9 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public IRubyObject reject_bangInternal(ThreadContext context, Block block) {
-        int n = size;
+        int n = size();
         delete_if(context, block);
-        if (n == size) return context.nil;
+        if (n == size()) return context.nil;
         return this;
     }
 
@@ -2288,7 +2288,7 @@ public class RubyHash extends RubyObject implements Map {
     // to totally change marshalling to work with overridden core classes.
     public static void marshalTo(final RubyHash hash, final MarshalStream output) throws IOException {
         output.registerLinkTarget(hash);
-       int hashSize = hash.size;
+       int hashSize = hash.size();
        output.writeInt(hashSize);
         try {
             hash.visitLimited(hash.getRuntime().getCurrentContext(), MarshalDumpVisitor, hashSize, output);
@@ -2336,7 +2336,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Override
     public boolean isEmpty() {
-        return size == 0;
+        return size() == 0;
     }
 
     @Override
@@ -2474,7 +2474,7 @@ public class RubyHash extends RubyObject implements Map {
 
         @Override
         public int size() {
-            return RubyHash.this.size;
+            return RubyHash.this.size();
         }
 
         @Override
@@ -2507,7 +2507,7 @@ public class RubyHash extends RubyObject implements Map {
 
         @Override
         public int size() {
-            return RubyHash.this.size;
+            return RubyHash.this.size();
         }
 
         @Override
@@ -2834,13 +2834,13 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public RubyFixnum rb_size() {
-        return metaClass.runtime.newFixnum(size);
+        return metaClass.runtime.newFixnum(size());
     }
 
     @Deprecated
     public RubyBoolean empty_p() {
         Ruby runtime = metaClass.runtime;
-        return size == 0 ? runtime.getTrue() : runtime.getFalse();
+        return isEmpty() ? runtime.getTrue() : runtime.getFalse();
     }
 
     @Deprecated

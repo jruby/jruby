@@ -361,6 +361,8 @@ describe "a java.util.Map instance" do
   # Rhino's scopes (implements Map) behave in a similar way
   it 'properly handles (internal) filtering map' do
     map = Java::java_integration::fixtures::InternalMap.new
+    expect( map.to_java.isEmpty ).to eql true
+    expect( map.to_java.size ).to eql 0
     map['_internal_1'] = 1
     map['_internal_2'] = 2
     expect( map.size() ).to eql 2
@@ -372,7 +374,10 @@ describe "a java.util.Map instance" do
     map['proper_key'] = 3
     expect( map.size() ).to eql 3
     expect( map.inspect ).to_not eql '{}'
-    expect(map.keys).to eql ['proper_key']
+    expect( map.keys ).to eql ['proper_key']
+
+    expect( map.to_java.isEmpty ).to eql false
+    expect( map.to_java.size ).to eql 3
   end
 
   private
