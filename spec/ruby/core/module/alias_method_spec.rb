@@ -61,9 +61,9 @@ describe "Module#alias_method" do
     }
   end
 
-  it "raises #{frozen_error_class} if frozen" do
+  it "raises FrozenError if frozen" do
     @class.freeze
-    -> { @class.make_alias :uno, :public_one }.should raise_error(frozen_error_class)
+    -> { @class.make_alias :uno, :public_one }.should raise_error(FrozenError)
   end
 
   it "converts the names using #to_str" do
@@ -81,15 +81,8 @@ describe "Module#alias_method" do
     -> { @class.make_alias mock('x'), :public_one }.should raise_error(TypeError)
   end
 
-  ruby_version_is ''...'2.5' do
-    it "is a private method" do
-      -> { @class.alias_method :ichi, :public_one }.should raise_error(NoMethodError)
-    end
-  end
-  ruby_version_is '2.5' do
-    it "is a public method" do
-      Module.should have_public_instance_method(:alias_method, false)
-    end
+  it "is a public method" do
+    Module.should have_public_instance_method(:alias_method, false)
   end
 
   it "returns self" do
