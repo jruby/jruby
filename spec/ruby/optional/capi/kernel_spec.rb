@@ -391,18 +391,6 @@ describe "C-API Kernel function" do
         @s.rb_rescue2(type_error_proc, :no_exc, proc, :exc, ArgumentError, RuntimeError)
       }.should raise_error(TypeError)
     end
-
-    it "works when the terminating argument has not been sizes as a VALUE" do
-      proc = -> x { x }
-      arg_error_proc = -> *_ { raise ArgumentError, '' }
-      run_error_proc = -> *_ { raise RuntimeError, '' }
-      type_error_proc = -> *_ { raise TypeError, '' }
-      @s.rb_rescue2_wrong_arg_type(arg_error_proc, :no_exc, proc, :exc, ArgumentError, RuntimeError).should == :exc
-      @s.rb_rescue2_wrong_arg_type(run_error_proc, :no_exc, proc, :exc, ArgumentError, RuntimeError).should == :exc
-      -> {
-        @s.rb_rescue2_wrong_arg_type(type_error_proc, :no_exc, proc, :exc, ArgumentError, RuntimeError)
-      }.should raise_error(TypeError)
-    end
   end
 
   describe "rb_catch" do

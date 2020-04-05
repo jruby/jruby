@@ -435,18 +435,16 @@ describe "The rescue keyword" do
     }.should raise_error(SyntaxError)
   end
 
-  ruby_version_is "2.5" do
-    it "allows rescue in 'do end' block" do
-      lambda = eval <<-ruby
-        lambda do
-          raise SpecificExampleException
-        rescue SpecificExampleException
-          ScratchPad << :caught
-        end.call
-      ruby
+  it "allows rescue in 'do end' block" do
+    lambda = eval <<-ruby
+      lambda do
+        raise SpecificExampleException
+      rescue SpecificExampleException
+        ScratchPad << :caught
+      end.call
+    ruby
 
-      ScratchPad.recorded.should == [:caught]
-    end
+    ScratchPad.recorded.should == [:caught]
   end
 
   it "allows 'rescue' in method arguments" do
