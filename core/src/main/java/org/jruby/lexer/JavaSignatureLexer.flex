@@ -116,7 +116,15 @@ Number         = "-"? {NumComponent} ("." {NumComponent})?
          yybegin(YYINITIAL);
          return JavaSignatureParser.CHARACTER_LITERAL; 
        }
-    .  { stringBuf.append(yytext()); }
+  [^\n\r\'\\]+      { stringBuf.append( yytext() ); }
+  \\t               { stringBuf.append('\t'); }
+  \\b               { stringBuf.append('\b'); }
+  \\n               { stringBuf.append('\n'); }
+  \\r               { stringBuf.append('\r'); }
+  \\f               { stringBuf.append('\f'); }
+  \\\'              { stringBuf.append('\''); }
+  \\\"              { stringBuf.append('\"'); }
+  \\                { stringBuf.append('\\'); }
 }
 
 <STRING> {
@@ -127,8 +135,11 @@ Number         = "-"? {NumComponent} ("." {NumComponent})?
   }
   [^\n\r\"\\]+      { stringBuf.append( yytext() ); }
   \\t               { stringBuf.append('\t'); }
+  \\b               { stringBuf.append('\b'); }
   \\n               { stringBuf.append('\n'); }
   \\r               { stringBuf.append('\r'); }
+  \\f               { stringBuf.append('\f'); }
+  \\\'              { stringBuf.append('\''); }
   \\\"              { stringBuf.append('\"'); }
   \\                { stringBuf.append('\\'); }
 }
