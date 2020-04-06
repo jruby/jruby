@@ -44,7 +44,11 @@ import java.util.List;
 public interface AnnotationVisitor<T> {
 	T annotation(Annotation annotation);
 	T annotation_array(ArrayAnnotationExpression arrayAnnotationExpression);
+	/**
+	 * For all literals that don't need extra type processing or parsing (String, bool)
+	 */
 	T literal(Literal literal);
-	T type(TypeNode typeNode);
 	T number_literal(NumberLiteral numberLiteral);
+	T char_literal(CharacterLiteral characterLiteral);
+	T type(TypeNode typeNode);
 }

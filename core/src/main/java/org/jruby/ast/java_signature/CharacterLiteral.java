@@ -26,7 +26,7 @@ public class CharacterLiteral implements Literal {
      **/
     @Override
     public <T> T accept(AnnotationVisitor<T> visitor) {
-    	return visitor.literal(this);
+    	return visitor.char_literal(this);
     }
     
     @Override

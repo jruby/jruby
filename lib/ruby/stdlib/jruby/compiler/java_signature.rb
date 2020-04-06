@@ -146,6 +146,10 @@ return_type: #{return_type}
     def literal(lit)
       @antiwrap = lit.literal
     end
+
+    def char_literal(lit)
+      @antiwrap = lit.literal.to_java :char
+    end
     
     def number_literal(lit)
       target = @target_type.last
