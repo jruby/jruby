@@ -72,7 +72,7 @@ describe "JRuby annotation processing:" do
         
       java_signature("@java_integration.fixtures.EveryTypeAnnotations.Annotated("+
         "astr=\"\", abyte=-128, ashort=-32768, anint=-2147483648, along=-9223372036854775808,"+
-        "afloat=-3.5, adouble=-10_24.10_24, abool=false, anbool=true, achar='\\'',"+# TODO: single character
+        "afloat=-3.5, adouble=-10_24.10_24, abool=false, anbool=true, achar='\\'',"+
         "anenum=java.lang.annotation.RetentionPolicy.SOURCE, aClass=java_integration.fixtures.EveryTypeAnnotations.Annotated.java_class,"+
         "Darray={})"+
         " void foo_sign()")
