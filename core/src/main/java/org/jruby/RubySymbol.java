@@ -65,6 +65,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHelper;
+import org.jruby.util.IdUtil;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
 
@@ -262,11 +263,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * Is the string this constant represents a valid constant identifier name.
      */
     public boolean validConstantName() {
-        boolean valid =  ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-            index == 0 && encoding.isUpper(codepoint) ||
-                    index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
+        ByteList bytes = getBytes();
+        boolean valid = IdUtil.isConstantInitial(bytes) &&
+                ByteListHelper.eachCodePoint(bytes, (index, codepoint, encoding) ->
+                        index == 0 || // skip initial because we check it differently
+                        index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
 
-        return valid && getBytes().length() >= 1;
+        return valid && bytes.length() >= 1;
     }
 
     /**

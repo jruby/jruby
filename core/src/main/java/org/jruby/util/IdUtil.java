@@ -30,6 +30,11 @@
 
 package org.jruby.util;
 
+import org.jcodings.Config;
+import org.jcodings.Encoding;
+import org.jcodings.IntHolder;
+import org.jcodings.unicode.UnicodeCodeRange;
+
 public final class IdUtil {
     /**
      * rb_is_const_id and is_const_id
@@ -136,6 +141,39 @@ public final class IdUtil {
     public static final boolean isRubyVariable(String name) {
         char c;
         return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
+    }
+
+    // MRI: rb_sym_constant_char_p
+    public static boolean isConstantInitial(ByteList byteList) {
+        int c, len;
+        int nlen = byteList.realSize();
+        Encoding enc = byteList.getEncoding();
+
+        if (nlen < 1) return false;
+        int byte0 = byteList.get(0);
+        if (byte0 < 128) return enc.isUpper(byte0);
+
+        byte[] bytes = byteList.getUnsafeBytes();
+        int begin = byteList.begin();
+        int end = begin + nlen;
+        c = StringSupport.preciseLength(enc, bytes, begin, end);
+        if (!StringSupport.MBCLEN_CHARFOUND_P(c)) return false;
+        len = StringSupport.MBCLEN_CHARFOUND_LEN(c);
+        c = StringSupport.codePoint(enc, bytes, begin, end);
+        if (enc.isUnicode()) {
+            if (enc.isUpper(c)) return true;
+            if (enc.isLower(c)) return false;
+            if (enc.isCodeCType(c, UnicodeCodeRange.TITLECASELETTER.getCType())) return true;
+        } else {
+            /* fallback to case-folding */
+            IntHolder holder = new IntHolder();
+            holder.value = begin;
+            byte[] fold = new byte[Config.ENC_GET_CASE_FOLD_CODES_MAX_NUM];
+            int r = enc.mbcCaseFold(Config.CASE_FOLD, bytes, holder, end, fold);
+            if (r > 0 && (r != len || ByteList.memcmp(fold, 0, bytes, begin, r) != 0))
+                return true;
+        }
+        return false;
     }
 
     @Deprecated
