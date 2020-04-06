@@ -136,3 +136,27 @@ describe "A Ruby subclass of a Java concrete class with custom methods" do
 end
 
 
+describe "A Ruby subclass of a Java concrete class with custom methods and annotaiton via #java_signature" do
+  class JavaProxyClassWithAnnotatedMethods < java.io.FilterReader
+    java_signature("@java_integration.fixtures.EveryTypeAnnotations.Annotated("+
+      "astr=\"Hello\", abyte=0xde, ashort=0xEF_FF, anint=0xFFff_EeeE, along=0xFFFF_EEEE_0000_9999,"+
+      "afloat=3.5, adouble=1024.1024, abool=true, anbool=false, achar='?',"+
+      "anenum=java.lang.annotation.RetentionPolicy.RUNTIME, aClass=java.lang.String.java_class,"+
+      "Darray={@javax.annotation.Resource(description=\"first\"), @javax.annotation.Resource(description=\"second\")})"+
+      " void foo()")
+    def foo; end
+
+    become_java!
+  end
+
+  it "has hex-set values" do
+    output = Java::java_integration.fixtures.EveryTypeAnnotations.decodeAnnotatedMethods(ClassWithAnnotatedMethods3)["foo"].to_a
+    easy_out = output[0..-2]
+    arry = output[-1]
+    expect(easy_out).to eq(["Hello", -34, -4097,-4370, -18769007044199, 3.5, 1024.1024,true, false,'?'.ord, java.lang.annotation.RetentionPolicy::RUNTIME, java.lang.String.java_class.to_java])
+    expect(arry).to_not be_nil
+expect(arry.map  &:description).to eq(%w{first second})
+  end
+end
+
+
