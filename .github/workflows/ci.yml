@@ -16,24 +16,26 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 8
+    - name: bootstrap
+      run: mvn -B -Pbootstrap clean package
     - name: test profile
-      run: mvn -B clean package -Ptest
+      run: mvn -Ptest
     - name: main profile
-      run: mvn -B clean package -Pmain
+      run: mvn -Pmain
     - name: dist profile
-      run: mvn -B clean package -Pdist
+      run: mvn -Pdist
     - name: jruby-jars profile
-      run: mvn -B clean package -Pjruby-jars
+      run: mvn -Pjruby-jars
     - name: complete profile
-      run: mvn -B clean package -Pcomplete
+      run: mvn -Pcomplete
     - name: osgi profile
-      run: mvn -B clean package -Posgi
+      run: mvn -Posgi
     - name: jruby-jars extended
-      run: mvn -B clean package -Pjruby-jars,test -Dinvoker.test=extended
+      run: mvn -Pjruby-jars,test -Dinvoker.test=extended
     - name: main extended
-      run: mvn -B clean package -Pmain,test -Dinvoker.test=extended
+      run: mvn -Pmain,test -Dinvoker.test=extended
     - name: dependency convergence
-      run: mvn -B -Pmain -Dinvoker.test=GH-6081* integration-test
+      run: mvn -Pmain -Dinvoker.test=GH-6081* integration-test
 
   maven-test-11:
     runs-on: ubuntu-latest
@@ -44,15 +46,17 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+      - name: bootstrap
+          run: mvn -B -Pbootstrap clean package
       - name: main profile
-        run: mvn -B clean package -Pmain
+        run: mvn -Pmain
       - name: dist profile
-        run: mvn -B clean package -Pdist
+        run: mvn -Pdist
       - name: complete profile
-        run: mvn -B clean package -Pcomplete
+        run: mvn -Pcomplete
       - name: osgi profile
-        run: mvn -B clean package -Posgi
+        run: mvn -Posgi
       - name: jruby-jars extended
-        run: mvn -B clean package -Pjruby-jars,test -Dinvoker.test=extended
+        run: mvn -Pjruby-jars,test -Dinvoker.test=extended
       - name: main extended
-        run: mvn -B clean package -Pmain,test -Dinvoker.test=extended
+        run: mvn -Pmain,test -Dinvoker.test=extended
