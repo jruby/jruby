@@ -4,7 +4,6 @@ on: [push]
 
 env:
   JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1'
-  MAVEN_OPTS: '-Dinvoker.skip=false'
 
 jobs:
   maven-test-8:
@@ -29,15 +28,15 @@ jobs:
     - name: bootstrap
       run: mvn -Pbootstrap clean package
     - name: test profile
-      run: mvn -Ptest
+      run: mvn -Dinvoker.skip=false -Ptest
     - name: main profile
-      run: mvn -Pmain
+      run: mvn -Dinvoker.skip=false -Pmain
     - name: dist profile
-      run: mvn -Pdist
+      run: mvn -Dinvoker.skip=false -Pdist
     - name: jruby-jars profile
-      run: mvn -Pjruby-jars
+      run: mvn -Dinvoker.skip=false -Pjruby-jars
     - name: complete profile
-      run: mvn -Pcomplete
+      run: mvn -Dinvoker.skip=false -Pcomplete
     - name: dependency convergence
       run: mvn -Pmain -Dinvoker.test=GH-6081* integration-test
 
@@ -63,8 +62,8 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: main profile
-        run: mvn -Pmain
+        run: mvn -Dinvoker.skip=false -Pmain
       - name: dist profile
-        run: mvn -Pdist
+        run: mvn -Dinvoker.skip=false -Pdist
       - name: complete profile
-        run: mvn -Pcomplete
+        run: mvn -Dinvoker.skip=false -Pcomplete
