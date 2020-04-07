@@ -28,6 +28,7 @@ default_gems = [
     ['json', '${json.version}'],
     ['logger', '1.3.0'],
     ['mutex_m', '0.1.0'],
+    ['prime', '0.1.0'],
     ['psych', '3.1.0'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
@@ -37,6 +38,7 @@ default_gems = [
     ['shell', '0.7'],
     ['sync', '0.5.0'],
     ['thwait', '0.1.0'],
+    ['tracer', '0.1.0'],
     ['webrick', '1.4.2'],
 ]
 

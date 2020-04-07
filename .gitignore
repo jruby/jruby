@@ -89,11 +89,13 @@ lib/ruby/stdlib/logger.rb
 lib/ruby/stdlib/matrix.rb
 lib/ruby/stdlib/mutex_m.rb
 lib/ruby/stdlib/ostruct.rb
+lib/ruby/stdlib/prime*
 lib/ruby/stdlib/rexml*
 lib/ruby/stdlib/rss*
 lib/ruby/stdlib/shell*
 lib/ruby/stdlib/sync.rb
 lib/ruby/stdlib/thwait*
+lib/ruby/stdlib/tracer*
 release.properties
 share
 spaces test
