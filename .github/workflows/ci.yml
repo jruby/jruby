@@ -48,8 +48,6 @@ jobs:
         run: mvn -B clean package -Pmain
       - name: dist profile
         run: mvn -B clean package -Pdist
-      - name: jruby-jars profile
-        run: mvn -B clean package -Pjruby-jars
       - name: complete profile
         run: mvn -B clean package -Pcomplete
       - name: osgi profile
