@@ -68,5 +68,3 @@ jobs:
         run: mvn -Pdist
       - name: complete profile
         run: mvn -Pcomplete
-      - name: main extended
-        run: mvn -Pmain,test -Dinvoker.test=extended
