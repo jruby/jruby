@@ -2,6 +2,9 @@ name: JRuby CI
 
 on: [push]
 
+env:
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1'
+
 jobs:
   maven-test-8:
     runs-on: ubuntu-latest
