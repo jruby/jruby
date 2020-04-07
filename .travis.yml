@@ -85,8 +85,6 @@ matrix:
 
     - env: COMMAND=test/check_versions.sh
 
-    - env: PHASE='-Ptest'
-
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
 
     - name: sequel
@@ -171,12 +169,6 @@ matrix:
       script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:profiler
-
-    - env: PHASE='-Pmain'
-      jdk: openjdk11
-
-    - env: PHASE='-Pcomplete'
-      jdk: openjdk11
 
     - name: -Pmain openj9 jdk8
       env: PHASE='-Ptest'
