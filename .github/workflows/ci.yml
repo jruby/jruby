@@ -16,8 +16,14 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 8
+    - name: cache dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
     - name: bootstrap
-      run: mvn -B -Pbootstrap clean package
+      run: mvn -Pbootstrap clean package
     - name: test profile
       run: mvn -Ptest
     - name: main profile
@@ -50,8 +56,14 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: bootstrap
-        run: mvn -B -Pbootstrap clean package
+        run: mvn -Pbootstrap clean package
       - name: main profile
         run: mvn -Pmain
       - name: dist profile
