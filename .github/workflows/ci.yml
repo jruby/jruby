@@ -34,8 +34,6 @@ jobs:
       run: mvn -Pjruby-jars
     - name: complete profile
       run: mvn -Pcomplete
-    - name: osgi profile
-      run: mvn -Posgi
     - name: jruby-jars extended
       run: mvn -Pjruby-jars,test -Dinvoker.test=extended
     - name: main extended
@@ -70,7 +68,5 @@ jobs:
         run: mvn -Pdist
       - name: complete profile
         run: mvn -Pcomplete
-      - name: jruby-jars extended
-        run: mvn -Pjruby-jars,test -Dinvoker.test=extended
       - name: main extended
         run: mvn -Pmain,test -Dinvoker.test=extended
