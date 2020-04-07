@@ -4,6 +4,7 @@ on: [push]
 
 env:
   JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1'
+  MAVEN_OPTS: '-Dinvoker.skip=false'
 
 jobs:
   maven-test-8:
