@@ -172,22 +172,6 @@ matrix:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:profiler
 
-    - env: PHASE='-Pdist'
-
-    - env: PHASE='-Pjruby-jars'
-
-    - env: PHASE='-Pmain'
-
-    - env: PHASE='-Pcomplete'
-
-    - env: PHASE='-Posgi'
-
-    - env: PHASE='-Pj2ee'
-
-    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-
-    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-
     - env: PHASE='-Pmain'
       jdk: openjdk11
 
