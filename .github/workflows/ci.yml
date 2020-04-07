@@ -6,6 +6,8 @@ jobs:
   maven-test-8:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
 
     steps:
     - name: checkout
@@ -40,7 +42,7 @@ jobs:
 
     strategy:
       fail-fast: false
-    
+
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -49,7 +51,7 @@ jobs:
         with:
           java-version: 11
       - name: bootstrap
-          run: mvn -B -Pbootstrap clean package
+        run: mvn -B -Pbootstrap clean package
       - name: main profile
         run: mvn -Pmain
       - name: dist profile
