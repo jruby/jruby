@@ -180,8 +180,14 @@ matrix:
     - name: maven osgi
       env: PHASE='-Posgi'
 
+    - name: maven main extended
+      enc: PHASE='-Pmain,test -Dinvoker.test=extended'
+
     - name: maven jruby-jars extended
       enc: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+
+    - name: Check Dependency Convergence
+      env: PHASE='-Pmain -Dinvoker.test=GH-6081* integration-test'
 
     - name: Check Dependency Convergence
       env: PHASE='-Pmain -Dinvoker.test=GH-6081* integration-test'
