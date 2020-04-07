@@ -18,20 +18,20 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
     - name: test profile
-      run: mvn clean package -Ptest
+      run: mvn -B clean package -Ptest
     - name: main profile
-      run: mvn clean package -Pmain
+      run: mvn -B clean package -Pmain
     - name: dist profile
-      run: mvn clean package -Pdist
+      run: mvn -B clean package -Pdist
     - name: jruby-jars profile
-      run: mvn clean package -Pjruby-jars
+      run: mvn -B clean package -Pjruby-jars
     - name: complete profile
-      run: mvn clean package -Pcomplete
+      run: mvn -B clean package -Pcomplete
     - name: osgi profile
-      run: mvn clean package -Posgi
+      run: mvn -B clean package -Posgi
     - name: jruby-jars extended
-      run: mvn clean package -Pjruby-jars,test -Dinvoker.test=extended
+      run: mvn -B clean package -Pjruby-jars,test -Dinvoker.test=extended
     - name: main extended
-      run: mvn clean package -Pmain,test -Dinvoker.test=extended
+      run: mvn -B clean package -Pmain,test -Dinvoker.test=extended
     - name: dependency convergence
-      run: -Pmain -Dinvoker.test=GH-6081* integration-test
+      run: mvn -B -Pmain -Dinvoker.test=GH-6081* integration-test
