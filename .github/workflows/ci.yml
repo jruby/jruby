@@ -5,9 +5,7 @@ on: [push]
 jobs:
   maven-test-8:
     runs-on: ubuntu-latest
-    
-    strategy:
-      fail-fast: false
+
 
     steps:
     - name: checkout
@@ -39,6 +37,10 @@ jobs:
 
   maven-test-11:
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+    
     steps:
       - name: checkout
         uses: actions/checkout@v2
