@@ -1926,6 +1926,22 @@ CLASSDEF
     assert_equal 255, color.getRed # assert we called (float,float,float)
   end
 
+  class Runner
+    def run; end
+  end
+
+  def test_concurrent_interface_proxy_generation
+    100.times do |_|
+      runner = Runner.new
+
+      assert_nothing_raised do
+        3.times.map do
+          Thread.start { assert runner.to_java(java.lang.Runnable) }
+        end.each(&:join)
+      end
+    end
+  end
+
   # original report: https://jira.codehaus.org/browse/JRUBY-5582
   # NOTE: we're not testing this "early" on still a good JI exercise
   def test_set_security_manager
