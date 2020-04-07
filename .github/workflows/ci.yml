@@ -28,17 +28,29 @@ jobs:
     - name: bootstrap
       run: mvn -Pbootstrap clean package
     - name: test profile
-      run: mvn -Dinvoker.skip=false -Ptest
+      run: tool/maven-ci-script.sh
+      env: 
+        PHASE: '-Ptest'
     - name: main profile
-      run: mvn -Dinvoker.skip=false -Pmain
+      run: tool/maven-ci-script.sh
+      env: 
+        PHASE: '-Pmain'
     - name: dist profile
-      run: mvn -Dinvoker.skip=false -Pdist
+      run: tool/maven-ci-script.sh
+      env: 
+        PHASE: '-Pdist'
     - name: jruby-jars profile
-      run: mvn -Dinvoker.skip=false -Pjruby-jars
+      run: tool/maven-ci-script.sh
+      env: 
+        PHASE: '-Pjruby-jars'
     - name: complete profile
-      run: mvn -Dinvoker.skip=false -Pcomplete
+      run: tool/maven-ci-script.sh
+      env: 
+        PHASE: '-Pcomplete'
     - name: dependency convergence
-      run: mvn -Pmain -Dinvoker.test=GH-6081* integration-test
+      run: tool/maven-ci-script.sh
+      env: 
+        PHASE: '-Pmain -Dinvoker.test=GH-6081* integration-test'
 
   maven-test-11:
     runs-on: ubuntu-latest
@@ -62,8 +74,14 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: main profile
-        run: mvn -Dinvoker.skip=false -Pmain
+        run: tool/maven-ci-script.sh
+        env: 
+          PHASE: '-Pmain'
       - name: dist profile
-        run: mvn -Dinvoker.skip=false -Pdist
+        run: tool/maven-ci-script.sh
+        env: 
+          PHASE: '-Pdist'
       - name: complete profile
-        run: mvn -Dinvoker.skip=false -Pcomplete
+        run: tool/maven-ci-script.sh
+        env: 
+          PHASE: '-Pcomplete'
