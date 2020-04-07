@@ -1,0 +1,69 @@
+name: JRuby CI
+
+on: [push]
+
+env:
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1'
+
+jobs:
+  maven-test-8:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+    - name: set up java 8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 8
+    - name: cache dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    - name: bootstrap
+      run: mvn -Pbootstrap clean package
+    - name: test profile
+      run: mvn -Ptest
+    - name: main profile
+      run: mvn -Pmain
+    - name: dist profile
+      run: mvn -Pdist
+    - name: jruby-jars profile
+      run: mvn -Pjruby-jars
+    - name: complete profile
+      run: mvn -Pcomplete
+    - name: dependency convergence
+      run: mvn -Pmain -Dinvoker.test=GH-6081* integration-test
+
+  maven-test-11:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: main profile
+        run: mvn -Pmain
+      - name: dist profile
+        run: mvn -Pdist
+      - name: complete profile
+        run: mvn -Pcomplete
