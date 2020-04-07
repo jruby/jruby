@@ -53,6 +53,8 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
+import static org.jruby.util.CodegenUtils.ci;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.jruby.RubyInstanceConfig.JAVA_VERSION;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -167,7 +169,7 @@ public class JavaProxyClassFactory {
                                     Class superClass, Class[] interfaces,
                                     Map<MethodKey, MethodData> methods, Type selfType, RubyClass rclass) {
         ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces, loader);
-        System.out.println("Concetizing " + targetClassName);
+        
         Map<String, Map<Class, Map<String, Object>>> fieldannos;
         Map<String, Class> fields;
         if (rclass != null)
@@ -182,14 +184,18 @@ public class JavaProxyClassFactory {
         	fields = Collections.EMPTY_MAP;
         }
         
-
         for (String key : fields.keySet()) {
-            // private final JavaProxyInvocationHandler __handler;
-            cw.visitField(Opcodes.ACC_PUBLIC,
+            FieldVisitor fv = cw.visitField(Opcodes.ACC_PUBLIC,
                     key,
                     Type.getDescriptor(fields.get(key)), null, null
-            ).visitEnd();
-            System.out.println("Field visit for " + key);
+            );
+            Map<Class, Map<String, Object>> annos = fieldannos.getOrDefault(key, Collections.EMPTY_MAP);
+            annos.forEach((anno, args) -> {
+    	        AnnotationVisitor av = fv.visitAnnotation(Type.getType(anno).getDescriptor(), true);
+    	        CodegenUtils.visitAnnotationFields(av, args);
+    	        av.visitEnd();
+        	});
+            fv.visitEnd();
         }
 
         GeneratorAdapter clazzInit = createClassInitializer(selfType, cw);
