@@ -58,7 +58,6 @@ public class RubyBignum extends RubyInteger {
         RubyClass bignum = runtime.getInteger();
         runtime.getObject().setConstant("Bignum", bignum);
         runtime.getObject().deprecateConstant(runtime, "Bignum");
-        runtime.setBignum(bignum);
 
         return bignum;
     }
@@ -506,14 +505,13 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return op_mul(context, ((RubyFixnum) other).value);
-        }
-        if (other instanceof RubyBignum) {
-            return bignorm(context.runtime, value.multiply(((RubyBignum) other).value));
-        }
-        if (other instanceof RubyFloat) {
+        } else if (other instanceof RubyBignum) {
+        } else if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(context.runtime, big2dbl(this) * ((RubyFloat) other).value);
+        } else {
+            return coerceBin(context, sites(context).op_times, other);
         }
-        return coerceBin(context, sites(context).op_times, other);
+        return bignorm(context.runtime, value.multiply(((RubyBignum) other).value));
     }
 
     @Deprecated
@@ -967,7 +965,7 @@ public class RubyBignum extends RubyInteger {
         if (other instanceof RubyBignum) {
             return value.compareTo(((RubyBignum)other).value);
         }
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         return (int)coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
     }
 
@@ -1018,11 +1016,11 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyFloat) {
             double a = ((RubyFloat) other).value;
             if (Double.isNaN(a)) return context.fals;
-            return RubyBoolean.newBoolean(context.runtime, a == big2dbl(this));
+            return RubyBoolean.newBoolean(context, a == big2dbl(this));
         } else {
             return other.op_eqq(context, this);
         }
-        return RubyBoolean.newBoolean(context.runtime, value.compareTo(otherValue) == 0);
+        return RubyBoolean.newBoolean(context, value.compareTo(otherValue) == 0);
     }
 
     /** rb_big_eql
@@ -1031,7 +1029,7 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject eql_p(IRubyObject other) {
         // '==' and '===' are the same, but they differ from 'eql?'.
-        return op_equal(getRuntime().getCurrentContext(), other);
+        return op_equal(metaClass.runtime.getCurrentContext(), other);
     }
 
     @Deprecated
@@ -1044,7 +1042,7 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(value.hashCode());
+        return metaClass.runtime.newFixnum(value.hashCode());
     }
 
     @Override
@@ -1067,7 +1065,7 @@ public class RubyBignum extends RubyInteger {
 
     @Deprecated
     public IRubyObject abs() {
-        return abs(getRuntime().getCurrentContext());
+        return abs(metaClass.runtime.getCurrentContext());
     }
 
     /** rb_big_abs
@@ -1088,7 +1086,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return context.runtime.newBoolean(isZero());
+        return RubyBoolean.newBoolean(context, isZero());
     }
 
     @Override
@@ -1202,22 +1200,20 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        Ruby runtime = context.runtime;
         CachingCallSite op_lt_site = sites(context).basic_op_lt;
         if (op_lt_site.retrieveCache(metaClass).method.isBuiltin()) {
-            return runtime.newBoolean(value.signum() < 0);
+            return RubyBoolean.newBoolean(context, value.signum() < 0);
         }
-        return op_lt_site.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_lt_site.call(context, this, this, RubyFixnum.zero(context.runtime));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        Ruby runtime = context.runtime;
         CachingCallSite op_gt_site = sites(context).basic_op_gt;
         if (op_gt_site.retrieveCache(metaClass).method.isBuiltin()) {
-            return runtime.newBoolean(value.signum() > 0);
+            return RubyBoolean.newBoolean(context, value.signum() > 0);
         }
-        return op_gt_site.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_gt_site.call(context, this, this, RubyFixnum.zero(context.runtime));
     }
 
     @Override

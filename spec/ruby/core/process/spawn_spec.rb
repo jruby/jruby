@@ -207,13 +207,9 @@ describe "Process.spawn" do
 
   it "unsets environment variables whose value is nil" do
     ENV["FOO"] = "BAR"
-    Process.wait Process.spawn({"FOO" => nil}, "echo #{@var}>#{@name}")
-    expected = "\n"
-    platform_is :windows do
-      # Windows does not expand the variable if it is unset
-      expected = "#{@var}\n"
-    end
-    File.read(@name).should == expected
+    -> do
+      Process.wait Process.spawn({"FOO" => nil}, ruby_cmd("p ENV['FOO']"))
+    end.should output_to_fd("nil\n")
   end
 
   it "calls #to_hash to convert the environment" do
@@ -331,9 +327,19 @@ describe "Process.spawn" do
 
     it "joins the specified process group if pgroup: pgid" do
       pgid = Process.getpgid(Process.pid)
-      -> do
-        Process.wait Process.spawn(ruby_cmd("print Process.getpgid(Process.pid)"), pgroup: pgid)
-      end.should output_to_fd(pgid.to_s)
+      # The process group is not available on all platforms.
+      # See "man proc" - /proc/[pid]/stat - (5) pgrp
+      # In Travis arm64 environment, the value is 0.
+      #
+      # $ cat /proc/[pid]/stat
+      # 19179 (ruby) S 19160 0 0 ...
+      unless pgid.zero?
+        -> do
+          Process.wait Process.spawn(ruby_cmd("print Process.getpgid(Process.pid)"), pgroup: pgid)
+        end.should output_to_fd(pgid.to_s)
+      else
+        skip "The process group is not available."
+      end
     end
 
     it "raises an ArgumentError if given a negative :pgroup option" do
@@ -409,7 +415,7 @@ describe "Process.spawn" do
 
       it "kills extra chdir processes" do
         pid = nil
-        Dir.chdir("/tmp") do
+        Dir.chdir("/") do
           pid = Process.spawn("sleep 10")
         end
 

@@ -31,6 +31,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,6 +46,16 @@ import java.util.Set;
  * Port of MRI's popen+exec logic.
  */
 public class PopenExecutor {
+    /**
+     * Check properties and runtime state to determine whether a native popen is possible.
+     *
+     * @param runtime current runtime
+     * @return true if popen can use native code, false otherwise
+     */
+    public static boolean nativePopenAvailable(Ruby runtime) {
+        return Options.NATIVE_POPEN.load() && runtime.getPosix().isNative() && !Platform.IS_WINDOWS;
+    }
+
     // MRI: check_pipe_command
     public static IRubyObject checkPipeCommand(ThreadContext context, IRubyObject filenameOrCommand) {
         RubyString filenameStr = filenameOrCommand.convertToString();
@@ -70,7 +81,7 @@ public class PopenExecutor {
         ExecArg eargp;
         IRubyObject fail_str;
 
-        eargp = execargNew(context, argv, true);
+        eargp = execargNew(context, argv, true, false);
         execargFixup(context, runtime, eargp);
         fail_str = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
@@ -86,15 +97,48 @@ public class PopenExecutor {
         return runtime.newFixnum(pid);
     }
 
-    // MRI: rb_spawn_internal
-    public long spawnInternal(ThreadContext context, IRubyObject[] argv, String[] errmsg) {
-        ExecArg eargp;
-        long ret;
+    // MRI: rb_f_system
+    public IRubyObject systemInternal(ThreadContext context, IRubyObject[] argv, String[] errmsg) {
+        Ruby runtime = context.runtime;
 
-        eargp = execargNew(context, argv, true);
-        execargFixup(context, context.runtime, eargp);
-        ret = spawnProcess(context, context.runtime, eargp, errmsg);
-        return ret;
+        ExecArg eargp;
+        long pid;
+
+        eargp = execargNew(context, argv, true, true);
+        execargFixup(context, runtime, eargp);
+        pid = spawnProcess(context, runtime, eargp, errmsg);
+
+//            #if defined(HAVE_FORK) || defined(HAVE_SPAWNV)
+        if (pid > 0) {
+            long ret;
+            ret = RubyProcess.waitpid(runtime, pid, 0);
+            if (ret == -1)
+                throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "Another thread waited the process started by system().");
+        }
+//            #endif
+//            #ifdef SIGCHLD
+//            signal(SIGCHLD, chfunc);
+//            #endif
+
+        if (pid < 0) {
+            if (eargp.exception) {
+                int err = errno.intValue();
+                RubyString command = eargp.command_name;
+                throw runtime.newErrnoFromInt(err, command.toString());
+            } else {
+                return context.nil;
+            }
+        }
+
+        int status = (int)((RubyProcess.RubyStatus) context.getLastExitStatus()).getStatus();
+
+        if (status == 0) return runtime.getTrue();
+
+        if (eargp.exception) {
+            throw runtime.newRuntimeError(RubyProcess.RubyStatus.pst_message("Command failed with", pid, status));
+        }
+
+        return runtime.getFalse();
     }
 
     // MRI: rb_spawn_process
@@ -243,7 +287,7 @@ public class PopenExecutor {
         ExecArg execArg = null;
 
         if (!isPopenFork(context.runtime, (RubyString)prog))
-            execArg = execargNew(context, argv, true);
+            execArg = execargNew(context, argv, true, false);
         return new PopenExecutor().pipeOpen(context, execArg, modestr, fmode, convconfig);
     }
 
@@ -286,14 +330,14 @@ public class PopenExecutor {
 //            #endif
             tmp = ((RubyArray)tmp).aryDup();
             //            RBASIC_CLEAR_CLASS(tmp);
-            eargp = execargNew(context, ((RubyArray)tmp).toJavaArray(), false);
+            eargp = execargNew(context, ((RubyArray)tmp).toJavaArray(), false, false);
             ((RubyArray)tmp).clear();
         } else {
             pname = pname.convertToString();
             eargp = null;
             if (!isPopenFork(runtime, (RubyString)pname)) {
                 IRubyObject[] pname_p = {pname};
-                eargp = execargNew(context, pname_p, true);
+                eargp = execargNew(context, pname_p, true, false);
                 pname = pname_p[0];
             }
         }
@@ -841,47 +885,45 @@ public class PopenExecutor {
             int j;
             if (pairs[i].oldfd == -1)
                 continue;
-            // We can't support this logic because it makes fcntl changes in parent
-            throw runtime.newNotImplementedError("cyclic redirects in child are not supported");
-//            if (pairs[i].oldfd == pairs[i].newfd) { /* self cycle */
-//                int fd = pairs[i].oldfd;
-//                ret = runtime.getPosix().fcntl(fd, Fcntl.F_GETFD); /* async-signal-safe */
-//                if (ret == -1) {
-//                    if (errmsg != null) errmsg[0] = "fcntl(F_GETFD)";
-//                    return -1;
-//                }
-//                if ((ret & FcntlLibrary.FD_CLOEXEC) != 0) {
-//                    ret &= ~FcntlLibrary.FD_CLOEXEC;
-//                    ret = runtime.getPosix().fcntl(fd, Fcntl.F_SETFD, ret); /* async-signal-safe */
-//                    if (ret == -1) {
-//                        if (errmsg != null) errmsg[0] = "fcntl(F_SETFD)";
-//                        return -1;
-//                    }
-//                }
-//                pairs[i].oldfd = -1;
-//                continue;
-//            }
-//            if (extra_fd == -1) {
-//                extra_fd = redirectDup(runtime, pairs[i].oldfd); /* async-signal-safe */
-//                if (extra_fd == -1) {
-//                    if (errmsg != null) errmsg[0] = "dup";
-//                    return -1;
-//                }
-////                rb_update_max_fd(extra_fd);
-//            }
-//            else {
-//                // This always succeeds because we just defer it to posix_spawn.
-//                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
-//            }
-//            pairs[i].oldfd = extra_fd;
-//            j = pairs[i].older_index;
-//            pairs[i].older_index = -1;
-//            while (j != -1) {
-//                // This always succeeds because we just defer it to posix_spawn.
-//                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
-//                pairs[j].oldfd = -1;
-//                j = pairs[j].older_index;
-//            }
+            if (pairs[i].oldfd == pairs[i].newfd) { /* self cycle */
+                int fd = pairs[i].oldfd;
+                ret = runtime.getPosix().fcntl(fd, Fcntl.F_GETFD); /* async-signal-safe */
+                if (ret == -1) {
+                    if (errmsg != null) errmsg[0] = "fcntl(F_GETFD)";
+                    return -1;
+                }
+                if ((ret & FcntlLibrary.FD_CLOEXEC) != 0) {
+                    ret &= ~FcntlLibrary.FD_CLOEXEC;
+                    ret = runtime.getPosix().fcntlInt(fd, Fcntl.F_SETFD, ret); /* async-signal-safe */
+                    if (ret == -1) {
+                        if (errmsg != null) errmsg[0] = "fcntl(F_SETFD)";
+                        return -1;
+                    }
+                }
+                pairs[i].oldfd = -1;
+                continue;
+            }
+            if (extra_fd == -1) {
+                extra_fd = redirectDup(runtime, pairs[i].oldfd); /* async-signal-safe */
+                if (extra_fd == -1) {
+                    if (errmsg != null) errmsg[0] = "dup";
+                    return -1;
+                }
+//                rb_update_max_fd(extra_fd);
+            }
+            else {
+                // This always succeeds because we just defer it to posix_spawn.
+                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
+            }
+            pairs[i].oldfd = extra_fd;
+            j = pairs[i].older_index;
+            pairs[i].older_index = -1;
+            while (j != -1) {
+                // This always succeeds because we just defer it to posix_spawn.
+                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
+                pairs[j].oldfd = -1;
+                j = pairs[j].older_index;
+            }
         }
         if (extra_fd != -1) {
             ret = redirectClose(runtime, eargp, extra_fd, sargp != null); /* async-signal-safe */
@@ -1536,6 +1578,13 @@ public class PopenExecutor {
 //                            "gid option is unimplemented on this machine");
 //                    #endif
                 }
+                else if (id.equals("exception")) {
+                    if (eargp.exception_given) {
+                        throw runtime.newArgumentError("exception option specified twice");
+                    }
+                    eargp.exception_given = true;
+                    eargp.exception = val.isTrue();
+                }
                 else {
                     return ST_STOP;
                 }
@@ -1729,9 +1778,12 @@ public class PopenExecutor {
     private static final int ST_STOP = 1;
 
     // rb_execarg_new
-    public static ExecArg execargNew(ThreadContext context, IRubyObject[] argv, boolean accept_shell) {
+    public static ExecArg execargNew(ThreadContext context, IRubyObject[] argv, boolean accept_shell, boolean allow_exc_opt) {
         ExecArg eargp = new ExecArg();
         execargInit(context, argv, accept_shell, eargp);
+        if (!allow_exc_opt && eargp.exception_given) {
+            throw context.runtime.newArgumentError("exception option is not allowed");
+        }
         return eargp;
     }
 
@@ -2053,6 +2105,8 @@ public class PopenExecutor {
         List<SpawnFileAction> fileActions = new ArrayList();
         List<SpawnAttribute> attributes = new ArrayList();
         IRubyObject path_env;
+        boolean exception_given;
+        boolean exception;
 
         boolean pgroup_given() {
             return (flags & 0x1) != 0;

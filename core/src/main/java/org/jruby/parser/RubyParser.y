@@ -292,7 +292,7 @@ public class RubyParser {
 %type <ArgumentNode> f_arg_asgn
 %type <FCallNode> fcall
 %token <ByteList> tLABEL_END
-%type <ISourcePosition> k_return k_class k_module
+%type <ISourcePosition> k_return k_class k_module k_else
 
 /*
  *    precedence table
@@ -361,29 +361,17 @@ top_stmts     : none
 
 top_stmt      : stmt
               | keyword_BEGIN tLCURLY top_compstmt tRCURLY {
-                    support.getResult().addBeginNode(new PreExe19Node($1, support.getCurrentScope(), $3));
+                    support.getResult().addBeginNode(new PreExe19Node($1, support.getCurrentScope(), $3, lexer.getRubySourceline()));
                     $$ = null;
               }
 
-bodystmt      : compstmt opt_rescue opt_else opt_ensure {
-                  Node node = $1;
-
-                  if ($2 != null) {
-                      node = new RescueNode(support.getPosition($1), $1, $2, $3);
-                  } else if ($3 != null) {
-                      support.warn(ID.ELSE_WITHOUT_RESCUE, support.getPosition($1), "else without rescue is useless");
-                      node = support.appendToBlock($1, $3);
-                  }
-                  if ($4 != null) {
-                      if (node != null) {
-                          node = new EnsureNode(support.getPosition($1), support.makeNullNil(node), $4);
-                      } else {
-                          node = support.appendToBlock($4, NilImplicitNode.NIL);
-                      }
-                  }
-
-                  support.fixpos(node, $1);
-                  $$ = node;
+ bodystmt     : compstmt opt_rescue k_else {
+                   if ($2 == null) support.yyerror("else without rescue is useless"); 
+               } compstmt opt_ensure {
+                   $$ = support.new_bodystmt($1, $2, $5, $6);
+                }
+                | compstmt opt_rescue opt_ensure {
+                    $$ = support.new_bodystmt($1, $2, null, $3);
                 }
 
 compstmt        : stmts opt_terms {
@@ -460,7 +448,7 @@ stmt            : keyword_alias fitem {
                     if (support.isInDef()) {
                         support.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
                     }
-                    $$ = new PostExeNode($1, $3);
+                    $$ = new PostExeNode($1, $3, lexer.getRubySourceline());
                 }
                 | command_asgn
                 | mlhs '=' command_call {
@@ -485,41 +473,28 @@ command_asgn    : lhs '=' command_rhs {
                 }
                 | var_lhs tOP_ASGN command_rhs {
                     value_expr(lexer, $3);
-
-                    ISourcePosition pos = $1.getPosition();
-                    ByteList asgnOp = $2;
-                    if (asgnOp == lexer.OR_OR) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp == lexer.AMPERSAND_AMPERSAND) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $$ = support.new_op_assign($1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_rhs {
-  // FIXME: arg_concat logic missing for opt_call_args
-                    $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
+                    value_expr(lexer, $6);
+                    $$ = support.new_ary_op_assign($1, $5, $3, $6);
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_rhs {
                     ISourcePosition pos = $1.getPosition();
-                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $2), $4, $5);
+                    $$ = support.new_const_op_assign(pos, support.new_colon2(pos, $1, $2), $4, $5);
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | backref tOP_ASGN command_rhs {
                     support.backrefAssignError($1);
@@ -1118,49 +1093,34 @@ reswords        : keyword__LINE__ {
 
 arg             : lhs '=' arg_rhs {
                     $$ = support.node_assign($1, $3);
-                    // FIXME: Consider fixing node_assign itself rather than single case
-                    $<Node>$.setPosition(support.getPosition($1));
+                    $<Node>$.setPosition(support.getPosition($1)); // FIXME: Not in MRI
                 }
                 | var_lhs tOP_ASGN arg_rhs {
-                    value_expr(lexer, $3);
-
-                    ISourcePosition pos = $1.getPosition();
-                    ByteList asgnOp = $2;
-                    if (asgnOp == lexer.OR_OR) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp == lexer.AMPERSAND_AMPERSAND) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $$ = support.new_op_assign($1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
-  // FIXME: arg_concat missing for opt_call_args
-                    $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
+                    value_expr(lexer, $6);
+                    $$ = support.new_ary_op_assign($1, $5, $3, $6);
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
+                    $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = support.getPosition($1);
-                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
+                    $$ = support.new_const_op_assign(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = lexer.getPosition();
-                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, support.symbolID($2)), $3, $4);
+                    $$ = support.new_const_op_assign(pos, new Colon3Node(pos, support.symbolID($2)), $3, $4);
                 }
                 | backref tOP_ASGN arg_rhs {
                     support.backrefAssignError($1);
@@ -1178,6 +1138,18 @@ arg             : lhs '=' arg_rhs {
 
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
                     $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), support.makeNullNil($3), true, isLiteral);
+                }
+                | arg tDOT2 {
+                    value_expr(lexer, $1);
+
+                    boolean isLiteral = $1 instanceof FixnumNode;
+                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
+                }
+                | arg tDOT3 {
+                    value_expr(lexer, $1);
+
+                    boolean isLiteral = $1 instanceof FixnumNode;
+                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
                 }
                 | arg tPLUS arg {
                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
@@ -1569,7 +1541,7 @@ primary         : literal
                     lexer.getConditionState().end();
                 } compstmt keyword_end {
                       // ENEBO: Lots of optz in 1.9 parser here
-                    $$ = new ForNode($1, $2, $8, $5, support.getCurrentScope());
+                    $$ = new ForNode($1, $2, $8, $5, support.getCurrentScope(), lexer.getRubySourceline());
                 }
                 | k_class cpath superclass {
                     if (support.isInDef()) {
@@ -1668,6 +1640,10 @@ k_class         : keyword_class {
                     $$ = $1;
                 }
 
+k_else          : keyword_else {
+                    $$ = $1;
+                }
+
 k_module        : keyword_module {
                     $$ = $1;
                 }
@@ -1692,7 +1668,7 @@ if_tail         : opt_else
                 }
 
 opt_else        : none
-                | keyword_else compstmt {
+                | k_else compstmt {
                     $$ = $2;
                 }
 
@@ -1866,7 +1842,7 @@ lambda          : /* none */  {
                 } lambda_body {
                     lexer.getCmdArgumentState().reset($<Long>3.longValue());
                     lexer.getCmdArgumentState().restart();
-                    $$ = new LambdaNode($2.getPosition(), $2, $4, support.getCurrentScope());
+                    $$ = new LambdaNode($2.getPosition(), $2, $4, support.getCurrentScope(), lexer.getRubySourceline());
                     lexer.setLeftParenBegin($<Integer>1);
                     support.popCurrentScope();
                 }
@@ -1881,7 +1857,7 @@ f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
 lambda_body     : tLAMBEG compstmt tRCURLY {
                     $$ = $2;
                 }
-                | keyword_do_lambda compstmt keyword_end {
+                | keyword_do_lambda bodystmt keyword_end {
                     $$ = $2;
                 }
 
@@ -1968,8 +1944,8 @@ brace_body      : {
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
                     lexer.getCmdArgumentState().reset();
                 } opt_block_param compstmt {
-                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope());
-                     support.popCurrentScope();
+                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
+                    support.popCurrentScope();
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
                 }
 
@@ -1980,8 +1956,8 @@ do_body 	: {
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
                     lexer.getCmdArgumentState().reset();
                 } opt_block_param bodystmt {
-                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope());
-                     support.popCurrentScope();
+                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
+                    support.popCurrentScope();
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
                 }
  

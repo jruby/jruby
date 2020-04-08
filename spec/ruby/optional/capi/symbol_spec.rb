@@ -8,6 +8,16 @@ describe "C-API Symbol function" do
     @s = CApiSymbolSpecs.new
   end
 
+  describe "SYMBOL_P" do
+    it "returns true for a Symbol" do
+      @s.SYMBOL_P(:foo).should == true
+    end
+
+    it "returns false for non-Symbols" do
+      @s.SYMBOL_P('bar').should == false
+    end
+  end
+
   describe "rb_intern" do
     it "converts a string to a symbol, uniquely" do
       @s.rb_intern("test_symbol").should == :test_symbol
@@ -68,6 +78,19 @@ describe "C-API Symbol function" do
     it "converts a Ruby String to a Symbol" do
       str = "test_symbol"
       @s.rb_intern_str(str).should == :test_symbol
+    end
+  end
+
+  describe "rb_check_symbol_cstr" do
+    it "returns a Symbol if a Symbol already exists for the given C string" do
+      sym = :test_symbol
+      @s.rb_check_symbol_cstr('test_symbol').should == sym
+    end
+
+    it "returns nil if the Symbol does not exist yet and does not create it" do
+      str = "symbol_does_not_exist_#{Object.new.object_id}_#{rand}"
+      @s.rb_check_symbol_cstr(str).should == nil # does not create the Symbol
+      @s.rb_check_symbol_cstr(str).should == nil
     end
   end
 

@@ -37,8 +37,8 @@ import org.jruby.parser.StaticScope;
  * A pre-execution construction (BEGIN { ... }).
  */
 public class PreExe19Node extends PreExeNode {
-    public PreExe19Node(ISourcePosition position, StaticScope scope, Node body) {
-        super(position, scope, body);
+    public PreExe19Node(ISourcePosition position, StaticScope scope, Node body, int endLine) {
+        super(position, scope, body, endLine);
     }
 
     @Override

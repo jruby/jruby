@@ -51,7 +51,12 @@ public class NativeThread implements ThreadLike {
     
     public void start() {
         Thread thread = getThread();
-        if (thread != null) thread.start();
+        
+        if (thread == null) {
+            throw new RuntimeException("BUG: thread was collected before start()");
+        }
+
+        thread.start();
     }
     
     public void interrupt() {

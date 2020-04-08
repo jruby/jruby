@@ -779,7 +779,7 @@ public class Java implements Library {
                 // no containing class for a $ class; treat it as internal and don't define a constant
                 return;
             }
-            parentModule = getProxyClass(runtime, JavaClass.get(runtime, clazz));
+            parentModule = getProxyClass(runtime, JavaClass.get(runtime, declaringClass));
             className = clazz.getSimpleName();
         }
         else {

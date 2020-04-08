@@ -236,12 +236,16 @@ public class ConvertBytes {
     /** rb_cstr_to_inum
      *
      */
+    public static IRubyObject byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck, boolean exception) {
+        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum(exception);
+    }
+
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
+        return (RubyInteger) byteListToInum(runtime, str, base, badcheck, true);
     }
 
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int off, int end, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum();
+        return (RubyInteger) new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum(true);
     }
 
     @Deprecated
@@ -551,9 +555,12 @@ public class ConvertBytes {
         return 0;
     }
 
-    public RubyInteger byteListToInum() {
+    public IRubyObject byteListToInum(boolean exception) {
         if (str == null) {
-            if (badcheck) invalidString("Integer");
+            if (badcheck) {
+                if (!exception) return runtime.getNil();
+                invalidString("Integer");
+            }
             return RubyFixnum.zero(runtime);
         }
 
@@ -563,7 +570,10 @@ public class ConvertBytes {
 
         if (beg < end) {
             if(data[beg] == '+' || data[beg] == '-') {
-                if (badcheck) invalidString("Integer");
+                if (badcheck) {
+                    if (!exception) return runtime.getNil();
+                    invalidString("Integer");
+                }
                 return RubyFixnum.zero(runtime);
             }
         }
@@ -580,7 +590,10 @@ public class ConvertBytes {
         }
         c = convertDigit(c);
         if (c < 0 || c >= base) {
-            if (badcheck) invalidString("Integer");
+            if (badcheck) {
+                if (!exception) return runtime.getNil();
+                invalidString("Integer");
+            }
             return RubyFixnum.zero(runtime);
         }
 
@@ -594,10 +607,11 @@ public class ConvertBytes {
             int[] endPlace = new int[] { beg };
             long val = stringToLong(beg, endPlace, base);
             if (endPlace[0] < end && data[endPlace[0]] == '_') {
-                return bigParse(len, sign);
+                return bigParse(len, sign, exception);
             }
             if (badcheck) {
                 if (endPlace[0] == beg) {
+                    if (!exception) return runtime.getNil();
                     invalidString("Integer"); // no number
                 }
 
@@ -606,13 +620,14 @@ public class ConvertBytes {
                 }
 
                 if (endPlace[0] < end) {
+                    if (!exception) return runtime.getNil();
                     invalidString("Integer"); // trailing garbage
                 }
             }
 
             return sign ? runtime.newFixnum(val) : runtime.newFixnum(-val);
         }
-        return bigParse(len, sign);
+        return bigParse(len, sign, exception);
     }
 
     private int trailingLength() {
@@ -624,8 +639,9 @@ public class ConvertBytes {
         return newLen;
     }
 
-    private RubyInteger bigParse(int len, boolean sign) {
+    private IRubyObject bigParse(int len, boolean sign, boolean exception) {
         if (badcheck && beg < end && data[beg] == '_') {
+            if (!exception) return runtime.getNil();
             invalidString("Integer");
         }
 
@@ -641,7 +657,10 @@ public class ConvertBytes {
                 char cx = (char) c;
                 if (c == '_') {
                     if (nondigit != -1) {
-                        if (badcheck) invalidString("Integer");
+                        if (badcheck) {
+                            if (!exception) return runtime.getNil();
+                            invalidString("Integer");
+                        }
                         break;
                     }
                     nondigit = c;
@@ -661,7 +680,10 @@ public class ConvertBytes {
                 // no beg-- here because we don't null-terminate strings
                 if (str.getBegin()+1 < tmpStr && data[tmpStr-1] == '_') invalidString("Integer");
                 while (tmpStr < end && Character.isWhitespace(data[tmpStr])) tmpStr++;
-                if (tmpStr < end) invalidString("Integer");
+                if (tmpStr < end) {
+                    if (!exception) return runtime.getNil();
+                    invalidString("Integer");
+                }
 
             }
         }
@@ -672,10 +694,14 @@ public class ConvertBytes {
 
         if (badcheck) {
             if (str.getBegin() + 1 < beg && data[beg -1] == '_') {
+                if (!exception) return runtime.getNil();
                 invalidString("Integer");
             }
             while(beg < end && isSpace(beg)) beg++;
-            if (beg < end) invalidString("Integer");
+            if (beg < end) {
+                if (!exception) return runtime.getNil();
+                invalidString("Integer");
+            }
         }
 
         return RubyBignum.bignorm(runtime, z);

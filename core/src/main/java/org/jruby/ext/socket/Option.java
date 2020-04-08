@@ -222,7 +222,7 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject bool(ThreadContext context) {
-        final Ruby runtime = context.getRuntime();
+        final Ruby runtime = context.runtime;
 
         validateDataSize(runtime, data, 4);
 

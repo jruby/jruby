@@ -65,10 +65,12 @@ describe "String#upcase" do
     -> { "abc".upcase(:invalid_option) }.should raise_error(ArgumentError)
   end
 
-  it "taints result when self is tainted" do
-    "".taint.upcase.tainted?.should == true
-    "X".taint.upcase.tainted?.should == true
-    "x".taint.upcase.tainted?.should == true
+  ruby_version_is ''...'2.7' do
+    it "taints result when self is tainted" do
+      "".taint.upcase.tainted?.should == true
+      "X".taint.upcase.tainted?.should == true
+      "x".taint.upcase.tainted?.should == true
+    end
   end
 
   it "returns a subclass instance for subclasses" do
@@ -83,11 +85,23 @@ describe "String#upcase!" do
     a.should == "HELLO"
   end
 
+  it "modifies self in place for non-ascii-compatible encodings" do
+    a = "HeLlO".encode("utf-16le")
+    a.upcase!
+    a.should == "HELLO".encode("utf-16le")
+  end
+
   describe "full Unicode case mapping" do
     it "modifies self in place for all of Unicode with no option" do
       a = "äöü"
       a.upcase!
       a.should == "ÄÖÜ"
+    end
+
+    it "works for non-ascii-compatible encodings" do
+      a = "äöü".encode("utf-16le")
+      a.upcase!
+      a.should == "ÄÖÜ".encode("utf-16le")
     end
 
     it "updates string metadata for self" do
@@ -106,6 +120,12 @@ describe "String#upcase!" do
       a = "aßet"
       a.upcase!(:ascii)
       a.should == "AßET"
+    end
+
+    it "works for non-ascii-compatible encodings" do
+      a = "abc".encode("utf-16le")
+      a.upcase!(:ascii)
+      a.should == "ABC".encode("utf-16le")
     end
   end
 
@@ -159,8 +179,8 @@ describe "String#upcase!" do
     a.should == "HELLO"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
-    -> { "HeLlo".freeze.upcase! }.should raise_error(frozen_error_class)
-    -> { "HELLO".freeze.upcase! }.should raise_error(frozen_error_class)
+  it "raises a FrozenError when self is frozen" do
+    -> { "HeLlo".freeze.upcase! }.should raise_error(FrozenError)
+    -> { "HELLO".freeze.upcase! }.should raise_error(FrozenError)
   end
 end

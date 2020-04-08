@@ -11,20 +11,12 @@ STDLIB_FILES = %w[
   delegate.rb
   drb
   drb.rb
-  e2mmap.rb
   erb.rb
   find.rb
-  forwardable
-  forwardable.rb
   getoptlong.rb
-  ipaddr.rb
-  irb
-  irb.rb
-  logger.rb
   matrix
   matrix.rb
   monitor.rb
-  mutex_m.rb
   net
   observer.rb
   open-uri.rb
@@ -35,26 +27,17 @@ STDLIB_FILES = %w[
   ostruct.rb
   pp.rb
   prettyprint.rb
-  prime.rb
   profile.rb
   profiler.rb
   pstore.rb
   resolv-replace.rb
   resolv.rb
-  rexml
   rinda
-  rss
-  rss.rb
   set.rb
-  shell
-  shell.rb
   shellwords.rb
   singleton.rb
-  sync.rb
-  thwait.rb
   time.rb
   tmpdir.rb
-  tracer.rb
   tsort.rb
   un.rb
   unicode_normalize

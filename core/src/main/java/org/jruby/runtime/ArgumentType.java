@@ -45,6 +45,24 @@ public enum ArgumentType {
         }
     }
 
+    // FIXME: This could have been part of enum but I was concerned about whether any extension uses ArgumentType.
+    static char prefixFrom(ArgumentType type) {
+        switch (type) {
+            case key: return 'k';
+            case keyreq: return 'K';
+            case keyrest: return 'e';
+            case block: return 'b';
+            case opt: return 'o';
+            case rest: return 'r';
+            case req: return 'q';
+            case anonreq: return DescriptorInfo.ANONREQ_CHAR;
+            case anonopt: return DescriptorInfo.ANONOPT_CHAR;
+            case anonrest: return DescriptorInfo.ANONREST_CHAR;
+            case anonkeyrest: return 'N';
+            default: throw new IllegalArgumentException("Bogus type for ArgumentType: '" + type + "'");
+        }
+    }
+
     public RubyArray toArrayForm(Ruby runtime, RubySymbol name) {
         RubySymbol typeName = runtime.newSymbol(typeId);
 

@@ -634,6 +634,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
                  Pipe::SinkChannel.java_class.name)
     assert(Pipe::SinkChannel.instance_methods.include?(:keyFor))
   end
+  
+  def test_inner_classes_should_not_be_nested
+    Java::JavaAwt::Desktop::Action
+    assert_raises(NameError){ Java::JavaAwt::Desktop::Action::Action }
+  end
 
   def test_subclasses_and_their_return_types
     l = ArrayList.new
@@ -1919,6 +1924,22 @@ CLASSDEF
     #assert ! output.index('ambiguous'), output
     pend('[ji] did not select (float,float,float) ctor') if color.getRed != 255
     assert_equal 255, color.getRed # assert we called (float,float,float)
+  end
+
+  class Runner
+    def run; end
+  end
+
+  def test_concurrent_interface_proxy_generation
+    100.times do |_|
+      runner = Runner.new
+
+      assert_nothing_raised do
+        3.times.map do
+          Thread.start { assert runner.to_java(java.lang.Runnable) }
+        end.each(&:join)
+      end
+    end
   end
 
   # original report: https://jira.codehaus.org/browse/JRUBY-5582

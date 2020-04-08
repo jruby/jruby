@@ -186,15 +186,15 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
 
     public static Boolean doReverseLookup(ThreadContext context, IRubyObject noreverse) {
-        Ruby runtime = context.runtime;
-
-        if (noreverse == runtime.getTrue()) {
+        if (noreverse == context.tru) {
             return false;
-        } else if (noreverse == runtime.getFalse()) {
+        } else if (noreverse == context.fals) {
             return true;
         } else if (noreverse == context.nil) {
             return null;
         } else {
+            Ruby runtime = context.runtime;
+
             TypeConverter.checkType(context, noreverse, runtime.getSymbol());
             switch (noreverse.toString()) {
                 case "numeric": return true;

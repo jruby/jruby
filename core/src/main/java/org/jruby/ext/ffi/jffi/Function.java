@@ -4,6 +4,7 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallingConvention;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -74,8 +75,6 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         Object proc = null;
         int optionsIndex = 2;
 
-        Type returnType = org.jruby.ext.ffi.Util.findType(context, args[0]);
-
         if (!(args[1] instanceof RubyArray)) {
             throw context.runtime.newTypeError("Invalid parameter array "
                     + args[1].getMetaClass().getName() + " (expected Array)");
@@ -99,7 +98,9 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         } else {
             throw context.runtime.newTypeError("Invalid function address "
                     + args[0].getMetaClass().getName() + " (expected FFI::Pointer)");
-        }    
+        }
+
+        Type returnType = org.jruby.ext.ffi.Util.findType(context, args[0]);
 
         // Get the convention from the options hash
         String convention = "default";
@@ -160,7 +161,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = { "autorelease?", "autorelease" })
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return context.runtime.newBoolean(autorelease);
+        return RubyBoolean.newBoolean(context, autorelease);
     }
 
     @Override

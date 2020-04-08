@@ -158,6 +158,20 @@ describe "C-API String function" do
     end
   end
 
+  describe "rb_str_tmp_new" do
+    it "returns a hidden string (RBasic->klass is NULL)" do
+      @s.rb_str_tmp_new_klass(4).should == false
+    end
+
+    it "returns a new String object filled with \\0 bytes" do
+      s = @s.rb_str_tmp_new(4)
+      s.encoding.should == Encoding::BINARY
+      s.bytesize.should == 4
+      s.size.should == 4
+      s.should == "\x00\x00\x00\x00"
+    end
+  end
+
   describe "rb_str_new" do
     it "creates a new String with BINARY Encoding" do
       @s.rb_str_new("", 0).encoding.should == Encoding::BINARY
@@ -167,8 +181,10 @@ describe "C-API String function" do
       @s.rb_str_new("hello", 3).should == "hel"
     end
 
-    it "returns a non-tainted string" do
-      @s.rb_str_new("hello", 5).tainted?.should == false
+    ruby_version_is ''...'2.7' do
+      it "returns a non-tainted string" do
+        @s.rb_str_new("hello", 5).tainted?.should == false
+      end
     end
 
     it "returns an empty string if len is 0" do
@@ -305,19 +321,21 @@ describe "C-API String function" do
     end
   end
 
-  describe "rb_tainted_str_new" do
-    it "creates a new tainted String" do
-      newstring = @s.rb_tainted_str_new("test", 4)
-      newstring.should == "test"
-      newstring.tainted?.should be_true
+  ruby_version_is ''...'2.7' do
+    describe "rb_tainted_str_new" do
+      it "creates a new tainted String" do
+        newstring = @s.rb_tainted_str_new("test", 4)
+        newstring.should == "test"
+        newstring.tainted?.should be_true
+      end
     end
-  end
 
-  describe "rb_tainted_str_new2" do
-    it "creates a new tainted String" do
-      newstring = @s.rb_tainted_str_new2("test")
-      newstring.should == "test"
-      newstring.tainted?.should be_true
+    describe "rb_tainted_str_new2" do
+      it "creates a new tainted String" do
+        newstring = @s.rb_tainted_str_new2("test")
+        newstring.should == "test"
+        newstring.tainted?.should be_true
+      end
     end
   end
 
@@ -509,6 +527,24 @@ describe "C-API String function" do
       end
       chars.should == [55, 48, 227, 131, 145, 227, 130, 175]
     end
+
+    it "returns a pointer which can be cast and used as another type" do
+      s = "70パク".
+        encode(Encoding::UTF_16LE).
+        force_encoding(Encoding::UTF_16LE).
+        encode(Encoding::UTF_8)
+
+      ints = []
+      @s.RSTRING_PTR_iterate_uint32(s) do |i|
+        ints << i
+      end
+      ints.should == s.unpack('LL')
+    end
+
+    it "allows a short memcpy to the string which may be converted to a single write operation by the compiler" do
+      str = "        "
+      @s.RSTRING_PTR_short_memcpy(str).should == "Infinity"
+    end
   end
 
   describe "RSTRING_LEN" do
@@ -558,20 +594,22 @@ describe "C-API String function" do
   end
 
   describe "SafeStringValue" do
-    it "raises for tained string when $SAFE is 1" do
-      begin
-        Thread.new {
-          $SAFE = 1
-          -> {
-            @s.SafeStringValue("str".taint)
-          }.should raise_error(SecurityError)
-        }.join
-      ensure
-        $SAFE = 0
+    ruby_version_is ''...'2.7' do
+      it "raises for tained string when $SAFE is 1" do
+        begin
+          Thread.new {
+            $SAFE = 1
+            -> {
+              @s.SafeStringValue("str".taint)
+            }.should raise_error(SecurityError)
+          }.join
+        ensure
+          $SAFE = 0
+        end
       end
-    end
 
-    it_behaves_like :string_value_macro, :SafeStringValue
+      it_behaves_like :string_value_macro, :SafeStringValue
+    end
   end
 
   describe "rb_str_modify_expand" do
@@ -682,8 +720,10 @@ describe :rb_external_str_new, shared: true do
     @s.send(@method, "#{x80}abc").encoding.should == Encoding::BINARY
   end
 
-  it "returns a tainted String" do
-    @s.send(@method, "abc").tainted?.should be_true
+  ruby_version_is ''...'2.7' do
+    it "returns a tainted String" do
+      @s.send(@method, "abc").tainted?.should be_true
+    end
   end
 end
 
@@ -765,9 +805,11 @@ describe "C-API String function" do
       s.encoding.should equal(Encoding::EUC_JP)
     end
 
-    it "returns a tainted String" do
-      s = @s.rb_external_str_new_with_enc("abc", 3, Encoding::US_ASCII)
-      s.tainted?.should be_true
+    ruby_version_is ''...'2.7' do
+      it "returns a tainted String" do
+        s = @s.rb_external_str_new_with_enc("abc", 3, Encoding::US_ASCII)
+        s.tainted?.should be_true
+      end
     end
   end
 
@@ -976,5 +1018,49 @@ end
       -> { @s.rb_string_value_cstr("Hello\0 with a null.".encode('UTF-16BE')) }.should raise_error(ArgumentError)
     end
 
+  end
+
+  describe "rb_str_drop_bytes" do
+    it "drops N characters for an ASCII string" do
+      str = "12345678".encode("US-ASCII")
+      @s.rb_str_drop_bytes(str, 4)
+      str.should == "5678".encode("US-ASCII")
+    end
+
+    it "drop N/2 characters for a UTF-16 string" do
+      str = "12345678".encode("UTF-16LE")
+      @s.rb_str_drop_bytes(str, 4)
+      str.should == "345678".encode("UTF-16LE")
+    end
+
+    it "drop N/4 characters for a UTF-32 string" do
+      str = "12345678".encode("UTF-32LE")
+      @s.rb_str_drop_bytes(str, 4)
+      str.should == "2345678".encode("UTF-32LE")
+    end
+  end
+
+  describe "rb_utf8_str_new_static" do
+    it "returns a UTF-8 string of the correct characters and length" do
+      str = @s.rb_utf8_str_new_static
+      str.should == "nokogiri"
+      str.encoding.should == Encoding::UTF_8
+    end
+  end
+
+  describe "rb_utf8_str_new" do
+    it "returns a UTF-8 string of the correct characters and length" do
+      str = @s.rb_utf8_str_new
+      str.should == "nokogiri"
+      str.encoding.should == Encoding::UTF_8
+    end
+  end
+
+  describe "rb_utf8_str_new_cstr" do
+    it "returns a UTF-8 string of the correct characters and length" do
+      str = @s.rb_utf8_str_new_cstr
+      str.should == "nokogiri"
+      str.encoding.should == Encoding::UTF_8
+    end
   end
 end

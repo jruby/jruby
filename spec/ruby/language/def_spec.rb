@@ -177,17 +177,32 @@ describe "An instance method with a default argument" do
     foo(2,3,3).should == [2,3,[3]]
   end
 
-  it "shadows an existing method with the same name as the local" do
-    def bar
-      1
+  ruby_version_is ''...'2.7' do
+    it "warns and uses a nil value when there is an existing local method with same name" do
+      def bar
+        1
+      end
+      -> {
+        eval "def foo(bar = bar)
+          bar
+        end"
+      }.should complain(/circular argument reference/)
+      foo.should == nil
+      foo(2).should == 2
     end
-    -> {
-      eval "def foo(bar = bar)
-        bar
-      end"
-    }.should complain(/circular argument reference/)
-    foo.should == nil
-    foo(2).should == 2
+  end
+
+  ruby_version_is '2.7' do
+    it "raises a syntaxError an existing method with the same name as the local variable" do
+      def bar
+        1
+      end
+      -> {
+        eval "def foo(bar = bar)
+          bar
+        end"
+      }.should raise_error(SyntaxError)
+    end
   end
 
   it "calls a method with the same name as the local when explicitly using ()" do
@@ -246,10 +261,10 @@ describe "A singleton method definition" do
     (obj==2).should == 2
   end
 
-  it "raises #{frozen_error_class} if frozen" do
+  it "raises FrozenError if frozen" do
     obj = Object.new
     obj.freeze
-    -> { def obj.foo; end }.should raise_error(frozen_error_class)
+    -> { def obj.foo; end }.should raise_error(FrozenError)
   end
 end
 
@@ -397,12 +412,12 @@ describe "A method definition inside a metaclass scope" do
     -> { Object.new.a_singleton_method }.should raise_error(NoMethodError)
   end
 
-  it "raises #{frozen_error_class} if frozen" do
+  it "raises FrozenError if frozen" do
     obj = Object.new
     obj.freeze
 
     class << obj
-      -> { def foo; end }.should raise_error(frozen_error_class)
+      -> { def foo; end }.should raise_error(FrozenError)
     end
   end
 end

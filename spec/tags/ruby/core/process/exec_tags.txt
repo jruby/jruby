@@ -15,3 +15,5 @@ windows:Process.exec (environment variables) coerces environment argument using 
 fails:Process.exec (environment variables) sets environment variables in the child environment
 fails:Process.exec (environment variables) unsets environment variables whose value is nil
 fails:Process.exec (environment variables) coerces environment argument using to_hash
+fails:Process.exec with an options Hash with Integer option keys lets the process after exec have specified file descriptor despite close_on_exec
+fails:Process.exec with an options Hash with Integer option keys sets close_on_exec to false on specified fd even when it fails

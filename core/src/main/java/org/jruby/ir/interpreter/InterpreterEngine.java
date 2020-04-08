@@ -473,18 +473,6 @@ public class InterpreterEngine {
                 break;
             }
 
-            case SEARCH_CONST: {
-                SearchConstInstr sci = (SearchConstInstr)instr;
-                ConstantCache cache = sci.getConstantCache();
-                if (!ConstantCache.isCached(cache)) {
-                    result = sci.cache(context, currScope, currDynScope, self, temp);
-                } else {
-                    result = cache.value;
-                }
-                setResult(temp, currDynScope, sci.getResult(), result);
-                break;
-            }
-
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
@@ -509,7 +497,7 @@ public class InterpreterEngine {
             }
 
             case BOX_BOOLEAN: {
-                RubyBoolean f = context.runtime.newBoolean(getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
+                RubyBoolean f = RubyBoolean.newBoolean(context, getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
                 setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
                 break;
             }

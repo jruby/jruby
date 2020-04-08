@@ -9,9 +9,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   inherit 'org.sonatype.oss:oss-parent:7'
   packaging 'pom'
 
-  description 'JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.'
+  description 'JRuby is the effort to recreate the Ruby (https://www.ruby-lang.org) interpreter in Java.'
 
-  organization 'JRuby', 'http://jruby.org'
+  organization 'JRuby', 'https://www.jruby.org'
 
   [ 'headius', 'enebo', 'wmeissner', 'BanzaiMan', 'mkristian' ].each do |name|
     developer name do
@@ -65,14 +65,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
-              'json.version' => '2.2.0',
+              'json.version' => '2.3.0',
               'rspec.version' => '3.7.0',
               'rspec-core.version' => '3.7.0',
               'rspec-expectations.version' => '3.7.0',
               'rspec-mocks.version' => '3.7.0',
               'rspec-support.version' => '3.7.0',
-              'minitest.version' => '5.10.3',
-              'test-unit.version' => '3.2.8',
+              'minitest.version' => '5.11.3',
+              'test-unit.version' => '3.2.9',
               'power_assert.version' => '1.1.3',
 
               # versions for default gems with bin executables
@@ -83,14 +83,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
               'asm.version' => '7.1',
-              'jffi.version' => '1.2.20',
-              'joda.time.version' => '2.10.3' )
+              'jffi.version' => '1.2.23',
+              'joda.time.version' => '2.10.5' )
 
   plugin_management do
     jar( 'junit:junit:4.12',
          :scope => 'test' )
 
-    plugin( 'org.apache.felix:maven-bundle-plugin:3.5.0',
+    plugin( 'org.apache.felix:maven-bundle-plugin:4.2.1',
             'instructions' => {
               'Export-Package' =>  'org.jruby.*;version=${project.version}',
               'Import-Package' =>  '!org.jruby.*, *;resolution:=optional',
@@ -99,7 +99,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'Bundle-Description' =>  '${bundle.name} ${project.version} OSGi bundle',
               'Bundle-SymbolicName' =>  '${bundle.symbolic_name}'
             } ) do
-      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '3.5.0')
+      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '4.3.1')
       execute_goals( 'manifest',
                      :phase => 'prepare-package' )
     end

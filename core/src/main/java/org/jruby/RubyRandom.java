@@ -227,12 +227,14 @@ public class RubyRandom extends RubyObject {
     public static RubyClass createRandomClass(Ruby runtime) {
         RubyClass randomClass = runtime
                 .defineClass("Random", runtime.getObject(), RANDOM_ALLOCATOR);
+
         randomClass.defineAnnotatedMethods(RubyRandom.class);
+
         RubyRandom defaultRand = new RubyRandom(runtime, randomClass);
         defaultRand.random = new RandomType(randomSeed(runtime));
         randomClass.setConstant("DEFAULT", defaultRand);
         runtime.setDefaultRand(defaultRand.random);
-        runtime.setRandomClass(randomClass);
+
         return randomClass;
     }
 
@@ -621,7 +623,7 @@ public class RubyRandom extends RubyObject {
         if (!getType().equals(obj.getType())) {
             return context.fals;
         }
-        return context.runtime.newBoolean(random.equals(((RubyRandom) obj).random));
+        return RubyBoolean.newBoolean(context, random.equals(((RubyRandom) obj).random));
     }
 
     // c: random_state
@@ -680,9 +682,19 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
+    // c: random_s_bytes
+    @JRubyMethod(meta = true)
+    public static IRubyObject bytes(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return bytesCommon(context, getDefaultRand(context), arg);
+    }
+
     // c: rb_random_bytes
     @JRubyMethod(name = "bytes")
     public IRubyObject bytes(ThreadContext context, IRubyObject arg) {
+        return bytesCommon(context, random, arg);
+    }
+
+    private static IRubyObject bytesCommon(ThreadContext context, RandomType random, IRubyObject arg) {
         int n = RubyNumeric.num2int(arg);
         byte[] bytes = new byte[n];
         int idx = 0;

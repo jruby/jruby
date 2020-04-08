@@ -3,7 +3,6 @@ package org.jruby.runtime;
 import java.io.ByteArrayOutputStream;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
@@ -25,11 +24,13 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     private int callCount = 0;
     private InterpreterContext interpreterContext;
     private InterpreterContext fullInterpreterContext;
+    private IRClosure closure;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
         this.pushScope = true;
         this.reuseParentScope = false;
+        this.closure = closure;
 
         // -1 jit.threshold is way of having interpreter not promote full builds
         // regardless of compile mode (even when OFF full-builds are promoted)
@@ -66,21 +67,23 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             displayedCFG = true;
         }
 
-        if (interpreterContext == null) {
+        InterpreterContext ic = interpreterContext;
+        if (ic == null) {
             if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
                 LOG.info("Printing simple IR for " + closure.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
-            interpreterContext = closure.getInterpreterContext();
+            ic = closure.getInterpreterContext();
+            interpreterContext = ic;
             fullInterpreterContext = interpreterContext;
         }
-        return interpreterContext;
+        return ic;
     }
 
     @Override
-    public String getClassName(ThreadContext context) {
+    public String getOwnerName() {
         return null;
     }
 
@@ -163,6 +166,11 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     public RubyModule getImplementationClass() {
         return null;
+    }
+
+    @Override
+    public IRClosure getScope() {
+        return closure;
     }
 
 }

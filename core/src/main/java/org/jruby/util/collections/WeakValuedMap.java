@@ -31,26 +31,32 @@
 
 package org.jruby.util.collections;
 
+import java.io.Serializable;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.AbstractCollection;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Map-like that holds its values weakly (backed by a concurrent hash map).
  */
-public class WeakValuedMap<Key, Value> {
+public class WeakValuedMap<Key, Value> implements Map<Key, Value>, Serializable {
 
     private final Map<Key, KeyedReference<Key, Value>> map = newMap();
-    @SuppressWarnings("unchecked")
-    private final ReferenceQueue<Value> deadRefs = new ReferenceQueue();
+    private final ReferenceQueue<Value> deadRefs = new ReferenceQueue<>();
 
-    public final void put(Key key, Value value) {
+    public Value put(Key key, Value value) {
         cleanReferences();
-        map.put(key, new KeyedReference<Key, Value>(value, key, deadRefs));
+        KeyedReference<Key, Value> prev = map.put(key, new KeyedReference<Key, Value>(value, key, deadRefs));
+        return prev == null ? null : prev.get();
     }
 
-    public final Value get(Key key) {
+    public Value get(Object key) {
         cleanReferences();
         KeyedReference<Key, Value> reference = map.get(key);
         if (reference == null) return null;
@@ -67,13 +73,98 @@ public class WeakValuedMap<Key, Value> {
         return map.size();
     }
 
+    @Override
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
+    @Override
+    public boolean containsKey(final Object key) {
+        return map.containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+        cleanReferences();
+        for (KeyedReference ref : map.values()) {
+            if (value == null) {
+                if (ref.get() == null) return true;
+            } else {
+                if (value.equals(ref.get())) return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Value remove(final Object key) {
+        cleanReferences();
+        KeyedReference<Key, Value> prev = map.remove(key);
+        return prev == null ? null : prev.get();
+    }
+
+    @Override
+    public void putAll(final Map<? extends Key, ? extends Value> m) {
+        for (Map.Entry<? extends Key, ? extends Value> e : m.entrySet()) put(e.getKey(), e.getValue());
+    }
+
+    @Override
+    public Set<Key> keySet() {
+        return map.keySet();
+    }
+
+    @Override
+    public Collection<Value> values() {
+        return new AbstractCollection<Value>() {
+            public Iterator<Value> iterator() {
+                return new Iterator<Value>() {
+                    final Iterator<Entry<Key, Value>> i = entrySet().iterator();
+
+                    public boolean hasNext() {
+                        return i.hasNext();
+                    }
+
+                    public Value next() {
+                        return i.next().getValue();
+                    }
+
+                    public void remove() {
+                        i.remove();
+                    }
+                };
+            }
+
+            public int size() {
+                return WeakValuedMap.this.size();
+            }
+
+            public boolean contains(Object v) {
+                return WeakValuedMap.this.containsValue(v);
+            }
+
+            public void clear() {
+                WeakValuedMap.this.clear();
+            }
+        };
+    }
+
+    @Override
+    public Set<Entry<Key, Value>> entrySet() {
+        return new EntrySet();
+    }
+
+    @Override
+    public String toString() {
+        return map.toString();
+    }
+
     /**
      * Construct the backing store map for this WeakValuedMap. It should be capable of safe concurrent read and write.
      *
      * @return the backing store map
      */
     protected Map<Key, KeyedReference<Key, Value>> newMap() {
-        return new ConcurrentHashMap<Key, KeyedReference<Key, Value>>();
+        return new ConcurrentHashMap<>();
     }
 
     protected static class KeyedReference<Key, Value> extends WeakReference<Value> {
@@ -94,4 +185,68 @@ public class WeakValuedMap<Key, Value> {
             map.remove( ref.key );
         }
     }
+
+    private class EntrySet extends AbstractCollection<Entry<Key, Value>> implements Set<Entry<Key, Value>> {
+
+        transient Set<Entry<Key, KeyedReference<Key, Value>>> entries;
+
+        private Set<Entry<Key, KeyedReference<Key, Value>>> getEntries() {
+            if (entries == null) {
+                entries = WeakValuedMap.this.map.entrySet();
+            }
+            return entries;
+        }
+
+        public int size() {
+            return WeakValuedMap.this.size();
+        }
+
+        public void clear() {
+            WeakValuedMap.this.clear();
+        }
+
+        public boolean contains(Object o) {
+            if (o instanceof Entry) {
+                Entry<Key, Value> entry = (Entry) o;
+                cleanReferences();
+                KeyedReference<Key, Value> reference = map.get(entry.getKey());
+                if (reference == null) return false;
+                Object value = reference.get();
+                return value == null ? entry.getValue() == null : value.equals(entry.getValue());
+            }
+            return false;
+        }
+
+        public Iterator<Entry<Key, Value>> iterator() {
+            WeakValuedMap.this.cleanReferences();
+
+            return new Iterator<Entry<Key, Value>>() {
+                final Iterator<Entry<Key, KeyedReference<Key, Value>>> i = WeakValuedMap.this.map.entrySet().iterator();
+
+                public boolean hasNext() {
+                    return i.hasNext();
+                }
+
+                public Entry<Key, Value> next() {
+                    Entry<Key, KeyedReference<Key, Value>> e = i.next();
+                    return new SimpleImmutableEntry<>(e.getKey(), e.getValue().get());
+                }
+
+                public void remove() {
+                    i.remove();
+                }
+
+            };
+        }
+
+        public boolean add(Entry<Key, Value> e) {
+            throw new UnsupportedOperationException();
+        }
+
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
 }

@@ -117,9 +117,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject dup() {
-        if (!packed()) return super.dup();
-        return new RubyArrayTwoObject(this);
+    protected RubyArray dupImpl(Ruby runtime, RubyClass metaClass) {
+        if (!packed()) return super.dupImpl(runtime, metaClass);
+        return new RubyArrayTwoObject(metaClass, this);
     }
 
     @Override

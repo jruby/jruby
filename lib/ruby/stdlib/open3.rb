@@ -84,7 +84,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   # If merged stdout and stderr output is not a problem, you can use Open3.popen2e.
   # If you really need stdout and stderr output as separate strings, you can consider Open3.capture3.
   #
-  def popen3(*cmd, **opts, &block)
+  def popen3(*cmd, &block)
+    if Hash === cmd.last
+      opts = cmd.pop.dup
+    else
+      opts = {}
+    end
+
     in_r, in_w = IO.pipe
     opts[:in] = in_r
     in_w.sync = true
@@ -139,7 +145,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #     p o.read #=> "*"
   #   }
   #
-  def popen2(*cmd, **opts, &block)
+  def popen2(*cmd, &block)
+    if Hash === cmd.last
+      opts = cmd.pop.dup
+    else
+      opts = {}
+    end
+
     in_r, in_w = IO.pipe
     opts[:in] = in_r
     in_w.sync = true
@@ -182,7 +194,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #     }
   #   }
   #
-  def popen2e(*cmd, **opts, &block)
+  def popen2e(*cmd, &block)
+    if Hash === cmd.last
+      opts = cmd.pop.dup
+    else
+      opts = {}
+    end
+
     in_r, in_w = IO.pipe
     opts[:in] = in_r
     in_w.sync = true
@@ -195,10 +213,6 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   module_function :popen2e
 
   def popen_run(cmd, opts, child_io, parent_io) # :nodoc:
-    if last = Hash.try_convert(cmd.last)
-      opts = opts.merge(last)
-      cmd.pop
-    end
     pid = spawn(*cmd, opts)
     wait_thr = Process.detach(pid)
     child_io.each(&:close)
@@ -257,7 +271,16 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #     STDOUT.binmode; print thumbnail
   #   end
   #
-  def capture3(*cmd, stdin_data: '', binmode: false, **opts)
+  def capture3(*cmd)
+    if Hash === cmd.last
+      opts = cmd.pop.dup
+    else
+      opts = {}
+    end
+
+    stdin_data = opts.delete(:stdin_data) || ''
+    binmode = opts.delete(:binmode)
+
     popen3(*cmd, opts) {|i, o, e, t|
       if binmode
         i.binmode
@@ -309,7 +332,16 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #   End
   #   image, s = Open3.capture2("gnuplot", :stdin_data=>gnuplot_commands, :binmode=>true)
   #
-  def capture2(*cmd, stdin_data: nil, binmode: false, **opts)
+  def capture2(*cmd)
+    if Hash === cmd.last
+      opts = cmd.pop.dup
+    else
+      opts = {}
+    end
+
+    stdin_data = opts.delete(:stdin_data)
+    binmode = opts.delete(:binmode)
+
     popen2(*cmd, opts) {|i, o, t|
       if binmode
         i.binmode
@@ -348,7 +380,16 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #   # capture make log
   #   make_log, s = Open3.capture2e("make")
   #
-  def capture2e(*cmd, stdin_data: nil, binmode: false, **opts)
+  def capture2e(*cmd)
+    if Hash === cmd.last
+      opts = cmd.pop.dup
+    else
+      opts = {}
+    end
+
+    stdin_data = opts.delete(:stdin_data)
+    binmode = opts.delete(:binmode)
+
     popen2e(*cmd, opts) {|i, oe, t|
       if binmode
         i.binmode
@@ -413,7 +454,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #     stdin.close     # send EOF to sort.
   #     p stdout.read   #=> "     1\tbar\n     2\tbaz\n     3\tfoo\n"
   #   }
-  def pipeline_rw(*cmds, **opts, &block)
+  def pipeline_rw(*cmds, &block)
+    if Hash === cmds.last
+      opts = cmds.pop.dup
+    else
+      opts = {}
+    end
+
     in_r, in_w = IO.pipe
     opts[:in] = in_r
     in_w.sync = true
@@ -463,7 +510,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #     p ts[1].value #=> #<Process::Status: pid 24913 exit 0>
   #   }
   #
-  def pipeline_r(*cmds, **opts, &block)
+  def pipeline_r(*cmds, &block)
+    if Hash === cmds.last
+      opts = cmds.pop.dup
+    else
+      opts = {}
+    end
+
     out_r, out_w = IO.pipe
     opts[:out] = out_w
 
@@ -499,7 +552,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #     i.puts "hello"
   #   }
   #
-  def pipeline_w(*cmds, **opts, &block)
+  def pipeline_w(*cmds, &block)
+    if Hash === cmds.last
+      opts = cmds.pop.dup
+    else
+      opts = {}
+    end
+
     in_r, in_w = IO.pipe
     opts[:in] = in_r
     in_w.sync = true
@@ -552,7 +611,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #     p err_r.read # error messages of pdftops and lpr.
   #   }
   #
-  def pipeline_start(*cmds, **opts, &block)
+  def pipeline_start(*cmds, &block)
+    if Hash === cmds.last
+      opts = cmds.pop.dup
+    else
+      opts = {}
+    end
+
     if block
       pipeline_run(cmds, opts, [], [], &block)
     else
@@ -614,7 +679,13 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
   #   #   106
   #   #   202
   #
-  def pipeline(*cmds, **opts)
+  def pipeline(*cmds)
+    if Hash === cmds.last
+      opts = cmds.pop.dup
+    else
+      opts = {}
+    end
+
     pipeline_run(cmds, opts, [], []) {|ts|
       ts.map(&:value)
     }
@@ -660,8 +731,8 @@ require 'jruby/open3_windows' if JRuby::Util::ON_WINDOWS
       end
       pid = spawn(*cmd, cmd_opts)
       wait_thrs << Process.detach(pid)
-      r.close if r
-      w2.close if w2
+      r&.close
+      w2&.close
       r = r2
     }
     result = parent_io + [wait_thrs]

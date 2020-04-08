@@ -29,103 +29,49 @@
 package org.jruby.ext.ffi;
 
 import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.Enum;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.RubySymbol;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-
-import java.util.Iterator;
 
 /**
  * Represents a C enum
  */
 @JRubyClass(name="FFI::Enums", parent="Object")
 public final class Enums extends RubyObject {
-    private final RubyArray allEnums;
-    private final RubyHash symbolMap;
-    private final RubyHash taggedEnums;
-        
     public static RubyClass createEnumsClass(Ruby runtime, RubyModule ffiModule) {
-        RubyClass enumsClass = ffiModule.defineClassUnder("Enums", runtime.getObject(),
-                Allocator.INSTANCE);
-        enumsClass.defineAnnotatedMethods(Enums.class);
-        enumsClass.defineAnnotatedConstants(Enums.class);
+        RubyClass enumsClass =
+                ffiModule.defineClassUnder("Enums", runtime.getObject(), Enums::new);
         enumsClass.includeModule(ffiModule.getConstant("DataConverter"));
 
         return enumsClass;
     }
 
-    private static final class Allocator implements ObjectAllocator {
-        private static final ObjectAllocator INSTANCE = new Allocator();
-
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new Enums(runtime, klass);
-        }
-    }
-
     private Enums(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        allEnums    = RubyArray.newArray(runtime);
-        taggedEnums = RubyHash.newHash(runtime);
-        symbolMap   = RubyHash.newHash(runtime);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public final IRubyObject initialize(ThreadContext context) {
-        return (IRubyObject) this;
+    protected RubyArray getAllEnums() {
+        return (RubyArray) getInstanceVariable("@all_enums");
     }
 
-    @JRubyMethod(name = "<<")
-    public IRubyObject append(final ThreadContext context, IRubyObject item){
-        if(!(item instanceof Enum)){
-            throw context.runtime.newTypeError(item, context.runtime.getFFI().ffiModule.getClass("Enum"));
-        }
-        allEnums.append(item);
-        if (!(item == null || item == context.nil)){
-            IRubyObject tag = ((Enum)item).tag(context);
-            if (tag != null && !tag.isNil())
-                taggedEnums.fastASet(tag, item);
-        }
-        symbolMap.merge_bang(context, ((Enum)item).symbol_map(context), Block.NULL_BLOCK);
-        return item;
+    protected RubyHash getSymbolMap() {
+        return (RubyHash) getInstanceVariable("@symbol_map");
+    }
+
+    protected RubyHash getTaggedEnums() {
+        return (RubyHash) getInstanceVariable("@tagged_enums");
     }
 
     public boolean isEmpty(){
-        return ( allEnums.isEmpty() && symbolMap.isEmpty() && taggedEnums.isEmpty());
+        return ( getAllEnums().isEmpty() && getSymbolMap().isEmpty() && getTaggedEnums().isEmpty());
     }
 
-    @JRubyMethod(name = "empty?")
-    public RubyBoolean empty_p(){
-        return isEmpty() ?  getRuntime().getTrue() : getRuntime().getFalse();
-    }
-
-    @JRubyMethod(name = "find")
-    public IRubyObject find(final ThreadContext context, IRubyObject query){
-        if (taggedEnums.has_key_p(context, query).isTrue()){
-            return taggedEnums.fastARef(query);
-        }
-        for (int i = 0; i < allEnums.getLength(); i++){
-            IRubyObject item = (IRubyObject)allEnums.entry(i);
-            if (((RubyArray)item.callMethod(context, "symbols")).include_p(context, query).isTrue()){
-                return item;
-            }
-        }
-        return context.nil;
-    }
-
-    @JRubyMethod(name = "__map_symbol")
     public IRubyObject mapSymbol(final ThreadContext context, IRubyObject symbol){
-        return symbolMap.op_aref(context, symbol);
+        return callMethod(context, "__map_symbol", symbol);
     }
 }

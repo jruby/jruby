@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import org.jruby.ParseResult;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
@@ -14,6 +15,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.*;
+import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -22,11 +24,17 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.IGVDumper;
 import org.jruby.parser.StaticScope;
 
-import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
@@ -90,7 +98,7 @@ public abstract class IRScope implements ParseResult {
 
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
-    private List<IRScope> lexicalChildren;
+    private final List<IRScope> lexicalChildren = Collections.synchronizedList(new ArrayList<>());
 
     /** Parser static-scope that this IR scope corresponds to */
     private final StaticScope staticScope;
@@ -135,6 +143,10 @@ public abstract class IRScope implements ParseResult {
         this.scopeId = globalScopeCount.getAndIncrement();
 
         setupLexicalContainment();
+
+        if (staticScope != null && !(this instanceof IRScriptBody) && !(this instanceof IREvalScript)) {
+            staticScope.setFile(getFile());
+        }
     }
 
     public IRScope(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope staticScope) {
@@ -159,10 +171,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void setupLexicalContainment() {
-        if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING || RubyInstanceConfig.RECORD_LEXICAL_HIERARCHY) {
-            lexicalChildren = new ArrayList<>(1);
-            if (lexicalParent != null) lexicalParent.addChildScope(this);
-        }
+        if (lexicalParent != null) lexicalParent.addChildScope(this);
     }
 
     public int getScopeId() {
@@ -183,13 +192,11 @@ public abstract class IRScope implements ParseResult {
         return (other != null) && (getClass() == other.getClass()) && (scopeId == ((IRScope) other).scopeId);
     }
 
-    protected void addChildScope(IRScope scope) {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
+    protected synchronized void addChildScope(IRScope scope) {
         lexicalChildren.add(scope);
     }
 
-    public List<IRScope> getLexicalScopes() {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
+    public synchronized List<IRScope> getLexicalScopes() {
         return lexicalChildren;
     }
 
@@ -401,6 +408,21 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(USES_EVAL);
     }
 
+    public boolean anyUsesEval() {
+        // Currently methods are only lazy scopes so we need to build them if we decide to persist them.
+        if (this instanceof IRMethod) {
+            ((IRMethod) this).lazilyAcquireInterpreterContext();
+        }
+
+        boolean usesEval = usesEval();
+
+        for (IRScope child : getLexicalScopes()) {
+            usesEval |= child.anyUsesEval();
+        }
+
+        return usesEval;
+    }
+
     public boolean usesZSuper() {
         return flags.contains(USES_ZSUPER);
     }
@@ -504,7 +526,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions) {
         interpreterContext = new InterpreterContext(this, instructions);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
@@ -690,7 +712,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private static final EnumSet<IRFlags> DEFAULT_SCOPE_FLAGS =
-            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, USES_EVAL, REQUIRES_BACKREF,
+            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, REQUIRES_BACKREF,
                     REQUIRES_LASTLINE, REQUIRES_DYNSCOPE, USES_ZSUPER);
 
     private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
@@ -786,13 +808,6 @@ public abstract class IRScope implements ParseResult {
         return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
 
-    public Variable createCurrentScopeVariable() {
-        // SSS: Used in only 1 case in generated IR:
-        // -> searching a constant in the lexical scope hierarchy
-        temporaryVariableIndex++;
-        return TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
-    }
-
     /**
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
@@ -806,14 +821,6 @@ public abstract class IRScope implements ParseResult {
      */
     public Set<LocalVariable> getUsedLocalVariables() {
         return getFullInterpreterContext().getUsedLocalVariables();
-    }
-
-    /**
-     * Set the local variables for this scope. This should only be used by persistence layer.
-     */
-    // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<RubySymbol, LocalVariable> variables) {
-        this.localVars = variables;
     }
 
     public void setNextLabelIndex(int index) {
@@ -974,7 +981,6 @@ public abstract class IRScope implements ParseResult {
         flags.remove(FLAGS_COMPUTED);
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
         flags.add(BINDING_HAS_ESCAPED);
-        flags.add(USES_EVAL);
         flags.add(USES_ZSUPER);
 
         flags.remove(HAS_BREAK_INSTRS);
@@ -1003,10 +1009,11 @@ public abstract class IRScope implements ParseResult {
         return null;
     }
 
-    private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+    private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, RubyModule implClass, long callsiteId, int classToken, boolean cloneHost) {
         alreadyHasInline = true;
-        // FIXME: Tried prepareFullBuild here and for methodToInline and a couple of missing callsiteid errors happened in spec:ruby:fast
-        if (getFullInterpreterContext() == null) return inlineFailed("inline into startup interpreter scope");
+
+        // Host may still be running in startup interp...promote it to full.
+        if (getFullInterpreterContext() == null) prepareFullBuild();
 
         // FIXME: So a potential problem is closures contain local variables in the method being inlined then we will nuke
         // those scoped variables and the closure cannot see them.  One idea is since for deoptimization we will need to
@@ -1018,21 +1025,33 @@ public abstract class IRScope implements ParseResult {
         // are IR methods (or are native but can be substituted with IR methods).
         //
         // Note: we can look for scoped methods and make this less conservative.
-        if (!methodToInline.getClosures().isEmpty()) return inlineFailed("inline a method which contains nested closures");
+        if (!methodToInline.getClosures().isEmpty()) {
+            boolean accessInaccessibleLocalVariables = false;
+            for (IRClosure closure: methodToInline.getClosures()) {
+                if (closure.flags.contains(ACCESS_PARENTS_LOCAL_VARIABLES)) {
+                    accessInaccessibleLocalVariables = true;
+                    break;
+                }
+            }
+            if (accessInaccessibleLocalVariables) return inlineFailed("inline a method which contains nested closures which access methods lvars");
+        }
+
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
+        if (newContext == null) {
+            return inlineFailed("FIXME: BBs are not linearized???");
+        }
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
-        RubyModule implClass = compilable.getImplementationClass();
 
         String error = new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
         return error == null ? newContext : inlineFailed(error);
     }
 
-    public void inlineMethod(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+    public void inlineMethod(IRMethod methodToInline, RubyModule metaclass, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
 
-        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, metaclass, callsiteId, classToken, cloneHost);
         if (newContext == null) {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
             return;
@@ -1045,15 +1064,18 @@ public abstract class IRScope implements ParseResult {
         manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
     }
 
-    public void inlineMethodJIT(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+    public void inlineMethodJIT(IRMethod methodToInline, RubyModule implClass, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
 
-        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, implClass, callsiteId, classToken, cloneHost);
+        Ruby runtime = manager.getRuntime();
         if (newContext == null) {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            runtime.getInlineStats().incrementInlineFailedCount();
             return;
         } else {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+            runtime.getInlineStats().incrementInlineSuccessCount();
         }
 
         // We are not running any JIT-specific passes here.
@@ -1061,13 +1083,13 @@ public abstract class IRScope implements ParseResult {
         newContext.linearizeBasicBlocks();
         this.optimizedInterpreterContext = newContext;
 
-        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
+        runtime.getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
      }
 
-    public void inlineMethodCompiled(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+    public void inlineMethodCompiled(IRMethod methodToInline, RubyModule implClass, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
 
-        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, implClass, callsiteId, classToken, cloneHost);
         if (newContext == null) {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
             return;
@@ -1182,19 +1204,7 @@ public abstract class IRScope implements ParseResult {
      */
     public void captureParentRefinements(ThreadContext context) {
         if (maybeUsingRefinements()) {
-            for (IRScope cur = this.getLexicalParent(); cur != null; cur = cur.getLexicalParent()) {
-                RubyModule overlay = cur.staticScope.getOverlayModuleForRead();
-                if (overlay != null && !overlay.getRefinements().isEmpty()) {
-                    // capture current refinements at definition time
-                    RubyModule myOverlay = staticScope.getOverlayModuleForWrite(context);
-
-                    // FIXME: MRI does a copy-on-write thing here with the overlay
-                    myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
-
-                    // only search until we find an overlay
-                    break;
-                }
-            }
+            getStaticScope().captureParentRefinements(context);
         }
     }
 
@@ -1214,12 +1224,13 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void persistScopeHeader(IRWriterEncoder file) {
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("IRScopeType = " + getScopeType());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: type       = " + getScopeType());
         file.encode(getScopeType()); // type is enum of kind of scope
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Line # = " + getLine());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: line       = " + getLine());
         file.encode(getLine());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + getTemporaryVariablesCount());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: temp count = " + getTemporaryVariablesCount());
         file.encode(getTemporaryVariablesCount());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: next label = " + getTemporaryVariablesCount());
         file.encode(getNextLabelIndex());
     }
 }

@@ -5,7 +5,7 @@ Prerequisites:
 
 * A [Java 8-compatible (or higher) Java development kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
   * If `JAVA_HOME` is not set on Mac OS X: `export JAVA_HOME=$(/usr/libexec/java_home)`
-* [Maven](https://maven.apache.org/download.cgi) 3+ (Maven Wrapper provided with `./mvnw`)
+* [Maven](https://maven.apache.org/download.cgi) 3.3.0+ (Maven Wrapper provided with `./mvnw`)
 * [Apache Ant](https://ant.apache.org/bindownload.cgi) 1.8+ (see https://github.com/jruby/jruby/issues/2236)
 * [Make](https://www.gnu.org/software/make/) and a C++ compiler for installing the jruby-launcher gem
 
@@ -23,7 +23,7 @@ command to execute is:
 ./mvnw
 ```
 
-This will run the default "install" goal (```mvn install```) and will do all of the following:
+This will run the default "install" goal (`mvn install`) and will do all of the following:
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
@@ -225,7 +225,7 @@ Cleaning the build may be necessary after switching to a different
 version of JRuby (for example, after switching git branches) to ensure
 that everything is rebuilt properly.
 
-NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar**!
+NOTE: `mvn clean` just cleans the **jruby-core** artifact and the **./lib/jruby.jar**!
 
 Clean everything:
 

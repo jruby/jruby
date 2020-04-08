@@ -44,7 +44,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 
 public class JRubyCallSite extends MutableCallSite {
 
-    private static final AtomicLong SITE_ID = new AtomicLong(1);
+    public static final AtomicLong SITE_ID = new AtomicLong(1);
 
     final long siteID = SITE_ID.getAndIncrement();
     final CallType callType;

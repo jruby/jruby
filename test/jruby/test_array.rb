@@ -110,8 +110,7 @@ class TestArray < Test::Unit::TestCase
 
     assert_equal(Array, @arr2.transpose.class)
     assert_equal(Array, @arr.compact.class)
-    # TODO incompatibility with MRI:
-    #assert_equal(Array, @arr.reverse.class)
+    assert_equal(Array, @arr.reverse.class)
     assert_equal(MyArray, @arr2.flatten.class)
     assert_equal(MyArray, @arr.uniq.class)
     assert_equal(Array, @arr.sort.class)
@@ -130,6 +129,27 @@ class TestArray < Test::Unit::TestCase
     assert_equal(Array, @arr.collect{true}.class)
     assert_equal(Array, @arr.zip([1,2,3]).class)
     assert_equal(MyArray, @arr.dup.class)
+  end
+
+  LONGP = 9223372036854775807
+
+  def test_aset_error # from MRI's TestArray which has test_aset_error excluded
+    assert_raise(IndexError) { [0][-2] = 1 }
+    assert_raise(IndexError) { [0][LONGP] = 2 }
+    assert_raise(IndexError) { [0][(LONGP + 1) / 2 - 1] = 2 }
+    #assert_raise(IndexError) { [0][LONGP..-1] = 2 }
+    begin
+      [0][LONGP..-1] = 2
+    rescue StandardError # okay
+    end
+
+    a = [0]
+    a[2] = 4
+    assert_equal([0, nil, 4], a)
+    assert_raise(ArgumentError) { [0][0, 0, 0] = 0 }
+    assert_raise(ArgumentError) { [0].freeze[0, 0, 0] = 0 }
+    assert_raise(TypeError) { [0][:foo] = 0 }
+    assert_raise(FrozenError) { [0].freeze[:foo] = 0 }
   end
 
   class Foo1

@@ -34,9 +34,9 @@
 
 package org.jruby;
 
-import java.util.HashSet;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -45,7 +45,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.IdUtil;
 
 /**
  * @author  jpetersen
@@ -75,7 +74,6 @@ public class RubyBinding extends RubyObject {
     
     public static RubyClass createBindingClass(Ruby runtime) {
         RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
-        runtime.setBinding(bindingClass);
 
         bindingClass.setClassIndex(ClassIndex.BINDING);
         bindingClass.setReifiedClass(RubyBinding.class);
@@ -142,7 +140,7 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
-        return context.runtime.newBoolean(binding.getEvalScope(context.runtime).getStaticScope().isDefined(symbol.asJavaString()) != -1);
+        return RubyBoolean.newBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(symbol.asJavaString()) != -1);
     }
 
     @JRubyMethod
@@ -172,26 +170,21 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod
     public IRubyObject local_variables(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        HashSet<String> encounteredLocalVariables = new HashSet<>();
-        RubyArray allLocalVariables = runtime.newArray();
-        DynamicScope currentScope = binding.getEvalScope(context.runtime);
+        Ruby runtime = context.runtime;
 
-        while (currentScope != null) {
-            for (String name : currentScope.getStaticScope().getVariables()) {
-                if (IdUtil.isLocal(name) && !encounteredLocalVariables.contains(name)) {
-                    allLocalVariables.push(runtime.newSymbol(name));
-                    encounteredLocalVariables.add(name);
-                }
-            }
-            currentScope = currentScope.getParentScope();
-        }
-
-        return allLocalVariables;
+        return binding.getEvalScope(runtime).getStaticScope().getLocalVariables(runtime);
     }
 
     @JRubyMethod(name = "receiver")
     public IRubyObject receiver(ThreadContext context) {
         return binding.getSelf();
+    }
+
+    @JRubyMethod
+    public IRubyObject source_location(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        IRubyObject filename = runtime.newString(binding.getFile()).freeze(context);
+        RubyFixnum line = runtime.newFixnum(binding.getLine() + 1); /* zero-based */
+        return runtime.newArray(filename, line);
     }
 }

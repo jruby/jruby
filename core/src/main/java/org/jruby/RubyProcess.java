@@ -81,7 +81,6 @@ public class RubyProcess {
 
     public static RubyModule createProcessModule(Ruby runtime) {
         RubyModule process = runtime.defineModule("Process");
-        runtime.setProcess(process);
 
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -238,7 +237,7 @@ public class RubyProcess {
             if (!PosixShim.WAIT_MACROS.WIFEXITED(status)) {
                 return context.nil;
             }
-            return context.runtime.newBoolean(PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
+            return RubyBoolean.newBoolean(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
         }
 
         @JRubyMethod(name = {"coredump?"})
@@ -278,7 +277,7 @@ public class RubyProcess {
         }
 
         // MRI: pst_message
-        private static String pst_message(String prefix, long pid, long status) {
+        public static String pst_message(String prefix, long pid, long status) {
             StringBuilder sb = new StringBuilder(prefix);
             sb
                     .append("pid ")
@@ -1632,7 +1631,7 @@ public class RubyProcess {
     public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+        if (PopenExecutor.nativePopenAvailable(runtime)) {
             return PopenExecutor.spawn(context, args);
         }
 

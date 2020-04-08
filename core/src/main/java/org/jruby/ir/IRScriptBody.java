@@ -13,7 +13,7 @@ public class IRScriptBody extends IRScope {
         this.toplevelScope = null;
         this.fileName = sourceName;
 
-        if (!getManager().isDryRun() && staticScope != null) {
+        if (staticScope != null) {
             staticScope.setIRScope(this);
         }
     }

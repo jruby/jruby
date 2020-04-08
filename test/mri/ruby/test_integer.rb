@@ -24,6 +24,32 @@ class TestInteger < Test::Unit::TestCase
                         rescue
                           nil
                         end, "[ruby-dev:32084] [ruby-dev:34547]")
+
+    x = EnvUtil.suppress_warning {2 ** -0x4000000000000000}
+    assert_in_delta(0.0, (x / 2), Float::EPSILON)
+
+    <<~EXPRS.each_line.with_index(__LINE__+1) do |expr, line|
+      crash01: 111r+11**-11111161111111
+      crash02: 1118111111111**-1111111111111111**1+1==11111
+      crash03: -1111111**-1111*11 - -1111111** -111111111
+      crash04: 1118111111111** -1111111111111111**1+11111111111**1 ===111
+      crash05: 11** -111155555555555555  -55   !=5-555
+      crash07: 1 + 111111111**-1111811111
+      crash08: 18111111111**-1111111111111111**1 + 1111111111**-1111**1
+      crash10: -7 - -1111111** -1111**11
+      crash12: 1118111111111** -1111111111111111**1 + 1111 - -1111111** -1111*111111111119
+      crash13: 1.0i - -1111111** -111111111
+      crash14: 11111**111111111**111111 * -11111111111111111111**-111111111111
+      crash15: ~1**1111 + -~1**~1**111
+      crash17: 11** -1111111**1111 /11i
+      crash18: 5555i**-5155 - -9111111**-1111**11
+      crash19: 111111*-11111111111111111111**-1111111111111111
+      crash20: 1111**111-11**-11111**11
+      crash21: 11**-10111111119-1i -1r
+    EXPRS
+      name, expr = expr.split(':', 2)
+      assert_ruby_status(%w"-W0", expr, name)
+    end
   end
 
   def test_lshift
@@ -92,6 +118,17 @@ class TestInteger < Test::Unit::TestCase
     assert_equal(2 ** 50, Integer(2.0 ** 50))
     assert_raise(TypeError) { Integer(nil) }
 
+    bug14552 = '[ruby-core:85813]'
+    obj = Object.new
+    def obj.to_int; "str"; end
+    assert_raise(TypeError, bug14552) { Integer(obj) }
+    def obj.to_i; 42; end
+    assert_equal(42, Integer(obj), bug14552)
+
+    obj = Object.new
+    def obj.to_i; "str"; end
+    assert_raise(TypeError) { Integer(obj) }
+
     bug6192 = '[ruby-core:43566]'
     assert_raise(Encoding::CompatibilityError, bug6192) {Integer("0".encode("utf-16be"))}
     assert_raise(Encoding::CompatibilityError, bug6192) {Integer("0".encode("utf-16le"))}
@@ -113,6 +150,55 @@ class TestInteger < Test::Unit::TestCase
       end
       assert_equal (1 << 100), Integer((1 << 100).to_f)
       assert_equal 1, Integer(1.0)
+    end;
+  end
+
+  def test_Integer_with_exception_keyword
+    assert_nothing_raised(ArgumentError) {
+      assert_equal(nil, Integer("1z", exception: false))
+    }
+    assert_nothing_raised(ArgumentError) {
+      assert_equal(nil, Integer(Object.new, exception: false))
+    }
+    assert_nothing_raised(ArgumentError) {
+      o = Object.new
+      def o.to_i; 42.5; end
+      assert_equal(nil, Integer(o, exception: false))
+    }
+    assert_nothing_raised(ArgumentError) {
+      o = Object.new
+      def o.to_i; raise; end
+      assert_equal(nil, Integer(o, exception: false))
+    }
+    assert_nothing_raised(ArgumentError) {
+      o = Object.new
+      def o.to_int; raise; end
+      assert_equal(nil, Integer(o, exception: false))
+    }
+    assert_nothing_raised(FloatDomainError) {
+      assert_equal(nil, Integer(Float::INFINITY, exception: false))
+    }
+    assert_nothing_raised(FloatDomainError) {
+      assert_equal(nil, Integer(-Float::INFINITY, exception: false))
+    }
+    assert_nothing_raised(FloatDomainError) {
+      assert_equal(nil, Integer(Float::NAN, exception: false))
+    }
+
+    assert_raise(ArgumentError) {
+      Integer("1z", exception: true)
+    }
+    assert_raise(TypeError) {
+      Integer(nil, exception: true)
+    }
+    assert_nothing_raised(TypeError) {
+      assert_equal(nil, Integer(nil, exception: false))
+    }
+
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      class Integer;def method_missing(*);"";end;end
+      assert_equal(0, Integer("0", 2))
     end;
   end
 

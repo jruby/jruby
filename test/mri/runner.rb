@@ -20,13 +20,10 @@ end
 
 ENV["GEM_SKIP"] = ENV["GEM_HOME"] = ENV["GEM_PATH"] = "".freeze
 
-# Use MRI backtraces for tests that verify error output
-ENV["JRUBY_OPTS"] = ENV["JRUBY_OPTS"].to_s + " -Xbacktrace.style=mri"
-
 require_relative 'lib/profile_test_all' if ENV.has_key?('RUBY_TEST_ALL_PROFILE')
-#require_relative 'lib/tracepointchecker'
+require_relative 'lib/tracepointchecker'
 require_relative 'lib/zombie_hunter'
-#require_relative 'lib/iseq_loader_checker'
+require_relative 'lib/iseq_loader_checker'
 
 if ENV['COVERAGE']
   require_relative "../tool/test-coverage.rb"

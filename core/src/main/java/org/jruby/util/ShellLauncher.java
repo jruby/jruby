@@ -234,32 +234,12 @@ public class ShellLauncher {
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
             RubyHash hash = null;
-            if (!clearEnv) {
+            if (clearEnv) {
+                hash = RubyHash.newHash(runtime);
+            } else {
                 hash = (RubyHash) runtime.getObject().getConstant("ENV").dup();
             }
-            String[] ret;
 
-            if (mergeEnv != null) {
-                ret = new String[hash.size() + mergeEnv.size()];
-            } else {
-                ret = new String[hash.size()];
-            }
-
-            int i = 0;
-            if (hash != null) {
-                for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
-                    // if the key is nil, raise TypeError
-                    if (e.getKey() == null) {
-                        throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
-                    }
-                    // ignore if the value is nil
-                    if (e.getValue() == null) {
-                        continue;
-                    }
-                    ret[i] = e.getKey() + '=' + e.getValue();
-                    i++;
-                }
-            }
             if (mergeEnv != null) {
                 if (mergeEnv instanceof Set) {
                     for (Map.Entry e : (Set<Map.Entry>)mergeEnv) {
@@ -269,10 +249,10 @@ public class ShellLauncher {
                         }
                         // ignore if the value is nil
                         if (e.getValue() == null) {
+                            hash.remove(e.getKey().toString());
                             continue;
                         }
-                        ret[i] = e.getKey().toString() + '=' + e.getValue();
-                        i++;
+                        hash.put(e.getKey().toString(), e.getValue().toString());
                     }
                 } else if (mergeEnv instanceof RubyArray) {
                     for (int j = 0; j < mergeEnv.size(); j++) {
@@ -287,12 +267,28 @@ public class ShellLauncher {
                         }
                         // ignore if the value is nil
                         if (e.eltOk(1) == null) {
+                            hash.remove(e.eltOk(0).toString());
                             continue;
                         }
-                        ret[i] = e.eltOk(0).toString() + '=' + e.eltOk(1).toString();
-                        i++;
+                        hash.put(e.eltOk(0).toString(), e.eltOk(1).toString());
                     }
                 }
+            }
+
+            String[] ret = new String[hash.size()];
+
+            int i = 0;
+            for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
+                // if the key is nil, raise TypeError
+                if (e.getKey() == null) {
+                    throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
+                }
+                // ignore if the value is nil
+                if (e.getValue() == null) {
+                    continue;
+                }
+                ret[i] = e.getKey() + '=' + e.getValue();
+                i++;
             }
 
             return arrayOfLength(ret, i);

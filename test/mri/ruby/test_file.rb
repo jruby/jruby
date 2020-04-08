@@ -87,7 +87,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_bom_32le
-    assert_bom(["\xFF\xFE\0", "\0"], __method__)
+    assert_bom(["\xFF", "\xFE\0\0"], __method__)
   end
 
   def test_truncate_wbuf
@@ -298,7 +298,7 @@ class TestFile < Test::Unit::TestCase
       assert_predicate(File.realpath(base, dir), :tainted?)
       base.untaint
       dir.untaint
-      assert_not_predicate(File.realpath(base, dir), :tainted?)
+      assert_predicate(File.realpath(base, dir), :tainted?)
       assert_predicate(Dir.chdir(dir) {File.realpath(base)}, :tainted?)
     }
   end
@@ -473,6 +473,8 @@ class TestFile < Test::Unit::TestCase
     (0..1).each do |level|
       assert_nothing_raised(SecurityError, bug5374) {in_safe[level]}
     end
+  ensure
+    $SAFE = 0
   end
 
   if /(bcc|ms|cyg)win|mingw|emx/ =~ RUBY_PLATFORM
@@ -502,6 +504,8 @@ class TestFile < Test::Unit::TestCase
         io = File.open(tmpdir, File::RDWR | File::TMPFILE)
       rescue Errno::EINVAL
         skip 'O_TMPFILE not supported (EINVAL)'
+      rescue Errno::EISDIR
+        skip 'O_TMPFILE not supported (EISDIR)'
       rescue Errno::EOPNOTSUPP
         skip 'O_TMPFILE not supported (EOPNOTSUPP)'
       end

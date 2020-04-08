@@ -1,0 +1,1 @@
+critical(exits):SignalException#signo returns the signal number

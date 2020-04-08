@@ -129,6 +129,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
 
         // Cannot run this on scopes that require dynamic scopes
         if (scope.getExecutionContext().getFlags().contains(IRFlags.REQUIRES_DYNSCOPE)) return null;
+        if (scope.getExecutionContext().getFlags().contains(IRFlags.HAS_END_BLOCKS)) return null;
 
         eliminateLocalVars(scope);
 

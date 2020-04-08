@@ -47,28 +47,31 @@ public class IterNode extends Node implements DefNode {
     
     // What static scoping relationship exists when it comes into being.
     private StaticScope scope;
+    private int endLine;
 
     /**
      *  Used by ForNode only.
      * This is to support 1.8-style assignments which only 'for' expressions use.
      */
-    public IterNode(ISourcePosition position, Node args, StaticScope scope, Node body) {
+    public IterNode(ISourcePosition position, Node args, StaticScope scope, Node body, int endLine) {
         super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
         this.scope = scope;
         this.bodyNode = body;
+        this.endLine = endLine;
     }
 
     /**
      * Used for all non-for types of blocks.
      */
-    public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
+    public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope, int endLine) {
         super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
         this.bodyNode = body == null ? NilImplicitNode.NIL : body;
         this.scope = scope;
+        this.endLine = endLine;
     }
 
     public NodeType getNodeType() {
@@ -113,6 +116,6 @@ public class IterNode extends Node implements DefNode {
     }
 
     public int getEndLine() {
-        return -1;
+        return endLine;
     }
 }

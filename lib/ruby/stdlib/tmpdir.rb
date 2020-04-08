@@ -83,14 +83,20 @@ class Dir
   #  end
   #
   def self.mktmpdir(prefix_suffix=nil, *rest)
-    path = Tmpname.create(prefix_suffix || "d", *rest) {|n| mkdir(n, 0700)}
+    base = nil
+    path = Tmpname.create(prefix_suffix || "d", *rest) {|_path, _, _, d|
+      base = d
+      mkdir(_path, 0700)
+    }
     if block_given?
       begin
         yield path
       ensure
-        stat = File.stat(File.dirname(path))
-        if stat.world_writable? and !stat.sticky?
-          raise ArgumentError, "parent directory is world writable but not sticky"
+        unless base
+          stat = File.stat(File.dirname(path))
+          if stat.world_writable? and !stat.sticky?
+            raise ArgumentError, "parent directory is world writable but not sticky"
+          end
         end
         FileUtils.remove_entry path
       end
@@ -110,6 +116,7 @@ class Dir
       if $SAFE > 0 and tmpdir.tainted?
         tmpdir = '/tmp'
       else
+        origdir = tmpdir
         tmpdir ||= tmpdir()
       end
       n = nil
@@ -127,7 +134,7 @@ class Dir
         # We use the second form here because chdir + ./ files won't open right (http://bugs.jruby.org/3698)
         # path = File.join(tmpdir, path)
         path = File.expand_path(path, tmpdir)
-        yield(path, n, opts)
+        yield(path, n, opts, origdir)
       rescue Errno::EEXIST
         n ||= 0
         n += 1

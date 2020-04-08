@@ -49,7 +49,7 @@ import org.jruby.runtime.backtrace.TraceType.Gather;
 public class Runtime implements RuntimeMBean {
     private final SoftReference<Ruby> ruby;
 
-    private static final StackWalker WALKER = StackWalker.getInstance();
+    private static final StackWalker WALKER = ThreadContext.WALKER;
 
     public Runtime(Ruby ruby) {
         this.ruby = new SoftReference<Ruby>(ruby);

@@ -55,6 +55,7 @@ DefSpecsLambdaVisibility
 DefineMethodByProcClass
 DefineMethodSpecClass
 DefineSingletonMethodSpecClass
+Delegator
 DescArray
 DescObjectTest
 Digest
@@ -148,6 +149,7 @@ Readline
 ReceiverClass
 RegexpSpecsSubclass
 RegexpSpecsSubclassTwo
+Reline
 RescueInClassExample
 Resolv
 SHA1Constants
@@ -161,6 +163,7 @@ SecondClass
 SecureRandom
 Set
 Shellwords
+SimpleDelegator
 SingleForwardable
 Singleton
 Socket
@@ -171,6 +174,7 @@ SpecificExampleException
 Specs
 StrChild
 StrangeEach
+StringIO
 StringRefinement
 StringScanner
 StringSubclass
@@ -187,6 +191,7 @@ TimeoutError
 UDPSocket
 UNIXServer
 UNIXSocket
+URI
 UnaryMinusTest
 UnicodeNormalize
 UnloadableDumpableDir

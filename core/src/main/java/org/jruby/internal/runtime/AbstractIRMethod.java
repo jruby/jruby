@@ -1,21 +1,13 @@
 package org.jruby.internal.runtime;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.jruby.MetaClass;
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.JIT;
-import org.jruby.ir.instructions.GetFieldInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -28,21 +20,33 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.cli.Options;
 
+import java.util.Collection;
+
 public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Cloneable {
 
     protected final Signature signature;
-    protected final IRScope method;
+    protected IRScope method;
+    protected final int line;
     protected final StaticScope staticScope;
-    protected InterpreterContext interpreterContext = null;
     protected int callCount = 0;
+    protected transient InterpreterContext interpreterContext; // cached from method
     private transient MethodData methodData;
 
+    // Interpreted and Jitted but live IRScope known constructor
     public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, method.getId());
+        this(method.getStaticScope(), method.getId(), method.getLine(), visibility, implementationClass);
+        // It is a little hinky to have a callback when we just set method anyways, but debugging in main constructor might need method before we set it.
         this.method = method;
-        this.staticScope = method.getStaticScope();
+    }
+
+    // Compiled where IRScope must be retrieved at a later date if actually needed
+    public AbstractIRMethod(StaticScope scope, String id, int line, Visibility visibility,
+                            RubyModule implementationClass) {
+        super(implementationClass, visibility, id);
+        this.staticScope = scope;
         this.staticScope.determineModule();
         this.signature = staticScope.getSignature();
+        this.line = line;
 
         final Ruby runtime = implementationClass.getRuntime();
         // If we are printing, do the build right at creation time so we can see it
@@ -75,7 +79,12 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     }
 
     public IRScope getIRScope() {
-        return method;
+        try {
+            if (method == null) method = staticScope.getIRScope();
+            return method;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public StaticScope getStaticScope() {
@@ -84,10 +93,32 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return ((IRMethod) method).getArgumentDescriptors();
+        return ((IRMethod) getIRScope()).getArgumentDescriptors();
     }
 
-    public abstract InterpreterContext ensureInstrsReady();
+    public InterpreterContext ensureInstrsReady() {
+        final InterpreterContext interpreterContext = this.interpreterContext;
+        if (interpreterContext == null) {
+            return this.interpreterContext = retrieveInterpreterContext();
+        }
+        return interpreterContext;
+    }
+
+    private InterpreterContext retrieveInterpreterContext() {
+        final InterpreterContext interpreterContext;
+        IRScope method = getIRScope();
+        if (method instanceof IRMethod) {
+            interpreterContext = ((IRMethod) method).lazilyAcquireInterpreterContext();
+        } else {
+            interpreterContext = method.getInterpreterContext();
+        }
+
+        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) printMethodIR();
+
+        return interpreterContext;
+    }
+
+    protected abstract void printMethodIR() ;
 
     public Signature getSignature() {
         return signature;
@@ -112,55 +143,40 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         }
     }
 
-    @JIT
-    public String getClassName(ThreadContext context) {
-        String className;
-        if (implementationClass.isSingleton()) {
-            MetaClass metaClass = (MetaClass)implementationClass;
-            RubyClass realClass = metaClass.getRealClass();
-            // if real class is Class
-            if (realClass == context.runtime.getClassClass()) {
-                // use the attached class's name
-                className = ((RubyClass) metaClass.getAttached()).getName();
-            } else {
-                // use the real class name
-                className = realClass.getName();
-            }
-        } else {
-            // use the class name
-            className = implementationClass.getName();
-        }
-        return className;
-    }
-
     public String getFile() {
-        return method.getFile();
+        return staticScope.getFile();
     }
 
     public int getLine() {
-        return method.getLine();
+        return line;
     }
 
     /**
      * Additional metadata about this method.
      */
+    @Override
     public MethodData getMethodData() {
         if (methodData == null) {
-            List<String> ivarNames = new ArrayList<>();
-            InterpreterContext context = ensureInstrsReady();
-            for (Instr i : context.getInstructions()) {
-                switch (i.getOperation()) {
-                    case GET_FIELD:
-                        ivarNames.add(((GetFieldInstr) i).getId());
-                        break;
-                    case PUT_FIELD:
-                        ivarNames.add(((PutFieldInstr) i).getId());
-                        break;
-                }
-            }
-            methodData = new MethodData(method.getId(), method.getFile(), ivarNames);
+            methodData = ((IRMethod) getIRScope()).getMethodData();
         }
 
         return methodData;
+    }
+
+    @Override
+    public Collection<String> getInstanceVariableNames() {
+        return staticScope.getInstanceVariableNames();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + ' ' + getIRScope() + ' ' + getSignature();
+    }
+
+    public boolean needsToFindImplementer() {
+        ensureInstrsReady(); // Ensure scope is ready for flags
+
+        IRScope irScope = getIRScope();
+        return !(irScope instanceof IRMethod && !irScope.getFlags().contains(IRFlags.REQUIRES_CLASS));
     }
 }

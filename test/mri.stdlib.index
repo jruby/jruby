@@ -83,7 +83,7 @@ fileutils/test_verbose.rb
 
 io/wait/test_io_wait.rb
 io/nonblock/test_flush.rb
-#io/console/test_io_console.rb
+io/console/test_io_console.rb
 
 json/json_addition_test.rb
 json/json_common_interface_test.rb
@@ -209,7 +209,6 @@ psych/test_string.rb
 psych/test_struct.rb
 psych/test_symbol.rb
 psych/test_tainted.rb
-psych/test_to_yaml_properties.rb
 psych/test_tree_builder.rb
 psych/test_yaml.rb
 psych/test_yamlstore.rb
@@ -255,7 +254,7 @@ zlib/test_zlib.rb
 ruby/enc/test_big5.rb
 ruby/enc/test_cp949.rb
 ruby/enc/test_emoji.rb
-ruby/enc/test_euc_jp.rb
+#ruby/enc/test_euc_jp.rb
 ruby/enc/test_euc_kr.rb
 ruby/enc/test_euc_tw.rb
 ruby/enc/test_gb18030.rb

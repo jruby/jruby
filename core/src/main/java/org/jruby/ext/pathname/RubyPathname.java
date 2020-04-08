@@ -303,7 +303,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(required = 1, optional = 1, reads = BACKREF, writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject result = getPath().callMethod(context, "sub", args, block);
+        IRubyObject result = sites(context).sub.call(context, this, getPath(), args, block);
         return newInstance(context, result);
     }
 

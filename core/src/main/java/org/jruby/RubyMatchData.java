@@ -71,7 +71,6 @@ public class RubyMatchData extends RubyObject {
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
-        runtime.setMatchData(matchDataClass);
 
         matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
@@ -81,6 +80,7 @@ public class RubyMatchData extends RubyObject {
 
         matchDataClass.getMetaClass().undefineMethod("new");
         matchDataClass.defineAnnotatedMethods(RubyMatchData.class);
+
         return matchDataClass;
     }
 
@@ -288,15 +288,15 @@ public class RubyMatchData extends RubyObject {
     }
 
     final void check() {
-        if (str == null) throw getRuntime().newTypeError("uninitialized Match");
+        if (str == null) throw metaClass.runtime.newTypeError("uninitialized Match");
     }
 
     final Regex getPattern() {
         final Object pattern = this.pattern;
         if (pattern instanceof Regex) return (Regex) pattern;
-        if (pattern == null) throw getRuntime().newTypeError("uninitialized Match (missing pattern)");
+        if (pattern == null) throw metaClass.runtime.newTypeError("uninitialized Match (missing pattern)");
         // when a regexp is avoided for matching we lazily instantiate one from the unquoted string :
-        Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(getRuntime(), (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
+        Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(metaClass.runtime, (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
         this.pattern = regexPattern;
         return regexPattern;
     }
@@ -305,7 +305,7 @@ public class RubyMatchData extends RubyObject {
         RubyRegexp regexp = this.regexp;
         if (regexp != null) return regexp;
         final Regex pattern = getPattern();
-        return this.regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList) pattern.getUserObject(), pattern);
+        return this.regexp = RubyRegexp.newRegexp(metaClass.runtime, (ByteList) pattern.getUserObject(), pattern);
     }
 
     private static RubyString makeShared(Ruby runtime, RubyString str, int index, int length) {
@@ -352,7 +352,7 @@ public class RubyMatchData extends RubyObject {
             byte[] bytes = name.getBytes();
             return getPattern().nameToBackrefNumber(bytes, 0, bytes.length, regs);
         } catch (JOniException je) {
-            throw getRuntime().newIndexError(je.getMessage());
+            throw metaClass.runtime.newIndexError(je.getMessage());
         }
     }
 
@@ -378,9 +378,9 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyString inspect() {
-        Ruby runtime = getRuntime();
         if (str == null) return (RubyString) anyToString();
 
+        Ruby runtime = metaClass.runtime;
         RubyString result = runtime.newString();
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
@@ -432,8 +432,8 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod
     @Override
-    public RubyArray to_a() {
-        return match_array(getRuntime(), 0);
+    public RubyArray to_a(ThreadContext context) {
+        return match_array(context.runtime, 0);
     }
 
     @JRubyMethod(rest = true)
@@ -460,7 +460,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     public IRubyObject values_at(IRubyObject[] args) {
-        return values_at(getRuntime().getCurrentContext(), args);
+        return values_at(metaClass.runtime.getCurrentContext(), args);
     }
 
     /** match_captures
@@ -473,13 +473,11 @@ public class RubyMatchData extends RubyObject {
 
     private int nameToBackrefNumber(RubyString str) {
         check();
-        return nameToBackrefNumber(getRuntime(), getPattern(), regs, str);
+        return nameToBackrefNumber(metaClass.runtime, getPattern(), regs, str);
     }
 
     private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, ByteListHolder str) {
-        if (pattern == null) {
-            throw runtime.newIndexError("undefined group name reference: " + str);
-        }
+        assert pattern != null;
         ByteList value = str.getByteList();
         try {
             return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
@@ -495,12 +493,12 @@ public class RubyMatchData extends RubyObject {
 
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
         if (obj instanceof RubySymbol) {
-            return nameToBackrefNumber(runtime, pattern, regs, (RubyString)((RubySymbol)obj).id2name());
-        } else if (obj instanceof RubyString) {
-            return nameToBackrefNumber(runtime, pattern, regs, (RubyString)obj);
-        } else {
-            return RubyNumeric.num2int(obj);
+            return nameToBackrefNumber(runtime, pattern, regs, ((RubySymbol) obj).to_s(runtime));
         }
+        if (obj instanceof RubyString) {
+            return nameToBackrefNumber(runtime, pattern, regs, (RubyString) obj);
+        }
+        return RubyNumeric.num2int(obj);
     }
 
     // MRI: namev_to_backref_number
@@ -576,26 +574,26 @@ public class RubyMatchData extends RubyObject {
 
     @Deprecated
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
-        return op_aref(idx, rest);
+        return op_aref(getRuntime().getCurrentContext(), idx, rest);
     }
 
     /** match_aref
      *
      */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? to_a().aref(idx) : result;
+        return result == null ? to_a(context).aref(idx) : result;
     }
 
     /** match_aref
     *
     */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a(context).aref(idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(IRubyObject idx) {
@@ -604,9 +602,10 @@ public class RubyMatchData extends RubyObject {
             if (num >= 0) return RubyRegexp.nth_match(num, this);
         } else {
             if (idx instanceof RubySymbol) {
-                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString)((RubySymbol)idx).id2name()), this);
-            } else if (idx instanceof RubyString) {
-                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString)idx), this);
+                return RubyRegexp.nth_match(nameToBackrefNumber(((RubySymbol) idx).to_s(metaClass.runtime)), this);
+            }
+            if (idx instanceof RubyString) {
+                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString) idx), this);
             }
         }
         return null;
@@ -743,7 +742,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject to_s() {
         check();
         IRubyObject ss = RubyRegexp.last_match(this);
-        if (ss.isNil()) ss = RubyString.newEmptyString(getRuntime());
+        if (ss.isNil()) ss = RubyString.newEmptyString(metaClass.runtime);
         if (isTaint()) ss.setTaint(true);
         return ss;
     }
@@ -792,7 +791,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = {"eql?", "=="}, required = 1)
     @Override
     public IRubyObject eql_p(IRubyObject obj) {
-        return getRuntime().newBoolean( equals(obj) );
+        return metaClass.runtime.newBoolean( equals(obj) );
     }
 
     @Override
@@ -804,7 +803,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum( hashCode() );
+        return metaClass.runtime.newFixnum( hashCode() );
     }
 
     @JRubyMethod
@@ -870,6 +869,22 @@ public class RubyMatchData extends RubyObject {
      */
     public int numRegs() {
         return regs == null ? 1 : regs.numRegs;
+    }
+
+    @Deprecated
+    @Override
+    public RubyArray to_a() {
+        return match_array(getRuntime(), 0);
+    }
+
+    @Deprecated
+    public IRubyObject op_aref(IRubyObject idx) {
+        return op_aref(getRuntime().getCurrentContext(), idx);
+    }
+
+    @Deprecated
+    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+        return op_aref(getRuntime().getCurrentContext(), idx, rest);
     }
 
 }

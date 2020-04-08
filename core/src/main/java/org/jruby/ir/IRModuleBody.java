@@ -12,8 +12,8 @@ public class IRModuleBody extends IRScope {
 
         this.executesOnce = executesOnce;
 
-        if (!getManager().isDryRun()) {
-            if (staticScope != null) staticScope.setIRScope(this);
+        if (staticScope != null) {
+            staticScope.setIRScope(this);
         }
     }
 

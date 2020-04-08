@@ -57,6 +57,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.HashSet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -70,6 +71,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -2660,6 +2662,46 @@ public class ScriptingContainerTest {
         //System.out.println(JavaEmbedUtils.rubyToJava(msg));
 
         container.terminate();
+    }
+
+    /**
+     * Verifies thread cleanup when using {@code org.jruby.ext.timeout.Timeout} in an embedded environment
+     */
+    @Test
+    public void testTimeoutCleanup() {
+        // memorize threads alive prior to creating a scripting container
+        Set<Long> preTestThreadsIds = new HashSet<>();
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            preTestThreadsIds.add(thread.getId());
+        }
+        // create a scripting container and run a basic script that uses the timeout module, expecting an exception
+        ScriptingContainer container = new ScriptingContainer();
+        container.setErrorWriter(writer);
+        String script = "require 'timeout'\n" +
+                "Timeout::timeout(0.1) { sleep(5) }";
+        EvalFailedException thrown = null;
+        try {
+            container.parse(script).run();
+        } catch (EvalFailedException caught) {
+            thrown = caught;
+        }
+        // assert exception
+        assertNotNull("Timeout module did not interrupt sleep as expected", thrown);
+        assertEquals("(Error) execution expired", thrown.getMessage());
+        // find any thread(s) launched due to script execution
+        Set<Long> spawnedThreadIds = new HashSet<>();
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (!preTestThreadsIds.remove(thread.getId())) {
+                spawnedThreadIds.add(thread.getId());
+            }
+        }
+        // terminate container
+        container.terminate();
+        // verify any spawned threads have been terminated
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            assertFalse("Timeout module left dangling threads after ScriptingContainer termination",
+                    spawnedThreadIds.contains(thread.getId()));
+        }
     }
 
 // NOTE: test makes no sense on 9K

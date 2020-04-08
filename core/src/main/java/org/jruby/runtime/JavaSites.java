@@ -47,6 +47,7 @@ public class JavaSites {
     public final MarshalSites Marshal = new MarshalSites();
     public final PathnameSites Pathname = new PathnameSites();
     public final DateSites Date = new DateSites();
+    public final TempfileSites Tempfile = new TempfileSites();
     public final RaiseExceptionSites RaiseException = new RaiseExceptionSites();
     public final ConditionVariableSites ConditionVariable = new ConditionVariableSites();
     public final FiberSites Fiber = new FiberSites();
@@ -175,12 +176,14 @@ public class JavaSites {
         public final RespondToCallSite respond_to_coerce = new RespondToCallSite("coerce");
         public final CallSite coerce = new FunctionalCachingCallSite("coerce");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
-        public final CallSite op_minus = new FunctionalCachingCallSite("-");
+        public final CachingCallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite op_quo = new FunctionalCachingCallSite("/");
         public final CallSite floor = new FunctionalCachingCallSite("floor");
         public final CallSite div = new FunctionalCachingCallSite("div");
-        public final CallSite op_times = new FunctionalCachingCallSite("*");
+        public final CachingCallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
+        public final CallSite op_ge = new FunctionalCachingCallSite(">=");
+        public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CachingCallSite op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite op_gt = new FunctionalCachingCallSite(">");
         public final CheckedSites op_lt_checked = new CheckedSites("<");
@@ -188,7 +191,7 @@ public class JavaSites {
         public final CallSite op_uminus = new FunctionalCachingCallSite("-@");
         public final CallSite zero = new FunctionalCachingCallSite("zero?");
         public final CallSite op_equals = new FunctionalCachingCallSite("==");
-        public final CallSite op_plus = new FunctionalCachingCallSite("+");
+        public final CachingCallSite op_plus = new FunctionalCachingCallSite("+");
         public final CallSite numerator = new FunctionalCachingCallSite("numerator");
         public final CallSite denominator = new FunctionalCachingCallSite("denominator");
         public final CallSite op_xor = new FunctionalCachingCallSite("^");
@@ -322,6 +325,7 @@ public class JavaSites {
 
     public static class EnumerableSites {
         public final CheckedSites size_checked = new CheckedSites("size");
+        public final CachingCallSite to_enum = new FunctionalCachingCallSite("to_enum");
     }
 
     public static class ComparableSites {
@@ -396,12 +400,13 @@ public class JavaSites {
 
     public static class ComplexSites {
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
-        public final CallSite op_quo = new FunctionalCachingCallSite("/");
+        public final CallSite op_quo = new FunctionalCachingCallSite("quo");
         public final CallSite op_exp = new FunctionalCachingCallSite("**");
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite finite = new FunctionalCachingCallSite("finite?");
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
+        public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
         public final CheckedSites to_c_checked = new CheckedSites("to_c");
     }
 
@@ -430,6 +435,10 @@ public class JavaSites {
         public final CallSite begin = new FunctionalCachingCallSite("begin");
         public final CallSite end = new FunctionalCachingCallSite("end");
         public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
+        public final CallSite max = new FunctionalCachingCallSite("max");
+        public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
+        public final CallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CallSite op_lt = new FunctionalCachingCallSite("<");
     }
 
     public static class WarningSites {
@@ -461,10 +470,15 @@ public class JavaSites {
     public static class PathnameSites {
         public final CallSite glob = new FunctionalCachingCallSite("glob");
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
+        public final CallSite sub = new FunctionalCachingCallSite("sub");
     }
 
     public static class DateSites {
         public final CallSite zone_to_diff = new FunctionalCachingCallSite("zone_to_diff");
+    }
+
+    public static class TempfileSites {
+        public final CachingCallSite create = new FunctionalCachingCallSite("create");
     }
 
     public static class RaiseExceptionSites {

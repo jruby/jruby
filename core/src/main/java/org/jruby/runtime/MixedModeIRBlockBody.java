@@ -2,7 +2,6 @@ package org.jruby.runtime;
 
 import java.io.ByteArrayOutputStream;
 
-import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
@@ -26,21 +25,17 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     private InterpreterContext interpreterContext;
     private int callCount = 0;
     private volatile CompiledIRBlockBody jittedBody;
+    private IRClosure closure;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
         this.pushScope = true;
         this.reuseParentScope = false;
+        this.closure = closure;
 
         // JIT currently JITs blocks along with their method and no on-demand by themselves.
         // We only promote to full build here if we are -X-C.
         if (!closure.getManager().getInstanceConfig().isJitEnabled()) setCallCount(-1);
-    }
-
-    @Override
-    public void setEvalType(EvalType evalType) {
-        super.setEvalType(evalType); // so that getEvalType is correct
-        if (jittedBody != null) jittedBody.setEvalType(evalType);
     }
 
     @Override
@@ -58,7 +53,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     @Override
     public void completeBuild(CompiledIRBlockBody blockBody) {
         setCallCount(-1);
-        blockBody.evalType = this.evalType; // share with parent
         this.jittedBody = blockBody;
     }
 
@@ -93,11 +87,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             interpreterContext = closure.getInterpreterContext();
         }
         return interpreterContext;
-    }
-
-    @Override
-    public String getClassName(ThreadContext context) {
-        return closure.getId();
     }
 
     @Override
@@ -182,6 +171,11 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     public RubyModule getImplementationClass() {
         return closure.getStaticScope().getModule();
+    }
+
+    @Override
+    public IRClosure getScope() {
+        return closure;
     }
 
 }

@@ -17,12 +17,15 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import jnr.constants.platform.Errno;
 import org.jruby.*;
@@ -33,6 +36,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -47,6 +51,7 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -386,8 +391,8 @@ public class Helpers {
         }
     }
 
-    private static class MethodMissingMethod extends DynamicMethod {
-        private final CacheEntry entry;
+    public static class MethodMissingMethod extends DynamicMethod {
+        public final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
 
@@ -1747,6 +1752,45 @@ public class Helpers {
         return scope;
     }
 
+    public static String describeScope(StaticScope scope) {
+        Signature signature = scope.getSignature();
+        Collection<String> instanceVariableNames = scope.getInstanceVariableNames();
+        String descriptor =
+                Integer.toString(scope.getType().ordinal()) + ';'
+                + scope.getFile() + ';'
+                + Arrays.stream(scope.getVariables()).collect(Collectors.joining(",")) + ';'
+                + scope.getFirstKeywordIndex() + ';' +
+                + (signature == null ? Signature.NO_ARGUMENTS.encode() : signature.encode()) + ';'
+                + scope.getIRScope().getScopeType().ordinal() + ';'
+                + (instanceVariableNames.size() > 0
+                        ? instanceVariableNames.stream().collect(Collectors.joining(","))
+                        : "NONE");
+
+        return descriptor;
+    }
+
+    public static StaticScope restoreScope(String descriptor, StaticScope enclosingScope) {
+        String[] bits = descriptor.split(";");
+
+        StaticScope.Type type = StaticScope.Type.fromOrdinal(Integer.parseInt(bits[0]));
+        String file = bits[1];
+
+        String[] varNames = bits[2].split(",");
+        int kwIndex = Integer.parseInt(bits[3]);
+        Signature signature = Signature.decode(Long.parseLong(bits[4]));
+        IRScopeType scopeType = IRScopeType.fromOrdinal(Integer.parseInt(bits[5]));
+        String encodedIvars = bits[6];
+        Collection<String> ivarNames = encodedIvars.equals("NONE") ? Collections.EMPTY_LIST : Arrays.asList(encodedIvars.split(","));
+
+        StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, file, varNames, kwIndex);
+
+        scope.setSignature(signature);
+        scope.setScopeType(scopeType);
+        scope.setInstanceVariableNames(ivarNames);
+
+        return scope;
+    }
+
     public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz,
                                                                              RubySymbol symbol, Visibility visibility) throws RaiseException {
         String name = symbol.asJavaString(); // We just assume simple ascii string since that is all we are examining.
@@ -1957,10 +2001,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = sites(context).op_equal.call(context, a, a, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**
@@ -1972,10 +2015,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b, CallSite equal) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = equal.call(context, a, a, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**
@@ -1987,10 +2029,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEql(ThreadContext context, IRubyObject a, IRubyObject b) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = invokedynamic(context, a, EQL, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**
@@ -2097,34 +2138,6 @@ public class Helpers {
             scopeOffsets[i] = (((int)depth) << 16) | (int)off;
         }
         return scopeOffsets;
-    }
-
-    @Deprecated // not-used
-    public static IRubyObject match2AndUpdateScope(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
-        IRubyObject match = ((RubyRegexp)receiver).op_match(context, value);
-        updateScopeWithCaptures(context, decodeCaptureOffsets(scopeOffsets), match);
-        return match;
-    }
-
-    public static void updateScopeWithCaptures(ThreadContext context, int[] scopeOffsets, IRubyObject result) {
-        Ruby runtime = context.runtime;
-        if (result.isNil()) { // match2 directly calls match so we know we can count on result
-            IRubyObject nil = runtime.getNil();
-
-            for (int i = 0; i < scopeOffsets.length; i++) {
-                // SSS FIXME: This is not doing the offset/depth extraction as in the else case
-                context.getCurrentScope().setValue(nil, scopeOffsets[i], 0);
-            }
-        } else {
-            RubyMatchData matchData = (RubyMatchData)context.getBackRef();
-            // FIXME: Mass assignment is possible since we know they are all locals in the same
-            //   scope that are also contiguous
-            IRubyObject[] namedValues = matchData.getNamedBackrefValues(runtime);
-
-            for (int i = 0; i < scopeOffsets.length; i++) {
-                context.getCurrentScope().setValue(namedValues[i], scopeOffsets[i] & 0xffff, scopeOffsets[i] >> 16);
-            }
-        }
     }
 
     @Deprecated
@@ -2381,6 +2394,43 @@ public class Helpers {
         return invokedynamic(context, self, MethodNames.values()[index], arg0);
     }
 
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param opts
+     * @return false if `exception: false`, true otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, RubyHash opts) {
+        return ArgsUtil.extractKeywordArg(context, opts, "exception") != context.fals;
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param opts the keyword args hash
+     * @param defValue to return when no keyword options
+     * @return false if `exception: false`, true (or default value) otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, IRubyObject opts, boolean defValue) {
+        IRubyObject hash = TypeConverter.checkHashType(context.runtime, opts);
+        if (hash != context.nil) {
+            return extractExceptionOnlyArg(context, (RubyHash) opts);
+        }
+        return defValue;
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param args method args
+     * @param defValue to return when no keyword options
+     * @return false if `exception: false`, true (or default value) otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, IRubyObject[] args, boolean defValue) {
+        if (args.length == 0) return defValue;
+        return extractExceptionOnlyArg(context, args[args.length - 1], defValue);
+    }
+
     public static void throwException(final Throwable e) {
         Helpers.<RuntimeException>throwsUnchecked(e);
     }
@@ -2497,6 +2547,13 @@ public class Helpers {
 
     public static <T> T[] arrayOf(T... values) {
         return values;
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject... values) {
+        IRubyObject[] newValues = new IRubyObject[values.length + 1];
+        newValues[0] = first;
+        System.arraycopy(values, 0, newValues, 1, values.length);
+        return newValues;
     }
 
     public static <T> T[] arrayOf(Class<T> t, int size, T fill) {

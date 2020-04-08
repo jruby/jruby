@@ -36,10 +36,14 @@
 package org.jruby.exceptions;
 
 import java.lang.reflect.Member;
+import java.util.Arrays;
+
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyStandardError;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
@@ -58,21 +62,29 @@ public class RaiseException extends JumpException {
     protected RaiseException(String message, RubyException exception) {
         super(message);
         setException(exception);
-        preRaise(exception.getRuntime().getCurrentContext());
+        preRaise(exception.getRuntime().getCurrentContext(), RubyException.retrieveBacktrace(exception), true);
+    }
+
+    @Override
+    public final Throwable fillInStackTrace() {
+        // NOTE: super logic (RubyInstanceConfig.JUMPS_HAVE_BACKTRACE) is not relevant for RaiseException
+
+        return this; // do not auto-fill from Throwable.<init> we fill (setStackTrace) in preRaise(...)
     }
 
     @Deprecated
     public static RaiseException from(RubyException exception, IRubyObject backtrace) {
-        // FIXME: This form currently creates a new exception since it's providing a backtrace
         return new RaiseException(exception, backtrace);
     }
 
-    public static RaiseException from(Ruby runtime, RubyClass excptnClass, String msg) {
-        return RubyException.newException(runtime, excptnClass, msg).toThrowable();
+    public static RaiseException from(Ruby runtime, RubyClass exceptionClass, String msg) {
+        return RubyException.newException(runtime, exceptionClass, msg).toThrowable();
     }
 
-    public static RaiseException from(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
-        return RubyException.newException(runtime, excptnClass, msg).toThrowable();
+    public static RaiseException from(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
+        RubyException exception = RubyException.newException(runtime, exceptionClass, msg);
+        exception.setBacktrace(backtrace);
+        return exception.toThrowable();
     }
 
     @Override
@@ -91,11 +103,7 @@ public class RaiseException extends JumpException {
         return exception;
     }
 
-    private void preRaise(ThreadContext context) {
-        preRaise(context, (IRubyObject) null);
-    }
-
-    private void preRaise(ThreadContext context, IRubyObject backtrace) {
+    private void preRaise(ThreadContext context, IRubyObject backtrace, boolean capture) {
         context.runtime.incrementExceptionCount();
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
@@ -103,16 +111,59 @@ public class RaiseException extends JumpException {
         doCallEventHook(context);
 
         if (backtrace == null) {
-            backtrace = Helpers.invokeChecked(context, exception, sites(context).backtrace);
+            if (capture) { // only false to support legacy RaiseException construction (not setting trace)
+                if (requiresBacktrace(context)) exception.captureBacktrace(context);
+                setStackTraceFromException();
+            }
         } else {
             exception.setBacktrace(backtrace);
+            if (!backtrace.isNil() && !isEmptyArray(backtrace)) {
+                if (requiresBacktrace(context)) exception.captureBacktrace(context);
+            }
+            setStackTraceFromException();
         }
+    }
 
-        if (backtrace == null || backtrace.isNil()) {
-            // No backtrace provided or overridden, capture at this point in stack
-            exception.captureBacktrace(context);
-            setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
+    private void setStackTraceFromException() {
+        RubyStackTraceElement[] rubyTrace = exception.getBacktraceElements();
+        if (rubyTrace.length > 5 && "getStackTrace".equals(rubyTrace[0].getMethodName())) { // -Xbacktrace.style=raw
+            int skip = 0;
+            if ("preRaise".equals(rubyTrace[4].getMethodName())) {
+                skip = 5;
+            } else if ("preRaise".equals(rubyTrace[3].getMethodName())) {
+                skip = 4;
+            }
+            // NOTE: we could skip more useless Throwable.<init> hierarchy constructor trace
+            //  up to org.jruby.exceptions.RaiseException.from ?
+            rubyTrace = Arrays.copyOfRange(rubyTrace, skip, rubyTrace.length);
         }
+        setStackTrace(javaTraceFromRubyTrace(rubyTrace));
+    }
+
+    private StackTraceElement[] skipFillInStackTracePart(StackTraceElement[] trace) {
+        final int len = trace.length;
+        if (len >= 3) {
+            // NOTE: let's not do too much work here - there are 2 paths to fillInStackTrace
+            int skip = 0;
+            if ("preRaise".equals(trace[2].getMethodName())) {
+                skip = 3;
+            } else if ("preRaise".equals(trace[1].getMethodName())) {
+                skip = 2;
+            } else if ("fillInStackTrace".equals(trace[2].getMethodName())) {
+                skip = 3; // fillInStackTraceCtor = true;
+                // NOTE: we could skip more useless Throwable.<init> hierarchy constructor trace
+                //  up to org.jruby.exceptions.RaiseException.from ?
+            }
+            return Arrays.copyOfRange(trace, skip, len);
+        }
+        return trace;
+    }
+
+    private void fillInStackTraceSkipPreRaise() {
+        originalFillInStackTrace(); // (fillInStackTraceSkipPreRaise) originalFillInStackTrace, preRaise
+        StackTraceElement[] curTrace = getStackTrace();
+        StackTraceElement[] newTrace = skipFillInStackTracePart(curTrace);
+        if (newTrace != curTrace) setStackTrace(newTrace);
     }
 
     private static void doCallEventHook(final ThreadContext context) {
@@ -141,7 +192,7 @@ public class RaiseException extends JumpException {
         return newTrace;
     }
 
-    @Deprecated
+    @Deprecated // used by JRuby-Rack
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
         return createNativeRaiseException(runtime, cause, null);
     }
@@ -156,7 +207,7 @@ public class RaiseException extends JumpException {
         providedMessage = super.getMessage(); // cause.getClass().getId() + ": " + message
         setException(nativeException);
         preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
-        setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
+        setStackTraceFromException();
     }
 
     @Deprecated
@@ -171,38 +222,36 @@ public class RaiseException extends JumpException {
 
     @Deprecated
     public RaiseException(RubyException exception, IRubyObject backtrace) {
-        this(exception.getMessageAsJavaString(), exception);
-        preRaise(exception.getRuntime().getCurrentContext(), backtrace);
+        // this(exception.getMessageAsJavaString(), exception) would preRaise twice!
+        super(exception.getMessageAsJavaString());
+        setException(exception);
+        preRaise(exception.getRuntime().getCurrentContext(), backtrace, true);
     }
 
     @Deprecated
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg) {
-        this(runtime, excptnClass, msg, null);
+    public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg) {
+        this(runtime, exceptionClass, msg, null);
     }
 
     @Deprecated
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, boolean unused) {
-        this(runtime, excptnClass, msg, null);
+    public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, boolean unused) {
+        this(runtime, exceptionClass, msg, null);
     }
 
     @Deprecated
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
+    public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
         super(msg == null ? msg = "No message available" : msg);
 
-        providedMessage = '(' + excptnClass.getName() + ") " + msg;
+        providedMessage = '(' + exceptionClass.getName() + ") " + msg;
 
         final ThreadContext context = runtime.getCurrentContext();
-        setException((RubyException) Helpers.invoke(
-                context,
-                excptnClass,
-                "new",
-                RubyString.newUnicodeString(runtime, msg)));
-        preRaise(context, backtrace);
+        setException(RubyException.newException(context, exceptionClass, RubyString.newUnicodeString(runtime, msg)));
+        preRaise(context, backtrace, true);
     }
 
     @Deprecated
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace, boolean unused) {
-        this(runtime, excptnClass, msg, backtrace);
+    public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace, boolean unused) {
+        this(runtime, exceptionClass, msg, backtrace);
     }
 
     @Deprecated
@@ -212,21 +261,23 @@ public class RaiseException extends JumpException {
 
     @Deprecated
     private void preRaise(ThreadContext context, StackTraceElement[] javaTrace) {
-        context.runtime.incrementExceptionCount();
-        doSetLastError(context);
-        doCallEventHook(context);
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
+        preRaise(context, null, false);
+
         if (requiresBacktrace(context)) {
             exception.prepareIntegratedBacktrace(context, javaTrace);
+            setStackTraceFromException();
+        } else {
+            setStackTrace(skipFillInStackTracePart(javaTrace));
         }
     }
 
-    @Deprecated
     private boolean requiresBacktrace(ThreadContext context) {
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
-        return context.exceptionRequiresBacktrace ||
-                !context.runtime.getStandardError().isInstance(exception) ||
-                context.runtime.isDebug();
+        return context.exceptionRequiresBacktrace || !(exception instanceof RubyStandardError);
+    }
+
+    private static boolean isEmptyArray(final IRubyObject ary) {
+        return ary instanceof RubyArray && ((RubyArray) ary).size() == 0;
     }
 
     private static JavaSites.RaiseExceptionSites sites(ThreadContext context) {

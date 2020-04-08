@@ -110,6 +110,11 @@ describe "CApiObject" do
       @o.rb_respond_to(ObjectTest.new, :foo).should == true
       @o.rb_respond_to(ObjectTest.new, :bar).should == false
     end
+
+    it "can be used with primitives" do
+      @o.rb_respond_to(true, :object_id).should == true
+      @o.rb_respond_to(14, :succ).should == true
+    end
   end
 
   describe "rb_obj_respond_to" do
@@ -313,8 +318,8 @@ describe "CApiObject" do
 
     it "does not rescue exceptions raised by #to_ary" do
       obj = mock("to_ary")
-      obj.should_receive(:to_ary).and_raise(frozen_error_class)
-      -> { @o.rb_check_array_type obj }.should raise_error(frozen_error_class)
+      obj.should_receive(:to_ary).and_raise(FrozenError)
+      -> { @o.rb_check_array_type obj }.should raise_error(FrozenError)
     end
   end
 
@@ -414,11 +419,13 @@ describe "CApiObject" do
   end
 
   describe "FL_TEST" do
-    it "returns correct status for FL_TAINT" do
-      obj = Object.new
-      @o.FL_TEST(obj, "FL_TAINT").should == 0
-      obj.taint
-      @o.FL_TEST(obj, "FL_TAINT").should_not == 0
+    ruby_version_is ''...'2.7' do
+      it "returns correct status for FL_TAINT" do
+        obj = Object.new
+        @o.FL_TEST(obj, "FL_TAINT").should == 0
+        obj.taint
+        @o.FL_TEST(obj, "FL_TAINT").should_not == 0
+      end
     end
 
     it "returns correct status for FL_FREEZE" do
@@ -570,61 +577,67 @@ describe "CApiObject" do
   end
 
   describe "OBJ_TAINT" do
-    it "taints the object" do
-      obj = mock("tainted")
-      @o.OBJ_TAINT(obj)
-      obj.tainted?.should be_true
+    ruby_version_is ''...'2.7' do
+      it "taints the object" do
+        obj = mock("tainted")
+        @o.OBJ_TAINT(obj)
+        obj.tainted?.should be_true
+      end
     end
   end
 
   describe "OBJ_TAINTED" do
-    it "returns C true if the object is tainted" do
-      obj = mock("tainted")
-      obj.taint
-      @o.OBJ_TAINTED(obj).should be_true
-    end
+    ruby_version_is ''...'2.7' do
+      it "returns C true if the object is tainted" do
+        obj = mock("tainted")
+        obj.taint
+        @o.OBJ_TAINTED(obj).should be_true
+      end
 
-    it "returns C false if the object is not tainted" do
-      obj = mock("untainted")
-      @o.OBJ_TAINTED(obj).should be_false
+      it "returns C false if the object is not tainted" do
+        obj = mock("untainted")
+        @o.OBJ_TAINTED(obj).should be_false
+      end
     end
   end
 
   describe "OBJ_INFECT" do
-    it "does not taint the first argument if the second argument is not tainted" do
-      host   = mock("host")
-      source = mock("source")
-      @o.OBJ_INFECT(host, source)
-      host.tainted?.should be_false
-    end
+    ruby_version_is ''...'2.7' do
+      it "does not taint the first argument if the second argument is not tainted" do
+        host   = mock("host")
+        source = mock("source")
+        @o.OBJ_INFECT(host, source)
+        host.tainted?.should be_false
+      end
 
-    it "taints the first argument if the second argument is tainted" do
-      host   = mock("host")
-      source = mock("source").taint
-      @o.OBJ_INFECT(host, source)
-      host.tainted?.should be_true
-    end
+      it "taints the first argument if the second argument is tainted" do
+        host   = mock("host")
+        source = mock("source").taint
+        @o.OBJ_INFECT(host, source)
+        host.tainted?.should be_true
+      end
 
-    it "does not untrust the first argument if the second argument is trusted" do
-      host   = mock("host")
-      source = mock("source")
-      @o.OBJ_INFECT(host, source)
-      host.untrusted?.should be_false
-    end
+      it "does not untrust the first argument if the second argument is trusted" do
+        host   = mock("host")
+        source = mock("source")
+        @o.OBJ_INFECT(host, source)
+        host.untrusted?.should be_false
+      end
 
-    it "untrusts the first argument if the second argument is untrusted" do
-      host   = mock("host")
-      source = mock("source").untrust
-      @o.OBJ_INFECT(host, source)
-      host.untrusted?.should be_true
-    end
+      it "untrusts the first argument if the second argument is untrusted" do
+        host   = mock("host")
+        source = mock("source").untrust
+        @o.OBJ_INFECT(host, source)
+        host.untrusted?.should be_true
+      end
 
-    it "propagates both taint and distrust" do
-      host   = mock("host")
-      source = mock("source").taint.untrust
-      @o.OBJ_INFECT(host, source)
-      host.tainted?.should be_true
-      host.untrusted?.should be_true
+      it "propagates both taint and distrust" do
+        host   = mock("host")
+        source = mock("source").taint.untrust
+        @o.OBJ_INFECT(host, source)
+        host.tainted?.should be_true
+        host.untrusted?.should be_true
+      end
     end
   end
 
@@ -659,21 +672,23 @@ describe "CApiObject" do
   end
 
   describe "rb_obj_taint" do
-    it "marks the object passed as tainted" do
-      obj = ""
-      obj.tainted?.should == false
-      @o.rb_obj_taint(obj)
-      obj.tainted?.should == true
-    end
+    ruby_version_is ''...'2.7' do
+      it "marks the object passed as tainted" do
+        obj = ""
+        obj.tainted?.should == false
+        @o.rb_obj_taint(obj)
+        obj.tainted?.should == true
+      end
 
-    it "raises a #{frozen_error_class} if the object passed is frozen" do
-      -> { @o.rb_obj_taint("".freeze) }.should raise_error(frozen_error_class)
+      it "raises a FrozenError if the object passed is frozen" do
+        -> { @o.rb_obj_taint("".freeze) }.should raise_error(FrozenError)
+      end
     end
   end
 
   describe "rb_check_frozen" do
-    it "raises a #{frozen_error_class} if the obj is frozen" do
-      -> { @o.rb_check_frozen("".freeze) }.should raise_error(frozen_error_class)
+    it "raises a FrozenError if the obj is frozen" do
+      -> { @o.rb_check_frozen("".freeze) }.should raise_error(FrozenError)
     end
 
     it "does nothing when object isn't frozen" do
@@ -874,6 +889,80 @@ describe "CApiObject" do
         o.instance_variable_set(:@baz, :flibble)
         @o.rb_free_generic_ivar(o)
         o.instance_variables.should == []
+      end
+    end
+  end
+
+  describe "allocator accessors" do
+    describe "rb_define_alloc_func" do
+      it "sets up the allocator" do
+        klass = Class.new
+        @o.rb_define_alloc_func(klass)
+        obj = klass.allocate
+        obj.class.should.equal?(klass)
+        obj.should have_instance_variable(:@from_custom_allocator)
+      end
+
+      it "sets up the allocator for a subclass of String" do
+        klass = Class.new(String)
+        @o.rb_define_alloc_func(klass)
+        obj = klass.allocate
+        obj.class.should.equal?(klass)
+        obj.should have_instance_variable(:@from_custom_allocator)
+        obj.should == ""
+      end
+
+      it "sets up the allocator for a subclass of Array" do
+        klass = Class.new(Array)
+        @o.rb_define_alloc_func(klass)
+        obj = klass.allocate
+        obj.class.should.equal?(klass)
+        obj.should have_instance_variable(:@from_custom_allocator)
+        obj.should == []
+      end
+    end
+
+    describe "rb_get_alloc_func" do
+      it "gets the allocator that is defined directly on a class" do
+        klass = Class.new
+        @o.rb_define_alloc_func(klass)
+        @o.speced_allocator?(Object).should == false
+        @o.speced_allocator?(klass).should == true
+      end
+
+      it "gets the allocator that is inherited" do
+        parent = Class.new
+        @o.rb_define_alloc_func(parent)
+        klass = Class.new(parent)
+        @o.speced_allocator?(Object).should == false
+        @o.speced_allocator?(klass).should == true
+      end
+    end
+
+    describe "rb_undef_alloc_func" do
+      it "makes rb_get_alloc_func() return NULL for a class without a custom allocator" do
+        klass = Class.new
+        @o.rb_undef_alloc_func(klass)
+        @o.custom_alloc_func?(klass).should == false
+      end
+
+      it "undefs the allocator for the class" do
+        klass = Class.new
+        @o.rb_define_alloc_func(klass)
+        @o.speced_allocator?(klass).should == true
+        @o.rb_undef_alloc_func(klass)
+        @o.custom_alloc_func?(klass).should == false
+      end
+
+      it "undefs the allocator for a class that inherits a allocator" do
+        parent = Class.new
+        @o.rb_define_alloc_func(parent)
+        klass = Class.new(parent)
+        @o.speced_allocator?(klass).should == true
+        @o.rb_undef_alloc_func(klass)
+        @o.custom_alloc_func?(klass).should == false
+
+        @o.speced_allocator?(parent).should == true
       end
     end
   end

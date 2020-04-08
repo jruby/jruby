@@ -216,8 +216,6 @@ public class RbConfigLibrary implements Library {
 
         final RubyModule rbConfig = runtime.defineModule("RbConfig");
 
-        rbConfig.defineAnnotatedMethods(RbConfigLibrary.class);
-
         normalizedHome = getNormalizedHome(runtime);
 
         // Ruby installed directory.
@@ -253,6 +251,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "bindir", binDir);
 
         setConfig(context, CONFIG, "RUBY_INSTALL_NAME", jrubyScript());
+        setConfig(context, CONFIG, "RUBY_BASE_NAME", jrubyScript());
         setConfig(context, CONFIG, "RUBYW_INSTALL_NAME", Platform.IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
         setConfig(context, CONFIG, "ruby_install_name", jrubyScript());
         setConfig(context, CONFIG, "rubyw_install_name", Platform.IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
@@ -334,6 +333,11 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "sysconfdir", sysConfDir);
         setConfig(context, CONFIG, "localstatedir", newFile(normalizedHome, "var").getPath());
         setConfig(context, CONFIG, "DLEXT", "jar");
+        if (Platform.IS_WINDOWS) {
+            setConfig(context, CONFIG, "RUBY_SO_NAME", ((arch.equals("x86_64")) ? "x64-" : "") + "msvcrt-" + jrubyScript());
+        } else {
+            setConfig(context, CONFIG, "RUBY_SO_NAME", "ruby");
+        }
 
         final String rubygemsDir = getRubygemsDir(runtime);
         if (rubygemsDir != null) {
@@ -356,6 +360,9 @@ public class RbConfigLibrary implements Library {
 
         setConfig(context, CONFIG, "joda-time.version", Constants.JODA_TIME_VERSION);
         setConfig(context, CONFIG, "tzdata.version",    Constants.TZDATA_VERSION);
+
+        setConfig(context, CONFIG, "UNICODE_VERSION", "12.1.0");
+        setConfig(context, CONFIG, "UNICODE_EMOJI_VERSION", "12.0");
 
         rbConfig.defineConstant("CONFIG", CONFIG);
 

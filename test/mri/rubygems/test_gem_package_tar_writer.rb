@@ -11,9 +11,12 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
     @data = 'abcde12345'
     @io = TempIO.new
     @tar_writer = Gem::Package::TarWriter.new @io
+    @epoch = ENV["SOURCE_DATE_EPOCH"]
+    ENV["SOURCE_DATE_EPOCH"] = nil
   end
 
   def teardown
+    ENV["SOURCE_DATE_EPOCH"] = @epoch
     @tar_writer.close unless @tar_writer.closed?
     @io.close!
 
@@ -31,6 +34,16 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
     assert_equal 1024, @io.pos
   end
 
+  def test_add_file_source_date_epoch
+    ENV["SOURCE_DATE_EPOCH"] = "123456789"
+    Time.stub :now, Time.at(1458518157) do
+      @tar_writer.mkdir 'foo', 0644
+
+      assert_headers_equal tar_dir_header('foo', '', 0644, Time.at(ENV["SOURCE_DATE_EPOCH"].to_i).utc),
+                           @io.string[0, 512]
+    end
+  end
+
   def test_add_symlink
     Time.stub :now, Time.at(1458518157) do
       @tar_writer.add_symlink 'x', 'y', 0644
@@ -39,6 +52,16 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
                          @io.string[0, 512])
     end
     assert_equal 512, @io.pos
+  end
+
+  def test_add_symlink_source_date_epoch
+    ENV["SOURCE_DATE_EPOCH"] = "123456789"
+    Time.stub :now, Time.at(1458518157) do
+      @tar_writer.add_symlink 'x', 'y', 0644
+
+      assert_headers_equal(tar_symlink_header('x', '', 0644, Time.at(ENV["SOURCE_DATE_EPOCH"].to_i).utc, 'y'),
+                         @io.string[0, 512])
+    end
   end
 
   def test_add_file_digest
@@ -116,7 +139,6 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
 
       assert_equal 2048, @io.pos
     end
-
   end
 
   def test_add_file_signer_empty
@@ -148,6 +170,16 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
     assert_equal 1024, @io.pos
   end
 
+  def test_add_file_simple_source_date_epoch
+    ENV["SOURCE_DATE_EPOCH"] = "123456789"
+    Time.stub :now, Time.at(1458518157) do
+      @tar_writer.add_file_simple 'x', 0644, 10 do |io| io.write "a" * 10 end
+
+      assert_headers_equal(tar_file_header('x', '', 0644, 10, Time.at(ENV["SOURCE_DATE_EPOCH"].to_i).utc),
+                         @io.string[0, 512])
+    end
+  end
+
   def test_add_file_simple_padding
     Time.stub :now, Time.at(1458518157) do
       @tar_writer.add_file_simple 'x', 0, 100
@@ -172,12 +204,6 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
       @tar_writer.add_file_simple("lib/foo/bar", 0, 10) do |io|
         io.write "1" * 11
       end
-    end
-  end
-
-  def test_add_file_unseekable
-    assert_raises Gem::Package::NonSeekableIO do
-      Gem::Package::TarWriter.new(Object.new).add_file 'x', 0
     end
   end
 
@@ -220,6 +246,16 @@ class TestGemPackageTarWriter < Gem::Package::TarTestCase
                            @io.string[0, 512]
 
       assert_equal 512, @io.pos
+    end
+  end
+
+  def test_mkdir_source_date_epoch
+    ENV["SOURCE_DATE_EPOCH"] = "123456789"
+    Time.stub :now, Time.at(1458518157) do
+      @tar_writer.mkdir 'foo', 0644
+
+      assert_headers_equal tar_dir_header('foo', '', 0644, Time.at(ENV["SOURCE_DATE_EPOCH"].to_i).utc),
+                           @io.string[0, 512]
     end
   end
 

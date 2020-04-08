@@ -68,11 +68,13 @@ describe "String#delete" do
     -> { "hello".delete("^h-e") }.should raise_error(ArgumentError)
   end
 
-  it "taints result when self is tainted" do
-    "hello".taint.delete("e").tainted?.should == true
-    "hello".taint.delete("a-z").tainted?.should == true
+  ruby_version_is ''...'2.7' do
+    it "taints result when self is tainted" do
+      "hello".taint.delete("e").tainted?.should == true
+      "hello".taint.delete("a-z").tainted?.should == true
 
-    "hello".delete("e".taint).tainted?.should == false
+      "hello".delete("e".taint).tainted?.should == false
+    end
   end
 
   it "tries to convert each set arg to a string using to_str" do
@@ -109,11 +111,11 @@ describe "String#delete!" do
     a.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "hello"
     a.freeze
 
-    -> { a.delete!("")            }.should raise_error(frozen_error_class)
-    -> { a.delete!("aeiou", "^e") }.should raise_error(frozen_error_class)
+    -> { a.delete!("")            }.should raise_error(FrozenError)
+    -> { a.delete!("aeiou", "^e") }.should raise_error(FrozenError)
   end
 end

@@ -393,44 +393,22 @@ describe "Module#refine" do
       end
     end
 
-    ruby_version_is "" ... "2.5" do
-      it "is not honored by string interpolation" do
-        refinement = Module.new do
-          refine Integer do
-            def to_s
-              "foo"
-            end
+    it "is honored by string interpolation" do
+      refinement = Module.new do
+        refine Integer do
+          def to_s
+            "foo"
           end
         end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = "#{1}"
-        end
-
-        result.should == "1"
       end
-    end
 
-    ruby_version_is "2.5" do
-      it "is honored by string interpolation" do
-        refinement = Module.new do
-          refine Integer do
-            def to_s
-              "foo"
-            end
-          end
-        end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = "#{1}"
-        end
-
-        result.should == "foo"
+      result = nil
+      Module.new do
+        using refinement
+        result = "#{1}"
       end
+
+      result.should == "foo"
     end
 
     it "is honored by Kernel#binding" do
@@ -702,6 +680,17 @@ describe "Module#refine" do
       [1,2].orig_count.should == 2
     end
     -> { [1,2].orig_count }.should raise_error(NoMethodError)
+  end
+
+  it "and instance_methods returns a list of methods including those of the refined module" do
+    methods = Array.instance_methods
+    methods_2 = []
+    Module.new do
+      refine Array do
+        methods_2 = instance_methods
+      end
+    end
+    methods.should == methods_2
   end
 
   # Refinements are inherited by module inclusion.

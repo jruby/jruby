@@ -57,6 +57,7 @@ import jnr.netdb.Service;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -72,6 +73,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.Sockaddr;
+
+import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
 /**
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
@@ -271,8 +274,12 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     public static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context, IRubyObject[] args) {
         int argc = args.length;
+        boolean exception = true;
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
-        if (opts != context.nil) argc--;
+        if (opts != context.nil) {
+            argc--;
+            exception = extractExceptionOnlyArg(context, (RubyHash) opts);
+        }
 
         IRubyObject length, flags, str;
         length = flags = str = context.nil;
@@ -283,7 +290,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             case 1: length = args[0];
         }
 
-        return recvfrom_nonblock(socket, context, length, flags, str, extractExceptionArg(context, opts));
+        return recvfrom_nonblock(socket, context, length, flags, str, exception);
     }
 
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
@@ -406,7 +413,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                     port = (int) _port.convertToInteger().getLongValue();
                 }
 
-                addrs = SocketUtils.getRubyInetAddresses(nameStr.getByteList());
+                addrs = SocketUtils.getRubyInetAddresses(nameStr.toString());
             }
 
             RubyString data = _mesg.convertToString();

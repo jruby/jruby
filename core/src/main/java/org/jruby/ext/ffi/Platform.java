@@ -31,6 +31,7 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -317,49 +318,37 @@ public class Platform {
         OS_TYPE os = platform.getOS();
         module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
         module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
-        module.defineConstant("OS", runtime.newString(OS.toString()));
-        module.defineConstant("ARCH", runtime.newString(platform.getCPU().toString()));
-        module.defineConstant("NAME", runtime.newString(platform.getName()));
-        module.defineConstant("IS_WINDOWS", runtime.newBoolean(os == OS.WINDOWS));
-        module.defineConstant("IS_BSD", runtime.newBoolean(platform.isBSD()));
-        module.defineConstant("IS_FREEBSD", runtime.newBoolean(os == OS.FREEBSD));
-        module.defineConstant("IS_DRAGONFLYBSD", runtime.newBoolean(os == OS.DRAGONFLYBSD));
-        module.defineConstant("IS_OPENBSD", runtime.newBoolean(os == OS.OPENBSD));
-        module.defineConstant("IS_SOLARIS", runtime.newBoolean(os == OS.SOLARIS));
-        module.defineConstant("IS_LINUX", runtime.newBoolean(os == OS.LINUX));
-        module.defineConstant("IS_MAC", runtime.newBoolean(os == OS.DARWIN));
-        module.defineConstant("LIBC", runtime.newString(LIBC));
-        module.defineConstant("LIBPREFIX", runtime.newString(LIBPREFIX));
-        module.defineConstant("LIBSUFFIX", runtime.newString(LIBSUFFIX));
         module.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
         module.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
         module.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
         module.defineAnnotatedMethods(Platform.class);
     }
+
     @JRubyMethod(name = "windows?", module=true)
     public static IRubyObject windows_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.WINDOWS);
+        return RubyBoolean.newBoolean(context, OS == OS.WINDOWS);
     }
     @JRubyMethod(name = "mac?", module=true)
     public static IRubyObject mac_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.DARWIN);
+        return RubyBoolean.newBoolean(context, OS == OS.DARWIN);
     }
     @JRubyMethod(name = "unix?", module=true)
     public static IRubyObject unix_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(Platform.getPlatform().isUnix());
+        return RubyBoolean.newBoolean(context, Platform.getPlatform().isUnix());
     }
     @JRubyMethod(name = "bsd?", module=true)
     public static IRubyObject bsd_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(Platform.getPlatform().isBSD());
+        return RubyBoolean.newBoolean(context, Platform.getPlatform().isBSD());
     }
     @JRubyMethod(name = "linux?", module=true)
     public static IRubyObject linux_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.LINUX);
+        return RubyBoolean.newBoolean(context, OS == OS.LINUX);
     }
     @JRubyMethod(name = "solaris?", module=true)
     public static IRubyObject solaris_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(OS == OS.SOLARIS);
+        return RubyBoolean.newBoolean(context, OS == OS.SOLARIS);
     }
+
     /**
      * An extension over <code>System.getProperty</code> method.
      * Handles security restrictions, and returns the default

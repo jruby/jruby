@@ -14,12 +14,12 @@ if ENV['CI']
   ENV['TESTOPT'] = "-v --no-use-color"
 
   # extend timeouts in MRI tests
-  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '10'
+  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '20'
 else
   ADDITIONAL_TEST_OPTIONS = ""
 end
 
-AVAILABLE_PROCESSORS = (ENV['JOBS'] || java.lang.Runtime.runtime.available_processors).to_i
+AVAILABLE_PROCESSORS = (ENV['JOBS'] || java.lang.Runtime.runtime.available_processors.to_i / 2 + 1)
 
 namespace :test do
   desc "Compile test code"
@@ -96,7 +96,7 @@ namespace :test do
         jruby_opts.each do |task, opts|
 
           task task do
-            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} --disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
             ruby "test/mri/runner.rb -j#{AVAILABLE_PROCESSORS} #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
           end
         end

@@ -143,6 +143,34 @@ describe "CApiNumericSpecs" do
     end
   end
 
+  describe "NUM2SHORT" do
+    it "raises a TypeError if passed nil" do
+      -> { @s.NUM2SHORT(nil) }.should raise_error(TypeError)
+    end
+
+    it "converts a Float" do
+      @s.NUM2SHORT(4.2).should == 4
+    end
+
+    it "converts a Fixnum" do
+      @s.NUM2SHORT(5).should == 5
+    end
+
+    it "converts -1 to an signed number" do
+      @s.NUM2SHORT(-1).should == -1
+    end
+
+    it "raises a RangeError if the value is more than 32bits" do
+      -> { @s.NUM2SHORT(0xffff_ffff+1) }.should raise_error(RangeError)
+    end
+
+    it "calls #to_int to coerce the value" do
+      obj = mock("number")
+      obj.should_receive(:to_int).and_return(2)
+      @s.NUM2SHORT(obj).should == 2
+    end
+  end
+
   describe "INT2NUM" do
     it "raises a TypeError if passed nil" do
       -> { @s.INT2NUM(nil) }.should raise_error(TypeError)
@@ -409,23 +437,12 @@ describe "CApiNumericSpecs" do
       @s.rb_num_coerce_cmp(2, obj, :<=>).should == -1
     end
 
-    ruby_version_is ""..."2.5" do
-      it "returns nil if passed nil" do
-        -> {
-          @result = @s.rb_num_coerce_cmp(nil, 2, :<=>)
-        }.should complain(/comparison operators will no more rescue exceptions/)
-        @result.should be_nil
-      end
-    end
-
-    ruby_version_is "2.5" do
-      it "lets the exception go through if #coerce raises an exception" do
-        obj = mock("rb_num_coerce_cmp")
-        obj.should_receive(:coerce).with(2).and_raise(RuntimeError.new("my error"))
-        -> {
-          @s.rb_num_coerce_cmp(2, obj, :<=>)
-        }.should raise_error(RuntimeError, "my error")
-      end
+    it "lets the exception go through if #coerce raises an exception" do
+      obj = mock("rb_num_coerce_cmp")
+      obj.should_receive(:coerce).with(2).and_raise(RuntimeError.new("my error"))
+      -> {
+        @s.rb_num_coerce_cmp(2, obj, :<=>)
+      }.should raise_error(RuntimeError, "my error")
     end
 
     it "returns nil if #coerce does not return an Array" do

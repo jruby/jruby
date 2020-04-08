@@ -54,12 +54,14 @@ describe "String#squeeze" do
     -> { s.squeeze("^e-b") }.should raise_error(ArgumentError)
   end
 
-  it "taints the result when self is tainted" do
-    "hello".taint.squeeze("e").tainted?.should == true
-    "hello".taint.squeeze("a-z").tainted?.should == true
+  ruby_version_is ''...'2.7' do
+    it "taints the result when self is tainted" do
+      "hello".taint.squeeze("e").tainted?.should == true
+      "hello".taint.squeeze("a-z").tainted?.should == true
 
-    "hello".squeeze("e".taint).tainted?.should == false
-    "hello".squeeze("l".taint).tainted?.should == false
+      "hello".squeeze("e".taint).tainted?.should == false
+      "hello".squeeze("l".taint).tainted?.should == false
+    end
   end
 
   it "tries to convert each set arg to a string using to_str" do
@@ -103,11 +105,11 @@ describe "String#squeeze!" do
     -> { s.squeeze!("^e-b") }.should raise_error(ArgumentError)
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "yellow moon"
     a.freeze
 
-    -> { a.squeeze!("") }.should raise_error(frozen_error_class)
-    -> { a.squeeze!     }.should raise_error(frozen_error_class)
+    -> { a.squeeze!("") }.should raise_error(FrozenError)
+    -> { a.squeeze!     }.should raise_error(FrozenError)
   end
 end

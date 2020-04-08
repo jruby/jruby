@@ -16,17 +16,29 @@ end
 
 default_gems = [
     ['cmath', '1.0.0'],
-    ['csv', '1.0.0'],
-    ['fileutils', '1.1.0'],
-    ['ipaddr', '1.2.0'],
+    ['csv', '3.1.2'],
+    ['e2mmap', '0.1.0'],
+    ['fileutils', '1.4.1'],
+    ['forwardable', '1.2.0'],
+    ['ipaddr', '1.2.2'],
+    ['irb', '1.0.0'],
     ['jar-dependencies', '${jar-dependencies.version}'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.10.2'],
+    ['jruby-openssl', '0.10.4'],
     ['json', '${json.version}'],
+    ['logger', '1.3.0'],
+    ['mutex_m', '0.1.0'],
+    ['prime', '0.1.0'],
     ['psych', '3.1.0'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
+    ['rexml', '3.1.9'],
+    ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
+    ['shell', '0.7'],
+    ['sync', '0.5.0'],
+    ['thwait', '0.1.0'],
+    ['tracer', '0.1.0'],
     ['webrick', '1.4.2'],
 ]
 
@@ -66,10 +78,8 @@ project 'JRuby Lib Setup' do
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
   # for testing out jruby-ossl before final release :
-  #repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots',
-  #            :id => 'gem-snaphots' )
-  #repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
-  #            :id => 'gem-staging' )
+  # repository :id => 'gem-snaphots', :url => 'https://oss.sonatype.org/content/repositories/snapshots'
+  # repository :id => 'gem-staging', :url => 'http://oss.sonatype.org/content/repositories/staging'
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',

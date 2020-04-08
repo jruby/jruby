@@ -49,9 +49,14 @@ public class StaticScopeFactory {
 
     // We only call these from inside IR impl (IR is all or nothing)
     public static StaticScope newIRBlockScope(StaticScope parent) {
-        return new StaticScope(StaticScope.Type.BLOCK, parent);
+        StaticScope scope = new StaticScope(StaticScope.Type.BLOCK, parent);
+
+        scope.setFile(parent.getFile());
+
+        return scope;
     }
 
+    @Deprecated
     public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names) {
         if(names == null) {
             return new StaticScope(type, parent);
@@ -60,11 +65,20 @@ public class StaticScopeFactory {
         }
     }
 
+    @Deprecated
     public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names, int keywordArgIndex) {
         if(names == null) {
             return new StaticScope(type, parent);
         } else {
             return new StaticScope(type, parent, names, keywordArgIndex);
+        }
+    }
+
+    public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String file, String[] names, int keywordArgIndex) {
+        if(names == null) {
+            return new StaticScope(type, parent, file);
+        } else {
+            return new StaticScope(type, parent, file, names, keywordArgIndex);
         }
     }
 

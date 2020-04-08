@@ -7,6 +7,8 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -22,8 +24,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
@@ -37,13 +45,14 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
  */
 public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<>();
+    private final Map<IRScope, Integer> scopePoolOffsets = new HashMap<>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final OutputStream stream;
     private final IRWriterAnalyzer analyzer;
+    private Map<RubySymbol, Integer> constantMap = new HashMap();
 
     int headersOffset = -1;
-    int poolOffset = -1;
 
     public IRWriterStream(OutputStream stream) {
         this.stream = stream;
@@ -131,6 +140,11 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     }
 
     @Override
+    public boolean isAnalyzer() {
+        return false;
+    }
+
+    @Override
     public void encode(ByteList value) {
         encode(value.bytes());
         encode(value.getEncoding());
@@ -144,15 +158,33 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(Encoding encoding) {
-        encode(encoding.getName());
+        if (encoding == USASCIIEncoding.INSTANCE) {
+            encode(USASCII);
+        } else if (encoding == UTF8Encoding.INSTANCE) {
+            encode(UTF8);
+        } else {
+            encode(encoding.getName());
+        }
     }
 
     @Override
     public void encode(RubySymbol symbol) {
+        Integer constantIndex = constantMap.get(symbol);
+
+        if (constantIndex != null) {
+            encode(constantIndex.intValue());
+        } else {
+            int index = constantMap.size();
+            constantMap.put(symbol, index);
+            encode(index);
+        }
+    }
+
+    public void encodeRaw(RubySymbol symbol) {
         if (symbol == null) {
             encode(NULL_STRING);
         } else {
-            encode(symbol.getBytes());
+            encode(symbol.getBytes()); // This looks weird but Bytelist is {byte[], Encoding}.
         }
     }
 
@@ -244,17 +276,39 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void endEncodingScopeHeader(IRScope scope) {
-        encode(getScopeInstructionOffset(scope)); // Write out offset to where this scopes instrs are
+        int offset = getScopeInstructionOffset(scope);
+        if (IRWriter.shouldLog(this)) System.out.println("endEncodingScopeHeader: instructions offset: " + offset);
+        encode(offset); // Write out offset to where this scopes instrs are
+        encode(scopePoolOffsets.get(scope));
     }
 
     @Override
     public void startEncodingScopeInstrs(IRScope scope) {
+        constantMap.clear();
         addScopeInstructionOffset(scope); // Record offset so we add this value to scope headers entry
-        encode(scope.getInterpreterContext().getInstructions().length); // Allows us to right-size when reconstructing instr list.
+        int instruction_count = scope.getInterpreterContext().getInstructions().length;
+
+        if (IRWriter.shouldLog(this)) {
+            System.out.println("startEncodingScopeInstrs: instrs to encode = " + instruction_count);
+        }
+
+        encode(instruction_count); // Allows us to right-size when reconstructing instr list.
     }
 
     @Override
     public void endEncodingScopeInstrs(IRScope scope) {
+        if (IRWriter.shouldLog(this)) {
+            System.out.println("endEncodingScopeInstrs: end offset = " + offset());
+        }
+        scopePoolOffsets.put(scope, offset());
+
+        List<Entry<RubySymbol, Integer> > list = new LinkedList(constantMap.entrySet());
+        Collections.sort(list, Comparator.comparing(Entry::getValue));
+
+        encode(list.size());    // How many entries are within pool
+        for (Entry<RubySymbol, Integer> entry: list) {
+            encodeRaw(entry.getKey());
+        }
     }
 
     @Override
@@ -281,7 +335,6 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         try {
             stream.write(ByteBuffer.allocate(4).putInt(VERSION).array());
             stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
-            stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
             flipBuffer(buf);
             stream.write(buf.array(), buf.position(), buf.limit());
             stream.close();

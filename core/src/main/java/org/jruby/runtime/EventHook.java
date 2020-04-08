@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public abstract class EventHook {    
     public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type){
-        eventHandler(context, event.getName(), file, line + event.getLineNumberOffset(), name, type);
+        eventHandler(context, event.getName(), file, line, name, type);
     }
     
     public abstract void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type);

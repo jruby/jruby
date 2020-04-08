@@ -32,6 +32,7 @@ import java.lang.invoke.MethodType;
 import org.jruby.Ruby;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.util.collections.IntHashMap;
@@ -39,7 +40,7 @@ import org.jruby.util.collections.IntHashMap;
 import static org.jruby.compiler.MethodJITTask.*;
 
 /**
- * Created by enebo on 10/30/18.
+ * For recompiling an already compiled method.  Current use is only for the inliner.
  */
 class MethodCompiledJITTask extends JITCompiler.Task {
 
@@ -57,24 +58,26 @@ class MethodCompiledJITTask extends JITCompiler.Task {
     @Override
     public void exec() throws NoSuchMethodException, IllegalAccessException {
         // Check if the method has been explicitly excluded
-        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method.getImplementationClass());
+        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
         if (excludeModuleName != null) {
             method.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                logImpl("skipping method in " + excludeModuleName);
+                logImpl("skipping (compiled) method in " + excludeModuleName);
             }
             return;
         }
 
-        final String key = SexpMaker.sha1(method.getIRScope());
+        IRScope methodScope = method.getIRScope();
+
+        final String key = SexpMaker.sha1(methodScope);
         final Ruby runtime = jitCompiler.runtime;
-        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
 
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         generator.compile(context);
 
-        Class<?> sourceClass = defineClass(generator, visitor, method.getIRScope(), method.ensureInstrsReady());
+        Class<?> sourceClass = defineClass(generator, visitor, methodScope, method.ensureInstrsReady());
         if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
         String variableName = context.getVariableName();
@@ -88,6 +91,11 @@ class MethodCompiledJITTask extends JITCompiler.Task {
                 break; // FIXME: only supports one arity
             }
         }
+    }
+
+    @Override
+    protected String getSourceFile() {
+        return method.getFile();
     }
 
     @Override

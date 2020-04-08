@@ -322,6 +322,11 @@ describe "CApiModule" do
       @class.should_not have_instance_method(:ruby_test_method)
     end
 
+    it "undefines private methods also" do
+      @m.rb_undef_method @class, "initialize_copy"
+      -> { @class.new.dup }.should raise_error(NoMethodError)
+    end
+
     it "does not raise exceptions when passed a missing name" do
       -> { @m.rb_undef_method @class, "not_exist" }.should_not raise_error
     end
@@ -331,12 +336,12 @@ describe "CApiModule" do
         @frozen = @class.dup.freeze
       end
 
-      it "raises a #{frozen_error_class} when passed a name" do
-        -> { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(frozen_error_class)
+      it "raises a FrozenError when passed a name" do
+        -> { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(FrozenError)
       end
 
-      it "raises a #{frozen_error_class} when passed a missing name" do
-        -> { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(frozen_error_class)
+      it "raises a FrozenError when passed a missing name" do
+        -> { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(FrozenError)
       end
     end
   end

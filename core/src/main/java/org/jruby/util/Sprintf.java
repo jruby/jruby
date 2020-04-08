@@ -621,6 +621,7 @@ public class Sprintf {
                             strLen = precision;
                             len = StringSupport.nth(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.getRealSize(), precision);
                             if (len == -1) len = 0; // we might return -1 but MRI's rb_enc_nth does 0 for not-found
+                            len = len - bytes.begin();
                         }
                         /* need to adjust multi-byte string pos */
                         if ((flags & FLAG_WIDTH) != 0 && width > strLen) {

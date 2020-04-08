@@ -50,7 +50,6 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 public class RubyComparable {
     public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
-        runtime.setComparable(comparableModule);
 
         comparableModule.defineAnnotatedMethods(RubyComparable.class);
 
@@ -185,7 +184,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) > 0);
+        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) > 0);
     }
 
     /** cmp_ge
@@ -197,7 +196,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) >= 0);
+        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) >= 0);
     }
 
     /** cmp_lt
@@ -209,7 +208,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) < 0);
+        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) < 0);
     }
 
     public static RubyBoolean op_lt(ThreadContext context, CallSite cmp, IRubyObject recv, IRubyObject other) {
@@ -217,7 +216,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) < 0);
+        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) < 0);
     }
 
     /** cmp_le
@@ -229,7 +228,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) <= 0);
+        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) <= 0);
     }
 
     /** cmp_between
@@ -237,7 +236,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "between?", required = 2)
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
-        return context.runtime.newBoolean(op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
+        return RubyBoolean.newBoolean(context, op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
     }
 
     @JRubyMethod(name = "clamp")

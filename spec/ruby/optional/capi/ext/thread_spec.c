@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-static VALUE thread_spec_rb_thread_alone() {
+static VALUE thread_spec_rb_thread_alone(VALUE self) {
   return rb_thread_alone() ? Qtrue : Qfalse;
 }
 
@@ -89,7 +89,7 @@ static VALUE thread_spec_rb_thread_call_without_gvl_with_ubf_io(VALUE self) {
   return (VALUE)ret;
 }
 
-static VALUE thread_spec_rb_thread_current() {
+static VALUE thread_spec_rb_thread_current(VALUE self) {
   return rb_thread_current();
 }
 
@@ -114,7 +114,8 @@ static VALUE thread_spec_rb_thread_wait_for(VALUE self, VALUE s, VALUE ms) {
 }
 
 
-VALUE thread_spec_call_proc(VALUE arg_array) {
+VALUE thread_spec_call_proc(void *arg_ptr) {
+  VALUE arg_array = (VALUE)arg_ptr;
   VALUE arg = rb_ary_pop(arg_array);
   VALUE proc = rb_ary_pop(arg_array);
   return rb_funcall(proc, rb_intern("call"), 1, arg);

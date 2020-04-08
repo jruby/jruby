@@ -1,0 +1,3 @@
+fails:Kernel#caller_locations can be called with a range whose end is negative
+fails:Kernel#caller_locations must return nil if omitting more locations than available
+fails:Kernel#caller_locations must return the same locations when called with 1..-1 and when called with no arguments

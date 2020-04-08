@@ -164,7 +164,7 @@ if defined? GDBM
       open_db_child(dbname) do
         assert_raise(Errno::EWOULDBLOCK, Errno::EAGAIN, Errno::EACCES) {
           GDBM.open(dbname, 0644) {|gdbm|
-            assert_instance_of(GDBM, gdbm)
+            assert(false)
           }
         }
       end
@@ -213,7 +213,7 @@ if defined? GDBM
     end if defined? GDBM::NOLOCK # gdbm 1.8.0 specific
 
     def test_s_open_error
-    skip if Process.uid == 0 # because root can open anything
+      skip "because root can open anything" if Process.uid == 0
 
       assert_instance_of(GDBM, gdbm = GDBM.open("#{@tmpdir}/#{@prefix}", 0))
       assert_raise(Errno::EACCES, Errno::EWOULDBLOCK) {
@@ -726,7 +726,8 @@ if defined? GDBM
     def test_freeze
       GDBM.open("#{@tmproot}/a.dbm") {|d|
         d.freeze
-        assert_raise(FrozenError) { d["k"] = "v" }
+        expected_error = defined?(FrozenError) ? FrozenError : RuntimeError
+        assert_raise(expected_error) { d["k"] = "v" }
       }
     end
   end

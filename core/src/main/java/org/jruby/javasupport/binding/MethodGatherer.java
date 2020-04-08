@@ -23,9 +23,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -78,6 +81,8 @@ public class MethodGatherer {
         INSTANCE_RESERVED_NAMES.put("class", new AssignedName("class", Priority.RESERVED));
         // "initialize" has meaning only for an instance (as opposed to a class)
         INSTANCE_RESERVED_NAMES.put("initialize", new AssignedName("initialize", Priority.RESERVED));
+        // "equal?" should not be overridden (GH-5990)
+        INSTANCE_RESERVED_NAMES.put("equal?", new AssignedName("equal?", Priority.RESERVED));
     }
 
     // TODO: other reserved names?
@@ -148,22 +153,32 @@ public class MethodGatherer {
     static Map<String, List<Method>> getMethods(final Class<?> javaClass) {
         HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
 
+        eachAccessibleMethod(
+                javaClass,
+                (classMethods) -> { addNewMethods(nameMethods, classMethods, true); return true; },
+                (interfaceMethods) -> { addNewMethods(nameMethods, interfaceMethods, false); return true; });
+
+        return nameMethods;
+    }
+
+    public static void eachAccessibleMethod(final Class<?> javaClass, Predicate<Method[]> classProcessor, Predicate<Method[]> interfaceProcessor) {
+        HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
+
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
-            // only add class's methods if it's public or we can set accessible
-            // (see JRUBY-4799)
-            if (Modifier.isPublic(klass.getModifiers()) || JavaUtil.CAN_SET_ACCESSIBLE) {
+            // only add class's methods if it's public (JIRA issue JRUBY-4799)
+            if (Modifier.isPublic(klass.getModifiers())) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
                     // and replacing child methods with equivalent parent methods
                     PartitionedMethods filteredMethods = FILTERED_DECLARED_METHODS.get(klass);
 
-                    addNewMethods(nameMethods, filteredMethods.instanceMethods, true);
+                    if (!classProcessor.test(filteredMethods.instanceMethods)) return;
 
                     if (klass == javaClass) {
-                        addNewMethods(nameMethods, filteredMethods.staticMethods, true);
+                        if (!classProcessor.test(filteredMethods.staticMethods)) return;
                     }
                 }
                 catch (SecurityException e) { /* ignored */ }
@@ -177,13 +192,11 @@ public class MethodGatherer {
                     // parent methods
                     PartitionedMethods filteredMethods = FILTERED_METHODS.get(iface);
 
-                    addNewMethods(nameMethods, filteredMethods.instanceMethods, false);
+                    if (!interfaceProcessor.test(filteredMethods.instanceMethods)) return;
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
         }
-
-        return nameMethods;
     }
 
     private static boolean methodsAreEquivalent(Method child, Method parent) {
@@ -272,9 +285,24 @@ public class MethodGatherer {
     private static final ClassValue<Class<?>[]> INTERFACES = new ClassValue<Class<?>[]>() {
         @Override
         public Class<?>[] computeValue(Class cls) {
-            return cls.getInterfaces();
+            Class<?>[] baseInterfaces = cls.getInterfaces();
+
+            // Expand each interface's parent interfaces using a set
+            Set<Class<?>> interfaceSet = new HashSet<>();
+
+            addAllInterfaces(interfaceSet, cls);
+
+            return interfaceSet.toArray(new Class<?>[interfaceSet.size()]);
+        }
+
+        void addAllInterfaces(Set<Class<?>> set, Class<?> ifc) {
+            for (Class<?> i : ifc.getInterfaces()) {
+                set.add(i);
+                addAllInterfaces(set, i);
+            }
         }
     };
+
     private static final ClassValue<Boolean> IS_SCALA = new ClassValue<Boolean>() {
         @Override
         protected Boolean computeValue(Class<?> type) {
@@ -511,15 +539,14 @@ public class MethodGatherer {
             if (constant) {
                 constantFields.add(new ConstantField(field));
 
-                // If we already are adding it as a constant, make the accessors warn about deprecated behavior.
-                // See jruby/jruby#5730.
-                if (!isInterface) continue;
+                // If we are adding it as a constant,  do not add an accessor (jruby/jruby#5730)
+                continue;
             }
 
             if (isStatic) {
-                addField(getStaticInstallersForWrite(), staticNames, field, isFinal, true, constant);
+                addField(getStaticInstallersForWrite(), staticNames, field, isFinal, true);
             } else {
-                addField(getInstanceInstallersForWrite(), instanceNames, field, isFinal, false, false);
+                addField(getInstanceInstallersForWrite(), instanceNames, field, isFinal, false);
             }
         }
     }
@@ -591,15 +618,14 @@ public class MethodGatherer {
             final Map<String, AssignedName> names,
             final Field field,
             final boolean isFinal,
-            final boolean isStatic,
-            final boolean isConstant) {
+            final boolean isStatic) {
 
         final String name = field.getName();
 
         if ( Priority.FIELD.lessImportantThan( names.get(name) ) ) return;
 
         names.put(name, new AssignedName(name, Priority.FIELD));
-        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field, isConstant) :
+        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field) :
                 new InstanceFieldGetterInstaller(name, field));
 
         if (!isFinal) {

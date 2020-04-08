@@ -46,7 +46,6 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -66,13 +65,12 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHelper;
+import org.jruby.util.IdUtil;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
-import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -93,7 +91,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final int id;
     private final ByteList symbolBytes;
     private final int hashCode;
-    private Object constant;
+    private String decodedString;
+    private transient Object constant;
 
     /**
      *
@@ -132,7 +131,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubyClass createSymbolClass(Ruby runtime) {
         RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setSymbol(symbolClass);
+
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.setClassIndex(ClassIndex.SYMBOL);
         symbolClass.setReifiedClass(RubySymbol.class);
@@ -177,7 +176,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     @Override
     public final String toString() {
-        return RubyEncoding.decodeISO(symbolBytes);
+        String decoded = decodedString;
+        if (decoded == null) {
+            decodedString = decoded = RubyEncoding.decodeISO(symbolBytes);
+        }
+        return decoded;
     }
 
     public final ByteList getBytes() {
@@ -189,19 +192,23 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return the new symbol
      */
     public RubySymbol asWriter() {
-        ByteList bytes = getBytes().dup();
+        ByteList bytes = getBytes();
+        ByteList dup = bytes.dup(bytes.length() + 1);
 
-        bytes.append((byte) '=');
+        dup.append((byte) '=');
 
-        return newIDSymbol(getRuntime(), bytes);
+        return newIDSymbol(metaClass.runtime, dup);
     }
 
     public RubySymbol asInstanceVariable() {
-        ByteList bytes = getBytes().dup();
+        ByteList bytes = getBytes();
 
-        bytes.prepend((byte) '@');
+        ByteList dup = new ByteList(bytes.length() + 1);
+        dup.setEncoding(ByteList.safeEncoding(bytes.getEncoding()));
+        dup.append((byte) '@');
+        dup.append(bytes);
 
-        return newIDSymbol(getRuntime(), bytes);
+        return newIDSymbol(metaClass.runtime, dup);
     }
 
     /**
@@ -256,11 +263,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * Is the string this constant represents a valid constant identifier name.
      */
     public boolean validConstantName() {
-        boolean valid =  ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-            index == 0 && encoding.isUpper(codepoint) ||
-                    index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
+        ByteList bytes = getBytes();
+        boolean valid = IdUtil.isConstantInitial(bytes) &&
+                ByteListHelper.eachCodePoint(bytes, (index, codepoint, encoding) ->
+                        index == 0 || // skip initial because we check it differently
+                        index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
 
-        return valid && getBytes().length() >= 1;
+        return valid && bytes.length() >= 1;
     }
 
     /**
@@ -441,7 +450,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public IRubyObject inspect() {
-        return inspect(getRuntime());
+        return inspect(metaClass.runtime);
     }
 
     @JRubyMethod(name = "inspect")
@@ -456,14 +465,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         RubyString str = RubyString.newString(runtime, symbolBytes);
 
-        if (!(isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol))) {
+        if (!(isPrintable(runtime) && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName(symbol))) {
             str = str.inspect(runtime);
         }
 
         ByteList result = new ByteList(str.getByteList().getRealSize() + 1);
         result.setEncoding(str.getEncoding());
         result.append((byte)':');
-        result.append(str.getBytes());
+        result.append(str.getByteList());
 
         return RubyString.newString(runtime, result);
     }
@@ -475,7 +484,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public IRubyObject to_s() {
-        return to_s(getRuntime());
+        return to_s(metaClass.runtime);
     }
 
     @JRubyMethod
@@ -488,7 +497,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     public IRubyObject id2name() {
-        return to_s(getRuntime());
+        return to_s(metaClass.runtime);
     }
 
     @JRubyMethod
@@ -498,25 +507,25 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public RubyString asString() {
-        return to_s(getRuntime());
+        return to_s(metaClass.runtime);
     }
 
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(this == other);
+        return RubyBoolean.newBoolean(context, this == other);
     }
 
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(this == other);
+        return RubyBoolean.newBoolean(context, this == other);
     }
 
     @Deprecated
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+        return metaClass.runtime.newFixnum(hashCode());
     }
 
     @JRubyMethod
@@ -639,7 +648,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = {"length", "size"})
     public IRubyObject length() {
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         return RubyFixnum.newFixnum(runtime, newShared(runtime).strLength());
     }
 
@@ -787,8 +796,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return true;
     }
 
-    private boolean isPrintable() {
-        Ruby runtime = getRuntime();
+    private boolean isPrintable(final Ruby runtime) {
         int p = symbolBytes.getBegin();
         int end = p + symbolBytes.getRealSize();
         byte[] bytes = symbolBytes.getUnsafeBytes();
@@ -805,66 +813,66 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return true;
     }
 
-    private static boolean isSymbolName19(String s) {
-        if (s == null || s.length() < 1) return false;
+    private static boolean isSymbolName(final String str) {
+        if (str == null || str.isEmpty()) return false;
 
-        int length = s.length();
-        char c = s.charAt(0);
+        int length = str.length();
+        char c = str.charAt(0);
 
-        return isSymbolNameCommon(s, c, length) ||
+        return isSymbolNameCommon(str, c, length) ||
                 (c == '!' && (length == 1 ||
-                             (length == 2 && (s.charAt(1) == '~' || s.charAt(1) == '=')))) ||
-                isSymbolLocal(s, c, length);
+                             (length == 2 && (str.charAt(1) == '~' || str.charAt(1) == '=')))) ||
+                isSymbolLocal(str, c, length);
     }
 
-    private static boolean isSymbolNameCommon(String s, char c, int length) {
-        switch (c) {
+    private static boolean isSymbolNameCommon(final String str, final char first, final int length) {
+        switch (first) {
         case '$':
-            if (length > 1 && isSpecialGlobalName(s.substring(1))) return true;
+            if (length > 1 && isSpecialGlobalName(str.substring(1))) return true;
 
-            return isIdentifier(s.substring(1));
+            return isIdentifier(str.substring(1));
         case '@':
             int offset = 1;
-            if (length >= 2 && s.charAt(1) == '@') offset++;
+            if (length >= 2 && str.charAt(1) == '@') offset++;
 
-            return isIdentifier(s.substring(offset));
+            return isIdentifier(str.substring(offset));
         case '<':
-            return (length == 1 || (length == 2 && (s.equals("<<") || s.equals("<="))) ||
-                    (length == 3 && s.equals("<=>")));
+            return (length == 1 || (length == 2 && (str.equals("<<") || str.equals("<="))) ||
+                    (length == 3 && str.equals("<=>")));
         case '>':
-            return (length == 1) || (length == 2 && (s.equals(">>") || s.equals(">=")));
+            return (length == 1) || (length == 2 && (str.equals(">>") || str.equals(">=")));
         case '=':
-            return ((length == 2 && (s.equals("==") || s.equals("=~"))) ||
-                    (length == 3 && s.equals("===")));
+            return ((length == 2 && (str.equals("==") || str.equals("=~"))) ||
+                    (length == 3 && str.equals("===")));
         case '*':
-            return (length == 1 || (length == 2 && s.equals("**")));
+            return (length == 1 || (length == 2 && str.equals("**")));
         case '+':
-            return (length == 1 || (length == 2 && s.equals("+@")));
+            return (length == 1 || (length == 2 && str.equals("+@")));
         case '-':
-            return (length == 1 || (length == 2 && s.equals("-@")));
+            return (length == 1 || (length == 2 && str.equals("-@")));
         case '|': case '^': case '&': case '/': case '%': case '~': case '`':
             return length == 1;
         case '[':
-            return s.equals("[]") || s.equals("[]=");
+            return str.equals("[]") || str.equals("[]=");
         }
         return false;
     }
 
-    private static boolean isSymbolLocal(String s, char c, int length) {
-        if (!isIdentStart(c)) return false;
+    private static boolean isSymbolLocal(final String str, final char first, final int length) {
+        if (!isIdentStart(first)) return false;
 
-        boolean localID = (c >= 'a' && c <= 'z');
+        boolean localID = (first >= 'a' && first <= 'z');
         int last = 1;
 
         for (; last < length; last++) {
-            char d = s.charAt(last);
+            char d = str.charAt(last);
 
             if (!isIdentChar(d)) break;
         }
 
         if (last == length) return true;
         if (localID && last == length - 1) {
-            char d = s.charAt(last);
+            char d = str.charAt(last);
 
             return d == '!' || d == '?' || d == '=';
         }

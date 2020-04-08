@@ -37,8 +37,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * A thread-based implementation of Ruby 1.9 Fiber library.
  */
-public class ThreadFiberLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) {
+public class ThreadFiberLibrary {
+    public RubyClass createFiberClass(final Ruby runtime) {
         RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                 return new ThreadFiber(runtime, klazz);
@@ -47,6 +47,6 @@ public class ThreadFiberLibrary implements Library {
 
         cFiber.defineAnnotatedMethods(ThreadFiber.class);
 
-        runtime.setFiber(cFiber);
+        return cFiber;
     }
 }
