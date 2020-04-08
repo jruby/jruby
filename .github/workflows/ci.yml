@@ -47,6 +47,18 @@ jobs:
       run: tool/maven-ci-script.sh
       env: 
         PHASE: '-Pcomplete'
+    - name: osgi profile
+      run: tool/maven-ci-script.sh
+      env:
+        PHASE: '-Posgi'
+    - name: main extended
+      run: tool/maven-ci-script.sh
+      env:
+        PHASE: '-Pmain,test -Dinvoker.test=extended'
+    - name: jruby-jars extended
+      run: tool/maven-ci-script.sh
+      env:
+        PHASE: '-Pjruby-jars,test -Dinvoker.test=extended'
     - name: dependency convergence
       run: tool/maven-ci-script.sh
       env: 
