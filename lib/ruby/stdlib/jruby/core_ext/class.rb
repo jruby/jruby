@@ -153,22 +153,32 @@ class Class
     self_r.add_method_signature(name, types.to_java(JClass))
   end
 
-  def java_field(signature)
-    signature = signature.to_s
+  ##
+  # java_field will take the argument and create a java field as defined
+  # with the name, the Java type, and the annotation signatures.
+  # 
+  # :call-seq:
+  #   java_field '@FXML int foo'
+  #   java_field 'org.foo.Bar bar'
+  def java_field(signature_source)
+    signature = JRuby::JavaSignature.parse "#{signature_source}()"
 
-    signature = signature.split(/\s/)
+    add_field_signature signature.name, signature.return_type
 
-    raise "Java Field must be specified as a string with the format <Type Name>" if signature.size != 2
-
-    type, name = signature
-    add_field_signature(name, type)
+    annotations = signature.annotations
+    add_field_annotation signature.name, annotations if annotations
   end
 
+  def java_annotation(anno)
+    # TODO: this might need to be a warning instead
+    raise "java_annotation has never been implemented for become_java! classes. Did you mean to use java_signature '@#{anno} ...'?"
+  end
+  
 
   def add_field_signature(name, type)
     self_r = JRuby.reference0(self)
 
-    java_return_type = JRuby::JavaSignature.as_java_type(type)
+    java_return_type = _anno_class(type)
 
     self_r.add_field_signature(name, java_return_type.to_java(JClass))
   end
