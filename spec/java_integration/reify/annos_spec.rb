@@ -140,4 +140,23 @@ expect(arry.to_a).to eq([])
       expect(Java::java_integration.fixtures.FieldAnnotations.countAnnotated(cls).size).to eq(2)
     end
   end
+
+
+  context "field annotations using #java_field annotation support" do
+    let(:cls) do
+      Class.new do
+        java_field "@java_integration.fixtures.FieldAnnotations.Annotated java.lang.String foo"
+  
+        java_field "@java_integration.fixtures.FieldAnnotations.Annotated java.lang.String bar"
+  
+        java_field "java.lang.String baz"
+  
+        become_java!
+      end
+    end
+  
+    it "has two annotated fields" do
+      expect(Java::java_integration.fixtures.FieldAnnotations.countAnnotated(cls).size).to eq(2)
+    end
+  end
 end
