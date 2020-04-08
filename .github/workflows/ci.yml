@@ -97,3 +97,27 @@ jobs:
         run: tool/maven-ci-script.sh
         env: 
           PHASE: '-Pcomplete'
+
+  ruby-specs:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: ruby specs fast
+        run: $GITHUB_WORKSPACE/bin/jruby -S rake spec:ruby:fast
