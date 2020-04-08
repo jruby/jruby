@@ -170,8 +170,7 @@ class Class
   end
 
   def java_annotation(anno)
-    # TODO: this might need to be a warning instead
-    raise "java_annotation has never been implemented for become_java! classes. Did you mean to use java_signature '@#{anno} ...'?"
+    STDERR.puts "java_annotation is deprecated. Use java_signature '@#{anno} ...' instead. Called from: #{caller.first}"
   end
   
 
