@@ -4507,10 +4507,6 @@ public class RubyModule extends RubyObject {
     private boolean constDefinedInner(String name, boolean exclude, boolean recurse, boolean visibility) {
         Ruby runtime = getRuntime();
 
-        if (!IdUtil.isValidConstantName(name)) {
-            throw runtime.newNameError("bad constant name " + name, name);
-        }
-
         RubyClass object = runtime.getObject();
         boolean moduleRetry = false;
 
