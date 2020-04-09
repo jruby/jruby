@@ -3688,7 +3688,13 @@ public class RubyModule extends RubyObject {
 
     private boolean constDefined(Ruby runtime, IRubyObject name, boolean inherit) {
         if (name instanceof RubySymbol) {
-            String id = ((RubySymbol) name).idString();
+            RubySymbol sym = (RubySymbol) name;
+
+            if (!sym.validConstantName()) {
+                throw runtime.newNameError("wrong constant name", sym.toString());
+            }
+
+            String id = sym.idString();
 
             return inherit ? constDefined(id) : constDefinedAt(id);
         }
