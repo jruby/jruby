@@ -214,7 +214,7 @@ public class JRubyUtilLibrary implements Library {
                 final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
                 ex.initCause(e); throw ex;
             } catch (Exception e) {
-                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", (String) null, e, true);
                 ex.initCause(e); throw ex;
             }
         }
@@ -231,7 +231,7 @@ public class JRubyUtilLibrary implements Library {
                 ex.initCause(e);
                 throw ex;
             } catch (java.lang.Exception e) {
-                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", (String) null, e, true);
                 ex.initCause(e); throw ex;
             }
         }
@@ -243,7 +243,7 @@ public class JRubyUtilLibrary implements Library {
             // propagate Ruby exceptions as-is
             throw e;
         } catch (java.lang.Exception e) {
-            final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+            final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", (String) null, e, true);
             ex.initCause(e); throw ex;
         }
     }

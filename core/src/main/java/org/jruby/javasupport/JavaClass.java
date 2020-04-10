@@ -778,7 +778,7 @@ public class JavaClass extends JavaObject {
             return new JavaConstructor(runtime, constructor);
         }
         catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("no matching java constructor", null);
+            throw runtime.newNameError("no matching java constructor", (String) null);
         }
     }
 
@@ -792,7 +792,7 @@ public class JavaClass extends JavaObject {
             return new JavaConstructor(runtime, constructor);
         }
         catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("no matching java constructor", null);
+            throw runtime.newNameError("no matching java constructor", (String) null);
         }
     }
 
