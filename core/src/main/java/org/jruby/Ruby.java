@@ -4010,6 +4010,18 @@ public final class Ruby implements Constantizable {
         return new RubyNameError(this, getNameError(), message, name).toThrowable();
     }
 
+    public RaiseException newNameError(String message, IRubyObject name, Throwable exception, boolean printWhenVerbose) {
+        if (exception != null) {
+            if (printWhenVerbose && isVerbose()) {
+                LOG.error(exception);
+            } else if (isDebug()) {
+                LOG.debug(exception);
+            }
+        }
+
+        return new RubyNameError(this, getNameError(), message, name).toThrowable();
+    }
+
     /**
      * Construct a NameError with a pre-formatted message and name.
      *
@@ -4023,6 +4035,11 @@ public final class Ruby implements Constantizable {
     public RaiseException newNameError(String message, String name) {
         return newNameError(message, name, null);
     }
+
+    public RaiseException newNameError(String message, IRubyObject name) {
+        return newNameError(message, name, (Throwable) null, false);
+    }
+
 
     /**
      * Construct a NameError with an optional originating exception and a pre-formatted message.

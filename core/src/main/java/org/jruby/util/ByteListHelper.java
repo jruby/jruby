@@ -1,6 +1,7 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 
 /**
  * Helpers for working with bytelists.
@@ -60,9 +61,29 @@ public class ByteListHelper {
      * @return length if all codepoints match.  index (ignoring begin) if not.
      */
     public static int eachCodePointWhile(ByteList bytelist, int offset, CodePoint each) {
+        Encoding encoding = bytelist.getEncoding();
+
+        if (encoding != USASCIIEncoding.INSTANCE) {
+            return eachMBCCodePointWhile(bytelist, offset, each);
+        }
+
         byte[] bytes = bytelist.unsafeBytes();
         int len = bytelist.getRealSize();
+        int begin = bytelist.begin();
+        int end = begin + len;
+
+        for (int i = 0; i < end; i++) {
+            if (!each.call(i, bytes[i], encoding)) return i;
+        }
+
+        return len;
+    }
+
+    // Should also call through eachCodePointWhile since it will fast path US-ASCII.
+    private static int eachMBCCodePointWhile(ByteList bytelist, int offset, CodePoint each) {
         Encoding encoding = bytelist.getEncoding();
+        byte[] bytes = bytelist.unsafeBytes();
+        int len = bytelist.getRealSize();
         int begin = bytelist.begin();
         int end = begin + len;
         int n;
