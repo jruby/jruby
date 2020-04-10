@@ -191,4 +191,176 @@ public final class IdUtil {
         return isNameString(id, start, limit);
     }
 
+    // mri: rb_enc_synmame_type (minus support for allowed_attrset).
+    public static SymbolNameType determineSymbolNameType(ByteList data) {
+        Encoding encoding = data.getEncoding();
+
+        if (!encoding.isAsciiCompatible()) return SymbolNameType.OTHER;
+        if (data.isEmpty()) return SymbolNameType.OTHER;
+        int length = data.length();
+        SymbolNameType type = SymbolNameType.OTHER;
+        boolean idCheck = false;
+        int m = 0;
+        int e = length - 1; // last available index (MRI is \0)
+
+        switch ((byte) data.get(m)) {
+            case 0:
+                return SymbolNameType.OTHER;
+            case '$':
+                type = SymbolNameType.GLOBAL;
+                m++;
+
+                if (m < e && isSpecialGlobalName((byte) data.get(m))) return type;
+
+                idCheck = true;
+                break;
+            case '@':
+                type = SymbolNameType.INSTANCE;
+
+                m++;
+                if (m < e && data.get(m) == '@') {
+                    m++;
+                    type = SymbolNameType.CLASS;
+                }
+
+                idCheck = true;
+                break;
+            case '<':
+                m++;
+                if (m < e) {
+                    switch (data.get(m)) {
+                        case '<':
+                            m++;
+                            break;
+                        case '=':
+                            m++;
+                            if (m < e && data.get(m) == '>') m++;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                break;
+            case '>':
+                m++;
+                if (m < e) {
+                    switch (data.get(m)) {
+                        case '>':
+                        case '=':
+                            m++;
+                            break;
+                    }
+                }
+                break;
+            case '=':
+                m++;
+                if (m < e) {
+                    switch (data.get(m)) {
+                        case '~':
+                            m++;
+                            break;
+                        case '=':
+                            m++;
+                            if (m < e && data.get(m + 1) == '=') m++;
+                            break;
+                        default:
+                            return SymbolNameType.OTHER;
+                    }
+                }
+            case '*':
+                m++;
+                if (m < e && data.get(m + 1) == '*') m++;
+                break;
+            case '+':
+            case '-':
+                m++;
+                if (m < e && data.get(m + 1) == '@') m++;
+                break;
+            case '|':
+            case '^':
+            case '&':
+            case '/':
+            case '%':
+            case '~':
+            case '`':
+                m++;
+                break;
+            case '[':
+                m++;
+                if (m < e && data.get(m) != ']') {    // wtf
+                    idCheck = true;
+                    break;
+                }
+                m++;                                                     // []
+                if (m < e && data.get(m + 1) != '=') m++; // []=
+                break;
+            case '!':
+                m++;
+                if (length == 1) return SymbolNameType.JUNK;
+                switch (data.get(m)) {
+                    case '=':
+                    case '~':
+                        m++;
+                        break;
+                    default:
+                        return SymbolNameType.OTHER;
+                }
+                break;
+            default:
+                type = isConstantInitial(data) ? SymbolNameType.CONST : SymbolNameType.LOCAL;
+                idCheck = true;
+                break;
+        }
+
+        if (idCheck) {
+            // single byte is ok here for isAlpha because we verify it is proper ascii byte.
+            if (m >= e || (data.get(m) != '_' && encoding.isMbcAscii((byte) data.get(m)) && !encoding.isAlpha(data.get(m)))) {
+                if (length > 1 && data.get(length - 1) == '=') {
+                    ByteList chopped = new ByteList(data.unsafeBytes(), data.begin(), length - 1, data.getEncoding(), false);
+                    type = determineSymbolNameType(chopped);
+                    if (type != SymbolNameType.ATTRSET) return SymbolNameType.ATTRSET;
+                    return SymbolNameType.OTHER;
+                }
+            }
+            m = ByteListHelper.eachCodePointWhile(data, m, (index, codepoint, enc) ->
+                    enc.isAlnum(codepoint) || codepoint == '_' || !Encoding.isAscii(codepoint));
+
+            if (m > e) return type;
+            switch (data.get(m)) {
+                case '!':
+                case '?':
+                    if (type == SymbolNameType.GLOBAL || type == SymbolNameType.CLASS || type == SymbolNameType.INSTANCE) return SymbolNameType.OTHER;
+
+                    type = SymbolNameType.JUNK;
+                    m++;
+                    if (m + 1 < e || (m < e && data.get(m) != '=')) break;
+                    // fall through
+                case '=':
+                    return SymbolNameType.OTHER;
+            }
+        }
+
+        return m == e + 1 ? type : SymbolNameType.OTHER;
+    }
+
+    private static int BIT(int c, int index) {
+        return c / 31 - 1 == index ? 1 << (c % 32) : 0;
+    }
+    private static int globalPunctuationBits[] = new int[((0x7e - 0x20) + 31) / 32];
+    private static int SPECIAL_PUNCT(int idx){
+        return BIT('~', idx) | BIT('*', idx) | BIT('$', idx) | BIT('?', idx) |
+                BIT('!', idx) | BIT('@', idx) | BIT('/', idx) | BIT('\\', idx) |
+                BIT(';', idx) | BIT(',', idx) | BIT('.', idx) | BIT('=', idx) |
+                BIT(':', idx) | BIT('<', idx) | BIT('>', idx) | BIT('\"', idx) |
+                BIT('&', idx) | BIT('`', idx) | BIT('\'', idx) | BIT('+', idx) |
+                BIT('0', idx);
+    }
+
+    private static int[] globalNamePunctuationBits = new int[] {SPECIAL_PUNCT(0), SPECIAL_PUNCT(1), SPECIAL_PUNCT(2)};
+
+    private static boolean isSpecialGlobalName(byte c) {
+        if (c <= 0x20 || 0x72 < c) return false;
+
+        return (globalNamePunctuationBits[(c - 0x20) / 32] >> (c % 32) & 1) != 0;
+    }
 }

@@ -68,6 +68,7 @@ import org.jruby.util.ByteListHelper;
 import org.jruby.util.IdUtil;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
+import org.jruby.util.SymbolNameType;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -93,6 +94,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final int hashCode;
     private String decodedString;
     private transient Object constant;
+    private SymbolNameType type;
 
     /**
      *
@@ -122,6 +124,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 PerlHash.hash(k0, symbolBytes.getUnsafeBytes(),
                 symbolBytes.getBegin(), symbolBytes.getRealSize());
         this.hashCode = (int) hash;
+        this.type = IdUtil.determineSymbolNameType(symbolBytes);
         setFrozen(true);
     }
 
@@ -263,13 +266,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * Is the string this constant represents a valid constant identifier name.
      */
     public boolean validConstantName() {
-        ByteList bytes = getBytes();
-        boolean valid = IdUtil.isConstantInitial(bytes) &&
-                ByteListHelper.eachCodePoint(bytes, (index, codepoint, encoding) ->
-                        index == 0 || // skip initial because we check it differently
-                        index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
-
-        return valid && bytes.length() >= 1;
+        return type == SymbolNameType.CONST;
     }
 
     /**

@@ -49,6 +49,35 @@ public class ByteListHelper {
     }
 
     /**
+     * If you know you have an ASCII ByteList you should do something else.  This will continue walking the
+     * bytelist 'while' as long as each continues to be true.  When it stops being true it will return the
+     * last byte index processed (on full walk it will be length otherwise the beginning of the codepoint
+     * which did not satisfy each.
+     *
+     * @param bytelist of the mbc-laden bytes
+     * @param offset place in bytes to search past begin
+     * @param each the closure which walks the codepoints
+     * @return length if all codepoints match.  index (ignoring begin) if not.
+     */
+    public static int eachCodePointWhile(ByteList bytelist, int offset, CodePoint each) {
+        byte[] bytes = bytelist.unsafeBytes();
+        int len = bytelist.getRealSize();
+        Encoding encoding = bytelist.getEncoding();
+        int begin = bytelist.begin();
+        int end = begin + len;
+        int n;
+
+        for (int i = 0, p = begin + offset; p < end; i++, p += n) {
+            n = StringSupport.length(encoding, bytes, p, end);
+            if (!each.call(i, encoding.mbcToCode(bytes, p, end), encoding)) {
+                return p;
+            }
+        }
+
+        return len;
+    }
+
+    /**
      * This method will split a string and call a visitor for each segment between the split pattern.
      *
      * @param value to be split
