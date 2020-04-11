@@ -96,17 +96,21 @@ return_type: #{return_type}
 
     def self.make_class_jiable(string)
       list = []
+      first_cap = nil
       string.split('.').inject(false) do |last_cap, segment|
         if segment =~ /[A-Z]/
           list << ( last_cap ? "::#{segment}" : ".#{segment}" )
+          first_cap = true if first_cap.nil?
           true # last_cap
         else
           list << ".#{segment}"
+          first_cap = false if first_cap.nil?
           false # last_cap
         end
       end
+      prefix = first_cap ? "" : "Java::" # if the first is capitalized, try java imports
       # e.g. [".java", ".lang", ".String"] or [".byte[]"]
-      "Java::#{list.join('')[1..-1]}"
+      "#{prefix}#{list.join('')[1..-1]}"
     end
 
   end
