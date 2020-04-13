@@ -20,7 +20,7 @@ default_gems = [
     ['e2mmap', '0.1.0'],
     ['fileutils', '1.4.1'],
     ['forwardable', '1.2.0'],
-    ['io-console', '0.5.6'],
+    ['io-console', '0.5.6'], # dummy on JRuby but dependency of irb
     ['ipaddr', '1.2.2'],
     ['irb', '1.2.3'],
     ['jar-dependencies', '${jar-dependencies.version}'],
@@ -28,12 +28,15 @@ default_gems = [
     ['jruby-openssl', '0.10.4'],
     ['json', '${json.version}'],
     ['logger', '1.3.0'],
+    #['matrix', '#####'], # waiting on https://github.com/ruby/matrix/issues/12
     ['mutex_m', '0.1.0'],
+    #['ostruct', '#####'], # waiting on https://github.com/ruby/ostruct/issues/11
     ['prime', '0.1.0'],
     ['psych', '3.1.0'],
     ['racc', '1.5.0'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
+    ['reline', '0.1.3'], # dependency of irb
     ['rexml', '3.1.9'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
