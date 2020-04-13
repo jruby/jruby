@@ -167,7 +167,8 @@ project 'JRuby Lib Setup' do
                                         wrappers: true,
                                         ignore_dependencies: true,
                                         install_dir: ghome,
-                                        bin_dir: jruby_bin)
+                                        bin_dir: jruby_bin,
+                                        env_shebang: true )
         def installer.ensure_required_ruby_version_met; end
         installer.install
       end
