@@ -1484,7 +1484,7 @@ public final class Ruby implements Constantizable {
             if (!(classObj instanceof RubyClass)) throw newTypeError(str(this, ids(this, id), " is not a class"));
             RubyClass klazz = (RubyClass)classObj;
             if (klazz.getSuperClass().getRealClass() != superClass) {
-                throw newNameError(str(this, ids(this, id), " is already defined"), id);
+                throw newNameError(str(this, ids(this, id), " is already defined"), newSymbol(id));
             }
             // If we define a class in Ruby, but later want to allow it to be defined in Java,
             // the allocator needs to be updated

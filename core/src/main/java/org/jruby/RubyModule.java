@@ -1317,6 +1317,7 @@ public class RubyModule extends RubyObject {
                 s0 = " module";
             }
 
+            // FIXME: Since we found no method we probably do not have symbol entry...do not want to pollute symbol table here.
             throw runtime.newNameError("Undefined method " + name + " for" + s0 + " '" + c.getName() + "'", name);
         }
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
@@ -2114,7 +2115,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(IdUtil.isLocal(internedIdentifier) || identifier.validConstantName())) {
-            throw runtime.newNameError("invalid attribute name", internedIdentifier);
+            throw runtime.newNameError("invalid attribute name", identifier);
         }
 
         final String variableName = identifier.asInstanceVariable().idString();
@@ -2170,8 +2171,9 @@ public class RubyModule extends RubyObject {
         if (orig.method.isUndefined() || orig.method.isRefined()) {
             if (!isModule()
                     || (orig = runtime.getObject().searchWithCache(id)).method.isUndefined()) {
+                // FIXME: Do we potentially leak symbols here if they do not exist?
                 RubySymbol name = runtime.newSymbol(id);
-                throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), id);
+                throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), name);
             }
         }
 
@@ -3657,7 +3659,7 @@ public class RubyModule extends RubyObject {
             return runtime.newBoolean(getConstantSkipAutoload(symbol.idString(), inherit, inherit) != null);
         }
 
-        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol.idString());
+        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol);
     }
 
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
@@ -3721,7 +3723,7 @@ public class RubyModule extends RubyObject {
         int sep = name.indexOf("::");
         // symbol form does not allow ::
         if (symbol instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", name);
+            throw runtime.newNameError("wrong constant name", fullName);
         }
 
         RubyModule mod = this;
@@ -3733,7 +3735,7 @@ public class RubyModule extends RubyObject {
 
         // Bare ::
         if (name.length() == 0) {
-            throw runtime.newNameError("wrong constant name ", fullName.idString());
+            throw runtime.newNameError("wrong constant name ", fullName);
         }
 
         while ( ( sep = name.indexOf("::") ) != -1 ) {
@@ -4780,7 +4782,7 @@ public class RubyModule extends RubyObject {
 
         return RubySymbol.retrieveIDSymbol(nameString, (sym, newSym) -> {
             if (!sym.validConstantName()) {
-                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym.idString());
+                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym);
             }
         }).idString();
     }

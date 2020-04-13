@@ -179,7 +179,7 @@ public class RubyKernel {
         final String nonInternedName = symbol.asJavaString();
 
         if (!IdUtil.isValidConstantName(nonInternedName)) {
-            throw runtime.newNameError("autoload must be constant name", nonInternedName);
+            throw runtime.newNameError("autoload must be constant name", symbol);
         }
 
         final RubyString fileString =

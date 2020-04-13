@@ -46,6 +46,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.util.RubyStringBuilder.str;
+
 /**
  * @author  jpetersen
  */
@@ -149,7 +151,7 @@ public class RubyBinding extends RubyObject {
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
         int slot = evalScope.getStaticScope().isDefined(name);
 
-        if (slot == -1) throw context.runtime.newNameError("local variable `" + name +  "' not defined for " + inspect(), name);
+        if (slot == -1) throw context.runtime.newNameError(str(context.runtime, "local variable `", symbol, "' not defined for " + inspect()), symbol);
 
         return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
     }

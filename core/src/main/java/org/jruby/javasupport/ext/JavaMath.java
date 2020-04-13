@@ -86,7 +86,7 @@ public class JavaMath {
         private static RubyBigDecimal asRubyBigDecimal(final Ruby runtime, final java.math.BigDecimal value) {
             final RubyClass klass = runtime.getClass("BigDecimal");
             if (klass == null) { // user should require 'bigdecimal'
-                throw runtime.newNameError("uninitialized constant BigDecimal", "BigDecimal");
+                throw runtime.newNameError("uninitialized constant BigDecimal", runtime.newSymbol("BigDecimal"));
             }
             return new RubyBigDecimal(runtime, klass, value);
         }
