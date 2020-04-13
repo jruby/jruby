@@ -191,19 +191,6 @@ describe "A Java class with inner classes" do
   it "allows const_missing on a Java class to trigger properly" do
     expect {
       InnerClasses::NonExistentClass
-    }.to raise_error(NameError)
-  end
-
-  it "raises error importing lower-case names" do
-    expect do
-      java_import InnerClasses::lowerInnerClass
-    end.to raise_error(ArgumentError)
-  end
-
-  it "imports upper-case names successfully" do
-    expect do
-      java_import InnerClasses::CapsInnerClass
-    end.not_to raise_error
-    expect(CapsInnerClass).to eq(InnerClasses::CapsInnerClass)
+    }.to raise_error(NameError, "uninitialized constant Java::Java_integrationFixtures::InnerClasses::NonExistentClass")
   end
 end

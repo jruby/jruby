@@ -29,5 +29,22 @@ describe "java_import" do
     end
     expect(mod::Kind).to be Java::JavaNioFile::WatchEvent::Kind
   end
+
+  java_import "java_integration.fixtures.InnerClasses"
+
+  it "raises error importing lower-case names" do
+    expect do
+      Module.new { java_import InnerClasses::lowerInnerClass }
+    end.to raise_error(NameError, /cannot import Java class .*?InnerClasses\$lowerInnerClass.*?: wrong constant name lowerInnerClass/)
+  end
+
+  it "imports upper-case names successfully" do
+    mod = nil
+    expect do
+      mod = Module.new { java_import InnerClasses::CapsInnerClass }
+    end.not_to raise_error
+    expect(mod::CapsInnerClass).to eq(InnerClasses::CapsInnerClass)
+  end
+
 end
 
