@@ -1,7 +1,5 @@
 package org.jruby.ir.targets.simple;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
-import org.jruby.Ruby;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -13,8 +11,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
+import org.objectweb.asm.Opcodes;
 
-import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
