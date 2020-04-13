@@ -21,7 +21,7 @@ default_gems = [
     ['fileutils', '1.4.1'],
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
-    ['irb', '1.0.0'],
+    ['irb', '1.2.3'],
     ['jar-dependencies', '${jar-dependencies.version}'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.4'],
@@ -124,6 +124,7 @@ project 'JRuby Lib Setup' do
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
     jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
+    jruby_bin = File.join( ctx.project.basedir.to_pathname, '../bin')
     default_specs = File.join( jruby_gems, 'specifications', 'default' )
     bin_stubs = File.join( jruby_gems, 'gems' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
@@ -161,7 +162,8 @@ project 'JRuby Lib Setup' do
         installer = Gem::Installer.new( a.file.to_pathname,
                                         :wrappers => true,
                                         :ignore_dependencies => true,
-                                        :install_dir => ghome )
+                                        :install_dir => ghome,
+                                        :bin_dir => jruby_bin)
         def installer.ensure_required_ruby_version_met; end
         installer.install
       end
