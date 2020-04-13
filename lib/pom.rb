@@ -164,10 +164,10 @@ project 'JRuby Lib Setup' do
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         log a.file.to_pathname
         installer = Gem::Installer.new( a.file.to_pathname,
-                                        :wrappers => true,
-                                        :ignore_dependencies => true,
-                                        :install_dir => ghome,
-                                        :bin_dir => jruby_bin)
+                                        wrappers: true,
+                                        ignore_dependencies: true,
+                                        install_dir: ghome,
+                                        bin_dir: jruby_bin)
         def installer.ensure_required_ruby_version_met; end
         installer.install
       end
