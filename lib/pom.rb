@@ -27,9 +27,12 @@ default_gems = [
     ['jruby-openssl', '0.10.4'],
     ['json', '${json.version}'],
     ['logger', '1.3.0'],
+    #['matrix', '#####'], # waiting on https://github.com/ruby/matrix/issues/12
     ['mutex_m', '0.1.0'],
+    #['ostruct', '#####'], # waiting on https://github.com/ruby/ostruct/issues/11
     ['prime', '0.1.0'],
     ['psych', '3.1.0'],
+    ['racc', '1.5.0'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
     ['rexml', '3.1.9'],
@@ -123,6 +126,7 @@ project 'JRuby Lib Setup' do
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
     jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
+    jruby_bin = File.join( ctx.project.basedir.to_pathname, '../bin')
     default_specs = File.join( jruby_gems, 'specifications', 'default' )
     bin_stubs = File.join( jruby_gems, 'gems' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
@@ -158,9 +162,11 @@ project 'JRuby Lib Setup' do
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         log a.file.to_pathname
         installer = Gem::Installer.new( a.file.to_pathname,
-                                        :wrappers => true,
-                                        :ignore_dependencies => true,
-                                        :install_dir => ghome )
+                                        wrappers: true,
+                                        ignore_dependencies: true,
+                                        install_dir: ghome,
+                                        bin_dir: jruby_bin,
+                                        env_shebang: true )
         def installer.ensure_required_ruby_version_met; end
         installer.install
       end
@@ -216,13 +222,14 @@ project 'JRuby Lib Setup' do
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
         # copy bin files if the gem has any
-        bin = File.join( gems, "#{gem_name}", spec.bindir || 'bin' )        
-        if File.exists? bin
-          Dir[ File.join( bin, '*' ) ].each do |f|
-            log "copy to bin: #{File.basename( f )}"
-            target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
-            FileUtils.mkdir_p( File.dirname( target ) )
-            FileUtils.cp_r( f, target )
+        Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir || 'bin' )) do |bin|
+          if File.exists?(bin)
+            Dir[ File.join( bin, '*' ) ].each do |f|
+              log "copy to bin: #{File.basename( f )}"
+              target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
+              FileUtils.mkdir_p( File.dirname( target ) )
+              FileUtils.cp_r( f, target )
+            end
           end
         end
 
