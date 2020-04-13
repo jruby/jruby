@@ -54,12 +54,14 @@ class Module
         end
       end
 
-      unless constant =~ /^[A-Z].*/
-        raise ArgumentError.new "cannot import class `" + java_class.name + "' as `" + constant + "'"
-      end
-
-      if !const_defined?(constant) || const_get(constant) != import_class
-        const_set(constant, import_class)
+      begin
+        if !const_defined?(constant) || const_get(constant) != import_class
+          const_set(constant, import_class)
+        end
+      rescue NameError => e
+        ex = e.exception("cannot import Java class #{java_class.name.inspect} as `#{constant}' : #{e.message}")
+        ex.set_backtrace e.backtrace
+        raise ex
       end
 
       import_class
