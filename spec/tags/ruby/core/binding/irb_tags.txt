@@ -1,0 +1,1 @@
+fails(differing output due to newer irb+reline):Binding#irb creates an IRB session with the binding in scope
