@@ -30,6 +30,7 @@ default_gems = [
     ['mutex_m', '0.1.0'],
     ['prime', '0.1.0'],
     ['psych', '3.1.0'],
+    ['racc', '1.5.0'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
     ['rexml', '3.1.9'],
