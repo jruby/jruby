@@ -20,9 +20,8 @@ default_gems = [
     ['e2mmap', '0.1.0'],
     ['fileutils', '1.4.1'],
     ['forwardable', '1.2.0'],
-    ['io-console', '0.5.6'], # dummy on JRuby but dependency of irb
     ['ipaddr', '1.2.2'],
-    ['irb', '1.2.3'],
+    ['irb', '1.0.0'],
     ['jar-dependencies', '${jar-dependencies.version}'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.4'],
@@ -36,7 +35,6 @@ default_gems = [
     ['racc', '1.5.0'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
-    ['reline', '0.1.3'], # dependency of irb
     ['rexml', '3.1.9'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
