@@ -20,6 +20,7 @@ default_gems = [
     ['e2mmap', '0.1.0'],
     ['fileutils', '1.4.1'],
     ['forwardable', '1.2.0'],
+    ['io-console', '0.5.6'],
     ['ipaddr', '1.2.2'],
     ['irb', '1.2.3'],
     ['jar-dependencies', '${jar-dependencies.version}'],

@@ -98,6 +98,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>io-console</artifactId>
+      <version>0.5.6</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>ipaddr</artifactId>
       <version>1.2.2</version>
       <type>gem</type>
@@ -495,6 +508,9 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/forwardable*1.2.0.gem</include>
           <include>gems/forwardable*1.2.0/**</include>
           <include>specifications/forwardable*1.2.0.gemspec</include>
+          <include>cache/io-console*0.5.6.gem</include>
+          <include>gems/io-console*0.5.6/**</include>
+          <include>specifications/io-console*0.5.6.gemspec</include>
           <include>cache/ipaddr*1.2.2.gem</include>
           <include>gems/ipaddr*1.2.2/**</include>
           <include>specifications/ipaddr*1.2.2.gemspec</include>
