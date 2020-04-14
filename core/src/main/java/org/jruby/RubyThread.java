@@ -161,6 +161,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Thread-local tuple used for sleeping (semaphore, millis, nanos) */
     private final SleepTask2 sleepTask = new SleepTask2();
 
+    /** Whether this is an "adopted" thread not created by Ruby code */
+    private final boolean adopted;
+
     public static final int RUBY_MIN_THREAD_PRIORITY = -3;
     public static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
@@ -219,15 +222,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static final int INTERRUPT_ON_BLOCKING = 2;
     private static final int INTERRUPT_NEVER = 3;
 
-    protected RubyThread(Ruby runtime, RubyClass type) {
+    protected RubyThread(Ruby runtime, RubyClass type, boolean adopted) {
         super(runtime, type);
 
         finalResult = errorInfo = runtime.getNil();
         reportOnException = runtime.getReportOnException();
+
+        this.adopted = adopted;
     }
 
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
-        this(runtime, klass);
+        this(runtime, klass, true);
 
         startThread(runtime.getCurrentContext(), runnable);
     }
@@ -438,7 +443,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         threadClass.defineAnnotatedMethods(RubyThread.class);
 
-        RubyThread rubyThread = new RubyThread(runtime, threadClass);
+        // main thread is considered adopted, since it is initiated by the JVM
+        RubyThread rubyThread = new RubyThread(runtime, threadClass, true);
+
         // TODO: need to isolate the "current" thread from class creation
         rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
         runtime.getThreadService().setMainThread(Thread.currentThread(), rubyThread);
@@ -583,7 +590,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private static RubyThread adoptThread(final Ruby runtime, final ThreadService service,
                                           final RubyClass recv, final Thread thread) {
-        final RubyThread rubyThread = new RubyThread(runtime, recv);
+        final RubyThread rubyThread = new RubyThread(runtime, recv, true);
 
         rubyThread.threadImpl = new NativeThread(rubyThread, thread);
         ThreadContext context = service.registerNewThread(rubyThread);
@@ -685,7 +692,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
         Ruby runtime = recv.getRuntime();
-        RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
+        RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv, false);
 
         if (callInit) {
             rubyThread.callInit(args, block);
@@ -703,7 +710,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     protected static RubyThread startWaiterThread(final Ruby runtime, int pid, Block block) {
         final IRubyObject waiter = runtime.getProcess().getConstantAt("Waiter"); // Process::Waiter
-        final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) waiter);
+        final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) waiter, false);
         rubyThread.op_aset(runtime.newSymbol("pid"), runtime.newFixnum(pid));
         rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
         return rubyThread;
@@ -957,6 +964,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public boolean isAlive(){
         return threadImpl.isAlive() && getStatus() != Status.DEAD;
+    }
+
+    public boolean isAdopted() {
+        return adopted;
     }
 
     @JRubyMethod
