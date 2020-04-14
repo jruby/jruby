@@ -140,7 +140,6 @@ rubyspec_temp
 !bin/jruby.dll
 !bin/jruby.exe
 !bin/jruby.sh
-!bin/jruby200.sh
 !bin/jrubyc
 !bin/jrubyd.bat
 !bin/jrubyw.exe
