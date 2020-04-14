@@ -81,16 +81,17 @@ public class RubyNativeThread implements ThreadLike {
         return thread.isInterrupted();
     }
 
-    public final Thread getThread() {
-        return thread;
-    }
-
     public String toString() {
         return String.valueOf(thread);
     }
 
     public Thread nativeThread() {
         return thread;
+    }
+
+    @Override
+    public StackTraceElement[] getStackTrace() {
+        return thread.getStackTrace();
     }
 
     @Override
@@ -125,9 +126,6 @@ public class RubyNativeThread implements ThreadLike {
         // "Ruby-0-Thread-17@worker#1: (irb):21"
         String newName;
         String setName = rubyName;
-        Thread thread = getThread();
-
-        if (thread == null) return;
 
         final String currentName = thread.getName();
         if (currentName != null && currentName.startsWith(RUBY_THREAD_PREFIX)) {

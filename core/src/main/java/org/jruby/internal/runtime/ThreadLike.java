@@ -28,6 +28,8 @@
 
 package org.jruby.internal.runtime;
 
+import org.jruby.runtime.backtrace.BacktraceData;
+
 import java.util.concurrent.ExecutionException;
 
 public interface ThreadLike {
@@ -54,6 +56,8 @@ public interface ThreadLike {
     public String getRubyName();
 
     public String getReportName();
+
+    public StackTraceElement[] getStackTrace();
 
     ThreadLike DUMMY = new ThreadLike() {
         @Override
@@ -104,6 +108,11 @@ public interface ThreadLike {
         @Override
         public String getReportName() {
             return "uninitialized thread";
+        }
+
+        @Override
+        public StackTraceElement[] getStackTrace() {
+            return BacktraceData.EMPTY_STACK_TRACE;
         }
     };
 }

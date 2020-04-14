@@ -29,6 +29,7 @@
 package org.jruby.internal.runtime;
 
 import org.jruby.RubyThread;
+import org.jruby.runtime.backtrace.BacktraceData;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -89,7 +90,7 @@ public class AdoptedNativeThread implements ThreadLike {
         return false;
     }
 
-    public final Thread getThread() {
+    final Thread getThread() {
         return nativeThread.get();
     }
 
@@ -99,6 +100,15 @@ public class AdoptedNativeThread implements ThreadLike {
 
     public Thread nativeThread() {
         return nativeThread.get();
+    }
+
+    @Override
+    public StackTraceElement[] getStackTrace() {
+        Thread thread = nativeThread();
+
+        if (thread == null) return BacktraceData.EMPTY_STACK_TRACE;
+
+        return thread.getStackTrace();
     }
 
     @Override
