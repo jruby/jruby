@@ -3282,6 +3282,9 @@ public final class Ruby implements Constantizable {
             }
         }
 
+        // Shut down thread service after at_exit hooks have run
+        threadService.teardown();
+
         // Fetches (and unsets) the SIGEXIT handler, if one exists.
         IRubyObject trapResult = RubySignal.__jtrap_osdefault_kernel(this.getNil(), this.newString("EXIT"));
         if (trapResult instanceof RubyArray) {
