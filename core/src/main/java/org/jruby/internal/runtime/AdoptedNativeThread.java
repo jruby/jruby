@@ -28,35 +28,22 @@
 
 package org.jruby.internal.runtime;
 
+import org.jruby.RubyThread;
+import org.jruby.runtime.backtrace.BacktraceData;
+
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
-import org.jruby.RubyString;
-import org.jruby.RubyThread;
-import org.jruby.runtime.builtin.IRubyObject;
-
 /**
- * @author cnutter
+ * A ThreadLike that weakly references its native thread, for adopted JVM threads we don't want to root.
  */
-public class NativeThread implements ThreadLike {
+public class AdoptedNativeThread implements ThreadLike {
     private final Reference<Thread> nativeThread;
     public final RubyThread rubyThread;
-    public String rubyName;
-    
-    public NativeThread(RubyThread rubyThread, Thread nativeThread) {
+
+    public AdoptedNativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
         this.nativeThread = new WeakReference<>(nativeThread);
-        this.rubyName = null;
-    }
-    
-    public void start() {
-        Thread thread = getThread();
-        
-        if (thread == null) {
-            throw new RuntimeException("BUG: thread was collected before start()");
-        }
-
-        thread.start();
     }
     
     public void interrupt() {
@@ -103,7 +90,7 @@ public class NativeThread implements ThreadLike {
         return false;
     }
 
-    public final Thread getThread() {
+    final Thread getThread() {
         return nativeThread.get();
     }
 
@@ -116,15 +103,28 @@ public class NativeThread implements ThreadLike {
     }
 
     @Override
+    public StackTraceElement[] getStackTrace() {
+        Thread thread = nativeThread();
+
+        if (thread == null) return BacktraceData.EMPTY_STACK_TRACE;
+
+        return thread.getStackTrace();
+    }
+
+    @Override
     public void setRubyName(String id) {
-        this.rubyName = id;
-        updateName();
+        try {
+            Thread thread = getThread();
+            if (thread != null) thread.setName(id);
+        } catch (SecurityException ignore) { } // current thread can not modify
     }
 
     @Override
     @Deprecated
     public String getRubyName() {
-        return rubyName;
+        Thread thread = getThread();
+        if (thread != null) return thread.getName();
+        return null;
     }
 
     @Override
@@ -134,42 +134,6 @@ public class NativeThread implements ThreadLike {
         Thread thread = getThread();
         if (thread != null) nativeName = thread.getName();
 
-        if (rubyName == null || rubyName.length() == 0) {
-            return nativeName.equals("") ? "(unnamed)" :  nativeName;
-        }
-
-        return nativeName.equals("") ? rubyName : rubyName + " (" + nativeName + ")";
-    }
-
-    private static final String RUBY_THREAD_PREFIX = "Ruby-";
-
-    void updateName() {
-        // "Ruby-0-Thread-16: (irb):21"
-        // "Ruby-0-Thread-17@worker#1: (irb):21"
-        String newName;
-        String setName = rubyName;
-        Thread thread = getThread();
-
-        if (thread == null) return;
-
-        final String currentName = thread.getName();
-        if (currentName != null && currentName.startsWith(RUBY_THREAD_PREFIX)) {
-            final int i = currentName.indexOf('@'); // Thread#name separator
-            if (i == -1) { // name not set yet: "Ruby-0-Thread-42: FILE:LINE"
-                int end = currentName.indexOf(':');
-                if (end == -1) end = currentName.length();
-                final String prefix = currentName.substring(0, end);
-                newName = currentName.replace(prefix, prefix + '@' + setName);
-
-            } else { // name previously set: "Ruby-0-Thread-42@foo: FILE:LINE"
-                final String prefix = currentName.substring(0, i); // Ruby-0-Thread-42
-                int end = currentName.indexOf(':', i);
-                if (end == -1) end = currentName.length();
-                final String prefixWithName = currentName.substring(0, end); // Ruby-0-Thread-42@foo:
-                newName = currentName.replace(prefixWithName, setName == null ? prefix : (prefix + '@' + setName));
-            }
-        } else return; // not a new-thread that and does not match out Ruby- prefix
-        // ... very likely user-code set the java thread name - thus do not mess!
-        try { thread.setName(newName); } catch (SecurityException ignore) { } // current thread can not modify
+        return nativeName.equals("") ? "(unnamed)" :  nativeName;
     }
 }
