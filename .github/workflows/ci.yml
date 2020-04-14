@@ -85,6 +85,10 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: bootstrap
         run: mvn -Pbootstrap clean package
+      - name: test profile
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: '-Ptest'
       - name: main profile
         run: tool/maven-ci-script.sh
         env: 
@@ -93,7 +97,27 @@ jobs:
         run: tool/maven-ci-script.sh
         env: 
           PHASE: '-Pdist'
+      - name: jruby-jars profile
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: '-Pjruby-jars'
       - name: complete profile
         run: tool/maven-ci-script.sh
-        env: 
+        env:
           PHASE: '-Pcomplete'
+      - name: osgi profile
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: '-Posgi'
+      - name: main extended
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: '-Pmain,test -Dinvoker.test=extended'
+      - name: jruby-jars extended
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: '-Pjruby-jars,test -Dinvoker.test=extended'
+      - name: dependency convergence
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: '-Pmain -Dinvoker.test=GH-6081* integration-test'
