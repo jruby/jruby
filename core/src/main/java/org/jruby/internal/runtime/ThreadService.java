@@ -44,6 +44,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.Future;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
@@ -127,7 +128,7 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
      * that when the Thread/Future goes away, eventually its entry in this map
      * will follow.
      */
-    private final Map<Object, RubyThread> rubyThreadMap;
+    private final Map<Thread, RubyThread> rubyThreadMap;
 
     private final ReentrantLock criticalLock = new ReentrantLock();
 
@@ -148,6 +149,18 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     }
 
     public void teardown() {
+        // kill and await all live Ruby threads
+        for (RubyThread rth : getActiveRubyThreads()) {
+            if (rth.getContext() == mainContext) return;
+
+            try {
+                rth.kill();
+                rth.join(mainContext, IRubyObject.NULL_ARRAY);
+            } catch (RaiseException re) {
+                // ignore Ruby exceptions raised out of join
+            }
+        }
+
         // clear main context reference
         mainContext = null;
 
@@ -242,29 +255,15 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
 
     public RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
-        ArrayList<RubyThread> rtList;
-        synchronized(rubyThreadMap) {
-            rtList = new ArrayList<>(rubyThreadMap.size());
+        ArrayList<RubyThread> rtList = new ArrayList<>(rubyThreadMap.size());
+        rubyThreadMap.forEach((th, rth) -> {
+            if (th == null) return;
 
-            for (Map.Entry<Object, RubyThread> entry : rubyThreadMap.entrySet()) {
-                Object key = entry.getKey();
-                if (key == null) continue;
+            // thread is not alive, skip it
+            if (!th.isAlive()) return;
 
-                if (key instanceof Thread) {
-                    Thread t = (Thread)key;
-
-                    // thread is not alive, skip it
-                    if (!t.isAlive()) continue;
-                } else if (key instanceof Future) {
-                    Future f = (Future)key;
-
-                    // future is done or cancelled, skip it
-                    if (f.isDone() || f.isCancelled()) continue;
-                }
-
-                rtList.add(entry.getValue());
-            }
-        }
+            rtList.add(rth);
+        });
         return rtList.toArray(new RubyThread[rtList.size()]);
     }
 
@@ -306,7 +305,7 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
 
     @Deprecated
     public Map<Object, RubyThread> getRubyThreadMap() {
-        return rubyThreadMap;
+        return (Map<Object, RubyThread>) (Map) rubyThreadMap;
     }
 
     @Deprecated
