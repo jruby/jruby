@@ -85,10 +85,10 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: bootstrap
         run: mvn -Pbootstrap clean package
-      - name: test profile
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: '-Ptest'
+#      - name: test profile
+#        run: tool/maven-ci-script.sh
+#        env:
+#          PHASE: '-Ptest'
       - name: main profile
         run: tool/maven-ci-script.sh
         env: 
