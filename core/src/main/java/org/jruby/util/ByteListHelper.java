@@ -2,6 +2,10 @@ package org.jruby.util;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.Ruby;
+
+import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * Helpers for working with bytelists.
@@ -60,7 +64,7 @@ public class ByteListHelper {
      * @param each the closure which walks the codepoints
      * @return length if all codepoints match.  index (ignoring begin) if not.
      */
-    public static int eachCodePointWhile(ByteList bytelist, int offset, CodePoint each) {
+    public static int eachCodePointWhile(Ruby runtime, ByteList bytelist, int offset, CodePoint each) {
         Encoding encoding = bytelist.getEncoding();
 
         if (encoding != USASCIIEncoding.INSTANCE) {
@@ -72,8 +76,10 @@ public class ByteListHelper {
         int begin = bytelist.begin();
         int end = begin + len;
 
-        for (int i = 0; i < end; i++) {
-            if (!each.call(i, bytes[i], encoding)) return i;
+        for (int i = offset; i < end; i++) {
+            byte c = bytes[i];
+            if (!Encoding.isAscii(c)) throw runtime.newEncodingError(str(runtime, "invalid symbol in encoding " + encoding + " :" , inspectIdentifierByteList(runtime, bytelist)));
+            if (!each.call(i, bytes[i] & 0xff, encoding)) return i;
         }
 
         return len;

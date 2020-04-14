@@ -124,7 +124,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 PerlHash.hash(k0, symbolBytes.getUnsafeBytes(),
                 symbolBytes.getBegin(), symbolBytes.getRealSize());
         this.hashCode = (int) hash;
-        this.type = IdUtil.determineSymbolNameType(symbolBytes);
+        this.type = IdUtil.determineSymbolNameType(runtime, symbolBytes);
         setFrozen(true);
     }
 
@@ -285,13 +285,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * Is the string this constant represents a valid constant identifier name.
      */
     public boolean validClassVariableName() {
-        boolean valid = ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-                index == 0 && codepoint == '@' ||
-                        index == 1 && codepoint == '@' ||
-                        index == 2 && (!encoding.isDigit(codepoint)) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_') ||
-                        index > 2 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
-
-        return valid && getBytes().length() >= 3; // FIXME: good enough on length check?  Trying to avoid counter.
+        return type == SymbolNameType.CLASS;
     }
 
 
@@ -888,10 +882,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input, UnmarshalStream.MarshalState state) throws java.io.IOException {
         ByteList byteList = input.unmarshalString();
+        byteList.setEncoding(ASCIIEncoding.INSTANCE);
 
-        if (RubyString.scanForCodeRange(byteList) == CR_7BIT) {
-            byteList.setEncoding(USASCIIEncoding.INSTANCE);
-        }
+        // Extra complicated interaction...
+        // We initially set to binary as newSymbol will make it US-ASCII if possible and code below will set explicit
+        // encoding otherwise.  Motivation here is binary is capable of being walked during symbol type calculation
+        // (and at this point the bytelist can be data of any encoding without us knowing what).  The proper type
+        // calculation will happen for non-US-ASCII below when it decodes the encoding.  setEncoding will recalculate
+        // symbol type properly.  This is all to work around registerLinkTarget being an ordered list.  So a symbol
+        // retrieved while decoding the encoding would make this symbol get registered out of order...
 
         // Need symbol to register before encoding, so pass in a lambda for remaining unmarshal logic
         RubySymbol result = newSymbol(input.getRuntime(), byteList,
@@ -907,7 +906,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                             if (enc == null) throw new RuntimeException("BUG: No encoding found in marshal stream");
 
                             // only change encoding if the symbol has been newly-created
-                            if (newSym) sym.getBytes().setEncoding(enc);
+                            if (newSym) sym.setEncoding(enc);
 
                             state.setIvarWaiting(false);
                         } catch (Throwable t) {
@@ -940,6 +939,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public void setEncoding(Encoding e) {
         symbolBytes.setEncoding(e);
+        type = IdUtil.determineSymbolNameType(getRuntime(), symbolBytes);
     }
 
     public static final class SymbolTable {

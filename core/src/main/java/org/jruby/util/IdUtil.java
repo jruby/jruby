@@ -34,6 +34,7 @@ import org.jcodings.Config;
 import org.jcodings.Encoding;
 import org.jcodings.IntHolder;
 import org.jcodings.unicode.UnicodeCodeRange;
+import org.jruby.Ruby;
 
 public final class IdUtil {
     /**
@@ -192,7 +193,7 @@ public final class IdUtil {
     }
 
     // mri: rb_enc_synmame_type (minus support for allowed_attrset).
-    public static SymbolNameType determineSymbolNameType(ByteList data) {
+    public static SymbolNameType determineSymbolNameType(Ruby runtime, ByteList data) {
         Encoding encoding = data.getEncoding();
 
         if (!encoding.isAsciiCompatible()) return SymbolNameType.OTHER;
@@ -317,12 +318,12 @@ public final class IdUtil {
             if (m >= e || (data.get(m) != '_' && encoding.isMbcAscii((byte) data.get(m)) && !encoding.isAlpha(data.get(m)))) {
                 if (length > 1 && data.get(length - 1) == '=') {
                     ByteList chopped = new ByteList(data.unsafeBytes(), data.begin(), length - 1, data.getEncoding(), false);
-                    type = determineSymbolNameType(chopped);
+                    type = determineSymbolNameType(runtime, chopped);
                     if (type != SymbolNameType.ATTRSET) return SymbolNameType.ATTRSET;
                     return SymbolNameType.OTHER;
                 }
             }
-            m = ByteListHelper.eachCodePointWhile(data, m, (index, codepoint, enc) ->
+            m = ByteListHelper.eachCodePointWhile(runtime, data, m, (index, codepoint, enc) ->
                     enc.isAlnum(codepoint) || codepoint == '_' || !Encoding.isAscii(codepoint));
 
             if (m > e) return type;
