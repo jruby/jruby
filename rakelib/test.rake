@@ -8,10 +8,10 @@ task :test => "test:short"
 
 if ENV['CI']
   # MRI tests have a different flag for color
-  ADDITIONAL_TEST_OPTIONS = "-v --color=never --tty=no"
+  ADDITIONAL_TEST_OPTIONS = "--color=never --tty=no"
 
   # for normal test/unit tests
-  ENV['TESTOPT'] = "-v --no-use-color"
+  ENV['TESTOPT'] = "--no-use-color"
 
   # extend timeouts in MRI tests
   ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '20'
