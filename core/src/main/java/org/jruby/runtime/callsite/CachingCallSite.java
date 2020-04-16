@@ -266,7 +266,7 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndGet(self, selfType, methodName);
     }
 
-    @Deprecated
+    // For use directly by classes (e.g. RubyClass) where the metaclass is the caller.
     public final CacheEntry retrieveCache(RubyClass selfType) {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
