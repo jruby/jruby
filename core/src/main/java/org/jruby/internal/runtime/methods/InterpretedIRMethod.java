@@ -271,6 +271,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         }
     }
 
+    @Deprecated
     public String getClassName(ThreadContext context) {
         return null;
     }
