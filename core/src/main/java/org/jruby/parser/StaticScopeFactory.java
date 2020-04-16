@@ -30,7 +30,6 @@ public class StaticScopeFactory {
         return new StaticScope(StaticScope.Type.EVAL, parent);
     }
 
-    @Deprecated
     public StaticScope newEvalScope(StaticScope parent, String[] names) {
         return new StaticScope(StaticScope.Type.EVAL, parent, names);
     }
