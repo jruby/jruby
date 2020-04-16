@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -375,7 +376,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "default=", required = 1)
     public IRubyObject default_value_set(ThreadContext context, final IRubyObject defaultValue) {
-        return getOrCreateRubyHashMap(context.runtime).default_value_set(defaultValue);
+        return getOrCreateRubyHashMap(context.runtime).default_value_set(context, defaultValue);
     }
 
     /** rb_hash_default_proc
@@ -383,7 +384,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "default_proc")
     public IRubyObject default_proc(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).default_proc();
+        return getOrCreateRubyHashMap(context.runtime).default_proc(context);
     }
 
     /** rb_hash_set_default_proc
@@ -391,7 +392,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "default_proc=")
     public IRubyObject set_default_proc(ThreadContext context, IRubyObject proc) {
-        return getOrCreateRubyHashMap(context.runtime).set_default_proc(proc);
+        return getOrCreateRubyHashMap(context.runtime).set_default_proc(context, proc);
     }
 
     /** rb_hash_inspect
@@ -457,7 +458,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = { "to_hash", "to_h" })
     public RubyHash to_hash(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).to_hash();
+        return getOrCreateRubyHashMap(context.runtime).to_hash(context);
     }
 
     /** rb_hash_aset
