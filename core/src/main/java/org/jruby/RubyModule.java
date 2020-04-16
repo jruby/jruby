@@ -2114,7 +2114,7 @@ public class RubyModule extends RubyObject {
             visibility = PRIVATE;
         }
 
-        if (!(IdUtil.isLocal(internedIdentifier) || identifier.validConstantName())) {
+        if (!identifier.validLocalVariableName() && !identifier.validConstantName()) {
             throw runtime.newNameError("invalid attribute name", identifier);
         }
 
@@ -4398,6 +4398,7 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
+    @Deprecated
     public boolean fastIsConstantDefined(String internedName) {
         assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
@@ -4417,10 +4418,12 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
+    @Deprecated
     public boolean fastIsConstantDefined19(String internedName) {
         return fastIsConstantDefined19(internedName, true);
     }
 
+    @Deprecated
     public boolean fastIsConstantDefined19(String internedName, boolean inherit) {
         assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);

@@ -71,7 +71,8 @@ public final class IdUtil {
     
     /**
      * rb_is_local_id and is_local_id
-     */    
+     */
+    @Deprecated
     public static boolean isLocal(String id) {
         return !isGlobal(id) && !isClassVariable(id) && !isInstanceVariable(id) && !isConstant(id) && !isPredicate(id) && !isSpecial(id);
     }
