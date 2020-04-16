@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -75,7 +76,6 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
-import static org.jruby.util.StringSupport.EMPTY_BYTELIST_ARRAY;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.util.Iterator;
@@ -200,7 +200,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
-        runtime.setRegexp(regexpClass);
 
         regexpClass.setClassIndex(ClassIndex.REGEXP);
         regexpClass.setReifiedClass(RubyRegexp.class);
