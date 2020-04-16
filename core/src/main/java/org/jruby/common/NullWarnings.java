@@ -49,11 +49,13 @@ public class NullWarnings implements IRubyWarnings {
         return runtime;
     }
 
+    @Deprecated
     public void warn(ID id, ISourcePosition position, String message) {}
     public void warn(ID id, String fileName, int lineNumber, String message) {}
     public void warn(ID id, String fileName, String message) {}
     public void warn(ID id, String message) {}
     public void warning(ID id, String message) {}
+    @Deprecated
     public void warning(ID id, ISourcePosition position, String message) {}
     public void warning(ID id, String fileName, int lineNumber, String message) {}
     
