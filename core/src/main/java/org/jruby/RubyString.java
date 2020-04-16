@@ -1768,7 +1768,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private boolean cmpIsBuiltin(ThreadContext context) {
-        return sites(context).cmp.isBuiltin(metaClass);
+        return sites(context).cmp.isBuiltin(this);
     }
 
     public IRubyObject str_eql_p(ThreadContext context, IRubyObject other) {

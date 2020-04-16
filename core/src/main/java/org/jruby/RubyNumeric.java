@@ -278,13 +278,13 @@ public class RubyNumeric extends RubyObject {
             case FLOAT:
                 return ((RubyFloat) arg).value;
             case FIXNUM:
-                if (context.sites.Fixnum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyFixnum) arg).value;
+                if (context.sites.Fixnum.to_f.isBuiltin(arg)) return ((RubyFixnum) arg).value;
                 break;
             case BIGNUM:
-                if (context.sites.Bignum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyBignum) arg).getDoubleValue();
+                if (context.sites.Bignum.to_f.isBuiltin(arg)) return ((RubyBignum) arg).getDoubleValue();
                 break;
             case RATIONAL:
-                if (context.sites.Rational.to_f.isBuiltin(getMetaClass(arg))) return ((RubyRational) arg).getDoubleValue();
+                if (context.sites.Rational.to_f.isBuiltin(arg)) return ((RubyRational) arg).getDoubleValue();
                 break;
             case STRING:
             case NIL:
@@ -1071,10 +1071,8 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: num_step_negative_p
     private static boolean numStepNegative(ThreadContext context, Ruby runtime, IRubyObject num) {
-        if (num instanceof RubyInteger) {
-            if (context.sites.Integer.op_lt.isBuiltin(runtime.getInteger())) {
-                return ((RubyInteger) num).isNegative();
-            }
+        if (num instanceof RubyInteger && context.sites.Integer.op_lt.isBuiltin(num)) {
+            return ((RubyInteger) num).isNegative();
         }
 
         RubyFixnum zero = RubyFixnum.zero(runtime);
