@@ -152,7 +152,7 @@ public class IRReader implements IRPersistenceValues {
             return new IRClosure(manager, lexicalParent, line, staticScope, signature);
         case EVAL_SCRIPT:
             // SSS FIXME: This is broken right now -- the isModuleEval arg has to be persisted and then read back.
-            return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope, EvalType.NONE);
+            return new IREvalScript(manager, lexicalParent, lexicalParent.getFile(), line, staticScope, EvalType.NONE);
         }
 
         throw new RuntimeException("No such scope type: " + type);
