@@ -7,7 +7,6 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.*;
 import org.jruby.parser.StaticScope;
@@ -88,7 +87,7 @@ public class IRReader implements IRPersistenceValues {
         } else {
             name = decoder.decodeByteList();
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: name = " + name);
-            parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
+            parent = decoder.decodeScope();
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: parent = " + parent);
         }
 
@@ -129,8 +128,6 @@ public class IRReader implements IRPersistenceValues {
 
     public static IRScope createScope(IRManager manager, IRScopeType type, ByteList byteName, String file, int line,
                                       IRScope lexicalParent, Signature signature, StaticScope staticScope) {
-        Ruby runtime = manager.getRuntime();
-
         switch (type) {
         case CLASS_BODY:
             // FIXME: add saving on noe-time usage to writeer/reader
