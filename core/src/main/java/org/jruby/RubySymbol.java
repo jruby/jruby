@@ -284,11 +284,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
 
     public boolean validLocalVariableName() {
-        boolean valid =  ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-                index == 0 && (!encoding.isDigit(codepoint) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_')) ||
-                        index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
-
-        return valid && getBytes().length() >= 1;
+        return type == SymbolNameType.LOCAL;
     }
 
     @Override
