@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -58,7 +59,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
-import org.jruby.util.Numeric;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
@@ -450,7 +450,7 @@ public class RubyGlobal {
 
         @JRubyMethod
         public RubyHash to_h(ThreadContext context, Block block){
-            RubyHash h = to_hash();
+            RubyHash h = to_hash(context);
             return block.isGiven() ? h.to_h_block(context, block) : h;
         }
 
