@@ -315,13 +315,13 @@ public final class IdUtil {
 
         if (idCheck) {
             // single byte is ok here for isAlpha because we verify it is proper ascii byte.
-            if (m >= e || (data.get(m) != '_' && encoding.isMbcAscii((byte) data.get(m)) && !encoding.isAlpha(data.get(m)))) {
+            if (m > e || (data.get(m) != '_' && encoding.isMbcAscii((byte) data.get(m)) && !encoding.isAlpha(data.get(m)))) {
                 if (length > 1 && data.get(length - 1) == '=') {
                     ByteList chopped = new ByteList(data.unsafeBytes(), data.begin(), length - 1, data.getEncoding(), false);
                     type = determineSymbolNameType(runtime, chopped);
                     if (type != SymbolNameType.ATTRSET) return SymbolNameType.ATTRSET;
-                    return SymbolNameType.OTHER;
                 }
+                return SymbolNameType.OTHER;
             }
             m = ByteListHelper.eachCodePointWhile(runtime, data, m, (index, codepoint, enc) ->
                     enc.isAlnum(codepoint) || codepoint == '_' || !Encoding.isAscii(codepoint));

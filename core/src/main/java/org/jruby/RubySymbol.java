@@ -261,7 +261,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return other == this;
     }
 
-    // FIXME: Symbol (like MRI) should get flag set for types of identifiers it can represent so we don't recalc this all the time (and others)
     /**
      * Is the string this constant represents a valid constant identifier name.
      */
@@ -273,12 +272,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * Is the string this constant represents a valid constant identifier name.
      */
     public boolean validInstanceVariableName() {
-        boolean valid = ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-            index == 0 && codepoint == '@' ||
-                    index == 1 && (!encoding.isDigit(codepoint)) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_') ||
-                    index > 1 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
-
-        return valid && getBytes().length() >= 2; // FIXME: good enough on length check?  Trying to avoid counter.
+        return type == SymbolNameType.INSTANCE;
     }
 
     /**
