@@ -40,7 +40,7 @@ public class NativeCallbackFactory {
             return (Pointer) callable;
         }
 
-        Object ffiHandle = callable.getMetaClass().getRealClass().getFFIHandleAccessorField().getVariableAccessorForRead().get(callable);
+        Object ffiHandle = callable.getMetaClass().getRealClass().getVariableTableManager().getFFIHandleAccessorForRead().get(callable);
         NativeCallbackPointer cbptr;
         if (ffiHandle instanceof NativeCallbackPointer && ((cbptr = (NativeCallbackPointer) ffiHandle).cbInfo == callbackInfo)) {
             return cbptr;
