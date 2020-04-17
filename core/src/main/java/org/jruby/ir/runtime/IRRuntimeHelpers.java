@@ -672,11 +672,7 @@ public class IRRuntimeHelpers {
         CoverageData data = context.runtime.getCoverageData();
 
         if (data.isCoverageEnabled()) {
-            int[] lines = data.getCoverage().get(filename);
-
-            if (lines == null || lines.length <= line) return;
-
-            lines[line] += 1;
+            data.coverLine(filename, line);
         }
     }
 

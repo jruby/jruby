@@ -339,7 +339,7 @@ public class IRBuilder {
             needsLineNumInfo = false;
 
             if (needsCodeCoverage()) {
-                addInstr(new LineNumberInstr(_lastProcessedLineNum, true, (coverageMode & CoverageData.ONESHOT_LINES) != 0));
+                addInstr(new LineNumberInstr(_lastProcessedLineNum, coverageMode));
             } else {
                 addInstr(manager.newLineNumber(_lastProcessedLineNum));
             }

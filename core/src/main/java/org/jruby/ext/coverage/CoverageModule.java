@@ -35,6 +35,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.IntList;
 
 /**
  * Implementation of Ruby 1.9.2's "Coverage" module
@@ -87,13 +88,17 @@ public class CoverageModule {
     @JRubyMethod(module = true)
     public static IRubyObject result(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
-        
-        if (!runtime.getCoverageData().isCoverageEnabled()) {
+
+        CoverageData coverageData = runtime.getCoverageData();
+
+        if (!coverageData.isCoverageEnabled()) {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
 
-        IRubyObject result = convertCoverageToRuby(context, runtime, runtime.getCoverageData().getCoverage());
-        runtime.getCoverageData().resetCoverage();
+        IRubyObject result = convertCoverageToRuby(context, runtime, coverageData.getCoverage(), coverageData.getMode());
+
+        coverageData.resetCoverage();
+
         return result;
     }
 
@@ -101,11 +106,13 @@ public class CoverageModule {
     public static IRubyObject peek_result(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
 
-        if (!runtime.getCoverageData().isCoverageEnabled()) {
+        CoverageData coverageData = runtime.getCoverageData();
+
+        if (!coverageData.isCoverageEnabled()) {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
         
-        return convertCoverageToRuby(context, runtime, runtime.getCoverageData().getCoverage());
+        return convertCoverageToRuby(context, runtime, coverageData.getCoverage(), coverageData.getMode());
     }
 
     @JRubyMethod(name = "running?", module = true)
@@ -113,19 +120,35 @@ public class CoverageModule {
         return context.runtime.getCoverageData().isCoverageEnabled() ? context.tru : context.fals;
     }
 
-    private static IRubyObject convertCoverageToRuby(ThreadContext context, Ruby runtime, Map<String, int[]> coverage) {
+    private static IRubyObject convertCoverageToRuby(ThreadContext context, Ruby runtime, Map<String, IntList> coverage, int mode) {
         // populate a Ruby Hash with coverage data
         RubyHash covHash = RubyHash.newHash(runtime);
-        for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
+        for (Map.Entry<String, IntList> entry : coverage.entrySet()) {
             if (entry.getKey().equals(CoverageData.STARTED)) continue; // ignore our hidden marker
 
-            final int[] val = entry.getValue();
-            RubyArray ary = RubyArray.newArray(runtime, val.length);
-            for (int i = 0; i < val.length; i++) {
-                int integer = val[i];
-                ary.store(i, integer == -1 ? context.nil : runtime.newFixnum(integer));
+            final IntList val = entry.getValue();
+            boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
+
+            RubyArray ary = RubyArray.newArray(runtime, val.size());
+            for (int i = 0; i < val.size(); i++) {
+                int integer = val.get(i);
+                if (oneshot) {
+                    ary.push(runtime.newFixnum(integer + 1));
+                } else {
+                    ary.store(i, integer == -1 ? context.nil : runtime.newFixnum(integer));
+                }
             }
-            covHash.fastASetCheckString(runtime, RubyString.newString(runtime, entry.getKey()), ary);
+
+            RubyString key = RubyString.newString(runtime, entry.getKey());
+            IRubyObject value = ary;
+
+            if (oneshot) {
+                RubyHash oneshotHash = RubyHash.newSmallHash(runtime);
+                oneshotHash.fastASetSmall(runtime.newSymbol("oneshot_lines"), ary);
+                value = oneshotHash;
+            }
+
+            covHash.fastASetCheckString(runtime, key, value);
         }
         
         return covHash;

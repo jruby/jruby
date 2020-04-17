@@ -26,20 +26,14 @@
 
 package org.jruby.ext.coverage;
 
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.Ruby;
-import org.jruby.runtime.EventHook;
-import org.jruby.runtime.RubyEvent;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.IntList;
 
 public class CoverageData {
     public static final String STARTED = "";        // no load/require ruby file can be "" so we
-    private static final int[] SVALUE = new int[0];  // use it as a holder to know if start occurs
-    private volatile Map<String, int[]> coverage;
+    private static final IntList SVALUE = new IntList();  // use it as a holder to know if start occurs
+    private volatile Map<String, IntList> coverage;
     private volatile int mode;
 
     public static final int NONE = 0;
@@ -57,12 +51,35 @@ public class CoverageData {
         return mode;
     }
 
-    public Map<String, int[]> getCoverage() {
+    public boolean isOneshot() {
+        return (mode & ONESHOT_LINES) != 0;
+    }
+
+    public Map<String, IntList> getCoverage() {
       return coverage;
     }
 
+    /**
+     * Update coverage data for the given file and line number.
+     *
+     * @param filename
+     * @param line
+     */
+    public synchronized void coverLine(String filename, int line) {
+        IntList lines = coverage.get(filename);
+
+        if (lines == null) return;
+
+        if (isOneshot()) {
+            lines.add(line);
+        } else {
+            if (lines.size() <= line) return;
+            lines.set(line, lines.get(line) + 1);
+        }
+    }
+
     public synchronized void setCoverageEnabled(int mode) {
-        Map<String, int[]> coverage = this.coverage;
+        Map<String, IntList> coverage = this.coverage;
 
         if (coverage == null) coverage = new HashMap<>();
 
@@ -76,11 +93,11 @@ public class CoverageData {
         this.mode = mode;
     }
 
-    public synchronized Map<String, int[]> resetCoverage() {
-        Map<String, int[]> coverage = this.coverage;
+    public synchronized Map<String, IntList> resetCoverage() {
+        Map<String, IntList> coverage = this.coverage;
         coverage.remove(STARTED);
 
-        for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
+        for (Map.Entry<String, IntList> entry : coverage.entrySet()) {
             String key = entry.getKey();
 
             // on reset we do not reset files where no execution ever happened but we do reset
@@ -94,18 +111,16 @@ public class CoverageData {
         return coverage;
     }
 
-    private static boolean hasCodeBeenPartiallyCovered(int[] lines) {
-        for (int i = 0; i < lines.length; i++) {
-            if (lines[i] > 0) return true;
+    private static boolean hasCodeBeenPartiallyCovered(IntList lines) {
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i) > 0) return true;
         }
 
         return false;
     }
 
-    public synchronized Map<String, int[]> prepareCoverage(String filename, int[] lines) {
-        assert lines != null;
-
-        Map<String, int[]> coverage = this.coverage;
+    public synchronized Map<String, IntList> prepareCoverage(String filename, int[] startingLines) {
+        Map<String, IntList> coverage = this.coverage;
 
         if (filename == null) {
             // null filename from certain evals, Ruby.executeScript, etc (jruby/jruby#5111)
@@ -114,7 +129,11 @@ public class CoverageData {
         }
 
         if (coverage != null) {
-            coverage.put(filename, lines);
+            if (isOneshot()) {
+                coverage.put(filename, new IntList());
+            } else {
+                coverage.put(filename, new IntList(startingLines));
+            }
         }
 
         return coverage;
