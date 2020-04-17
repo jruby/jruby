@@ -446,7 +446,7 @@ stmt            : keyword_alias fitem {
                 }
                 | keyword_END tLCURLY compstmt tRCURLY {
                     if (support.isInDef()) {
-                        support.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
+                       support.warn(ID.END_IN_METHOD, $1.getLine(), "END in method; use at_exit");
                     }
                     $$ = new PostExeNode($1, $3, lexer.getRubySourceline());
                 }

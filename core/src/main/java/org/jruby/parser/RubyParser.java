@@ -1939,7 +1939,7 @@ states[31] = new ParserState() {
 states[32] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef()) {
-                        support.warn(ID.END_IN_METHOD, ((ISourcePosition)yyVals[-3+yyTop]), "END in method; use at_exit");
+                       support.warn(ID.END_IN_METHOD, ((ISourcePosition)yyVals[-3+yyTop]).getLine(), "END in method; use at_exit");
                     }
                     yyVal = new PostExeNode(((ISourcePosition)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), lexer.getRubySourceline());
     return yyVal;
