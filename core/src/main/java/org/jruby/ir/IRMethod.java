@@ -29,13 +29,11 @@ public class IRMethod extends IRScope {
     private volatile DefNode defNode;
 
     public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, ByteList name,
-            boolean isInstanceMethod, int lineNumber, StaticScope staticScope, boolean needsCodeCoverage) {
-        super(manager, lexicalParent, name, lineNumber, staticScope);
+            boolean isInstanceMethod, int lineNumber, StaticScope staticScope, int coverageMode) {
+        super(manager, lexicalParent, name, lineNumber, staticScope, coverageMode);
 
         this.defNode = defn;
         this.isInstanceMethod = isInstanceMethod;
-
-        if (needsCodeCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
 
         if (staticScope != null) {
             staticScope.setIRScope(this);
@@ -98,7 +96,7 @@ public class IRMethod extends IRScope {
         if (hasBeenBuilt()) return;
 
         IRBuilder.topIRBuilder(getManager(), this).
-                defineMethodInner(defNode, getLexicalParent(), getFlags().contains(IRFlags.CODE_COVERAGE)); // sets interpreterContext
+                defineMethodInner(defNode, getLexicalParent(), getCoverageMode()); // sets interpreterContext
         this.defNode = null;
     }
 

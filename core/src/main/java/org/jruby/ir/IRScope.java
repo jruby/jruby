@@ -6,6 +6,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -127,6 +128,8 @@ public abstract class IRScope implements ParseResult {
     private String inlineFailed;
     public Compilable compilable;
 
+    private final int coverageMode;
+
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
         this.lexicalParent = lexicalParent;
@@ -139,6 +142,8 @@ public abstract class IRScope implements ParseResult {
 
         this.flags = s.flags.clone();
 
+        this.coverageMode = CoverageData.NONE;
+
         this.localVars = new HashMap<>(s.localVars);
         this.scopeId = globalScopeCount.getAndIncrement();
 
@@ -150,6 +155,10 @@ public abstract class IRScope implements ParseResult {
     }
 
     public IRScope(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope staticScope) {
+        this(manager, lexicalParent, name, lineNumber, staticScope, CoverageData.NONE);
+    }
+
+    public IRScope(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope staticScope, int coverageMode) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
         this.name = name;
@@ -159,6 +168,8 @@ public abstract class IRScope implements ParseResult {
         this.temporaryVariableIndex = -1;
         this.interpreterContext = null;
         this.flags = DEFAULT_SCOPE_FLAGS.clone();
+
+        this.coverageMode = coverageMode;
 
         // We only can compute this once since 'module X; using A; class B; end; end' vs
         // 'module X; class B; using A; end; end'.  First case B can see refinements and in second it cannot.
@@ -649,6 +660,10 @@ public abstract class IRScope implements ParseResult {
 
     public EnumSet<IRFlags> getFlags() {
         return flags;
+    }
+
+    public int getCoverageMode() {
+        return coverageMode;
     }
 
     private void initScopeFlags() {

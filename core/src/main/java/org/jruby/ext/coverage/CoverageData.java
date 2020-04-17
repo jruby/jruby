@@ -40,35 +40,45 @@ public class CoverageData {
     public static final String STARTED = "";        // no load/require ruby file can be "" so we
     private static final int[] SVALUE = new int[0];  // use it as a holder to know if start occurs
     private volatile Map<String, int[]> coverage;
+    private volatile int mode;
+
+    public static final int NONE = 0;
+    public static final int LINES = 1 << 0;
+    public static final int BRANCHES = 1 << 1;
+    public static final int METHODS = 1 << 2;
+    public static final int ONESHOT_LINES = 1 << 3;
+    public static final int ALL = LINES | BRANCHES | METHODS;
 
     public boolean isCoverageEnabled() {
-        return coverage != null && coverage.get(STARTED) != null;
+        return mode != 0;
+    }
+
+    public int getMode() {
+        return mode;
     }
 
     public Map<String, int[]> getCoverage() {
       return coverage;
     }
 
-    public synchronized void setCoverageEnabled(Ruby runtime, boolean enabled) {
+    public synchronized void setCoverageEnabled(int mode) {
         Map<String, int[]> coverage = this.coverage;
 
-        if (coverage == null) coverage = new HashMap<String, int[]>();
+        if (coverage == null) coverage = new HashMap<>();
 
-        if (enabled) {
+        if (mode != CoverageData.NONE) {
             coverage.put(STARTED, SVALUE);
-            runtime.addEventHook(COVERAGE_HOOK);
         } else {
             coverage.remove(STARTED);
         }
 
         this.coverage = coverage;
+        this.mode = mode;
     }
 
-    public synchronized Map<String, int[]> resetCoverage(Ruby runtime) {
+    public synchronized Map<String, int[]> resetCoverage() {
         Map<String, int[]> coverage = this.coverage;
-        runtime.removeEventHook(COVERAGE_HOOK);
         coverage.remove(STARTED);
-
 
         for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
             String key = entry.getKey();
@@ -79,6 +89,7 @@ public class CoverageData {
         }
 
         this.coverage = null;
+        this.mode = CoverageData.NONE;
 
         return coverage;
     }
@@ -108,40 +119,5 @@ public class CoverageData {
 
         return coverage;
     }
-
-    private static final EnumSet<RubyEvent> COVERAGE_EVENTS = EnumSet.of(RubyEvent.COVERAGE);
-    
-    private final EventHook COVERAGE_HOOK = new EventHook() {
-        @Override
-        public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
-            synchronized (CoverageData.this) {
-                Map<String, int[]> coverage = CoverageData.this.coverage;
-
-                // Should not be needed but I predict serialization of IR might hit this.
-                if (coverage == null || line <= 0) return;
-
-                int[] lines = coverage.get(file);
-
-                // no coverage lines for this record.  bail out (should never happen)
-                if (lines == null) return;
-
-                // coverage is dead for this record.  result() has been called once and we marked it as such as an empty list.
-                if (lines.length == 0) return;
-
-                // increment usage count by one.
-                lines[line - 1] += 1;
-            }
-        }
-
-        @Override
-        public boolean isInterestedInEvent(RubyEvent event) {
-            return event == RubyEvent.COVERAGE;
-        }
-
-        @Override
-        public EnumSet<RubyEvent> eventSet() {
-            return COVERAGE_EVENTS;
-        }
-    };
     
 }

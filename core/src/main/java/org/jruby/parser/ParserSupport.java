@@ -231,8 +231,12 @@ public class ParserSupport {
             if (topOfAST != null) newTopOfAST.add(topOfAST);
             topOfAST = newTopOfAST;
         }
-        
-        return new RootNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageData != null);
+
+        int coverageMode = coverageData == null ?
+                CoverageData.NONE :
+                coverageData.getMode();
+
+        return new RootNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageMode);
     }
     
     /* MRI: block_append */

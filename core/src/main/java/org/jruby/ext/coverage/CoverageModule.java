@@ -32,6 +32,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -44,9 +45,42 @@ public class CoverageModule {
         Ruby runtime = context.runtime;
         
         if (!runtime.getCoverageData().isCoverageEnabled()) {
-            runtime.getCoverageData().setCoverageEnabled(runtime, true);
+            runtime.getCoverageData().setCoverageEnabled(CoverageData.LINES);
         }
         
+        return context.nil;
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject start(ThreadContext context, IRubyObject self, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+
+        if (!runtime.getCoverageData().isCoverageEnabled()) {
+            int mode = 0;
+
+            if (ArgsUtil.extractKeywordArg(context, "all", opts).isTrue()) {
+                mode |= CoverageData.ALL;
+            } else {
+                if (ArgsUtil.extractKeywordArg(context, "lines", opts).isTrue()) {
+                    mode |= CoverageData.LINES;
+                }
+                if (ArgsUtil.extractKeywordArg(context, "branches", opts).isTrue()) {
+                    runtime.getWarnings().warn("branch coverage is not supported");
+                    mode |= CoverageData.BRANCHES;
+                }
+                if (ArgsUtil.extractKeywordArg(context, "methods", opts).isTrue()) {
+                    runtime.getWarnings().warn("method coverage is not supported");
+                    mode |= CoverageData.METHODS;
+                }
+                if (ArgsUtil.extractKeywordArg(context, "oneshot_lines", opts).isTrue()) {
+                    mode |= CoverageData.LINES;
+                    mode |= CoverageData.ONESHOT_LINES;
+                }
+            }
+
+            runtime.getCoverageData().setCoverageEnabled(mode);
+        }
+
         return context.nil;
     }
 
@@ -59,7 +93,7 @@ public class CoverageModule {
         }
 
         IRubyObject result = convertCoverageToRuby(context, runtime, runtime.getCoverageData().getCoverage());
-        runtime.getCoverageData().resetCoverage(runtime);
+        runtime.getCoverageData().resetCoverage();
         return result;
     }
 

@@ -9,15 +9,31 @@ import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 
 public class LineNumberInstr extends NoOperandInstr implements FixedArityInstr {
     public final int lineNumber;
+    public boolean coverage;
+    public final boolean oneshot;
 
-    public LineNumberInstr(int lineNumber) {
+    public LineNumberInstr(int lineNumber, boolean coverage, boolean oneshot) {
         super(Operation.LINE_NUM);
 
         this.lineNumber = lineNumber;
+        this.coverage = coverage;
+        this.oneshot = oneshot;
+    }
+
+    public LineNumberInstr(int lineNumber) {
+        this(lineNumber, false, false);
     }
 
     public int getLineNumber() {
         return lineNumber;
+    }
+
+    public boolean isCoverage() {
+        return coverage;
+    }
+
+    public boolean isOneshot() {
+        return oneshot;
     }
 
     @Override

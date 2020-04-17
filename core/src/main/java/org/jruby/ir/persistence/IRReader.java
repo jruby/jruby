@@ -9,6 +9,7 @@ package org.jruby.ir.persistence;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.*;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
@@ -138,9 +139,9 @@ public class IRReader implements IRPersistenceValues {
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName().getBytes(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, null, byteName, true, line, staticScope, false);
+            return new IRMethod(manager, lexicalParent, null, byteName, true, line, staticScope, CoverageData.NONE);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, null, byteName, false, line, staticScope, false);
+            return new IRMethod(manager, lexicalParent, null, byteName, false, line, staticScope, CoverageData.NONE);
         case MODULE_BODY:
             // FIXME: add saving on noe-time usage to writeer/reader
             return new IRModuleBody(manager, lexicalParent, byteName, line, staticScope, false);

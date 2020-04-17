@@ -1240,6 +1240,10 @@ public class Bootstrap {
         return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
     }
 
+    public static Handle coverLineHandle() {
+        return getBootstrapHandle("coverLineBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class, int.class));
+    }
+
     public static Handle getBootstrapHandle(String name, String sig) {
         return getBootstrapHandle(name, Bootstrap.class, sig);
     }
@@ -1276,6 +1280,23 @@ public class Bootstrap {
         target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
 
         site.setTarget(target);
+    }
+
+    public static CallSite coverLineBootstrap(Lookup lookup, String name, MethodType type, String filename, int line, int oneshot) throws Throwable {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = lookup.findStatic(Bootstrap.class, "coverLineFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class, String.class, int.class, boolean.class));
+
+        handle = handle.bindTo(site);
+        handle = insertArguments(handle, 1, filename, line, oneshot != 0);
+        site.setTarget(handle);
+
+        return site;
+    }
+
+    public static void coverLineFallback(MutableCallSite site, ThreadContext context, String filename, int line, boolean oneshot) throws Throwable {
+        IRRuntimeHelpers.updateCoverage(context, filename, line);
+
+        if (oneshot) site.setTarget(Binder.from(void.class, ThreadContext.class).dropAll().nop());
     }
 
     public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
