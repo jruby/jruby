@@ -410,7 +410,12 @@ public class InterpreterEngine {
                 ((CheckArityInstr) instr).checkArity(context, currScope, args, block);
                 break;
             case LINE_NUM:
-                context.setLine(((LineNumberInstr)instr).lineNumber);
+                LineNumberInstr line = (LineNumberInstr) instr;
+                context.setLine(line.lineNumber);
+                if (line.coverage) {
+                    IRRuntimeHelpers.updateCoverage(context, currScope.getFile(), line.lineNumber);
+                    if (line.oneshot) line.coverage = false;
+                }
                 break;
             case TOGGLE_BACKTRACE:
                 context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());

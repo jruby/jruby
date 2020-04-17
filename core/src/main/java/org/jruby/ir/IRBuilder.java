@@ -6,6 +6,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -17,7 +18,6 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
@@ -302,7 +302,7 @@ public class IRBuilder {
     protected IRScope scope;
     protected List<Instr> instructions;
     protected List<Object> argumentDescriptions;
-    protected boolean needsCodeCoverage;
+    protected int coverageMode;
     private boolean executesOnce = true;
 
     // Current index to put next BEGIN blocks and other things at the front of this scope.
@@ -318,12 +318,13 @@ public class IRBuilder {
         this.parent = parent;
         this.instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
+        this.coverageMode = parent == null ? CoverageData.NONE : parent.coverageMode;
 
         if (parent != null) executesOnce = parent.executesOnce;
     }
 
     private boolean needsCodeCoverage() {
-        return needsCodeCoverage || parent != null && parent.needsCodeCoverage();
+        return coverageMode != CoverageData.NONE || parent != null && parent.needsCodeCoverage();
     }
 
     public void addArgumentDescription(ArgumentType type, RubySymbol name) {
@@ -336,12 +337,15 @@ public class IRBuilder {
     public void addInstr(Instr instr) {
         if (needsLineNumInfo) {
             needsLineNumInfo = false;
-            addInstr(manager.newLineNumber(_lastProcessedLineNum));
+
+            if (needsCodeCoverage()) {
+                addInstr(new LineNumberInstr(_lastProcessedLineNum, coverageMode));
+            } else {
+                addInstr(manager.newLineNumber(_lastProcessedLineNum));
+            }
+
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
                 addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum + 1));
-                if (needsCodeCoverage()) {
-                    addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), _lastProcessedLineNum + 1));
-                }
             }
         }
 
@@ -554,7 +558,7 @@ public class IRBuilder {
     }
 
     public Operand buildLambda(LambdaNode node) {
-        IRClosure closure = new IRClosure(manager, scope, node.getLine(), node.getScope(), Signature.from(node), needsCodeCoverage);
+        IRClosure closure = new IRClosure(manager, scope, node.getLine(), node.getScope(), Signature.from(node), coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildLambdaInner(node);
@@ -2056,8 +2060,8 @@ public class IRBuilder {
 
     // Called by defineMethod but called on a new builder so things like ensure block info recording
     // do not get confused.
-    protected InterpreterContext defineMethodInner(DefNode defNode, IRScope parent, boolean needsCodeCoverage) {
-        this.needsCodeCoverage = needsCodeCoverage;
+    protected InterpreterContext defineMethodInner(DefNode defNode, IRScope parent, int coverageMode) {
+        this.coverageMode = coverageMode;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
@@ -2109,7 +2113,7 @@ public class IRBuilder {
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
         return new IRMethod(manager, scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
-                defNode.getScope(), needsCodeCoverage());
+                defNode.getScope(), coverageMode);
     }
 
     public Operand buildDefn(MethodDefNode node) { // Instance method
@@ -2981,7 +2985,7 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode) {
-        IRClosure closure = new IRClosure(manager, scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), needsCodeCoverage);
+        IRClosure closure = new IRClosure(manager, scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), coverageMode);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildIterInner(iterNode);
@@ -3745,7 +3749,7 @@ public class IRBuilder {
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
         executesOnce = false;
-        needsCodeCoverage = false;  // Assuming there is no path into build eval root without actually being an eval.
+        coverageMode = CoverageData.NONE;  // Assuming there is no path into build eval root without actually being an eval.
         addInstr(manager.newLineNumber(scope.getLine()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -3771,7 +3775,7 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildRootInner(RootNode rootNode) {
-        needsCodeCoverage = rootNode.needsCoverage();
+        coverageMode = rootNode.coverageMode();
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentModule();                                        // %current_module
 

@@ -1681,6 +1681,17 @@ public class JVMVisitor extends IRVisitor {
 
         lastLine = linenumberinstr.getLineNumber() + 1;
         jvmAdapter().line(lastLine);
+
+        if (linenumberinstr.coverage) {
+            jvmMethod().loadContext();
+            jvmAdapter().invokedynamic(
+                    "coverLine",
+                    sig(void.class, ThreadContext.class),
+                    Bootstrap.coverLineHandle(),
+                    jvm.methodData().scope.getFile(),
+                    linenumberinstr.getLineNumber(),
+                    linenumberinstr.oneshot ? 1 : 0);
+        }
     }
 
     @Override

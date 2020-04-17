@@ -33,6 +33,7 @@ import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -658,6 +659,21 @@ public class IRRuntimeHelpers {
         boolean printAll = Options.IR_PRINT_ALL.load();
 
         return (!booting && print) || (booting && printAll);
+    }
+
+    /**
+     * Update coverage data for the given file and zero-based line number.
+     *
+     * @param context
+     * @param filename
+     * @param line
+     */
+    public static void updateCoverage(ThreadContext context, String filename, int line) {
+        CoverageData data = context.runtime.getCoverageData();
+
+        if (data.isCoverageEnabled()) {
+            data.coverLine(filename, line);
+        }
     }
 
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
