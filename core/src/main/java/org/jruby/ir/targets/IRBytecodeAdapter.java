@@ -39,6 +39,7 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.collections.IntHashMap;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
@@ -243,8 +244,8 @@ public class IRBytecodeAdapter {
     public void endMethod() {
         adapter.end(new Runnable() {
             public void run() {
-                for (Map.Entry<Integer, Type> entry : variableTypes.entrySet()) {
-                    int i = entry.getKey();
+                for (IntHashMap.Entry<Type> entry : variableTypes.entrySet()) {
+                    final int i = entry.getKey();
                     String name = variableNames.get(i);
                     adapter.local(i, name, entry.getValue());
                 }
@@ -433,8 +434,8 @@ public class IRBytecodeAdapter {
 
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;
-    private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
-    private Map<Integer, String> variableNames = new HashMap<Integer, String>();
+    private final IntHashMap<Type> variableTypes = new IntHashMap<>();
+    private final IntHashMap<String> variableNames = new IntHashMap<>();
     protected final Signature signature;
     protected final ClassData classData;
     protected final ValueCompiler valueCompiler;
