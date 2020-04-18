@@ -1186,10 +1186,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (matchPos(context, str, null, holder, pos) < 0) {
             return context.nil;
         }
-
-        IRubyObject backref = getBackRefInternal(context, holder);
-        if (block.isGiven()) return block.yield(context, backref);
-        return backref;
+        // NOTE: since MatchData ($~) is escaping - always tag it as used (if setBackref == true)
+        IRubyObject match = setBackref ? getBackRef(context) : holder[0];
+        if (block.isGiven()) return block.yield(context, match);
+        return match;
     }
 
     /**
