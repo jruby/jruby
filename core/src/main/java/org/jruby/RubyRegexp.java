@@ -1577,26 +1577,29 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     */
     public static IRubyObject nth_match(int nth, IRubyObject match) {
         if (match.isNil()) return match;
-        RubyMatchData m = (RubyMatchData)match;
-        m.check();
+        return nth_match(nth, (RubyMatchData) match);
+    }
 
-        Ruby runtime = m.getRuntime();
+    static IRubyObject nth_match(int nth, RubyMatchData match) {
+        match.check();
 
         final int start, end;
-        if (m.regs == null) {
-            if (nth >= 1 || (nth < 0 && ++nth <= 0)) return runtime.getNil();
-            start = m.begin;
-            end = m.end;
+        if (match.regs == null) {
+            if (nth >= 1 || (nth < 0 && ++nth <= 0)) return match.getRuntime().getNil();
+            start = match.begin;
+            end = match.end;
         } else {
-            if (nth >= m.regs.numRegs || (nth < 0 && (nth+=m.regs.numRegs) <= 0)) return runtime.getNil();
-            start = m.regs.beg[nth];
-            end = m.regs.end[nth];
+            if (nth >= match.regs.numRegs || (nth < 0 && (nth+=match.regs.numRegs) <= 0)) {
+                return match.getRuntime().getNil();
+            }
+            start = match.regs.beg[nth];
+            end = match.regs.end[nth];
         }
 
-        if (start == -1) return runtime.getNil();
+        if (start == -1) return match.getRuntime().getNil();
 
-        RubyString str = m.str.makeShared(runtime, start, end - start);
-        str.infectBy(m);
+        RubyString str = match.str.makeShared(match.metaClass.runtime, start, end - start);
+        str.infectBy(match);
         return str;
     }
 
@@ -1638,16 +1641,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     public static IRubyObject match_last(IRubyObject match) {
         if (match.isNil()) return match;
-        RubyMatchData m = (RubyMatchData)match;
+        RubyMatchData m = (RubyMatchData) match;
         m.check();
 
-        if (m.regs == null || m.regs.beg[0] == -1) return match.getRuntime().getNil();
+        if (m.regs == null || m.regs.beg[0] == -1) return m.getRuntime().getNil();
 
         int i;
         for (i = m.regs.numRegs - 1; m.regs.beg[i] == -1 && i > 0; i--);
-        if (i == 0) return match.getRuntime().getNil();
+        if (i == 0) return m.getRuntime().getNil();
 
-        return nth_match(i, match);
+        return nth_match(i, m);
     }
 
     // MRI: ASCGET macro from rb_reg_regsub
