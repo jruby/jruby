@@ -1268,30 +1268,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         final int beg = strBL.begin();
         final Regex reg = preparePattern(str);
 
-        IRubyObject match = getBackRefInternal(context, null);
-        if (match instanceof RubyMatchData) { // ! match.isNil()
-            if (((RubyMatchData) match).used()) match = context.nil;
-        }
-
         final Matcher matcher = reg.matcher(strBL.unsafeBytes(), beg, beg + strBL.realSize());
 
         try {
             int result = matcherMatch(context, matcher, beg, beg + strBL.realSize(), RE_OPTION_NONE);
             if (result == -1) {
-                setBackRefInternal(context, null, context.nil);
+                context.setBackRef(context.nil);
                 return false;
             }
 
-            final RubyMatchData matchData;
-            if (match == context.nil) {
-                matchData = createMatchData(context, str, matcher, reg);
-            } else {
-                matchData = (RubyMatchData) match;
-                matchData.initMatchData(str, matcher, reg);
-            }
+            final RubyMatchData matchData = createMatchData(context, str, matcher, reg);
             matchData.regexp = this;
             matchData.infectBy(this);
-            setBackRefInternal(context, null, matchData);
+            context.setBackRef(matchData);
             return true;
         } catch (JOniException je) {
             throw context.runtime.newRegexpError(je.getMessage());
