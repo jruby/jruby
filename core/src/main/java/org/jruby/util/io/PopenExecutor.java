@@ -1231,7 +1231,7 @@ public class PopenExecutor {
                                 context.pollThreadEvents();
                                 continue;
                             }
-                            runtime.newErrnoFromInt(open_data.errno.intValue(), vpath.toString());
+                            throw runtime.newErrnoFromInt(open_data.errno.intValue(), vpath.toString());
                         }
                         // We're in the fully-native process logic, so this should be a native stream
                         fd2 = ((ChannelFD) ret).realFileno;

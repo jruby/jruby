@@ -2021,8 +2021,8 @@ public class RubyTime extends RubyObject {
         if (zoneLocalTime(context, zone, time)) return time;
 
         if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
-            if ((zone = time.findTimezone(context, zone)).isNil()) invalidUTCOffset(context.runtime);
-            if (!zoneLocalTime(context, zone, time)) invalidUTCOffset(context.runtime);
+            if ((zone = time.findTimezone(context, zone)).isNil()) throw invalidUTCOffset(context.runtime);
+            if (!zoneLocalTime(context, zone, time)) throw invalidUTCOffset(context.runtime);
             return time;
         } else if (dtz == DateTimeZone.UTC) {
             return time.gmtime();
