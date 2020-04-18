@@ -5,6 +5,8 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubySymbol;
 
+import java.util.Arrays;
+
 /**
  * A description of a single argument in a Ruby argument list.  Primarily used in Method.to_proc.
  */
@@ -86,7 +88,8 @@ public class ArgumentDescriptor {
             String descriptor = encodedStringDescriptors[i];
             char type = descriptor.charAt(0);
             String id = descriptor.length() == 1 ? "" : descriptor.substring(1);
-            RubySymbol symbol = ANONYMOUS_ENCODED.equals(id) ? null : runtime.newSymbol(id);
+            boolean anonymous = Arrays.equals(ANONYMOUS_ENCODED, id.getBytes(RubyEncoding.ISO));
+            RubySymbol symbol = anonymous ? null : runtime.newSymbol(id);
 
             descriptors[i] = new ArgumentDescriptor(ArgumentType.valueOf(type), symbol);
         }
