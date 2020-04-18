@@ -735,28 +735,33 @@ public class Helpers {
 
     }
 
+    @Deprecated
     public static IRubyObject backref(ThreadContext context) {
         return RubyRegexp.getBackRef(context);
     }
 
+    @Deprecated
     public static IRubyObject backrefLastMatch(ThreadContext context) {
         IRubyObject backref = context.getBackRef();
 
         return RubyRegexp.last_match(backref);
     }
 
+    @Deprecated
     public static IRubyObject backrefMatchPre(ThreadContext context) {
         IRubyObject backref = context.getBackRef();
 
         return RubyRegexp.match_pre(backref);
     }
 
+    @Deprecated
     public static IRubyObject backrefMatchPost(ThreadContext context) {
         IRubyObject backref = context.getBackRef();
 
         return RubyRegexp.match_post(backref);
     }
 
+    @Deprecated
     public static IRubyObject backrefMatchLast(ThreadContext context) {
         IRubyObject backref = context.getBackRef();
 
@@ -1476,13 +1481,25 @@ public class Helpers {
         return context.getLastLine();
     }
 
-    public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
-        if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
+    public static IRubyObject setBackref(ThreadContext context, IRubyObject value) {
+        if (!(value instanceof RubyMatchData) && value != context.nil) {
+            throw context.runtime.newTypeError(value, context.runtime.getMatchData());
+        }
         return context.setBackRef(value);
     }
 
+    @Deprecated
+    public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
+        return setBackref(context, value);
+    }
+
+    public static IRubyObject getBackref(ThreadContext context) {
+        return RubyRegexp.getBackRef(context);
+    }
+
+    @Deprecated
     public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
-        return backref(context); // backref(context) method otherwise not used
+        return RubyRegexp.getBackRef(context);
     }
 
     public static RubyArray arrayValue(IRubyObject value) {

@@ -691,12 +691,12 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return Helpers.getBackref(runtime, runtime.getCurrentContext());
+            return Helpers.getBackref(runtime.getCurrentContext());
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            Helpers.setBackref(runtime, runtime.getCurrentContext(), value);
+            Helpers.setBackref(runtime.getCurrentContext(), value);
             return value;
         }
     }
