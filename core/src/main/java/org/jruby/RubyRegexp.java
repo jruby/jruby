@@ -1136,8 +1136,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         final RubyString[] strp = { null };
         int pos = matchPos(context, str, strp, null, 0);
         if (pos < 0) return context.nil;
-        pos = ((RubyString) strp[0]).subLength(pos);
-        return RubyFixnum.newFixnum(context.runtime, pos);
+        return RubyFixnum.newFixnum(context.runtime, strp[0].subLength(pos));
     }
 
     @Deprecated
@@ -1183,7 +1182,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private IRubyObject matchCommon(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
-        IRubyObject[] holder = setBackref ? null : new IRubyObject[1];
+        IRubyObject[] holder = setBackref ? null : new IRubyObject[] { context.nil };
         if (matchPos(context, str, null, holder, pos) < 0) {
             return context.nil;
         }
@@ -1264,8 +1263,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return search(context, str, pos, reverse, holder);
     }
 
-
-    public final RubyBoolean startWithP(ThreadContext context, RubyString str) {
+    final boolean startsWith(ThreadContext context, RubyString str) {
         final ByteList strBL = str.getByteList();
         final int beg = strBL.begin();
         final Regex reg = preparePattern(str);
@@ -1281,22 +1279,28 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             int result = matcherMatch(context, matcher, beg, beg + strBL.realSize(), RE_OPTION_NONE);
             if (result == -1) {
                 setBackRefInternal(context, null, context.nil);
-                return context.fals;
+                return false;
             }
 
             final RubyMatchData matchData;
             if (match == context.nil) {
                 matchData = createMatchData(context, str, matcher, reg);
             } else {
-                matchData = createMatchData(context, str, matcher, reg);
+                matchData = (RubyMatchData) match;
+                matchData.initMatchData(str, matcher, reg);
             }
             matchData.regexp = this;
             matchData.infectBy(this);
             setBackRefInternal(context, null, matchData);
-            return context.tru;
+            return true;
         } catch (JOniException je) {
             throw context.runtime.newRegexpError(je.getMessage());
         }
+    }
+
+    @Deprecated
+    public final RubyBoolean startWithP(ThreadContext context, RubyString str) {
+        return startsWith(context, str) ? context.tru : context.fals;
     }
 
     /**
@@ -1317,9 +1321,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         final Regex reg = preparePattern(str);
         IRubyObject match = getBackRefInternal(context, holder);
         if (match instanceof RubyMatchData) { // ! match.isNil()
-            if (((RubyMatchData) match).used()) {
-                match = context.nil;
-            }
+            if (((RubyMatchData) match).used()) match = context.nil;
         }
 
         if (!reverse) range += str.size();
@@ -1337,12 +1339,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (match == context.nil) {
                 matchData = createMatchData(context, str, matcher, reg);
             } else {
-                // FIXME: This could be reusing the MatchData object
-                matchData = createMatchData(context, str, matcher, reg);
-                //if (setBackrefStr) {
-                //    matchData.str = str.newFrozen();
-                //    matchData.infectBy(str);
-                //}
+                matchData = (RubyMatchData) match;
+                matchData.initMatchData(str, matcher, reg);
             }
             matchData.regexp = this;
             matchData.infectBy(this);
@@ -1367,7 +1365,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     static RubyMatchData createMatchData(ThreadContext context, RubyString str, Matcher matcher, Regex pattern) {
         final RubyMatchData match = new RubyMatchData(context.runtime);
-        match.initMatchData(context, str, matcher, pattern);
+        match.initMatchData(str, matcher, pattern);
         return match;
     }
 

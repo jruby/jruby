@@ -2933,7 +2933,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             final int mLen = pattern.size();
             final int mEnd = mBeg + mLen;
             final RubyMatchData match = new RubyMatchData(runtime);
-            match.initMatchData(context, this, mBeg, pattern);
+            match.initMatchData(this, mBeg, pattern);
             context.setBackRef(match);
 
             IRubyObject subStr = makeShared(runtime, mBeg, mLen);
@@ -3000,7 +3000,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (mBeg > -1) {
             final int mEnd = mBeg + pattern.size();
             final RubyMatchData match = new RubyMatchData(context.runtime);
-            match.initMatchData(context, this, mBeg, pattern);
+            match.initMatchData(this, mBeg, pattern);
             context.setBackRef(match);
             repl = RubyRegexp.regsub(context, repl, this, REPL_MOCK_REGEX, null, mBeg, mEnd);
 
@@ -3240,7 +3240,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     val = objAsString(context, hash.op_aref(context, pattern));
                 } else {            // block given
                     match = new RubyMatchData(runtime);
-                    match.initMatchData(context, this, begz, pattern);
+                    match.initMatchData(this, begz, pattern);
 
                     if (useBackref) context.setBackRef(match);
                     val = objAsString(context, block.yield(context, pattern.strDup(runtime)));
@@ -3273,7 +3273,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 context.setBackRef(match);
             } else {
                 match = new RubyMatchData(runtime);
-                match.initMatchData(context, this, begz, pattern);
+                match.initMatchData(this, begz, pattern);
                 context.setBackRef(match);
             }
         }
@@ -4383,9 +4383,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int end, beg = 0;
         boolean lastNull = false;
         int start = beg;
-        IRubyObject[] holder = useBackref ? null : new IRubyObject[]{context.nil};
+        IRubyObject[] holder = useBackref ? null : new IRubyObject[] { context.nil };
         while ((end = pattern.search(context, this, start, false, holder)) >= 0) {
-            RubyMatchData match = useBackref ? (RubyMatchData)context.getBackRef() : (RubyMatchData)holder[0];
+            RubyMatchData match = (RubyMatchData) (useBackref ? context.getBackRef() : holder[0]);
             if (start == end && match.begin(0) == match.end(0)) {
                 if (len == 0) {
                     result.append(newEmptyString(runtime, metaClass).infectBy(this));
@@ -4550,7 +4550,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: get_pat_quoted
-    private static IRubyObject getPatternQuoted(ThreadContext context, IRubyObject pat, boolean check) {
+    private static IRubyObject getPatternQuoted(ThreadContext context, IRubyObject pat, final boolean check) {
         IRubyObject val;
 
         if (pat instanceof RubyRegexp) return pat;
@@ -4680,7 +4680,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         else {
             match = (RubyMatchData) m;
         }
-        match.initMatchData(context, str, pos, pattern); // MRI: match_set_string
+        match.initMatchData(str, pos, pattern); // MRI: match_set_string
         context.setBackRef(match);
         return match;
     }
@@ -4692,8 +4692,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
-        if (arg instanceof RubyRegexp) return ((RubyRegexp)arg).startWithP(context, this);
-        return startWith(arg) ? context.tru : context.fals;
+        if (arg instanceof RubyRegexp) {
+            return ((RubyRegexp) arg).startsWith(context, this) ? context.tru : context.fals;
+        }
+        return startsWith(arg.convertToString()) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "start_with?", rest = true)
@@ -4704,18 +4706,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.fals;
     }
 
-    private boolean startWith(IRubyObject arg) {
-        RubyString otherString = arg.convertToString();
+    public boolean startsWith(final RubyString str) {
+        checkEncoding(str);
 
-        checkEncoding(otherString);
-
-        int otherLength = otherString.value.getRealSize();
+        int otherLength = str.value.getRealSize();
 
         if (otherLength == 0) return true; // other is '', so return true
 
         if (value.getRealSize() < otherLength) return false;
 
-        return value.startsWith(otherString.value);
+        return value.startsWith(str.value);
     }
 
     @JRubyMethod(name = "end_with?")
