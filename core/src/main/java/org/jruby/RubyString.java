@@ -4674,10 +4674,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static RubyMatchData setBackRefString(ThreadContext context, RubyString str, int pos, RubyString pattern) {
         final IRubyObject m = context.getBackRef();
         final RubyMatchData match;
-        if (m == null || m.isNil() || ((RubyMatchData) m).used()) {
+        if (m.isNil() || ((RubyMatchData) m).used()) {
             match = new RubyMatchData(context.runtime);
-        }
-        else {
+        } else {
             match = (RubyMatchData) m;
         }
         match.initMatchData(str, pos, pattern); // MRI: match_set_string
@@ -5038,7 +5037,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         final int pos;
         final RubyString sep;
         if (arg instanceof RubyRegexp) {
-            RubyRegexp regex = (RubyRegexp)arg;
+            RubyRegexp regex = (RubyRegexp) arg;
 
             pos = regex.search(context, this, 0, false);
             if (pos < 0) return partitionMismatch(runtime);
