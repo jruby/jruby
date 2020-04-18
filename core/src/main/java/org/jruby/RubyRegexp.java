@@ -818,9 +818,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     */
     @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject nth) {
-        IRubyObject match = context.getBackRef();
-        if (match.isNil()) return match;
-        return nth_match(((RubyMatchData)match).backrefNumber(context.runtime, nth), match);
+        IRubyObject backref = context.getBackRef();
+        if (backref instanceof RubyMatchData) {
+            RubyMatchData match = ((RubyMatchData) backref);
+            return nth_match(match.backrefNumber(context.runtime, nth), match);
+        }
+        return backref; // nil
     }
 
     /** rb_reg_s_union
