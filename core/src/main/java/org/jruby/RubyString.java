@@ -5051,10 +5051,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (pos < 0) return partitionMismatch(runtime);
         }
 
-        return RubyArray.newArray(runtime, new IRubyObject[]{
+        return RubyArray.newArrayNoCopy(runtime, new IRubyObject[] {
                 makeShared(runtime, 0, pos),
                 sep,
-                makeShared(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())});
+                makeShared(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())
+        });
     }
 
     private RubyArray partitionMismatch(Ruby runtime) {
@@ -5080,15 +5081,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (pos < 0) return rpartitionMismatch(runtime);
         }
 
-        return RubyArray.newArray(runtime, new IRubyObject[]{
+        return RubyArray.newArrayNoCopy(runtime, new IRubyObject[] {
                 substr19(runtime, 0, pos),
                 sep,
-                substr19(runtime, pos + sep.strLength(), value.getRealSize())});
+                substr19(runtime, pos + sep.strLength(), value.getRealSize())
+        });
     }
 
     private IRubyObject rpartitionMismatch(Ruby runtime) {
         final Encoding enc = getEncoding();
-        return RubyArray.newArray(runtime, new IRubyObject[]{newEmptyString(runtime, enc), newEmptyString(runtime, enc), this.strDup(runtime)});
+        return RubyArray.newArrayNoCopy(runtime, newEmptyString(runtime, enc), newEmptyString(runtime, enc), this.strDup(runtime));
     }
 
     /** rb_str_chop / rb_str_chop_bang
