@@ -509,7 +509,7 @@ public class RubyDateFormat extends DateFormat {
         TimeOutputFormatter formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
 
         for (Token token: compiledPattern) {
-            String output = null;
+            CharSequence output = null;
             long value = 0;
             FieldType type = TEXT;
             int format = token.getFormat();
@@ -645,10 +645,10 @@ public class RubyDateFormat extends DateFormat {
                     int defaultWidth = (format == FORMAT_NANOSEC) ? 9 : 3;
                     int width = formatter.getWidth(defaultWidth);
                     if (width < 9) {
-                        output = output.substring(0, width);
+                        output = ((String) output).substring(0, width);
                     } else {
-                        while(output.length() < width)
-                            output += "0";
+                        output = new StringBuilder(width).append(output);
+                        while (output.length() < width) ((StringBuilder) output).append('0');
                     }
                     formatter = TimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
@@ -667,10 +667,9 @@ public class RubyDateFormat extends DateFormat {
                     break;
             }
 
-            output = formatter.format(output, value, type);
             // reset formatter
             formatter = TimeOutputFormatter.DEFAULT_FORMATTER;
-            toAppendTo.append(output);
+            toAppendTo.append(formatter.format(output.toString(), value, type));
         }
 
         return toAppendTo;
