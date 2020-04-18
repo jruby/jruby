@@ -101,7 +101,7 @@ public class ChannelStream implements Stream, Finalizable {
      * we create a single instance to avoid stack trace generation. Comment out
      * the initialization of this field to cause a new one each time.
      */
-    private static EOFException eofException = new EOFException();
+    private static final EOFException eofException = new EOFException();
 
     private volatile Ruby runtime;
     protected ModeFlags modes;
@@ -111,7 +111,7 @@ public class ChannelStream implements Stream, Finalizable {
     protected boolean reading; // are we reading or writing?
     private ChannelDescriptor descriptor;
     private boolean blocking = true;
-    private ByteList ungotChars = new ByteList();
+    private final ByteList ungotChars = new ByteList();
     private volatile boolean closedExplicitly = false;
 
     private volatile boolean eof = false;

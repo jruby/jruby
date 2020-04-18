@@ -8,7 +8,7 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalCheckpointCompiler implements CheckpointCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalCheckpointCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

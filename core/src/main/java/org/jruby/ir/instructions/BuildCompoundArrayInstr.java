@@ -19,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // This used to be an operand, but since to_a can be called as part of
 // building the args-cat/push value, this is not really side-effect free.
 public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
-    private boolean isArgsPush;
+    private final boolean isArgsPush;
 
     public BuildCompoundArrayInstr(Variable result, Operand a1, Operand a2, boolean isArgsPush) {
         super(Operation.BUILD_COMPOUND_ARRAY, result, a1, a2);

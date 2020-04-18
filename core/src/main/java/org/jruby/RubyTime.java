@@ -250,7 +250,6 @@ public class RubyTime extends RubyObject {
                         return null;
                     }
                     n *= 3600;
-                    dtz = getTimeZoneWithOffset(runtime, "", n * 1000);
                     break;
                 case 3:
                     if (tmpBytes.toByteString().equals("UTC")) {

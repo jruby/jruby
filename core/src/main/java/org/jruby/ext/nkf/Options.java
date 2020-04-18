@@ -33,8 +33,8 @@ import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 
 public class Options {
-    private Map<String, Option> shortOpts = new LinkedHashMap<String, Option>();
-    private Map<String, Option> longOpts = new LinkedHashMap<String, Option>();
+    private final Map<String, Option> shortOpts = new LinkedHashMap<String, Option>();
+    private final Map<String, Option> longOpts = new LinkedHashMap<String, Option>();
 
     public Options addOption(String opt) {
         return addOption(opt, null);

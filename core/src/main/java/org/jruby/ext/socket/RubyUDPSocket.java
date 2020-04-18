@@ -92,7 +92,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         runtime.getObject().setConstant("UDPsocket", rb_cUDPSocket);
     }
 
-    private static ObjectAllocator UDPSOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator UDPSOCKET_ALLOCATOR = new ObjectAllocator() {
 
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyUDPSocket(runtime, klass);
@@ -163,7 +163,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
             else if (host instanceof RubyFixnum) {
                 // passing in something like INADDR_ANY
-                int intAddr = 0;
+                int intAddr;
                 if (host instanceof RubyInteger) {
                     intAddr = RubyNumeric.fix2int(host);
                 } else if (host instanceof RubyString) {

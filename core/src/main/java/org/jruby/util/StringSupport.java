@@ -1012,7 +1012,7 @@ public final class StringSupport {
         p = byteList.getBegin();
         end = p + byteList.getRealSize();
 
-        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
+        if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         while (p < end) {
             int c = bytes[p++] & 0xff;
             switch (c) {
@@ -1064,7 +1064,7 @@ public final class StringSupport {
                     }
             }
         }
-        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
+        if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         outBytes.setRealSize(q);
         assert out == outBytes.getUnsafeBytes(); // must not reallocate
 
@@ -1210,7 +1210,10 @@ public final class StringSupport {
         }
 
         final byte[] buf;
-        int p, pend, now, max;
+        int p;
+        final int pend;
+        int now;
+        int max;
         boolean gen;
     }
 

@@ -42,7 +42,7 @@ import org.objectweb.asm.ClassWriter;
  */
 public class DumpingInvocationMethodFactory extends InvocationMethodFactory {
 
-    private String dumpPath;
+    private final String dumpPath;
     
     public DumpingInvocationMethodFactory(String path, ClassLoader classLoader) {
         super(classLoader);

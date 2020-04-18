@@ -26,9 +26,9 @@ import org.jruby.util.ByteList;
  * Context object when performing an inline.
  */
 public class InlineCloneInfo extends CloneInfo {
-    private static AtomicInteger globalInlineCount = new AtomicInteger(0);
+    private static final AtomicInteger globalInlineCount = new AtomicInteger(0);
 
-    private CFG hostCFG;
+    private final CFG hostCFG;
 
     private ByteList inlineVarPrefix;
 
@@ -38,13 +38,13 @@ public class InlineCloneInfo extends CloneInfo {
     private Variable argsArray;
     private boolean canMapArgsStatically;
 
-    private Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<>();
+    private final Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<>();
 
-    private boolean isClosure;    // true for closure inlining
+    private final boolean isClosure;    // true for closure inlining
     private Operand yieldArg;     // Closure inlining only
     private Variable yieldResult; // Closure inlining only
-    private List yieldSites = new ArrayList(); // Closure inlining only
-    private IRScope scopeBeingInlined; // host scope is where we are going and this was original scope
+    private final List yieldSites = new ArrayList(); // Closure inlining only
+    private final IRScope scopeBeingInlined; // host scope is where we are going and this was original scope
 
 
     // Closure Inline

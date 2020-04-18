@@ -47,7 +47,7 @@ public class YieldSite extends MutableCallSite {
             false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int unwrap) throws Throwable {
-        YieldSite site = new YieldSite(type, unwrap == 1 ? true : false);
+        YieldSite site = new YieldSite(type, unwrap == 1);
 
         MethodHandle handle;
         switch (name) {

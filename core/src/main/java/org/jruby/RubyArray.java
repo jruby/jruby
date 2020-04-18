@@ -122,7 +122,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return arrayc;
     }
 
-    private static ObjectAllocator ARRAY_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator ARRAY_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyArray(runtime, klass, IRubyObject.NULL_ARRAY);
         }
@@ -253,8 +253,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (size == 0) {
             return newEmptyArray(runtime);
         }
-        return isPackedArray(size) ? packedArray(runtime, args)
-            : new RubyArray(runtime, args.clone());
+        return isPackedArray(size) ? packedArray(runtime, args) : new RubyArray(runtime, args.clone());
     }
 
     public static RubyArray newArray(Ruby runtime, Collection<? extends IRubyObject> collection) {
@@ -269,8 +268,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (list.isEmpty()) {
             return newEmptyArray(runtime);
         }
-        return isPackedArray(list) ? packedArray(runtime, list)
-            : new RubyArray(runtime, list.toArray(IRubyObject.NULL_ARRAY));
+        return isPackedArray(list) ? packedArray(runtime, list) : new RubyArray(runtime, list.toArray(IRubyObject.NULL_ARRAY));
     }
 
     private static RubyArray packedArray(final Ruby runtime, final IRubyObject[] args) {
@@ -3949,7 +3947,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private SizeFn cycleSizeFn(final ThreadContext context) {
         return new SizeFn() {
-            CallSite op_times = sites(context).op_times;
+            final CallSite op_times = sites(context).op_times;
             @Override
             public IRubyObject size(ThreadContext context, IRubyObject[] args) {
                 Ruby runtime = context.runtime;
@@ -4209,22 +4207,22 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private static void rpermute(ThreadContext context, int n, int r, int[] p, RubyArray values, Block block) {
-        int i = 0, index = 0;
+        int index = 0;
 
-        p[index] = i;
+        p[index] = 0;
         for (;;) {
             if (++index < r-1) {
-                p[index] = i = 0;
+                p[index] = 0;
                 continue;
             }
-            for (i = 0; i < n; ++i) {
+            for (int i = 0; i < n; ++i) {
                 p[index] = i;
                 // TODO: MRI has a weird reentrancy check that depends on having a null class in values
                 yieldValues(context, r, p, 0, values, block);
             }
             do {
                 if (index <= 0) return;
-            } while ((i = ++p[--index]) >= n);
+            } while ((++p[--index]) >= n);
         }
     }
 
@@ -4248,7 +4246,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private SizeFn repeatedPermutationSize(final ThreadContext context) {
         return new SizeFn() {
-            CallSite op_exp = sites(context).op_exp;
+            final CallSite op_exp = sites(context).op_exp;
             @Override
             public IRubyObject size(ThreadContext context, IRubyObject[] args) {
                 RubyFixnum n = RubyArray.this.length();

@@ -43,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Access to a class variable.
  */
 public class ClassVarNode extends Node implements INameNode, SideEffectFree {
-    private RubySymbol name;
+    private final RubySymbol name;
 
     public ClassVarNode(ISourcePosition position, RubySymbol name) {
         super(position, false);

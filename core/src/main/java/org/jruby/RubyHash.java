@@ -348,7 +348,7 @@ public class RubyHash extends RubyObject implements Map {
     { head.prevAdded = head.nextAdded = head; }
 
     public static final class RubyHashEntry implements Map.Entry {
-        IRubyObject key;
+        final IRubyObject key;
         IRubyObject value;
         private RubyHashEntry next;
         private RubyHashEntry prevAdded;

@@ -49,7 +49,7 @@ public class OSGiLoadService extends LoadService {
     
     public static final String OSGI_BUNDLE_CLASSPATH_SCHEME = "osgibundle:/";
     
-    public static LoadServiceCreator OSGI_DEFAULT = new LoadServiceCreator() {
+    public static final LoadServiceCreator OSGI_DEFAULT = new LoadServiceCreator() {
         public LoadService create(Ruby runtime) {
             return new OSGiLoadService19(runtime);
         }

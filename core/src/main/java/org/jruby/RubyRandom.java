@@ -238,7 +238,7 @@ public class RubyRandom extends RubyObject {
         return randomClass;
     }
 
-    private static ObjectAllocator RANDOM_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator RANDOM_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyRandom(runtime, klass);

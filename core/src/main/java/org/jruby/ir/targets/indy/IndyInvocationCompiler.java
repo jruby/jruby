@@ -22,7 +22,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyInvocationCompiler implements InvocationCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
     private final InvocationCompiler normalCompiler;
 
     public IndyInvocationCompiler(IRBytecodeAdapter compiler) {

@@ -41,9 +41,9 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     protected final Node receiverNode;
-    private RubySymbol name;
+    private final RubySymbol name;
     private Node argsNode;
-    private Node blockNode;
+    private final Node blockNode;
     private final boolean isLazy;
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode, Node blockNode, boolean isLazy) {

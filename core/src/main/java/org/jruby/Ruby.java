@@ -2994,7 +2994,7 @@ public final class Ruby implements Constantizable {
 
     public static class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
-        private ThreadContext thread; // if non-null only call traceFunc if it is from this thread.
+        private final ThreadContext thread; // if non-null only call traceFunc if it is from this thread.
 
         public CallTraceFuncHook(ThreadContext context) {
             this.thread = context;
@@ -4345,7 +4345,7 @@ public final class Ruby implements Constantizable {
 
     public boolean isInspecting(Object obj) {
         Map<Object, Object> val = inspect.get();
-        return val == null ? false : val.containsKey(obj);
+        return val != null && val.containsKey(obj);
     }
 
     public void unregisterInspecting(Object obj) {
@@ -5014,7 +5014,7 @@ public final class Ruby implements Constantizable {
         synchronized (this) {
             mriRecursionGuard = this.mriRecursionGuard;
             if (mriRecursionGuard != null) return mriRecursionGuard;
-            return mriRecursionGuard = new MRIRecursionGuard(this);
+            return this.mriRecursionGuard = new MRIRecursionGuard(this);
         }
     }
 
@@ -5363,7 +5363,7 @@ public final class Ruby implements Constantizable {
     private PrintStream err;
 
     // Java support
-    private JavaSupport javaSupport;
+    private final JavaSupport javaSupport;
     private final JRubyClassLoader jrubyClassLoader;
 
     // Management/monitoring
@@ -5372,7 +5372,7 @@ public final class Ruby implements Constantizable {
     // Parser stats
     private final ParserStats parserStats;
 
-    private InlineStats inlineStats;
+    private final InlineStats inlineStats;
 
     // Compilation
     private final JITCompiler jitCompiler;

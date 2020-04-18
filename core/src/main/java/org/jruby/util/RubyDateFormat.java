@@ -494,8 +494,8 @@ public class RubyDateFormat extends DateFormat {
         NUMERIC5('0', 5),
         TEXT(' ', 0);
 
-        char defaultPadder;
-        int defaultWidth;
+        final char defaultPadder;
+        final int defaultWidth;
         FieldType(char padder, int width) {
             defaultPadder = padder;
             defaultWidth = width;

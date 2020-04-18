@@ -351,7 +351,7 @@ public class PosixShim {
         private int __W_EXITCODE(int ret, int sig) { return (ret << 8) | sig; }
         private int __W_STOPCODE(int sig) { return (sig << 8) | 0x7f; }
         private static int __W_CONTINUED = 0xffff;
-        private static int __WCOREFLAG = 0x80;
+        private static final int __WCOREFLAG = 0x80;
 
         /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
         private int __WEXITSTATUS(long status) { return (int)((status & 0xff00) >> 8); }
@@ -654,7 +654,7 @@ public class PosixShim {
      */
     public Throwable error;
 
-    private ThreadLocal<Errno> errno = new ThreadLocal<>();
+    private final ThreadLocal<Errno> errno = new ThreadLocal<>();
 
     /**
      * The recommended error message, if any.

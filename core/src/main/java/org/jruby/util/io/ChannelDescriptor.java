@@ -89,7 +89,7 @@ public class ChannelDescriptor {
      * for this descriptor. This is generated new for most ChannelDescriptor
      * instances, except when they need to masquerade as another fileno.
      */
-    private int internalFileno;
+    private final int internalFileno;
     /** The java.io.FileDescriptor object for this descriptor. */
     private FileDescriptor fileDescriptor;
     /**

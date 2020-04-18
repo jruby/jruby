@@ -20,8 +20,8 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     private MethodHandle specific;
     private final int specificArity;
-    private String encodedArgumentDescriptors;
-    private boolean needsToFindImplementer;
+    private final String encodedArgumentDescriptors;
+    private final boolean needsToFindImplementer;
 
     public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope, Visibility visibility,
                             RubyModule implementationClass, String encodedArgumentDescriptors, boolean recievesKeywordArgs, boolean needsToFindImplementer) {

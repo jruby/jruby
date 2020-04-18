@@ -29,7 +29,7 @@ public class SelfInvokeSite extends InvokeSite {
         this(type, name, callType, false, file, line);
     }
 
-    public static Handle BOOTSTRAP = new Handle(
+    public static final Handle BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
             p(SelfInvokeSite.class),
             "bootstrap",

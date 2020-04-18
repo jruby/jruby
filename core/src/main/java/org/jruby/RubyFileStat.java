@@ -73,7 +73,7 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) throw getRuntime().newTypeError("uninitialized File::Stat");
     }
 
-    private static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyFileStat(runtime, klass);

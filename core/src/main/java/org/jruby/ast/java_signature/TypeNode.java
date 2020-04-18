@@ -33,7 +33,7 @@ package org.jruby.ast.java_signature;
  * Base class for all typed nodes
  */
 public class TypeNode implements AnnotationExpression {
-    protected String name;
+    protected final String name;
 
     public TypeNode(String name) {
         this.name = name;

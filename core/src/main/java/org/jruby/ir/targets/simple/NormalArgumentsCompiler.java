@@ -18,7 +18,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalArgumentsCompiler implements ArgumentsCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalArgumentsCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

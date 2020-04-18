@@ -84,7 +84,7 @@ public class RubyMatchData extends RubyObject {
         return matchDataClass;
     }
 
-    private static ObjectAllocator MATCH_DATA_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator MATCH_DATA_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyMatchData(runtime, klass);

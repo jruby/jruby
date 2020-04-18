@@ -45,7 +45,7 @@ import static com.headius.backport9.buffer.Buffers.positionBuffer;
  */
 public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final ByteBuffer buf;
-    private IRManager manager;
+    private final IRManager manager;
     private final List<IRScope> scopes = new ArrayList<>();
     private IRScope currentScope = null; // FIXME: This is not thread-safe and more than a little gross
     /** Filename to use for the script */

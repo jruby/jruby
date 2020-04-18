@@ -19,9 +19,9 @@ import org.jruby.RubyInstanceConfig;
 
 public class URLResource implements FileResource, DummyResourceStat.FileResourceExt {
 
-    public static String URI = "uri:";
-    public static String CLASSLOADER = "classloader:";
-    public static String URI_CLASSLOADER = URI + CLASSLOADER;
+    public static final String URI = "uri:";
+    public static final String CLASSLOADER = "classloader:";
+    public static final String URI_CLASSLOADER = URI + CLASSLOADER;
 
     private final String uri;
 

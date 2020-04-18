@@ -292,7 +292,7 @@ public class JRubyFile extends JavaSecuredFile {
         return smartFiles;
     }
 
-    public static JRubyFile DUMMY = new JRubyFile("") {
+    public static final JRubyFile DUMMY = new JRubyFile("") {
         @Override
         public String getAbsolutePath() {
             return "";

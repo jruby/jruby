@@ -46,7 +46,7 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalValueCompiler implements ValueCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalValueCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

@@ -30,7 +30,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     public transient long callSiteId;
     private final CallType callType;
-    protected RubySymbol name;
+    protected final RubySymbol name;
     protected final transient CallSite callSite;
     protected final transient int argsCount;
     protected final transient boolean hasClosure;
@@ -42,7 +42,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean dontInline;
     private transient boolean[] splatMap;
     protected transient boolean procNew;
-    private boolean potentiallyRefined;
+    private final boolean potentiallyRefined;
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 

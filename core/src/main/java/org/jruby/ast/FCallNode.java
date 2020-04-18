@@ -44,7 +44,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
-    private RubySymbol name;
+    private final RubySymbol name;
     protected Node argsNode;
     protected Node iterNode;
 

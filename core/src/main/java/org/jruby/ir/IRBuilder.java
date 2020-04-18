@@ -133,8 +133,8 @@ public class IRBuilder {
     }
 
     private static class RescueBlockInfo {
-        Label      entryLabel;             // Entry of the rescue block
-        Variable   savedExceptionVariable; // Variable that contains the saved $! variable
+        final Label      entryLabel;             // Entry of the rescue block
+        final Variable   savedExceptionVariable; // Variable that contains the saved $! variable
 
         public RescueBlockInfo(Label l, Variable v) {
             entryLabel = l;
@@ -172,25 +172,25 @@ public class IRBuilder {
      * run the stack of ensure blocks in the right order.
      * ----------------------------------------------------------------------------------- */
     private static class EnsureBlockInfo {
-        Label    regionStart;
-        Label    start;
-        Label    end;
-        Label    dummyRescueBlockLabel;
+        final Label    regionStart;
+        final Label    start;
+        final Label    end;
+        final Label    dummyRescueBlockLabel;
         Variable savedGlobalException;
         boolean needsBacktrace;
 
         // Label of block that will rescue exceptions raised by ensure code
-        Label    bodyRescuer;
+        final Label    bodyRescuer;
 
         // Innermost loop within which this ensure block is nested, if any
-        IRLoop   innermostLoop;
+        final IRLoop   innermostLoop;
 
         // AST node for any associated rescue node in the case of begin-rescue-ensure-end block
         // Will be null in the case of begin-ensure-end block
-        RescueNode matchingRescueNode;
+        final RescueNode matchingRescueNode;
 
         // This ensure block's instructions
-        List<Instr> instrs;
+        final List<Instr> instrs;
 
         public EnsureBlockInfo(IRScope s, RescueNode n, IRLoop l, Label bodyRescuer) {
             regionStart = s.getNewLabel();
@@ -297,10 +297,10 @@ public class IRBuilder {
         return loopStack.isEmpty() ? null : loopStack.peek();
     }
 
-    protected IRBuilder parent;
-    protected IRManager manager;
-    protected IRScope scope;
-    protected List<Instr> instructions;
+    protected final IRBuilder parent;
+    protected final IRManager manager;
+    protected final IRScope scope;
+    protected final List<Instr> instructions;
     protected List<Object> argumentDescriptions;
     protected int coverageMode;
     private boolean executesOnce = true;

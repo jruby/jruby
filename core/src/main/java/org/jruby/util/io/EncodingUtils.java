@@ -454,12 +454,12 @@ public class EncodingUtils {
         int len = sByteList.getRealSize();
 
         Ptr sp = new Ptr(0);
-        int se = 0;
-        int ds = 0;
+        int se;
+        int ds;
         int ss = sByteList.getBegin();
         byte[] dBytes;
         Ptr dp = new Ptr(0);
-        int de = 0;
+        int de;
         EConvResult res;
         int maxOutput;
 
@@ -2007,7 +2007,7 @@ public class EncodingUtils {
                 throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
             case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
             case 0:
-                throw runtime.newRangeError(Long.toString(i) + " out of char range");
+                throw runtime.newRangeError(i + " out of char range");
         }
 
         ByteList strBytes = new ByteList(n);

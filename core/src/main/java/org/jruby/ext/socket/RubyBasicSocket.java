@@ -87,7 +87,7 @@ public class RubyBasicSocket extends RubyIO {
         rb_cBasicSocket.undefineMethod("initialize");
     }
 
-    private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyBasicSocket(runtime, klass);
         }

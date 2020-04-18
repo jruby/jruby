@@ -565,8 +565,6 @@ public class RubyStruct extends RubyObject {
             return context.fals;
         }
 
-        if (other == this) return context.tru;
-
         // recursion guard
         return context.safeRecurse(EqlRecursive.INSTANCE, other, this, "eql?", true);
     }

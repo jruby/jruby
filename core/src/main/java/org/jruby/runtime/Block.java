@@ -205,9 +205,8 @@ public class Block {
     }
 
     public Block cloneBlockAsType(Type newType) {
-        Block newBlock = new Block(body, binding, newType, this, evalType);
 
-        return newBlock;
+        return new Block(body, binding, newType, this, evalType);
     }
 
     public Block cloneBlockAndBinding() {
@@ -215,9 +214,8 @@ public class Block {
     }
 
     public Block cloneBlockAndBinding(EvalType evalType) {
-        Block newBlock = new Block(body, binding.clone(), type, this, evalType);
 
-        return newBlock;
+        return new Block(body, binding.clone(), type, this, evalType);
     }
 
     public Block cloneBlockAndFrame() {
@@ -235,15 +233,12 @@ public class Block {
                 oldBinding.getFile(),
                 oldBinding.getLine());
 
-        Block newBlock = new Block(body, binding, type, this, evalType);
-
-        return newBlock;
+        return new Block(body, binding, type, this, evalType);
     }
 
     public Block cloneBlockForEval(IRubyObject self, EvalType evalType) {
-        Block newBlock = new Block(body, binding, type, this, evalType);
 
-        Block block = newBlock;
+        Block block = new Block(body, binding, type, this, evalType);
 
         block.getBinding().setSelf(self);
         block.getBinding().getFrame().setSelf(self);

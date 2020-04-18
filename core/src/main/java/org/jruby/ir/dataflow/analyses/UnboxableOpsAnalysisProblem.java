@@ -39,7 +39,7 @@ abstract class UnboxableOp {
     abstract public Class getUnboxedResultType(Class operandType);
     abstract public Operation getUnboxedOp(Class operandType);
 
-    public static Map<String, UnboxableOp> opsMap = new HashMap<String, UnboxableOp>();
+    public static final Map<String, UnboxableOp> opsMap = new HashMap<String, UnboxableOp>();
 
     public static void addUnboxableOp(UnboxableOp op) {
         opsMap.put(op.name, op);

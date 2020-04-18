@@ -127,8 +127,8 @@ public class RubyGlobal {
         globals.define("$0", d, GLOBAL);
 
         // Version information:
-        IRubyObject version = null;
-        IRubyObject patchlevel = null;
+        IRubyObject version;
+        IRubyObject patchlevel;
         IRubyObject release = runtime.newString(Constants.COMPILE_DATE);
         release.setFrozen(true);
         IRubyObject platform = runtime.newString(Constants.PLATFORM);
@@ -334,7 +334,7 @@ public class RubyGlobal {
 
             // try typical stdio stream and channel types
             int fileno = -1;
-            Channel channel = null;
+            Channel channel;
 
             if (stream instanceof Channel) {
                 channel = (Channel) stream;

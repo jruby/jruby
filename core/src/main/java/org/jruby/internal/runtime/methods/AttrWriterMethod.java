@@ -76,7 +76,7 @@ public class AttrWriterMethod extends JavaMethodOne {
     @Override
     public MethodData getMethodData() {
         if (methodData == null){
-            methodData = new MethodData(name, "dummyfile", Arrays.asList(variableName));
+            methodData = new MethodData(name, "dummyfile", Collections.singletonList(variableName));
         }
         return methodData;
     }

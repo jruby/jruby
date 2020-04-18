@@ -2074,7 +2074,7 @@ public class Helpers {
     }
 
     public static void checkArgumentCount(ThreadContext context, int length, int min, int max) {
-        int expected = 0;
+        int expected;
         if (length < min) {
             expected = min;
         } else if (max > -1 && length > max) {

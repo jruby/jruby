@@ -32,7 +32,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         }
     }
 
-    Methods    helperMethod;
+    final Methods    helperMethod;
 
     public RuntimeHelperCall(Variable result, Methods helperMethod, Operand[] args) {
         super(Operation.RUNTIME_HELPER, result, args);

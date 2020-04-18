@@ -59,7 +59,7 @@ public class RubyIPSocket extends RubyBasicSocket {
         runtime.getObject().setConstant("IPsocket",rb_cIPSocket);
     }
 
-    private static ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyIPSocket(runtime, klass);
         }

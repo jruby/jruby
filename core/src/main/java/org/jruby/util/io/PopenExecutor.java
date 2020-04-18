@@ -76,7 +76,7 @@ public class PopenExecutor {
     // MRI: rb_f_spawn
     public static RubyFixnum spawn(ThreadContext context, IRubyObject[] argv) {
         Ruby runtime = context.runtime;
-        long pid = 0;
+        long pid;
         String[] errmsg = { null };
         ExecArg eargp;
         IRubyObject fail_str;
@@ -552,7 +552,7 @@ public class PopenExecutor {
     private RubyIO pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
         final Ruby runtime = context.runtime;
         IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.command_name : eargp.command_name) : null;
-        long pid = 0;
+        long pid;
         OpenFile fptr;
         RubyIO port;
         OpenFile write_fptr;
@@ -2102,8 +2102,8 @@ public class PopenExecutor {
         int close_others_maxhint;
         RubyArray env_modification; /* null or [[k1,v1], ...] */
         String chdir_dir;
-        List<SpawnFileAction> fileActions = new ArrayList();
-        List<SpawnAttribute> attributes = new ArrayList();
+        final List<SpawnFileAction> fileActions = new ArrayList();
+        final List<SpawnAttribute> attributes = new ArrayList();
         IRubyObject path_env;
         boolean exception_given;
         boolean exception;

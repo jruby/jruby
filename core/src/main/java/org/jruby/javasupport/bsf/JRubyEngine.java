@@ -61,7 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class JRubyEngine extends BSFEngineImpl {
     private Ruby runtime;
-    private RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
+    private final RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
 
     @Override
     public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {

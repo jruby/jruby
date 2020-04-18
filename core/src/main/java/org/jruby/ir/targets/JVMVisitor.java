@@ -2799,9 +2799,9 @@ public class JVMVisitor extends IRVisitor {
     public final JVM jvm;
     private final Ruby runtime;
     private int methodIndex;
-    private Map<IRClosure, Handle> closuresMap = new HashMap();
-    public Map<String, StaticScope> staticScopeMap = new HashMap();
-    public Map<StaticScope, String> scopeFieldMap = new HashMap();
+    private final Map<IRClosure, Handle> closuresMap = new HashMap();
+    public final Map<String, StaticScope> staticScopeMap = new HashMap();
+    public final Map<StaticScope, String> scopeFieldMap = new HashMap();
     public final Map<String, String> staticScopeDescriptorMap = new HashMap();
     private String file;
     private int lastLine = -1;

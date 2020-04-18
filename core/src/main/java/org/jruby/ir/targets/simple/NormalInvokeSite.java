@@ -26,7 +26,7 @@ public class NormalInvokeSite extends InvokeSite {
         super(type, name, CallType.NORMAL, literalClosure, file, line);
     }
 
-    public static Handle BOOTSTRAP = new Handle(
+    public static final Handle BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
             p(NormalInvokeSite.class),
             "bootstrap",

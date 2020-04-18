@@ -70,7 +70,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
     }
 
-    private static ObjectAllocator TCPSERVER_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator TCPSERVER_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyTCPServer(runtime, klass);
         }

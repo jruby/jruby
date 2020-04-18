@@ -219,7 +219,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexpClass;
     }
 
-    private static ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyRegexp(runtime, klass);

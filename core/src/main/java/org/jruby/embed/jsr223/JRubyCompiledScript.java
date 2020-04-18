@@ -47,8 +47,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class JRubyCompiledScript extends CompiledScript {
-    private ScriptingContainer container;
-    private JRubyEngine engine;
+    private final ScriptingContainer container;
+    private final JRubyEngine engine;
     private final EmbedEvalUnit unit;
 
     JRubyCompiledScript(ScriptingContainer container,

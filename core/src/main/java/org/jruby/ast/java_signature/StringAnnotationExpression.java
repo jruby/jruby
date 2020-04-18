@@ -9,7 +9,7 @@ package org.jruby.ast.java_signature;
  * @author enebo
  */
 public class StringAnnotationExpression implements AnnotationExpression {
-    private String value;
+    private final String value;
     
     public StringAnnotationExpression(String value) {
         this.value = value;

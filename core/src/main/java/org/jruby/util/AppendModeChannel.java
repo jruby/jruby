@@ -14,7 +14,7 @@ import java.nio.channels.WritableByteChannel;
  * RandomAccessFile in pure-Java mode but has no append option ala O_APPEND to open(2).
  */
 public class AppendModeChannel extends FileChannel {
-    private FileChannel delegate;
+    private final FileChannel delegate;
 
     public AppendModeChannel(FileChannel delegate) {
         this.delegate = delegate;

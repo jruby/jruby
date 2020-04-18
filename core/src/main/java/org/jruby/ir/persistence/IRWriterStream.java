@@ -50,7 +50,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final OutputStream stream;
     private final IRWriterAnalyzer analyzer;
-    private Map<RubySymbol, Integer> constantMap = new HashMap();
+    private final Map<RubySymbol, Integer> constantMap = new HashMap();
 
     int headersOffset = -1;
 

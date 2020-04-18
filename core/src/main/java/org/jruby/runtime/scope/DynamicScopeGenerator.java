@@ -34,7 +34,7 @@ import static org.jruby.util.CodegenUtils.sig;
  */
 public class DynamicScopeGenerator {
     private static final NonBlockingHashMapLong<MethodHandle> specializedFactories = new NonBlockingHashMapLong<>();
-    private static ClassDefiningClassLoader CDCL = new OneShotClassLoader(Ruby.getClassLoader());
+    private static final ClassDefiningClassLoader CDCL = new OneShotClassLoader(Ruby.getClassLoader());
 
     public static final String SCOPES_PACKAGE = "org.jruby.runtime.scopes";
     public static final String SCOPES_PATH = SCOPES_PACKAGE.replaceAll("\\.", "/");

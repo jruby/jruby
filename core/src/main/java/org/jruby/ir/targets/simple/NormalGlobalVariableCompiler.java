@@ -13,7 +13,7 @@ import org.objectweb.asm.commons.Method;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalGlobalVariableCompiler implements GlobalVariableCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalGlobalVariableCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

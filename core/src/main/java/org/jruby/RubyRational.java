@@ -78,7 +78,7 @@ public class RubyRational extends RubyNumeric {
         return rationalc;
     }
 
-    private static ObjectAllocator RATIONAL_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator RATIONAL_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFixnum zero = RubyFixnum.zero(runtime);

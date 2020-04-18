@@ -65,7 +65,7 @@ public class RubyBinding extends RubyObject {
         super(runtime, rubyClass);
     }
     
-    private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyBinding instance = new RubyBinding(runtime, klass);

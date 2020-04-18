@@ -24,7 +24,7 @@ import org.jruby.runtime.opto.Invalidator;
  * call const_missing.
  */
 public class SearchModuleForConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private RubySymbol constantName;
+    private final RubySymbol constantName;
     private final boolean noPrivateConsts;
     private final boolean callConstMissing;
 

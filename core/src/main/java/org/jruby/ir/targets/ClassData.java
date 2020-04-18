@@ -93,7 +93,7 @@ public class ClassData {
         methodStack.pop();
     }
 
-    public ClassVisitor cls;
+    public final ClassVisitor cls;
     public final JVMVisitor visitor;
     public final String clsName;
     final Stack<MethodData> methodStack = new Stack();

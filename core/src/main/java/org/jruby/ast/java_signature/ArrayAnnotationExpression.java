@@ -11,7 +11,7 @@ import java.util.List;
  * @author enebo
  */
 public class ArrayAnnotationExpression implements AnnotationExpression {
-    private List<AnnotationExpression> expressions;
+    private final List<AnnotationExpression> expressions;
     
     public ArrayAnnotationExpression(List<AnnotationExpression> expressions) {
         this.expressions = expressions;

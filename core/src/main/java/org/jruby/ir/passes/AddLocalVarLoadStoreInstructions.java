@@ -1,5 +1,6 @@
 package org.jruby.ir.passes;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -25,7 +26,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         return "Add LVar L/S";
     }
 
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(LiveVariableAnalysis.class);
+    public static final List<Class<? extends CompilerPass>> DEPENDENCIES = Collections.singletonList(LiveVariableAnalysis.class);
 
     @Override
     public List<Class<? extends CompilerPass>> getDependencies() {

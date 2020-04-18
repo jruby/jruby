@@ -1738,8 +1738,8 @@ public class Pack {
     }
 
     public abstract static class Converter {
-        public int size;
-        public String type;
+        public final int size;
+        public final String type;
 
         public Converter(int size) {
             this(size, null);

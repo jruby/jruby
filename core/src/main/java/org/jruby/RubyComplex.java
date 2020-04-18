@@ -116,7 +116,7 @@ public class RubyComplex extends RubyNumeric {
         return complexc;
     }
 
-    private static ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFixnum zero = RubyFixnum.zero(runtime);
@@ -1176,10 +1176,6 @@ public class RubyComplex extends RubyNumeric {
 
         if (value instanceof RubyFloat) {
             return ((RubyFloat) value).finite_p().isTrue();
-        }
-
-        if (value instanceof RubyRational) {
-            return true;
         }
 
         return sites(context).finite.call(context, value, value).isTrue();

@@ -18,13 +18,13 @@ import org.jruby.util.log.LoggerFactory;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
-    protected boolean pushScope;
-    protected boolean reuseParentScope;
+    protected final boolean pushScope;
+    protected final boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private int callCount = 0;
     private InterpreterContext interpreterContext;
     private InterpreterContext fullInterpreterContext;
-    private IRClosure closure;
+    private final IRClosure closure;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);

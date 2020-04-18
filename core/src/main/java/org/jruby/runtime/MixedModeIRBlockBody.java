@@ -19,13 +19,13 @@ import org.jruby.util.log.LoggerFactory;
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
 
-    protected boolean pushScope;
-    protected boolean reuseParentScope;
+    protected final boolean pushScope;
+    protected final boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private InterpreterContext interpreterContext;
     private int callCount = 0;
     private volatile CompiledIRBlockBody jittedBody;
-    private IRClosure closure;
+    private final IRClosure closure;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);

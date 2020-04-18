@@ -47,10 +47,10 @@ import org.jruby.runtime.DynamicScope;
  */
 // TODO: Store BEGIN and END information into this node
 public class RootNode extends Node implements ParseResult {
-    private transient DynamicScope scope;
-    private StaticScope staticScope;
-    private Node bodyNode;
-    private String file;
+    private final transient DynamicScope scope;
+    private final StaticScope staticScope;
+    private final Node bodyNode;
+    private final String file;
     private int endPosition;
     private final int coverageMode;
 

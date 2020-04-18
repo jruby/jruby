@@ -43,7 +43,7 @@ public class InterpreterContext {
     private boolean reuseParentDynScope;
     private boolean popDynScope;
     private boolean receivesKeywordArguments;
-    private boolean metaClassBodyScope;
+    private final boolean metaClassBodyScope;
 
     private InterpreterEngine engine;
     public final Supplier<List<Instr>> instructionsCallback;

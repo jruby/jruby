@@ -80,7 +80,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private static final int STRIO_WRITABLE = ObjectFlags.STRIO_WRITABLE;
     private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
 
-    private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new StringIO(runtime, klass);
         }

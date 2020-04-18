@@ -158,7 +158,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return stringClass;
     }
 
-    private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return RubyString.newAllocatedString(runtime, klass);
@@ -2490,7 +2490,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 continue;
             }
             n = MBCLEN_CHARFOUND_LEN(n);
-            final int c = enc.mbcToCode(bytes, p, end); int cc = 0;
+            final int c = enc.mbcToCode(bytes, p, end); int cc;
 
             p += n;
             if ((asciiCompat || isUnicode) &&
@@ -3201,7 +3201,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * In the code paths possible for a string pattern a single instance of a blank regex
      * is enough.
      */
-    private static Regex REPL_MOCK_REGEX = new Regex(new String(""));
+    private static final Regex REPL_MOCK_REGEX = new Regex(new String(""));
 
     // MRI: str_gsub, roughly
     private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl,
@@ -4291,7 +4291,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int lim = RubyNumeric.num2int(arg1);
-        RubyArray array = null;
+        RubyArray array;
         if (lim <= 0) {
             array = splitCommon(context, arg0, false, lim, 1, true);
         } else if (lim == 1) {

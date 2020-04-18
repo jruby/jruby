@@ -89,7 +89,7 @@ public abstract class IRScope implements ParseResult {
     private final int lineNumber;
 
     /** Lexical parent scope */
-    private IRScope lexicalParent;
+    private final IRScope lexicalParent;
 
     /** List of (nested) closures in this scope */
     private List<IRClosure> nestedClosures;
@@ -122,7 +122,7 @@ public abstract class IRScope implements ParseResult {
 
     final EnumSet<IRFlags> flags;
 
-    private IRManager manager;
+    private final IRManager manager;
 
     private boolean alreadyHasInline;
     private String inlineFailed;
@@ -634,9 +634,7 @@ public abstract class IRScope implements ParseResult {
 
         runCompilerPasses(getManager().getJITPasses(this), dumpToIGV());
 
-        BasicBlock[] bbs = fullInterpreterContext.linearizeBasicBlocks();
-
-        return bbs;
+        return fullInterpreterContext.linearizeBasicBlocks();
     }
 
     // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even

@@ -13,7 +13,7 @@ import java.util.Map;
 public class BasicCompilerPassListener implements CompilerPassListener {
     private static final Logger LOG = LoggerFactory.getLogger(BasicCompilerPassListener.class);
 
-    private Map<CompilerPass, Long> times = new HashMap<CompilerPass, Long>();
+    private final Map<CompilerPass, Long> times = new HashMap<>();
 
     @Override
     public void alreadyExecuted(CompilerPass passClass, IRScope scope, Object data, boolean childScope) {

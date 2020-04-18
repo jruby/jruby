@@ -358,7 +358,7 @@ public final class IdUtil {
                 BIT('0', idx);
     }
 
-    private static int[] globalNamePunctuationBits = new int[] {SPECIAL_PUNCT(0), SPECIAL_PUNCT(1), SPECIAL_PUNCT(2)};
+    private static final int[] globalNamePunctuationBits = new int[] {SPECIAL_PUNCT(0), SPECIAL_PUNCT(1), SPECIAL_PUNCT(2)};
 
     private static boolean isSpecialGlobalName(byte c) {
         if (c <= 0x20 || 0x72 < c) return false;

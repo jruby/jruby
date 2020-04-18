@@ -18,7 +18,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalYieldCompiler implements YieldCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalYieldCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

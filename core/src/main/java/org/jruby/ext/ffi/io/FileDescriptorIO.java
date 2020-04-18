@@ -104,7 +104,7 @@ public class FileDescriptorIO extends RubyIO {
     }
 
     static class FileDescriptorHelper {
-        static java.lang.reflect.Constructor<java.io.FileDescriptor> CONSTRUCTOR;
+        static final java.lang.reflect.Constructor<java.io.FileDescriptor> CONSTRUCTOR;
         static {
             java.lang.reflect.Constructor<java.io.FileDescriptor> constructor;
             try {

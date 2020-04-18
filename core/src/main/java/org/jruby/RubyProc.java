@@ -60,7 +60,7 @@ import static org.jruby.util.RubyStringBuilder.types;
 @JRubyClass(name="Proc")
 public class RubyProc extends RubyObject implements DataType {
     private Block block = Block.NULL_BLOCK;
-    private Block.Type type;
+    private final Block.Type type;
     private String file = null;
     private int line = -1;
 

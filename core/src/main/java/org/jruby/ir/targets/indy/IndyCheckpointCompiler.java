@@ -7,7 +7,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyCheckpointCompiler implements CheckpointCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public IndyCheckpointCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

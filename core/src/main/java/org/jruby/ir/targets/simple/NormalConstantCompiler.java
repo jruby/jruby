@@ -13,7 +13,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalConstantCompiler implements ConstantCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalConstantCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

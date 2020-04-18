@@ -68,7 +68,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static volatile File tempDir;
 
-    private List<String> cachedJarPaths = Collections.synchronizedList(new ArrayList<String>());
+    private final List<String> cachedJarPaths = Collections.synchronizedList(new ArrayList<String>());
 
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
