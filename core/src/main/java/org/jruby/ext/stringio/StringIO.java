@@ -1205,13 +1205,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 ptr.pos = olen;
             }
             if (ptr.pos == olen) {
-                EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
+                    EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                    ptr.string.infectBy(str);
+                } else {
+                    ptr.string.cat19(str);
+                }
             } else {
                 strioExtend(ptr.pos, len);
                 ByteList ptrByteList = ptr.string.getByteList();
                 System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + ptr.pos, len);
+                ptr.string.infectBy(str);
             }
-            ptr.string.infectBy(str);
             ptr.string.infectBy(this);
             ptr.pos += len;
         }
