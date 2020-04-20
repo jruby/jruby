@@ -50,7 +50,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
   jar 'org.jruby.joni:joni:2.1.32'
-  jar 'org.jruby.jcodings:jcodings:1.0.48'
+  jar 'org.jruby.jcodings:jcodings:1.0.49'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
