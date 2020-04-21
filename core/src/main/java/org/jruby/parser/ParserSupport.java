@@ -185,7 +185,6 @@ public class ParserSupport {
     /**
      *  Wraps node with NEWLINE node.
      *
-     *@param node
      */
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
@@ -352,7 +351,6 @@ public class ParserSupport {
     }
     
 	/**
-	 * @fixme position
 	 **/
     public Node node_assign(Node lhs, Node rhs) {
         if (lhs == null) return null;
@@ -394,17 +392,15 @@ public class ParserSupport {
      * @return true if a control node, false otherwise
      */
     public boolean isBreakStatement(Node node) {
-        breakLoop: do {
-            if (node == null) return false;
+        if (node == null) return false;
 
-            switch (node.getNodeType()) {
+        switch (node.getNodeType()) {
             case BREAKNODE: case NEXTNODE: case REDONODE:
             case RETRYNODE: case RETURNNODE:
                 return true;
             default:
                 return false;
-            }
-        } while (true);                    
+        }
     }
     
     public void warnUnlessEOption(ID id, Node node, String message) {
