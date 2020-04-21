@@ -251,7 +251,7 @@ public class ParserSupport {
     }
 
     public Node getOperatorCallNode(Node firstNode, ByteList operator) {
-        checkExpression(firstNode);
+        value_expr(lexer, firstNode);
 
         return new CallNode(firstNode.getLine(), firstNode, symbolID(operator), null, null, false);
     }
@@ -321,8 +321,7 @@ public class ParserSupport {
     }
 
     public Node attrset(Node receiver, ByteList callType, ByteList name) {
-        checkExpression(receiver);
-
+        value_expr(lexer, receiver);
 
         return new_attrassign(receiver.getLine(), receiver, name.append('='), null, isLazy(callType));
     }
@@ -445,11 +444,6 @@ public class ParserSupport {
         }
 
         return true;
-    }
-
-    @Deprecated
-    public boolean checkExpression(Node node) {
-        return value_expr(lexer, node);
     }
     
     /**
