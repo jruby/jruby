@@ -35,8 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents a $number ($0..$9) variable.
@@ -44,8 +42,8 @@ import org.jruby.util.DefinedMessage;
 public class NthRefNode extends Node {
     private final int matchNumber;
     
-    public NthRefNode(ISourcePosition position, int matchNumber) {
-        super(position, false);
+    public NthRefNode(int line, int matchNumber) {
+        super(line, false);
         this.matchNumber = matchNumber;
     }
 

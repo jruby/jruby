@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * All Nodes which have a list representation inherit this.  This is also used
@@ -59,18 +58,18 @@ public class ListNode extends Node implements Iterable<Node> {
     /**
      * Create a new ListNode.
      * 
-     * @param position where list is
+     * @param line where list is
      * @param firstNode first element of the list
      */
-    public ListNode(ISourcePosition position, Node firstNode) {
-        super(position, firstNode != null && firstNode.containsVariableAssignment);
+    public ListNode(int line, Node firstNode) {
+        super(line, firstNode != null && firstNode.containsVariableAssignment);
 
         single = firstNode;
         size = 1;
     }
     
-    public ListNode(ISourcePosition position) {
-        super(position, false);
+    public ListNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {
@@ -153,8 +152,6 @@ public class ListNode extends Node implements Iterable<Node> {
         if (node.containsVariableAssignment()) containsVariableAssignment = true;
         addInternal(node);
 
-        if (getPosition() == null) setPosition(node.getPosition());
-
         return this;
     }
     
@@ -173,9 +170,8 @@ public class ListNode extends Node implements Iterable<Node> {
         if (other != null && other.size() > 0) {
             if (other.containsVariableAssignment()) containsVariableAssignment = true;
             addAllInternal(other);
-
-            if (getPosition() == null) setPosition(other.getPosition());
         }
+
         return this;
     }
 

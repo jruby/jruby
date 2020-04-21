@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -80,17 +81,6 @@ public class SyntaxException extends RuntimeException {
     private String file;
     private int line;
     private PID pid;
-    private int column;
-
-    @Deprecated
-    public SyntaxException(PID pid, ISourcePosition position, String lastLine, String message, Object... data) {
-        this(pid, position.getFile(), position.getLine(), lastLine, message, data);
-    }
-
-    @Deprecated
-    public SyntaxException(PID pid, String file, int line, String lastLine, String message, Object... data) {
-        this(pid, file, line, lastLine, message, -1);
-    }
 
     public SyntaxException(PID pid, String file, int line, String lastLine, String message, int column) {
         super(prepareMessage(message, lastLine, column));
@@ -98,7 +88,6 @@ public class SyntaxException extends RuntimeException {
         this.pid = pid;
         this.file = file;
         this.line = line;
-        this.column = column;
     }
 
 
@@ -108,16 +97,12 @@ public class SyntaxException extends RuntimeException {
             message += (addNewline ? "\n" : "") + line;
             if (column >= 0) {
                 addNewline = !line.endsWith("\n");
-                return message += (addNewline ? "\n" : "") + new String(new char[column - 1]).replace("\0", " ") + "^";
+                message += (addNewline ? "\n" : "") + new String(new char[column - 1]).replace("\0", " ") + "^";
+                return message;
             }
         }
         
         return message;
-    }
-
-    @Deprecated
-    public ISourcePosition getPosition() {
-        return new SimpleSourcePosition(file, line);
     }
 
     public String getFile() {

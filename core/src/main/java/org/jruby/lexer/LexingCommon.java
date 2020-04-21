@@ -7,16 +7,10 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.joni.Matcher;
-import org.joni.Option;
-import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.ext.JavaLang;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -84,7 +78,7 @@ public abstract class LexingCommon {
     protected int token;                      // Last token read via yylex().
     private int tokenCR;
     protected boolean tokenSeen = false;
-    public ISourcePosition tokline;
+    public int tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
 
@@ -265,11 +259,6 @@ public abstract class LexingCommon {
         return leftParenBegin;
     }
 
-    public ISourcePosition getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
-        return new SimpleSourcePosition(getFile(), ruby_sourceline);
-    }
-
     public int getLineOffset() {
         return line_offset;
     }
@@ -414,7 +403,7 @@ public abstract class LexingCommon {
     // In most cases this does not matter much but for ripper or a place where
     // we remove actual source characters (like extra '"') then this acts differently.
     public void newtok(boolean unreadOnce) {
-        tokline = getPosition();
+        tokline = ruby_sourceline;
         // We assume all idents are 7BIT until they aren't.
         tokenCR = StringSupport.CR_7BIT;
 

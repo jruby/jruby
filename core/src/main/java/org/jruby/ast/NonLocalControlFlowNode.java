@@ -9,6 +9,6 @@ package org.jruby.ast;
  * Marker interface for return, break, next, redo, retry
  */
 public interface NonLocalControlFlowNode {
-    public Node getValueNode();
-    public boolean hasValue();
+    Node getValueNode();
+    boolean hasValue();
 }
