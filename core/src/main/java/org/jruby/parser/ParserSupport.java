@@ -317,7 +317,7 @@ public class ParserSupport {
      * @return an AttrAssignNode
      */
     public Node attrset(Node receiver, ByteList name) {
-        return attrset(receiver, lexer.DOT, name);
+        return attrset(receiver, DOT, name);
     }
 
     public Node attrset(Node receiver, ByteList callType, ByteList name) {
@@ -354,8 +354,6 @@ public class ParserSupport {
     public Node node_assign(Node lhs, Node rhs) {
         if (lhs == null) return null;
 
-        Node newNode = lhs;
-
         value_expr(lexer, rhs);
         if (lhs instanceof AssignableNode) {
     	    ((AssignableNode) lhs).setValueNode(rhs);
@@ -365,7 +363,7 @@ public class ParserSupport {
             return invokableNode.setArgsNode(arg_add(lhs.getLine(), invokableNode.getArgsNode(), rhs));
         }
         
-        return newNode;
+        return lhs;
     }
     
     public Node ret_args(Node node, int line) {
@@ -445,20 +443,6 @@ public class ParserSupport {
 
         return true;
     }
-    
-    /**
-     * Is this a literal in the sense that MRI has a NODE_LIT for.  This is different than
-     * ILiteralNode.  We should pick a different name since ILiteralNode is something we created
-     * which is similiar but used for a slightly different condition (can I do singleton things).
-     * 
-     * @param node to be tested
-     * @return true if it is a literal
-     */
-    public boolean isLiteral(Node node) {
-        return node != null && (node instanceof FixnumNode || node instanceof BignumNode || 
-                node instanceof FloatNode || node instanceof SymbolNode || 
-                (node instanceof RegexpNode && ((RegexpNode) node).getOptions().toJoniOptions() == 0));
-    }
 
     private void handleUselessWarn(Node node, String useless) {
         if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
@@ -474,10 +458,9 @@ public class ParserSupport {
     public void checkUselessStatement(Node node) {
         if (!warnings.isVerbose() || (!configuration.isInlineSource() && configuration.isEvalParse())) return;
         
-        uselessLoop: do {
-            if (node == null) return;
+        if (node == null) return;
             
-            switch (node.getNodeType()) {
+        switch (node.getNodeType()) {
             case CALLNODE: {
                 ByteList name = ((CallNode) node).getName().getBytes();
                 int length = name.realSize();
@@ -543,8 +526,7 @@ public class ParserSupport {
             case TRUENODE:
                 handleUselessWarn(node, "true"); return;
             default: return;
-            }
-        } while (true);
+        }
     }
 
     /**
