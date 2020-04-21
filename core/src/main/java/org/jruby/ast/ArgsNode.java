@@ -174,6 +174,11 @@ public class ArgsNode extends Node {
         return restArgNode;
     }
 
+    // Used by jrubyc/jit (Ruby code)
+    public boolean hasRestArg() {
+        return restArgNode != null;
+    }
+
     /**
      * Gets the explicit block argument of the parameter list (&block).
      *
