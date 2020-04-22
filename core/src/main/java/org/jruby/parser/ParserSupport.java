@@ -116,13 +116,13 @@ public class ParserSupport {
         lexer.getCmdArgumentState().reset(0);
     }
     
-    public Node arg_concat(Node node1, Node node2) {
+    public static Node arg_concat(Node node1, Node node2) {
         return node2 == null ? node1 : new ArgsCatNode(node1.getLine(), node1, node2);
     }
 
     // firstNode is ArgsCatNode, SplatNode, ArrayNode, HashNode
     // secondNode is null or not
-    public Node arg_blk_pass(Node firstNode, BlockPassNode secondNode) {
+    public static Node arg_blk_pass(Node firstNode, BlockPassNode secondNode) {
         if (secondNode != null) {
             secondNode.setArgsNode(firstNode);
             return secondNode;
@@ -321,8 +321,6 @@ public class ParserSupport {
     }
 
     public Node attrset(Node receiver, ByteList callType, ByteList name) {
-        value_expr(lexer, receiver);
-
         return new_attrassign(receiver.getLine(), receiver, name.append('='), null, isLazy(callType));
     }
 
@@ -336,7 +334,7 @@ public class ParserSupport {
         }
     }
 
-    public Node arg_add(int line, Node node1, Node node2) {
+    private static Node arg_add(int line, Node node1, Node node2) {
         if (node1 == null) {
             if (node2 == null) {
                 return new ArrayNode(line, NilImplicitNode.NIL);
@@ -351,10 +349,10 @@ public class ParserSupport {
     
 	/**
 	 **/
-    public Node node_assign(Node lhs, Node rhs) {
+    public static Node node_assign(Node lhs, Node rhs) {
         if (lhs == null) return null;
 
-        value_expr(lexer, rhs);
+        // MRI sets position to one passed in its version of node_assign but it is always pos of lhs????
         if (lhs instanceof AssignableNode) {
     	    ((AssignableNode) lhs).setValueNode(rhs);
         } else if (lhs instanceof IArgumentNode) {
@@ -382,13 +380,7 @@ public class ParserSupport {
         return node;
     }
 
-    /**
-     * Is the supplied node a break/control statement?
-     * 
-     * @param node to be checked
-     * @return true if a control node, false otherwise
-     */
-    public boolean isBreakStatement(Node node) {
+    private static boolean isBreakStatement(Node node) {
         if (node == null) return false;
 
         switch (node.getNodeType()) {
@@ -564,7 +556,7 @@ public class ParserSupport {
     }
 
     // Only literals or does it contain something more dynamic like variables?
-    private boolean isStaticContent(Node node) {
+    private static boolean isStaticContent(Node node) {
         if (node instanceof HashNode) {
             HashNode hash = (HashNode) node;
             for (KeyValuePair<Node, Node> pair : hash.getPairs()) {

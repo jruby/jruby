@@ -133,6 +133,8 @@ import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
+import static org.jruby.parser.ParserSupport.arg_blk_pass;
+import static org.jruby.parser.ParserSupport.node_assign;
 import static org.jruby.parser.ParserSupport.value_expr;
 
  
@@ -163,7 +165,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 167 "-"
+					// line 169 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -1948,30 +1950,27 @@ states[32] = new ParserState() {
 states[34] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-                    yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
+                    yyVal = node_assign(((MultipleAsgnNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[35] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[36] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-                    yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
-                    ((MultipleAsgnNode)yyVals[-2+yyTop]).setLine(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])));
+                    yyVal = node_assign(((MultipleAsgnNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[38] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3066,8 +3065,7 @@ states[219] = new ParserState() {
 };
 states[220] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-                    ((Node)yyVal).setLine(support.getPosition(((Node)yyVals[-2+yyTop]))); /* FIXME: Not in MRI*/
+                    yyVal = node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3448,21 +3446,21 @@ states[282] = new ParserState() {
 };
 states[283] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_blk_pass(((Node)yyVals[-1+yyTop]), ((BlockPassNode)yyVals[0+yyTop]));
+                    yyVal = arg_blk_pass(((Node)yyVals[-1+yyTop]), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[284] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop]).getLine(), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop])));
-                    yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+                    yyVal = arg_blk_pass(((Node)yyVal), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[285] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop])));
-                    yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+                    yyVal = arg_blk_pass(((Node)yyVal), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3531,7 +3529,7 @@ states[295] = new ParserState() {
                         (node = support.splat_array(((Node)yyVals[-3+yyTop]))) != null) {
                         yyVal = support.list_concat(node, ((Node)yyVals[0+yyTop]));
                     } else {
-                        yyVal = support.arg_concat(((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+                        yyVal = ParserSupport.arg_concat(((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
                     }
     return yyVal;
   }
@@ -3568,7 +3566,7 @@ states[299] = new ParserState() {
                         (node = support.splat_array(((Node)yyVals[-3+yyTop]))) != null) {
                         yyVal = support.list_concat(node, ((Node)yyVals[0+yyTop]));
                     } else {
-                        yyVal = support.arg_concat(((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+                        yyVal = ParserSupport.arg_concat(((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
                     }
     return yyVal;
   }
@@ -4518,7 +4516,7 @@ states[457] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     Node node;
                     if (((Node)yyVals[-3+yyTop]) != null) {
-                        node = support.appendToBlock(support.node_assign(((Node)yyVals[-3+yyTop]), new GlobalVarNode(((Integer)yyVals[-5+yyTop]), support.symbolID(lexer.DOLLAR_BANG))), ((Node)yyVals[-1+yyTop]));
+                        node = support.appendToBlock(node_assign(((Node)yyVals[-3+yyTop]), new GlobalVarNode(((Integer)yyVals[-5+yyTop]), support.symbolID(lexer.DOLLAR_BANG))), ((Node)yyVals[-1+yyTop]));
                         if (((Node)yyVals[-1+yyTop]) != null) {
                             node.setLine(((Integer)yyVals[-5+yyTop]));
                         }
@@ -5733,7 +5731,7 @@ states[654] = new ParserState() {
   }
 };
 }
-					// line 2746 "RubyParser.y"
+					// line 2744 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5748,4 +5746,4 @@ states[654] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10739 "-"
+					// line 10737 "-"

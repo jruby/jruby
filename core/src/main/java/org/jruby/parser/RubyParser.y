@@ -130,6 +130,8 @@ import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
+import static org.jruby.parser.ParserSupport.arg_blk_pass;
+import static org.jruby.parser.ParserSupport.node_assign;
 import static org.jruby.parser.ParserSupport.value_expr;
 
  
@@ -453,23 +455,20 @@ stmt            : keyword_alias fitem {
                 | command_asgn
                 | mlhs '=' command_call {
                     value_expr(lexer, $3);
-                    $1.setValueNode($3);
-                    $$ = $1;
+                    $$ = node_assign($1, $3);
                 }
                 | lhs '=' mrhs {
                     value_expr(lexer, $3);
-                    $$ = support.node_assign($1, $3);
+                    $$ = node_assign($1, $3);
                 }
                 | mlhs '=' mrhs_arg {
-                    $<AssignableNode>1.setValueNode($3);
-                    $$ = $1;
-                    $1.setLine(support.getPosition($1));
+                    $$ = node_assign($1, $3);
                 }
                 | expr
 
 command_asgn    : lhs '=' command_rhs {
                     value_expr(lexer, $3);
-                    $$ = support.node_assign($1, $3);
+                    $$ = node_assign($1, $3);
                 }
                 | var_lhs tOP_ASGN command_rhs {
                     value_expr(lexer, $3);
@@ -1092,8 +1091,7 @@ reswords        : keyword__LINE__ {
                 }
 
 arg             : lhs '=' arg_rhs {
-                    $$ = support.node_assign($1, $3);
-                    $<Node>$.setLine(support.getPosition($1)); // FIXME: Not in MRI
+                    $$ = node_assign($1, $3);
                 }
                 | var_lhs tOP_ASGN arg_rhs {
                     $$ = support.new_op_assign($1, $2, $3);
@@ -1315,15 +1313,15 @@ call_args       : command {
                     $$ = support.newArrayNode(support.getPosition($1), $1);
                 }
                 | args opt_block_arg {
-                    $$ = support.arg_blk_pass($1, $2);
+                    $$ = arg_blk_pass($1, $2);
                 }
                 | assocs opt_block_arg {
                     $$ = support.newArrayNode($1.getLine(), support.remove_duplicate_keys($1));
-                    $$ = support.arg_blk_pass((Node)$$, $2);
+                    $$ = arg_blk_pass($<Node>$, $2);
                 }
                 | args ',' assocs opt_block_arg {
                     $$ = support.arg_append($1, support.remove_duplicate_keys($3));
-                    $$ = support.arg_blk_pass((Node)$$, $4);
+                    $$ = arg_blk_pass($<Node>$, $4);
                 }
                 | block_arg {
                 }
@@ -1371,7 +1369,7 @@ args            : arg_value { // ArrayNode
                         (node = support.splat_array($1)) != null) {
                         $$ = support.list_concat(node, $4);
                     } else {
-                        $$ = support.arg_concat($1, $4);
+                        $$ = ParserSupport.arg_concat($1, $4);
                     }
                 }
 
@@ -1399,7 +1397,7 @@ mrhs            : args ',' arg_value {
                         (node = support.splat_array($1)) != null) {
                         $$ = support.list_concat(node, $4);
                     } else {
-                        $$ = support.arg_concat($1, $4);
+                        $$ = ParserSupport.arg_concat($1, $4);
                     }
                 }
                 | tSTAR arg_value {
@@ -1971,7 +1969,7 @@ cases           : opt_else | case_body
 opt_rescue      : keyword_rescue exc_list exc_var then compstmt opt_rescue {
                     Node node;
                     if ($3 != null) {
-                        node = support.appendToBlock(support.node_assign($3, new GlobalVarNode($1, support.symbolID(lexer.DOLLAR_BANG))), $5);
+                        node = support.appendToBlock(node_assign($3, new GlobalVarNode($1, support.symbolID(lexer.DOLLAR_BANG))), $5);
                         if ($5 != null) {
                             node.setLine($1);
                         }
