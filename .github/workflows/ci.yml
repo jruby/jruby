@@ -51,10 +51,6 @@ jobs:
         run: tool/maven-ci-script.sh
         env:
           PHASE: '-Pmain,test -Dinvoker.test=extended'
-      - name: dependency convergence
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: '-Pmain -Dinvoker.test=GH-6081* integration-test'
 
   # Maven test suites that don't pass on Java 11
   maven-test-8:
@@ -90,3 +86,25 @@ jobs:
         run: tool/maven-ci-script.sh
         env:
           PHASE: '-Pjruby-jars,test -Dinvoker.test=extended'
+
+  dependency-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: dependency convergence
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: '-Pmain -Dinvoker.test=GH-6081* integration-test'
+
