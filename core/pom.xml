@@ -107,7 +107,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.29</version>
+      <version>0.30</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
