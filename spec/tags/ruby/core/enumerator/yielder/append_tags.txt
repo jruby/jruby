@@ -1,1 +1,0 @@
-fails:Enumerator::Yielder#<< doesn't double-wrap Arrays
