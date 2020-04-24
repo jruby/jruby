@@ -3,6 +3,7 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
+import com.headius.invokebinder.SmartHandle;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.*;
@@ -624,11 +625,37 @@ public class Bootstrap {
         SmartBinder binder;
         DynamicMethod method = entry.method;
 
-        binder = SmartBinder.from(site.signature)
-                .permute("context", "self", "arg.*", "block")
-                .insert(2, new String[]{"rubyClass", "name", "argName"}, new Class[]{RubyModule.class, String.class, IRubyObject.class}, entry.sourceModule, site.name(), self.getRuntime().newSymbol(site.methodName))
-                .insert(0, "method", DynamicMethod.class, method)
-                .collect("args", "arg.*");
+        if (site.arity >= 0) {
+            binder = SmartBinder.from(site.signature)
+                    .permute("context", "self", "arg.*", "block")
+                    .insert(2,
+                            new String[]{"rubyClass", "name", "argName"}
+                            , new Class[]{RubyModule.class, String.class, IRubyObject.class},
+                            entry.sourceModule,
+                            site.name(),
+                            self.getRuntime().newSymbol(site.methodName))
+                    .insert(0, "method", DynamicMethod.class, method)
+                    .collect("args", "arg.*");
+        } else {
+            SmartHandle fold = SmartBinder.from(
+                    site.signature
+                            .permute("context", "self", "args", "block")
+                            .changeReturn(IRubyObject[].class))
+                    .permute("args")
+                    .insert(0, "argName", IRubyObject.class, self.getRuntime().newSymbol(site.methodName))
+                    .invokeStaticQuiet(LOOKUP, Helpers.class, "arrayOf");
+
+            binder = SmartBinder.from(site.signature)
+                    .permute("context", "self", "args", "block")
+                    .fold("args2", fold)
+                    .permute("context", "self", "args2", "block")
+                    .insert(2,
+                            new String[]{"rubyClass", "name"}
+                            , new Class[]{RubyModule.class, String.class},
+                            entry.sourceModule,
+                            site.name())
+                    .insert(0, "method", DynamicMethod.class, method);
+        }
 
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
             LOG.info(site.name() + "\tbound to method_missing for " + method + ", " + Bootstrap.logMethod(method));
