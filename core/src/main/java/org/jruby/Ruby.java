@@ -169,7 +169,6 @@ import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
-import org.jruby.util.func.Function1;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
@@ -1367,14 +1366,6 @@ public final class Ruby implements Constantizable {
         Enumeration<RubyModule> e = allModules.keys();
         while (e.hasMoreElements()) {
             func.accept(e.nextElement());
-        }
-    }
-
-    @Deprecated
-    public void eachModule(Function1<Object, IRubyObject> func) {
-        Enumeration<RubyModule> e = allModules.keys();
-        while (e.hasMoreElements()) {
-            func.apply(e.nextElement());
         }
     }
 
