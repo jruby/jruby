@@ -3285,12 +3285,6 @@ public final class Ruby implements Constantizable {
     }
 
     private void systemTeardown(ThreadContext context) {
-        // Shut down thread service after user-defined at_exit hooks and finalizers have run
-        threadService.teardown();
-
-        // clear out old style recursion guards so they don't leak
-        mriRecursionGuard = null;
-
         // Run post-user exit hooks, such as for shutting down internal JRuby services
         while (!postExitBlocks.isEmpty()) {
             ExitFunction fun = postExitBlocks.remove(0);
@@ -3330,8 +3324,8 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
-        // swap with a new service to dereference all thread constructs
-        threadService = new ThreadService(this);
+        // clear out old style recursion guards so they don't leak
+        mriRecursionGuard = null;
 
         // shut down executors
         getJITCompiler().shutdown();
@@ -3347,6 +3341,11 @@ public final class Ruby implements Constantizable {
                 ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
             }
         }
+
+        // Shut down and replace thread service after all other hooks and finalizers have run
+        threadService.teardown();
+        threadService = new ThreadService(this);
+
     }
 
     private int userTeardown(ThreadContext context) {
