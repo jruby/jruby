@@ -86,7 +86,12 @@ public class IRMethod extends IRScope {
         return new MethodData(getId(), getFile(), ivarNames);
     }
 
-    public final InterpreterContext lazilyAcquireInterpreterContext() {
+    @Override
+    public InterpreterContext builtInterpreterContext() {
+        return lazilyAcquireInterpreterContext();
+    }
+
+    final InterpreterContext lazilyAcquireInterpreterContext() {
         if (!hasBeenBuilt()) buildMethodImpl();
 
         return interpreterContext;

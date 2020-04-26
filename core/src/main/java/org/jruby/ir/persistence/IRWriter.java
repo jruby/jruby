@@ -5,6 +5,7 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 
 import java.io.IOException;
@@ -43,11 +44,9 @@ public class IRWriter {
         file.startEncodingScopeInstrs(scope);
 
         // Currently methods are only lazy scopes so we need to build them if we decide to persist them.
-        if (scope instanceof IRMethod && !scope.hasBeenBuilt()) {
-            ((IRMethod) scope).lazilyAcquireInterpreterContext();
-        }
+        InterpreterContext context = scope.builtInterpreterContext();
 
-        for (Instr instr: scope.getInterpreterContext().getInstructions()) {
+        for (Instr instr: context.getInstructions()) {
             file.encode(instr);
         }
 

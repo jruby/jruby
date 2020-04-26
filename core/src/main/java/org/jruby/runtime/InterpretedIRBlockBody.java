@@ -75,8 +75,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
                 LOG.info("Printing simple IR for " + closure.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
-            ic = closure.getInterpreterContext();
-            interpreterContext = ic;
+            interpreterContext = ic = closure.getInterpreterContext();
             fullInterpreterContext = interpreterContext;
         }
         return ic;

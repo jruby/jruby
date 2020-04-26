@@ -105,13 +105,8 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     }
 
     private InterpreterContext retrieveInterpreterContext() {
-        final InterpreterContext interpreterContext;
         IRScope method = getIRScope();
-        if (method instanceof IRMethod) {
-            interpreterContext = ((IRMethod) method).lazilyAcquireInterpreterContext();
-        } else {
-            interpreterContext = method.getInterpreterContext();
-        }
+        final InterpreterContext interpreterContext = method.builtInterpreterContext();
 
         if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) printMethodIR();
 
