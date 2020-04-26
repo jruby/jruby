@@ -9,6 +9,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.collections.IntHashMap;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -99,8 +100,7 @@ public class ClassData {
     public final String clsName;
     private final Deque<MethodData> methodStack = new ArrayDeque<>(8);
     public final AtomicInteger cacheFieldCount = new AtomicInteger(0);
-    public final Set<Integer> arrayMethodsDefined = new HashSet(4, 1);
-    public final Set<Integer> hashMethodsDefined = new HashSet(4, 1);
-    public final Set<Integer> kwargsHashMethodsDefined = new HashSet(4, 1);
-    public final Set<Integer> dregexpMethodsDefined = new HashSet(4, 1);
+    public final IntHashMap<Void> arrayMethodsDefined = new IntHashMap<>(4, 1); // Set<int>
+    public final IntHashMap<Void> hashMethodsDefined = new IntHashMap<>(4, 1); // Set<int>
+    public final IntHashMap<Void> kwargsHashMethodsDefined = new IntHashMap<>(4, 1); // Set<int>
 }
