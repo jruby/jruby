@@ -142,7 +142,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public byte[] code() {
-        return jvm.code();
+        return jvm.toByteCode();
     }
 
     protected void codegenScope(IRScope scope, JVMVisitorMethodContext context) {
@@ -546,7 +546,7 @@ public class JVMVisitor extends IRVisitor {
 
         Handle handle = new Handle(
                 Opcodes.H_INVOKESTATIC,
-                jvm.clsData().clsName,
+                jvm.classData().clsName,
                 name,
                 sig(signature.type().returnType(), signature.type().parameterArray()),
                 false);
@@ -573,7 +573,7 @@ public class JVMVisitor extends IRVisitor {
 
         Handle handle = new Handle(
                 Opcodes.H_INVOKESTATIC,
-                jvm.clsData().clsName,
+                jvm.classData().clsName,
                 name,
                 sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()),
                 false);
@@ -591,7 +591,7 @@ public class JVMVisitor extends IRVisitor {
 
         return new Handle(
                 Opcodes.H_INVOKESTATIC,
-                jvm.clsData().clsName,
+                jvm.classData().clsName,
                 name,
                 sig(signature.type().returnType(), signature.type().parameterArray()),
                 false);
@@ -1416,7 +1416,7 @@ public class JVMVisitor extends IRVisitor {
 
         jvmMethod().pushHandle(new Handle(
                 Opcodes.H_INVOKESTATIC,
-                jvm.clsData().clsName,
+                jvm.classData().clsName,
                 variableName,
                 sig(variable.returnType(), variable.parameterArray()),
                 false));
@@ -1429,7 +1429,7 @@ public class JVMVisitor extends IRVisitor {
             for (IntHashMap.Entry<MethodType> entry : signaturesExceptVariable.entrySet()) {
                 jvmMethod().pushHandle(new Handle(
                         Opcodes.H_INVOKESTATIC,
-                        jvm.clsData().clsName,
+                        jvm.classData().clsName,
                         specificName,
                         sig(entry.getValue().returnType(), entry.getValue().parameterArray()),
                         false));
@@ -1447,7 +1447,7 @@ public class JVMVisitor extends IRVisitor {
         Handle bodyHandle = emitModuleBody(metaClassBody);
         String scopeField = bodyHandle.getName() + "_StaticScope";
 
-        String clsName = jvm.clsData().clsName;
+        String clsName = jvm.classData().clsName;
 
         Handle scopeHandle = new Handle(
                 Opcodes.H_GETSTATIC,
@@ -2796,13 +2796,13 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private final BytecodeMode bytecodeMode;
-    public final JVM jvm;
+    private final JVM jvm;
     private final Ruby runtime;
     private int methodIndex;
-    private final Map<IRClosure, Handle> closuresMap = new HashMap();
-    public final Map<String, StaticScope> staticScopeMap = new HashMap();
-    public final Map<StaticScope, String> scopeFieldMap = new HashMap();
-    public final Map<String, String> staticScopeDescriptorMap = new HashMap();
+    private final Map<IRClosure, Handle> closuresMap = new HashMap<>();
+    final Map<String, StaticScope> staticScopeMap = new HashMap<>();
+    final Map<StaticScope, String> scopeFieldMap = new HashMap<>();
+    final Map<String, String> staticScopeDescriptorMap = new HashMap<>();
     private String file;
     private int lastLine = -1;
 

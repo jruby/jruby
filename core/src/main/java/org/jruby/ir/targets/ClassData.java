@@ -14,9 +14,10 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -96,7 +97,7 @@ public class ClassData {
     public final ClassVisitor cls;
     public final JVMVisitor visitor;
     public final String clsName;
-    final Stack<MethodData> methodStack = new Stack();
+    private final Deque<MethodData> methodStack = new ArrayDeque<>(8);
     public final AtomicInteger cacheFieldCount = new AtomicInteger(0);
     public final Set<Integer> arrayMethodsDefined = new HashSet(4, 1);
     public final Set<Integer> hashMethodsDefined = new HashSet(4, 1);
