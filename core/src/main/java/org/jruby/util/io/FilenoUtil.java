@@ -11,7 +11,7 @@ import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
 
-import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.collections.NonBlockingHashMapLong;
@@ -19,10 +19,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.io.FileDescriptor;
-import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.channels.Channel;
@@ -48,21 +46,21 @@ public class FilenoUtil {
     }
 
     public static FileDescriptor getDescriptorFromChannel(Channel channel) {
-        if (ReflectiveAccess.SEL_CH_IMPL_GET_FD != null && ReflectiveAccess.SEL_CH_IMPL.test(channel)) {
+        if (ReflectiveAccess.SEL_CH_IMPL_GET_FD_HANDLE != null && ReflectiveAccess.SEL_CH_IMPL.test(channel)) {
             // Pipe Source and Sink, Sockets, and other several other selectable channels
             try {
                 return ReflectiveAccess.SEL_CH_IMPL_GET_FD.apply(channel);
             } catch (Exception e) {
                 // return bogus below
             }
-        } else if (ReflectiveAccess.FILE_CHANNEL_IMPL_GET_FD != null && ReflectiveAccess.FILE_CHANNEL_IMPL.test(channel)) {
+        } else if (ReflectiveAccess.FILE_CHANNEL_IMPL_GET_FD_HANDLE != null && ReflectiveAccess.FILE_CHANNEL_IMPL.test(channel)) {
             // FileChannels
             try {
                 return ReflectiveAccess.FILE_CHANNEL_IMPL_GET_FD.apply(channel);
             } catch (Exception e) {
                 // return bogus below
             }
-        } else if (ReflectiveAccess.FILE_DESCRIPTOR_SET_FILENO != null) {
+        } else if (ReflectiveAccess.FILE_DESCRIPTOR_SET_FILENO_HANDLE != null) {
             FileDescriptor unixFD = new FileDescriptor();
 
             // UNIX sockets, from jnr-unixsocket
@@ -131,7 +129,7 @@ public class FilenoUtil {
     }
 
     private static int getFilenoUsingReflection(Channel channel) {
-        if (ReflectiveAccess.FILE_DESCRIPTOR_GET_FILENO != null) {
+        if (ReflectiveAccess.FILE_DESCRIPTOR_GET_FILENO_HANDLE != null) {
             return filenoFrom(getDescriptorFromChannel(channel));
         }
         return -1;
@@ -158,7 +156,7 @@ public class FilenoUtil {
     }
 
     private static HANDLE getHandleUsingReflection(Channel channel) {
-        if (ReflectiveAccess.FILE_DESCRIPTOR_GET_FILENO != null) {
+        if (ReflectiveAccess.FILE_DESCRIPTOR_GET_FILENO_HANDLE != null) {
             return JavaLibCHelper.gethandle(getDescriptorFromChannel(channel));
         }
         return HANDLE.valueOf(-1);
@@ -198,14 +196,14 @@ public class FilenoUtil {
 
         private static final Predicate<Object> SEL_CH_IMPL;
         private static final MethodHandle SEL_CH_IMPL_GET_FD_HANDLE;
-        private static final Function<Object, FileDescriptor> SEL_CH_IMPL_GET_FD;
+        private static final Function<Object, FileDescriptor> SEL_CH_IMPL_GET_FD = ReflectiveAccess::selChImplGetFD;
         private static final Predicate<Object> FILE_CHANNEL_IMPL;
         private static final MethodHandle FILE_CHANNEL_IMPL_GET_FD_HANDLE;
-        private static final Function<Object, FileDescriptor> FILE_CHANNEL_IMPL_GET_FD;
+        private static final Function<Object, FileDescriptor> FILE_CHANNEL_IMPL_GET_FD = ReflectiveAccess::fileChannelImplGetFD;
         private static final MethodHandle FILE_DESCRIPTOR_SET_FILENO_HANDLE;
-        private static final ObjIntConsumer<FileDescriptor> FILE_DESCRIPTOR_SET_FILENO;
+        private static final ObjIntConsumer<FileDescriptor> FILE_DESCRIPTOR_SET_FILENO = ReflectiveAccess::fileDescriptorSetFileno;
         private static final MethodHandle FILE_DESCRIPTOR_GET_FILENO_HANDLE;
-        private static final ToIntFunction<FileDescriptor> FILE_DESCRIPTOR_GET_FILENO;
+        private static final ToIntFunction<FileDescriptor> FILE_DESCRIPTOR_GET_FILENO = ReflectiveAccess::fileDescriptorGetFileno;
 
         static {
             MethodHandle selChImplGetFD = null;
@@ -218,21 +216,13 @@ public class FilenoUtil {
 
                 Method getFD = selChImpl.getDeclaredMethod("getFD");
 
-                selChImplGetFD = getHandleSafe(getFD);
+                selChImplGetFD = JavaUtil.getHandleSafe(getFD, ReflectiveAccess.class, LOOKUP);
             } catch (Throwable e) {
                 // leave it null
             }
 
             SEL_CH_IMPL = isSelChImpl;
             SEL_CH_IMPL_GET_FD_HANDLE = selChImplGetFD;
-            SEL_CH_IMPL_GET_FD = selChImplGetFD == null ? null : (obj) -> {
-                try {
-                    return (FileDescriptor) SEL_CH_IMPL_GET_FD_HANDLE.invoke(obj);
-                } catch (Throwable t) {
-                    Helpers.throwException(t);
-                    return null; // not reached
-                }
-            };
 
             Predicate isFileChannelImpl = null;
             MethodHandle fileChannelGetFD = null;
@@ -244,21 +234,13 @@ public class FilenoUtil {
 
                 Field fd = fileChannelImpl.getDeclaredField("fd");
 
-                fileChannelGetFD = getGetterSafe(fd);
+                fileChannelGetFD = JavaUtil.getGetterSafe(fd, ReflectiveAccess.class, LOOKUP);
             } catch (Throwable e) {
                 // leave it null
             }
 
             FILE_CHANNEL_IMPL = isFileChannelImpl;
             FILE_CHANNEL_IMPL_GET_FD_HANDLE = fileChannelGetFD;
-            FILE_CHANNEL_IMPL_GET_FD = fileChannelGetFD == null ? null : (obj) -> {
-                try {
-                    return (FileDescriptor) FILE_CHANNEL_IMPL_GET_FD_HANDLE.invoke(obj);
-                } catch (Throwable t) {
-                    Helpers.throwException(t);
-                    return null; // not reached
-                }
-            };
 
             MethodHandle fdGetFileno = null;
             MethodHandle fdSetFileno = null;
@@ -266,29 +248,14 @@ public class FilenoUtil {
             try {
                 Field fd = FileDescriptor.class.getDeclaredField("fd");
 
-                fdGetFileno = getGetterSafe(fd);
-                fdSetFileno = getSetterSafe(fd);
+                fdGetFileno = JavaUtil.getGetterSafe(fd, ReflectiveAccess.class, LOOKUP);
+                fdSetFileno = JavaUtil.getSetterSafe(fd, ReflectiveAccess.class, LOOKUP);
             } catch (Throwable e) {
                 // leave it null
             }
-            
+
             FILE_DESCRIPTOR_GET_FILENO_HANDLE = fdGetFileno;
-            FILE_DESCRIPTOR_GET_FILENO = fileChannelGetFD == null ? null : (obj) -> {
-                try {
-                    return (int) FILE_DESCRIPTOR_GET_FILENO_HANDLE.invoke(obj);
-                } catch (Throwable t) {
-                    Helpers.throwException(t);
-                    return -1; // not reached
-                }
-            };
             FILE_DESCRIPTOR_SET_FILENO_HANDLE = fdSetFileno;
-            FILE_DESCRIPTOR_SET_FILENO = fdSetFileno == null ? null : (obj, i) -> {
-                try {
-                    FILE_DESCRIPTOR_SET_FILENO_HANDLE.invoke(obj, i);
-                } catch (Throwable t) {
-                    Helpers.throwException(t);
-                }
-            };
 
             if (selChImplGetFD == null || fileChannelGetFD == null || fdGetFileno == null) {
                 // Warn users since we don't currently handle half-native process control.
@@ -297,61 +264,39 @@ public class FilenoUtil {
             }
         }
 
-        static MethodHandle getHandleSafe(Method method) {
+        private static FileDescriptor fileChannelImplGetFD(Object obj) {
             try {
-                return LOOKUP.unreflect(method);
-            } catch (IllegalAccessException iae) {
-                // try again with setAccessible
-                Class<?> declaringClass = method.getDeclaringClass();
-                Modules.addOpens(declaringClass, declaringClass.getPackage().getName(), ReflectiveAccess.class);
-                if (Java.trySetAccessible(method)) {
-                    try {
-                        return LOOKUP.unreflect(method);
-                    } catch (IllegalAccessException iae2) {
-                        // ignore, return null below
-                    }
-                }
+                return (FileDescriptor) FILE_CHANNEL_IMPL_GET_FD_HANDLE.invoke(obj);
+            } catch (Throwable t) {
+                Helpers.throwException(t);
+                return null; // not reached
             }
-
-            return null;
         }
 
-        static MethodHandle getGetterSafe(Field field) {
+        private static int fileDescriptorGetFileno(FileDescriptor obj) {
             try {
-                return LOOKUP.unreflectGetter(field);
-            } catch (IllegalAccessException iae) {
-                // try again with setAccessible
-                Class<?> declaringClass = field.getDeclaringClass();
-                Modules.addOpens(declaringClass, declaringClass.getPackage().getName(), ReflectiveAccess.class);
-                if (Java.trySetAccessible(field)) {
-                    try {
-                        return LOOKUP.unreflectGetter(field);
-                    } catch (IllegalAccessException iae2) {
-                        // ignore, return null below
-                    }
-                }
+                return (int) FILE_DESCRIPTOR_GET_FILENO_HANDLE.invoke(obj);
+            } catch (Throwable t) {
+                Helpers.throwException(t);
+                return -1; // not reached
             }
-
-            return null;
         }
 
-        static MethodHandle getSetterSafe(Field field) {
+        private static void fileDescriptorSetFileno(FileDescriptor obj, int i) {
             try {
-                return LOOKUP.unreflectSetter(field);
-            } catch (IllegalAccessException iae) {
-                // try again with setAccessible
-                Class<?> declaringClass = field.getDeclaringClass();
-                Modules.addOpens(declaringClass, declaringClass.getPackage().getName(), ReflectiveAccess.class);
-                if (Java.trySetAccessible(field)) {
-                    try {
-                        return LOOKUP.unreflectSetter(field);
-                    } catch (IllegalAccessException iae2) {
-                        // ignore, return null below
-                    }
-                }
+                FILE_DESCRIPTOR_SET_FILENO_HANDLE.invoke(obj, i);
+            } catch (Throwable t) {
+                Helpers.throwException(t);
             }
+        }
 
-            return null;
+        private static FileDescriptor selChImplGetFD(Object obj) {
+            try {
+                return (FileDescriptor) SEL_CH_IMPL_GET_FD_HANDLE.invoke(obj);
+            } catch (Throwable t) {
+                Helpers.throwException(t);
+                return null; // not reached
+            }
         }
     }
 }
