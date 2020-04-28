@@ -1,6 +1,5 @@
 package org.jruby.javasupport.binding;
 
-import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -8,7 +7,6 @@ import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -669,7 +667,7 @@ public class MethodGatherer {
             if (Modifier.isPrivate(mod)) return false;
 
             // Skip protected methods if we can't set accessible
-            if (!Modifier.isPublic(mod) && !Modules.trySetAccessible(method, Java.class)) return false;
+            if (!Modifier.isPublic(mod) && !Java.trySetAccessible(method)) return false;
 
             // ignore bridge methods because we'd rather directly call methods that this method
             // is bridging (and such methods are by definition always available.)

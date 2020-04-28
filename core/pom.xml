@@ -249,7 +249,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>backport9</artifactId>
-      <version>1.5</version>
+      <version>1.7</version>
     </dependency>
     <dependency>
       <groupId>javax.annotation</groupId>
