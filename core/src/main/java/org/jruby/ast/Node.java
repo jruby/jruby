@@ -141,7 +141,9 @@ public abstract class Node {
 
         if (indent) indent(indentation, builder);
 
-        builder.append("(").append(getNodeName());
+        builder.append('(').append(getNodeName());
+
+        if (isNewline()) builder.append('*');
 
         String moreState = toStringInternal();
 
