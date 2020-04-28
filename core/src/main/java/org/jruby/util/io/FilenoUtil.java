@@ -1,5 +1,6 @@
 package org.jruby.util.io;
 
+import com.headius.backport9.modules.Module;
 import com.headius.backport9.modules.Modules;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.ffi.LibraryLoader;
@@ -259,8 +260,13 @@ public class FilenoUtil {
 
             if (selChImplGetFD == null || fileChannelGetFD == null || fdGetFileno == null) {
                 // Warn users since we don't currently handle half-native process control.
-                LOG.warn("Native subprocess control requires open access to sun.nio.ch\n" +
-                        "Pass '--add-opens java.base/sun.nio.ch=org.jruby.dist' or '=org.jruby.core' to enable.");
+                Module module = Modules.getModule(ReflectiveAccess.class);
+                String moduleName = module.getName();
+                if (moduleName == null) {
+                    moduleName = "ALL-UNNAMED";
+                }
+                LOG.warn("Native subprocess control requires open access to the JDK IO subsystem\n" +
+                        "Pass '--add-opens java.base/sun.nio.ch=" + moduleName + " --add-opens java.base/java.io=" + moduleName + "' to enable.");
             }
         }
 
