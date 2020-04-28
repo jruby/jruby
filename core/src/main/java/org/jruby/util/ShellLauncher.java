@@ -64,6 +64,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import jnr.posix.util.Platform;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
@@ -661,7 +662,7 @@ public class ShellLauncher {
         try {
             up = Class.forName("java.lang.UNIXProcess");
             pid = up.getDeclaredField("pid");
-            pid.setAccessible(true);
+            Java.trySetAccessible(pid);
         } catch (Exception e) {
             // ignore and try windows version
         }
@@ -673,7 +674,7 @@ public class ShellLauncher {
         try {
             pi = Class.forName("java.lang.ProcessImpl");
             handle = pi.getDeclaredField("handle");
-            handle.setAccessible(true);
+            Java.trySetAccessible(pid);
         } catch (Exception e) {
             // ignore and use hashcode
         }

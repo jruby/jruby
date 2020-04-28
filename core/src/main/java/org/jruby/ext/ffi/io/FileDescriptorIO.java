@@ -102,30 +102,4 @@ public class FileDescriptorIO extends RubyIO {
     public static RubyIO wrap(ThreadContext context, IRubyObject recv, IRubyObject fd) {
         return new FileDescriptorIO(context.runtime, fd);
     }
-
-    static class FileDescriptorHelper {
-        static java.lang.reflect.Constructor<java.io.FileDescriptor> CONSTRUCTOR;
-        static {
-            java.lang.reflect.Constructor<java.io.FileDescriptor> constructor;
-            try {
-                constructor = java.io.FileDescriptor.class.getDeclaredConstructor(int.class);
-                constructor.setAccessible(true);
-            } catch (Throwable t) {
-                constructor = null;
-            }
-            CONSTRUCTOR = constructor;
-        }
-
-        public static java.io.FileDescriptor wrap(int fileno) {
-            try {
-                return CONSTRUCTOR != null ? CONSTRUCTOR.newInstance(fileno) : new java.io.FileDescriptor();
-            } catch (IllegalAccessException iae) {
-                return new java.io.FileDescriptor();
-            } catch (InstantiationException ie) {
-                return new java.io.FileDescriptor();
-            } catch (java.lang.reflect.InvocationTargetException ite) {
-                return new java.io.FileDescriptor();
-            }
-        }
-    }
 }
