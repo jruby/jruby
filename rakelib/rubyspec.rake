@@ -14,7 +14,7 @@ namespace :spec do
   task :'ruby:aot' => :ci_precompiled
 
   if ENV['CI']
-    MSPEC_FORMAT = "m"
+    MSPEC_FORMAT = "f"
   else
     MSPEC_FORMAT = "d"
   end
