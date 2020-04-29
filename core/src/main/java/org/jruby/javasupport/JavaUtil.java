@@ -582,9 +582,9 @@ public class JavaUtil {
     }
 
     public static MethodHandle getHandleSafe(Method method, Class caller, MethodHandles.Lookup lookup) {
-        try {
-            return lookup.unreflect(method);
-        } catch (IllegalAccessException iae) {
+//        try {
+//            return lookup.unreflect(method);
+//        } catch (IllegalAccessException iae) {
             // try again with setAccessible
             Class<?> declaringClass = method.getDeclaringClass();
             try {
@@ -595,7 +595,7 @@ public class JavaUtil {
             } catch (Exception iae2) {
                 // ignore, return null below
             }
-        }
+//        }
 
         return null;
     }
