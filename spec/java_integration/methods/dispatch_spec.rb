@@ -4,6 +4,7 @@ java_import "java_integration.fixtures.ClassWithVarargs"
 java_import "java_integration.fixtures.CoreTypeMethods"
 java_import "java_integration.fixtures.StaticMethodSelection"
 java_import "java_integration.fixtures.UsesSingleMethodInterface"
+java_import "java_integration.fixtures.InheritsFromAbstractClass"
 
 describe "Non-overloaded static Java methods" do
   it "should raise ArgumentError when called with incorrect arity" do
@@ -291,6 +292,14 @@ describe "A Java method dispatch downstream from a Kernel#catch block" do
         UsesSingleMethodInterface.new(nil, nil, nil, nil) { throw :foo }
       end
     end.not_to raise_error
+  end
+end
+
+# JRUBY-6197
+describe "A Java method dispatch to a method inherited from a class marked abstract" do
+  it "should be found and callable" do
+    obj = InheritsFromAbstractClass.new
+    expect(obj.aMethod).to be(true)
   end
 end
 
