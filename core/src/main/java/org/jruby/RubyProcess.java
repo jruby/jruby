@@ -30,7 +30,6 @@
 
 package org.jruby;
 
-import com.headius.backport9.modules.Modules;
 import jnr.constants.platform.RLIM;
 import jnr.constants.platform.RLIMIT;
 import jnr.constants.platform.Sysconf;
@@ -43,7 +42,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import jnr.posix.POSIX;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -52,7 +50,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Helpers.tryThrow;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,8 +66,6 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.util.WindowsFFI.kernel32;
 import static org.jruby.util.WindowsFFI.Kernel32.*;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
@@ -928,45 +923,38 @@ public class RubyProcess {
         return res;
     }
 
-    private static final MethodHandle NATIVE_THREAD_SIGNAL;
-    private static final MethodHandle NATIVE_THREAD_CURRENT;
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final Method NATIVE_THREAD_SIGNAL;
+    private static final Method NATIVE_THREAD_CURRENT;
 
     static {
-        MethodHandle signalHandle = null;
-        MethodHandle currentHandle = null;
-
+        Method m1 = null;
+        Method m2 = null;
         try {
             // NativeThread is not public on Windows builds of Open JDK
             Class nativeThread = Class.forName("sun.nio.ch.NativeThread");
-
             Method signal = nativeThread.getDeclaredMethod("signal", long.class);
             Method current = nativeThread.getDeclaredMethod("current");
-
-            signalHandle = JavaUtil.getHandleSafe(signal, RubyProcess.class, LOOKUP);
-            currentHandle = JavaUtil.getHandleSafe(current, RubyProcess.class, LOOKUP);
+            if (Java.trySetAccessible(signal) && Java.trySetAccessible(current)) {
+                m1 = signal;
+                m2 = current;
+            }
         } catch (NoSuchMethodException | ClassNotFoundException e) {
             // ignore and leave it null
         }
-
-        NATIVE_THREAD_SIGNAL = signalHandle;
-        NATIVE_THREAD_CURRENT = currentHandle;
+        NATIVE_THREAD_SIGNAL = m1;
+        NATIVE_THREAD_CURRENT = m2;
 
     }
 
     private static int pthreadKillable(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
-        if (Platform.IS_WINDOWS
-                || !Options.NATIVE_PTHREAD_KILL.load()
-                || NATIVE_THREAD_SIGNAL == null
-                || NATIVE_THREAD_CURRENT == null) {
+        if (Platform.IS_WINDOWS || !Options.NATIVE_PTHREAD_KILL.load() || NATIVE_THREAD_CURRENT == null) {
             // Can't use pthread_kill on Windows
             return blockingCall.applyAsInt(context);
         }
 
         do try {
-            final long threadID = (long) NATIVE_THREAD_CURRENT.invokeExact();
-
             return context.getThread().executeTask(context, blockingCall, new RubyThread.Task<ToIntFunction<ThreadContext>, Integer>() {
+                final long threadID = tryThrow(() -> (Long) NATIVE_THREAD_CURRENT.invoke(null));
 
                 @Override
                 public Integer run(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
@@ -975,18 +963,12 @@ public class RubyProcess {
 
                 @Override
                 public void wakeup(RubyThread thread, ToIntFunction<ThreadContext> blockingCall) {
-                    try {
-                        NATIVE_THREAD_SIGNAL.invokeExact(null, threadID);
-                    } catch (Throwable t) {
-                        throwException(t);
-                    }
+                    tryThrow(() -> NATIVE_THREAD_SIGNAL.invoke(null, threadID));
                 }
             });
         } catch (InterruptedException ie) {
             context.pollThreadEvents();
             // try again
-        } catch (Throwable t) {
-            throwException(t);
         } while (true);
     }
 
