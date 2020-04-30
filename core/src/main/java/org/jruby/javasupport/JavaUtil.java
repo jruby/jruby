@@ -583,18 +583,11 @@ public class JavaUtil {
 
     public static MethodHandle getHandleSafe(Method method, Class caller, MethodHandles.Lookup lookup) {
         try {
-            return lookup.unreflect(method);
-        } catch (IllegalAccessException iae) {
-            // try again with setAccessible
-            Class<?> declaringClass = method.getDeclaringClass();
-            try {
-                Modules.addOpens(declaringClass, declaringClass.getPackage().getName(), caller);
-                if (Java.trySetAccessible(method)) {
-                    return lookup.unreflect(method);
-                }
-            } catch (Exception iae2) {
-                // ignore, return null below
+            if (Modules.trySetAccessible(method, caller)) {
+                return lookup.unreflect(method);
             }
+        } catch (Exception iae2) {
+            // ignore, return null below
         }
 
         return null;
@@ -602,18 +595,11 @@ public class JavaUtil {
 
     public static MethodHandle getGetterSafe(Field field, Class caller, MethodHandles.Lookup lookup) {
         try {
-            return lookup.unreflectGetter(field);
-        } catch (IllegalAccessException iae) {
-            // try again with setAccessible
-            Class<?> declaringClass = field.getDeclaringClass();
-            try {
-                Modules.addOpens(declaringClass, declaringClass.getPackage().getName(), caller);
-                if (Java.trySetAccessible(field)) {
-                    return lookup.unreflectGetter(field);
-                }
-            } catch (Exception iae2) {
-                // ignore, return null below
+            if (Modules.trySetAccessible(field, caller)) {
+                return lookup.unreflectGetter(field);
             }
+        } catch (Exception iae2) {
+            // ignore, return null below
         }
 
         return null;
@@ -621,18 +607,11 @@ public class JavaUtil {
 
     public static MethodHandle getSetterSafe(Field field, Class caller, MethodHandles.Lookup lookup) {
         try {
-            return lookup.unreflectSetter(field);
-        } catch (IllegalAccessException iae) {
-            // try again with setAccessible
-            Class<?> declaringClass = field.getDeclaringClass();
-            try {
-                Modules.addOpens(declaringClass, declaringClass.getPackage().getName(), caller);
-                if (Java.trySetAccessible(field)) {
-                    return lookup.unreflectSetter(field);
-                }
-            } catch (Exception iae2) {
-                // ignore, return null below
+            if (Modules.trySetAccessible(field, caller)) {
+                return lookup.unreflectSetter(field);
             }
+        } catch (Exception iae2) {
+            // ignore, return null below
         }
 
         return null;
