@@ -470,8 +470,6 @@ class MSpecOptions
   end
 
   def all
-    # Generated with:
-    # puts File.read(__FILE__).scan(/def (\w+).*\n\s*on\(/)
     configure {}
     targets
     formatters
@@ -484,6 +482,7 @@ class MSpecOptions
     repeat
     verbose
     interrupt
+    timeout
     verify
     action_filters
     actions
