@@ -1,0 +1,2 @@
+fails:ObjectSpace::WeakMap#member? recognizes keys in use
+fails:ObjectSpace::WeakMap#member? matches using identity semantics
