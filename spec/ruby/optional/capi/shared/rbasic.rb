@@ -17,7 +17,7 @@ describe :rbasic, shared: true do
     obj, _ = @data.call
     initial = @specs.get_flags(obj)
     @specs.set_flags(obj, @freeze | initial).should == @freeze | initial
-    obj.frozen?.should == true
+    obj.should.frozen?
   end
 
   ruby_version_is ""..."2.7" do
@@ -41,35 +41,37 @@ describe :rbasic, shared: true do
       obj, _ = @data.call
       initial = @specs.get_flags(obj)
       @specs.set_flags(obj, @taint | initial).should == @taint | initial
-      obj.tainted?.should == true
+      obj.should.tainted?
       @specs.set_flags(obj, initial).should == initial
-      obj.tainted?.should == false
+      obj.should_not.tainted?
       @specs.set_flags(obj, @freeze | initial).should == @freeze | initial
-      obj.frozen?.should == true
+      obj.should.frozen?
 
       obj, _ = @data.call
       @specs.set_flags(obj, @freeze | @taint | initial).should == @freeze | @taint | initial
-      obj.tainted?.should == true
-      obj.frozen?.should == true
+      obj.should.tainted?
+      obj.should.frozen?
     end
   end
 
   it "supports user flags" do
     obj, _ = @data.call
-    @specs.get_flags(obj) == 0
-    @specs.set_flags(obj, 1 << 14 | 1 << 16).should == 1 << 14 | 1 << 16
-    @specs.get_flags(obj).should == 1 << 14 | 1 << 16
-    @specs.set_flags(obj, 0).should == 0
+    initial = @specs.get_flags(obj)
+    @specs.set_flags(obj, 1 << 14 | 1 << 16 | initial).should == 1 << 14 | 1 << 16 | initial
+    @specs.get_flags(obj).should == 1 << 14 | 1 << 16 | initial
+    @specs.set_flags(obj, initial).should == initial
   end
 
   it "supports copying the flags from one object over to the other" do
     obj1, obj2 = @data.call
-    @specs.set_flags(obj1, @taint | 1 << 14 | 1 << 16)
+    initial = @specs.get_flags(obj1)
+    @specs.get_flags(obj2).should == initial
+    @specs.set_flags(obj1, @taint | 1 << 14 | 1 << 16 | initial)
     @specs.copy_flags(obj2, obj1)
-    @specs.get_flags(obj2).should == @taint | 1 << 14 | 1 << 16
-    @specs.set_flags(obj1, 0)
+    @specs.get_flags(obj2).should == @taint | 1 << 14 | 1 << 16 | initial
+    @specs.set_flags(obj1, initial)
     @specs.copy_flags(obj2, obj1)
-    @specs.get_flags(obj2).should == 0
+    @specs.get_flags(obj2).should == initial
   end
 
   it "supports retrieving the (meta)class" do
