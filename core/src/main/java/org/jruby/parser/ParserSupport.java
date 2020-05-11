@@ -1217,6 +1217,11 @@ public class ParserSupport {
      * @param expected list of acceptable tokens, if available.
      */
     public void yyerror(String message, String[] expected, String found) {
+        int foundLength = found.length() - 1;
+        // bison yynames is "" but jat is '' and parse in MRI strips the extra quotes off when it notices.
+        // is only 3 ':' then report as ':' but if longer report bareword <=> instead of "<=>".
+        if (foundLength >= 3 && found.charAt(0) == '\'' && found.charAt(foundLength) == '\'') found = found.substring(1, foundLength);
+
         lexer.compile_error(PID.GRAMMAR_ERROR, message + ", unexpected " + found + "\n");
     }
 
