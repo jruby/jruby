@@ -163,6 +163,7 @@ public class StringTerm extends StrTerm {
         boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
         boolean regexp = (flags & STR_FUNC_REGEXP) != 0;
         boolean symbol = (flags & STR_FUNC_SYMBOL) != 0;
+        boolean indent = (flags & STR_FUNC_INDENT) != 0;
         boolean hasNonAscii = false;
         int c;
 
@@ -193,7 +194,16 @@ public class StringTerm extends StrTerm {
                 switch (c) {
                 case '\n':
                     if (qwords) break;
-                    if (expand) continue;
+                    if (expand) {
+                        if (!(indent || lexer.getHeredocIndent() >= 0)) continue;
+                        if (c == end) {
+                            c = '\\';
+                            // goto terminate
+                            if (encoding != null) buffer.setEncoding(encoding);
+                            return c;
+                        }
+                        continue;
+                    }
                     buffer.append('\\');
                     break;
 

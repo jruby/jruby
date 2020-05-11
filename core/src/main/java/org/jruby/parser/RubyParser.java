@@ -4739,7 +4739,9 @@ states[491] = new ParserState() {
 };
 states[492] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = null;
+                    ByteList aChar = ByteList.create("");
+                    aChar.setEncoding(lexer.getEncoding());
+                    yyVal = lexer.createStr(aChar, 0);
     return yyVal;
   }
 };
@@ -4829,6 +4831,7 @@ states[504] = new ParserState() {
                    lexer.setHeredocIndent(((Integer)yyVals[-2+yyTop]));
                    lexer.setHeredocLineIndent(-1);
 
+                   if (((Node)yyVals[-1+yyTop]) != null) ((Node)yyVals[-1+yyTop]).unsetNewline();
                    yyVal = support.newEvStrNode(support.getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
@@ -5731,7 +5734,7 @@ states[654] = new ParserState() {
   }
 };
 }
-					// line 2744 "RubyParser.y"
+					// line 2747 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5746,4 +5749,4 @@ states[654] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10737 "-"
+					// line 10740 "-"

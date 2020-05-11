@@ -2125,7 +2125,9 @@ string_contents : /* none */ {
                 }
 
 xstring_contents: /* none */ {
-                    $$ = null;
+                    ByteList aChar = ByteList.create("");
+                    aChar.setEncoding(lexer.getEncoding());
+                    $$ = lexer.createStr(aChar, 0);
                 }
                 | xstring_contents string_content {
                     $$ = support.literal_concat($1, $<Node>2);
@@ -2175,6 +2177,7 @@ string_content  : tSTRING_CONTENT {
                    lexer.setHeredocIndent($<Integer>6);
                    lexer.setHeredocLineIndent(-1);
 
+                   if ($7 != null) $7.unsetNewline();
                    $$ = support.newEvStrNode(support.getPosition($7), $7);
                 }
 

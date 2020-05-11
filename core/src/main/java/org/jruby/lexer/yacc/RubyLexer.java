@@ -48,9 +48,11 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.ComplexNode;
+import org.jruby.ast.DStrNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.NumericNode;
@@ -68,6 +70,9 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
+
+import static org.jruby.parser.RubyParser.tSTRING_BEG;
+import static org.jruby.parser.RubyParser.tXSTRING_BEG;
 
 /*
  * This is a port of the MRI lexer to Java.
@@ -363,18 +368,14 @@ public class RubyLexer extends LexingCommon {
 
         if (root instanceof StrNode) {
             StrNode str = (StrNode) root;
-            dedent_string(str.getValue(), indent);
+            if (str.isNewline()) dedent_string(str.getValue(), indent);
         } else if (root instanceof ListNode) {
             ListNode list = (ListNode) root;
             int length = list.size();
-            int currentLine = -1;
             for (int i = 0; i < length; i++) {
                 Node child = list.get(i);
-                if (currentLine == child.getLine()) continue;  // Only process first element on a line?
 
-                currentLine = child.getLine();                 // New line
-
-                if (child instanceof StrNode) {
+                if (child instanceof StrNode && child.isNewline()) {
                     dedent_string(((StrNode) child).getValue(), indent);
                 }
             }
@@ -611,12 +612,12 @@ public class RubyLexer extends LexingCommon {
         case 'Q':
             lex_strterm = new StringTerm(str_dquote, begin ,end, ruby_sourceline);
             yaccValue = "%"+ (shortHand ? (""+end) : ("" + c + begin));
-            return RubyParser.tSTRING_BEG;
+            return tSTRING_BEG;
 
         case 'q':
             lex_strterm = new StringTerm(str_squote, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
-            return RubyParser.tSTRING_BEG;
+            return tSTRING_BEG;
 
         case 'W':
             lex_strterm = new StringTerm(str_dword, begin, end, ruby_sourceline);
@@ -672,14 +673,19 @@ public class RubyLexer extends LexingCommon {
             func = STR_FUNC_INDENT;
             indent = Integer.MAX_VALUE;
         }
-        
+
+        int token = tSTRING_BEG;
         ByteList markerValue;
         if (c == '\'' || c == '"' || c == '`') {
             if (c == '\'') {
+                yaccValue = Q;
                 func |= str_squote;
             } else if (c == '"') {
+                yaccValue = QQ;
                 func |= str_dquote;
             } else {
+                yaccValue = BACKTICK;
+                token = tXSTRING_BEG;
                 func |= str_xquote; 
             }
 
@@ -718,18 +724,10 @@ public class RubyLexer extends LexingCommon {
         int len = lex_p - lex_pbeg;
         lex_goto_eol();
         lex_strterm = new HeredocTerm(markerValue, func, len, ruby_sourceline, lex_lastline);
-
-        if (term == '`') {
-            yaccValue = BACKTICK;
-            flush();
-            return RubyParser.tXSTRING_BEG;
-        }
-        
-        yaccValue = QQ;
         heredoc_indent = indent;
         heredoc_line_indent = 0;
         flush();
-        return RubyParser.tSTRING_BEG;
+        return token;
     }
     
     private boolean arg_ambiguous() {
@@ -759,7 +757,7 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tINTEGER: System.err.print("tINTEGER,"); break;
             case RubyParser.tFLOAT: System.err.print("tFLOAT,"); break;
             case RubyParser.tSTRING_CONTENT: System.err.print("tSTRING_CONTENT[" + ((StrNode) value()).getValue() + "],"); break;
-            case RubyParser.tSTRING_BEG: System.err.print("tSTRING_BEG,"); break;
+            case tSTRING_BEG: System.err.print("tSTRING_BEG,"); break;
             case RubyParser.tSTRING_END: System.err.print("tSTRING_END,"); break;
             case RubyParser.tSTRING_DBEG: System.err.print("tSTRING_DBEG,"); break;
             case RubyParser.tSTRING_DVAR: System.err.print("tSTRING_DVAR,"); break;
@@ -1428,7 +1426,7 @@ public class RubyLexer extends LexingCommon {
         lex_strterm = new StringTerm(str_dquote|label, '\0', '"', ruby_sourceline);
         yaccValue = QQ;
 
-        return RubyParser.tSTRING_BEG;
+        return tSTRING_BEG;
     }
     
     private int greaterThan() throws IOException {
@@ -1912,7 +1910,7 @@ public class RubyLexer extends LexingCommon {
         lex_strterm = new StringTerm(str_squote|label, '\0', '\'', ruby_sourceline);
         yaccValue = Q;
 
-        return RubyParser.tSTRING_BEG;
+        return tSTRING_BEG;
     }
     
     private int slash(boolean spaceSeen) throws IOException {
