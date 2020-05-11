@@ -904,7 +904,7 @@ public class EncodingUtils {
                     if (!ecopts.isNil()) {
                         rep = ((RubyHash)ecopts).op_aref(context, runtime.newSymbol("replace"));
                     }
-                    dest = ((RubyString)str).scrub(context, rep, Block.NULL_BLOCK);
+                    dest = ((RubyString)str).encStrScrub(context, senc_p[0], rep, Block.NULL_BLOCK);
                     if (dest.isNil()) dest = str;
                     self_p[0] = dest;
                     return dencindex;

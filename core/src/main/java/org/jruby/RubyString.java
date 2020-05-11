@@ -6488,9 +6488,22 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * MRI: rb_str_scrub
      */
     public IRubyObject strScrub(ThreadContext context, IRubyObject repl, Block block) {
+        Encoding enc = EncodingUtils.STR_ENC_GET(this);
+        return encStrScrub(context, enc, repl, getCodeRange(), block);
+    }
+
+    // MRI: rb_enc_str_scrub
+    public IRubyObject encStrScrub(ThreadContext context, Encoding enc, IRubyObject repl, Block block) {
+        int cr = CR_UNKNOWN;
+        if (enc == EncodingUtils.STR_ENC_GET(this)) {
+            cr = getCodeRange();
+        }
+        return encStrScrub(context, enc, repl, cr, block);
+    }
+
+    // MRI: enc_str_scrub
+    public IRubyObject encStrScrub(ThreadContext context, Encoding enc, IRubyObject repl, int cr, Block block) {
         Ruby runtime = context.runtime;
-        int cr = getCodeRange();
-        Encoding enc;
         Encoding encidx;
         IRubyObject buf = context.nil;
         byte[] repBytes;
@@ -6506,7 +6519,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (cr == CR_7BIT || cr == CR_VALID) return context.nil;
 
-        enc = EncodingUtils.STR_ENC_GET(this);
         if (repl != context.nil) {
             repl = EncodingUtils.strCompatAndValid(context, repl, enc);
             tainted |= repl.isTaint();
@@ -6553,7 +6565,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 p = e;
             }
             while (p < e) {
-                int ret = enc.length(pBytes, p, e);
+                int ret = StringSupport.preciseLength(enc, pBytes, p, e);
                 if (MBCLEN_NEEDMORE_P(ret)) {
                     break;
                 }
