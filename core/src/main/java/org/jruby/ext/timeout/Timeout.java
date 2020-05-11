@@ -69,7 +69,7 @@ public class Timeout {
         executor.setRemoveOnCancelPolicy(true);
         timeout.setInternalVariable(EXECUTOR_VARIABLE, executor);
 
-        timeout.getRuntime().pushExitFunction((context) -> { executor.shutdown(); return 0;});
+        timeout.getRuntime().pushPostExitFunction((context) -> { executor.shutdown(); return 0;});
     }
 
 
