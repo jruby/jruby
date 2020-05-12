@@ -1,5 +1,6 @@
 %{
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -68,7 +69,6 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
-import org.jruby.ast.IfNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
@@ -84,8 +84,6 @@ import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NonLocalControlFlowNode;
 import org.jruby.ast.NumericNode;
-import org.jruby.ast.OpAsgnAndNode;
-import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExe19Node;
@@ -94,7 +92,6 @@ import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.RescueBodyNode;
-import org.jruby.ast.RescueNode;
 import org.jruby.ast.RestArgNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
@@ -422,25 +419,25 @@ stmt            : keyword_alias fitem {
                     $$ = $2;
                 }
                 | stmt modifier_if expr_value {
-                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($3), $1, null);
+                    $$ = support.new_if(support.getPosition($1), support.cond($3), $1, null);
                     support.fixpos($<Node>$, $3);
                 }
                 | stmt modifier_unless expr_value {
-                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($3), null, $1);
+                    $$ = support.new_if(support.getPosition($1), support.cond($3), null, $1);
                     support.fixpos($<Node>$, $3);
                 }
                 | stmt modifier_while expr_value {
                     if ($1 != null && $1 instanceof BeginNode) {
-                        $$ = new WhileNode(support.getPosition($1), support.getConditionNode($3), $<BeginNode>1.getBodyNode(), false);
+                        $$ = new WhileNode(support.getPosition($1), support.cond($3), $<BeginNode>1.getBodyNode(), false);
                     } else {
-                        $$ = new WhileNode(support.getPosition($1), support.getConditionNode($3), $1, true);
+                        $$ = new WhileNode(support.getPosition($1), support.cond($3), $1, true);
                     }
                 }
                 | stmt modifier_until expr_value {
                     if ($1 != null && $1 instanceof BeginNode) {
-                        $$ = new UntilNode(support.getPosition($1), support.getConditionNode($3), $<BeginNode>1.getBodyNode(), false);
+                        $$ = new UntilNode(support.getPosition($1), support.cond($3), $<BeginNode>1.getBodyNode(), false);
                     } else {
-                        $$ = new UntilNode(support.getPosition($1), support.getConditionNode($3), $1, true);
+                        $$ = new UntilNode(support.getPosition($1), support.cond($3), $1, true);
                     }
                 }
                 | stmt modifier_rescue stmt {
@@ -519,10 +516,10 @@ expr            : command_call
                     $$ = support.newOrNode($1, $3);
                 }
                 | keyword_not opt_nl expr {
-                    $$ = support.getOperatorCallNode(support.getConditionNode($3), lexer.BANG);
+                    $$ = support.getOperatorCallNode(support.method_cond($3), lexer.BANG);
                 }
                 | tBANG command_call {
-                    $$ = support.getOperatorCallNode(support.getConditionNode($2), $1);
+                    $$ = support.getOperatorCallNode(support.method_cond($2), $1);
                 }
                 | arg
 
@@ -1213,7 +1210,7 @@ arg             : lhs '=' arg_rhs {
                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                 }
                 | tBANG arg {
-                    $$ = support.getOperatorCallNode(support.getConditionNode($2), $1);
+                    $$ = support.getOperatorCallNode(support.method_cond($2), $1);
                 }
                 | tTILDE arg {
                     $$ = support.getOperatorCallNode($2, $1);
@@ -1235,7 +1232,7 @@ arg             : lhs '=' arg_rhs {
                 }
                 | arg '?' arg opt_nl ':' arg {
                     value_expr(lexer, $1);
-                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $3, $6);
+                    $$ = support.new_if(support.getPosition($1), support.cond($1), $3, $6);
                 }
                 | primary {
                     $$ = $1;
@@ -1484,10 +1481,10 @@ primary         : literal
                     $$ = new DefinedNode($1, $4);
                 }
                 | keyword_not tLPAREN2 expr rparen {
-                    $$ = support.getOperatorCallNode(support.getConditionNode($3), lexer.BANG);
+                    $$ = support.getOperatorCallNode(support.method_cond($3), lexer.BANG);
                 }
                 | keyword_not tLPAREN2 rparen {
-                    $$ = support.getOperatorCallNode(NilImplicitNode.NIL, lexer.BANG);
+                    $$ = support.getOperatorCallNode(support.method_cond(NilImplicitNode.NIL), lexer.BANG);
                 }
                 | fcall brace_block {
                     support.frobnicate_fcall_args($1, null, $2);
@@ -1506,10 +1503,10 @@ primary         : literal
                     $$ = $2;
                 }
                 | keyword_if expr_value then compstmt if_tail keyword_end {
-                    $$ = new IfNode($1, support.getConditionNode($2), $4, $5);
+                    $$ = support.new_if($1, support.cond($2), $4, $5);
                 }
                 | keyword_unless expr_value then compstmt opt_else keyword_end {
-                    $$ = new IfNode($1, support.getConditionNode($2), $5, $4);
+                    $$ = support.new_if($1, support.cond($2), $5, $4);
                 }
                 | keyword_while {
                     lexer.getConditionState().begin();
@@ -1517,7 +1514,7 @@ primary         : literal
                     lexer.getConditionState().end();
                 } compstmt keyword_end {
                     Node body = support.makeNullNil($6);
-                    $$ = new WhileNode($1, support.getConditionNode($3), body);
+                    $$ = new WhileNode($1, support.cond($3), body);
                 }
                 | keyword_until {
                   lexer.getConditionState().begin();
@@ -1525,7 +1522,7 @@ primary         : literal
                   lexer.getConditionState().end();
                 } compstmt keyword_end {
                     Node body = support.makeNullNil($6);
-                    $$ = new UntilNode($1, support.getConditionNode($3), body);
+                    $$ = new UntilNode($1, support.cond($3), body);
                 }
                 | keyword_case expr_value opt_terms case_body keyword_end {
                     $$ = support.newCaseNode($1, $2, $4);
@@ -1663,7 +1660,7 @@ do              : term
 
 if_tail         : opt_else
                 | keyword_elsif expr_value then compstmt if_tail {
-                    $$ = new IfNode($1, support.getConditionNode($2), $4, $5);
+                    $$ = support.new_if($1, support.cond($2), $4, $5);
                 }
 
 opt_else        : none

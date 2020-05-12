@@ -51,6 +51,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
@@ -582,7 +583,7 @@ public class ParserSupport {
         return node == null ? NilImplicitNode.NIL : node;
     }
 
-    private Node cond0(Node node) {
+    private Node cond0(Node node, boolean method) {
         checkAssignmentInCondition(node);
 
         if (node == null) return new NilNode(lexer.getRubySourceline());
@@ -590,60 +591,86 @@ public class ParserSupport {
         Node leftNode;
         Node rightNode;
 
-        // FIXME: DSTR,EVSTR,STR: warning "string literal in condition"
         switch(node.getNodeType()) {
-        case DREGEXPNODE: {
-            int line = node.getLine();
+            case DSTRNODE:
+            case EVSTRNODE:
+            case STRNODE:
+                if (!method) warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "string literal in condition");
+                break;
+            case DREGEXPNODE: {
+                int line = node.getLine();
 
-            return new Match2Node(line, node, new GlobalVarNode(line, symbolID(DOLLAR_UNDERSCORE)));
-        }
-        case ANDNODE:
-            leftNode = cond0(((AndNode) node).getFirstNode());
-            rightNode = cond0(((AndNode) node).getSecondNode());
-            
-            return new AndNode(node.getLine(), makeNullNil(leftNode), makeNullNil(rightNode));
-        case ORNODE:
-            leftNode = cond0(((OrNode) node).getFirstNode());
-            rightNode = cond0(((OrNode) node).getSecondNode());
-            
-            return new OrNode(node.getLine(), makeNullNil(leftNode), makeNullNil(rightNode));
-        case DOTNODE: {
-            DotNode dotNode = (DotNode) node;
-            if (dotNode.isLiteral()) return node; 
-            
-            ByteList label = new ByteList(new byte[] {'F', 'L', 'I', 'P'}, USASCII_ENCODING);
-            label.append(Long.toString(node.hashCode()).getBytes());
-            RubySymbol symbolID = symbolID(label);
-
-            return new FlipNode(node.getLine(),
-                    getFlipConditionNode(((DotNode) node).getBeginNode()),
-                    getFlipConditionNode(((DotNode) node).getEndNode()),
-                    dotNode.isExclusive(), currentScope.getLocalScope().addVariable(symbolID.idString()));
-        }
-        case REGEXPNODE:
-            if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
-                warningUnlessEOption(ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
+                return new Match2Node(line, node, new GlobalVarNode(line, symbolID(DOLLAR_UNDERSCORE)));
             }
+            case ANDNODE:
+                leftNode = cond0(((AndNode) node).getFirstNode(), false);
+                rightNode = cond0(((AndNode) node).getSecondNode(), false);
             
-            return new MatchNode(node.getLine(), node);
+                return new AndNode(node.getLine(), makeNullNil(leftNode), makeNullNil(rightNode));
+            case ORNODE:
+                leftNode = cond0(((OrNode) node).getFirstNode(), false);
+                rightNode = cond0(((OrNode) node).getSecondNode(), false);
+            
+                return new OrNode(node.getLine(), makeNullNil(leftNode), makeNullNil(rightNode));
+            case DOTNODE: {
+                DotNode dotNode = (DotNode) node;
+                if (dotNode.isLiteral()) return node;
+            
+                ByteList label = new ByteList(new byte[] {'F', 'L', 'I', 'P'}, USASCII_ENCODING);
+                label.append(Long.toString(node.hashCode()).getBytes());
+                RubySymbol symbolID = symbolID(label);
+
+                if (!method && !configuration.isInlineSource()) {
+                    if ((dotNode.getBeginNode() instanceof TrueNode && dotNode.getEndNode() instanceof FalseNode) ||
+                            (dotNode.getBeginNode() instanceof FalseNode && dotNode.getEndNode() instanceof TrueNode)) {
+                        warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "range literal in condition");
+                    }
+
+                }
+
+                return new FlipNode(node.getLine(),
+                        getFlipConditionNode(((DotNode) node).getBeginNode()),
+                        getFlipConditionNode(((DotNode) node).getEndNode()),
+                        dotNode.isExclusive(), currentScope.getLocalScope().addVariable(symbolID.idString()));
+            }
+            case SYMBOLNODE:
+            case DSYMBOLNODE:
+            case FIXNUMNODE:
+                if (!method) warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "literal in condition");
+                break;
+            case REGEXPNODE:
+                if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
+                    if (!method) warnUnlessEOption(ID.REGEXP_LITERAL_IN_CONDITION, node, "regex literal in condition");
+                }
+            
+                return new MatchNode(node.getLine(), node);
         }
 
         return node;
     }
 
-    public Node getConditionNode(Node node) {
-        Node cond = cond0(node);
+    public Node cond(Node node) {
+        return cond0(node, false);
+    }
 
-        cond.setNewline();
+    public Node method_cond(Node node) {
+        return cond0(node, true);
+    }
 
-        return cond;
+    // we just reverse then/else for unless
+    public Node new_if(int line, Node condition, Node thenNode, Node elseNode) {
+        if (condition == null) return elseNode;
+
+        condition = cond0(condition, false);
+
+        return new IfNode(line, condition, thenNode, elseNode);
     }
 
     /* MRI: range_op */
     private Node getFlipConditionNode(Node node) {
         if (!configuration.isInlineSource()) return node;
         
-        node = getConditionNode(node);
+        node = cond0(node, false);
 
         if (node instanceof FixnumNode) {
             warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");

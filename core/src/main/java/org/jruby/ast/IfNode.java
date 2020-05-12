@@ -52,6 +52,7 @@ public class IfNode extends Node {
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;
+        setNewline();
     }
 
     public NodeType getNodeType() {

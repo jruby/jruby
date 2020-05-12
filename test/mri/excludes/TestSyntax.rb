@@ -1,4 +1,3 @@
-exclude :test__END___cr, "needs investigation"
 exclude :test_block_after_cmdarg_in_paren, "needs investigation"
 exclude :test_classdef_in_cond, "needs investigation"
 exclude :test_constant_reassignment_nested, "needs investigation"
@@ -18,4 +17,4 @@ exclude :test_methoddef_in_cond, "needs investigation"
 exclude :test_parenthesised_statement_argument, "needs investigation"
 exclude :test_syntax_error_in_rescue, "needs investigation"
 exclude :test_warn_unreachable, "needs investigation"
-exclude :test_warning_literal_in_condition, "needs investigation"
+
