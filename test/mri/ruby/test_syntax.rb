@@ -958,8 +958,10 @@ eom
     assert_warn(/literal in condition/) do
       eval('1 if //')
     end
-    assert_warn(/literal in condition/) do
-      eval('1 if true..false')
+    if RUBY_ENGINE != 'jruby'
+      assert_warn(/literal in condition/) do
+        eval('1 if true..false')
+      end
     end
     assert_warning(/literal in condition/) do
       eval('1 if 1')
@@ -977,8 +979,10 @@ eom
     assert_warn('') do
       eval('1 if !//')
     end
-    assert_warn('') do
-      eval('1 if !(true..false)')
+    if RUBY_ENGINE != 'jruby'
+      assert_warn('') do
+        eval('1 if !(true..false)')
+      end
     end
     assert_warning('') do
       eval('1 if !1')
