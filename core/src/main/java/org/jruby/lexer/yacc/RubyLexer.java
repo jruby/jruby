@@ -43,6 +43,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.BackRefNode;
@@ -73,6 +75,7 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.parser.RubyParser.tSTRING_BEG;
 import static org.jruby.parser.RubyParser.tXSTRING_BEG;
+import static org.jruby.util.StringSupport.CR_7BIT;
 
 /*
  * This is a port of the MRI lexer to Java.
@@ -559,7 +562,7 @@ public class RubyLexer extends LexingCommon {
 
         if ((flags & STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
-            if (codeRange == StringSupport.CR_7BIT) {
+            if (codeRange == CR_7BIT) {
                 // Do nothing like MRI
             } else if (getEncoding() == USASCII_ENCODING &&
                     bufferEncoding != UTF8_ENCODING) {
@@ -675,7 +678,8 @@ public class RubyLexer extends LexingCommon {
         }
 
         int token = tSTRING_BEG;
-        ByteList markerValue;
+        ByteList markerValue = new ByteList();
+        markerValue.setEncoding(getEncoding());
         if (c == '\'' || c == '"' || c == '`') {
             if (c == '\'') {
                 yaccValue = Q;
@@ -689,19 +693,32 @@ public class RubyLexer extends LexingCommon {
                 func |= str_xquote; 
             }
 
-            newtok(false); // skip past quote type
-
+            int newline = 0;
             term = c;
             while ((c = nextc()) != EOF && c != term) {
-                if (!tokadd_mbchar(c)) return EOF;
+                if (!tokadd_mbchar(c, markerValue)) return EOF;
+                if (newline == 0 && c == '\n') {
+                    newline = 1;
+                } else if (newline > 0) {
+                    newline = 2;
+                }
             }
 
             if (c == EOF) compile_error("unterminated here document identifier");
 
+            switch (newline) {
+                case 1:
+                    parserSupport.warn(ID.USELESS_EXPRESSION, ruby_sourceline, "here document identifier ends with a newline");
+                    markerValue.setRealSize(markerValue.realSize() - 1);
+                    if (markerValue.get(markerValue.realSize() - 1) == '\r') markerValue.setRealSize(markerValue.realSize() - 1);
+                    break;
+                case 2:
+                    compile_error("here document identifier across newlines, never match");
+            }
+
             // c == term.  This differs from MRI in that we unwind term symbol so we can make
             // our marker with just tokp and lex_p info (e.g. we don't make second numberBuffer).
             pushback(term);
-            markerValue = createTokenByteList();
             nextc();
         } else {
             if (!isIdentifierChar(c)) {
@@ -715,10 +732,9 @@ public class RubyLexer extends LexingCommon {
             term = '"';
             func |= str_dquote;
             do {
-                if (!tokadd_mbchar(c)) return EOF;
+                if (!tokadd_mbchar(c, markerValue)) return EOF;
             } while ((c = nextc()) != EOF && isIdentifierChar(c));
             pushback(c);
-            markerValue = createTokenByteList();
         }
 
         int len = lex_p - lex_pbeg;
@@ -2281,6 +2297,9 @@ public class RubyLexer extends LexingCommon {
     
     private void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral) throws IOException {
         if (codepoint >= 0x80) {
+            if (buffer.getEncoding() != UTF8Encoding.INSTANCE && buffer.getEncoding() != USASCIIEncoding.INSTANCE) {
+                compile_error(PID.MIXED_ENCODING, "UTF-8 mixed within " + buffer.getEncoding() + " source");
+            }
             buffer.setEncoding(UTF8_ENCODING);
             if (stringLiteral) tokaddmbc(codepoint, buffer);
         } else if (stringLiteral) {

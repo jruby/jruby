@@ -153,7 +153,7 @@ public class StringTerm extends StrTerm {
     }
 
     private void mixedEscape(RubyLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
-        lexer.compile_error(PID.MIXED_ENCODING, "" + foundEncoding + " mixed within " + parserEncoding);
+        lexer.compile_error(PID.MIXED_ENCODING, "" + foundEncoding + " mixed within " + parserEncoding + " source");
     }
 
     // mri: parser_tokadd_string
