@@ -674,7 +674,7 @@ public class ShellLauncher {
         try {
             pi = Class.forName("java.lang.ProcessImpl");
             handle = pi.getDeclaredField("handle");
-            Java.trySetAccessible(pid);
+            Java.trySetAccessible(handle);
         } catch (Exception e) {
             // ignore and use hashcode
         }
