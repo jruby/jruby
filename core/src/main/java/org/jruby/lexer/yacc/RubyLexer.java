@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
@@ -2297,7 +2298,9 @@ public class RubyLexer extends LexingCommon {
     
     private void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral) throws IOException {
         if (codepoint >= 0x80) {
-            if (buffer.getEncoding() != UTF8Encoding.INSTANCE && buffer.getEncoding() != USASCIIEncoding.INSTANCE) {
+            if (buffer.getEncoding() != UTF8Encoding.INSTANCE &&
+                    buffer.getEncoding() != USASCIIEncoding.INSTANCE &&
+                    buffer.getEncoding() != ASCIIEncoding.INSTANCE) {
                 compile_error(PID.MIXED_ENCODING, "UTF-8 mixed within " + buffer.getEncoding() + " source");
             }
             buffer.setEncoding(UTF8_ENCODING);
