@@ -413,7 +413,17 @@ public abstract class LexingCommon {
     protected int numberLiteralSuffix(int mask) throws IOException {
         int c = nextc();
 
-        if (c == 'i') return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
+        if (c == 'i') {
+            c = nextc();
+
+            if (!isASCII(c) || getEncoding().isAlpha(c) || c == '_') {
+                pushback(c);
+                pushback(c);
+                return 0;
+            }
+
+            return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
+        }
 
         if (c == 'r') {
             int result = 0;

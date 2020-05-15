@@ -2054,10 +2054,10 @@ public class RubyLexer extends LexingCommon {
                     if (isHexChar(c)) {
                         for (;; c = nextc()) {
                             if (c == '_') {
-                                if (nondigit != '\0') break;
+                                if (nondigit != 0) break;
                                 nondigit = c;
                             } else if (isHexChar(c)) {
-                                nondigit = '\0';
+                                nondigit = 0;
                                 numberBuffer.append((char) c);
                             } else {
                                 break;
@@ -2068,7 +2068,7 @@ public class RubyLexer extends LexingCommon {
 
                     if (numberBuffer.length() == startLen) {
                         compile_error(PID.BAD_HEX_NUMBER, "Hexadecimal number without hex-digits.");
-                    } else if (nondigit != '\0') {
+                    } else if (nondigit != 0) {
                         compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
                     return getIntegerToken(numberBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
@@ -2078,10 +2078,10 @@ public class RubyLexer extends LexingCommon {
                     if (c == '0' || c == '1') {
                         for (;; c = nextc()) {
                             if (c == '_') {
-                                if (nondigit != '\0') break;
+                                if (nondigit != 0) break;
 								nondigit = c;
                             } else if (c == '0' || c == '1') {
-                                nondigit = '\0';
+                                nondigit = 0;
                                 numberBuffer.append((char) c);
                             } else {
                                 break;
@@ -2092,7 +2092,7 @@ public class RubyLexer extends LexingCommon {
 
                     if (numberBuffer.length() == startLen) {
                         compile_error(PID.EMPTY_BINARY_NUMBER, "Binary number without digits.");
-                    } else if (nondigit != '\0') {
+                    } else if (nondigit != 0) {
                         compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
                     return getIntegerToken(numberBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
@@ -2102,10 +2102,10 @@ public class RubyLexer extends LexingCommon {
                     if (Character.isDigit(c)) {
                         for (;; c = nextc()) {
                             if (c == '_') {
-                                if (nondigit != '\0') break;
+                                if (nondigit != 0) break;
 								nondigit = c;
                             } else if (Character.isDigit(c)) {
-                                nondigit = '\0';
+                                nondigit = 0;
                                 numberBuffer.append((char) c);
                             } else {
                                 break;
@@ -2116,7 +2116,7 @@ public class RubyLexer extends LexingCommon {
 
                     if (numberBuffer.length() == startLen) {
                         compile_error(PID.EMPTY_BINARY_NUMBER, "Binary number without digits.");
-                    } else if (nondigit != '\0') {
+                    } else if (nondigit != 0) {
                         compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
                     return getIntegerToken(numberBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
@@ -2127,11 +2127,11 @@ public class RubyLexer extends LexingCommon {
                 case '5': case '6': case '7': case '_': 
                     for (;; c = nextc()) {
                         if (c == '_') {
-                            if (nondigit != '\0') break;
+                            if (nondigit != 0) break;
 
 							nondigit = c;
                         } else if (c >= '0' && c <= '7') {
-                            nondigit = '\0';
+                            nondigit = 0;
                             numberBuffer.append((char) c);
                         } else {
                             break;
@@ -2140,7 +2140,7 @@ public class RubyLexer extends LexingCommon {
                     if (numberBuffer.length() > startLen) {
                         pushback(c);
 
-                        if (nondigit != '\0') compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
+                        if (nondigit != 0) compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
 
                         return getIntegerToken(numberBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
                     }
@@ -2174,11 +2174,11 @@ public class RubyLexer extends LexingCommon {
                 case '7' :
                 case '8' :
                 case '9' :
-                    nondigit = '\0';
+                    nondigit = 0;
                     numberBuffer.append((char) c);
                     break;
                 case '.' :
-                    if (nondigit != '\0') {
+                    if (nondigit != 0) {
                         pushback(c);
                         compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
@@ -2199,7 +2199,7 @@ public class RubyLexer extends LexingCommon {
                             numberBuffer.append('.');
                             numberBuffer.append((char) c2);
                             seen_point = true;
-                            nondigit = '\0';
+                            nondigit = 0;
                         }
                     }
                     break;
@@ -2212,25 +2212,26 @@ public class RubyLexer extends LexingCommon {
                         pushback(c);
                         return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
                     } else {
+                        c = nextc();
+                        if (c != '-' && c != '+' && !Character.isDigit(c)) {
+                            pushback(c);
+                            pushback(c);
+                            nondigit = 0;
+                            return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                        }
                         numberBuffer.append((char) c);
                         seen_e = true;
-                        nondigit = c;
-                        c = nextc();
-                        if (c == '-' || c == '+') {
-                            numberBuffer.append((char) c);
-                            nondigit = c;
-                        } else {
-                            pushback(c);
-                        }
+                        numberBuffer.append((char) c);
+                        nondigit = (c == '-' || c == '+') ? c : 0;
                     }
                     break;
                 case '_' : //  '_' in number just ignored
-                    if (nondigit != '\0') compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
+                    if (nondigit != 0) compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     nondigit = c;
                     break;
                 default :
                     pushback(c);
-                return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                    return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
             }
         }
     }
