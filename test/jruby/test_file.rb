@@ -1261,6 +1261,15 @@ class TestFile < Test::Unit::TestCase
     File.open('jar:file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb'){}
   end if IS_JRUBY
 
+  def test_open_nonexisting_file_in_jar
+    assert_raises(Errno::ENOENT) { File.open('file:test/jruby/dir with spaces/test_jar.jar!/abc/error.rb'){} }
+    assert_raises(Errno::ENOENT) { File.open('jar:file:test/jruby/dir with spaces/test_jar.jar!/abc/error.rb'){} }
+  end if IS_JRUBY
+
+  def test_open_nonexisting_file_in_classloader
+    assert_raises(Errno::ENOENT) { File.open('uri:classloader:/a/b/c/d.e'){} }
+  end if IS_JRUBY
+
   # JRUBY-3634: File.read or File.open with a url to a file resource fails with StringIndexOutOfBounds exception
   def test_file_url
     path = File.expand_path(__FILE__)
