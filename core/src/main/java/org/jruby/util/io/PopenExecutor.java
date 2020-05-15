@@ -121,7 +121,7 @@ public class PopenExecutor {
         if (eargp.chdir_given()) {
             // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
             // just need to add chdir to the cmd
-            prog = (RubyString)prog.strDup(runtime).prepend(context, RubyString.newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
+            prog = (RubyString)prog.strDup(runtime).prepend(context, newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
             eargp.chdir_dir = null;
             eargp.chdir_given_clear();
 
@@ -1765,6 +1765,7 @@ public class PopenExecutor {
         int beg = 0;
         int end = argv_p[0].length;
 
+        // extract environment and options from args
         if (end >= 1) {
             hash = TypeConverter.checkHashType(runtime, argv_p[0][end - 1]);
             if (!hash.isNil()) {
@@ -1772,7 +1773,6 @@ public class PopenExecutor {
                 end--;
             }
         }
-
         if (end >= 1) {
             hash = TypeConverter.checkHashType(runtime, argv_p[0][0]);
             if (!hash.isNil()) {
@@ -1781,13 +1781,18 @@ public class PopenExecutor {
             }
         }
         argv_p[0] = Arrays.copyOfRange(argv_p[0], beg, end);
+
+        // try to extract program from args
         prog = checkArgv(context, argv_p[0]);
+
         if (prog == null) {
+            // use first arg as program name and clear argv if we can use sh
             prog = (RubyString)argv_p[0][0];
             if (accept_shell && (end - beg) == 1) {
                 argv_p[0] = IRubyObject.NULL_ARRAY;
             }
         }
+
         return prog;
     }
 
@@ -1801,6 +1806,8 @@ public class PopenExecutor {
         Arity.checkArgumentCount(runtime, argv, 1, Integer.MAX_VALUE);
 
         prog = null;
+
+        // if first parameter is an array, it is expected to be [program, $0 name]
         tmp = TypeConverter.checkArrayType(runtime, argv[0]);
         if (!tmp.isNil()) {
             if (((RubyArray)tmp).size() != 2) {
@@ -1812,12 +1819,15 @@ public class PopenExecutor {
             prog = prog.strDup(runtime);
             prog.setFrozen(true);
         }
+
+        // process all arguments
         for (i = 0; i < argv.length; i++) {
             argv[i] = argv[i].convertToString();
             argv[i] = ((RubyString)argv[i]).newFrozen();
             StringSupport.checkEmbeddedNulls(runtime, argv[i]);
         }
-        //        security(name ? name : RSTRING_PTR(argv[0]));
+
+        // return program, or null if we did not yet determine it
         return prog;
     }
 
@@ -1870,7 +1880,7 @@ public class PopenExecutor {
 
             // if we're launching org.jruby.Main, adjust args to -C to new dir
             if ((arg = ShellLauncher.changeDirInsideJar(runtime, arg)) != null) {
-                prog = RubyString.newString(runtime, arg);
+                prog = newString(runtime, arg);
             } else if (virtualCWD.startsWith("uri:classloader:")) {
                 // can't switch to uri:classloader URL, so just run in cwd
             } else if (!eargp.chdir_given()) {
@@ -2003,7 +2013,7 @@ public class PopenExecutor {
             String abspath;
             abspath = dlnFindExeR(runtime, eargp.command_name.toString(), eargp.path_env);
             if (abspath != null)
-                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, RubyString.newString(runtime, abspath));
+                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, newString(runtime, abspath));
             else
                 eargp.command_abspath = null;
         }
