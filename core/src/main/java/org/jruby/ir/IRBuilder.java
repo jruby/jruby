@@ -480,7 +480,7 @@ public class IRBuilder {
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + scope.getFile() + ":" + node.getLine());
             case RESCUENODE: return buildRescue((RescueNode) node);
-            case RETRYNODE: return buildRetry();
+            case RETRYNODE: return buildRetry((RetryNode) node);
             case RETURNNODE: return buildReturn((ReturnNode) node);
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + scope.getFile() + ":" + node.getLine());
@@ -3548,6 +3548,17 @@ public class IRBuilder {
         Variable rv = createTemporaryVariable();
         if (rescueNode.getBodyNode() != null) tmp = build(rescueNode.getBodyNode());
 
+        // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
+        // let us discover the edge of the region during linear traversal of instructions during cfg construction.
+        addInstr(new ExceptionRegionEndMarkerInstr());
+        activeRescuers.pop();
+
+        // Else part of the body -- we simply fall through from the main body if there were no exceptions
+        if (rescueNode.getElseNode() != null) {
+            addInstr(new LabelInstr(getNewLabel()));
+            tmp = build(rescueNode.getElseNode());
+        }
+
         // Push rescue block *after* body has been built.
         // If not, this messes up generation of retry in these scenarios like this:
         //
@@ -3566,17 +3577,6 @@ public class IRBuilder {
         // If we push the rescue block before building the body, we will jump to 2.
         RescueBlockInfo rbi = new RescueBlockInfo(rBeginLabel, ensure.savedGlobalException);
         activeRescueBlockStack.push(rbi);
-
-        // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
-        // let us discover the edge of the region during linear traversal of instructions during cfg construction.
-        addInstr(new ExceptionRegionEndMarkerInstr());
-        activeRescuers.pop();
-
-        // Else part of the body -- we simply fall through from the main body if there were no exceptions
-        if (rescueNode.getElseNode() != null) {
-            addInstr(new LabelInstr(getNewLabel()));
-            tmp = build(rescueNode.getElseNode());
-        }
 
         if (tmp != U_NIL) {
             addInstr(new CopyInstr(rv, tmp));
@@ -3663,7 +3663,7 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildRetry() {
+    public Operand buildRetry(RetryNode retryNode) {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
 
@@ -3676,7 +3676,7 @@ public class IRBuilder {
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (activeRescueBlockStack.empty()) {
-            addInstr(new ThrowExceptionInstr(IRException.RETRY_LocalJumpError));
+            throwSyntaxError(retryNode, "Invalid retry");
         } else {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block

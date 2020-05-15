@@ -13,6 +13,5 @@ exclude :test_invalid_break, "lazy method build makes this fail"
 exclude :test_method_call_location, "needs investigation"
 exclude :test_methoddef_in_cond, "needs investigation"
 exclude :test_parenthesised_statement_argument, "needs investigation"
-exclude :test_syntax_error_in_rescue, "needs investigation"
 exclude :test_warn_unreachable, "needs investigation"
 
