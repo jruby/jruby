@@ -1,10 +1,15 @@
 package org.jruby.ir;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
+import org.jruby.RubyComplex;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyRational;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
+import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.parser.StaticScope;
@@ -22,6 +27,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
@@ -1229,6 +1235,7 @@ public class IRBuilder {
 
         List<Label> labels = new ArrayList<>();
         Map<Label, Node> bodies = new HashMap<>();
+        Set<IRubyObject> seenLiterals = new HashSet<>();
 
         // build each "when"
         for (Node aCase : caseNode.getCases().children()) {
@@ -1237,9 +1244,19 @@ public class IRBuilder {
 
             Variable eqqResult = createTemporaryVariable();
             labels.add(bodyLabel);
-            Operand expression = buildWithOrder(whenNode.getExpressionNodes(), whenNode.containsVariableAssignment());
             Node exprNodes = whenNode.getExpressionNodes();
+            Operand expression = buildWithOrder(exprNodes, whenNode.containsVariableAssignment());
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
+
+            // FIXME: Remove duplicated entries to reduce codesize (like MRI does).
+            IRubyObject literal = getWhenLiteral(exprNodes);
+            if (literal != null) {
+                if (seenLiterals.contains(literal)) {
+                    scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), exprNodes.getLine(), "duplicated when clause is ignored");
+                } else {
+                    seenLiterals.add(literal);
+                }
+            }
 
             addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
@@ -1287,6 +1304,38 @@ public class IRBuilder {
         return result;
     }
 
+    // Note: This is potentially a little wasteful in that we eagerly create these literals for a duplicated warning
+    // check.  In most cases these would be made anyways (e.g. symbols/fixnum) but in others we double allocation
+    // (e.g. strings).
+    private IRubyObject getWhenLiteral(Node node) {
+        Ruby runtime = scope.getManager().getRuntime();
+
+        switch(node.getNodeType()) {
+            case FIXNUMNODE:
+                return runtime.newFixnum(((FixnumNode) node).getValue());
+            case FLOATNODE:
+                return runtime.newFloat((((FloatNode) node).getValue()));
+            case BIGNUMNODE:
+                return new RubyBignum(runtime, ((BignumNode) node).getValue());
+            case COMPLEXNODE:
+                return RubyComplex.newComplexRaw(runtime, getWhenLiteral(((ComplexNode) node).getNumber()));
+            case RATIONALNODE:
+                return RubyRational.newRationalRaw(runtime, getWhenLiteral(((RationalNode)node).getDenominator()), getWhenLiteral(((RationalNode) node).getNumerator()));
+            case NILNODE:
+                return runtime.getNil();
+            case TRUENODE:
+                return runtime.getTrue();
+            case FALSENODE:
+                return runtime.getFalse();
+            case SYMBOLNODE:
+                return ((SymbolNode) node).getName();
+            case STRNODE:
+                return runtime.newString(((StrNode) node).getValue());
+        }
+
+        return null;
+    }
+
     private Operand buildFixnumCase(CaseNode caseNode) {
         Map<Integer, Label> jumpTable = new HashMap<>();
         Map<Node, Label> nodeBodies = new HashMap<>();
@@ -1302,9 +1351,10 @@ public class IRBuilder {
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
+                nodeBodies.put(whenNode, bodyLabel);
+            } else {
+                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine(), "duplicated when clause is ignored");
             }
-
-            nodeBodies.put(whenNode, bodyLabel);
         }
 
         // sort the jump table
