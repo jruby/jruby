@@ -424,6 +424,7 @@ public class StaticScope implements Serializable {
     }
 
     public boolean keywordExists(String name) {
+        if (name.equals("_")) return true;
         int slot = exists(name);
 
         return slot >= 0 && firstKeywordIndex != -1 && slot >= firstKeywordIndex;
