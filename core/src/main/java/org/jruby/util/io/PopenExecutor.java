@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jruby.RubyString.newString;
+
 /**
  * Port of MRI's popen+exec logic.
  */
@@ -1818,10 +1820,24 @@ public class PopenExecutor {
             }
         }
 
-        // restructure command as a single string if chdir and has args
+        // restructure command as call to sh with arguments
         if (eargp.chdir_given() && argc > 1) {
-            RubyArray array = RubyArray.newArrayMayCopy(runtime, argv);
-            prog = (RubyString)array.join(context, RubyString.newString(runtime, " "));
+            argc = argc + 4;
+
+            IRubyObject[] newArgv = new IRubyObject[argc];
+
+            newArgv[0] = newString(runtime, "sh");
+            newArgv[1] = newString(runtime, "-c");
+            newArgv[2] = newString(runtime, "cd \"$0\"; exec \"$@\"");
+            newArgv[3] = newString(runtime, eargp.chdir_dir);
+
+            System.arraycopy(argv, 0, newArgv, 4, argv.length);
+
+            argv = newArgv;
+
+            prog = newString(runtime, "/bin/sh");
+
+            eargp.chdir_given_clear();
         }
 
         if (!env.isNil()) {
