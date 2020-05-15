@@ -16,6 +16,7 @@ import org.objectweb.asm.tree.LabelNode;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -126,11 +127,10 @@ public class DynamicScopeGenerator {
         new File(targetPath + "/" + SCOPES_PATH).mkdirs();
 
         definedClasses.forEach((key, value) -> {
-            try {
-                FileOutputStream fos = new FileOutputStream(targetPath + "/" + key.replaceAll("\\.", "/") + ".class");
+            try (FileOutputStream fos = new FileOutputStream(targetPath + "/" + key.replaceAll("\\.", "/") + ".class")) {
                 fos.write(value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
         });
     }
