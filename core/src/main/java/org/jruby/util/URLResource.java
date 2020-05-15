@@ -147,10 +147,13 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
 
     @Override
     public InputStream openInputStream() throws IOException {
-    	if (pathname != null) {
+        if (pathname != null) {
             return cl.getResourceAsStream(pathname);
-    	}
-    	return url.openStream();
+        } else if (url != null) {
+            return url.openStream();
+        } else {
+            throw new ResourceException.NotFound(uri);
+        }
     }
 
     @Override
