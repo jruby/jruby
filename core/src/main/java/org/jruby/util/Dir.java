@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
@@ -41,6 +42,7 @@ import org.jruby.platform.Platform;
 import static org.jruby.util.ByteList.NULL_ARRAY;
 import static org.jruby.util.ByteList.memcmp;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+import static org.jruby.util.StringSupport.codePoint;
 
 /**
  * This class exists as a counterpart to the dir.c file in
@@ -102,7 +104,8 @@ public class Dir {
             this.nocase = (flags & FNM_CASEFOLD) != 0;
         }
 
-        int helper(byte[] pbytes, int pend, byte[] sbytes, int send) {
+        // MRI: fnmatch_helper
+        int helper(byte[] pbytes, int pend, byte[] sbytes, int send, Encoding enc) {
             int s = scur;
             int p = pcur;
 
@@ -121,7 +124,6 @@ public class Dir {
                     }
 
                     switch (pbytes[p]) {
-
                         case '*':
                             do p++; while (p < pend && pbytes[p] == '*');
                             if (isEnd(pbytes, unescape(pbytes, p), pend)) {
@@ -139,17 +141,17 @@ public class Dir {
                                 return FNM_NOMATCH;
                             }
                             p++;
-                            s++;
+                            s += StringSupport.length(enc, sbytes, s, send);
                             continue;
 
                         case '[':
                             if (isEnd(sbytes, s, send)) {
                                 return FNM_NOMATCH;
                             }
-                            int t = bracket(pbytes, p + 1, pend, (char) (sbytes[s] & 0xFF));
+                            int t = bracket(pbytes, p + 1, pend, sbytes, s, send, enc);
                             if (t != -1) {
                                 p = t;
-                                s++;
+                                s += StringSupport.length(enc, sbytes, s, send);
                                 continue;
                             }
                             break; // branch to failed
@@ -164,10 +166,10 @@ public class Dir {
                             }
 
                             // TODO: MBC
-                            int r = 1;
-                            //                    if (!MBCLEN_CHARFOUND_P(r)) {
-                            //                        break; // branch to failed;
-                            //                    }
+                            int r = StringSupport.preciseLength(enc, pbytes, p, pend);
+                            if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
+                                break; // branch to failed
+                            }
                             if (r <= send - s && memcmp(pbytes, p, r, sbytes, s, r) == 0) {
                                 p += r;
                                 s += r;
@@ -179,19 +181,19 @@ public class Dir {
                                     break; // branch to failed
                                 }
 
-                                // TODO: MBC
-                                if (Character.toLowerCase((char) pbytes[p]) != Character.toLowerCase((char) sbytes[s])) {
+                                // TODO: Use JOni case folding
+                                if (Character.toLowerCase(codePoint(enc, pbytes, p, pend)) !=
+                                        Character.toLowerCase(codePoint(enc, sbytes, s, send))) {
                                     break; // branch to failed
                                 }
 
                             }
                             p += r;
-                            s++;
+                            s += StringSupport.length(enc, sbytes, s, send);
                             continue;
                     }
 
-                    failed:
-                    // reached by breaking from above switch rather than continuing
+                    failed: // reached by breaking from above switch rather than continuing
                     if (ptmp != -1 && stmp != -1) {
                         p = ptmp;
                         stmp++; /* !ISEND(*stmp) */
@@ -207,51 +209,71 @@ public class Dir {
             }
         }
 
-        public int bracket(byte[] _pat, int pat, int pend, char test) {
-            boolean not;
+        public int bracket(byte[] pbytes, int p, int pend, byte[] sbytes, int s, int send, Encoding enc) {
+            boolean not = false;
             boolean ok = false;
+            int r;
+            int c1, c2;
 
-            not = _pat[pat] == '!' || _pat[pat] == '^';
-            if(not) {
-                pat++;
+            if (p >= pend) return -1;
+
+            if (pbytes[p] == '!' || pbytes[p] == '^') {
+                not = true;
+                p++;
             }
 
-            if (nocase) {
-                test = Character.toLowerCase(test);
-            }
-
-            while(_pat[pat] != ']') {
-                char cstart, cend;
-                if(escape && _pat[pat] == '\\') {
-                    pat++;
-                    if(pat >= pend) return -1;
+            while (true) {
+                // in place of null terminator logic
+                {
+                    if (p >= pend) return -1;
+                    if (pbytes[p] == ']') break;
                 }
-                cstart = cend = (char)(_pat[pat++] & 0xFF);
-                if(pat >= pend) return -1;
-                if(_pat[pat] == '-' && _pat[pat+1] != ']') {
-                    pat++;
-                    if(escape && _pat[pat] == '\\') {
-                        pat++;
-                        if(pat >= pend) return -1;
+
+                int t1 = p;
+                if(escape && pbytes[t1] == '\\') {
+                    t1++;
+                }
+                if (t1 >= pend) return -1;
+                p = t1 + (r = StringSupport.length(enc, pbytes, t1, pend));
+                if (p >= pend) return -1;
+                if (pbytes[p] == '-' && pbytes[p+1] != ']') {
+                    int t2 = p + 1;
+                    int r2;
+                    if (escape && pbytes[t2] == '\\') {
+                        t2++;
                     }
-
-                    cend = (char)(_pat[pat++] & 0xFF);
-                    if(pat >= pend) return -1;
-                }
-
-                if (nocase) {
-                    if (Character.toLowerCase(cstart) <= test
-                            && test <= Character.toLowerCase(cend)) {
+                    if (t2 >= pend) return -1;
+                    p = t2 + (r2 = StringSupport.length(enc, pbytes, t2, pend));
+                    if (ok) continue;
+                    if ((r <= (send-s) && memcmp(pbytes, t1, r, sbytes, s, r) == 0) ||
+                            (r2 <= (send-s) && memcmp(pbytes, t2, r2, sbytes, s, r2) == 0)) {
                         ok = true;
+                        continue;
                     }
+                    c1 = codePoint(enc, sbytes, s, send);
+                    // TODO: Use JOni case folding
+                    if (nocase) c1 = Character.toUpperCase(c1);
+                    c2 = codePoint(enc, pbytes, t1, pend);
+                    if (nocase) c2 = Character.toUpperCase(c2);
+                    if (c1 < c2) continue;
+                    c2 = codePoint(enc, pbytes, t2, pend);
+                    if (nocase) c2 = Character.toUpperCase(c2);
+                    if (c1 > c2) continue;
                 } else {
-                    if (cstart <= test && test <= cend) {
+                    if (ok) continue;
+                    if (r <= (send-s) && memcmp(pbytes, t1, r, sbytes, s, r) == 0) {
                         ok = true;
+                        continue;
                     }
+                    if (!nocase) continue;
+                    c1 = Character.toUpperCase(codePoint(enc, sbytes, s, send));
+                    c2 = Character.toUpperCase(codePoint(enc, pbytes, p, pend));
+                    if (c1 != c2) continue;
                 }
+                ok = true;
             }
 
-            return ok == not ? -1 : pat + 1;
+            return ok == not ? -1 : p + 1;
         }
 
         private int unescape(byte[] bytes, int i) {
@@ -270,6 +292,12 @@ public class Dir {
     public static int fnmatch(
             byte[] bytes, int pstart, int pend,
             byte[] string, int sstart, int send, int flags) {
+        return fnmatch(bytes, pstart, pend, string, sstart, send, flags, ASCIIEncoding.INSTANCE);
+    }
+
+    public static int fnmatch(
+            byte[] bytes, int pstart, int pend,
+            byte[] string, int sstart, int send, int flags, Encoding enc) {
 
         // This method handles '**/' patterns and delegates to
         // fnmatch_helper for the main work.
@@ -292,7 +320,7 @@ public class Dir {
 
                 FilenameMatch fnmatch = new FilenameMatch(pat_pos, str_pos, flags);
                 if (fnmatch.helper(bytes, pend,
-                        string, send) == 0) {
+                        string, send, enc) == 0) {
                     pat_pos = fnmatch.pcur;
                     str_pos = fnmatch.scur;
                     while (str_pos < send && string[str_pos] != '/') {
@@ -321,7 +349,7 @@ public class Dir {
             }
         } else {
             FilenameMatch fnmatch = new FilenameMatch(pstart, sstart, flags);
-            return fnmatch.helper(bytes, pend, string, send);
+            return fnmatch.helper(bytes, pend, string, send, enc);
         }
 
     }
@@ -887,6 +915,6 @@ public class Dir {
      */
     @Deprecated
     public static int range(byte[] _pat, int pat, int pend, char test, int flags) {
-        return new FilenameMatch(pat, 0, flags).helper(_pat, pend, new byte[] {(byte) test}, 1);
+        return new FilenameMatch(pat, 0, flags).helper(_pat, pend, new byte[] {(byte) test}, 1, ASCIIEncoding.INSTANCE);
     }
 }
