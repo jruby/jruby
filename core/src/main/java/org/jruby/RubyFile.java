@@ -955,13 +955,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static boolean dir_fnmatch(ByteList pattern, ByteList path, int flags) {
-        return org.jruby.util.Dir.fnmatch(pattern.getUnsafeBytes(),
-            pattern.getBegin(),
-            pattern.getBegin()+pattern.getRealSize(),
-            path.getUnsafeBytes(),
-            path.getBegin(),
-            path.getBegin()+path.getRealSize(),
-            flags) == 0;
+        return Dir.fnmatch(pattern.getUnsafeBytes(),
+                pattern.getBegin(),
+                pattern.getBegin() + pattern.getRealSize(),
+                path.getUnsafeBytes(),
+                path.getBegin(),
+                path.getBegin() + path.getRealSize(),
+                flags,
+                path.getEncoding()) == 0;
     }
 
     @JRubyMethod(name = "ftype", required = 1, meta = true)
