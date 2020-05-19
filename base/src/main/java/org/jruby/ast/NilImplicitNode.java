@@ -1,0 +1,20 @@
+package org.jruby.ast;
+
+import org.jruby.lexer.yacc.InvalidSourcePosition;
+
+/**
+ * A node which behaves like a nil node, but is not actually present in the AST as a syntactical
+ * element (e.g. IDE's should ignore occurrences of this node. We have this as separate subclass
+ * so that IDE consumers can more easily ignore these.
+ */
+public class NilImplicitNode extends NilNode implements InvisibleNode {
+    public static final NilImplicitNode NIL = new NilImplicitNode();
+    
+    public NilImplicitNode() {
+        super(InvalidSourcePosition.INSTANCE);
+    }
+
+    public boolean isNil() {
+        return true;
+    }
+}

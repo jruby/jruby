@@ -168,7 +168,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                    :phase => 'site-deploy' )
   end
 
-  modules [ 'core', 'lib' ]
+  modules [ 'base', 'core', 'lib' ]
 
   build do
     default_goal 'install'

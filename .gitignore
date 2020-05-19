@@ -32,7 +32,7 @@ failures
 build
 build.properties
 build_graph.png
-core/src/main/java/org/jruby/runtime/Constants.java
+base/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
 dev_null
 dist
@@ -46,7 +46,7 @@ glob_test
 jruby-complete.jar
 jruby-findbugs.html
 latest_source_cache
-core/src/main/java/META-INF/
+base/src/main/java/META-INF/
 lib/jni
 lib/jruby*.jar
 lib/native

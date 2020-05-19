@@ -1,0 +1,65 @@
+package org.jruby.management;
+
+import java.lang.ref.SoftReference;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import org.jruby.Ruby;
+
+public class ParserStats implements ParserStatsMBean {
+    private final SoftReference<Ruby> ruby;
+    private final AtomicInteger totalParseTime = new AtomicInteger(0);
+    private final AtomicLong totalParsedBytes = new AtomicLong(0);
+    private final AtomicInteger totalEvalParses = new AtomicInteger(0);
+    private final AtomicInteger totalLoadParses = new AtomicInteger(0);
+    private final AtomicInteger totalJRubyModuleParses = new AtomicInteger(0);
+    
+    public ParserStats(Ruby ruby) {
+        this.ruby = new SoftReference<Ruby>(ruby);
+    }
+
+    public void addParseTime(int time) {
+        totalParseTime.addAndGet(time);
+    }
+
+    public void addParsedBytes(int bytes) {
+        totalParsedBytes.addAndGet(bytes);
+    }
+
+    public void addEvalParse() {
+        totalEvalParses.incrementAndGet();
+    }
+
+    public void addLoadParse() {
+        totalLoadParses.incrementAndGet();
+    }
+
+    public void addJRubyModuleParse() {
+        totalJRubyModuleParses.incrementAndGet();
+    }
+
+    public double getTotalParseTime() {
+        Ruby runtime = ruby.get();
+        if (runtime == null) return 0;
+        return runtime.getParser().getTotalTime() / 1000000000.0;
+    }
+
+    public long getTotalParsedBytes() {
+        Ruby runtime = ruby.get();
+        if (runtime == null) return 0;
+        return runtime.getParser().getTotalBytes();
+    }
+
+    public double getParseTimePerKB() {
+        long totalBytes = getTotalParsedBytes();
+        if (totalBytes == 0) return 0;
+        return getTotalParseTime() / (totalBytes / 1000.0);
+    }
+
+    public int getNumberOfEvalParses() {
+        return totalEvalParses.get();
+    }
+
+    public int getNumberOfLoadParses() {
+        return totalLoadParses.get();
+    }
+}
