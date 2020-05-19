@@ -112,8 +112,10 @@ public class Dir {
             int ptmp = -1;
             int stmp = -1;
 
-            if (period && sbytes[s] == '.' && pbytes[unescape(pbytes, p)] != '.') { /* leading period */
-                return FNM_NOMATCH;
+            if (s < send && p < pend) {
+                if (period && sbytes[s] == '.' && pbytes[unescape(pbytes, p)] != '.') { /* leading period */
+                    return FNM_NOMATCH;
+                }
             }
 
             try { // RETURN macro in MRI
