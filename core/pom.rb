@@ -8,7 +8,9 @@ project 'JRuby Core' do
   id 'org.jruby:jruby-core'
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
-              'polyglot.dump.readonly' => true)
+              'polyglot.dump.readonly' => true,
+              'jruby.basedir' => '${basedir}/..'
+            )
 
   jar 'org.jruby:jruby-base', '${project.version}'
   plugin :shade do
