@@ -33,15 +33,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import jnr.posix.POSIX;
-
 import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.platform.Platform;
 import static org.jruby.util.ByteList.NULL_ARRAY;
+import static org.jruby.util.ByteList.memcmp;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 /**
@@ -70,12 +68,12 @@ public class Dir {
     public final static byte[] STAR = new byte[]{'*'};
     public final static byte[] DOUBLE_STAR = new byte[]{'*','*'};
 
-    private static boolean isdirsep(char c) {
+    private static boolean isdirsep(int c) {
         return c == '/' || DOSISH && c == '\\';
     }
 
     private static boolean isdirsep(byte c) {
-        return isdirsep((char)(c & 0xFF));
+        return isdirsep((int)(c & 0xFF));
     }
 
     private static int rb_path_next(byte[] _s, int s, int send) {
@@ -85,99 +83,188 @@ public class Dir {
         return s;
     }
 
-    private static int fnmatch_helper(byte[] bytes, int pstart, int pend, byte[] string, int sstart, int send, int flags) {
-        char test;
-        int s = sstart;
-        int pat = pstart;
-        boolean escape = (flags & FNM_NOESCAPE) == 0;
-        boolean pathname = (flags & FNM_PATHNAME) != 0;
-        boolean period = (flags & FNM_DOTMATCH) == 0;
-        boolean nocase = (flags & FNM_CASEFOLD) != 0;
+    static class FilenameMatch {
+        int pcur;
+        int scur;
+        final int flags;
+        final boolean escape;
+        final boolean pathname;
+        final boolean period;
+        final boolean nocase;
 
-        while(pat<pend) {
-            char c = (char)(bytes[pat++] & 0xFF);
-            switch(c) {
-            case '?':
-                if(s >= send || (pathname && isdirsep(string[s])) ||
-                   (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
-                    return FNM_NOMATCH;
-                }
-                s++;
-                break;
-            case '*':
-                while(pat < pend && (c = (char)(bytes[pat++] & 0xFF)) == '*') {}
-                if(s < send && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
-                    return FNM_NOMATCH;
-                }
-                if(pat > pend || (pat == pend && c == '*')) {
-                    if(pathname && rb_path_next(string, s, send) < send) {
-                        return FNM_NOMATCH;
-                    } else {
-                        return 0;
-                    }
-                } else if((pathname && isdirsep(c))) {
-                    s = rb_path_next(string, s, send);
-                    if(s < send) {
-                        s++;
-                        break;
-                    }
-                    return FNM_NOMATCH;
-                }
-                test = (char)(escape && c == '\\' && pat < pend ? (bytes[pat] & 0xFF) : c);
-                test = Character.toLowerCase(test);
-                pat--;
-                while(s < send) {
-                    if((c == '?' || c == '[' || Character.toLowerCase((char) string[s]) == test) &&
-                       fnmatch(bytes, pat, pend, string, s, send, flags | FNM_DOTMATCH) == 0) {
-                        return 0;
-                    } else if((pathname && isdirsep(string[s]))) {
-                        break;
-                    }
-                    s++;
-                }
+        FilenameMatch(int pcur, int scur, int flags) {
+            this.pcur = pcur;
+            this.scur = scur;
+            this.flags = flags;
+            this.escape = (flags & FNM_NOESCAPE) == 0;
+            this.pathname = (flags & FNM_PATHNAME) != 0;
+            this.period = (flags & FNM_DOTMATCH) == 0;
+            this.nocase = (flags & FNM_CASEFOLD) != 0;
+        }
+
+        int helper(byte[] pbytes, int pend, byte[] sbytes, int send) {
+            int s = scur;
+            int p = pcur;
+
+            int ptmp = -1;
+            int stmp = -1;
+
+            if (period && sbytes[s] == '.' && pbytes[unescape(pbytes, p)] != '.') { /* leading period */
                 return FNM_NOMATCH;
-            case '[':
-                if(s >= send || (pathname && isdirsep(string[s]) ||
-                                 (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1])))))) {
-                    return FNM_NOMATCH;
-                }
-                pat = range(bytes, pat, pend, (char)(string[s]&0xFF), flags);
-                if(pat == -1) {
-                    return FNM_NOMATCH;
-                }
-                s++;
-                break;
-            case '\\':
-                if (escape) {
-                    if (pat >= pend) {
-                        c = '\\';
-                    } else {
-                        c = (char)(bytes[pat++] & 0xFF);
-                    }
-                }
-            default:
-                if(s >= send) {
-                    return FNM_NOMATCH;
-                }
-                if(DOSISH && (pathname && isdirsep(c) && isdirsep(string[s]))) {
-                } else {
-                    if (nocase) {
-                        if(Character.toLowerCase((char)c) != Character.toLowerCase((char)string[s])) {
-                            return FNM_NOMATCH;
-                        }
+            }
 
-                    } else {
-                        if(c != (char)(string[s] & 0xFF)) {
-                            return FNM_NOMATCH;
-                        }
+            try { // RETURN macro in MRI
+                while (true) {
+                    // in place of expected C null char check that falls into default in switch below
+                    if (p >= pend) {
+                        return isEnd(sbytes, s, send) ? 0 : FNM_NOMATCH;
                     }
 
+                    switch (pbytes[p]) {
+
+                        case '*':
+                            do p++; while (p < pend && pbytes[p] == '*');
+                            if (isEnd(pbytes, unescape(pbytes, p), pend)) {
+                                return 0;
+                            }
+                            if (isEnd(sbytes, s, send)) {
+                                return FNM_NOMATCH;
+                            }
+                            ptmp = p;
+                            stmp = s;
+                            continue;
+
+                        case '?':
+                            if (isEnd(sbytes, s, send)) {
+                                return FNM_NOMATCH;
+                            }
+                            p++;
+                            s++;
+                            continue;
+
+                        case '[':
+                            if (isEnd(sbytes, s, send)) {
+                                return FNM_NOMATCH;
+                            }
+                            int t = bracket(pbytes, p + 1, pend, (char) (sbytes[s] & 0xFF));
+                            if (t != -1) {
+                                p = t;
+                                s++;
+                                continue;
+                            }
+                            break; // branch to failed
+
+                        default:
+                            p = unescape(pbytes, p);
+                            if (isEnd(sbytes, s, send)) {
+                                return isEnd(pbytes, p, pend) ? 0 : FNM_NOMATCH;
+                            }
+                            if (isEnd(pbytes, p, pend)) {
+                                break; // branch to failed
+                            }
+
+                            // TODO: MBC
+                            int r = 1;
+                            //                    if (!MBCLEN_CHARFOUND_P(r)) {
+                            //                        break; // branch to failed;
+                            //                    }
+                            if (r <= send - s && memcmp(pbytes, p, r, sbytes, s, r) == 0) {
+                                p += r;
+                                s += r;
+                                continue;
+                            }
+                            if (DOSISH && (pathname && isdirsep(pbytes[p]) && isdirsep(sbytes[s]))) {
+                            } else {
+                                if (!nocase) {
+                                    break; // branch to failed
+                                }
+
+                                // TODO: MBC
+                                if (Character.toLowerCase((char) pbytes[p]) != Character.toLowerCase((char) sbytes[s])) {
+                                    break; // branch to failed
+                                }
+
+                            }
+                            p += r;
+                            s++;
+                            continue;
+                    }
+
+                    failed:
+                    // reached by breaking from above switch rather than continuing
+                    if (ptmp != -1 && stmp != -1) {
+                        p = ptmp;
+                        stmp++; /* !ISEND(*stmp) */
+                        s = stmp;
+                        continue;
+                    }
+                    return FNM_NOMATCH;
                 }
-                s++;
-                break;
+            } finally {
+                // RETURN macro in MRI
+                pcur = p;
+                scur = s;
             }
         }
-        return s >= send ? 0 : FNM_NOMATCH;
+
+        public int bracket(byte[] _pat, int pat, int pend, char test) {
+            boolean not;
+            boolean ok = false;
+
+            not = _pat[pat] == '!' || _pat[pat] == '^';
+            if(not) {
+                pat++;
+            }
+
+            if (nocase) {
+                test = Character.toLowerCase(test);
+            }
+
+            while(_pat[pat] != ']') {
+                char cstart, cend;
+                if(escape && _pat[pat] == '\\') {
+                    pat++;
+                    if(pat >= pend) return -1;
+                }
+                cstart = cend = (char)(_pat[pat++] & 0xFF);
+                if(pat >= pend) return -1;
+                if(_pat[pat] == '-' && _pat[pat+1] != ']') {
+                    pat++;
+                    if(escape && _pat[pat] == '\\') {
+                        pat++;
+                        if(pat >= pend) return -1;
+                    }
+
+                    cend = (char)(_pat[pat++] & 0xFF);
+                    if(pat >= pend) return -1;
+                }
+
+                if (nocase) {
+                    if (Character.toLowerCase(cstart) <= test
+                            && test <= Character.toLowerCase(cend)) {
+                        ok = true;
+                    }
+                } else {
+                    if (cstart <= test && test <= cend) {
+                        ok = true;
+                    }
+                }
+            }
+
+            return ok == not ? -1 : pat + 1;
+        }
+
+        private int unescape(byte[] bytes, int i) {
+            if (escape && i < bytes.length && bytes[i] == '\\') {
+                return i + 1;
+            }
+            return i;
+        }
+
+        private boolean isEnd(byte[] sbytes, int s, int send) {
+            return s >= send || (pathname && isdirsep(sbytes[s]));
+        }
+
     }
 
     public static int fnmatch(
@@ -203,17 +290,20 @@ public class Dir {
                     stmp = str_pos;
                 }
 
-                int patSlashIdx = nextSlashIndex(bytes, pat_pos, pend);
-                int strSlashIdx = nextSlashIndex(string, str_pos, send);
-
-                if (fnmatch_helper(bytes, pat_pos, patSlashIdx,
-                        string, str_pos, strSlashIdx, flags) == 0) {
-                    if (patSlashIdx < pend && strSlashIdx < send) {
-                        pat_pos = ++patSlashIdx;
-                        str_pos = ++strSlashIdx;
+                FilenameMatch fnmatch = new FilenameMatch(pat_pos, str_pos, flags);
+                if (fnmatch.helper(bytes, pend,
+                        string, send) == 0) {
+                    pat_pos = fnmatch.pcur;
+                    str_pos = fnmatch.scur;
+                    while (str_pos < send && string[str_pos] != '/') {
+                        str_pos++;
+                    }
+                    if (pat_pos < pend && str_pos < send) {
+                        pat_pos++;
+                        str_pos++;
                         continue;
                     }
-                    if (patSlashIdx == pend && strSlashIdx == send) {
+                    if (pat_pos == pend && str_pos == send) {
                         return 0;
                     }
                 }
@@ -230,7 +320,8 @@ public class Dir {
                 return FNM_NOMATCH;
             }
         } else {
-            return fnmatch_helper(bytes, pstart, pend, string, sstart, send, flags);
+            FilenameMatch fnmatch = new FilenameMatch(pstart, sstart, flags);
+            return fnmatch.helper(bytes, pend, string, send);
         }
 
     }
@@ -253,55 +344,6 @@ public class Dir {
             idx++;
         }
         return idx;
-    }
-
-    public static int range(byte[] _pat, int pat, int pend, char test, int flags) {
-        boolean not;
-        boolean ok = false;
-        boolean nocase = (flags & FNM_CASEFOLD) != 0;
-        boolean escape = (flags & FNM_NOESCAPE) == 0;
-
-        not = _pat[pat] == '!' || _pat[pat] == '^';
-        if(not) {
-            pat++;
-        }
-
-        if (nocase) {
-            test = Character.toLowerCase(test);
-        }
-
-        while(_pat[pat] != ']') {
-            char cstart, cend;
-            if(escape && _pat[pat] == '\\') {
-                pat++;
-                if(pat >= pend) return -1;
-            }
-            cstart = cend = (char)(_pat[pat++] & 0xFF);
-            if(pat >= pend) return -1;
-            if(_pat[pat] == '-' && _pat[pat+1] != ']') {
-                pat++;
-                if(escape && _pat[pat] == '\\') {
-                    pat++;
-                    if(pat >= pend) return -1;
-                }
-
-                cend = (char)(_pat[pat++] & 0xFF);
-                if(pat >= pend) return -1;
-            }
-
-            if (nocase) {
-                if (Character.toLowerCase(cstart) <= test
-                        && test <= Character.toLowerCase(cend)) {
-                    ok = true;
-                }
-            } else {
-                if (cstart <= test && test <= cend) {
-                    ok = true;
-                }
-            }
-        }
-
-        return ok == not ? -1 : pat + 1;
     }
 
     public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags) {
@@ -840,4 +882,11 @@ public class Dir {
         return RubyEncoding.encodeUTF8(str);
     }
 
+    /**
+     * @deprecated No replacement; not intended to be made public
+     */
+    @Deprecated
+    public static int range(byte[] _pat, int pat, int pend, char test, int flags) {
+        return new FilenameMatch(pat, 0, flags).helper(_pat, pend, new byte[] {(byte) test}, 1);
+    }
 }
