@@ -58,6 +58,7 @@ import org.jcodings.Encoding;
 
 import org.jruby.*;
 import org.jruby.javasupport.binding.Initializer;
+import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.Arity;
@@ -773,8 +774,8 @@ public class Java implements Library {
 
         final RubyModule parentModule; final String className;
 
+        Class<?> declaringClass = clazz.getDeclaringClass();
         if ( fullName.indexOf('$') != -1 ) { // inner classes must be nested
-            Class<?> declaringClass = clazz.getDeclaringClass();
             if ( declaringClass == null ) {
                 // no containing class for a $ class; treat it as internal and don't define a constant
                 return;
@@ -791,6 +792,10 @@ public class Java implements Library {
 
         if ( parentModule != null && // TODO a Java Ruby class should not validate (as well)
             ( IdUtil.isConstant(className) || parentModule instanceof JavaPackage ) ) {
+
+            // avoid binding Kotlin Companion classes, since they'll have a conflicting static final field (#6196)
+            if (className.equals("Companion") && MethodGatherer.IS_KOTLIN.get(declaringClass)) return;
+
             if (parentModule.getConstantAt(className) == null) {
                 parentModule.setConstant(className, proxyClass);
             }

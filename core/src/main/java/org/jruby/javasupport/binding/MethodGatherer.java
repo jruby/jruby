@@ -306,15 +306,31 @@ public class MethodGatherer {
         protected Boolean computeValue(Class<?> type) {
             if (type.isInterface()) return false;
 
-            boolean scalaAnno = false;
+            boolean isScala = false;
             for (Annotation anno : type.getDeclaredAnnotations()) {
                 Package pkg = anno.annotationType().getPackage();
-                if (pkg != null && pkg.getName() != null && pkg.getName().startsWith("scala.")) {
-                    scalaAnno = true;
+                if (pkg != null && pkg.getName() != null && pkg.getName().startsWith("scala")) {
+                    isScala = true;
                     break;
                 }
             }
-            return scalaAnno;
+            return isScala;
+        }
+    };
+
+    public static final ClassValue<Boolean> IS_KOTLIN = new ClassValue<Boolean>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            if (type.isInterface()) return false;
+
+            boolean isKotlin = false;
+            for (Annotation anno : type.getDeclaredAnnotations()) {
+                if (anno.annotationType().getName().equals("kotlin.Metadata")) {
+                    isKotlin = true;
+                    break;
+                }
+            }
+            return isKotlin;
         }
     };
 
@@ -336,6 +352,9 @@ public class MethodGatherer {
 
             final RubyModule innerProxy = Java.getProxyClass(runtime, JavaClass.get(runtime, clazz));
 
+            // avoid binding Kotlin Companion classes, since they'll have a conflicting static final field (#6196)
+            if (simpleName.equals("Companion") && IS_KOTLIN.get(javaClass)) continue;
+
             if ( IdUtil.isConstant(simpleName) ) {
                 if (proxy.getConstantAt(simpleName) == null) {
                     proxy.const_set(runtime.newString(simpleName), innerProxy);
@@ -356,14 +375,12 @@ public class MethodGatherer {
     }
 
     protected void setupScalaSingleton(final Class<?> javaClass) {
-        if (javaClass.isInterface()) return;
+        if (!IS_SCALA.get(javaClass)) return;
 
         // check for Scala companion object
         try {
             final ClassLoader loader = javaClass.getClassLoader();
             if ( loader == null ) return; //this is a core class, bail
-
-            if (!IS_SCALA.get(javaClass)) return;
 
             Class<?> companionClass = loader.loadClass(javaClass.getName() + '$');
             final Field field = companionClass.getField("MODULE$");
