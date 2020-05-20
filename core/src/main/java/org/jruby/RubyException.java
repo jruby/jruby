@@ -353,6 +353,17 @@ public class RubyException extends RubyObject {
 
     public void setCause(IRubyObject cause) {
         this.cause = cause;
+
+        Throwable t = toThrowable();
+        Object javaCause;
+
+        if (t.getCause() == null) {
+            if (cause instanceof RubyException) {
+                t.initCause(((RubyException) cause).toThrowable());
+            } else if (cause instanceof ConcreteJavaProxy && (javaCause = ((ConcreteJavaProxy) cause).getObject()) instanceof Throwable) {
+                t.initCause((Throwable) javaCause);
+            }
+        }
     }
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
