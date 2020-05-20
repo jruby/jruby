@@ -3290,9 +3290,15 @@ public class IRBuilder {
     public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
         if (node.isOr()) {
             Variable result = createTemporaryVariable();
+            Label falseCheck = getNewLabel();
             Label done = getNewLabel();
+            Label assign = getNewLabel();
             Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, false);
-            addInstr(BNEInstr.create(done, result, UndefinedValue.UNDEFINED));
+            addInstr(BNEInstr.create(falseCheck, result, UndefinedValue.UNDEFINED));
+            addInstr(new JumpInstr(assign));
+            addInstr(new LabelInstr(falseCheck));
+            addInstr(BNEInstr.create(done, result, manager.getFalse()));
+            addInstr(new LabelInstr(assign));
             Operand rhsValue = build(node.getSecondNode());
             copy(result, rhsValue);
             addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
