@@ -90,7 +90,6 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.common.IRubyWarnings.ID;
 
 import static org.jruby.runtime.Visibility.*;
-import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
