@@ -44,7 +44,7 @@ public class DefinedNode extends Node {
     private final Node expressionNode;
 
     public DefinedNode(int line, Node expressionNode) {
-        super(line, expressionNode.containsVariableAssignment());
+        super(line, expressionNode != null && expressionNode.containsVariableAssignment());
         
         this.expressionNode = expressionNode;
     }

@@ -1,4 +1,3 @@
-exclude :test_defined_empty_argument, "needs investigation"
 exclude :test_invalid_jump, "needs investigation"
 exclude :test_invalid_next, "lazy method build make this fail"
 exclude :test_invalid_break, "lazy method build makes this fail"

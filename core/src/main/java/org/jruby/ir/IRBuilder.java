@@ -1684,6 +1684,8 @@ public class IRBuilder {
     }
 
     public Operand buildGetDefinition(Node node) {
+        if (node == null) return new FrozenString("expression");
+
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
         case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
