@@ -411,42 +411,45 @@ public abstract class LexingCommon {
     }
 
     protected int numberLiteralSuffix(int mask) throws IOException {
-        int c = nextc();
+        int c;
+        int result = 0;
+        int last = lex_p;
 
-        if (c == 'i') {
-            c = nextc();
-
-            pushback(c);
-            if (!isASCII(c) || getEncoding().isAlpha(c) || c == '_') return mask & SUFFIX_I;
-
-            return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
-        }
-
-        if (c == 'r') {
-            int result = 0;
-            if ((mask & SUFFIX_R) != 0) result |= (mask & SUFFIX_R);
-
-            if (peek('i') && (mask & SUFFIX_I) != 0) {
-                c = nextc();
+        while((c = nextc()) != EOF) {
+            if ((mask & SUFFIX_I) != 0 && c == 'i') {
                 result |= (mask & SUFFIX_I);
+                mask &= ~SUFFIX_R; // 'r' cannot come after an 'i'.
+                continue;
             }
 
-            return result;
-        }
-        if (c == '.') {
-            int c2 = nextc();
-            if (Character.isDigit(c2)) {
-                compile_error("unexpected fraction part after numeric literal");
-                do { // Ripper does not stop so we follow MRI here and read over next word...
-                    c2 = nextc();
-                } while (isIdentifierChar(c2));
-            } else {
-                pushback(c2);
+            if ((mask & SUFFIX_R) != 0 && c == 'r') {
+                result |= (mask & SUFFIX_R);
+                mask &= ~SUFFIX_R;
+                continue;
             }
-        }
-        pushback(c);
 
-        return 0;
+            if (!isASCII(c) || getEncoding().isAlpha(c) || c == '_') {
+                lex_p = last;
+                return 0;
+            }
+
+            if (c == '.') {
+                int c2 = nextc();
+                if (Character.isDigit(c2)) {
+                    compile_error("unexpected fraction part after numeric literal");
+                    do { // Ripper does not stop so we follow MRI here and read over next word...
+                        c2 = nextc();
+                    } while (isIdentifierChar(c2));
+                } else {
+                    pushback(c2);
+                }
+            }
+            pushback(c);
+
+            break;
+        }
+
+        return result;
     }
 
     public void parser_prepare() {
