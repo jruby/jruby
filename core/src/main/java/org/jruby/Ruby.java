@@ -4243,9 +4243,14 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * @param exceptionClass
-     * @param message
-     * @return
+     * Construct a new RaiseException wrapping a new Ruby exception object appropriate to the given exception class.
+     *
+     * There are additional forms of this construction logic in {@link RaiseException#from}.
+     *
+     * @param exceptionClass the exception class from which to construct the exception object
+     * @param message a simple message for the exception
+     * @return a new RaiseException wrapping a new Ruby exception
+     * @see RaiseException#from(Ruby, RubyClass, String)
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
         return RaiseException.from(this, exceptionClass, message);

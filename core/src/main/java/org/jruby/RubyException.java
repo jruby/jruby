@@ -201,13 +201,28 @@ public class RubyException extends RubyObject {
         return (RubyException) exceptionClass.newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, msg), Block.NULL_BLOCK);
     }
 
+    /**
+     * Construct a new RubyException object from the given exception class and message.
+     *
+     * @param context the current thread context
+     * @param exceptionClass the exception class
+     * @param message the message for the exception
+     * @return the new exception object
+     */
     public static RubyException newException(ThreadContext context, RubyClass exceptionClass, RubyString message) {
         return (RubyException) exceptionClass.newInstance(context, message, Block.NULL_BLOCK);
     }
 
-    @Deprecated
-    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
-        return newException(context, exceptionClass, message.convertToString());
+    /**
+     * Construct a new RubyException object from the given exception class and message.
+     *
+     * @param context the current thread context
+     * @param exceptionClass the exception class
+     * @param args the arguments for the exception's constructor
+     * @return the new exception object
+     */
+    public static RubyException newException(ThreadContext context, RubyClass exceptionClass, IRubyObject... args) {
+        return (RubyException) exceptionClass.newInstance(context, args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod
@@ -488,5 +503,10 @@ public class RubyException extends RubyObject {
         if (backtrace.backtraceData == null) {
             backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
         }
+    }
+
+    @Deprecated
+    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
+        return newException(context, exceptionClass, message.convertToString());
     }
 }
