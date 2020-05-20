@@ -102,6 +102,7 @@ public class ParserSupport {
     public void popCurrentScope() {
         if (!currentScope.isBlockScope()) {
             lexer.getCmdArgumentState().reset(currentScope.getCommandArgumentStack());
+            lexer.getConditionState().reset(currentScope.getCondArgumentStack());
         }
         currentScope = currentScope.getEnclosingScope();
 
@@ -114,7 +115,9 @@ public class ParserSupport {
     public void pushLocalScope() {
         currentScope = configuration.getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
         currentScope.setCommandArgumentStack(lexer.getCmdArgumentState().getStack());
+        currentScope.setCondArgumentStack(lexer.getConditionState().getStack());
         lexer.getCmdArgumentState().reset(0);
+        lexer.getConditionState().reset(0);
     }
     
     public static Node arg_concat(Node node1, Node node2) {
