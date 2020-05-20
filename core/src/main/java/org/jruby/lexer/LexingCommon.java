@@ -416,11 +416,8 @@ public abstract class LexingCommon {
         if (c == 'i') {
             c = nextc();
 
-            if (!isASCII(c) || getEncoding().isAlpha(c) || c == '_') {
-                pushback(c);
-                pushback(c);
-                return 0;
-            }
+            pushback(c);
+            if (!isASCII(c) || getEncoding().isAlpha(c) || c == '_') return mask & SUFFIX_I;
 
             return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
         }

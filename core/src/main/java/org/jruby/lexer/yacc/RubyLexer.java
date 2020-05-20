@@ -2212,17 +2212,17 @@ public class RubyLexer extends LexingCommon {
                         pushback(c);
                         return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
                     } else {
-                        c = nextc();
-                        if (c != '-' && c != '+' && !Character.isDigit(c)) {
-                            pushback(c);
+                        int c1 = nextc();
+                        if (c1 != '-' && c1 != '+' && !Character.isDigit(c1)) {
+                            pushback(c1);
                             pushback(c);
                             nondigit = 0;
                             return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
                         }
                         numberBuffer.append((char) c);
+                        numberBuffer.append((char) c1);
                         seen_e = true;
-                        numberBuffer.append((char) c);
-                        nondigit = (c == '-' || c == '+') ? c : 0;
+                        nondigit = (c1 == '-' || c1 == '+') ? c1 : 0;
                     }
                     break;
                 case '_' : //  '_' in number just ignored
