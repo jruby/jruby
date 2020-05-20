@@ -33,10 +33,8 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -49,8 +47,7 @@ import org.jruby.runtime.callsite.CacheEntry;
  * so from the appropriate starting level.
  */
 public class AliasMethod extends DynamicMethod {
-    private final CacheEntry entry;
-    private final boolean findImplementer;
+    private CacheEntry entry;
 
     /**
      * For some java native methods it is convenient to pass in a String instead
@@ -60,68 +57,56 @@ public class AliasMethod extends DynamicMethod {
         super(implementationClass, entry.method.getVisibility(), oldName);
 
         this.entry = entry;
-
-        boolean findImplementer = true;
-
-        // This logic is an attempt to reduce the number of cases that must do an implementer search,
-        // since it is only needed for super calls (and possibly other features that require the caller's
-        // frame class to be available).
-        // TODO: general support for DynamicMethod.needsClass etc, so we can easily make this determination.
-        if (entry.method instanceof AbstractIRMethod) {
-            findImplementer = ((AbstractIRMethod) entry.method).needsToFindImplementer();
-        }
-
-        this.findImplementer = findImplementer;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name);
+        return entry.method.call(context, self, entry.sourceModule, name);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg);
+        return entry.method.call(context, self, entry.sourceModule, name, arg);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2);
+        return entry.method.call(context, self, entry.sourceModule, name, arg1, arg2);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, arg3);
+        return entry.method.call(context, self, entry.sourceModule, name, arg1, arg2, arg3);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, args);
+        return entry.method.call(context, self, entry.sourceModule, name, args);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, block);
+        return entry.method.call(context, self, entry.sourceModule, name, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, block);
+        return entry.method.call(context, self, entry.sourceModule, name, arg1, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, block);
+        return entry.method.call(context, self, entry.sourceModule, name, arg1, arg2, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, arg3, block);
+        return entry.method.call(context, self, entry.sourceModule, name, arg1, arg2, arg3, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, args, block);
+        return entry.method.call(context, self, entry.sourceModule, name, args, block);
     }
 
     public DynamicMethod dup() {
@@ -145,23 +130,6 @@ public class AliasMethod extends DynamicMethod {
     @Override
     public long getSerialNumber() {
         return entry.method.getSerialNumber();
-    }
-
-    // MRI: vm_call0_body and aliased_callable_method_entry
-    /* FIXME: This is not quite right. It appears that MRI does this logic at call time, but I believe
-              the calculated class is cached somewhere along with the "callable" method entry. The code
-              below means all aliases in modules will do the implementer search, unless we can detect
-              that the related method does not need "super". We can improve this at cache time in either
-              CacheEntry logic or CallSite logic.
-     */
-    private RubyModule calculateSourceModule(IRubyObject self, RubyModule incomingSourceModule) {
-        if (entry.method.definedClass != null) return definedClass;
-
-        if (findImplementer) {
-            return Helpers.findImplementerIfNecessary(self.getMetaClass(), entry.method.getImplementationClass());
-        } else {
-            return incomingSourceModule;
-        }
     }
 
 }
