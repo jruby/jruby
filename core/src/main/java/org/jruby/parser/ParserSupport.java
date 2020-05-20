@@ -1296,8 +1296,8 @@ public class ParserSupport {
     };
 
     private static String foundString(String found) {
-        int pairs = alternateTokenNames.length / 2; // always a multiple of two
-        for (int i = 0; i < pairs; i += 2) {
+        int length = alternateTokenNames.length;
+        for (int i = 0; i < length; i += 2) {
             if (alternateTokenNames[i].equals(found)) return alternateTokenNames[i + 1];
         }
 
