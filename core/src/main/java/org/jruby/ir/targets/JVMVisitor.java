@@ -753,17 +753,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void AsStringInstr(AsStringInstr asstring) {
-        if (asstring.isPotentiallyRefined()) {
-            jvmMethod().loadContext();
-            jvmMethod().loadSelf();
-            visit(asstring.getReceiver());
-            jvmMethod().getInvocationCompiler().invokeAsString(file, lastLine, jvm.methodData().scopeField, asstring);
-            jvmStoreLocal(asstring.getResult());
-        } else {
-            visit(asstring.getReceiver());
-            jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
-            jvmStoreLocal(asstring.getResult());
-        }
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf();
+        visit(asstring.getReceiver());
+        jvmMethod().getInvocationCompiler().invokeOther(file, lastLine, jvm.methodData().scopeField, asstring, 0);
+        jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+        jvmStoreLocal(asstring.getResult());
     }
 
     @Override
