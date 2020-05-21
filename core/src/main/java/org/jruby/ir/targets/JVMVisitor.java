@@ -32,7 +32,6 @@ import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
@@ -1108,11 +1107,14 @@ public class JVMVisitor extends IRVisitor {
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
         jvmMethod().getValueCompiler().pushEmptyString(compoundstring.getEncoding());
         for (Operand p : compoundstring.getPieces()) {
-            visit(p);
             if (p instanceof StringLiteral) {
-                // append19 with a RubyString ends up in cat19, so we skip the type checks
-                jvmAdapter().invokevirtual(p(RubyString.class), "cat19", sig(RubyString.class, RubyString.class));
+                // we have bytelist and CR in hand, go straight to cat logic
+                StringLiteral str = (StringLiteral) p;
+                jvmMethod().getValueCompiler().pushByteList(str.getByteList());
+                jvmAdapter().pushInt(str.getCodeRange());
+                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class, int.class));
             } else {
+                visit(p);
                 jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
             }
         }
@@ -2712,8 +2714,8 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void StringLiteral(StringLiteral stringliteral) {
-        jvmMethod().getValueCompiler().pushString(stringliteral.getByteList(), stringliteral.getCodeRange());
+    public void MutableString(MutableString mutablestring) {
+        jvmMethod().getValueCompiler().pushString(mutablestring.getByteList(), mutablestring.getCodeRange());
     }
 
     @Override

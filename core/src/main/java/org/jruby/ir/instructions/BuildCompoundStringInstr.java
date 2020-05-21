@@ -16,7 +16,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -51,10 +50,6 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, frozen, debug, file, line);
     }
 
-    public boolean isSameEncodingAndCodeRange(RubyString str, StringLiteral newStr) {
-        return newStr.getByteList().getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
-    }
-
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
@@ -74,11 +69,13 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyString str = RubyString.newEmptyString(context.runtime, encoding);
         for (Operand p : getOperands()) {
-            if ((p instanceof StringLiteral) && (isSameEncodingAndCodeRange(str, (StringLiteral)p))) {
-                str.getByteList().append(((StringLiteral)p).getByteList());
-                str.setCodeRange(((StringLiteral)p).getCodeRange());
+            if (p instanceof StringLiteral) {
+                StringLiteral strLiteral = (StringLiteral) p;
+                ByteList byteList = strLiteral.getByteList();
+                int cr = strLiteral.getCodeRange();
+                str.cat(byteList, cr);
             } else {
-                IRubyObject pval = (IRubyObject)p.retrieve(context, self, currScope, currDynScope, temp);
+                IRubyObject pval = (IRubyObject) p.retrieve(context, self, currScope, currDynScope, temp);
                 str.append19(pval);
             }
         }

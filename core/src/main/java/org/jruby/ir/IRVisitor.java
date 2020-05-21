@@ -189,7 +189,7 @@ public abstract class IRVisitor {
     public void Self(Self self) { error(self); }
     public void Splat(Splat splat) { error(splat); }
     public void StandardError(StandardError standarderror) { error(standarderror); }
-    public void StringLiteral(StringLiteral stringliteral) { error(stringliteral); }
+    public void MutableString(MutableString mutablestring) { error(mutablestring); }
     public void SValue(SValue svalue) { error(svalue); }
     public void Symbol(Symbol symbol) { error(symbol); }
     public void SymbolProc(SymbolProc symbolproc) { error(symbolproc); }

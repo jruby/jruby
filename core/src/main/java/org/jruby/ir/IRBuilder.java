@@ -1353,8 +1353,8 @@ public class IRBuilder {
             Operand expression = build(whenNode.getExpressionNodes());
 
             // use frozen string for direct literal strings in `when`
-            if (expression instanceof StringLiteral) {
-                expression = ((StringLiteral) expression).frozenString;
+            if (expression instanceof MutableString) {
+                expression = ((MutableString) expression).frozenString;
             }
 
             addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
@@ -1985,7 +1985,7 @@ public class IRBuilder {
     }
 
     public Operand buildGetArgumentDefinition(final Node node, String type) {
-        if (node == null) return new StringLiteral(type);
+        if (node == null) return new MutableString(type);
 
         Operand rv = new FrozenString(type);
         boolean failPathReqd = false;
@@ -2509,8 +2509,8 @@ public class IRBuilder {
     private Operand dynamicPiece(Node pieceNode) {
         Operand piece = pieceNode instanceof StrNode ? buildStrRaw((StrNode) pieceNode) : build(pieceNode);
 
-        if (piece instanceof StringLiteral) {
-            piece = ((StringLiteral)piece).frozenString;
+        if (piece instanceof MutableString) {
+            piece = ((MutableString)piece).frozenString;
         }
 
         return piece == null ? manager.getNil() : piece;
@@ -2786,7 +2786,7 @@ public class IRBuilder {
     public Operand buildFlip(FlipNode flipNode) {
         Ruby runtime = scope.getManager().getRuntime();
         Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol("NotImplementedError"));
-        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new StringLiteral("flip-flop is no longer supported in JRuby")}, null));
+        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new MutableString("flip-flop is no longer supported in JRuby")}, null));
 
         addInstr(new ThrowExceptionInstr(exception));
 
@@ -2992,7 +2992,7 @@ public class IRBuilder {
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
-        return new StringLiteral(literalNode.getSymbolName());
+        return new MutableString(literalNode.getSymbolName());
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
@@ -3817,7 +3817,7 @@ public class IRBuilder {
 
         if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
 
-        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
+        return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
@@ -3932,7 +3932,7 @@ public class IRBuilder {
     }
 
     public Operand buildVAlias(VAliasNode valiasNode) {
-        addInstr(new GVarAliasInstr(new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName())));
+        addInstr(new GVarAliasInstr(new MutableString(valiasNode.getNewName()), new MutableString(valiasNode.getOldName())));
 
         return manager.getNil();
     }

@@ -10,7 +10,6 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRManager;
@@ -514,7 +513,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case SELF: return Self.SELF;
             case SPLAT: return Splat.decode(this);
             case STANDARD_ERROR: return new StandardError();
-            case STRING_LITERAL: return StringLiteral.decode(this);
+            case STRING_LITERAL: return MutableString.decode(this);
             case SVALUE: return SValue.decode(this);
             case SYMBOL: return Symbol.decode(this);
             case SYMBOL_PROC: return SymbolProc.decode(this);

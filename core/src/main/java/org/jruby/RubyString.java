@@ -1378,6 +1378,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
+    public final RubyString cat(ByteList other, int codeRange) {
+        cat19(other, codeRange);
+        return this;
+    }
+
     // rb_str_buf_append against ptr
     public final int cat19(ByteList other, int codeRange) {
         return EncodingUtils.encCrStrBufCat(metaClass.runtime, this, other, other.getEncoding(), codeRange);
