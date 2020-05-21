@@ -4327,10 +4327,36 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
     }
 
+    enum SplitType {
+        AWK, REGEXP, STRING, CHARS
+    }
+
     // MRI: rb_str_split_m, overall structure
     private RubyArray splitCommon(ThreadContext context, IRubyObject spat, final boolean limit, final int lim, final int i, boolean useBackref) {
         final RubyArray result;
+        SplitType splitType = SplitType.REGEXP;
+
         if (spat == context.nil && (spat = context.runtime.getGlobalVariables().get("$;")) == context.nil) {
+            splitType = SplitType.AWK;
+        }
+
+        if (splitType != SplitType.AWK) {
+            if (spat instanceof RubyRegexp) {
+                RubyRegexp regexp = (RubyRegexp) spat;
+                regexp.options(); /* check if uninitialized */
+                RubyString tmp = (RubyString) regexp.source();
+                splitType = literal_split_pattern(tmp, SplitType.REGEXP);
+                if (splitType == SplitType.AWK) {
+                    spat = tmp;
+                    splitType = SplitType.STRING;
+                }
+            } else if (spat instanceof RubyString) {
+                ((RubyString) spat).mustnotBroken(context);
+                splitType = literal_split_pattern((RubyString) spat, SplitType.STRING);
+            }
+        }
+
+        if (splitType == SplitType.AWK) {
             result = awkSplit(context.runtime, limit, lim, i);
         } else {
             spat = getPatternQuoted(context, spat, false);
@@ -4367,6 +4393,29 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         return result;
     }
+
+    private static SplitType literal_split_pattern(RubyString spat, SplitType default_type) {
+        Encoding enc = spat.getEncoding();
+        ByteList spatBL = spat.value;
+        int len = spat.size();
+        if (len == 0) {
+            /* Special case - split into chars */
+            return SplitType.CHARS;
+        }
+        else if (EncodingUtils.encAsciicompat(enc)) {
+            if (len == 1 && spatBL.get(0) == ' ') {
+                return SplitType.AWK;
+            }
+        }
+        else {
+            int[] l = {0};
+            if (EncodingUtils.encAscget(spatBL.unsafeBytes(), spatBL.begin(), spatBL.begin() + len, l, enc) == ' ' && len == l[0]) {
+                return SplitType.AWK;
+            }
+        }
+        return default_type;
+    }
+
 
     // MRI: rb_str_split_m, when split_type = regexp
     private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
