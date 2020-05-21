@@ -711,9 +711,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** Encoding aware String construction routines for 1.9
      *
      */
-    private static final class EmptyByteListHolder {
-        final ByteList bytes;
-        final int cr;
+    public static final class EmptyByteListHolder {
+        public final ByteList bytes;
+        public final int cr;
         EmptyByteListHolder(Encoding enc) {
             this.bytes = new ByteList(ByteList.NULL_ARRAY, enc);
             this.cr = bytes.getEncoding().isAsciiCompatible() ? CR_7BIT : CR_VALID;
@@ -722,7 +722,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private static EmptyByteListHolder EMPTY_BYTELISTS[] = new EmptyByteListHolder[4];
 
-    static EmptyByteListHolder getEmptyByteList(Encoding enc) {
+    public static EmptyByteListHolder getEmptyByteList(Encoding enc) {
         if (enc == null) enc = ASCIIEncoding.INSTANCE;
         int index = enc.getIndex();
         EmptyByteListHolder bytes;

@@ -101,6 +101,11 @@ public class NormalValueCompiler implements ValueCompiler {
         });
     }
 
+    public void pushEmptyString(Encoding encoding) {
+        pushRuntime();
+        compiler.adapter.invokestatic(p(RubyString.class), "newEmptyString", sig(RubyString.class, Ruby.class));
+    }
+
     public void pushByteList(final ByteList bl) {
         cacheValuePermanentlyLoadContext("bytelist", ByteList.class, keyFor("bytelist", bl), () -> {
             pushRuntime();

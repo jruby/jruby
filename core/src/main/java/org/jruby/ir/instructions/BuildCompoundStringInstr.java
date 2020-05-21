@@ -72,9 +72,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        ByteList bytes = new ByteList();
-        bytes.setEncoding(encoding);
-        RubyString str = RubyString.newStringShared(context.runtime, bytes, StringSupport.CR_7BIT);
+        RubyString str = RubyString.newEmptyString(context.runtime, encoding);
         for (Operand p : getOperands()) {
             if ((p instanceof StringLiteral) && (isSameEncodingAndCodeRange(str, (StringLiteral)p))) {
                 str.getByteList().append(((StringLiteral)p).getByteList());

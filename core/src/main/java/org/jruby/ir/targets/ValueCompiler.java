@@ -133,4 +133,11 @@ public interface ValueCompiler {
      * Load a ConstantLookupSite onto the stack
      */
     void pushConstantLookupSite(String className, String siteName, ByteList name);
+
+    /**
+     * Push a new empty string on the stack
+     *
+     * Stack required: none
+     */
+    void pushEmptyString(Encoding encoding);
 }

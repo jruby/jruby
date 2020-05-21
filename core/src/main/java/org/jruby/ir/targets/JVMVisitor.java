@@ -1106,9 +1106,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
-        ByteList csByteList = new ByteList();
-        csByteList.setEncoding(compoundstring.getEncoding());
-        jvmMethod().getValueCompiler().pushString(csByteList, StringSupport.CR_UNKNOWN);
+        jvmMethod().getValueCompiler().pushEmptyString(compoundstring.getEncoding());
         for (Operand p : compoundstring.getPieces()) {
             visit(p);
             if (p instanceof StringLiteral) {
