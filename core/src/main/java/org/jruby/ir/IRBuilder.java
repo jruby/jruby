@@ -440,7 +440,6 @@ public class IRBuilder {
             case DXSTRNODE: return buildDXStr(result, (DXStrNode) node);
             case ENCODINGNODE: return buildEncoding((EncodingNode)node);
             case ENSURENODE: return buildEnsureNode((EnsureNode) node);
-            case EVSTRNODE: return buildEvStr((EvStrNode) node);
             case FALSENODE: return buildFalse();
             case FCALLNODE: return buildFCall(result, (FCallNode) node);
             case FIXNUMNODE: return buildFixnum((FixnumNode) node);
@@ -2507,7 +2506,15 @@ public class IRBuilder {
     }
 
     private Operand dynamicPiece(Node pieceNode) {
-        Operand piece = pieceNode instanceof StrNode ? buildStrRaw((StrNode) pieceNode) : build(pieceNode);
+        Operand piece;
+        if (pieceNode instanceof StrNode) {
+            piece = buildStrRaw((StrNode) pieceNode);
+        } if (pieceNode instanceof EvStrNode) {
+            // evstr/asstring logic lives in BuildCompoundString now
+            piece = build(((EvStrNode) pieceNode).getBody());
+        } else {
+            piece = build(pieceNode);
+        }
 
         if (piece instanceof MutableString) {
             piece = ((MutableString)piece).frozenString;
@@ -2695,14 +2702,6 @@ public class IRBuilder {
         addInstr(new LabelInstr(ebi.end));
 
         return isEnsureExpr ? ensureExprValue : rv;
-    }
-
-    public Operand buildEvStr(EvStrNode node) {
-        TemporaryVariable result = createTemporaryVariable();
-
-        addInstr(new AsStringInstr(scope, result, build(node.getBody()), scope.maybeUsingRefinements()));
-
-        return result;
     }
 
     public Operand buildFalse() {

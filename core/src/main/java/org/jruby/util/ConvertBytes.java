@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -124,6 +125,10 @@ public class ConvertBytes {
         return longToByteList(i, radix, LOWER_DIGITS);
     }
 
+    public static final void longIntoString(RubyString string, long i) {
+        longIntoStringRadix10(string, i);
+    }
+
     public static final ByteList longToByteList(long i, int radix, byte[] digitmap) {
         if (i == 0) return new ByteList(ZERO_BYTES);
 
@@ -146,6 +151,36 @@ public class ConvertBytes {
         if (neg) buf[--pos] = (byte)'-';
 
         return new ByteList(buf, pos, len - pos);
+    }
+
+    public static final void longIntoStringRadix10(RubyString string, long i) {
+        if (i == 0) {
+            string.cat('0');
+            return;
+        }
+
+        if (i == Long.MIN_VALUE) {
+            string.cat(MIN_VALUE_BYTES_RADIX_10, 0, MIN_VALUE_BYTES_RADIX_10.length, USASCIIEncoding.INSTANCE);
+            return;
+        }
+
+        boolean neg = false;
+        if (i < 0) {
+            i = -i;
+            neg = true;
+        }
+
+        // expand to hold all chars
+        int len = ((int) Math.log10(i)) + 1;
+        int newSize = string.size() + len;
+        if (neg) newSize++;
+        string.resize(newSize);
+        ByteList byteList = string.getByteList();
+
+        do {
+            byteList.set(--newSize, LOWER_DIGITS[(int) (i % 10)]);
+        } while ((i /= 10) > 0);
+        if (neg) byteList.set(--newSize, '-');
     }
 
     private static final ByteList intToUnsignedByteList(int i, int shift, byte[] digitmap) {
@@ -185,11 +220,13 @@ public class ConvertBytes {
     private static final byte[] ZERO_BYTES = new byte[] {(byte)'0'};
 
     private static final byte[][] MIN_VALUE_BYTES;
+    private static final byte[] MIN_VALUE_BYTES_RADIX_10;
     static {
         MIN_VALUE_BYTES = new byte[37][];
         for (int i = 2; i <= 36; i++) {
             MIN_VALUE_BYTES[i] =  ByteList.plain(Long.toString(Long.MIN_VALUE, i));
         }
+        MIN_VALUE_BYTES_RADIX_10 = MIN_VALUE_BYTES[10];
     }
 
     private static final byte[] LOWER_DIGITS = {

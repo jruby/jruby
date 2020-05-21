@@ -2652,18 +2652,41 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyString append19(IRubyObject other) {
+        // fast path for fixnum straight into ascii-compatible bytelist
+        if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
+            ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
+            return this;
+        }
+
         modifyCheck();
 
-        if (other instanceof RubyFixnum) {
-            cat19(ConvertBytes.longToByteList(((RubyFixnum) other).value), StringSupport.CR_7BIT);
-            return this;
-        } else if (other instanceof RubyFloat) {
+        if (other instanceof RubyFloat) {
             return cat19((RubyString) ((RubyFloat) other).to_s());
         } else if (other instanceof RubySymbol) {
             cat19(((RubySymbol) other).getBytes(), 0);
             return this;
         }
+
         return cat19(other.convertToString());
+    }
+
+    public RubyString appendAsDynamicString(IRubyObject other) {
+        // fast path for fixnum straight into ascii-compatible bytelist
+        if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
+            ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
+            return this;
+        }
+
+        modifyCheck();
+
+        if (other instanceof RubyFloat) {
+            return cat19((RubyString) ((RubyFloat) other).to_s());
+        } else if (other instanceof RubySymbol) {
+            cat19(((RubySymbol) other).getBytes(), 0);
+            return this;
+        }
+
+        return cat19(other.asString());
     }
 
     // NOTE: append(RubyString) should pbly just do the encoding aware cat

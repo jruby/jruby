@@ -76,7 +76,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
                 str.cat(byteList, cr);
             } else {
                 IRubyObject pval = (IRubyObject) p.retrieve(context, self, currScope, currDynScope, temp);
-                str.append19(pval);
+                str.appendAsDynamicString(pval);
             }
         }
 

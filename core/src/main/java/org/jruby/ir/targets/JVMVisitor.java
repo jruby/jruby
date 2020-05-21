@@ -1115,7 +1115,7 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class, int.class));
             } else {
                 visit(p);
-                jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
+                jvmAdapter().invokevirtual(p(RubyString.class), "appendAsDynamicString", sig(RubyString.class, IRubyObject.class));
             }
         }
         if (compoundstring.isFrozen()) {
@@ -1151,6 +1151,7 @@ public class JVMVisitor extends IRVisitor {
                 for (int i = 0; i < operands.length; i++) {
                     Operand operand = operands[i];
                     visit(operand);
+                    jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
                 }
             }
         };
