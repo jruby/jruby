@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "uri:classloader path strings" do
   let(:many_slashes_path) { "uri:classloader:////foo/b.gemspec" }
-  let(:unc_like_path) { "uri:classloader://foo/b.gemspec" }
+  let(:unc_like_path) { "uri:classloader:/foo/b.gemspec" }
   let(:normal_path) { "uri:classloader:/foo/b.gemspec" }
 
   let(:sub_path) { "../../../vendor/jface/*.jar" }
