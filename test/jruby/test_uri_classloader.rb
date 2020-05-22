@@ -84,4 +84,12 @@ class TestURIClassloader < Test::Unit::TestCase
       assert_equal cwd, `pwd`.chomp
     end
   end
+
+  # GH-6045: don't double up slashes when canonicalizing a URI path
+  def test_uri_expand_path_does_not_double_slash
+    assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader://foo/bar")
+    assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar");
+    assert_equal "uri:classloader:/foo/bar", File.expand_path("foo/bar", "uri:classloader://")
+    assert_equal "uri:classloader:/foo/bar", File.expand_path("foo/bar", "uri:classloader:/")
+  end
 end

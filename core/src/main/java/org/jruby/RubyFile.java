@@ -2160,8 +2160,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } else if (canonicalPath == null) {
             path = child;
         } else {
-            path = new StringBuilder(canonicalPath.length() + 1 + child.length()).
-                    append(canonicalPath).append('/').append(child);
+            // add a slash (if not already there) plus child and recurse)
+            int length = canonicalPath.length();
+            if (length > 0 && canonicalPath.charAt(length - 1) == '/') {
+                path = canonicalPath + child;
+            } else {
+                path = canonicalPath + "/" + child;
+            }
         }
 
         return canonicalize(path, remaining);
