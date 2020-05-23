@@ -32,7 +32,8 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'gem.home' => '${jruby_home}/lib/ruby/gems/shared',
             # need jruby_home but not jruby.home as name otherwise
             # polyglot-plugin will pick the jruby from jruby.home
-            'jruby_home' => '${basedir}/../../' )
+            'jruby_home' => '${basedir}/../../',
+             'jruby.version' => '9.2.11.1')
 
   unless version =~ /-SNAPSHOT/
     properties 'jruby.home' => '${basedir}/../..'
