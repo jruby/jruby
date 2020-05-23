@@ -120,7 +120,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.ruby_opts << '-Xaot.loadClasses=true' # disabled by default now
     t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
@@ -139,7 +138,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.test_files = files_in_file 'test/slow.index'
     t.ruby_opts << '-J-ea' << '-I.'
     t.ruby_opts << '-J-cp target/test-classes'
@@ -155,7 +153,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-X+O'
   end
