@@ -25,7 +25,7 @@
 	  </execution>
 	</executions>
         <configuration>
-          <jrubyVersion>1.7.22</jrubyVersion>
+          <jrubyVersion>9.2.11.1</jrubyVersion>
         </configuration>
       </plugin>
       <plugin>
