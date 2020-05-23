@@ -18,7 +18,7 @@
       <plugin>
 	<groupId>de.saumya.mojo</groupId>
 	<artifactId>gem-maven-plugin</artifactId>
-	<version>1.0.5</version>
+	<version>1.1.8</version>
 	<executions>
 	  <execution>
 	    <goals><goal>initialize</goal></goals>
