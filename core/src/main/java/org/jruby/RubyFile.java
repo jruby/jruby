@@ -2146,11 +2146,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         } else if (child.equals("..")) {
             if (canonicalPath == null) throw new IllegalArgumentException("Cannot have .. at the start of an absolute path");
-            canonicalPath = canonicalPath.toString();
-            int lastDir = ((String) canonicalPath).lastIndexOf('/');
+            String canonicalPathString = canonicalPath.toString();
+            int lastDir = canonicalPathString.lastIndexOf('/');
             if (lastDir == -1) {
                 if (startsWithDriveLetterOnWindows(canonicalPath)) {
                     // do nothing, we should not delete the drive letter
+                } else if (isLocalURI(canonicalPathString)) {
+                    // do nothing, leave the URI bits alone
                 } else {
                     path = "";
                 }
@@ -2160,11 +2162,27 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } else if (canonicalPath == null) {
             path = child;
         } else {
-            path = new StringBuilder(canonicalPath.length() + 1 + child.length()).
-                    append(canonicalPath).append('/').append(child);
+            // add a slash (if not already there) plus child and recurse) (jruby/jruby#6045)
+            int length = canonicalPath.length();
+            String canonPathString = canonicalPath.toString();
+            if (canonPathString.length() > 0 &&
+                    canonicalPath.charAt(length - 1) == '/' &&
+                    canonPathString.startsWith("uri:classloader:")) {
+                path = canonicalPath + child;
+            } else {
+                path = canonicalPath + "/" + child;
+            }
         }
 
         return canonicalize(path, remaining);
+    }
+
+    private static boolean isLocalURI(String canonicalPathString) {
+        return startsWith("classpath:", canonicalPathString) ||
+                startsWith("classloader:", canonicalPathString) ||
+                startsWith("uri:classloader:", canonicalPathString) ||
+                startsWith("file:", canonicalPathString) ||
+                startsWith("jar:file", canonicalPathString);
     }
 
     private static StringBuilder appendSlash(final CharSequence canonicalPath) {

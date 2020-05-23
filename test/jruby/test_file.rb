@@ -341,13 +341,9 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_with_uri_classloader_prefix
       assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar")
       assert_equal "uri:classloader:/bar", File.expand_path("uri:classloader:/foo/../bar")
-      # uri:classloader:// and uri:classloader:/ are treated as equivalent as
-      # there is an internal normalization going on path which replace all // with /
-      assert_equal "uri:classloader://foo/bar/baz", File.expand_path("baz", "uri:classloader:/foo/bar")
+      assert_equal "uri:classloader:/foo/bar/baz", File.expand_path("baz", "uri:classloader:/foo/bar")
       assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar", "uri:classloader:/baz/quux")
-      # uri:classloader:// and uri:classloader:/ are treated as equivalent as
-      # there is an internal normalization going on path which replace all // with /
-      assert_equal "uri:classloader://foo/bar", File.expand_path("../../foo/bar", "uri:classloader:/baz/quux")
+      assert_equal "uri:classloader:/foo/bar", File.expand_path("../../foo/bar", "uri:classloader:/baz/quux")
       assert_equal "uri:classloader:/foo/bar", File.expand_path("../../../foo/bar", "uri:classloader:/baz/quux")
     end if IS_JRUBY
 
@@ -367,8 +363,8 @@ class TestFile < Test::Unit::TestCase
     # GH-3176
     def test_expand_path_with_relative_reference_and_inside_uri_classloader
       Dir.chdir( 'uri:classloader:/') do
-        assert_equal 'uri:classloader://something/foo', File.expand_path('foo', 'something')
-        assert_equal 'uri:classloader://foo', File.expand_path('foo', '.')
+        assert_equal 'uri:classloader:/something/foo', File.expand_path('foo', 'something')
+        assert_equal 'uri:classloader:/foo', File.expand_path('foo', '.')
       end
     end if IS_JRUBY
 
