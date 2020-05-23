@@ -7,7 +7,7 @@ describe "uri:classloader path strings" do
 
   let(:sub_path) { "../../../vendor/jface/*.jar" }
   let(:base_path) { "uri:classloader:/gems/swt-4.6.1/lib/swt/full.rb" }
-  let(:resolved_path) { "uri:classloader://gems/swt-4.6.1/vendor/jface/*.jar" }
+  let(:resolved_path) { "uri:classloader:/gems/swt-4.6.1/vendor/jface/*.jar" }
   let(:resolved_path_win) { "uri:classloader:/gems/swt-4.6.1/vendor/jface/*.jar" }
   let(:windows) { RbConfig::CONFIG['host_os'] =~ /Windows|mswin/ }
 
