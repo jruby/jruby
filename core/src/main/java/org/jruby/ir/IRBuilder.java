@@ -2510,8 +2510,15 @@ public class IRBuilder {
         if (pieceNode instanceof StrNode) {
             piece = buildStrRaw((StrNode) pieceNode);
         } if (pieceNode instanceof EvStrNode) {
-            // evstr/asstring logic lives in BuildCompoundString now
-            piece = build(((EvStrNode) pieceNode).getBody());
+            if (scope.maybeUsingRefinements()) {
+                // refined asString must still go through dispatch
+                TemporaryVariable result = createTemporaryVariable();
+                addInstr(new AsStringInstr(scope, result, build(((EvStrNode) pieceNode).getBody()), scope.maybeUsingRefinements()));
+                piece = result;
+            } else {
+                // evstr/asstring logic lives in BuildCompoundString now
+                piece = build(((EvStrNode) pieceNode).getBody());
+            }
         } else {
             piece = build(pieceNode);
         }
