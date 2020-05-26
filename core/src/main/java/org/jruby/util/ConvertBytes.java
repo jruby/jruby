@@ -164,7 +164,7 @@ public class ConvertBytes {
         boolean neg = i < 0;
         if (neg) i = -i;
 
-        int newSize = calculateDecimalSize(i, neg, 0);
+        int newSize = sizeWithDecimalString(i, neg, 0);
         byte[] bytes = new byte[newSize];
 
         writeDecimalDigitsToArray(bytes, i, neg, 0, 0, newSize);
@@ -189,7 +189,7 @@ public class ConvertBytes {
         // expand to hold all chars
         int baseSize = string.size();
 
-        int newSize = calculateDecimalSize(i, neg, baseSize);
+        int newSize = sizeWithDecimalString(i, neg, baseSize);
 
         // implicit modify to ensure the buffer is ready
         string.resize(newSize);
@@ -201,7 +201,7 @@ public class ConvertBytes {
         writeDecimalDigitsToArray(bytes, i, neg, beg, baseSize, newSize);
     }
 
-    private static int calculateDecimalSize(long i, boolean neg, int baseSize) {
+    private static int sizeWithDecimalString(long i, boolean neg, int baseSize) {
         int newSize = baseSize + ((int) Math.log10(i)) + 1;
 
         if (neg) newSize++;
