@@ -59,11 +59,8 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 public class JavaPackage extends RubyModule {
 
     static RubyModule createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
-        RubyClass superClass = new BlankSlateWrapper(runtime, runtime.getModule(), runtime.getKernel());
-        RubyClass JavaPackage = RubyClass.newClass(runtime, superClass);
-        JavaPackage.setMetaClass(runtime.getModule());
+        RubyClass JavaPackage = RubyClass.newClass(runtime, runtime.getModule());
         JavaPackage.setAllocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
 
         JavaPackage.setBaseName("JavaPackage");
 
