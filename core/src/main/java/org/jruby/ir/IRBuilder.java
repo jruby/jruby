@@ -24,6 +24,7 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 
@@ -2505,36 +2506,51 @@ public class IRBuilder {
                 build(dotNode.getEndNode()), dotNode.isExclusive()));
     }
 
-    private Operand dynamicPiece(Node pieceNode) {
+    private int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
         Operand piece;
-        if (pieceNode instanceof StrNode) {
-            piece = buildStrRaw((StrNode) pieceNode);
-        } if (pieceNode instanceof EvStrNode) {
-            if (scope.maybeUsingRefinements()) {
-                // refined asString must still go through dispatch
-                TemporaryVariable result = createTemporaryVariable();
-                addInstr(new AsStringInstr(scope, result, build(((EvStrNode) pieceNode).getBody()), scope.maybeUsingRefinements()));
-                piece = result;
+
+        // somewhat arbitrary minimum size for interpolated values
+        int estimatedSize = 4;
+
+        while (true) { // loop to unwrap EvStr
+
+            if (pieceNode instanceof StrNode) {
+                piece = buildStrRaw((StrNode) pieceNode);
+                estimatedSize = ((StrNode) pieceNode).getValue().realSize();
+            } else if (pieceNode instanceof EvStrNode) {
+                if (scope.maybeUsingRefinements()) {
+                    // refined asString must still go through dispatch
+                    TemporaryVariable result = createTemporaryVariable();
+                    addInstr(new AsStringInstr(scope, result, build(((EvStrNode) pieceNode).getBody()), scope.maybeUsingRefinements()));
+                    piece = result;
+                } else {
+                    // evstr/asstring logic lives in BuildCompoundString now, unwrap and try again
+                    pieceNode = ((EvStrNode) pieceNode).getBody();
+                    continue;
+                }
             } else {
-                // evstr/asstring logic lives in BuildCompoundString now
-                piece = build(((EvStrNode) pieceNode).getBody());
+                piece = build(pieceNode);
             }
-        } else {
-            piece = build(pieceNode);
+
+            break;
         }
 
         if (piece instanceof MutableString) {
             piece = ((MutableString)piece).frozenString;
         }
 
-        return piece == null ? manager.getNil() : piece;
+        pieces[i] = piece == null ? manager.getNil() : piece;
+
+        return estimatedSize;
     }
 
     public Operand buildDRegexp(Variable result, DRegexpNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            // dregexp does not use estimated size
+            dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
@@ -2545,26 +2561,34 @@ public class IRBuilder {
     public Operand buildDStr(Variable result, DStrNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return result;
     }
 
     public Operand buildDSymbol(Variable result, DSymbolNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return copyAndReturnValue(new DynamicSymbol(result));
     }
 
@@ -2575,14 +2599,18 @@ public class IRBuilder {
     public Operand buildDXStr(Variable result, DXStrNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         Variable stringResult = createTemporaryVariable();
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
     }
 

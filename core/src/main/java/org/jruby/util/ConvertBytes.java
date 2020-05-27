@@ -261,12 +261,14 @@ public class ConvertBytes {
 
     private static final byte[][] MIN_VALUE_BYTES;
     private static final byte[] MIN_VALUE_BYTES_RADIX_10;
+    public static final int MIN_VALUE_BYTES_RADIX_10_LENGTH;
     static {
         MIN_VALUE_BYTES = new byte[37][];
         for (int i = 2; i <= 36; i++) {
             MIN_VALUE_BYTES[i] =  ByteList.plain(Long.toString(Long.MIN_VALUE, i));
         }
         MIN_VALUE_BYTES_RADIX_10 = MIN_VALUE_BYTES[10];
+        MIN_VALUE_BYTES_RADIX_10_LENGTH = MIN_VALUE_BYTES_RADIX_10.length;
     }
 
     private static final byte[] LOWER_DIGITS = {
