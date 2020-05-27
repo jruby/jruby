@@ -95,7 +95,7 @@ public class RubyBasicSocket extends RubyIO {
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        doNotReverseLookup = true;
+        doNotReverseLookup = runtime.isDoNotReverseLookupEnabled();
     }
 
     @JRubyMethod(meta = true)
