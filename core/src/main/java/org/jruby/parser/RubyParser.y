@@ -1581,6 +1581,7 @@ primary         : literal
                     support.setIsInClass($<Boolean>3.booleanValue());
                 }
                 | keyword_def fname {
+                    support.isNextBreak = false;
                     support.pushLocalScope();
                     $$ = lexer.getCurrentArg();
                     lexer.setCurrentArg(null);
@@ -1591,11 +1592,14 @@ primary         : literal
                     Node body = support.makeNullNil($6);
 
                     $$ = new DefnNode($1, support.symbolID($2), (ArgsNode) $5, support.getCurrentScope(), body, $7);
+                    if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();
+                    support.isNextBreak = false;
                     support.popCurrentScope();
                     support.setInDef($<Boolean>4.booleanValue());
                     lexer.setCurrentArg($<ByteList>3);
                 }
                 | keyword_def singleton dot_or_colon {
+                    support.isNextBreak = false;  
                     lexer.setState(EXPR_FNAME); 
                     $$ = support.isInDef();
                     support.setInDef(true);
@@ -1609,14 +1613,18 @@ primary         : literal
                     if (body == null) body = NilImplicitNode.NIL;
 
                     $$ = new DefsNode($1, $2, support.symbolID($5), (ArgsNode) $7, support.getCurrentScope(), body, $9);
+                    if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();
+                    support.isNextBreak = false;
                     support.popCurrentScope();
                     support.setInDef($<Boolean>4.booleanValue());
                     lexer.setCurrentArg($<ByteList>6);
                 }
                 | keyword_break {
+                    support.isNextBreak = true;
                     $$ = new BreakNode($1, NilImplicitNode.NIL);
                 }
                 | keyword_next {
+                    support.isNextBreak = true;
                     $$ = new NextNode($1, NilImplicitNode.NIL);
                 }
                 | keyword_redo {

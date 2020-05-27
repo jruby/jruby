@@ -7,7 +7,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyRational;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
-import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
@@ -2164,8 +2163,13 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
+        IRMethod method = new IRMethod(manager, scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
                 defNode.getScope(), coverageMode);
+
+        // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
+        if (defNode.containsBreakNext()) method.lazilyAcquireInterpreterContext();
+
+        return method;
     }
 
     public Operand buildDefn(MethodDefNode node) { // Instance method

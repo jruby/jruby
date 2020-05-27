@@ -87,6 +87,8 @@ public class ParserSupport {
     protected ParserConfiguration configuration;
     private RubyParserResult result;
 
+    public boolean isNextBreak = false;
+
     public void reset() {
         inDefinition = false;
     }
