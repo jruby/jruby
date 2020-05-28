@@ -1,4 +1,3 @@
-exclude :test_arg_concat, "needs investigation"
 exclude :test_error_def_in_argument, "provides different syntax errors"
 exclude :test_invalid_char, "needs investigation"
 exclude :test_lparenarg, "space issue with parens in really weird syntax"
@@ -17,4 +16,4 @@ exclude :test_unexpected_token_after_numeric, "More strict parsing of text immed
 exclude :test_unused_variable, "missing warning in parser (#2147)"
 exclude :test_void_expr_stmts_value, "1; next; 2 is figured via compile.c.  IR can do equivalent for 9k.  Not a huge issue for 1.7.x barring real issue"
 exclude :test_whitespace_warning, "not implemented, #6159"
-exclude :test_yyerror_at_eol, "needs investigation"
+
