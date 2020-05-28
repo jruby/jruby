@@ -84,12 +84,20 @@ public abstract class IOChannel implements Channel {
     }
 
     protected int read(CallSite read, ByteBuffer dst) throws IOException {
-        IRubyObject readValue = read.call(runtime.getCurrentContext(), io, io, runtime.newFixnum(dst.remaining()));
+        int remaining = dst.remaining();
+        IRubyObject readValue = read.call(runtime.getCurrentContext(), io, io, runtime.newFixnum(remaining));
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();
-            dst.put(str.getUnsafeBytes(), str.getBegin(), str.getRealSize());
-            returnValue = str.getRealSize();
+            int realSize = str.getRealSize();
+
+            if (realSize > remaining) {
+                throw new ReadPartialBufferOverflowException(
+                        "error calling " + io.getType() + "#readpartial: requested " + remaining + " bytes but received " + realSize);
+            }
+
+            dst.put(str.getUnsafeBytes(), str.getBegin(), realSize);
+            returnValue = realSize;
         }
         return returnValue;
     }
@@ -182,6 +190,12 @@ public abstract class IOChannel implements Channel {
 
         public int write(ByteBuffer src) throws IOException {
             return write(write, src);
+        }
+    }
+
+    private class ReadPartialBufferOverflowException extends IOException {
+        public ReadPartialBufferOverflowException(String message) {
+            super(message);
         }
     }
 }
