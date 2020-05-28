@@ -113,9 +113,6 @@ public class StaticScope implements Serializable {
     private boolean isBlockOrEval;
     private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
-    private long commandArgumentStack;
-    private long condArgumentStack;
-
     private int firstKeywordIndex;
 
     // Method/Closure that this static scope corresponds to.  This is used to tell whether this
@@ -647,22 +644,6 @@ public class StaticScope implements Serializable {
 
     public DynamicScope getDummyScope() {
         return dummyScope == null ? dummyScope = DynamicScope.newDynamicScope(this) : dummyScope;
-    }
-
-    public void setCondArgumentStack(long condArgumentStack) {
-        this.condArgumentStack = condArgumentStack;
-    }
-
-    public long getCondArgumentStack() {
-        return condArgumentStack;
-    }
-
-    public void setCommandArgumentStack(long commandArgumentStack) {
-        this.commandArgumentStack = commandArgumentStack;
-    }
-
-    public long getCommandArgumentStack() {
-        return commandArgumentStack;
     }
 
     private void growVariableNames(String name) {

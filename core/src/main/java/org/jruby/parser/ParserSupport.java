@@ -51,7 +51,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
@@ -73,6 +72,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 public class ParserSupport {
     // Parser states:
     protected StaticScope currentScope;
+    protected ScopedParserState scopedParserState;
 
     protected RubyLexer lexer;
     
@@ -103,21 +103,22 @@ public class ParserSupport {
     
     public void popCurrentScope() {
         if (!currentScope.isBlockScope()) {
-            lexer.getCmdArgumentState().reset(currentScope.getCommandArgumentStack());
-            lexer.getConditionState().reset(currentScope.getCondArgumentStack());
+            lexer.getCmdArgumentState().reset(scopedParserState.getCommandArgumentStack());
+            lexer.getConditionState().reset(scopedParserState.getCondArgumentStack());
         }
         currentScope = currentScope.getEnclosingScope();
+        scopedParserState = scopedParserState.getEnclosingScope();
 
     }
     
     public void pushBlockScope() {
         currentScope = configuration.getRuntime().getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
+        scopedParserState = new ScopedParserState(scopedParserState);
     }
     
     public void pushLocalScope() {
         currentScope = configuration.getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
-        currentScope.setCommandArgumentStack(lexer.getCmdArgumentState().getStack());
-        currentScope.setCondArgumentStack(lexer.getConditionState().getStack());
+        scopedParserState = new ScopedParserState(scopedParserState, lexer.getCmdArgumentState().getStack(), lexer.getConditionState().getStack());
         lexer.getCmdArgumentState().reset(0);
         lexer.getConditionState().reset(0);
     }
