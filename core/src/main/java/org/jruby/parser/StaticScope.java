@@ -94,9 +94,6 @@ public class StaticScope implements Serializable {
 
     private int variableNamesLength;
 
-    // A list of booleans indicating which variables are named captures from regexp
-    private boolean[] namedCaptures;
-
     // Arity of this scope if there is one
     private Signature signature;
 
@@ -254,20 +251,6 @@ public class StaticScope implements Serializable {
 
         // Returns slot of variable
         return variableNames.length - 1;
-    }
-
-    /**
-     * Add a new named capture variable to this (current) scope.
-     *
-     * @param name name of variable.
-     * @return index of variable
-     */
-    public int addNamedCaptureVariable(String name) {
-        int index = addVariableThisScope(name);
-
-        growNamedCaptures(index);
-
-        return index;
     }
 
     /**
@@ -654,19 +637,6 @@ public class StaticScope implements Serializable {
         variableNames[variableNames.length - 1] = name;
     }
 
-    private void growNamedCaptures(int index) {
-        boolean[] namedCaptures = this.namedCaptures;
-        boolean[] newNamedCaptures;
-        if (namedCaptures != null) {
-            newNamedCaptures = new boolean[Math.max(index + 1, namedCaptures.length)];
-            System.arraycopy(namedCaptures, 0, newNamedCaptures, 0, namedCaptures.length);
-        } else {
-            newNamedCaptures = new boolean[index + 1];
-        }
-        newNamedCaptures[index] = true;
-        this.namedCaptures = newNamedCaptures;
-    }
-
     /**
      * Determine if we happen to be within a method definition.
      * @return true if so
@@ -677,11 +647,6 @@ public class StaticScope implements Serializable {
         }
 
         return false;
-    }
-
-    public boolean isNamedCapture(int index) {
-        boolean[] namedCaptures = this.namedCaptures;
-        return namedCaptures != null && index < namedCaptures.length && namedCaptures[index];
     }
 
     @Override

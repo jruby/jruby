@@ -977,7 +977,8 @@ public class ParserSupport {
     */
     public void initTopLocalVariables() {
         DynamicScope scope = configuration.getScope(lexer.getFile());
-        currentScope = scope.getStaticScope(); 
+        currentScope = scope.getStaticScope();
+        scopedParserState = new ScopedParserState(null);
         
         result.setScope(scope);
     }
@@ -1470,12 +1471,14 @@ public class ParserSupport {
                 int slot = scope.isDefined(id);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
-                    if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
+                    if (warnings.isVerbose() && !scopedParserState.isNamedCapture(slot)) {
                         warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), getPosition(regexpNode), str(runtime, "named capture conflicts a local variable - " , ids(runtime, names[i])));
                     }
                     locals.add(slot);
                 } else {
-                    locals.add(getCurrentScope().addNamedCaptureVariable(id));
+                    int index = getCurrentScope().addVariableThisScope(id);
+                    locals.add(index);
+                    scopedParserState.growNamedCaptures(index);
                 }
             }
         }
