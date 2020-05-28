@@ -13,6 +13,5 @@ exclude :test_symbol, "we should allow empty unicode escapes that not really"
 exclude :test_truncated_source_line, "2.5 truncates long source lines...we dont yet"
 exclude :test_unexpected_token_after_numeric, "More strict parsing of text immediately after numbers"
 exclude :test_unused_variable, "missing warning in parser (#2147)"
-exclude :test_void_expr_stmts_value, "1; next; 2 is figured via compile.c.  IR can do equivalent for 9k.  Not a huge issue for 1.7.x barring real issue"
 exclude :test_whitespace_warning, "not implemented, #6159"
 

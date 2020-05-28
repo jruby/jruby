@@ -48,6 +48,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.coverage.CoverageData;
@@ -237,6 +238,13 @@ public class ParserSupport {
         if (tail == null) return head;
         if (head == null) return tail;
 
+        switch (head.getNodeType()) {
+            case BIGNUMNODE: case FIXNUMNODE: case FLOATNODE: // NODE_LIT
+            case STRNODE: case SELFNODE: case TRUENODE: case FALSENODE: case NILNODE:
+                warnings.warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
+                return tail;
+        }
+
         if (!(head instanceof BlockNode)) {
             head = new BlockNode(head.getLine()).add(head);
         }
@@ -260,7 +268,7 @@ public class ParserSupport {
     public Node getOperatorCallNode(Node firstNode, ByteList operator) {
         value_expr(lexer, firstNode);
 
-        return new CallNode(firstNode.getLine(), firstNode, symbolID(operator), null, null, false);
+        return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), null, null, false);
     }
     
     public Node getOperatorCallNode(Node firstNode, ByteList operator, Node secondNode) {
@@ -278,7 +286,7 @@ public class ParserSupport {
         value_expr(lexer, firstNode);
         value_expr(lexer, secondNode);
 
-        return new CallNode(firstNode.getLine(), firstNode, symbolID(operator), new ArrayNode(secondNode.getLine(), secondNode), null, false);
+        return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), new ArrayNode(secondNode.getLine(), secondNode), null, false);
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
@@ -445,7 +453,7 @@ public class ParserSupport {
 
     private void handleUselessWarn(Node node, String useless) {
         if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
-            warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), node.getLine(), "Useless use of " + useless + " in void context.");
+            warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), node.getLine(), "possibly useless use of " + useless + " in void context");
         }
     }
 
@@ -454,13 +462,14 @@ public class ParserSupport {
      * 
      * @param node to be checked.
      */
-    public void checkUselessStatement(Node node) {
-        if (!warnings.isVerbose() || (!configuration.isInlineSource() && configuration.isEvalParse())) return;
+    public void void_expr(Node node) {
+        if (!warnings.isVerbose()) return;
         
         if (node == null) return;
             
         switch (node.getNodeType()) {
             case CALLNODE: {
+                if (!(node instanceof OperatorCallNode)) return;
                 ByteList name = ((CallNode) node).getName().getBytes();
                 int length = name.realSize();
 
@@ -501,29 +510,26 @@ public class ParserSupport {
             case LOCALVARNODE: case NTHREFNODE: case CLASSVARNODE:
             case INSTVARNODE:
                 handleUselessWarn(node, "a variable"); return;
-            // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
-            /*case CONSTNODE:
-                handleUselessWarn(node, "a constant"); return;*/
+            case CONSTNODE:
+                handleUselessWarn(node, "a constant"); return;
             case BIGNUMNODE: case DREGEXPNODE: case DSTRNODE: case DSYMBOLNODE:
             case FIXNUMNODE: case FLOATNODE: case REGEXPNODE:
             case STRNODE: case SYMBOLNODE:
                 handleUselessWarn(node, "a literal"); return;
-            // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
-            /*case CLASSNODE: case COLON2NODE:
-                handleUselessWarn(node, "::"); return;*/
+            case COLON2NODE: case COLON3NODE:
+                handleUselessWarn(node, "::"); return;
             case DOTNODE:
                 handleUselessWarn(node, ((DotNode) node).isExclusive() ? "..." : ".."); return;
-            case DEFINEDNODE:
-                handleUselessWarn(node, "defined?"); return;
+            case SELFNODE:
+                handleUselessWarn(node, "self"); return;
+            case NILNODE:
+                handleUselessWarn(node, "nil"); return;
             case FALSENODE:
                 handleUselessWarn(node, "false"); return;
-            case NILNODE: 
-                handleUselessWarn(node, "nil"); return;
-            // FIXME: Temporarily disabling because this fires way too much running Rails tests. JRUBY-518
-            /*case SELFNODE:
-                handleUselessWarn(node, "self"); return;*/
             case TRUENODE:
                 handleUselessWarn(node, "true"); return;
+            case DEFINEDNODE:
+                handleUselessWarn(node, "defined?"); return;
             default: return;
         }
     }
@@ -531,20 +537,19 @@ public class ParserSupport {
     /**
      * Check all nodes but the last one in a BlockNode for useless (void context) statements.
      * 
-     * @param blockNode to be checked.
+     * @param node to be checked.
      */
-    public void checkUselessStatements(BlockNode blockNode) {
-        if (warnings.isVerbose()) {
-            Node lastNode = blockNode.getLast();
+    public Node void_stmts(Node node) {
+        if (!warnings.isVerbose() || !(node instanceof BlockNode)) return node;
 
-            for (int i = 0; i < blockNode.size(); i++) {
-                Node currentNode = blockNode.get(i);
-        		
-                if (lastNode != currentNode ) {
-                    checkUselessStatement(currentNode);
-                }
-            }
+        BlockNode blockNode = (BlockNode) node;
+        int size = blockNode.size();
+
+        for (int i = 0; i <= size - 2; i++) {
+            void_expr(blockNode.get(i));
         }
+
+        return node;
     }
 
 	/**

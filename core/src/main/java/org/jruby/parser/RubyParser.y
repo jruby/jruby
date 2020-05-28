@@ -328,34 +328,30 @@ program       : {
                   lexer.setState(EXPR_BEG);
                   support.initTopLocalVariables();
               } top_compstmt {
-  // ENEBO: Removed !compile_for_eval which probably is to reduce warnings
-                  if ($2 != null) {
+                  if ($2 != null && !support.getConfiguration().isEvalParse()) {
                       /* last expression should not be void */
                       if ($2 instanceof BlockNode) {
-                          support.checkUselessStatement($<BlockNode>2.getLast());
+                          support.void_expr($<BlockNode>2.getLast());
                       } else {
-                          support.checkUselessStatement($2);
+                          support.void_expr($2);
                       }
                   }
                   support.getResult().setAST(support.addRootNode($2));
               }
 
 top_compstmt  : top_stmts opt_terms {
-                  if ($1 instanceof BlockNode) {
-                      support.checkUselessStatements($<BlockNode>1);
-                  }
-                  $$ = $1;
+                  $$ = support.void_stmts($1);
               }
 
 top_stmts     : none
               | top_stmt {
-                    $$ = support.newline_node($1, support.getPosition($1));
+                  $$ = support.newline_node($1, support.getPosition($1));
               }
               | top_stmts terms top_stmt {
-                    $$ = support.appendToBlock($1, support.newline_node($3, support.getPosition($3)));
+                  $$ = support.appendToBlock($1, support.newline_node($3, support.getPosition($3)));
               }
               | error top_stmt {
-                    $$ = $2;
+                  $$ = $2;
               }
 
 top_stmt      : stmt
@@ -374,10 +370,7 @@ top_stmt      : stmt
                 }
 
 compstmt        : stmts opt_terms {
-                    if ($1 instanceof BlockNode) {
-                        support.checkUselessStatements($<BlockNode>1);
-                    }
-                    $$ = $1;
+                    $$ = support.void_stmts($1);
                 }
 
 stmts           : none
