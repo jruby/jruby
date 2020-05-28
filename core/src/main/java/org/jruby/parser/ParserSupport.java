@@ -1470,10 +1470,6 @@ public class ParserSupport {
                 String id = runtime.newSymbol(names[i]).idString();
                 int slot = scope.isDefined(id);
                 if (slot >= 0) {
-                    // If verbose and the variable is not just another named capture, warn
-                    if (warnings.isVerbose() && !scopedParserState.isNamedCapture(slot)) {
-                        warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), getPosition(regexpNode), str(runtime, "named capture conflicts a local variable - " , ids(runtime, names[i])));
-                    }
                     locals.add(slot);
                 } else {
                     int index = getCurrentScope().addVariableThisScope(id);
