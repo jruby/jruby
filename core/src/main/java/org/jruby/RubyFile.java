@@ -40,6 +40,7 @@ import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -64,6 +65,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
@@ -1718,12 +1720,46 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     static RubyString expandPathInternal(ThreadContext context, RubyString path, RubyString wd, boolean expandUser, boolean canonicalize) {
-        String relativePath = path.getUnicodeValue();
-        Encoding[] enc = {path.getEncoding()};
-        String cwd = wd == null ? null : wd.toString();
-        String expanded =  expandPath(context, relativePath, enc, cwd, expandUser, canonicalize);
+        boolean useISO = false;
 
-        return RubyString.newString(context.runtime, expanded, enc[0]);
+        ByteList pathByteList = path.getByteList();
+        ByteList wdByteList = wd == null ? null : wd.getByteList();
+
+        String relativePath;
+        String cwd;
+
+        /*
+         In order to support expanding paths marked as binary without breaking any multibyte characters they contain,
+         we decode the paths as ISO-8859-1 (raw bytes) here and reencode them below the same way. This allows path
+         manipulation to ignore multibyte characters rather than mangling them by incorrectly decoding their bytes.
+
+         Strings not marked as binary are expected to be valid and are decoded using their reported encoding.
+        */
+        if (pathByteList.getEncoding() == ASCIIEncoding.INSTANCE ||
+                (wd != null && wd.getByteList().getEncoding() == ASCIIEncoding.INSTANCE)) {
+            // use raw bytes if either are encoded as "binary"
+            useISO = true;
+            relativePath = RubyEncoding.decodeISO(pathByteList);
+            cwd = wd == null ? null : RubyEncoding.decodeISO(wdByteList);
+        } else {
+            // use characters assuming the string is properly encoded
+            relativePath = path.toString();
+            cwd = wd == null ? null : wd.toString();
+        }
+
+        Encoding[] enc = {path.getEncoding()};
+        String expanded = expandPath(context, relativePath, enc, cwd, expandUser, canonicalize);
+
+        ByteList expandedByteList;
+        if (useISO) {
+            // restore the raw bytes and mark them as the new encoding
+            expandedByteList = new ByteList(expanded.getBytes(StandardCharsets.ISO_8859_1), enc[0], false);
+        } else {
+            // encode the characters as the new encoding
+            expandedByteList = new ByteList(expanded.getBytes(enc[0].getCharset()), enc[0], false);
+        }
+
+        return RubyString.newString(context.runtime, expandedByteList);
 
     }
 
