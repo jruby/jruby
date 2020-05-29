@@ -1401,9 +1401,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // mri: rb_open_file + rb_scan_open_args
     protected IRubyObject openFile(ThreadContext context, IRubyObject args[]) {
         Ruby runtime = context.runtime;
-        RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
-
-        setPath(adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory()));
 
         Object pm = EncodingUtils.vmodeVperm(null, null);
         IRubyObject options = context.nil;
@@ -1448,11 +1445,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int perm = (vperm(pm) != null && !vperm(pm).isNil()) ?
                 RubyNumeric.num2int(vperm(pm)) : 0666;
 
-        return fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
+        return fileOpenGeneric(context, args[0], oflags_p[0], fmode_p[0], convconfig, perm);
     }
 
     // rb_file_open_generic
     public IRubyObject fileOpenGeneric(ThreadContext context, IRubyObject filename, int oflags, int fmode, IOEncodable convConfig, int perm) {
+        Ruby runtime = context.runtime;
+
         if (convConfig == null) {
             convConfig = new ConvConfig();
             EncodingUtils.ioExtIntToEncs(context, convConfig, null, null, fmode);
@@ -1468,16 +1467,26 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         fptr.setMode(fmode_p[0]);
         fptr.encs.copy(convConfig);
-        fptr.setPath(adjustRootPathOnWindows(context.runtime,
-                RubyFile.get_path(context, filename).asJavaString(), getRuntime().getCurrentDirectory()));
 
-        fptr.setFD(sysopen(context.runtime, fptr.getPath(), oflags, perm));
+        fptr.setPath(adjustRootPathOnWindows(runtime, getDecodedPath(context, filename), runtime.getCurrentDirectory()));
+
+        fptr.setFD(sysopen(runtime, fptr.getPath(), oflags, perm));
         fptr.checkTTY();
         if ((fmode_p[0] & OpenFile.SETENC_BY_BOM) != 0) {
             EncodingUtils.ioSetEncodingByBOM(context, this);
         }
 
         return this;
+    }
+
+    public static String getAdjustedPath(ThreadContext context, IRubyObject fileOrPath) {
+        return getAdjustedPath(context, fileOrPath, context.runtime.getCurrentDirectory());
+    }
+
+    public static String getAdjustedPath(ThreadContext context, IRubyObject fileOrPath, String currentDirectory) {
+        Ruby runtime = context.runtime;
+
+        return adjustRootPathOnWindows(runtime, getDecodedPath(context, fileOrPath), currentDirectory);
     }
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
@@ -1521,15 +1530,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param pathOrFile the string or IO to use for the path
      */
     public static FileResource fileResource(ThreadContext context, IRubyObject pathOrFile) {
-        Ruby runtime = context.runtime;
-
-        if (pathOrFile instanceof RubyFile) {
-            return JRubyFile.createResource(runtime, ((RubyFile) pathOrFile).getPath());
-        } else if (pathOrFile instanceof RubyIO) {
-            return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).openFile.getPath());
-        }
-
-        return JRubyFile.createResource(runtime, getDecodedPath(context, pathOrFile));
+        return JRubyFile.createResource(context.runtime, getDecodedPath(context, pathOrFile));
     }
 
     /**
@@ -1549,17 +1550,23 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static String getDecodedPath(ThreadContext context, IRubyObject pathOrFile) {
         String decodedPath;
 
-        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, pathOrFile));
-
-        if (path.getEncoding() == ASCIIEncoding.INSTANCE) {
-            // Best we can do while using JDK file APIs is to hope the path is system default encoding
-            ByteList pathBL = path.getByteList();
-            decodedPath = new String(pathBL.unsafeBytes(), pathBL.begin(), pathBL.realSize());
+        if (pathOrFile instanceof RubyFile) {
+            decodedPath = ((RubyFile) pathOrFile).getPath();
+        } else if (pathOrFile instanceof RubyIO) {
+            decodedPath = ((RubyIO) pathOrFile).openFile.getPath();
         } else {
-            // decode as characters
-            decodedPath = path.toString();
+            RubyString path = get_path(context, pathOrFile);
+
+            if (path.getEncoding() == ASCIIEncoding.INSTANCE) {
+                // Best we can do while using JDK file APIs is to hope the path is system default encoding
+                ByteList pathBL = path.getByteList();
+                decodedPath = new String(pathBL.unsafeBytes(), pathBL.begin(), pathBL.realSize());
+            } else {
+                // decode as characters
+                decodedPath = path.toString();
+            }
         }
-        
+
         return decodedPath;
     }
 
