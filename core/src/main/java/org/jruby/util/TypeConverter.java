@@ -44,7 +44,6 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.RubyNil;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.TypeConverterSites;
 import org.jruby.runtime.ThreadContext;
@@ -533,7 +532,7 @@ public class TypeConverter {
         // grab it's string representation without calling a method which properly encodes
         // the string.
         if (obj instanceof RubyString) {
-            return RubyEncoding.decodeISO(((RubyString) obj).getByteList()).intern();
+            return RubyEncoding.decodeRaw(((RubyString) obj).getByteList()).intern();
         }
         return obj.asJavaString().intern();
     }
