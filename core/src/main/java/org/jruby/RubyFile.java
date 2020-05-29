@@ -1739,8 +1739,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 (wd != null && wd.getByteList().getEncoding() == ASCIIEncoding.INSTANCE)) {
             // use raw bytes if either are encoded as "binary"
             useISO = true;
-            relativePath = RubyEncoding.decodeISO(pathByteList);
-            cwd = wd == null ? null : RubyEncoding.decodeISO(wdByteList);
+            relativePath = RubyEncoding.decodeRaw(pathByteList);
+            cwd = wd == null ? null : RubyEncoding.decodeRaw(wdByteList);
         } else {
             // use characters assuming the string is properly encoded
             relativePath = path.toString();
