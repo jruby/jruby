@@ -1513,7 +1513,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return path;
     }
 
-
+    /**
+     * Get the fully-qualified JRubyFile object for the path, taking into
+     * account the runtime's current directory.
+     *
+     * @param context current thread context
+     * @param pathOrFile the string or IO to use for the path
+     */
     public static FileResource fileResource(ThreadContext context, IRubyObject pathOrFile) {
         Ruby runtime = context.runtime;
 
@@ -1521,27 +1527,40 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return JRubyFile.createResource(runtime, ((RubyFile) pathOrFile).getPath());
         } else if (pathOrFile instanceof RubyIO) {
             return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).openFile.getPath());
-
         }
 
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, pathOrFile));
-        return JRubyFile.createResource(runtime, path.toString());
+        return JRubyFile.createResource(runtime, getDecodedPath(context, pathOrFile));
     }
 
     /**
      * Get the fully-qualified JRubyFile object for the path, taking into
      * account the runtime's current directory.
+     *
+     * Same as calling {@link #fileResource(ThreadContext, IRubyObject)}
+     *
+     * @param pathOrFile the string or IO to use for the path
      */
     public static FileResource fileResource(IRubyObject pathOrFile) {
-        Ruby runtime = pathOrFile.getRuntime();
+        ThreadContext context = pathOrFile.getRuntime().getCurrentContext();
 
-        if (pathOrFile instanceof RubyIO) {
-            return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).getOpenFileChecked().getPath());
+        return fileResource(context, pathOrFile);
+    }
+
+    private static String getDecodedPath(ThreadContext context, IRubyObject pathOrFile) {
+        String decodedPath;
+
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, pathOrFile));
+
+        if (path.getEncoding() == ASCIIEncoding.INSTANCE) {
+            // Best we can do while using JDK file APIs is to hope the path is system default encoding
+            ByteList pathBL = path.getByteList();
+            decodedPath = new String(pathBL.unsafeBytes(), pathBL.begin(), pathBL.realSize());
+        } else {
+            // decode as characters
+            decodedPath = path.toString();
         }
-
-        ThreadContext context = runtime.getCurrentContext();
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, pathOrFile));
-        return JRubyFile.createResource(runtime, path.toString());
+        
+        return decodedPath;
     }
 
     @Deprecated // Use fileResource instead
