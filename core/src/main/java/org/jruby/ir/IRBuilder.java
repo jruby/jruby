@@ -24,6 +24,7 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 
@@ -440,7 +441,6 @@ public class IRBuilder {
             case DXSTRNODE: return buildDXStr(result, (DXStrNode) node);
             case ENCODINGNODE: return buildEncoding((EncodingNode)node);
             case ENSURENODE: return buildEnsureNode((EnsureNode) node);
-            case EVSTRNODE: return buildEvStr((EvStrNode) node);
             case FALSENODE: return buildFalse();
             case FCALLNODE: return buildFCall(result, (FCallNode) node);
             case FIXNUMNODE: return buildFixnum((FixnumNode) node);
@@ -1353,8 +1353,8 @@ public class IRBuilder {
             Operand expression = build(whenNode.getExpressionNodes());
 
             // use frozen string for direct literal strings in `when`
-            if (expression instanceof StringLiteral) {
-                expression = ((StringLiteral) expression).frozenString;
+            if (expression instanceof MutableString) {
+                expression = ((MutableString) expression).frozenString;
             }
 
             addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
@@ -1985,7 +1985,7 @@ public class IRBuilder {
     }
 
     public Operand buildGetArgumentDefinition(final Node node, String type) {
-        if (node == null) return new StringLiteral(type);
+        if (node == null) return new MutableString(type);
 
         Operand rv = new FrozenString(type);
         boolean failPathReqd = false;
@@ -2506,21 +2506,51 @@ public class IRBuilder {
                 build(dotNode.getEndNode()), dotNode.isExclusive()));
     }
 
-    private Operand dynamicPiece(Node pieceNode) {
-        Operand piece = pieceNode instanceof StrNode ? buildStrRaw((StrNode) pieceNode) : build(pieceNode);
+    private int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
+        Operand piece;
 
-        if (piece instanceof StringLiteral) {
-            piece = ((StringLiteral)piece).frozenString;
+        // somewhat arbitrary minimum size for interpolated values
+        int estimatedSize = 4;
+
+        while (true) { // loop to unwrap EvStr
+
+            if (pieceNode instanceof StrNode) {
+                piece = buildStrRaw((StrNode) pieceNode);
+                estimatedSize = ((StrNode) pieceNode).getValue().realSize();
+            } else if (pieceNode instanceof EvStrNode) {
+                if (scope.maybeUsingRefinements()) {
+                    // refined asString must still go through dispatch
+                    TemporaryVariable result = createTemporaryVariable();
+                    addInstr(new AsStringInstr(scope, result, build(((EvStrNode) pieceNode).getBody()), scope.maybeUsingRefinements()));
+                    piece = result;
+                } else {
+                    // evstr/asstring logic lives in BuildCompoundString now, unwrap and try again
+                    pieceNode = ((EvStrNode) pieceNode).getBody();
+                    continue;
+                }
+            } else {
+                piece = build(pieceNode);
+            }
+
+            break;
         }
 
-        return piece == null ? manager.getNil() : piece;
+        if (piece instanceof MutableString) {
+            piece = ((MutableString)piece).frozenString;
+        }
+
+        pieces[i] = piece == null ? manager.getNil() : piece;
+
+        return estimatedSize;
     }
 
     public Operand buildDRegexp(Variable result, DRegexpNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            // dregexp does not use estimated size
+            dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
@@ -2531,26 +2561,34 @@ public class IRBuilder {
     public Operand buildDStr(Variable result, DStrNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return result;
     }
 
     public Operand buildDSymbol(Variable result, DSymbolNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return copyAndReturnValue(new DynamicSymbol(result));
     }
 
@@ -2561,14 +2599,18 @@ public class IRBuilder {
     public Operand buildDXStr(Variable result, DXStrNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         Variable stringResult = createTemporaryVariable();
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
     }
 
@@ -2697,14 +2739,6 @@ public class IRBuilder {
         return isEnsureExpr ? ensureExprValue : rv;
     }
 
-    public Operand buildEvStr(EvStrNode node) {
-        TemporaryVariable result = createTemporaryVariable();
-
-        addInstr(new AsStringInstr(scope, result, build(node.getBody()), scope.maybeUsingRefinements()));
-
-        return result;
-    }
-
     public Operand buildFalse() {
         return manager.getFalse();
     }
@@ -2786,7 +2820,7 @@ public class IRBuilder {
     public Operand buildFlip(FlipNode flipNode) {
         Ruby runtime = scope.getManager().getRuntime();
         Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol("NotImplementedError"));
-        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new StringLiteral("flip-flop is no longer supported in JRuby")}, null));
+        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new MutableString("flip-flop is no longer supported in JRuby")}, null));
 
         addInstr(new ThrowExceptionInstr(exception));
 
@@ -2992,7 +3026,7 @@ public class IRBuilder {
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
-        return new StringLiteral(literalNode.getSymbolName());
+        return new MutableString(literalNode.getSymbolName());
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
@@ -3817,7 +3851,7 @@ public class IRBuilder {
 
         if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
 
-        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
+        return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
@@ -3932,7 +3966,7 @@ public class IRBuilder {
     }
 
     public Operand buildVAlias(VAliasNode valiasNode) {
-        addInstr(new GVarAliasInstr(new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName())));
+        addInstr(new GVarAliasInstr(new MutableString(valiasNode.getNewName()), new MutableString(valiasNode.getOldName())));
 
         return manager.getNil();
     }

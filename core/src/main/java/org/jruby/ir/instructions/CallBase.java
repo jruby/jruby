@@ -275,14 +275,14 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                 flags.add(REQUIRES_DYNSCOPE);
             }
 
-            if (meth instanceof StringLiteral) {
+            if (meth instanceof MutableString) {
                 // This logic is intended to reduce the framing impact of send if we can
                 // statically determine the sent name and we know it does not need to be
                 // either framed or scoped. Previously it only did this logic for
                 // send(:local_variables).
 
                 // This says getString but I believe this will also always be an id string in this case so it is ok.
-                String sendName = ((StringLiteral) meth).getString();
+                String sendName = ((MutableString) meth).getString();
                 if (MethodIndex.SCOPE_AWARE_METHODS.contains(sendName)) {
                     modifiedScope = true;
                     flags.add(REQUIRES_DYNSCOPE);
@@ -358,9 +358,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
         if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (!(meth instanceof StringLiteral)) return true; // We don't know
+            if (!(meth instanceof MutableString)) return true; // We don't know
 
-            String name = ((StringLiteral) meth).getString();
+            String name = ((MutableString) meth).getString();
             // FIXME: ENEBO - Half of these are name and half mname?
             return name.equals("call") || name.equals("eval") || mname.equals("module_eval") ||
                     mname.equals("class_eval") || mname.equals("instance_eval") || name.equals("send") ||
@@ -381,9 +381,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             return true;
         } else if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
+            if (!(meth instanceof MutableString)) return true; // We don't know -- could be anything
 
-            return MethodIndex.SCOPE_AWARE_METHODS.contains(((StringLiteral) meth).getString());
+            return MethodIndex.SCOPE_AWARE_METHODS.contains(((MutableString) meth).getString());
         }
 
         /* -------------------------------------------------------------

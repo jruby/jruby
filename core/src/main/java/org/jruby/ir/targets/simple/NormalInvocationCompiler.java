@@ -74,24 +74,6 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         compiler.adapter.invokestatic(clsName, methodName, incomingSig);
     }
 
-    @Override
-    public void invokeAsString(String file, int line, String scopeFieldName, CallBase call) {
-        MethodType type = MethodType.methodType(RubyString.class, ThreadContext.class, JVM.OBJECT, JVM.OBJECT);
-        String incomingSig = sig(type);
-        String methodName = compiler.getUniqueSiteName(call.getId());
-
-        String clsName = compiler.getClassData().clsName;
-        compiler.outline(methodName, type, () -> {
-            compiler.adapter.aloadMany(0, 1, 2);
-            compiler.getValueCompiler().pushCallSite(clsName, methodName, scopeFieldName, call);
-            compiler.adapter.invokestatic(p(IRRuntimeHelpers.class), "asString", sig(RubyString.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class));
-            compiler.adapter.areturn();
-        });
-
-        // now call it
-        compiler.adapter.invokestatic(clsName, methodName, incomingSig);
-    }
-
     public void invoke(String file, int lineNumber, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
