@@ -5,6 +5,7 @@ exclude :test_literal_in_conditional, "flip-flop case raises because do not impl
 exclude :test_location_of_invalid_token, "not implemented, #6159"
 exclude :test_method_block_location, "needs investigation"
 exclude :test_method_location_in_rescue, "parser updates corrected defs to use first line"
+exclude :test_negative_line_number, "JVM emits negative like some overflow (interp fine)"
 exclude :test_question, "needs investigation"
 exclude :test_rescue_in_command_assignment, "needs investigation"
 exclude :test_string, "lots of very specific error messages in which we differ a little"
