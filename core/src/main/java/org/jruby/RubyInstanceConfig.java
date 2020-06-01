@@ -1858,10 +1858,10 @@ public class RubyInstanceConfig {
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
     public static final boolean STOPITERATION_BACKTRACE = Options.STOPITERATION_BACKTRACE.load();
 
-    public static final boolean IR_DEBUG = Options.IR_DEBUG.load();
+    public static boolean IR_DEBUG = Options.IR_DEBUG.load(); // ast tool can toggle this
     public static final String IR_DEBUG_IGV = Options.IR_DEBUG_IGV.load();
     public static final boolean IR_PROFILE = Options.IR_PROFILE.load();
-    public static final boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
+    public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load(); // ast tool can toggle this
     public static final boolean IR_WRITING = Options.IR_WRITING.load();
     public static final boolean IR_READING = Options.IR_READING.load();
     public static final boolean IR_READING_DEBUG = Options.IR_READING_DEBUG.load();
