@@ -290,19 +290,12 @@ public class JRubyEngineFactoryTest {
         Object command = engine.eval("$command = this.java_method :append, [java.lang.String]");
 
         assertTrue( command instanceof org.jruby.RubyMethod );
-        //assertEquals( "append", ((Method) command).getId() );
-        //assertEquals( String.class, ((Method) command).getParameterTypes()[0] );
 
-        Object result = engine.eval(
-            "result = $command.call \"third to pass\n\"; " +
-            "# puts result \n" +
-            "result.to_s.each_line do |line|\n" +
-            "  puts line\n" +
-            "end"
+        engine.eval(
+            "$command.call \"third to pass\n\""
         );
 
-        //System.out.println(result);
-        //System.out.println(result.getClass());
+        assertEquals("first\n2\nthird to pass\n", $this.toString());
     }
 
 }
