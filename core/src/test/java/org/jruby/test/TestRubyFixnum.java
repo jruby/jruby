@@ -8,12 +8,6 @@ public class TestRubyFixnum extends junit.framework.TestCase {
 
     private Ruby runtime = Ruby.newInstance();
 
-    static {
-        // wasn't working when fixnum cache got disabled, test using:
-        //   mvn -Djruby.fixnum.cache=false -Ptest
-        System.out.println("RubyFixnum: USE_CACHE = " + RubyFixnum.USE_CACHE + " CACHE_OFFSET = " + RubyFixnum.CACHE_OFFSET);
-    }
-
     @Test
     public void testZero() {
         RubyFixnum num = runtime.newFixnum(0);
