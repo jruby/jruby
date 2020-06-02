@@ -1250,84 +1250,13 @@ public class ParserSupport {
         lexer.compile_error(PID.GRAMMAR_ERROR, message);
     }
 
-    // Jay does not support additional String names for tokens so we will just emulate it outside of the
-    // grammar.  This list is only used for generating syntax errors so speed is unimportant.
-    private static final String[] alternateTokenNames = new String[] {
-            "keyword_class",        "class",
-            "keyword_module",       "module",
-            "keyword_def",          "def",
-            "keyword_undef",        "undef",
-            "keyword_begin",        "begin",
-            "keyword_rescue",       "rescue",
-            "keyword_ensure",       "ensure",
-            "keyword_end",          "end",
-            "keyword_if",           "if",
-            "keyword_unless",       "unless",
-            "keyword_then",         "then",
-            "keyword_elsif",        "elsif",
-            "keyword_else",         "else",
-            "keyword_case",         "case",
-            "keyword_when",         "when",
-            "keyword_while",        "while",
-            "keyword_until",        "until",
-            "keyword_for",          "for",
-            "keyword_break",        "break",
-            "keyword_next",         "next",
-            "keyword_redo",         "redo",
-            "keyword_retry",        "retry",
-            "keyword_in",           "in",
-            "keyword_do",           "do",
-            "keyword_do_cond",      "do (for condition)",
-            "keyword_do_block",     "do (for block)",
-            "keyword_do_LAMBDA",    "do (for lambda)",
-            "keyword_return",       "return",
-            "keyword_yield",        "yield",
-            "keyword_super",        "super",
-            "keyword_self",         "self",
-            "keyword_nil",          "nil",
-            "keyword_true",         "true",
-            "keyword_false",        "false",
-            "keyword_and",          "and",
-            "keyword_or",           "or",
-            "keyword_not",          "not",
-            "modifier_if",          "if (modifier)",
-            "modifier_unless",      "unless (modifier)",
-            "modifier_while",       "while (modifier)",
-            "modifier_until",       "until (modifier)",
-            "modifier_rescue",      "rescue (modifier)",
-            "keyword_alias",        "alias",
-            "keyword_defined",      "defined?",
-            "keyword_BEGIN",        "BEGIN",
-            "keyword_END",          "END",
-            "keyword__LINE__",      "__LINE__",
-            "keyword__FILE__",      "__FILE__",
-            "keyword__ENCODING__",  "__ENCODING__"
-    };
-
-    private static String foundString(String found) {
-        int length = alternateTokenNames.length;
-        for (int i = 0; i < length; i += 2) {
-            if (alternateTokenNames[i].equals(found)) return alternateTokenNames[i + 1];
-        }
-
-        return found;
-    }
-
     /**
      * generate parsing error
      * @param message text to be displayed.
      * @param expected list of acceptable tokens, if available.
      */
     public void yyerror(String message, String[] expected, String found) {
-        if (found != null) {
-            int foundLength = found.length() - 1;
-            // bison yynames is "" but jat is '' and parse in MRI strips the extra quotes off when it notices.
-            // is only 3 ':' then report as ':' but if longer report bareword <=> instead of "<=>".
-            if (foundLength >= 3 && found.charAt(0) == '\'' && found.charAt(foundLength) == '\'')
-                found = found.substring(1, foundLength);
-        }
-
-        lexer.compile_error(PID.GRAMMAR_ERROR, message + ", unexpected " + foundString(found) + "\n");
+        lexer.compile_error(PID.GRAMMAR_ERROR, message + ", unexpected " + found + "\n");
     }
 
     public int getPosition(Node start) {

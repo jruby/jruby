@@ -161,75 +161,128 @@ public class RubyParser {
     }
 %}
 
-%token <Integer> keyword_class keyword_module keyword_def keyword_undef
-  keyword_begin keyword_rescue keyword_ensure keyword_end keyword_if
-  keyword_unless keyword_then keyword_elsif keyword_else keyword_case
-  keyword_when keyword_while keyword_until keyword_for keyword_break
-  keyword_next keyword_redo keyword_retry keyword_in keyword_do
-  keyword_do_cond keyword_do_block keyword_return keyword_yield keyword_super
-  keyword_self keyword_nil keyword_true keyword_false keyword_and keyword_or
-  keyword_not modifier_if modifier_unless modifier_while modifier_until
-  modifier_rescue keyword_alias keyword_defined keyword_BEGIN keyword_END
-  keyword__LINE__ keyword__FILE__ keyword__ENCODING__ keyword_do_lambda 
-
-%token <ByteList> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+// patch_parser.rb will look for token lines with {{ and }} within it to put
+// in reasonable strings we expect during a parsing error.
+%token <Integer> keyword_class        /* {{class}} */
+%token <Integer> keyword_module       /* {{module}} */
+%token <Integer> keyword_def          /* {{def}} */
+%token <Integer> keyword_undef        /* {{undef}} */
+%token <Integer> keyword_begin        /* {{begin}} */
+%token <Integer> keyword_rescue       /* {{rescue}} */
+%token <Integer> keyword_ensure       /* {{ensure}} */
+%token <Integer> keyword_end          /* {{end}} */
+%token <Integer> keyword_if           /* {{if}} */
+%token <Integer> keyword_unless       /* {{unless}} */
+%token <Integer> keyword_then         /* {{then}} */
+%token <Integer> keyword_elsif        /* {{elsif}} */
+%token <Integer> keyword_else         /* {{else}} */
+%token <Integer> keyword_case         /* {{case}} */
+%token <Integer> keyword_when         /* {{when}} */
+%token <Integer> keyword_while        /* {{while}} */
+%token <Integer> keyword_until        /* {{until}} */
+%token <Integer> keyword_for          /* {{for}} */
+%token <Integer> keyword_break        /* {{break}} */
+%token <Integer> keyword_next         /* {{next}} */
+%token <Integer> keyword_redo         /* {{redo}} */
+%token <Integer> keyword_retry        /* {{retry}} */
+%token <Integer> keyword_in           /* {{in}} */
+%token <Integer> keyword_do           /* {{do}} */
+%token <Integer> keyword_do_cond      /* {{do (for condition)}} */
+%token <Integer> keyword_do_block     /* {{do (for block)}} */
+%token <Integer> keyword_return       /* {{return}} */
+%token <Integer> keyword_yield        /* {{yield}} */
+%token <Integer> keyword_super        /* {{super}} */
+%token <Integer> keyword_self         /* {{self}} */
+%token <Integer> keyword_nil          /* {{nil}} */
+%token <Integer> keyword_true         /* {{true}} */
+%token <Integer> keyword_false        /* {{false}} */
+%token <Integer> keyword_and          /* {{and}} */
+%token <Integer> keyword_or           /* {{or}} */
+%token <Integer> keyword_not          /* {{not}} */
+%token <Integer> modifier_if          /* {{if (modifier)}} */
+%token <Integer> modifier_unless      /* {{unless (modifier)}} */
+%token <Integer> modifier_while       /* {{while (modifier)}} */
+%token <Integer> modifier_until       /* {{until (modifier)}} */
+%token <Integer> modifier_rescue      /* {{rescue (modifier)}} */
+%token <Integer> keyword_alias        /* {{alias}} */
+%token <Integer> keyword_defined      /* {{defined}} */
+%token <Integer> keyword_BEGIN        /* {{BEGIN}} */
+%token <Integer> keyword_END          /* {{END}} */
+%token <Integer> keyword__LINE__      /* {{__LINE__}} */
+%token <Integer> keyword__FILE__      /* {{__FILE__}} */
+%token <Integer> keyword__ENCODING__  /* {{__ENCODING__}} */
+%token <Integer> keyword_do_lambda    /* {{do (for lambda)}} */
+%token <ByteList> tIDENTIFIER         
+%token <ByteList> tFID
+%token <ByteList> tGVAR
+%token <ByteList> tIVAR
+%token <ByteList> tCONSTANT
+%token <ByteList> tCVAR
+%token <ByteList> tLABEL
 %token <StrNode> tCHAR
-%type <ByteList> sym symbol operation operation2 operation3 op fname cname
-%type <ByteList> f_norm_arg restarg_mark
-%type <ByteList> dot_or_colon  blkarg_mark
-%token <ByteList> tUPLUS         /* unary+ */
-%token <ByteList> tUMINUS        /* unary- */
-%token <ByteList> tUMINUS_NUM    /* unary- */
-%token <ByteList> tPOW           /* ** */
-%token <ByteList> tCMP           /* <=> */
-%token <ByteList> tEQ            /* == */
-%token <ByteList> tEQQ           /* === */
-%token <ByteList> tNEQ           /* != */
-%token <ByteList> tGEQ           /* >= */
-%token <ByteList> tLEQ           /* <= */
-%token <ByteList> tANDOP tOROP   /* && and || */
-%token <ByteList> tMATCH tNMATCH /* =~ and !~ */
-%token <ByteList> tDOT           /* Is just '.' in ruby and not a token */
-%token <ByteList> tDOT2 tDOT3    /* .. and ... */
-%token <ByteList> tAREF tASET    /* [] and []= */
-%token <ByteList> tLSHFT tRSHFT  /* << and >> */
-%token <ByteList> tANDDOT        /* &. */
-%token <ByteList> tCOLON2        /* :: */
-%token <ByteList> tCOLON3        /* :: at EXPR_BEG */
-%token <ByteList> tOP_ASGN       /* +=, -=  etc. */
-%token <ByteList> tASSOC         /* => */
-%token <Integer> tLPAREN       /* ( */
-%token <Integer> tLPAREN2      /* ( Is just '(' in ruby and not a token */
-%token <ByteList> tRPAREN        /* ) */
-%token <Integer> tLPAREN_ARG    /* ( */
-%token <ByteList> tLBRACK        /* [ */
-%token <ByteList> tRBRACK        /* ] */
-%token <Integer> tLBRACE        /* { */
-%token <Integer> tLBRACE_ARG    /* { */
-%token <ByteList> tSTAR          /* * */
-%token <ByteList> tSTAR2         /* *  Is just '*' in ruby and not a token */
-%token <ByteList> tAMPER         /* & */
-%token <ByteList> tAMPER2        /* &  Is just '&' in ruby and not a token */
-%token <ByteList> tTILDE         /* ` is just '`' in ruby and not a token */
-%token <ByteList> tPERCENT       /* % is just '%' in ruby and not a token */
-%token <ByteList> tDIVIDE        /* / is just '/' in ruby and not a token */
-%token <ByteList> tPLUS          /* + is just '+' in ruby and not a token */
-%token <ByteList> tMINUS         /* - is just '-' in ruby and not a token */
-%token <ByteList> tLT            /* < is just '<' in ruby and not a token */
-%token <ByteList> tGT            /* > is just '>' in ruby and not a token */
-%token <ByteList> tPIPE          /* | is just '|' in ruby and not a token */
-%token <ByteList> tBANG          /* ! is just '!' in ruby and not a token */
-%token <ByteList> tCARET         /* ^ is just '^' in ruby and not a token */
-%token <Integer> tLCURLY        /* { is just '{' in ruby and not a token */
-%token <ByteList> tRCURLY        /* } is just '}' in ruby and not a token */
-%token <ByteList> tBACK_REF2     /* { is just '`' in ruby and not a token */
+%token <ByteList> tUPLUS               /* {{unary+}} */
+%token <ByteList> tUMINUS              /* {{unary-}} */
+%token <ByteList> tUMINUS_NUM
+%token <ByteList> tPOW                 /* {{**}} */
+%token <ByteList> tCMP                 /* {{<=>}} */
+%token <ByteList> tEQ                  /* {{==}} */
+%token <ByteList> tEQQ                 /* {{===}} */
+%token <ByteList> tNEQ                 /* {{!=}} */
+%token <ByteList> tGEQ                 /* {{>=}} */
+%token <ByteList> tLEQ                 /* {{<=}} */
+%token <ByteList> tANDOP               /* {{&&}}*/
+%token <ByteList> tOROP                /* {{||}} */
+%token <ByteList> tMATCH               /* {{=~}} */
+%token <ByteList> tNMATCH              /* {{!~}} */
+%token <ByteList> tDOT                 /* {{.}} -  '.' in ruby and not a token */
+%token <ByteList> tDOT2                /* {{..}} */
+%token <ByteList> tDOT3                /* {{...}} */
+%token <ByteList> tAREF                /* {{[]}} */
+%token <ByteList> tASET                /* {{[]=}} */
+%token <ByteList> tLSHFT               /* {{<<}} */
+%token <ByteList> tRSHFT               /* {{>>}} */
+%token <ByteList> tANDDOT              /* {{&.}} */
+%token <ByteList> tCOLON2              /* {{::}} */
+%token <ByteList> tCOLON3              /* {{:: at EXPR_BEG}} */
+%token <ByteList> tOP_ASGN             /* +=, -=  etc. */
+%token <ByteList> tASSOC               /* {{=>}} */
+%token <Integer> tLPAREN               /* {{(}} */
+%token <Integer> tLPAREN2              /* {{(}} - '(' in ruby and not a token */
+%token <ByteList> tRPAREN              /* {{)}} */
+%token <Integer> tLPAREN_ARG           /* {{( arg}} */
+%token <ByteList> tLBRACK              /* {{[}} */
+%token <ByteList> tRBRACK              /* {{]}} */
+%token <Integer> tLBRACE               /* {{{}} */
+%token <Integer> tLBRACE_ARG           /* {{{ arg}} */
+%token <ByteList> tSTAR                /* {{*}} */
+%token <ByteList> tSTAR2               /* {{*}} - '*' in ruby and not a token */
+%token <ByteList> tAMPER               /* {{&}} */
+%token <ByteList> tAMPER2              /* {{&}} - '&' in ruby and not a token */
+%token <ByteList> tTILDE               /* {{`}} - '`' in ruby and not a token */
+%token <ByteList> tPERCENT             /* {{%}} - '%' in ruby and not a token */
+%token <ByteList> tDIVIDE              /* {{/}} - '/' in ruby and not a token */
+%token <ByteList> tPLUS                /* {{+}} - '+' in ruby and not a token */
+%token <ByteList> tMINUS               /* {{-}} - '-' in ruby and not a token */
+%token <ByteList> tLT                  /* {{<}} - '<' in ruby and not a token */
+%token <ByteList> tGT                  /* {{>}} - '>' in ruby and not a token */
+%token <ByteList> tPIPE                /* {{|}} - '|' in ruby and not a token */
+%token <ByteList> tBANG                /* {{!}} - '!' in ruby and not a token */
+%token <ByteList> tCARET               /* {{^}} - '^' in ruby and not a token */
+%token <Integer> tLCURLY               /* {{{}} - '{' in ruby and not a token */
+%token <ByteList> tRCURLY              /* {{}}} - '}' in ruby and not a token */
+%token <ByteList> tBACK_REF2           /* {{`}} - '`' in ruby and not a token */
 %token <ByteList> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
 %token <ByteList> tSTRING_DBEG tSTRING_DVAR tSTRING_END
-%token <ByteList> tLAMBDA tLAMBEG
+%token <ByteList> tLAMBDA              /* {{->}} */
+%token <ByteList> tLAMBEG
 %token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER tIMAGINARY
 %token <FloatNode> tFLOAT  
 %token <RationalNode> tRATIONAL
 %token <RegexpNode>  tREGEXP_END
+
+%type <ByteList> sym symbol operation operation2 operation3 op fname cname
+%type <ByteList> f_norm_arg restarg_mark
+%type <ByteList> dot_or_colon  blkarg_mark
 %type <RestArgNode> f_rest_arg
 %type <Node> singleton strings string string1 xstring regexp
 %type <Node> string_contents xstring_contents method_call
@@ -284,7 +337,7 @@ public class RubyParser {
 %type <Node> top_compstmt top_stmts top_stmt
 %token <ByteList> tSYMBOLS_BEG
 %token <ByteList> tQSYMBOLS_BEG
-%token <ByteList> tDSTAR
+%token <ByteList> tDSTAR                /* {{**arg}} */
 %token <ByteList> tSTRING_DEND
 %type <ByteList> kwrest_mark f_kwrest f_label 
 %type <ByteList> call_op call_op2

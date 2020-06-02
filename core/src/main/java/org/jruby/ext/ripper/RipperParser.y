@@ -48,75 +48,126 @@ public class RipperParser extends RipperParserBase {
     }
 %}
 
-%token <IRubyObject> keyword_class keyword_module keyword_def keyword_undef
-  keyword_begin keyword_rescue keyword_ensure keyword_end keyword_if
-  keyword_unless keyword_then keyword_elsif keyword_else keyword_case
-  keyword_when keyword_while keyword_until keyword_for keyword_break
-  keyword_next keyword_redo keyword_retry keyword_in keyword_do keyword_do_cond
-  keyword_do_block keyword_return keyword_yield keyword_super keyword_self
-  keyword_nil keyword_true keyword_false keyword_and keyword_or keyword_not
-  modifier_if modifier_unless modifier_while modifier_until modifier_rescue
-  keyword_alias keyword_defined keyword_BEGIN keyword_END keyword__LINE__
-  keyword__FILE__ keyword__ENCODING__ keyword_do_lambda
-
-%token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+%token <IRubyObject> keyword_class        /* {{class}} */
+%token <IRubyObject> keyword_module       /* {{module}} */
+%token <IRubyObject> keyword_def          /* {{def}} */
+%token <IRubyObject> keyword_undef        /* {{undef}} */
+%token <IRubyObject> keyword_begin        /* {{begin}} */
+%token <IRubyObject> keyword_rescue       /* {{rescue}} */
+%token <IRubyObject> keyword_ensure       /* {{ensure}} */
+%token <IRubyObject> keyword_end          /* {{end}} */
+%token <IRubyObject> keyword_if           /* {{if}} */
+%token <IRubyObject> keyword_unless       /* {{unless}} */
+%token <IRubyObject> keyword_then         /* {{then}} */
+%token <IRubyObject> keyword_elsif        /* {{elsif}} */
+%token <IRubyObject> keyword_else         /* {{else}} */
+%token <IRubyObject> keyword_case         /* {{case}} */
+%token <IRubyObject> keyword_when         /* {{when}} */
+%token <IRubyObject> keyword_while        /* {{while}} */
+%token <IRubyObject> keyword_until        /* {{until}} */
+%token <IRubyObject> keyword_for          /* {{for}} */
+%token <IRubyObject> keyword_break        /* {{break}} */
+%token <IRubyObject> keyword_next         /* {{next}} */
+%token <IRubyObject> keyword_redo         /* {{redo}} */
+%token <IRubyObject> keyword_retry        /* {{retry}} */
+%token <IRubyObject> keyword_in           /* {{in}} */
+%token <IRubyObject> keyword_do           /* {{do}} */
+%token <IRubyObject> keyword_do_cond      /* {{do (for condition)}} */
+%token <IRubyObject> keyword_do_block     /* {{do (for block)}} */
+%token <IRubyObject> keyword_return       /* {{return}} */
+%token <IRubyObject> keyword_yield        /* {{yield}} */
+%token <IRubyObject> keyword_super        /* {{super}} */
+%token <IRubyObject> keyword_self         /* {{self}} */
+%token <IRubyObject> keyword_nil          /* {{nil}} */
+%token <IRubyObject> keyword_true         /* {{true}} */
+%token <IRubyObject> keyword_false        /* {{false}} */
+%token <IRubyObject> keyword_and          /* {{and}} */
+%token <IRubyObject> keyword_or           /* {{or}} */
+%token <IRubyObject> keyword_not          /* {{not}} */
+%token <IRubyObject> modifier_if          /* {{if (modifier)}} */
+%token <IRubyObject> modifier_unless      /* {{unless (modifier)}} */
+%token <IRubyObject> modifier_while       /* {{while (modifier)}} */
+%token <IRubyObject> modifier_until       /* {{until (modifier)}} */
+%token <IRubyObject> modifier_rescue      /* {{rescue (modifier)}} */
+%token <IRubyObject> keyword_alias        /* {{alias}} */
+%token <IRubyObject> keyword_defined      /* {{defined}} */
+%token <IRubyObject> keyword_BEGIN        /* {{BEGIN}} */
+%token <IRubyObject> keyword_END          /* {{END}} */
+%token <IRubyObject> keyword__LINE__      /* {{__LINE__}} */
+%token <IRubyObject> keyword__FILE__      /* {{__FILE__}} */
+%token <IRubyObject> keyword__ENCODING__  /* {{__ENCODING__}} */
+%token <IRubyObject> keyword_do_lambda    /* {{do (for lambda)}} */
+%token <IRubyObject> tIDENTIFIER         
+%token <IRubyObject> tFID
+%token <IRubyObject> tGVAR
+%token <IRubyObject> tIVAR
+%token <IRubyObject> tCONSTANT
+%token <IRubyObject> tCVAR
+%token <IRubyObject> tLABEL
 %token <IRubyObject> tCHAR
-%type <IRubyObject> sym symbol operation operation2 operation3 op fname cname 
-%type <IRubyObject> f_norm_arg restarg_mark
-%type <IRubyObject> dot_or_colon blkarg_mark
-%token <IRubyObject> tUPLUS         /* unary+ */
-%token <IRubyObject> tUMINUS        /* unary- */
-%token <IRubyObject> tUMINUS_NUM    /* unary- */
-%token <IRubyObject> tPOW           /* ** */
-%token <IRubyObject> tCMP           /* <=> */
-%token <IRubyObject> tEQ            /* == */
-%token <IRubyObject> tEQQ           /* === */
-%token <IRubyObject> tNEQ           /* != */
-%token <IRubyObject> tGEQ           /* >= */
-%token <IRubyObject> tLEQ           /* <= */
-%token <IRubyObject> tANDOP tOROP   /* && and || */
-%token <IRubyObject> tMATCH tNMATCH /* =~ and !~ */
-%token <IRubyObject>  tDOT           /* Is just '.' in ruby and not a token */
-%token <IRubyObject> tDOT2 tDOT3    /* .. and ... */
-%token <IRubyObject> tAREF tASET    /* [] and []= */
-%token <IRubyObject> tLSHFT tRSHFT  /* << and >> */
-%token <String> tANDDOT	            /* &. */
-%token <IRubyObject> tCOLON2        /* :: */
-%token <IRubyObject> tCOLON3        /* :: at EXPR_BEG */
-%token <IRubyObject> tOP_ASGN       /* +=, -=  etc. */
-%token <IRubyObject> tASSOC         /* => */
-%token <IRubyObject> tLPAREN        /* ( */
-%token <IRubyObject> tLPAREN2        /* ( Is just '(' in ruby and not a token */
-%token <IRubyObject> tRPAREN        /* ) */
-%token <IRubyObject> tLPAREN_ARG    /* ( */
-%token <IRubyObject> tLBRACK        /* [ */
-%token <IRubyObject> tRBRACK        /* ] */
-%token <IRubyObject> tLBRACE        /* { */
-%token <IRubyObject> tLBRACE_ARG    /* { */
-%token <IRubyObject> tSTAR          /* * */
-%token <IRubyObject> tSTAR2         /* *  Is just '*' in ruby and not a token */
-%token <IRubyObject> tAMPER         /* & */
-%token <IRubyObject> tAMPER2        /* &  Is just '&' in ruby and not a token */
-%token <IRubyObject> tTILDE         /* ` is just '`' in ruby and not a token */
-%token <IRubyObject> tPERCENT       /* % is just '%' in ruby and not a token */
-%token <IRubyObject> tDIVIDE        /* / is just '/' in ruby and not a token */
-%token <IRubyObject> tPLUS          /* + is just '+' in ruby and not a token */
-%token <IRubyObject> tMINUS         /* - is just '-' in ruby and not a token */
-%token <IRubyObject> tLT            /* < is just '<' in ruby and not a token */
-%token <IRubyObject> tGT            /* > is just '>' in ruby and not a token */
-%token <IRubyObject> tPIPE          /* | is just '|' in ruby and not a token */
-%token <IRubyObject> tBANG          /* ! is just '!' in ruby and not a token */
-%token <IRubyObject> tCARET         /* ^ is just '^' in ruby and not a token */
-%token <IRubyObject> tLCURLY        /* { is just '{' in ruby and not a token */
-%token <IRubyObject> tRCURLY        /* } is just '}' in ruby and not a token */
-%token <IRubyObject> tBACK_REF2     /* { is just '`' in ruby and not a token */
+%token <IRubyObject> tUPLUS               /* {{unary+}} */
+%token <IRubyObject> tUMINUS              /* {{unary-}} */
+%token <IRubyObject> tUMINUS_NUM
+%token <IRubyObject> tPOW                 /* {{**}} */
+%token <IRubyObject> tCMP                 /* {{<=>}} */
+%token <IRubyObject> tEQ                  /* {{==}} */
+%token <IRubyObject> tEQQ                 /* {{===}} */
+%token <IRubyObject> tNEQ                 /* {{!=}} */
+%token <IRubyObject> tGEQ                 /* {{>=}} */
+%token <IRubyObject> tLEQ                 /* {{<=}} */
+%token <IRubyObject> tANDOP               /* {{&&}}*/
+%token <IRubyObject> tOROP                /* {{||}} */
+%token <IRubyObject> tMATCH               /* {{=~}} */
+%token <IRubyObject> tNMATCH              /* {{!~}} */
+%token <IRubyObject> tDOT                 /* {{.}} -  '.' in ruby and not a token */
+%token <IRubyObject> tDOT2                /* {{..}} */
+%token <IRubyObject> tDOT3                /* {{...}} */
+%token <IRubyObject> tAREF                /* {{[]}} */
+%token <IRubyObject> tASET                /* {{[]=}} */
+%token <IRubyObject> tLSHFT               /* {{<<}} */
+%token <IRubyObject> tRSHFT               /* {{>>}} */
+%token <String> tANDDOT                /* {{&.}} */
+%token <IRubyObject> tCOLON2              /* {{::}} */
+%token <IRubyObject> tCOLON3              /* {{:: at EXPR_BEG}} */
+%token <IRubyObject> tOP_ASGN             /* +=, -=  etc. */
+%token <IRubyObject> tASSOC               /* {{=>}} */
+%token <IRubyObject> tLPAREN               /* {{(}} */
+%token <IRubyObject> tLPAREN2              /* {{(}} - '(' in ruby and not a token */
+%token <IRubyObject> tRPAREN              /* {{)}} */
+%token <IRubyObject> tLPAREN_ARG           /* {{( arg}} */
+%token <IRubyObject> tLBRACK              /* {{[}} */
+%token <IRubyObject> tRBRACK              /* {{]}} */
+%token <IRubyObject> tLBRACE               /* {{{}} */
+%token <IRubyObject> tLBRACE_ARG           /* {{{ arg}} */
+%token <IRubyObject> tSTAR                /* {{*}} */
+%token <IRubyObject> tSTAR2               /* {{*}} - '*' in ruby and not a token */
+%token <IRubyObject> tAMPER               /* {{&}} */
+%token <IRubyObject> tAMPER2              /* {{&}} - '&' in ruby and not a token */
+%token <IRubyObject> tTILDE               /* {{`}} - '`' in ruby and not a token */
+%token <IRubyObject> tPERCENT             /* {{%}} - '%' in ruby and not a token */
+%token <IRubyObject> tDIVIDE              /* {{/}} - '/' in ruby and not a token */
+%token <IRubyObject> tPLUS                /* {{+}} - '+' in ruby and not a token */
+%token <IRubyObject> tMINUS               /* {{-}} - '-' in ruby and not a token */
+%token <IRubyObject> tLT                  /* {{<}} - '<' in ruby and not a token */
+%token <IRubyObject> tGT                  /* {{>}} - '>' in ruby and not a token */
+%token <IRubyObject> tPIPE                /* {{|}} - '|' in ruby and not a token */
+%token <IRubyObject> tBANG                /* {{!}} - '!' in ruby and not a token */
+%token <IRubyObject> tCARET               /* {{^}} - '^' in ruby and not a token */
+%token <IRubyObject> tLCURLY               /* {{{}} - '{' in ruby and not a token */
+%token <IRubyObject> tRCURLY              /* {{}}} - '}' in ruby and not a token */
+%token <IRubyObject> tBACK_REF2           /* {{`}} - '`' in ruby and not a token */
 %token <IRubyObject> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
 %token <IRubyObject> tSTRING_DBEG tSTRING_DVAR tSTRING_END
-%token <IRubyObject> tLAMBDA tLAMBEG
+%token <IRubyObject> tLAMBDA              /* {{->}} */
+%token <IRubyObject> tLAMBEG
 %token <IRubyObject> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER tIMAGINARY
 %token <IRubyObject> tFLOAT
 %token <IRubyObject> tRATIONAL
 %token <IRubyObject>  tREGEXP_END
+   
+%type <IRubyObject> sym symbol operation operation2 operation3 op fname cname 
+%type <IRubyObject> f_norm_arg restarg_mark
+%type <IRubyObject> dot_or_colon blkarg_mark
 /* RIPPER-ONY TOKENS { */
 %token <IRubyObject> tIGNORED_NL tCOMMENT tEMBDOC_BEG tEMBDOC tEMBDOC_END
 %token <IRubyObject> tSP tHEREDOC_BEG tHEREDOC_END
