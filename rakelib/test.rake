@@ -166,24 +166,4 @@ namespace :test do
     puts cmd
     system cmd
   end
-  
-  namespace :junit do
-    test_class_path = [
-      "target/junit.jar",
-      "target/livetribe-jsr223.jar",
-      "target/bsf.jar",
-      "target/commons-logging.jar",
-      "lib/jruby.jar",
-      "target/test-classes",
-      "test/jruby/requireTest.jar",
-      "test"
-    ]
-    
-    desc "Run the main JUnit test suite"
-    task :main => 'test:compile' do
-      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite", :maxmemory => '500M' do
-        jvmarg :line => '-ea'
-      end
-    end
-  end
 end

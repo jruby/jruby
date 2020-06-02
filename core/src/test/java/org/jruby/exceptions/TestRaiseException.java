@@ -15,12 +15,12 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.test.TestRubyBase;
+import org.jruby.test.Base;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-public class TestRaiseException extends TestRubyBase {
+public class TestRaiseException extends Base {
 
     public void testBacktrace() {
         IRubyObject ex = runtime.evalScriptlet("ex = nil; " +

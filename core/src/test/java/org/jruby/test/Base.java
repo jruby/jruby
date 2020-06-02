@@ -42,14 +42,14 @@ import org.jruby.RubyIO;
 /**
  * @author Benoit
  */
-public class TestRubyBase extends junit.framework.TestCase {
+public class Base extends junit.framework.TestCase {
     protected Ruby runtime;
     private PrintStream out;
 
-    public TestRubyBase() {
+    public Base() {
     }
     
-    public TestRubyBase(String name) {
+    public Base(String name) {
         super(name);
     }
 

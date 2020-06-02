@@ -235,10 +235,12 @@ project 'JRuby Core' do
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
-          'includes' => [ 'org/jruby/test/MainTestSuite.java',
-                          'org/jruby/embed/**/*Test*.java',
-                          'org/jruby/util/**/*Test*.java',
-                          'org/jruby/runtime/**/*Test*.java' ],
+          includes: [
+              'org/jruby/test/**/*Test*.java',
+              'org/jruby/embed/**/*Test*.java',
+              'org/jruby/util/**/*Test*.java',
+              'org/jruby/runtime/**/*Test*.java'
+          ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   plugin(:jar,
