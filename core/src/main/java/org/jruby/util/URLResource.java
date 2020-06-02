@@ -150,6 +150,9 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
     	if (pathname != null) {
             return cl.getResourceAsStream(pathname);
     	}
+    	if (url == null) {
+            throw new ResourceException.NotFound(absolutePath());
+        }
     	return url.openStream();
     }
 
