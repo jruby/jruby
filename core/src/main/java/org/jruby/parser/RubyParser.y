@@ -346,6 +346,14 @@ public class RubyParser {
 %token <ByteList> tLABEL_END
 %type <Integer> k_return k_class k_module k_else
 
+// For error reporting
+%token <Integer> '\\'                   /* {{backslash}} */
+%token <Integer> tSP                    /* {{escaped space}} */
+%token <Integer> '\t'                   /* {{escaped horizontal tab}} */
+%token <Integer> '\f'                   /* {{escaped form feed}} */
+%token <Integer> '\r'                   /* {{escaped carriage return}} */
+%token <Integer> '\v'                   /* {{escaped vertical tab}} */
+
 /*
  *    precedence table
  */

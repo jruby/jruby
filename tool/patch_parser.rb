@@ -8,6 +8,7 @@ def generate_yyname_remaps(file)
                       %Q{\"#{replacement}\"}
                     end
       name = %Q{"#{name}"}
+#      $stderr.puts "NAME #{name}(#{name.length}) = #{replacement.inspect}"
       remaps[name] = replacement   
     end
   end
@@ -35,8 +36,16 @@ def print_yynames_until_end_block(remaps)
     end
     next if /^\/\// =~ line
     new_line = line.split(/,/).map do |element|
+#      $stderr.puts "ELEMENT #{element.strip} #{element.strip.size}"
+      key = element.strip.gsub("\\\\", '\\')
 
-      remaps[element.strip] || element
+      # In .y we use '\\' which jay does realize is backslash in generated code
+      # but in yyNames it wraps the string in extra "" and then expands the number
+      # of \\ to make each \ its own backslash.  Part of me does not quite grok
+      # how it encodes the name like this yet the specification works on matching
+      # an incoming token.  Working around this by making it the key we need.
+      key = "\"\'\\\\'\"" if key == "\"'\\\\'\""
+      remaps[key] || element
     end.join(',')
     puts new_line
   end

@@ -51,11 +51,9 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.ComplexNode;
-import org.jruby.ast.DStrNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ListNode;
-import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.NumericNode;
@@ -74,8 +72,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.parser.RubyParser.tSTRING_BEG;
-import static org.jruby.parser.RubyParser.tXSTRING_BEG;
+import static org.jruby.parser.RubyParser.*;
 import static org.jruby.util.StringSupport.CR_7BIT;
 
 /*
@@ -358,7 +355,6 @@ public class RubyLexer extends LexingCommon {
             } else if (ruby_sourceline > last_cr_line) {
                 last_cr_line = ruby_sourceline;
                 warnings.warn(ID.VOID_VALUE_EXPRESSION, getFile(), ruby_sourceline, "encountered \\r in middle of line, treated as a mere space");
-                c = ' ';
             }
         }
 
@@ -1061,6 +1057,8 @@ public class RubyLexer extends LexingCommon {
                     spaceSeen = true;
                     continue;
                 }
+                if (c == ' ') return tSP;
+                if (Character.isWhitespace(c)) return c;
                 pushback(c);
                 yaccValue = BACKSLASH;
                 return '\\';

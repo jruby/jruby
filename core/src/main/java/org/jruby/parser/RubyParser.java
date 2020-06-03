@@ -296,7 +296,8 @@ public class RubyParser {
   public static final int tDSTAR = 386;
   public static final int tSTRING_DEND = 387;
   public static final int tLABEL_END = 388;
-  public static final int tLOWEST = 389;
+  public static final int tSP = 389;
+  public static final int tLOWEST = 390;
   public static final int yyErrorCode = 256;
 
   /** number of final state.
@@ -836,16 +837,14 @@ public class RubyParser {
       @see #yyExpecting
     */
   protected static final String[] yyNames = {
-    "end-of-file",null,null,null,null,null,null,null,null,null,"'\\n'",
+    "end-of-file",null,null,null,null,null,null,null,null,"escaped horizontal tab","'\\n'",
+"escaped vertical tab","escaped form feed","escaped carriage return",null,null,null,null,null,null,null,null,null,
+    null,null,null,null,null,null,null,null,null,"' '",null,null,null,
+    null,null,null,null,null,null,null,null,"','",null,null,null,null,
+    null,null,null,null,null,null,null,null,null,"':'","';'",null,"'='",
+    null,"'?'",null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
-    null,null,null,null,null,null,null,"' '",null,null,null,null,null,
-    null,null,null,null,null,null,"','",null,null,null,null,null,null,
-    null,null,null,null,null,null,null,"':'","';'",null,"'='",null,"'?'",
-    null,null,null,null,null,null,null,null,null,null,null,null,null,null,
-    null,null,null,null,null,null,null,null,null,null,null,null,null,
-    "'['",null,null,null,null,null,null,null,null,null,null,null,null,
-    null,null,null,null,null,null,null,null,null,null,null,null,null,null,
-    null,null,null,null,null,null,null,null,null,null,null,null,null,null,
+    null,null,"'['","backslash",null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
@@ -854,8 +853,10 @@ public class RubyParser {
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
-    null,null,null,null,null,null,null,null,null,null,null,null,null,
-"class","module","def","undef",
+    null,null,null,null,null,null,null,null,null,null,null,null,null,null,
+    null,null,null,null,null,null,null,null,null,null,null,null,null,null,
+    null,null,null,null,null,null,null,null,null,null,null,null,null,null,
+    null,"class","module","def","undef",
 "begin","rescue","ensure","end",
 "if","unless","then","elsif",
 "else","case","when","while",
@@ -880,7 +881,7 @@ public class RubyParser {
     "tSTRING_DBEG","tSTRING_DVAR","tSTRING_END","->","tLAMBEG",
     "tNTH_REF","tBACK_REF","tSTRING_CONTENT","tINTEGER","tIMAGINARY",
     "tFLOAT","tRATIONAL","tREGEXP_END","tSYMBOLS_BEG","tQSYMBOLS_BEG",
-"**arg","tSTRING_DEND","tLABEL_END","tLOWEST",
+"**arg","tSTRING_DEND","tLABEL_END","escaped space","tLOWEST",
     };
 
   /** printable rules for debugging.
@@ -5732,7 +5733,7 @@ states[654] = new ParserState() {
   }
 };
 }
-					// line 2798 "RubyParser.y"
+					// line 2806 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5747,4 +5748,4 @@ states[654] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10738 "-"
+					// line 10739 "-"
