@@ -36,6 +36,7 @@ import java.nio.channels.WritableByteChannel;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.exceptions.ReadPartialBufferOverflowException;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -193,9 +194,4 @@ public abstract class IOChannel implements Channel {
         }
     }
 
-    private class ReadPartialBufferOverflowException extends IOException {
-        public ReadPartialBufferOverflowException(String message) {
-            super(message);
-        }
-    }
 }
