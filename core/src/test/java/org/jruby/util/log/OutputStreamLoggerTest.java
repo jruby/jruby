@@ -14,7 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import org.jruby.test.TestRubyBase;
+import org.jruby.test.Base;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.After;
@@ -138,7 +138,7 @@ public class OutputStreamLoggerTest extends junit.framework.TestCase {
         stream.flush();
         if ( newLine ) expected = expected + LINE_SEPARATOR;
 
-        final String actual = newLine ? baos.toString() : TestRubyBase.CRLFToNL(baos.toString());
+        final String actual = newLine ? baos.toString() : Base.CRLFToNL(baos.toString());
         final String endPart = actual.substring(actual.length() - expected.length());
 
         Assert.assertEquals("expected: \"" + actual + "\" to end with: \"" + expected + "\"", expected, endPart);
@@ -147,7 +147,7 @@ public class OutputStreamLoggerTest extends junit.framework.TestCase {
     protected void assertStreamContains(String expected) {
         stream.flush();
 
-        final String actual = TestRubyBase.CRLFToNL(baos.toString());
+        final String actual = Base.CRLFToNL(baos.toString());
 
         Assert.assertTrue("expected: \"" + actual + "\" to contain: \"" + expected + "\"", actual.contains(expected));
     }

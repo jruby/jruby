@@ -1,11 +1,11 @@
 package org.jruby;
 
 import org.joni.Regex;
-import org.jruby.test.TestRubyBase;
+import org.jruby.test.Base;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 
-public class TestRegexpCache extends TestRubyBase {
+public class TestRegexpCache extends Base {
 
     // GH-2078
     public void testCacheRetention() {
