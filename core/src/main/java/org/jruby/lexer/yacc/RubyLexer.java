@@ -2268,6 +2268,7 @@ public class RubyLexer extends LexingCommon {
         }
     }
 
+    // FIXME: This could be refactored into something cleaner
     // MRI: parser_tokadd_utf8 sans regexp literal parsing
     public int readUTFEscape(ByteList buffer, boolean stringLiteral, boolean symbolLiteral) throws IOException {
         int codepoint;
@@ -2277,6 +2278,10 @@ public class RubyLexer extends LexingCommon {
             do {
                 nextc(); // Eat curly or whitespace
                 codepoint = scanHex(6, false, "invalid Unicode escape");
+                if (codepoint == -1 && peek('}')) {
+                    nextc();
+                    return 0;
+                }
                 if (codepoint > 0x10ffff) {
                     compile_error(PID.INVALID_ESCAPE_SYNTAX,  "invalid Unicode codepoint (too large)");
                 }
@@ -2375,8 +2380,7 @@ public class RubyLexer extends LexingCommon {
      * exception will be thrown.  This will also return the codepoint as a value so codepoint
      * ranges can be checked.
      */
-    private char scanHexLiteral(ByteList buffer, int count, boolean strict, String errorMessage)
-            throws IOException {
+    private char scanHexLiteral(ByteList buffer, int count, boolean strict, String errorMessage) {
         int i = 0;
         char hexValue = '\0';
 
@@ -2395,7 +2399,7 @@ public class RubyLexer extends LexingCommon {
         }
 
         // No hex value after the 'x'.
-        if (i == 0 || strict && count != i) {
+        if (strict && count != i) {
             compile_error(PID.INVALID_ESCAPE_SYNTAX, errorMessage);
         }
 
@@ -2406,9 +2410,16 @@ public class RubyLexer extends LexingCommon {
      * Read up to count hexadecimal digits.  If strict is provided then count number of hex
      * digits must be present. If no digits can be read a syntax exception will be thrown.
      */
-    private int scanHex(int count, boolean strict, String errorMessage) throws IOException {
+    private int scanHex(int count, boolean strict, String errorMessage) {
         int i = 0;
-        int hexValue = '\0';
+        int hexValue = 0;
+
+        if (!strict) {
+            for (int c = nextc(); Character.isWhitespace((c)); c = nextc()) {
+                // do nothing
+            }
+            pushback(0);
+        }
 
         for (; i < count; i++) {
             int h1 = nextc();
@@ -2423,7 +2434,9 @@ public class RubyLexer extends LexingCommon {
         }
 
         // No hex value after the 'x'.
-        if (i == 0 || (strict && count != i)) compile_error(PID.INVALID_ESCAPE_SYNTAX, errorMessage);
+        if (strict && count != i) compile_error(PID.INVALID_ESCAPE_SYNTAX, errorMessage);
+
+        if (i == 0) return -1; // Nothing read so not so return special value vs unicode value of 0.
 
         return hexValue;
     }

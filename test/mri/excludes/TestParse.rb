@@ -9,7 +9,6 @@ exclude :test_negative_line_number, "JVM emits negative like some overflow (inte
 exclude :test_question, "needs investigation"
 exclude :test_rescue_in_command_assignment, "needs investigation"
 exclude :test_string, "lots of very specific error messages in which we differ a little"
-exclude :test_symbol, "we should allow empty unicode escapes that not really"
 exclude :test_truncated_source_line, "2.5 truncates long source lines...we dont yet"
 exclude :test_unexpected_token_after_numeric, "More strict parsing of text immediately after numbers"
 exclude :test_unused_variable, "missing warning in parser (#2147)"
