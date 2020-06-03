@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
@@ -23,20 +24,20 @@ import org.jruby.util.ByteList;
 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
 
 public class UnresolvedSuperInstr extends CallInstr {
-    private static final ByteList UNKNOWN_SUPER_TARGET =
-            new ByteList(new byte[] {'-', 'u', 'n', 'k', 'n', 'o', 'w', 'n', '-', 's', 'u', 'p', 'e', 'r', '-', 't', 'a', 'r', 'g', 'e', 't', '-'});
+    private static final ByteList DYNAMIC_SUPER_TARGET =
+            new ByteList("-dynamic-super_target-".getBytes(), USASCIIEncoding.INSTANCE, false);
 
     // clone constructor
     public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args,
                                 Operand closure, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(UNKNOWN_SUPER_TARGET),
+        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
                 receiver, args, closure, isPotentiallyRefined, callSite, callSiteId);
     }
 
     // normal constructor
     public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args, Operand closure,
                                 boolean isPotentiallyRefined) {
-        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(UNKNOWN_SUPER_TARGET),
+        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
                 receiver, args, closure, isPotentiallyRefined);
     }
 
