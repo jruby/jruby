@@ -39,6 +39,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.BasicLibraryService;
@@ -246,6 +247,106 @@ public class JRubyUtilLibrary implements Library {
             final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", (String) null, e, true);
             ex.initCause(e); throw ex;
         }
+    }
+
+    /**
+     * Invoke the given block under synchronized lock, using standard Java synchronization.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object against which to synchronize
+     * @param block the block to execute
+     * @return the return value of the block
+     */
+    @JRubyMethod(name = "synchronized", module = true)
+    public static IRubyObject rbSynchronized(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
+        synchronized (arg) {
+            return block.call(context);
+        }
+    }
+
+    /**
+     * Wait for a locked object to notify, as in Object {@link #wait()}.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to wait for
+     * @return the object given
+     * @throws InterruptedException if interrupted
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg) throws InterruptedException {
+        arg.wait();
+        return arg;
+    }
+
+    /**
+     * Wait for a locked object to notify, as in Object {@link #wait(long)}.
+     *
+     * The object given must be locked using JRuby.synchronized or a similar Java monitor-based locking mechanism.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to wait for
+     * @param timeoutMillis the time in millis to wait (converted using #to_int)
+     * @return the object given
+     * @throws InterruptedException if interrupted
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis) throws InterruptedException {
+        arg.wait(timeoutMillis.convertToInteger().getLongValue());
+        return arg;
+    }
+
+    /**
+     * Wait for a locked object to notify, as in Object {@link #wait(long, int)}.
+     *
+     * The object given must be locked using JRuby.synchronized or a similar Java monitor-based locking mechanism.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to wait for
+     * @param timeoutMillis the time in millis to wait (converted using #to_int)
+     * @param timeoutNanos the time in nanos to wait (converted using #to_int, and truncated to a signed 32-bit integer)
+     * @return the object given
+     * @throws InterruptedException if interrupted
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis, IRubyObject timeoutNanos) throws InterruptedException {
+        arg.wait(timeoutMillis.convertToInteger().getLongValue(), timeoutNanos.convertToInteger().getIntValue());
+        return arg;
+    }
+
+    /**
+     * Notify one waiter on a locked object, as in Object {@link #notify()}
+     *
+     * The object given must be locked using JRuby.synchronized or a similar Java monitor-based locking mechanism.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to notify
+     * @return the object given
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject notify(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        arg.notify();
+        return arg;
+    }
+
+    /**
+     * Notify all waiters on a locked object, as in Object {@link #notifyAll()}
+     *
+     * The object given must be locked using JRuby.synchronized or a similar Java monitor-based locking mechanism.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to notify
+     * @return the object given
+     */
+    @JRubyMethod(name = "notify_all", module = true)
+    public static IRubyObject notifyAll(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        arg.notifyAll();
+        return arg;
     }
 
     @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
