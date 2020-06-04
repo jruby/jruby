@@ -2340,7 +2340,7 @@ public class RubyLexer extends LexingCommon {
                 pushback(c);
                 return scanOct(3);
             case 'x' : // hex constant
-                return scanHex(2, false, "Invalid hex escape");
+                return tokHex(2, "Invalid hex escape");
             case 'b' : // backspace
                 return '\010';
             case 's' : // space
@@ -2404,6 +2404,18 @@ public class RubyLexer extends LexingCommon {
         }
 
         return hexValue;
+    }
+
+    private int tokHex(int count, String errorMessage) {
+        int codepoint = scanHex(2, false, errorMessage);
+
+        // Means no digits read.
+        if (codepoint == -1) {
+            nextc(); // because we pushed back bad char in scanHex.  Restore so error caret is in proper colunn.
+            compile_error(PID.INVALID_ESCAPE_SYNTAX, errorMessage);
+        }
+
+        return codepoint;
     }
 
     /**
