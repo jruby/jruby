@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLConnection;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.file.attribute.FileTime;
@@ -148,12 +149,17 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
     @Override
     public InputStream openInputStream() throws IOException {
     	if (pathname != null) {
-            return cl.getResourceAsStream(pathname);
+    	    URL url = cl.getResource(pathname);
+            URLConnection connection = url.openConnection();
+            connection.setUseCaches(false);
+            return connection.getInputStream();
     	}
     	if (url == null) {
             throw new ResourceException.NotFound(absolutePath());
         }
-    	return url.openStream();
+        URLConnection connection = url.openConnection();
+    	connection.setUseCaches(false);
+    	return connection.getInputStream();
     }
 
     @Override
@@ -289,7 +295,9 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
             return new URLResource(URI + pathname, null, files);
         }
         try {
-            InputStream is = url.openStream();
+            URLConnection connection = url.openConnection();
+            connection.setUseCaches(false);
+            InputStream is = connection.getInputStream();
             // no inputstream happens with knoplerfish OSGI and osgi tests from /maven/jruby-complete
             if (is != null) {
                 is.close();
@@ -334,7 +342,9 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
             Set<String> result = new LinkedHashSet<>();
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
-                for (String entry: listFilesFromInputStream(url.openStream())) {
+                URLConnection connection = url.openConnection();
+                connection.setUseCaches(false);
+                for (String entry: listFilesFromInputStream(connection.getInputStream())) {
                     if (!result.contains(entry)) result.add(entry);
                 }
             }
@@ -347,7 +357,10 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
 
     private static String[] listFiles(String pathname) {
         try {
-            InputStream is = new URL(pathname + "/.jrubydir").openStream();
+            URL url = new URL(pathname + "/.jrubydir");
+            URLConnection connection = url.openConnection();
+            connection.setUseCaches(false);
+            InputStream is = connection.getInputStream();
             // no inputstream happens with knoplerfish OSGI and osgi tests from /maven/jruby-complete
             if (is != null) {
                 return listFilesFromInputStream(is);

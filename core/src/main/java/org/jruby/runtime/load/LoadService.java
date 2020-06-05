@@ -41,6 +41,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.List;

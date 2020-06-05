@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.net.URLConnection;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
@@ -130,7 +131,9 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                     if (loc != null) {
                         filename = LoadService.classpathFilenameFromURL(filename, loc, true);
                         try {
-                            istream = loc.openStream();
+                            URLConnection connection = loc.openConnection();
+                            connection.setUseCaches(false);
+                            istream = connection.getInputStream();
                         } catch (IOException ioe) {
                             istream = null; // as in getClassLoader.getResourceAsStream
                         }

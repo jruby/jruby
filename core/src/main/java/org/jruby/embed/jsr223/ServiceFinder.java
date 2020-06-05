@@ -33,6 +33,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -73,8 +74,10 @@ class ServiceFinder<T> {
             URL url = null;
             try {
                 url = urls.nextElement();
+                URLConnection connection = url.openConnection();
+                connection.setUseCaches(false);
                 BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(url.openStream(), encoding));
+                        new BufferedReader(new InputStreamReader(connection.getInputStream(), encoding));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if ((line = deleteComments(line)) != null) {

@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -84,8 +85,11 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             try {
                 File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
 
+                URLConnection connection = url.openConnection();
+                connection.setUseCaches(false);
+
                 try (FileOutputStream fileOut = new FileOutputStream(f);
-                     InputStream urlIn = url.openStream()) {
+                     InputStream urlIn = connection.getInputStream()) {
 
                     OutputStream out = new BufferedOutputStream(fileOut);
                     InputStream in = new BufferedInputStream(urlIn);

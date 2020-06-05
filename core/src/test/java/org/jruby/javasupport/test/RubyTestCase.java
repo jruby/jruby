@@ -34,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 
 import junit.framework.TestCase;
 
@@ -55,7 +56,9 @@ public class RubyTestCase extends TestCase {
         if (url == null) {
             throw new NullPointerException("url was null");
         }
-        InputStream in = url.openStream();
+        URLConnection connection = url.openConnection();
+        connection.setUseCaches(false);
+        InputStream in = connection.getInputStream();
         NormalizedFile f = (NormalizedFile)NormalizedFile.createTempFile("rtc", ".rb");
         FileOutputStream out = new FileOutputStream(f);
 

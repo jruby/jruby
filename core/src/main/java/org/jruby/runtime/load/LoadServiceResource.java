@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -82,11 +83,10 @@ public class LoadServiceResource {
 
     public InputStream getInputStream() throws IOException {
         if (resource != null) {
-            InputStream is = resource.openStream();
-            try {
+            URLConnection connection = resource.openConnection();
+            connection.setUseCaches(false);
+            try (InputStream is = connection.getInputStream()){
                 return new LoadServiceResourceInputStream(is);
-            } finally {
-                is.close();
             }
         }
         byte[] bytes = new byte[(int)path.length()];

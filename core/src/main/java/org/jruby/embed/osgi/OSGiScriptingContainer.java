@@ -32,6 +32,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EvalFailedException;
@@ -120,7 +121,9 @@ public class OSGiScriptingContainer extends ScriptingContainer {
         addToClassPath(bundle);
         InputStream istream = null;
         try {
-            istream = new BufferedInputStream(url.openStream());
+            URLConnection connection = url.openConnection();
+            connection.setUseCaches(false);
+            istream = new BufferedInputStream(connection.getInputStream());
             return this.runScriptlet(istream, getFilename(bundle, path));
         } catch (IOException ioe) {
             throw new EvalFailedException(ioe);
@@ -143,8 +146,9 @@ public class OSGiScriptingContainer extends ScriptingContainer {
     public EmbedEvalUnit parse(Bundle bundle, String path, int... lines) throws IOException {
         URL url = bundle.getEntry(path);
         InputStream istream = null;
-        try {
-            istream = new BufferedInputStream(url.openStream());
+        try {URLConnection connection = url.openConnection();
+            connection.setUseCaches(false);
+            istream = new BufferedInputStream(connection.getInputStream());
             return super.parse(istream, getFilename(bundle, path));
         } catch (IOException ioe) {
             throw new EvalFailedException(ioe);

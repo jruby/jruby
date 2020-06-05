@@ -39,6 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -67,7 +68,9 @@ public abstract class JavaNet {
             java.net.URL url = unwrapIfJavaObject(self);
             final InputStream stream; final RubyIO io;
             try {
-                stream = url.openStream();
+                URLConnection connection = url.openConnection();
+                connection.setUseCaches(false);
+                stream = connection.getInputStream();
                 io = JavaIo.to_io(context, stream, null);
 
                 if ( block.isGiven() ) {
