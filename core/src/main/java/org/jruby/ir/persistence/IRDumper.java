@@ -40,7 +40,7 @@ import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
-import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.TemporaryBooleanVariable;
@@ -66,7 +66,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class IRDumper extends IRVisitor {
     private final PrintStream stream;
@@ -332,7 +331,7 @@ public class IRDumper extends IRVisitor {
     public void Self(Self self) { print("%self"); }
     public void Splat(Splat splat) { visit(splat.getArray()); }
     public void StandardError(StandardError standarderror) {  }
-    public void StringLiteral(StringLiteral stringliteral) { print(stringliteral.getByteList()); }
+    public void MutableString(MutableString mutablestring) { print(mutablestring.getByteList()); }
     public void SValue(SValue svalue) { visit(svalue.getArray()); }
     public void Symbol(Symbol symbol) { print(symbol.getBytes()); }
     public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getName().idString()); }

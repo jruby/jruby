@@ -275,12 +275,37 @@ public class RubyDateFormatter {
         lexer.yyreset(reader);
 
         Token token;
+        RubyTimeOutputFormatter formatter = null;
         try {
             while ((token = lexer.yylex()) != null) {
-                if (token.format != Format.FORMAT_SPECIAL) {
+                if (token.format == Format.FORMAT_OUTPUT) {
+                    formatter = (RubyTimeOutputFormatter) token.data;
+                } else if (token.format != Format.FORMAT_SPECIAL) {
+                    if (formatter != null) {
+                        compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
+                        formatter = null;
+                    }
                     compiledPattern.add(token);
                 } else {
                     char c = (Character) token.data;
+
+                    // prepare padding if necessary
+                    if (formatter != null) {
+                        switch (c) {
+                            default:
+                                // force most formats to use spaces for padding unless otherwise specified
+                                if (formatter.flags == "" || formatter.flags == null) {
+                                    compiledPattern.add(new Token(Format.FORMAT_OUTPUT, new RubyTimeOutputFormatter("_", formatter.width)));
+                                    break;
+                                }
+                                // fall through
+                            case 'Q':
+                            case '+':
+                                compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
+                        }
+                        formatter = null;
+                    }
+
                     switch (c) {
                     case 'c':
                         addToPattern(compiledPattern, "a b e H:M:S Y");
@@ -343,6 +368,11 @@ public class RubyDateFormatter {
                         throw new AssertionError("Unknown special char: " + c);
                     }
                 }
+            }
+
+            // if formatter is still set we didn't use it, add it as is
+            if (formatter != null) {
+                compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
             }
         } catch (IOException e) {
             throw new AssertionError(e); // IOException never happens

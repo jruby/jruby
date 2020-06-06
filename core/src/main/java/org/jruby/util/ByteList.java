@@ -444,9 +444,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Append a single int to the ByteList
+     * Append a single byte to the ByteList by truncating the given int
      *
-     * @param b the int to be added
+     * @param b the int to truncated and added
      * @return this instance
      */
     public ByteList append(int b) {

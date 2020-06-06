@@ -26,3 +26,4 @@ fails(not implemented, jruby/jruby#6149):TracePoint#enable target_line: option r
 fails(not implemented, jruby/jruby#6149):TracePoint#enable target_line: option raises TypeError if :target_line value couldn't be coerced to Integer
 fails(not implemented, jruby/jruby#6149):TracePoint#enable target_line: option raises ArgumentError if :target_line value is negative
 fails(not implemented, jruby/jruby#6149):TracePoint#enable target_line: option accepts value that could be coerced to Integer
+fails:TracePoint#enable when nested enables both TracePoints but only calls the respective callbacks

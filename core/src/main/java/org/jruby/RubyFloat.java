@@ -849,10 +849,6 @@ public class RubyFloat extends RubyNumeric {
         double number, f;
         int ndigits = num2int(digits);
 
-        if (ndigits < 0) {
-            return ((RubyInteger) truncate(context)).floor(context, digits);
-        }
-
         Ruby runtime = context.runtime;
         number = value;
 

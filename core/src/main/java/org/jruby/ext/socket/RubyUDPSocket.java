@@ -82,6 +82,8 @@ import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 @JRubyClass(name="UDPSocket", parent="IPSocket")
 public class RubyUDPSocket extends RubyIPSocket {
 
+    public static final double RECV_BUFFER_COPY_SCALE = 1.5;
+
     static void createUDPSocket(Ruby runtime) {
         RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.getClass("IPSocket"), UDPSOCKET_ALLOCATOR);
 
@@ -602,7 +604,9 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
         }
 
-        RubyString result = runtime.newString(new ByteList(buf.array(), 0, buf.position(), false));
+        // return a string from the buffer, copying if the buffer size is > 1.5 * data size
+        ByteList bl = new ByteList(buf.array(), 0, buf.position(), buf.limit() > buf.position() * RECV_BUFFER_COPY_SCALE);
+        RubyString result = runtime.newString(bl);
 
         if (tuple != null) {
             tuple.result = result;

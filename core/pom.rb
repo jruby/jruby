@@ -41,16 +41,16 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.27', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.31', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.56', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.28', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.32', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.57', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.15', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.14'
+  jar 'com.github.jnr:jnr-ffi:2.1.15'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.37'
-  jar 'org.jruby.jcodings:jcodings:1.0.53'
+  jar 'org.jruby.joni:joni:2.1.40'
+  jar 'org.jruby.jcodings:jcodings:1.0.55'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
@@ -235,10 +235,12 @@ project 'JRuby Base' do
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
-          'includes' => [ 'org/jruby/test/MainTestSuite.java',
-                          'org/jruby/embed/**/*Test*.java',
-                          'org/jruby/util/**/*Test*.java',
-                          'org/jruby/runtime/**/*Test*.java' ],
+          includes: [
+              'org/jruby/test/**/*Test*.java',
+              'org/jruby/embed/**/*Test*.java',
+              'org/jruby/util/**/*Test*.java',
+              'org/jruby/runtime/**/*Test*.java'
+          ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   plugin(:jar,

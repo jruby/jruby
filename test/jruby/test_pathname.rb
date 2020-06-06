@@ -68,7 +68,7 @@ class TestPathname < Test::Unit::TestCase
 
   # GH-3150
   def test_expand_path_with_pathname_and_uri_path
-    assert_equal 'uri:classloader://foo', File.expand_path('foo', Pathname.new('uri:classloader:/'))
+    assert_equal 'uri:classloader:/foo', File.expand_path('foo', Pathname.new('uri:classloader:/'))
   end if defined?(JRUBY_VERSION)
 
 end

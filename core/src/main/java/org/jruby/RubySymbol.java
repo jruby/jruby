@@ -64,7 +64,6 @@ import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHelper;
 import org.jruby.util.IdUtil;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
@@ -181,7 +180,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public final String toString() {
         String decoded = decodedString;
         if (decoded == null) {
-            decodedString = decoded = RubyEncoding.decodeISO(symbolBytes);
+            decodedString = decoded = RubyEncoding.decodeRaw(symbolBytes);
         }
         return decoded;
     }
@@ -1014,7 +1013,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             if (symbol == null) {
                 bytes = bytes.dup();
                 symbol = createSymbol(
-                        RubyEncoding.decodeISO(bytes),
+                        RubyEncoding.decodeRaw(bytes),
                         bytes,
                         hash,
                         hard);
@@ -1437,7 +1436,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-            RubyProc.prepareArgs(context, block.type, this, args);
             return yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), blockArg);
         }
 
@@ -1453,6 +1451,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+            if (args.length == 1) {
+                return yieldSpecific(context, Block.NULL_BLOCK, args[0]);
+            }
             return yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), Block.NULL_BLOCK);
         }
 

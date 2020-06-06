@@ -16,7 +16,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -27,8 +26,9 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     final private boolean debug;
     final private String file;
     final private int line;
+    private final int estimatedSize;
 
-    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, boolean frozen, boolean debug, String file, int line) {
+    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, int estimatedSize, boolean frozen, boolean debug, String file, int line) {
         super(Operation.BUILD_COMPOUND_STRING, result, pieces);
 
         this.encoding = encoding;
@@ -36,6 +36,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         this.debug = debug;
         this.file = file;
         this.line = line;
+        this.estimatedSize = estimatedSize;
     }
 
     public Operand[] getPieces() {
@@ -48,11 +49,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, frozen, debug, file, line);
-    }
-
-    public boolean isSameEncodingAndCodeRange(RubyString str, StringLiteral newStr) {
-        return newStr.getByteList().getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
+        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, estimatedSize, frozen, debug, file, line);
     }
 
     @Override
@@ -60,6 +57,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         super.encode(e);
         e.encode(getPieces());
         e.encode(encoding);
+        e.encode(estimatedSize);
         e.encode(frozen);
         e.encode(file);
         e.encode(line);
@@ -67,21 +65,23 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     public static BuildCompoundStringInstr decode(IRReaderDecoder d) {
         boolean debuggingFrozenStringLiteral = d.getCurrentScope().getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
-        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeBoolean(), debuggingFrozenStringLiteral, d.decodeString(), d.decodeInt());
+        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeInt(), d.decodeBoolean(), debuggingFrozenStringLiteral, d.decodeString(), d.decodeInt());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        ByteList bytes = new ByteList();
-        bytes.setEncoding(encoding);
-        RubyString str = RubyString.newStringShared(context.runtime, bytes, StringSupport.CR_7BIT);
+        // use estimatedSize * 1.5 to give some initial room for interpolation
+        RubyString str = RubyString.newStringLight(context.runtime, estimatedSize * 3 / 2, encoding);
+
         for (Operand p : getOperands()) {
-            if ((p instanceof StringLiteral) && (isSameEncodingAndCodeRange(str, (StringLiteral)p))) {
-                str.getByteList().append(((StringLiteral)p).getByteList());
-                str.setCodeRange(((StringLiteral)p).getCodeRange());
+            if (p instanceof StringLiteral) {
+                StringLiteral strLiteral = (StringLiteral) p;
+                ByteList byteList = strLiteral.getByteList();
+                int cr = strLiteral.getCodeRange();
+                str.cat(byteList, cr);
             } else {
-                IRubyObject pval = (IRubyObject)p.retrieve(context, self, currScope, currDynScope, temp);
-                str.append19(pval);
+                IRubyObject pval = (IRubyObject) p.retrieve(context, self, currScope, currDynScope, temp);
+                str.appendAsDynamicString(pval);
             }
         }
 

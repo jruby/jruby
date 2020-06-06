@@ -4233,11 +4233,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         Channel channel1 = null;
         Channel channel2 = null;
 
-        if (args.length >= 3) {
+        if (args.length >= 3 && !args[2].isNil()) {
             length = args[2].convertToInteger();
-            if (args.length == 4) {
-                offset = args[3].convertToInteger();
-            }
+        }
+
+        if (args.length == 4 && !args[3].isNil()) {
+            offset = args[3].convertToInteger();
         }
 
         IOSites sites = sites(context);

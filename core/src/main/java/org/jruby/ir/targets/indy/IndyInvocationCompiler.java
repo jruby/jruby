@@ -62,11 +62,6 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeAsString(String file, int line, String scopeFieldName, CallBase call) {
-        normalCompiler.invokeAsString(file, line, scopeFieldName, call);
-    }
-
-    @Override
     public void invokeOtherOneFixnum(String file, int line, CallBase call, long fixnum) {
         String id = call.getId();
         if (!MethodIndex.hasFastFixnumOps(id)) {

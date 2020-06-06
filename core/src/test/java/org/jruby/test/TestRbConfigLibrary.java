@@ -3,7 +3,7 @@ package org.jruby.test;
 import org.jruby.Ruby;
 import jnr.posix.util.Platform;
 
-public class TestRbConfigLibrary extends TestRubyBase {
+public class TestRbConfigLibrary extends Base {
 
     protected void setUp() throws Exception {
         super.setUp();

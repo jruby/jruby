@@ -6,7 +6,7 @@ gem 'leafy-complete', '~> 0.6'
 gem 'sinatra', '~> 1.4'
 
 group 'puma' do
-  gem 'puma', '>= 3.12.4'
+  gem 'puma', '3.12.6'
 end
 group 'torquebox' do
   gem 'torquebox', '4.0.0.beta2'
