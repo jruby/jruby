@@ -44,7 +44,7 @@ public class IRReader implements IRPersistenceValues {
             int instructionsOffset = file.decodeInt();
             int poolOffset = file.decodeInt();
 
-            scope.allocateInterpreterContext(() -> file.decodeInstructionsAt(scope, poolOffset, instructionsOffset));
+            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset));
         }
 
         return firstScope; // topmost scope;
