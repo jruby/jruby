@@ -38,6 +38,7 @@ import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -260,7 +261,7 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(name = "synchronized", module = true)
     public static IRubyObject rbSynchronized(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
-        synchronized (arg) {
+        synchronized (getSyncObject(arg)) {
             return block.call(context);
         }
     }
@@ -276,7 +277,10 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg) throws InterruptedException {
-        arg.wait();
+        Object obj = getSyncObject(arg);
+
+        obj.wait();
+
         return arg;
     }
 
@@ -294,7 +298,10 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis) throws InterruptedException {
-        arg.wait(timeoutMillis.convertToInteger().getLongValue());
+        Object obj = getSyncObject(arg);
+
+        obj.wait(timeoutMillis.convertToInteger().getLongValue());
+
         return arg;
     }
 
@@ -313,7 +320,12 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis, IRubyObject timeoutNanos) throws InterruptedException {
-        arg.wait(timeoutMillis.convertToInteger().getLongValue(), timeoutNanos.convertToInteger().getIntValue());
+        Object obj = getSyncObject(arg);
+
+        obj.wait(
+                timeoutMillis.convertToInteger().getLongValue(),
+                timeoutNanos.convertToInteger().getIntValue());
+
         return arg;
     }
 
@@ -329,7 +341,10 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject notify(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        arg.notify();
+        Object obj = getSyncObject(arg);
+
+        obj.notify();
+        
         return arg;
     }
 
@@ -345,8 +360,20 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(name = "notify_all", module = true)
     public static IRubyObject notifyAll(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        arg.notifyAll();
+        Object obj = getSyncObject(arg);
+
+        obj.notifyAll();
+
         return arg;
+    }
+
+    private static Object getSyncObject(IRubyObject arg) {
+        Object obj = arg;
+
+        if (arg instanceof ConcreteJavaProxy) {
+            obj = ((ConcreteJavaProxy) arg).getObject();
+        }
+        return obj;
     }
 
     @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
