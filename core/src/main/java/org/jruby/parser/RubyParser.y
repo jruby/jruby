@@ -1608,7 +1608,7 @@ primary         : literal
                     support.setIsInClass($<Boolean>4.booleanValue());
                 }
                 | k_class tLSHFT expr {
-                    $$ = new Integer((support.isInClass() ? 2 : 0) & (support.isInDef() ? 1 : 0));
+                    $$ = new Integer((support.isInClass() ? 2 : 0) | (support.isInDef() ? 1 : 0));
                     support.setInDef(false);
                     support.setIsInClass(false);
                     support.pushLocalScope();
