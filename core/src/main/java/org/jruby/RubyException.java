@@ -369,6 +369,11 @@ public class RubyException extends RubyObject {
     public void setCause(IRubyObject cause) {
         this.cause = cause;
 
+        // don't do anything to throwable for null/nil cause to avoid forcing backtrace
+        // * if we have no cause yet, it's a no-op
+        // * if we have a cause, we can't change it
+        if (cause == null || cause.isNil()) return;
+
         Throwable t = toThrowable();
         Object javaCause;
 
