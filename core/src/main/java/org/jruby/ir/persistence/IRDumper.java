@@ -114,10 +114,9 @@ public class IRDumper extends IRVisitor {
         FullInterpreterContext fullInterpreterContext = ic.getScope().getFullInterpreterContext();
         if (fullInterpreterContext != null) {
             Collection<LocalVariable> usedVariables = fullInterpreterContext.getUsedLocalVariables();
-
-            println("used variables:");
-
+            
             if (usedVariables != null && !usedVariables.isEmpty()) {
+                println("used variables:");
                 for (LocalVariable var : usedVariables) {
                     println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
                 }
