@@ -1235,7 +1235,8 @@ primary         : literal
                     p.setIsInClass($<Boolean>4.booleanValue());
                 }
                 | keyword_class tLSHFT expr {
-                    $$ = new Integer((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
+                    $$ = new Integer((p.isInClass() ? 0b10 : 0) |
+                                     (p.isInDef()   ? 0b01 : 0));
                     p.setInDef(false);
                     p.setIsInClass(false);
                     p.pushLocalScope();
@@ -1243,8 +1244,8 @@ primary         : literal
                     $$ = p.dispatch("on_sclass", $3, $6);
 
                     p.popCurrentScope();
-                    p.setInDef((($<Integer>4.intValue()) & 1) != 0);
-                    p.setIsInClass((($<Integer>4.intValue()) & 2) != 0);
+                    p.setInDef((($<Integer>4.intValue())     & 0b01) != 0);
+                    p.setIsInClass((($<Integer>4.intValue()) & 0b10) != 0);
                 }
                 | keyword_module cpath {
                     if (p.isInDef()) { 

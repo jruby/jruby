@@ -1608,7 +1608,8 @@ primary         : literal
                     support.setIsInClass($<Boolean>4.booleanValue());
                 }
                 | k_class tLSHFT expr {
-                    $$ = new Integer((support.isInClass() ? 2 : 0) | (support.isInDef() ? 1 : 0));
+                    $$ = new Integer((support.isInClass() ? 0b10 : 0) |
+                                     (support.isInDef()   ? 0b01 : 0));
                     support.setInDef(false);
                     support.setIsInClass(false);
                     support.pushLocalScope();
@@ -1617,8 +1618,8 @@ primary         : literal
 
                     $$ = new SClassNode($1, $3, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
-                    support.setInDef((($<Integer>4.intValue()) & 1) != 0);
-                    support.setIsInClass((($<Integer>4.intValue()) & 2) != 0);
+                    support.setInDef((($<Integer>4.intValue())     & 0b01) != 0);
+                    support.setIsInClass((($<Integer>4.intValue()) & 0b10) != 0);
                 }
                 | k_module cpath {
                     if (support.isInDef()) { 

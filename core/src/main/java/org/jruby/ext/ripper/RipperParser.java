@@ -3236,7 +3236,8 @@ states[351] = new RipperParserState() {
 };
 states[352] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new Integer((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
+                    yyVal = new Integer((p.isInClass() ? 0b10 : 0) |
+                                     (p.isInDef()   ? 0b01 : 0));
                     p.setInDef(false);
                     p.setIsInClass(false);
                     p.pushLocalScope();
@@ -3248,8 +3249,8 @@ states[353] = new RipperParserState() {
                     yyVal = p.dispatch("on_sclass", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
 
                     p.popCurrentScope();
-                    p.setInDef(((((Integer)yyVals[-3+yyTop]).intValue()) & 1) != 0);
-                    p.setIsInClass(((((Integer)yyVals[-3+yyTop]).intValue()) & 2) != 0);
+                    p.setInDef(((((Integer)yyVals[-3+yyTop]).intValue())     & 0b01) != 0);
+                    p.setIsInClass(((((Integer)yyVals[-3+yyTop]).intValue()) & 0b10) != 0);
     return yyVal;
   }
 };
@@ -4862,6 +4863,6 @@ states[650] = new RipperParserState() {
   }
 };
 }
-					// line 2249 "RipperParser.y"
+					// line 2250 "RipperParser.y"
 }
-					// line 9835 "-"
+					// line 9836 "-"
