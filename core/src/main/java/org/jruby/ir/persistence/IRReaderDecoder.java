@@ -71,4 +71,11 @@ public interface IRReaderDecoder {
 
     public TemporaryVariableType decodeTemporaryVariableType();
     public ByteList getFilename();
+
+    /**
+     * Duplicate this decoder to isolate any state changes.
+     *
+     * @return An identical decoder that's isolated from the original
+     */
+    public IRReaderDecoder dup();
 }

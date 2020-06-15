@@ -45,25 +45,34 @@ import static com.headius.backport9.buffer.Buffers.positionBuffer;
 public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final ByteBuffer buf;
     private final IRManager manager;
-    private final List<IRScope> scopes = new ArrayList<>();
-    private IRScope currentScope = null; // FIXME: This is not thread-safe and more than a little gross
+    private final List<IRScope> scopes;
+    private IRScope currentScope; // FIXME: This is not thread-safe and more than a little gross
     /** Filename to use for the script */
     private final ByteList filename;
     private RubySymbol[] constantPool;
 
     public IRReaderStream(IRManager manager, byte[] bytes, ByteList filename) {
-        this.manager = manager;
-        this.buf = ByteBuffer.wrap(bytes);
-        this.filename = filename;
+        this(ByteBuffer.wrap(bytes), manager, new ArrayList<>(), null, filename, null);
     }
 
     public IRReaderStream(IRManager manager, File file, ByteList filename) {
-        this.manager = manager;
-        this.buf = readingIntoBuffer(file);
-        this.filename = filename;
+        this(readingIntoBuffer(file), manager, new ArrayList<>(), null, filename, null);
     }
 
-    private ByteBuffer readingIntoBuffer(File file) {
+    private IRReaderStream(ByteBuffer buf, IRManager manager, List<IRScope> scopes, IRScope currentScope, ByteList filename, RubySymbol[] constantPool) {
+        this.buf = buf;
+        this.manager = manager;
+        this.scopes = scopes;
+        this.currentScope = currentScope;
+        this.filename = filename;
+        this.constantPool = constantPool;
+    }
+
+    public IRReaderDecoder dup() {
+        return new IRReaderStream(buf.duplicate(), manager, new ArrayList(scopes), currentScope, filename, constantPool);
+    }
+
+    private static ByteBuffer readingIntoBuffer(File file) {
         try {
             return ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
         } catch (IOException e) {
