@@ -112,12 +112,6 @@ project 'JRuby Integration Tests' do
     test_source_directory '.'
   end
 
-  profile 'bootstrap' do
-    unless version =~ /-SNAPSHOT/
-      gem 'rubygems:jruby-launcher:${jruby-launcher.version}'
-    end
-  end
-
   profile 'rake' do
 
     plugin :antrun do
