@@ -129,7 +129,6 @@ import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.parser.ParserSupport.arg_blk_pass;
 import static org.jruby.parser.ParserSupport.node_assign;
-import static org.jruby.parser.ParserSupport.value_expr;
 
  
 public class RubyParser {
@@ -505,11 +504,11 @@ stmt            : keyword_alias fitem {
                 }
                 | command_asgn
                 | mlhs '=' command_call {
-                    value_expr(lexer, $3);
+                    support.value_expr(lexer, $3);
                     $$ = node_assign($1, $3);
                 }
                 | lhs '=' mrhs {
-                    value_expr(lexer, $3);
+                    support.value_expr(lexer, $3);
                     $$ = node_assign($1, $3);
                 }
                 | mlhs '=' mrhs_arg {
@@ -518,23 +517,23 @@ stmt            : keyword_alias fitem {
                 | expr
 
 command_asgn    : lhs '=' command_rhs {
-                    value_expr(lexer, $3);
+                    support.value_expr(lexer, $3);
                     $$ = node_assign($1, $3);
                 }
                 | var_lhs tOP_ASGN command_rhs {
-                    value_expr(lexer, $3);
+                    support.value_expr(lexer, $3);
                     $$ = support.new_op_assign($1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_rhs {
-                    value_expr(lexer, $6);
+                    support.value_expr(lexer, $6);
                     $$ = support.new_ary_op_assign($1, $5, $3, $6);
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN command_rhs {
-                    value_expr(lexer, $5);
+                    support.value_expr(lexer, $5);
                     $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN command_rhs {
-                    value_expr(lexer, $5);
+                    support.value_expr(lexer, $5);
                     $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_rhs {
@@ -543,7 +542,7 @@ command_asgn    : lhs '=' command_rhs {
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {
-                    value_expr(lexer, $5);
+                    support.value_expr(lexer, $5);
                     $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | backref tOP_ASGN command_rhs {
@@ -551,11 +550,11 @@ command_asgn    : lhs '=' command_rhs {
                 }
 
 command_rhs     : command_call %prec tOP_ASGN {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = $1;
                 }
 		| command_call modifier_rescue stmt {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = support.newRescueModNode($1, $3);
                 }
 		| command_asgn
@@ -578,7 +577,7 @@ expr            : command_call
                 | arg
 
 expr_value      : expr {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                 }
 
 // Node:command - call with or with block on end [!null]
@@ -705,7 +704,7 @@ mlhs_post       : mlhs_item {
                 }
 
 mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = support.assignableLabelOrIdentifier($1, null);
+                   $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
                    $$ = new InstAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
@@ -1148,19 +1147,19 @@ arg             : lhs '=' arg_rhs {
                     $$ = support.new_op_assign($1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
-                    value_expr(lexer, $6);
+                    support.value_expr(lexer, $6);
                     $$ = support.new_ary_op_assign($1, $5, $3, $6);
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN arg_rhs {
-                    value_expr(lexer, $5);
+                    support.value_expr(lexer, $5);
                     $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN arg_rhs {
-                    value_expr(lexer, $5);
+                    support.value_expr(lexer, $5);
                     $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg_rhs {
-                    value_expr(lexer, $5);
+                    support.value_expr(lexer, $5);
                     $$ = support.new_attr_op_assign($1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
@@ -1175,27 +1174,27 @@ arg             : lhs '=' arg_rhs {
                     support.backrefAssignError($1);
                 }
                 | arg tDOT2 arg {
-                    value_expr(lexer, $1);
-                    value_expr(lexer, $3);
+                    support.value_expr(lexer, $1);
+                    support.value_expr(lexer, $3);
     
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
                     $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), support.makeNullNil($3), false, isLiteral);
                 }
                 | arg tDOT3 arg {
-                    value_expr(lexer, $1);
-                    value_expr(lexer, $3);
+                    support.value_expr(lexer, $1);
+                    support.value_expr(lexer, $3);
 
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
                     $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), support.makeNullNil($3), true, isLiteral);
                 }
                 | arg tDOT2 {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
 
                     boolean isLiteral = $1 instanceof FixnumNode;
                     $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
                 }
                 | arg tDOT3 {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
 
                     boolean isLiteral = $1 instanceof FixnumNode;
                     $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
@@ -1285,7 +1284,7 @@ arg             : lhs '=' arg_rhs {
                     $$ = new DefinedNode($1, $3);
                 }
                 | arg '?' arg opt_nl ':' arg {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = support.new_if(support.getPosition($1), support.cond($1), $3, $6);
                 }
                 | primary {
@@ -1314,7 +1313,7 @@ rel_expr        : arg relop arg   %prec tGT {
                 }
  
 arg_value       : arg {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = support.makeNullNil($1);
                 }
 
@@ -1330,11 +1329,11 @@ aref_args       : none
                 }
 
 arg_rhs         : arg %prec tOP_ASGN {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = $1;
                 }
                 | arg modifier_rescue arg {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = support.newRescueModNode($1, $3);
                 }
 
@@ -1360,7 +1359,7 @@ opt_call_args   : none
 
 // [!null] - ArgsCatNode, SplatNode, ArrayNode, HashNode, BlockPassNode
 call_args       : command {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = support.newArrayNode(support.getPosition($1), $1);
                 }
                 | args opt_block_arg {
@@ -1690,7 +1689,7 @@ primary         : literal
                 }
 
 primary_value   : primary {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = $1;
                     if ($$ == null) $$ = NilImplicitNode.NIL;
                 }
@@ -1737,7 +1736,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                     $$ = support.assignableInCurr($1, NilImplicitNode.NIL);
+                    $$ = support.assignableInCurr($1, NilImplicitNode.NIL);
                 }
                 | tLPAREN f_margs rparen {
                     $$ = $2;
@@ -2673,7 +2672,7 @@ opt_f_block_arg : ',' f_block_arg {
                 }
 
 singleton       : var_ref {
-                    value_expr(lexer, $1);
+                    support.value_expr(lexer, $1);
                     $$ = $1;
                 }
                 | tLPAREN2 {
@@ -2684,7 +2683,7 @@ singleton       : var_ref {
                     } else if ($3 instanceof ILiteralNode) {
                         support.yyerror("can't define single method for literals.");
                     }
-                    value_expr(lexer, $3);
+                    support.value_expr(lexer, $3);
                     $$ = $3;
                 }
 

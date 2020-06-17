@@ -64,7 +64,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.lexer.LexingCommon.*;
-import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /** 
@@ -82,6 +81,9 @@ public class ParserSupport {
 
     // Is the parser currently within a class body.
     private boolean inClass;
+
+    // Should we warn if a variable is declared not actually used?
+    private boolean warnOnUnusedVariables;
 
     protected IRubyWarnings warnings;
 
@@ -107,17 +109,23 @@ public class ParserSupport {
             lexer.getCmdArgumentState().reset(scopedParserState.getCommandArgumentStack());
             lexer.getConditionState().reset(scopedParserState.getCondArgumentStack());
         }
+
+        if (warnOnUnusedVariables) {
+            scopedParserState.warnUnusedVariables(configuration.getRuntime(), warnings, currentScope.getFile());
+        }
+
         currentScope = currentScope.getEnclosingScope();
         scopedParserState = scopedParserState.getEnclosingScope();
-
     }
     
     public void pushBlockScope() {
+        warnOnUnusedVariables = warnings.isVerbose();
         currentScope = configuration.getRuntime().getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState);
     }
     
     public void pushLocalScope() {
+        warnOnUnusedVariables = warnings.isVerbose();
         currentScope = configuration.getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState, lexer.getCmdArgumentState().getStack(), lexer.getConditionState().getStack());
         lexer.getCmdArgumentState().reset(0);
@@ -152,7 +160,12 @@ public class ParserSupport {
             if (name.getBytes().equals(lexer.getCurrentArg())) {
                 warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
             }
-            return currentScope.declare(node.getLine(), name);
+            Node newNode = currentScope.declare(node.getLine(), name);
+
+            if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
+                scopedParserState.markUsedVariable(name, ((IScopedNode) node).getDepth());
+            }
+            return newNode;
         case CONSTDECLNODE: // CONSTANT
             return new ConstNode(node.getLine(), ((INameNode) node).getName());
         case INSTASGNNODE: // INSTANCE VARIABLE
@@ -168,17 +181,37 @@ public class ParserSupport {
         return null;
     }
 
-    public Node declareIdentifier(ByteList name) {
-        if (name.equals(lexer.getCurrentArg())) {
-            warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), lexer.getRubySourceline(), "circular argument reference - " + name);
+    public Node declareIdentifier(ByteList byteName) {
+        RubySymbol name = symbolID(byteName);
+        if (byteName.equals(lexer.getCurrentArg())) {
+            warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), lexer.getRubySourceline(),
+                    str(getConfiguration().getRuntime(), "circular argument reference - ", name));
         }
 
-        return currentScope.declare(lexer.tokline, symbolID(name));
+        int slot = currentScope.isDefined(name.idString());
+        Node node = currentScope.declare(lexer.tokline, name);
+
+        if (warnOnUnusedVariables && node instanceof IScopedNode) addOrMarkVariable(name, slot);
+
+        return node;
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
-    public AssignableNode assignableLabelOrIdentifier(ByteList name, Node value) {
-        return currentScope.assign(lexer.getRubySourceline(), symbolID(name), makeNullNil(value));
+    public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
+        RubySymbol name = symbolID(byteName);
+
+        if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
+
+        AssignableNode node = currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
+        return node;
+    }
+
+    private void addOrMarkVariable(RubySymbol name, int slot) {
+        if (slot == -1) {
+            scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+        } else {
+            scopedParserState.markUsedVariable(name, slot >> 16);
+        }
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
@@ -262,6 +295,7 @@ public class ParserSupport {
     public AssignableNode assignableInCurr(ByteList nameBytes, Node value) {
         RubySymbol name = symbolID(nameBytes);
         currentScope.addVariableThisScope(name.idString());
+        if (warnOnUnusedVariables) scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
 
@@ -419,7 +453,7 @@ public class ParserSupport {
         }
     }
 
-    public static boolean value_expr(RubyLexer lexer, Node node) {
+    public boolean value_expr(RubyLexer lexer, Node node) {
         boolean conditional = false;
 
         while (node != null) {
@@ -443,6 +477,11 @@ public class ParserSupport {
                     conditional = true;
                     node = ((BinaryOperatorNode) node).getSecondNode();
                     break;
+                case LOCALASGNNODE: case DASGNNODE:
+                    if (warnOnUnusedVariables) {
+                        scopedParserState.markUsedVariable((((INameNode) node).getName()), (((IScopedNode) node).getDepth()));
+                    }
+                    return true;
                 default: // Node
                     return true;
             }
@@ -984,6 +1023,7 @@ public class ParserSupport {
         DynamicScope scope = configuration.getScope(lexer.getFile());
         currentScope = scope.getStaticScope();
         scopedParserState = new ScopedParserState(null);
+        warnOnUnusedVariables = warnings.isVerbose() && !configuration.isEvalParse() && !configuration.isInlineSource();
         
         result.setScope(scope);
     }
@@ -1298,19 +1338,17 @@ public class ParserSupport {
         return arg_var(identifier);
     }
 
-    public ArgumentNode arg_var(ByteList id) {
-        RubySymbol name = symbolID(id);
+    public ArgumentNode arg_var(ByteList byteName) {
+        RubySymbol name = symbolID(byteName);
+
+        if (warnOnUnusedVariables) {
+            scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+            scopedParserState.markUsedVariable(name, 0);
+        }
         return new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addVariableThisScope(name.idString()));
     }
 
     public ByteList formal_argument(ByteList identifier) {
-        lexer.validateFormalIdentifier(identifier);
-
-        return shadowing_lvar(identifier);
-    }
-
-    @Deprecated
-    public String formal_argument(String identifier) {
         lexer.validateFormalIdentifier(identifier);
 
         return shadowing_lvar(identifier);
@@ -1326,28 +1364,15 @@ public class ParserSupport {
         StaticScope current = getCurrentScope();
         if (current.exists(id) >= 0) yyerror("duplicated argument name");
 
-        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(id) >= 0 &&
-                Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
-            Ruby runtime = getConfiguration().getRuntime();
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getRubySourceline(), str(runtime, "shadowing outer local variable - ", ids(runtime, name)));
+        if (warnOnUnusedVariables) {
+            int slot = current.isDefined(id);
+            if (slot != -1) {
+                scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+                scopedParserState.markUsedVariable(name, slot >> 16);
+            }
         }
 
         return nameBytes;
-    }
-
-    @Deprecated
-    public String shadowing_lvar(String name) {
-        if (name == "_") return name;
-
-        StaticScope current = getCurrentScope();
-        if (current.exists(name) >= 0) yyerror("duplicated argument name");
-
-        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
-                Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getRubySourceline(), "shadowing outer local variable - " + name);
-        }
-
-        return name;
     }
 
     // 1.9

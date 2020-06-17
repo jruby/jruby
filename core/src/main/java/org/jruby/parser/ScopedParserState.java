@@ -1,5 +1,16 @@
 package org.jruby.parser;
 
+import org.jruby.Ruby;
+import org.jruby.RubySymbol;
+import org.jruby.common.IRubyWarnings;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static org.jruby.util.RubyStringBuilder.str;
+
 /**
  * Each scope while parsing contains extra information as part of the parsing process.
  * This class holds this instead of StaticScope which will outlive parsing.
@@ -10,6 +21,8 @@ public class ScopedParserState {
     private long condArgumentStack;
     // A list of booleans indicating which variables are named captures from regexp
     private boolean[] namedCaptures;
+    private Map<RubySymbol, Integer> definedVariables;
+    private Set<RubySymbol> usedVariables;
 
     // block scope constructor
     public ScopedParserState(ScopedParserState enclosingScope) {
@@ -60,5 +73,34 @@ public class ScopedParserState {
     public boolean isNamedCapture(int index) {
         boolean[] namedCaptures = this.namedCaptures;
         return namedCaptures != null && index < namedCaptures.length && namedCaptures[index];
+    }
+
+    public void addDefinedVariable(RubySymbol name, int line) {
+        if (definedVariables == null) definedVariables = new HashMap<>();
+
+        definedVariables.put(name, line);
+    }
+
+    public void markUsedVariable(RubySymbol name, int depth) {
+        if (depth > 0) {
+            enclosingScope.markUsedVariable(name, depth - 1);
+            return;
+        }
+
+        if (usedVariables == null) usedVariables = new HashSet<>();
+
+        usedVariables.add(name);
+    }
+
+    public void warnUnusedVariables(Ruby runtime, IRubyWarnings warnings, String file) {
+        if (definedVariables == null) return;
+
+        for(RubySymbol name: definedVariables.keySet()) {
+            if ("_".equals(name.idString())) continue; // Hidden variable cannot be used.
+            if (usedVariables == null || !usedVariables.contains(name)) {
+                warnings.warn(IRubyWarnings.ID.AMBIGUOUS_ARGUMENT, file, definedVariables.get(name), str(runtime, "assigned but unused variable - ", name));
+            }
+        }
+
     }
 }
