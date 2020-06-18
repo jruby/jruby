@@ -773,14 +773,13 @@ public class Java implements Library {
 
         final RubyModule parentModule; final String className;
 
-        if ( fullName.indexOf('$') != -1 ) { // inner classes must be nested
-            Class<?> declaringClass = clazz.getDeclaringClass();
-            if ( declaringClass == null ) {
-                // no containing class for a $ class; treat it as internal and don't define a constant
-                return;
-            }
-            parentModule = getProxyClass(runtime, JavaClass.get(runtime, declaringClass));
-            className = clazz.getSimpleName();
+        if ( fullName.indexOf('$') != -1 ) {
+            /*
+             We don't want to define an inner class constant here, because it may conflict with static fields.
+             Instead, we defer that constant definition to the declaring class's proxy initialization, which will deal
+             with naming conflicts appropriately. See GH-6196.
+             */
+            return;
         }
         else {
             final int endPackage = fullName.lastIndexOf('.');
