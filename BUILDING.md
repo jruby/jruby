@@ -140,7 +140,21 @@ To run a given test with these excludes enabled, you can use the --excludes flag
 bin/jruby test/mri/runner.rb --excludes=test/mri/excludes <test file>
 ```
 
-#### Run a single Ruby spec
+#### Run a single spec using RSpec
+
+Most of the specs under the spec/ directory are written for rspec, and can be run with rspec.
+
+The notable exception is the "Ruby specs" under spec/ruby, which are run with mspec as described later in this document.
+
+rspec will be installed with `mvn package -Pbootstrap` or you can install it manually.
+
+```
+jruby -S rspec spec/path/to/spec
+```
+
+#### Run a single "Ruby spec" using mspec
+
+The specs under spec/ruby are part of the "Ruby spec" suite of tests and use the "mspec" tool to run.
 
 Individual specs can be run with the mspec tool:
 
