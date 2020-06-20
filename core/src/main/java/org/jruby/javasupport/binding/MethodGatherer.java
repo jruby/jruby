@@ -95,7 +95,7 @@ public class MethodGatherer {
 
     private Map<String, NamedInstaller> staticInstallers = Collections.EMPTY_MAP;
     private Map<String, NamedInstaller> instanceInstallers = Collections.EMPTY_MAP;
-    final List<ConstantField> constantFields = new ArrayList<>();
+    private Map<String, ConstantField> constantFields = Collections.EMPTY_MAP;
     final Ruby runtime;
 
     MethodGatherer(final Ruby runtime, final Class superClass) {
@@ -334,6 +334,16 @@ public class MethodGatherer {
             final String simpleName = JavaClass.getSimpleName(clazz);
             if ( simpleName.length() == 0 ) continue;
 
+            if (constantFields.containsKey(simpleName)) {
+                /*
+                 If we already have a static final field of the same name, don't define the inner class constant.
+                 Typically this is used for singleton patterns where the field is an instance of the inner class, and
+                 in languages like Kotlin the class itself is not what users intend to access. See GH-6196.
+                 */
+                runtime.getWarnings().warning("inner class \"" + javaClass.getName() + "::" + simpleName + "\" conflicts with field of same name");
+                continue;
+            }
+
             final RubyModule innerProxy = Java.getProxyClass(runtime, JavaClass.get(runtime, clazz));
 
             if ( IdUtil.isConstant(simpleName) ) {
@@ -424,7 +434,7 @@ public class MethodGatherer {
     }
 
     protected void installConstants(final RubyModule proxy) {
-        constantFields.forEach(field -> field.install(proxy));
+        constantFields.forEach((name, field) -> field.install(proxy));
     }
 
     protected void installClassMethods(final RubyModule proxy) {
@@ -535,7 +545,7 @@ public class MethodGatherer {
 
             boolean constant = isPublic && isStatic && isFinal && Character.isUpperCase(field.getName().charAt(0));
             if (constant) {
-                constantFields.add(new ConstantField(field));
+                addConstantField(field);
 
                 // If we are adding it as a constant,  do not add an accessor (jruby/jruby#5730)
                 continue;
@@ -547,6 +557,14 @@ public class MethodGatherer {
                 addField(getInstanceInstallersForWrite(), instanceNames, field, isFinal, false);
             }
         }
+    }
+
+    private void addConstantField(Field field) {
+        Map<String, ConstantField> constantFields = this.constantFields;
+        if (constantFields == Collections.EMPTY_MAP) {
+            constantFields = this.constantFields = new HashMap<>();
+        }
+        constantFields.put(field.getName(), new ConstantField(field));
     }
 
     void setupMethods(Class<?> javaClass) {

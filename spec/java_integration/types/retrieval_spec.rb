@@ -193,4 +193,14 @@ describe "A Java class with inner classes" do
       InnerClasses::NonExistentClass
     }.to raise_error(NameError, "uninitialized constant Java::Java_integrationFixtures::InnerClasses::NonExistentClass")
   end
+
+  describe "with static final fields of the same name" do
+    it "defines a constant pointing at the field" do
+      err = with_stderr_captured do
+        expect(InnerClasses::ConflictsWithStaticFinalField.ok()).to be true
+      end
+
+      err.should be_empty
+    end
+  end
 end
