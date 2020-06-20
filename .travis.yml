@@ -13,7 +13,7 @@ cache:
 
 before_install:
   - unset _JAVA_OPTIONS
-  - rm ~/.m2/settings.xml
+  - rm -f ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
   - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:CompressedClassSpaceSize=96M"
   - export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=96M"
@@ -25,6 +25,7 @@ before_script:
   - echo $HOME
   - echo $JAVA_OPTS
   - echo $MAVEN_OPTS
+  - 'export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")'
 
 jdk:
   - openjdk8
@@ -43,6 +44,27 @@ matrix:
   fast_finish: true
 
   include:
+    - name: JRuby tests jit ARM64
+      jdk: openjdk11
+      arch: arm64
+      script:
+        - ./mvnw clean package -Pbootstrap
+        - jruby -S rake test:jruby
+
+    - name: JRuby tests jit PPC64LE
+      jdk: openjdk11
+      arch: ppc64le
+      script:
+        - ./mvnw clean package -Pbootstrap
+        - jruby -S rake test:jruby
+
+    - name: JRuby tests jit S390X
+      jdk: openjdk11
+      arch: s390x
+      script:
+        - ./mvnw clean package -Pbootstrap
+        - jruby -S rake test:jruby
+
     - stage: test
       name: MRI core int
       script:
