@@ -290,8 +290,17 @@ public class RubyModule extends RubyObject {
         return constants;
     }
 
-    public synchronized Map<String, ConstantEntry> getConstantMapForWrite() {
-        return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<>(4, 0.9f, 1) : constants;
+    public Map<String, ConstantEntry> getConstantMapForWrite() {
+        Map<String, ConstantEntry> constants = this.constants;
+        if (constants == Collections.EMPTY_MAP) {
+            synchronized (this) {
+                constants = this.constants;
+                if (constants == Collections.EMPTY_MAP) {
+                    constants = this.constants = new ConcurrentHashMap<>(2, 0.9f, 1);
+                }
+            }
+        }
+        return constants;
     }
 
     /**
@@ -303,8 +312,17 @@ public class RubyModule extends RubyObject {
         return autoloads;
     }
 
-    private synchronized Map<String, Autoload> getAutoloadMapForWrite() {
-        return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<String, Autoload>(4, 0.9f, 1) : autoloads;
+    private Map<String, Autoload> getAutoloadMapForWrite() {
+        Map<String, Autoload> autoloads = this.autoloads;
+        if (autoloads == Collections.EMPTY_MAP) {
+            synchronized (this) {
+                autoloads = this.autoloads;
+                if (autoloads == Collections.EMPTY_MAP) {
+                    autoloads = this.autoloads = new ConcurrentHashMap<>(2, 0.9f, 1);
+                }
+            }
+        }
+        return autoloads;
     }
 
     @SuppressWarnings("unchecked")
@@ -485,7 +503,7 @@ public class RubyModule extends RubyObject {
         synchronized (this) {
             methods = this.methods;
             return methods == Collections.EMPTY_MAP ?
-                this.methods = new ConcurrentHashMap<>(0, 0.9f, 1) :
+                this.methods = new ConcurrentHashMap<>(2, 0.9f, 1) : // CHM initial-size: 4
                     methods;
         }
     }
