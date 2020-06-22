@@ -3790,9 +3790,7 @@ public class RubyModule extends RubyObject {
 
             // autoload entry
             removeAutoload(id);
-            // FIXME: I'm not sure this is right, but the old code returned
-            // the undef, which definitely isn't right...
-            return context.nil;
+            return context.nil; // if we weren't auto-loaded MRI returns nil
         }
 
         if (hasConstantInHierarchy(id)) throw cannotRemoveError(id);
