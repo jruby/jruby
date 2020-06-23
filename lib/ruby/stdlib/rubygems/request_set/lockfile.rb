@@ -5,6 +5,7 @@
 # constructed.
 
 class Gem::RequestSet::Lockfile
+
   ##
   # Raised when a lockfile cannot be parsed
 
@@ -35,6 +36,7 @@ class Gem::RequestSet::Lockfile
       @path   = path
       super "#{message} (at line #{line} column #{column})"
     end
+
   end
 
   ##
@@ -77,9 +79,11 @@ class Gem::RequestSet::Lockfile
     @gem_deps_file = File.expand_path(gem_deps_file)
     @gem_deps_dir  = File.dirname(@gem_deps_file)
 
-    @gem_deps_file.untaint unless gem_deps_file.tainted?
+    if RUBY_VERSION < '2.7'
+      @gem_deps_file.untaint unless gem_deps_file.tainted?
+    end
 
-    @platforms      = []
+    @platforms = []
   end
 
   def add_DEPENDENCIES(out) # :nodoc:
@@ -153,7 +157,7 @@ class Gem::RequestSet::Lockfile
     base = File.expand_path(base)
 
     if dest.index(base) == 0
-      offset = dest[base.size+1..-1]
+      offset = dest[base.size + 1..-1]
 
       return '.' unless offset
 
@@ -233,6 +237,7 @@ class Gem::RequestSet::Lockfile
   def requests
     @set.sorted_requests
   end
+
 end
 
 require 'rubygems/request_set/lockfile/tokenizer'

@@ -57,7 +57,7 @@ class Gem::Uninstaller
     # Indicate if development dependencies should be checked when
     # uninstalling. (default: false)
     #
-    @check_dev         = options[:check_dev]
+    @check_dev = options[:check_dev]
 
     if options[:force]
       @force_all = true
@@ -80,7 +80,7 @@ class Gem::Uninstaller
 
     dirs =
       Gem::Specification.dirs +
-      [Gem::Specification.default_specifications_dir]
+      [Gem.default_specifications_dir]
 
     Gem::Specification.each_spec dirs do |spec|
       next unless dependency.matches_spec? spec
@@ -88,8 +88,16 @@ class Gem::Uninstaller
       list << spec
     end
 
+    if list.empty?
+      raise Gem::InstallError, "gem #{@gem.inspect} is not installed"
+    end
+
     default_specs, list = list.partition do |spec|
       spec.default_gem?
+    end
+
+    default_specs.each do |default_spec|
+      say "Gem #{default_spec.full_name} cannot be uninstalled because it is a default gem"
     end
 
     list, other_repo_specs = list.partition do |spec|
@@ -100,16 +108,7 @@ class Gem::Uninstaller
     list.sort!
 
     if list.empty?
-      if other_repo_specs.empty?
-        if default_specs.empty?
-          raise Gem::InstallError, "gem #{@gem.inspect} is not installed"
-        else
-          message =
-            "gem #{@gem.inspect} cannot be uninstalled " +
-            "because it is a default gem"
-          raise Gem::InstallError, message
-        end
-      end
+      return unless other_repo_specs.any?
 
       other_repos = other_repo_specs.map { |spec| spec.base_dir }.uniq
 
@@ -134,7 +133,7 @@ class Gem::Uninstaller
       elsif index >= 0 && index < list.size
         uninstall_gem list[index]
       else
-        say "Error: must enter a number [1-#{list.size+1}]"
+        say "Error: must enter a number [1-#{list.size + 1}]"
       end
     else
       uninstall_gem list.first
@@ -180,9 +179,9 @@ class Gem::Uninstaller
     # Leave any executables created by other installed versions
     # of this gem installed.
 
-    list = Gem::Specification.find_all { |s|
+    list = Gem::Specification.find_all do |s|
       s.name == spec.name && s.version != spec.version
-    }
+    end
 
     list.each do |s|
       s.executables.each do |exe_name|
@@ -354,4 +353,5 @@ class Gem::Uninstaller
 
     raise e
   end
+
 end

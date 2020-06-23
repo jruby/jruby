@@ -20,6 +20,10 @@ class Gem::Command
 
   include Gem::UserInteraction
 
+  OptionParser.accept Symbol do |value|
+    value.to_sym
+  end
+
   ##
   # The name of the command.
 
@@ -122,6 +126,7 @@ class Gem::Command
     @defaults = defaults
     @options = defaults.dup
     @option_groups = Hash.new { |h,k| h[k] = [] }
+    @deprecated_options = { command => {} }
     @parser = nil
     @when_invoked = nil
   end
@@ -150,9 +155,8 @@ class Gem::Command
   ##
   # Display to the user that a gem couldn't be found and reasons why
   #--
-  # TODO: replace +domain+ with a parameter to suppress suggestions
 
-  def show_lookup_failure(gem_name, version, errors, domain, required_by = nil)
+  def show_lookup_failure(gem_name, version, errors, suppress_suggestions = false, required_by = nil)
     gem = "'#{gem_name}' (#{version})"
     msg = String.new "Could not find a valid gem #{gem}"
 
@@ -169,7 +173,7 @@ class Gem::Command
 
     alert_error msg
 
-    unless domain == :local  # HACK
+    unless suppress_suggestions
       suggestions = Gem::SpecFetcher.fetcher.suggest_gems_from_name gem_name
 
       unless suggestions.empty?
@@ -366,12 +370,55 @@ class Gem::Command
   end
 
   ##
+  # Mark a command-line option as deprecated, and optionally specify a
+  # deprecation horizon.
+  #
+  # Note that with the current implementation, every version of the option needs
+  # to be explicitly deprecated, so to deprecate an option defined as
+  #
+  #   add_option('-t', '--[no-]test', 'Set test mode') do |value, options|
+  #     # ... stuff ...
+  #   end
+  #
+  # you would need to explicitly add a call to `deprecate_option` for every
+  # version of the option you want to deprecate, like
+  #
+  #   deprecate_option('-t')
+  #   deprecate_option('--test')
+  #   deprecate_option('--no-test')
+
+  def deprecate_option(name, version: nil, extra_msg: nil)
+    @deprecated_options[command].merge!({ name => { "rg_version_to_expire" => version, "extra_msg" => extra_msg } })
+  end
+
+  def check_deprecated_options(options)
+    options.each do |option|
+      if option_is_deprecated?(option)
+        deprecation = @deprecated_options[command][option]
+        version_to_expire = deprecation["rg_version_to_expire"]
+
+        deprecate_option_msg = if version_to_expire
+                                 "The \"#{option}\" option has been deprecated and will be removed in Rubygems #{version_to_expire}."
+                               else
+                                 "The \"#{option}\" option has been deprecated and will be removed in future versions of Rubygems."
+                               end
+
+        extra_msg = deprecation["extra_msg"]
+
+        deprecate_option_msg += " #{extra_msg}" if extra_msg
+
+        alert_warning(deprecate_option_msg)
+      end
+    end
+  end
+
+  ##
   # Merge a set of command options with the set of default options (without
   # modifying the default option hash).
 
   def merge_options(new_options)
     @options = @defaults.clone
-    new_options.each do |k,v| @options[k] = v end
+    new_options.each { |k,v| @options[k] = v }
   end
 
   ##
@@ -392,6 +439,7 @@ class Gem::Command
 
   def handle_options(args)
     args = add_extra_args(args)
+    check_deprecated_options(args)
     @options = Marshal.load Marshal.dump @defaults # deep copy
     parser.parse!(args)
     @options[:args] = args
@@ -419,6 +467,10 @@ class Gem::Command
   end
 
   private
+
+  def option_is_deprecated?(option)
+    @deprecated_options[command].has_key?(option)
+  end
 
   def add_parser_description # :nodoc:
     return unless description
@@ -566,7 +618,6 @@ class Gem::Command
                     'Avoid loading any .gemrc file') do
   end
 
-
   # :stopdoc:
 
   HELP = <<-HELP.freeze
@@ -595,7 +646,7 @@ basic help message containing pointers to more information.
                                  http://localhost:8808/
                                  with info about installed gems
   Further information:
-    http://guides.rubygems.org
+    https://guides.rubygems.org
   HELP
 
   # :startdoc:

@@ -65,6 +65,11 @@ class Gem::Installer
 
   attr_reader :options
 
+  ##
+  # The gem package instance.
+
+  attr_reader :package
+
   @path_warning = false
 
   @install_lock = Mutex.new
@@ -108,6 +113,7 @@ class Gem::Installer
   end
 
   class FakePackage
+
     attr_accessor :spec
 
     attr_accessor :dir_mode
@@ -125,12 +131,15 @@ class Gem::Installer
         file = File.join destination_dir, file
         next if File.exist? file
         FileUtils.mkdir_p File.dirname(file)
-        File.open file, 'w' do |fp| fp.puts "# #{file}" end
+        File.open file, 'w' do |fp|
+          fp.puts "# #{file}"
+        end
       end
     end
 
     def copy_to(path)
     end
+
   end
 
   ##
@@ -187,9 +196,7 @@ class Gem::Installer
     @package.prog_mode = options[:prog_mode]
     @package.data_mode = options[:data_mode]
 
-    @bin_dir = options[:bin_dir] if options[:bin_dir]
-
-    if options[:user_install] and not options[:unpack]
+    if options[:user_install]
       @gem_home = Gem.user_dir
       @bin_dir = Gem.bindir gem_home unless options[:bin_dir]
       check_that_user_bin_dir_is_in_path
@@ -320,8 +327,11 @@ class Gem::Installer
       build_extensions
       write_build_info_file
       run_post_build_hooks
+    end
 
-      generate_bin
+    generate_bin
+
+    unless @options[:install_as_default]
       write_spec
       write_cache_file
     end
@@ -345,7 +355,7 @@ class Gem::Installer
   def run_pre_install_hooks # :nodoc:
     Gem.pre_install_hooks.each do |hook|
       if hook.call(self) == false
-        location = " at #{$1}" if hook.inspect =~ /@(.*:\d+)/
+        location = " at #{$1}" if hook.inspect =~ /[ @](.*:\d+)/
 
         message = "pre-install hook#{location} failed for #{spec.full_name}"
         raise Gem::InstallError, message
@@ -358,7 +368,7 @@ class Gem::Installer
       if hook.call(self) == false
         FileUtils.rm_rf gem_dir
 
-        location = " at #{$1}" if hook.inspect =~ /@(.*:\d+)/
+        location = " at #{$1}" if hook.inspect =~ /[ @](.*:\d+)/
 
         message = "post-build hook#{location} failed for #{spec.full_name}"
         raise Gem::InstallError, message
@@ -382,7 +392,7 @@ class Gem::Installer
       specs = []
 
       Gem::Util.glob_files_in_dir("*.gemspec", File.join(gem_home, "specifications")).each do |path|
-        spec = Gem::Specification.load path.untaint
+        spec = Gem::Specification.load path.tap(&Gem::UNTAINT)
         specs << spec if spec
       end
 
@@ -421,6 +431,7 @@ class Gem::Installer
     @gem_dir = directory
     extract_files
   end
+  deprecate :unpack, :none, 2020, 04
 
   ##
   # The location of the spec file that is installed.
@@ -435,7 +446,7 @@ class Gem::Installer
   #
 
   def default_spec_file
-    File.join Gem::Specification.default_specifications_dir, "#{spec.full_name}.gemspec"
+    File.join Gem.default_specifications_dir, "#{spec.full_name}.gemspec"
   end
 
   ##
@@ -467,7 +478,7 @@ class Gem::Installer
 
   def generate_windows_script(filename, bindir)
     if Gem.win_platform?
-      script_name = filename + ".bat"
+      script_name = formatted_program_filename(filename) + ".bat"
       script_path = File.join bindir, File.basename(script_name)
       File.open script_path, 'w' do |file|
         file.puts windows_stub_script(bindir, filename)
@@ -489,7 +500,7 @@ class Gem::Installer
     raise Gem::FilePermissionError.new(@bin_dir) unless File.writable? @bin_dir
 
     spec.executables.each do |filename|
-      filename.untaint
+      filename.tap(&Gem::UNTAINT)
       bin_path = File.join gem_dir, spec.bindir, filename
 
       unless File.exist? bin_path
@@ -620,7 +631,7 @@ class Gem::Installer
 
   def ensure_loadable_spec
     ruby = spec.to_ruby_for_cache
-    ruby.untaint
+    ruby.tap(&Gem::UNTAINT)
 
     begin
       eval ruby
@@ -685,7 +696,7 @@ class Gem::Installer
     @development         = options[:development]
     @build_root          = options[:build_root]
 
-    @build_args          = options[:build_args] || Gem::Command.build_args
+    @build_args = options[:build_args] || Gem::Command.build_args
 
     unless @build_root.nil?
       require 'pathname'
@@ -719,10 +730,9 @@ class Gem::Installer
     end
   end
 
-  def verify_gem_home(unpack = false) # :nodoc:
+  def verify_gem_home # :nodoc:
     FileUtils.mkdir_p gem_home, :mode => options[:dir_mode] && 0755
-    raise Gem::FilePermissionError, gem_home unless
-      unpack or File.writable?(gem_home)
+    raise Gem::FilePermissionError, gem_home unless File.writable?(gem_home)
   end
 
   def verify_spec
@@ -742,7 +752,11 @@ class Gem::Installer
       raise Gem::InstallError, "#{spec} has an invalid specification_version"
     end
 
-    if spec.dependencies.any? {|dep| dep.type =~ /\R/ || dep.name =~ /\R/ }
+    if spec.dependencies.any? {|dep| dep.type != :runtime && dep.type != :development }
+      raise Gem::InstallError, "#{spec} has an invalid dependencies"
+    end
+
+    if spec.dependencies.any? {|dep| dep.name =~ /(?:\R|[<>])/ }
       raise Gem::InstallError, "#{spec} has an invalid dependencies"
     end
   end
@@ -764,7 +778,7 @@ class Gem::Installer
 
 require 'rubygems'
 
-version = "#{Gem::Requirement.default}.a"
+version = "#{Gem::Requirement.default_prerelease}"
 
 str = ARGV.first
 if str
@@ -891,7 +905,7 @@ TEXT
   # The dependent check will be skipped if the install is ignoring dependencies.
 
   def pre_install_checks
-    verify_gem_home options[:unpack]
+    verify_gem_home
 
     # The name and require_paths must be verified first, since it could contain
     # ruby code that would be eval'ed in #ensure_loadable_spec

@@ -140,7 +140,7 @@ class Gem::Dependency
 
     if defined?(@version_requirement) && @version_requirement
       version = @version_requirement.instance_variable_get :@version
-      @version_requirement  = nil
+      @version_requirement = nil
       @version_requirements = Gem::Requirement.new version
     end
 
@@ -266,7 +266,7 @@ class Gem::Dependency
     end
 
     default = Gem::Requirement.default
-    self_req  = self.requirement
+    self_req = self.requirement
     other_req = other.requirement
 
     return self.class.new name, self_req  if other_req == default
@@ -277,16 +277,16 @@ class Gem::Dependency
 
   def matching_specs(platform_only = false)
     env_req = Gem.env_requirement(name)
-    matches = Gem::Specification.stubs_for(name).find_all { |spec|
+    matches = Gem::Specification.stubs_for(name).find_all do |spec|
       requirement.satisfied_by?(spec.version) && env_req.satisfied_by?(spec.version)
-    }.map(&:to_spec)
+    end.map(&:to_spec)
 
-    Gem::BundlerVersionFinder.filter!(matches) if name == "bundler".freeze
+    Gem::BundlerVersionFinder.filter!(matches) if name == "bundler".freeze && !requirement.specific?
 
     if platform_only
-      matches.reject! { |spec|
+      matches.reject! do |spec|
         spec.nil? || !Gem::Platform.match(spec.platform)
-      }
+      end
     end
 
     matches
@@ -333,4 +333,19 @@ class Gem::Dependency
 
     matches.first
   end
+
+  def identity
+    if prerelease?
+      if specific?
+        :complete
+      else
+        :abs_latest
+      end
+    elsif latest_version?
+      :latest
+    else
+      :released
+    end
+  end
+
 end

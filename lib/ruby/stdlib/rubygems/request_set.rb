@@ -334,7 +334,7 @@ class Gem::RequestSet
 
     @git_set.root_dir = @install_dir
 
-    lock_file = "#{File.expand_path(path)}.lock".dup.untaint
+    lock_file = "#{File.expand_path(path)}.lock".dup.tap(&Gem::UNTAINT)
     begin
       tokenizer = Gem::RequestSet::Lockfile::Tokenizer.from_file lock_file
       parser = tokenizer.make_parser self, []
@@ -457,9 +457,9 @@ class Gem::RequestSet
     node.spec.dependencies.each do |dep|
       next if dep.type == :development and not @development
 
-      match = @requests.find { |r|
+      match = @requests.find do |r|
         dep.match? r.spec.name, r.spec.version, @prerelease
-      }
+      end
 
       unless match
         next if dep.type == :development and @development_shallow

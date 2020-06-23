@@ -2,8 +2,8 @@
 module Gem
   DEFAULT_HOST = "https://rubygems.org".freeze
 
-  @post_install_hooks   ||= []
-  @done_installing_hooks  ||= []
+  @post_install_hooks ||= []
+  @done_installing_hooks ||= []
   @post_uninstall_hooks ||= []
   @pre_uninstall_hooks  ||= []
   @pre_install_hooks    ||= []
@@ -34,16 +34,9 @@ module Gem
                'Gems',
                RbConfig::CONFIG['ruby_version']
              ]
-           elsif RbConfig::CONFIG['rubylibprefix']
-             [
-               RbConfig::CONFIG['rubylibprefix'],
-               'gems',
-               RbConfig::CONFIG['ruby_version']
-             ]
            else
              [
-               RbConfig::CONFIG['libdir'],
-               ruby_engine,
+               RbConfig::CONFIG['rubylibprefix'],
                'gems',
                RbConfig::CONFIG['ruby_version']
              ]
@@ -68,6 +61,13 @@ module Gem
 
   def self.default_rubygems_dirs
     nil # default to standard layout
+  end
+
+  ##
+  # Path to specification files of default gems.
+
+  def self.default_specifications_dir
+    File.join(Gem.default_dir, "specifications", "default")
   end
 
   ##
@@ -138,13 +138,6 @@ module Gem
 
   def self.default_cert_path
     File.join Gem.user_home, ".gem", "gem-public_cert.pem"
-  end
-
-  ##
-  # Whether to expect full paths in default gems - true for non-MRI
-  # ruby implementations
-  def self.default_gems_use_full_paths?
-    ruby_engine != 'ruby'
   end
 
   ##
