@@ -235,6 +235,9 @@ project 'JRuby Core' do
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
+          'environmentVariables' => {
+              'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
+          },
           includes: [
               'org/jruby/test/**/*Test*.java',
               'org/jruby/embed/**/*Test*.java',
