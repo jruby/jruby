@@ -134,6 +134,12 @@ matrix:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:ji
 
+    - name: JI specs jdk11
+      jdk: openjdk11
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ji
+
     - name: Compiler specs
       script:
         - mvn clean package -Pbootstrap
