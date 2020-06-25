@@ -157,6 +157,13 @@ matrix:
         - jruby -S rake spec:compiler
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
+    - name: Compiler specs indy jdk11
+      jdk: openjdk11
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:compiler
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
     - name: FFI specs
       script:
         - mvn clean package -Pbootstrap
