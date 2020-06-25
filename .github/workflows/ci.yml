@@ -51,6 +51,10 @@ jobs:
         run: tool/maven-ci-script.sh
         env:
           PHASE: '-Pmain,test -Dinvoker.test=extended'
+      - name: test profile
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: '-Ptest'
 
   # Maven test suites that don't pass on Java 11
   maven-test-8:
@@ -74,10 +78,6 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: bootstrap
         run: mvn -Pbootstrap clean package
-      - name: test profile
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: '-Ptest'
       - name: jruby-jars profile
         run: tool/maven-ci-script.sh
         env:

@@ -52,6 +52,8 @@ public class JavaFields {
     public Boolean trueObjField = Boolean.TRUE;
     public Boolean falseObjField = Boolean.FALSE;
 
+    private final int privateIntField = 1;
+
     Object field1 = this;
     Object[] aryField2 = new Object[] { this };
 

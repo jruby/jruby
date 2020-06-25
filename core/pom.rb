@@ -73,7 +73,7 @@ project 'JRuby Core' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.7'
+  jar 'com.headius:backport9:1.8'
 
   jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
 
@@ -235,6 +235,9 @@ project 'JRuby Core' do
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
+          'environmentVariables' => {
+              'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
+          },
           includes: [
               'org/jruby/test/**/*Test*.java',
               'org/jruby/embed/**/*Test*.java',
