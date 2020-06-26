@@ -193,7 +193,7 @@ public final class IdUtil {
         return isNameString(id, start, limit);
     }
 
-    // mri: rb_enc_synmame_type (minus support for allowed_attrset).
+    // mri: rb_enc_symname_type (minus support for allowed_attrset).
     public static SymbolNameType determineSymbolNameType(Ruby runtime, ByteList data) {
         Encoding encoding = data.getEncoding();
 
@@ -269,6 +269,7 @@ public final class IdUtil {
                             return SymbolNameType.OTHER;
                     }
                 }
+                break;
             case '*':
                 m++;
                 if (m < e && data.get(m + 1) == '*') m++;

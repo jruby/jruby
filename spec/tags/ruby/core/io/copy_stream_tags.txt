@@ -19,3 +19,4 @@ windows:IO.copy_stream from a file name to an IO returns the number of bytes cop
 windows:IO.copy_stream from a file name to an IO leaves the destination IO position at the last write
 windows:IO.copy_stream from a file name to an IO copies only length bytes from the offset
 windows:IO.copy_stream with non-IO Objects calls #read on the source Object
+fails:IO.copy_stream with non-IO Objects calls #read on the source Object

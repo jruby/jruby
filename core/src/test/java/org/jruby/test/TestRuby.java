@@ -57,7 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author Benoit
 */
-public class TestRuby extends TestRubyBase {
+public class TestRuby extends Base {
     
     public TestRuby(String name) {
         super(name);

@@ -1,2 +1,0 @@
-fails:String#intern does not special case +(binary) and -(binary)
-fails:String#intern raises an EncodingError for UTF-8 String containing invalid bytes

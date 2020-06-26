@@ -711,9 +711,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** Encoding aware String construction routines for 1.9
      *
      */
-    private static final class EmptyByteListHolder {
-        final ByteList bytes;
-        final int cr;
+    public static final class EmptyByteListHolder {
+        public final ByteList bytes;
+        public final int cr;
         EmptyByteListHolder(Encoding enc) {
             this.bytes = new ByteList(ByteList.NULL_ARRAY, enc);
             this.cr = bytes.getEncoding().isAsciiCompatible() ? CR_7BIT : CR_VALID;
@@ -722,7 +722,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private static EmptyByteListHolder EMPTY_BYTELISTS[] = new EmptyByteListHolder[4];
 
-    static EmptyByteListHolder getEmptyByteList(Encoding enc) {
+    public static EmptyByteListHolder getEmptyByteList(Encoding enc) {
         if (enc == null) enc = ASCIIEncoding.INSTANCE;
         int index = enc.getIndex();
         EmptyByteListHolder bytes;
@@ -1037,10 +1037,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public final void resize(final int size) {
         final int len = value.length();
         if (len > size) {
-            modify();
+            modify(size);
             value.setRealSize(size);
         } else if (len < size) {
-            modify();
+            modify(size);
             value.length(size);
         }
     }
@@ -1375,6 +1375,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         infectBy(str2);
         str2.setCodeRange(str2_cr);
 
+        return this;
+    }
+
+    public final RubyString cat(ByteList other, int codeRange) {
+        cat19(other, codeRange);
         return this;
     }
 
@@ -2647,18 +2652,41 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyString append19(IRubyObject other) {
+        // fast path for fixnum straight into ascii-compatible bytelist
+        if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
+            ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
+            return this;
+        }
+
         modifyCheck();
 
-        if (other instanceof RubyFixnum) {
-            cat19(ConvertBytes.longToByteList(((RubyFixnum) other).value), StringSupport.CR_7BIT);
-            return this;
-        } else if (other instanceof RubyFloat) {
+        if (other instanceof RubyFloat) {
             return cat19((RubyString) ((RubyFloat) other).to_s());
         } else if (other instanceof RubySymbol) {
             cat19(((RubySymbol) other).getBytes(), 0);
             return this;
         }
+
         return cat19(other.convertToString());
+    }
+
+    public RubyString appendAsDynamicString(IRubyObject other) {
+        // fast path for fixnum straight into ascii-compatible bytelist
+        if (other instanceof RubyFixnum && value.getEncoding().isAsciiCompatible()) {
+            ConvertBytes.longIntoString(this, ((RubyFixnum) other).value);
+            return this;
+        }
+
+        modifyCheck();
+
+        if (other instanceof RubyFloat) {
+            return cat19((RubyString) ((RubyFloat) other).to_s());
+        } else if (other instanceof RubySymbol) {
+            cat19(((RubySymbol) other).getBytes(), 0);
+            return this;
+        }
+
+        return cat19(other.asString());
     }
 
     // NOTE: append(RubyString) should pbly just do the encoding aware cat
@@ -6488,9 +6516,22 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * MRI: rb_str_scrub
      */
     public IRubyObject strScrub(ThreadContext context, IRubyObject repl, Block block) {
+        Encoding enc = EncodingUtils.STR_ENC_GET(this);
+        return encStrScrub(context, enc, repl, getCodeRange(), block);
+    }
+
+    // MRI: rb_enc_str_scrub
+    public IRubyObject encStrScrub(ThreadContext context, Encoding enc, IRubyObject repl, Block block) {
+        int cr = CR_UNKNOWN;
+        if (enc == EncodingUtils.STR_ENC_GET(this)) {
+            cr = getCodeRange();
+        }
+        return encStrScrub(context, enc, repl, cr, block);
+    }
+
+    // MRI: enc_str_scrub
+    public IRubyObject encStrScrub(ThreadContext context, Encoding enc, IRubyObject repl, int cr, Block block) {
         Ruby runtime = context.runtime;
-        int cr = getCodeRange();
-        Encoding enc;
         Encoding encidx;
         IRubyObject buf = context.nil;
         byte[] repBytes;
@@ -6506,7 +6547,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (cr == CR_7BIT || cr == CR_VALID) return context.nil;
 
-        enc = EncodingUtils.STR_ENC_GET(this);
         if (repl != context.nil) {
             repl = EncodingUtils.strCompatAndValid(context, repl, enc);
             tainted |= repl.isTaint();
@@ -6553,7 +6593,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 p = e;
             }
             while (p < e) {
-                int ret = enc.length(pBytes, p, e);
+                int ret = StringSupport.preciseLength(enc, pBytes, p, e);
                 if (MBCLEN_NEEDMORE_P(ret)) {
                     break;
                 }

@@ -1,7 +1,9 @@
 package org.jruby.util;
 
+import java.nio.channels.Channel;
 import java.util.Arrays;
 
+import jnr.constants.platform.OpenFlags;
 import org.jruby.Ruby;
 
 import junit.framework.TestCase;
@@ -54,15 +56,32 @@ public class URLResourceTest extends TestCase {
         assertNull(resource.list());
     }
 
-    public void testNonExistingFile(){
+    public void testNonExistingFile() throws Throwable {
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir" ).toExternalForm();
-        FileResource resource = URLResource.create((Ruby) null, "uri:" + uri + "/not_there", false);
+        String pathname = "uri:" + uri + "/not_there";
+        FileResource resource = URLResource.create(null, pathname, false);
 
         assertNotNull(resource );
         assertFalse(resource.isFile());
         assertFalse(resource.exists());
         assertFalse(resource.isDirectory());
         assertNull(resource.list());
+
+        try {
+            resource.openChannel(OpenFlags.O_RDONLY.intValue(), 0x600);
+            fail("non-existing resource should not produce a Channel");
+        } catch (ResourceException.NotFound nf) {
+            assertEquals(nf.getPath(), resource.absolutePath());
+            assertTrue(nf.getMessage().contains(resource.absolutePath()));
+        }
+
+        try {
+            resource.openInputStream();
+            fail("non-existing resource should not produce an InputStream");
+        } catch (ResourceException.NotFound nf) {
+            assertEquals(nf.getPath(), resource.absolutePath());
+            assertTrue(nf.getMessage().contains(resource.absolutePath()));
+        }
     }
 
     public void testDirectoryClassloader() {

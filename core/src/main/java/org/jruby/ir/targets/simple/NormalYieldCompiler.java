@@ -46,7 +46,7 @@ public class NormalYieldCompiler implements YieldCompiler {
         final String methodName = "yieldValues:" + arity;
         final ClassData classData = compiler.getClassData();
 
-        if (!classData.arrayMethodsDefined.contains(arity)) {
+        if (!classData.arrayMethodsDefined.containsKey(arity)) {
             adapter2 = new SkinnyMethodAdapter(
                     compiler.adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
@@ -63,7 +63,7 @@ public class NormalYieldCompiler implements YieldCompiler {
             adapter2.areturn();
             adapter2.end();
 
-            classData.arrayMethodsDefined.add(arity);
+            classData.arrayMethodsDefined.put(arity, null);
         }
 
         // now call it

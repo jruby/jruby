@@ -267,28 +267,28 @@ public class IRBuilder {
 
     // SSS FIXME: Currently only used for retries -- we should be able to eliminate this
     // Stack of nested rescue blocks -- this just tracks the start label of the blocks
-    private Stack<RescueBlockInfo> activeRescueBlockStack = new Stack<>();
+    private final Deque<RescueBlockInfo> activeRescueBlockStack = new ArrayDeque<>(4);
 
     // Stack of ensure blocks that are currently active
-    private Stack<EnsureBlockInfo> activeEnsureBlockStack = new Stack<>();
+    private final Deque<EnsureBlockInfo> activeEnsureBlockStack = new ArrayDeque<>(4);
 
     // Stack of ensure blocks whose bodies are being constructed
-    private Stack<EnsureBlockInfo> ensureBodyBuildStack   = new Stack<>();
+    private final Deque<EnsureBlockInfo> ensureBodyBuildStack   = new ArrayDeque<>(4);
 
     // Combined stack of active rescue/ensure nestings -- required to properly set up
     // rescuers for ensure block bodies cloned into other regions -- those bodies are
     // rescued by the active rescuers at the point of definition rather than the point
     // of cloning.
-    private Stack<Label> activeRescuers = new Stack<>();
+    private final Deque<Label> activeRescuers = new ArrayDeque<>(4);
 
     // Since we are processing ASTs, loop bodies are processed in depth-first manner
     // with outer loops encountered before inner loops, and inner loops finished before outer ones.
     //
     // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
     // This lets us implement next/redo/break/retry easily for the non-closure cases.
-    private Stack<IRLoop> loopStack = new Stack<>();
+    private final Deque<IRLoop> loopStack = new LinkedList<>();
 
-    private int _lastProcessedLineNum = -1;
+    private int lastProcessedLineNum = -1;
 
     // We do not need n consecutive line num instrs but only the last one in the sequence.
     // We set this flag to indicate that we need to emit a line number but have not yet.
@@ -298,8 +298,8 @@ public class IRBuilder {
 
     public boolean underscoreVariableSeen = false;
 
-    public IRLoop getCurrentLoop() {
-        return loopStack.isEmpty() ? null : loopStack.peek();
+    private IRLoop getCurrentLoop() {
+        return loopStack.peek();
     }
 
     protected final IRBuilder parent;
@@ -344,19 +344,19 @@ public class IRBuilder {
             needsLineNumInfo = false;
 
             if (needsCodeCoverage()) {
-                addInstr(new LineNumberInstr(_lastProcessedLineNum, coverageMode));
+                addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
             } else {
-                addInstr(manager.newLineNumber(_lastProcessedLineNum));
+                addInstr(manager.newLineNumber(lastProcessedLineNum));
             }
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum + 1));
+                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), lastProcessedLineNum + 1));
             }
         }
 
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
-        if (ensureBodyBuildStack.empty()) {
+        if (ensureBodyBuildStack.isEmpty()) {
             instr.computeScopeFlags(scope);
 
             if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, instructions.size());
@@ -370,7 +370,7 @@ public class IRBuilder {
     public void addInstrAtBeginning(Instr instr) {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
-        if (ensureBodyBuildStack.empty()) {
+        if (ensureBodyBuildStack.isEmpty()) {
             instr.computeScopeFlags(scope);
 
             if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, 0);
@@ -386,7 +386,7 @@ public class IRBuilder {
     private void emitEnsureBlocks(IRLoop loop) {
         int n = activeEnsureBlockStack.size();
         EnsureBlockInfo[] ebArray = activeEnsureBlockStack.toArray(new EnsureBlockInfo[n]);
-        for (int i = n-1; i >= 0; i--) {
+        for (int i = 0; i < n; i++) { // Deque's head is the first element (unlike Stack's)
             EnsureBlockInfo ebi = ebArray[i];
 
             // For "break" and "next" instructions, we only want to run
@@ -401,9 +401,9 @@ public class IRBuilder {
     private void determineIfWeNeedLineNumber(Node node) {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
-            if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
+            if (currLineNum != lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
                 needsLineNumInfo = true;
-                _lastProcessedLineNum = currLineNum;
+                lastProcessedLineNum = currLineNum;
             }
         }
     }
@@ -445,7 +445,6 @@ public class IRBuilder {
             case DXSTRNODE: return buildDXStr(result, (DXStrNode) node);
             case ENCODINGNODE: return buildEncoding((EncodingNode)node);
             case ENSURENODE: return buildEnsureNode((EnsureNode) node);
-            case EVSTRNODE: return buildEvStr((EvStrNode) node);
             case FALSENODE: return buildFalse();
             case FCALLNODE: return buildFCall(result, (FCallNode) node);
             case FIXNUMNODE: return buildFixnum((FixnumNode) node);
@@ -976,7 +975,7 @@ public class IRBuilder {
 
         if (currLoop != null) {
             // If we have ensure blocks, have to run those first!
-            if (!activeEnsureBlockStack.empty()) emitEnsureBlocks(currLoop);
+            if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
 
             addInstr(new CopyInstr(currLoop.loopResult, build(breakNode.getValueNode())));
             addInstr(new JumpInstr(currLoop.loopEndLabel));
@@ -1402,8 +1401,8 @@ public class IRBuilder {
             Operand expression = build(whenNode.getExpressionNodes());
 
             // use frozen string for direct literal strings in `when`
-            if (expression instanceof StringLiteral) {
-                expression = ((StringLiteral) expression).frozenString;
+            if (expression instanceof MutableString) {
+                expression = ((MutableString) expression).frozenString;
             }
 
             addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
@@ -1462,8 +1461,6 @@ public class IRBuilder {
         Operand superClass = (superNode == null) ? null : build(superNode);
         ByteList className = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
-
-        //System.out.println("MODULE IS SINGLE USE:"  + className +  ", " +  scope.getFile() + ":" + classNode.getEndLine());
 
         IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope(), executesOnce);
         Variable bodyResult = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
@@ -2038,7 +2035,7 @@ public class IRBuilder {
     }
 
     public Operand buildGetArgumentDefinition(final Node node, String type) {
-        if (node == null) return new StringLiteral(type);
+        if (node == null) return new MutableString(type);
 
         Operand rv = new FrozenString(type);
         boolean failPathReqd = false;
@@ -2564,21 +2561,51 @@ public class IRBuilder {
                 build(dotNode.getEndNode()), dotNode.isExclusive()));
     }
 
-    private Operand dynamicPiece(Node pieceNode) {
-        Operand piece = pieceNode instanceof StrNode ? buildStrRaw((StrNode) pieceNode) : build(pieceNode);
+    private int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
+        Operand piece;
 
-        if (piece instanceof StringLiteral) {
-            piece = ((StringLiteral)piece).frozenString;
+        // somewhat arbitrary minimum size for interpolated values
+        int estimatedSize = 4;
+
+        while (true) { // loop to unwrap EvStr
+
+            if (pieceNode instanceof StrNode) {
+                piece = buildStrRaw((StrNode) pieceNode);
+                estimatedSize = ((StrNode) pieceNode).getValue().realSize();
+            } else if (pieceNode instanceof EvStrNode) {
+                if (scope.maybeUsingRefinements()) {
+                    // refined asString must still go through dispatch
+                    TemporaryVariable result = createTemporaryVariable();
+                    addInstr(new AsStringInstr(scope, result, build(((EvStrNode) pieceNode).getBody()), scope.maybeUsingRefinements()));
+                    piece = result;
+                } else {
+                    // evstr/asstring logic lives in BuildCompoundString now, unwrap and try again
+                    pieceNode = ((EvStrNode) pieceNode).getBody();
+                    continue;
+                }
+            } else {
+                piece = build(pieceNode);
+            }
+
+            break;
         }
 
-        return piece == null ? manager.getNil() : piece;
+        if (piece instanceof MutableString) {
+            piece = ((MutableString)piece).frozenString;
+        }
+
+        pieces[i] = piece == null ? manager.getNil() : piece;
+
+        return estimatedSize;
     }
 
     public Operand buildDRegexp(Variable result, DRegexpNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            // dregexp does not use estimated size
+            dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
@@ -2589,26 +2616,34 @@ public class IRBuilder {
     public Operand buildDStr(Variable result, DStrNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return result;
     }
 
     public Operand buildDSymbol(Variable result, DSymbolNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return copyAndReturnValue(new DynamicSymbol(result));
     }
 
@@ -2619,14 +2654,18 @@ public class IRBuilder {
     public Operand buildDXStr(Variable result, DXStrNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = dynamicPiece(nodePieces[i]);
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i]);
         }
 
         Variable stringResult = createTemporaryVariable();
         if (result == null) result = createTemporaryVariable();
+
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
-        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+
         return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
     }
 
@@ -2755,14 +2794,6 @@ public class IRBuilder {
         return isEnsureExpr ? ensureExprValue : rv;
     }
 
-    public Operand buildEvStr(EvStrNode node) {
-        TemporaryVariable result = createTemporaryVariable();
-
-        addInstr(new AsStringInstr(scope, result, build(node.getBody()), scope.maybeUsingRefinements()));
-
-        return result;
-    }
-
     public Operand buildFalse() {
         return manager.getFalse();
     }
@@ -2844,7 +2875,7 @@ public class IRBuilder {
     public Operand buildFlip(FlipNode flipNode) {
         Ruby runtime = scope.getManager().getRuntime();
         Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol("NotImplementedError"));
-        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new StringLiteral("flip-flop is no longer supported in JRuby")}, null));
+        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new MutableString("flip-flop is no longer supported in JRuby")}, null));
 
         addInstr(new ThrowExceptionInstr(exception));
 
@@ -3050,7 +3081,7 @@ public class IRBuilder {
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
-        return new StringLiteral(literalNode.getSymbolName());
+        return new MutableString(literalNode.getSymbolName());
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
@@ -3179,7 +3210,7 @@ public class IRBuilder {
         Operand rv = build(nextNode.getValueNode());
 
         // If we have ensure blocks, have to run those first!
-        if (!activeEnsureBlockStack.empty()) emitEnsureBlocks(currLoop);
+        if (!activeEnsureBlockStack.isEmpty()) emitEnsureBlocks(currLoop);
 
         if (currLoop != null) {
             // If a regular loop, the next is simply a jump to the end of the iteration
@@ -3525,7 +3556,7 @@ public class IRBuilder {
 
     public Operand buildRedo(RedoNode redoNode) {
         // If we have ensure blocks, have to run those first!
-        if (!activeEnsureBlockStack.empty()) {
+        if (!activeEnsureBlockStack.isEmpty()) {
             emitEnsureBlocks(getCurrentLoop());
         }
 
@@ -3562,11 +3593,6 @@ public class IRBuilder {
         return buildEnsureInternal(node, null);
     }
 
-    /**
-     * Global names and aliases that reference the exception in flight
-     */
-    private static final List<String> EXCEPTION_GLOBALS = Arrays.asList("$!", "$ERROR_INFO", "$@", "$ERROR_POSITION");
-
     private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
                 rescueNode.getElseNode() != null) return false;
@@ -3580,13 +3606,25 @@ public class IRBuilder {
 
         // This optimization omits backtrace info for the exception getting rescued so we cannot
         // optimize the exception variable.
-        if (body instanceof GlobalVarNode
-                && EXCEPTION_GLOBALS.contains(((GlobalVarNode) body).getName().idString())) return false;
+        if (body instanceof GlobalVarNode && isErrorInfoGlobal(((GlobalVarNode) body).getName().idString())) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
         // effecting or being able to access $!.
         return body instanceof SideEffectFree;
+    }
+
+    private static boolean isErrorInfoGlobal(final String name) {
+        // Global names and aliases that reference the exception in flight
+        switch (name) {
+            case "$!" :
+            case "$ERROR_INFO" :
+            case "$@" :
+            case "$ERROR_POSITION" :
+                return true;
+            default :
+                return false;
+        }
     }
 
     private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {
@@ -3737,7 +3775,7 @@ public class IRBuilder {
         //
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
-        if (activeRescueBlockStack.empty()) {
+        if (activeRescueBlockStack.isEmpty()) {
             throwSyntaxError(retryNode, "Invalid retry");
         } else {
             addInstr(new ThreadPollInstr(true));
@@ -3755,7 +3793,7 @@ public class IRBuilder {
         // Before we return,
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
-        if (!activeEnsureBlockStack.empty()) {
+        if (!activeEnsureBlockStack.isEmpty()) {
             retVal = addResultInstr(new CopyInstr(createTemporaryVariable(), retVal));
             emitEnsureBlocks(null);
         }
@@ -3780,7 +3818,7 @@ public class IRBuilder {
                     addInstr(new CheckForLJEInstr(definedWithinMethod));
                 }
                 // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
-                if (!activeRescueBlockStack.empty()) {
+                if (!activeRescueBlockStack.isEmpty()) {
                     RescueBlockInfo rbi = activeRescueBlockStack.peek();
                     addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
                 }
@@ -3874,7 +3912,7 @@ public class IRBuilder {
 
         if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
 
-        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
+        return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
@@ -3989,7 +4027,7 @@ public class IRBuilder {
     }
 
     public Operand buildVAlias(VAliasNode valiasNode) {
-        addInstr(new GVarAliasInstr(new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName())));
+        addInstr(new GVarAliasInstr(new MutableString(valiasNode.getNewName()), new MutableString(valiasNode.getOldName())));
 
         return manager.getNil();
     }

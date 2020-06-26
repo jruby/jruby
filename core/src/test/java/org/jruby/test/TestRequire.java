@@ -29,16 +29,13 @@
 
 package org.jruby.test;
 
-import java.util.ArrayList;
-
-import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 
 /**
  * Simple test to make sure require works properly in conjunction with jars
  * in the classpath.
  */
-public class TestRequire extends TestRubyBase {
+public class TestRequire extends Base {
     public TestRequire(String name) {
         super(name);
     }

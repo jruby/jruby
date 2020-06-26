@@ -2,7 +2,7 @@ package org.jruby.test;
 
 import org.jruby.exceptions.RaiseException;
 
-public class TestParser extends TestRubyBase {
+public class TestParser extends Base {
     
     public void testWarningLineNumber() throws Exception {
         String out;

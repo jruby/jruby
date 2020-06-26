@@ -1442,11 +1442,19 @@ public final class StringSupport {
         if (!alnumSeen) {
             s = end;
             while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
+                byte tmp[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
                 int cl = preciseLength(enc, bytes, s, end);
                 if (cl <= 0) continue;
-                neighbor = succChar(enc, bytes, s, cl);
-                if (neighbor == NeighborChar.FOUND) return valueCopy;
-                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
+                System.arraycopy(bytes, s, tmp, 0, cl);
+                neighbor = succChar(enc, tmp, 0, cl);
+                if (neighbor == NeighborChar.FOUND) {
+                    System.arraycopy(tmp, 0, bytes, s, cl);
+                    return valueCopy;
+                }
+                if (neighbor == NeighborChar.WRAPPED) {
+                    System.arraycopy(tmp, 0, bytes, s, cl);
+                }
+                if (preciseLength(enc, bytes, s, s + cl) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
                 if (!enc.isAsciiCompatible()) {
                     System.arraycopy(bytes, s, carry, 0, cl);
                     carryLen = cl;

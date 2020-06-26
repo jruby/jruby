@@ -36,7 +36,7 @@ import org.jruby.RubyString;
 /**
  * Test case for functionality in RubyArray
  */
-public class TestRubyString extends TestRubyBase {
+public class TestRubyString extends Base {
     public TestRubyString(final String name) {
         super(name);
     }

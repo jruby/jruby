@@ -90,7 +90,7 @@ class Enumerator
     end
 
     def next
-      reset unless @fiber
+      reset unless @fiber&.__alive__
 
       val = @fiber.resume
 

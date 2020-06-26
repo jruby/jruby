@@ -33,16 +33,13 @@
 package org.jruby.test;
 
 import org.jruby.Ruby;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
-import org.jruby.RubySymbol;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author chadfowler
  */
-public class TestRubyHash extends TestRubyBase {
+public class TestRubyHash extends Base {
 
     private String result;
 

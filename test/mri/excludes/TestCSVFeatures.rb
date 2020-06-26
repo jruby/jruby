@@ -1,1 +1,1 @@
-exclude :test_gzip_reader, "unfinished in initial 2.6 work, #6161"
+exclude :test_gzip_reader, "only fails on Linux, but also fails on CRuby (#6157)"

@@ -10,6 +10,8 @@
  */
 package org.jruby.util.io;
 
+import org.jruby.javasupport.Java;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -147,7 +149,7 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
     private static Field accessibleField(final String name) {
         try {
             Field field = ByteArrayInputStream.class.getDeclaredField(name);
-            field.setAccessible(true);
+            Java.trySetAccessible(field);
             return field;
         }
         catch (NoSuchFieldException ex) {

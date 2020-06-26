@@ -168,7 +168,6 @@ import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
-import org.jruby.util.func.Function1;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
@@ -1366,14 +1365,6 @@ public final class Ruby implements Constantizable {
         Enumeration<RubyModule> e = allModules.keys();
         while (e.hasMoreElements()) {
             func.accept(e.nextElement());
-        }
-    }
-
-    @Deprecated
-    public void eachModule(Function1<Object, IRubyObject> func) {
-        Enumeration<RubyModule> e = allModules.keys();
-        while (e.hasMoreElements()) {
-            func.apply(e.nextElement());
         }
     }
 
@@ -3187,6 +3178,18 @@ public final class Ruby implements Constantizable {
     }
 
     /**
+     * Add a post-termination exit function that should be run to shut down JRuby internal services.
+     *
+     * This will be run toward the end of teardown, after all user code has finished executing (e.g. at_exit
+     * hooks and user-defined finalizers). The exit functions registered here are run in FILO order.
+     *
+     * @param postExit the {@link ExitFunction} to run after user exit hooks have completed
+     */
+    public void pushPostExitFunction(ExitFunction postExit) {
+        postExitBlocks.add(0, postExit);
+    }
+
+    /**
      * It is possible for looping or repeated execution to encounter the same END
      * block multiple times.  Rather than store extra runtime state we will just
      * make sure it is not already registered.  at_exit by contrast can push the
@@ -3257,58 +3260,34 @@ public final class Ruby implements Constantizable {
     // catch exception. This makes debugging really hard. This is why
     // tearDown(boolean) exists.
     public void tearDown(boolean systemExit) {
-        int status = 0;
-
-        // clear out old style recursion guards so they don't leak
-        mriRecursionGuard = null;
-
         final ThreadContext context = getCurrentContext();
 
-        // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
-        // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
-        // bogus scope back for at_exit block run.  This is buggy if at_exit is capturing vars.
-        if (!context.hasAnyScopes()) {
-            StaticScope topStaticScope = getStaticScopeFactory().newLocalScope(null);
-            context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
+        int status = userTeardown(context);
+
+        systemTeardown(context);
+
+        if (systemExit && status != 0) {
+            throw newSystemExit(status);
         }
 
-        // Run all exit functions from at_exit, END, or Java code
-        while (!exitBlocks.isEmpty()) {
-            ExitFunction fun = exitBlocks.remove(0);
-            int ret = fun.applyAsInt(context);
-            if (ret != 0) {
-                status = ret;
-            }
-        }
-
-        // Shut down thread service after at_exit hooks have run
-        threadService.teardown();
-
-        // Fetches (and unsets) the SIGEXIT handler, if one exists.
-        IRubyObject trapResult = RubySignal.__jtrap_osdefault_kernel(this.getNil(), this.newString("EXIT"));
-        if (trapResult instanceof RubyArray) {
-            IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
-            IRubyObject exitHandlerProc = trapResultEntries[0];
-            if (exitHandlerProc instanceof RubyProc) {
-                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
-            }
-        }
-
-        if (finalizers != null) {
-            synchronized (finalizersMutex) {
-                for (Iterator<Finalizable> finalIter = new ArrayList<>(
-                        finalizers.keySet()).iterator(); finalIter.hasNext();) {
-                    Finalizable f = finalIter.next();
-                    if (f != null) {
-                        try {
-                            f.finalize();
-                        } catch (Throwable t) {
-                            // ignore
-                        }
-                    }
-                    finalIter.remove();
+        // This is a rather gross way to ensure nobody else performs the same clearing of globalRuntime followed by
+        // initializing a new runtime, which would cause our clear below to clear the wrong runtime. Synchronizing
+        // against the class is a problem, but the overhead of teardown and creating new containers should outstrip
+        // a global synchronize around a few field accesses. -CON
+        if (this == globalRuntime) {
+            synchronized (Ruby.class) {
+                if (this == globalRuntime) {
+                    globalRuntime = null;
                 }
             }
+        }
+    }
+
+    private void systemTeardown(ThreadContext context) {
+        // Run post-user exit hooks, such as for shutting down internal JRuby services
+        while (!postExitBlocks.isEmpty()) {
+            ExitFunction fun = postExitBlocks.remove(0);
+            fun.applyAsInt(context);
         }
 
         synchronized (internalFinalizersMutex) {
@@ -3344,29 +3323,67 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
-        // swap with a new service to dereference all thread constructs
-        threadService = new ThreadService(this);
+        // clear out old style recursion guards so they don't leak
+        mriRecursionGuard = null;
 
         // shut down executors
         getJITCompiler().shutdown();
         getExecutor().shutdown();
         getFiberExecutor().shutdown();
 
-        if (systemExit && status != 0) {
-            throw newSystemExit(status);
+        // Fetches (and unsets) the SIGEXIT handler, if one exists.
+        IRubyObject trapResult = RubySignal.__jtrap_osdefault_kernel(this.getNil(), this.newString("EXIT"));
+        if (trapResult instanceof RubyArray) {
+            IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
+            IRubyObject exitHandlerProc = trapResultEntries[0];
+            if (exitHandlerProc instanceof RubyProc) {
+                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
+            }
         }
 
-        // This is a rather gross way to ensure nobody else performs the same clearing of globalRuntime followed by
-        // initializing a new runtime, which would cause our clear below to clear the wrong runtime. Synchronizing
-        // against the class is a problem, but the overhead of teardown and creating new containers should outstrip
-        // a global synchronize around a few field accesses. -CON
-        if (this == globalRuntime) {
-            synchronized (Ruby.class) {
-                if (this == globalRuntime) {
-                    globalRuntime = null;
+        // Shut down and replace thread service after all other hooks and finalizers have run
+        threadService.teardown();
+        threadService = new ThreadService(this);
+
+    }
+
+    private int userTeardown(ThreadContext context) {
+        int status = 0;
+
+        // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
+        // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
+        // bogus scope back for at_exit block run.  This is buggy if at_exit is capturing vars.
+        if (!context.hasAnyScopes()) {
+            StaticScope topStaticScope = getStaticScopeFactory().newLocalScope(null);
+            context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
+        }
+
+        // Run all exit functions from user hooks like at_exit
+        while (!exitBlocks.isEmpty()) {
+            ExitFunction fun = exitBlocks.remove(0);
+            int ret = fun.applyAsInt(context);
+            if (ret != 0) {
+                status = ret;
+            }
+        }
+
+        if (finalizers != null) {
+            synchronized (finalizersMutex) {
+                for (Iterator<Finalizable> finalIter = new ArrayList<>(
+                        finalizers.keySet()).iterator(); finalIter.hasNext();) {
+                    Finalizable f = finalIter.next();
+                    if (f != null) {
+                        try {
+                            f.finalize();
+                        } catch (Throwable t) {
+                            // ignore
+                        }
+                    }
+                    finalIter.remove();
                 }
             }
         }
+        return status;
     }
 
     /**
@@ -4225,9 +4242,14 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * @param exceptionClass
-     * @param message
-     * @return
+     * Construct a new RaiseException wrapping a new Ruby exception object appropriate to the given exception class.
+     *
+     * There are additional forms of this construction logic in {@link RaiseException#from}.
+     *
+     * @param exceptionClass the exception class from which to construct the exception object
+     * @param message a simple message for the exception
+     * @return a new RaiseException wrapping a new Ruby exception
+     * @see RaiseException#from(Ruby, RubyClass, String)
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
         return RaiseException.from(this, exceptionClass, message);
@@ -5415,9 +5437,15 @@ public final class Ruby implements Constantizable {
         }
     };
 
-    // Contains a list of all blocks (as Procs) that should be called when
-    // the runtime environment exits.
+    /**
+     * Reserved for userland at_exit logic that runs before internal services start shutting down.
+     */
     private final List<ExitFunction> exitBlocks = Collections.synchronizedList(new LinkedList<>());
+
+    /**
+     * Registry of shutdown operations that should happen after all user code has been run (e.g. at_exit hooks).
+     */
+    private final List<ExitFunction> postExitBlocks = Collections.synchronizedList(new LinkedList<>());
 
     private Profile profile;
 

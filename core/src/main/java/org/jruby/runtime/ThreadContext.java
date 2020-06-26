@@ -1381,19 +1381,4 @@ public final class ThreadContext {
         if (encodingHolder == null) encodingHolder = new Encoding[1];
         return encodingHolder;
     }
-
-    @Deprecated
-    public void setFile(String file) {
-        backtrace[backtraceIndex].filename = file;
-    }
-
-    @Deprecated
-    private org.jruby.util.RubyDateFormat dateFormat;
-
-    @Deprecated
-    public org.jruby.util.RubyDateFormat getRubyDateFormat() {
-        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US);
-
-        return dateFormat;
-    }
 }

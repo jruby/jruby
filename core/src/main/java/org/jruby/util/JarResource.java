@@ -86,8 +86,8 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
         return null;
     }
 
-    public static boolean removeJarResource(String jarPath){
-        return jarCache.remove(jarPath);
+    public static void removeJarResource(String jarPath){
+        jarCache.remove(jarPath);
     }
 
     private final CharSequence jarPrefix;

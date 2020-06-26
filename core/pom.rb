@@ -41,16 +41,16 @@ project 'JRuby Core' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.25', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.28', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.54', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.28', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.32', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.57', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.15', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.12'
+  jar 'com.github.jnr:jnr-ffi:2.1.15'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.32'
-  jar 'org.jruby.jcodings:jcodings:1.0.48'
+  jar 'org.jruby.joni:joni:2.1.40'
+  jar 'org.jruby.jcodings:jcodings:1.0.55'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
@@ -73,7 +73,7 @@ project 'JRuby Core' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.5'
+  jar 'com.headius:backport9:1.7'
 
   jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
 
@@ -235,10 +235,12 @@ project 'JRuby Core' do
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
-          'includes' => [ 'org/jruby/test/MainTestSuite.java',
-                          'org/jruby/embed/**/*Test*.java',
-                          'org/jruby/util/**/*Test*.java',
-                          'org/jruby/runtime/**/*Test*.java' ],
+          includes: [
+              'org/jruby/test/**/*Test*.java',
+              'org/jruby/embed/**/*Test*.java',
+              'org/jruby/util/**/*Test*.java',
+              'org/jruby/runtime/**/*Test*.java'
+          ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   plugin(:jar,

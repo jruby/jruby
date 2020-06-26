@@ -1058,7 +1058,7 @@ public class RubyKernel {
 
         String file = context.getCurrentStaticScope().getFile();
 
-        if (file == null || file.matches("\\A\\((.*)\\)")) {
+        if (file == null || file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")) {
             throw runtime.newLoadError("cannot infer basepath");
         }
 

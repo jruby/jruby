@@ -1,8 +1,9 @@
 package org.jruby.ir.interpreter;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Stack;
 import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
@@ -16,7 +17,6 @@ import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 
 public class InterpreterContext {
@@ -111,7 +111,7 @@ public class InterpreterContext {
             if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
         }
 
-        Stack<Integer> markers = new Stack();
+        Deque<Integer> markers = new ArrayDeque<>(8);
         rescueIPCs = new int[length];
         int rpc = -1;
 

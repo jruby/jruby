@@ -26,16 +26,6 @@ public interface InvocationCompiler {
     void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call);
 
     /**
-     * Invoke the to_s method with AsString semantics (tainting, refinements, etc).
-     * <p>
-     * Stack required: context, self, target
-     *
-     * @param file
-     * @param line
-     */
-    void invokeAsString(String file, int line, String scopeFieldName, CallBase call);
-
-    /**
      * Invoke a fixnum-receiving method on an object other than self.
      * <p>
      * Stack required: context, self, receiver (fixnum will be handled separately)

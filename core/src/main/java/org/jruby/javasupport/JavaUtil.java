@@ -36,6 +36,8 @@ package org.jruby.javasupport;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -60,6 +62,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
@@ -576,6 +579,42 @@ public class JavaUtil {
             if ( ! silent ) Helpers.throwException(e.getTargetException());
             return null;
         }
+    }
+
+    public static MethodHandle getHandleSafe(Method method, Class caller, MethodHandles.Lookup lookup) {
+        try {
+            if (Modules.trySetAccessible(method, caller)) {
+                return lookup.unreflect(method);
+            }
+        } catch (Exception iae2) {
+            // ignore, return null below
+        }
+
+        return null;
+    }
+
+    public static MethodHandle getGetterSafe(Field field, Class caller, MethodHandles.Lookup lookup) {
+        try {
+            if (Modules.trySetAccessible(field, caller)) {
+                return lookup.unreflectGetter(field);
+            }
+        } catch (Exception iae2) {
+            // ignore, return null below
+        }
+
+        return null;
+    }
+
+    public static MethodHandle getSetterSafe(Field field, Class caller, MethodHandles.Lookup lookup) {
+        try {
+            if (Modules.trySetAccessible(field, caller)) {
+                return lookup.unreflectSetter(field);
+            }
+        } catch (Exception iae2) {
+            // ignore, return null below
+        }
+
+        return null;
     }
 
     public static abstract class JavaConverter {

@@ -23,8 +23,8 @@ import java.util.Collection;
 import java.util.List;
 
 public class BasicBlock implements ExplicitVertexID, Comparable {
-    private int         id;             // Basic Block id
-    private CFG         cfg;            // CFG that this basic block belongs to
+    private final int         id;             // Basic Block id
+    private final CFG         cfg;            // CFG that this basic block belongs to
     private Label       label;          // All basic blocks have a starting label
     private List<Instr> instrs;         // List of non-label instructions
     private boolean     isRescueEntry;  // Is this basic block entry of a rescue?
@@ -267,7 +267,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         Collection<Edge<BasicBlock>> outs = cfg.getOutgoingEdges(this);
         if (!outs.isEmpty()) {
             for (Edge<BasicBlock> edge : outs) {
-                buf.append(" -" + edge.getType() + "->" + edge.getDestination().getID());
+                buf.append(" -").append(edge.getType()).append("->").append(edge.getDestination().getID());
             }
         }
         buf.append('\n');
