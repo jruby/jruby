@@ -88,6 +88,7 @@ matrix:
       jdk: openjdk11
       script:
         - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby fast jdk14
       jdk: openjdk14
