@@ -3767,9 +3767,11 @@ public final class Ruby implements Constantizable {
 
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 
-    public RaiseException newErrnoEADDRFromBindException(BindException be) {
-		return newErrnoEADDRFromBindException(be, null);
-	}
+    public RaiseException newErrnoFromBindException(BindException be, String contextMessage) {
+        Errno errno = Helpers.errnoFromException(be);
+
+        return newErrnoFromErrno(errno, contextMessage);
+    }
 
     public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {
         String msg = be.getMessage();
@@ -5505,6 +5507,11 @@ public final class Ruby implements Constantizable {
                     + "If you need this option please set it manually as a JVM property.\n"
                     + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
         }
+    }
+
+    @Deprecated
+    public RaiseException newErrnoEADDRFromBindException(BindException be) {
+        return newErrnoEADDRFromBindException(be, null);
     }
 
 }

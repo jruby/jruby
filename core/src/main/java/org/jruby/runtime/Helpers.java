@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 
+import java.net.BindException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
@@ -257,16 +258,17 @@ public class Helpers {
         } catch (AccessDeniedException ade) {
             return Errno.EACCES;
         } catch (DirectoryNotEmptyException dnee) {
-            switch (dnee.getMessage()) {
-                case "File exists":
-                    return Errno.EEXIST;
-                case "Directory not empty":
-                    return Errno.ENOTEMPTY;
-            }
+            return errnoFromMessage(dnee);
+        } catch (BindException be) {
+            return errnoFromMessage(be);
         } catch (Throwable t2) {
             // fall through
         }
 
+        return errnoFromMessage(t);
+    }
+
+    private static Errno errnoFromMessage(Throwable t) {
         final String errorMessage = t.getMessage();
 
         if (errorMessage != null) {
