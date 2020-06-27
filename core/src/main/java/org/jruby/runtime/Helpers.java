@@ -303,6 +303,8 @@ public class Helpers {
                     return Errno.ENETUNREACH;
                 case "Address already in use":
                     return Errno.EADDRINUSE;
+                case "Cannot assign requested address":
+                    return Errno.EADDRNOTAVAIL;
                 case "No space left on device":
                     return Errno.ENOSPC;
                 case "Message too large": // Alpine Linux
@@ -317,8 +319,8 @@ public class Helpers {
                 case "permission denied":
                 case "Permission denied":
                     return Errno.EACCES;
-                case "Protocol family unavailable":
-                    return Errno.EADDRNOTAVAIL;
+                case "Protocol family not supported":
+                    return Errno.EPFNOSUPPORT;
             }
         }
         return null;
