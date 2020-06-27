@@ -737,6 +737,10 @@ public class RubyBasicSocket extends RubyIO {
         return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
     }
 
+    protected static String bindContextMessage(IRubyObject host, int port) {
+        return "bind(2) for " + host.inspect() + " port " + port;
+    }
+
     @Deprecated
     public IRubyObject recv(IRubyObject[] args) {
         return recv(getRuntime().getCurrentContext(), args);
