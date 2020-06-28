@@ -1,0 +1,5 @@
+fails:Integer#hash with a small value resists CVE-2011-4815 by having different hash codes in different processes
+fails:Integer#hash with a large value resists CVE-2011-4815 by having different hash codes in different processes
+fails:Float#hash resists CVE-2011-4815 by having different hash codes in different processes
+fails:Rational#hash resists CVE-2011-4815 by having different hash codes in different processes
+fails:Complex#hash resists CVE-2011-4815 by having different hash codes in different processes
