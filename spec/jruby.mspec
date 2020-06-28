@@ -4,6 +4,9 @@ require 'rbconfig'
 require 'java'
 require 'jruby'
 
+# Inherit from the default configuration
+load "#{__dir__}/ruby/default.mspec"
+
 # Some non-deterministic specs assume a GC will actually fire.  For spec
 # runs we change our noop version of GC.start to requesting we actually
 # perform a GC on the JVM.
@@ -21,29 +24,11 @@ SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
 TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 
 class MSpecScript
+  set :prefix, 'spec/ruby'
+
   jruby = RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
   jruby = File.expand_path("../../bin/#{jruby}", __FILE__)
   set :target, jruby
-
-  # Command Line specs
-  set :command_line, [
-    SPEC_DIR + '/command_line',
-  ]
-
-  # Language features specs
-  set :language, [
-    SPEC_DIR + '/language',
-  ]
-
-  # Core library specs
-  set :core, [
-    SPEC_DIR + '/core',
-  ]
-
-  # Standard library specs
-  set :library, [
-    SPEC_DIR + '/library',
-  ]
 
   slow_specs = [
       SPEC_DIR + '/core/process',
@@ -116,8 +101,6 @@ class MSpecScript
 
   # This set of files is run by mspec ci
   set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
-
-  set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
                         [%r(^.*/language/),     TAGS_DIR + '/ruby/language/'],
