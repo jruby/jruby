@@ -46,7 +46,8 @@ class MSpecScript
       SPEC_DIR + '/library/net/http',
       # This requires --debug which slows down or changes other spec results
       SPEC_DIR + '/core/tracepoint',
-      *get(:command_line)
+      *get(:command_line),
+      *get(:security),
   ]
 
   set :fast, [
@@ -100,13 +101,14 @@ class MSpecScript
   end
 
   # This set of files is run by mspec ci
-  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
+  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library) + get(:security)
 
   set :tags_patterns, [
                         [%r(^.*/language/),     TAGS_DIR + '/ruby/language/'],
                         [%r(^.*/core/),         TAGS_DIR + '/ruby/core/'],
                         [%r(^.*/command_line/), TAGS_DIR + '/ruby/command_line/'],
                         [%r(^.*/library/),      TAGS_DIR + '/ruby/library/'],
+                        [%r(^.*/security/),     TAGS_DIR + '/ruby/security/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 end
