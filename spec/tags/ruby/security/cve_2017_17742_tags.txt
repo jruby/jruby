@@ -1,0 +1,2 @@
+fails:WEBrick resists CVE-2017-17742 for a response splitting headers
+fails:WEBrick resists CVE-2017-17742 for a response splitting cookie headers
