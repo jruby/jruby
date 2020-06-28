@@ -103,7 +103,11 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 break;
             case 1:
+                _host = context.nil;
                 _port = args[0];
+                break;
+            default:
+                throw runtime.newArgumentError(args.length, 1, 2);
         }
 
         int port = SocketUtils.getPortFrom(context, _port);
@@ -124,7 +128,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
 
         } catch(BindException e) {
-            throw runtime.newErrnoEADDRFromBindException(e);
+            throw runtime.newErrnoFromBindException(e, bindContextMessage(_host, port));
 
         } catch(SocketException e) {
             String msg = e.getMessage();
