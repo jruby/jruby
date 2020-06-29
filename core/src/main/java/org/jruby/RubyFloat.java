@@ -48,6 +48,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -667,14 +668,19 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "hash")
     @Override
     public RubyFixnum hash() {
-        return metaClass.runtime.newFixnum( hashCode() );
+        Ruby runtime = metaClass.runtime;
+        return RubyFixnum.newFixnum(runtime, floatHash(runtime, value));
     }
 
     @Override
     public final int hashCode() {
+        return (int) floatHash(getRuntime(), value);
+    }
+
+    private static long floatHash(Ruby runtime, double value) {
         final double val = value == 0.0 ? -0.0 : value;
-        final long l = Double.doubleToLongBits(val);
-        return (int) ( l ^ l >>> 32 );
+        long hashLong = Double.doubleToLongBits(val);
+        return Helpers.multAndMix(runtime.getHashSeedK0(), hashLong);
     }
 
     /** flo_fo
