@@ -2624,6 +2624,17 @@ public class Helpers {
         return (RubyFixnum) hval;
     }
 
+    // MRI: mult_and_mix, roughly since we have no uint64 type
+    public static long multAndMix(long seed, long hash) {
+        long hm1 = seed >> 32, hm2 = hash >> 32;
+        long lm1 = seed, lm2 = hash;
+        long v64_128 = hm1 * hm2;
+        long v32_96 = hm1 * lm2 + lm1 * hm2;
+        long v1_32 = lm1 * lm2;
+
+        return (v64_128 + (v32_96 >> 32)) ^ ((v32_96 << 32) + v1_32);
+    }
+
     public static long murmurCombine(long h, long i)
     {
         long v = 0;
