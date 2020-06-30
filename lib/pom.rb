@@ -27,7 +27,7 @@ default_gems = [
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
     ['scanf', '1.0.0'],
-    ['webrick', '1.4.2'],
+    ['webrick', '1.6.0'],
 ]
 
 bundled_gems = [
