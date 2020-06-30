@@ -5,8 +5,6 @@
 
 strategy:
   matrix:
-    mac:
-      imageName: 'macos-10.14'
     windows:
       imageName: 'windows-2019'
 
