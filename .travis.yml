@@ -44,26 +44,6 @@ matrix:
   fast_finish: true
 
   include:
-    - name: JRuby tests jit ARM64
-      jdk: openjdk11
-      arch: arm64
-      script:
-        - ./mvnw clean package -Pbootstrap
-        - jruby -S rake test:jruby
-
-    - name: JRuby tests jit PPC64LE
-      jdk: openjdk11
-      arch: ppc64le
-      script:
-        - ./mvnw clean package -Pbootstrap
-        - jruby -S rake test:jruby
-
-    - name: JRuby tests jit S390X
-      jdk: openjdk11
-      arch: s390x
-      script:
-        - ./mvnw clean package -Pbootstrap
-        - jruby -S rake test:jruby
 
     - stage: test
       name: MRI core int
@@ -161,6 +141,35 @@ matrix:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:jruby
       env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: JRuby tests jit indy jdk11 ARM64
+      jdk: openjdk11
+      arch: arm64
+      script:
+        - ./mvnw clean package -Pbootstrap
+        - jruby -S rake test:jruby
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: spec/ruby fast jdk11 ARM64
+      jdk: openjdk11
+      arch: arm64
+      script:
+        - ./mvnw clean package -Pbootstrap
+        - jruby -S rake spec:ruby:fast
+
+    - name: JRuby tests jit PPC64LE
+      jdk: openjdk11
+      arch: ppc64le
+      script:
+        - ./mvnw clean package -Pbootstrap
+        - jruby -S rake test:jruby
+
+    - name: JRuby tests jit S390X
+      jdk: openjdk11
+      arch: s390x
+      script:
+        - ./mvnw clean package -Pbootstrap
+        - jruby -S rake test:jruby
 
     - name: JRuby tests aot
       script:
@@ -268,6 +277,8 @@ matrix:
   allow_failures:
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - name: concurrent ruby # temporary, see ruby-concurrency/concurrent-ruby#862
+    - name: JRuby tests jit PPC64LE
+    - name: JRuby tests jit S390X
 
 script: tool/maven-ci-script.sh
 
