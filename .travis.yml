@@ -305,3 +305,4 @@ addons:
   apt:
     packages:
       - haveged
+      - ant
