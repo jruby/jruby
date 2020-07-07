@@ -115,13 +115,9 @@ public class PosixShim {
             }
 
             return written;
-        }  catch (NotYetConnectedException nyce) {
-            setErrno(Errno.ENOTCONN);
-            error = nyce;
-            return -1;
-        } catch (IOException ioe) {
-            setErrno(Helpers.errnoFromException(ioe));
-            error = ioe;
+        }  catch (Exception e) {
+            setErrno(Helpers.errnoFromException(e));
+            error = e;
             return -1;
         }
     }

@@ -74,6 +74,7 @@ import static jnr.constants.platform.IPProto.IPPROTO_TCP;
 import static jnr.constants.platform.IPProto.IPPROTO_IP;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
+import static org.jruby.runtime.Helpers.throwErrorFromException;
 
 /**
  * Implementation of the BasicSocket class from Ruby.
@@ -273,9 +274,9 @@ public class RubyBasicSocket extends RubyIO {
             default:
                 throw runtime.newErrnoENOPROTOOPTError();
             }
-        }
-        catch (IOException e) {
-            throw runtime.newErrnoENOPROTOOPTError();
+        } catch (Exception e) {
+            throwErrorFromException(context.runtime, e);
+            return null; // not reached
         }
     }
 
@@ -335,12 +336,9 @@ public class RubyBasicSocket extends RubyIO {
                     throw runtime.newErrnoENOPROTOOPTError();
                 }
             }
-        }
-        catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        }
-        catch(IOException e) {
-            throw runtime.newErrnoENOPROTOOPTError();
+        } catch (Exception e) {
+            throwErrorFromException(context.runtime, e);
+            return null; // not reached
         }
         return runtime.newFixnum(0);
     }
@@ -498,17 +496,10 @@ public class RubyBasicSocket extends RubyIO {
             if (read == 0) return null;
 
             return new ByteList(buffer.array(), 0, buffer.position(), false);
-        }
-        catch (IOException e) {
-            // All errors to sysread should be SystemCallErrors, but on a closed stream
-            // Ruby returns an IOError.  Java throws same exception for all errors so
-            // we resort to this hack...
-            if ( "Socket not open".equals(e.getMessage()) ) {
-                throw context.runtime.newIOError(e.getMessage());
-            }
-            throw context.runtime.newSystemCallError(e.getMessage());
-        }
-        finally {
+        } catch (Exception e) {
+            throwErrorFromException(context.runtime, e);
+            return null; // not reached
+        } finally {
             context.getThread().afterBlockingCall();
         }
     }
@@ -534,9 +525,9 @@ public class RubyBasicSocket extends RubyIO {
                 finally {
                     selectable.configureBlocking(oldBlocking);
                 }
-            }
-            catch (IOException e) {
-                throw context.runtime.newIOErrorFromException(e);
+            } catch (Exception e) {
+                throwErrorFromException(context.runtime, e);
+                return null; // not reached
             }
         }
     }
