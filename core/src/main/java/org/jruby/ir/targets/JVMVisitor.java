@@ -567,7 +567,6 @@ public class JVMVisitor extends IRVisitor {
         /* Compile the closure like a method */
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
 
-
         emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
         Handle handle = new Handle(
