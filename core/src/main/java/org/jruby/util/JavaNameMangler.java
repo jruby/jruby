@@ -33,6 +33,7 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.backtrace.FrameType;
 
@@ -286,7 +287,14 @@ public class JavaNameMangler {
             return "RUBY$method$" + mangleMethodNameInternal(scope.getId());
         }
         if (scope instanceof IRClosure) {
-            return "RUBY$block$" + mangleMethodNameInternal(scope.getNearestTopLocalVariableScope().getId());
+            IRScope ancestorScope = scope.getNearestTopLocalVariableScope();
+            String name;
+            if (ancestorScope instanceof IRScriptBody) {
+                name = Interpreter.ROOT;
+            } else {
+                name = ancestorScope.getId();
+            }
+            return "RUBY$block$" + mangleMethodNameInternal(name);
         }
         if (scope instanceof IRMetaClassBody) {
             return "RUBY$metaclass";
@@ -304,23 +312,6 @@ public class JavaNameMangler {
     }
 
     public static final String VARARGS_MARKER = "$__VARARGS__";
-
-    @Deprecated
-    public static String decodeMethodForBacktrace(String methodName) {
-        final List<String> name = decodeMethodTuple(methodName);
-        final String type = name.get(1); // e.g. RUBY $ class $ methodName
-        // root body gets named (root)
-        switch (type) {
-            case "script":    return "<main>";
-            case "metaclass": return "singleton class";
-            // remaining cases have an encoded name
-            case "method":    return demangleMethodName(name.get(2));
-            case "block":     return "block in " + demangleMethodNameInternal(name.get(2));
-            case "class":     // fall through
-            case "module":    return '<' + type + ':' + demangleMethodNameInternal(name.get(2)) + '>';
-        }
-        throw new IllegalStateException("unknown encoded method type '" + type + "' from " + methodName);
-    }
 
     // returns location $ type $ methodName as 3 elements or null if this is an invalid mangled name
     public static List<String> decodeMethodTuple(String methodName) {
