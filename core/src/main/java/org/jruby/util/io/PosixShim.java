@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
 
@@ -114,6 +115,10 @@ public class PosixShim {
             }
 
             return written;
+        }  catch (NotYetConnectedException nyce) {
+            setErrno(Errno.ENOTCONN);
+            error = nyce;
+            return -1;
         } catch (IOException ioe) {
             setErrno(Helpers.errnoFromException(ioe));
             error = ioe;

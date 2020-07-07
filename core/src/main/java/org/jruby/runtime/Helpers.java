@@ -8,6 +8,7 @@ import java.lang.reflect.Array;
 import java.net.BindException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -265,6 +266,8 @@ public class Helpers {
             return errnoFromMessage(dnee);
         } catch (BindException be) {
             return errnoFromMessage(be);
+        } catch (NotYetConnectedException nyce) {
+            return Errno.ENOTCONN;
         } catch (Throwable t2) {
             // fall through
         }
