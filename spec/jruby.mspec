@@ -83,6 +83,8 @@ class MSpecScript
 
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
 
+  get(:ci_xtags) << RbConfig::CONFIG['host_os']
+
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via
     # ruby_exe() in-process (see core/argf/gets_spec.rb)
