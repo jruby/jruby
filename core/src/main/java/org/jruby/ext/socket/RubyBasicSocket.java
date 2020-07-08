@@ -298,36 +298,62 @@ public class RubyBasicSocket extends RubyIO {
             bytes = doReadNonblock(context, buffer, exception);
         }
 
+        return handleReturnBytes(runtime, bytes, str, "recvfrom(2)", exception);
+    }
+
+    private IRubyObject handleReturnBytes(Ruby runtime, ByteList bytes, IRubyObject str, String exMessage, boolean exception) {
         if (bytes == null) {
             if (!exception) return runtime.newSymbol("wait_readable");
-            throw runtime.newErrnoEAGAINReadableError("recvfrom(2)");
+            throw runtime.newErrnoEAGAINReadableError(exMessage);
         }
 
-        if (str != null && str != context.nil) {
+        if (str != null && str != runtime.getNil()) {
             str = str.convertToString();
             ((RubyString) str).setValue(bytes);
             return str;
         }
+
         return RubyString.newString(runtime, bytes);
     }
 
     @Override
     @JRubyMethod(required = 1, optional = 2)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
         Channel channel = getChannel();
 
         if (!(channel instanceof DatagramChannel)) {
             return super.read_nonblock(context, args);
         }
 
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", args) != context.fals;
+        int argc = args.length;
+        boolean exception = true;
+        IRubyObject str = context.nil;
+        IRubyObject length;
 
-        IRubyObject length = args[0];
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, args);
+
+        if (!maybeHash.isNil()) {
+            exception = ArgsUtil.extractKeywordArg(context, "exception", maybeHash) != context.fals;
+            argc--;
+        }
+
+        switch (argc) {
+            case 3:
+            case 2:
+                str = args[1];
+                // fall through
+            case 1:
+                length = args[0];
+                break;
+            default:
+                throw runtime.newArgumentError(argc, 1, 3);
+        }
+
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
         ByteList bytes;
 
-        Ruby runtime = context.runtime;
         try {
             DatagramChannel dgram = (DatagramChannel) channel;
 
@@ -335,14 +361,23 @@ public class RubyBasicSocket extends RubyIO {
 
             dgram.receive(buffer);
 
-            buffer.flip();
-            bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+            if (buffer.position() == 0) {
+                bytes = null;
+            } else {
+                buffer.flip();
+                bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+            }
         } catch (Exception ex) {
             if (exception) throwErrorFromException(runtime, ex);
             return context.nil;
+        } finally {
+            if (Platform.IS_LINUX) {
+                // unset nonblocking to emulate recv(... MSG_DONTWAIT) leaving it blocking
+                getOpenFile().setBlocking(runtime, true);
+            }
         }
 
-        return RubyString.newString(runtime, bytes);
+        return handleReturnBytes(runtime, bytes, str, "read_nonblock", exception);
     }
 
     @JRubyMethod
