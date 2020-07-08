@@ -138,14 +138,47 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(name = "send")
     public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags) {
-        // TODO: implement flags
-        return syswrite(context, _mesg);
+        return doSend(context, _mesg, _flags, null);
     }
 
     @JRubyMethod(name = "send")
     public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
-        // TODO: implement flags and to
-        return send(context, _mesg, _flags);
+        return doSend(context, _mesg, _flags, _to);
+    }
+
+    private IRubyObject doSend(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
+        final SocketAddress sockaddr;
+
+        if (_to instanceof Addrinfo) {
+            Addrinfo addr = (Addrinfo) _to;
+            sockaddr = addr.getSocketAddress();
+        } else if (_to == null || _to.isNil()) {
+            sockaddr = null;
+        } else {
+            sockaddr = Sockaddr.addressFromSockaddr(context, _to);
+        }
+
+        RubyString mesg = _mesg.convertToString();
+        ByteList mesgByteList = mesg.getByteList();
+        ByteBuffer mesgBytes = ByteBuffer.wrap(mesgByteList.unsafeBytes(), mesgByteList.begin(), mesgByteList.realSize());
+
+        Channel channel = getChannel();
+
+        int written = 0;
+
+        // TODO: implement flags
+        try {
+            if (channel instanceof DatagramChannel && sockaddr != null) {
+                written = ((DatagramChannel) channel).send(mesgBytes, sockaddr);
+
+                return context.runtime.newFixnum(written);
+            } else {
+                return syswrite(context, _mesg);
+            }
+        } catch (Exception e) {
+            throwErrorFromException(context.runtime, e);
+            return null; // not reached
+        }
     }
 
     @JRubyMethod
@@ -153,7 +186,7 @@ public class RubyBasicSocket extends RubyIO {
         return recv(context, length, null, null);
     }
 
-    @JRubyMethod(required = 2, optional = 1) // (length) required = 1 handled above
+    @JRubyMethod(required = 1, optional = 2) // (length) required = 1 handled above
     public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
         IRubyObject length; RubyString str; IRubyObject flags;
 
@@ -185,22 +218,42 @@ public class RubyBasicSocket extends RubyIO {
         // TODO: implement flags
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
-        ByteList bytes = doRead(context, buffer);
+        ByteList bytes;
 
+        Channel channel = getChannel();
+
+        Ruby runtime = context.runtime;
+        if (channel instanceof DatagramChannel) {
+            try {
+                DatagramChannel dgram = (DatagramChannel) channel;
+
+                dgram.receive(buffer);
+
+                buffer.flip();
+                bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+            } catch (Exception e) {
+                throwErrorFromException(runtime, e);
+                return null; // not reached
+            }
+        } else {
+                bytes = doRead(context, buffer);
+        }
         if (bytes == null) return context.nil;
 
         if (str != null) {
             str.setValue(bytes);
             return str;
         }
-        return RubyString.newString(context.runtime, bytes);
+
+        return RubyString.newString(runtime, bytes);
     }
 
-    @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
+    @JRubyMethod(required = 1, optional = 3)
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
         int argc = args.length;
         boolean exception = true;
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
+        Ruby runtime = context.runtime;
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
         if (opts != context.nil) {
             argc--;
             exception = extractExceptionOnlyArg(context, (RubyHash) opts);
@@ -216,13 +269,34 @@ public class RubyBasicSocket extends RubyIO {
         }
 
         // TODO: implement flags
+
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
-        ByteList bytes = doReadNonblock(context, buffer);
+        ByteList bytes;
+
+        Channel channel = getChannel();
+
+        if (channel instanceof DatagramChannel) {
+            try {
+                DatagramChannel dgram = (DatagramChannel) channel;
+
+                getOpenFile().setBlocking(runtime, false);
+
+                dgram.receive(buffer);
+
+                buffer.flip();
+                bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+            } catch (Exception e) {
+                throwErrorFromException(runtime, e);
+                return null; // not reached
+            }
+        } else {
+            bytes = doReadNonblock(context, buffer);
+        }
 
         if (bytes == null) {
-            if (!exception) return context.runtime.newSymbol("wait_readable");
-            throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
+            if (!exception) return runtime.newSymbol("wait_readable");
+            throw runtime.newErrnoEAGAINReadableError("recvfrom(2)");
         }
 
         if (str != null && str != context.nil) {
@@ -230,7 +304,41 @@ public class RubyBasicSocket extends RubyIO {
             ((RubyString) str).setValue(bytes);
             return str;
         }
-        return RubyString.newString(context.runtime, bytes);
+        return RubyString.newString(runtime, bytes);
+    }
+
+    @Override
+    @JRubyMethod(required = 1, optional = 2)
+    public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
+        Channel channel = getChannel();
+
+        if (!(channel instanceof DatagramChannel)) {
+            return super.read_nonblock(context, args);
+        }
+
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", args) != context.fals;
+
+        IRubyObject length = args[0];
+        final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
+
+        ByteList bytes;
+
+        Ruby runtime = context.runtime;
+        try {
+            DatagramChannel dgram = (DatagramChannel) channel;
+
+            getOpenFile().setBlocking(runtime, false);
+
+            dgram.receive(buffer);
+
+            buffer.flip();
+            bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+        } catch (Exception ex) {
+            if (exception) throwErrorFromException(runtime, ex);
+            return context.nil;
+        }
+
+        return RubyString.newString(runtime, bytes);
     }
 
     @JRubyMethod
