@@ -308,6 +308,7 @@ public class Helpers {
                 case "Address already in use":
                     return Errno.EADDRINUSE;
                 case "Cannot assign requested address":
+                case "Can't assign requested address":
                     return Errno.EADDRNOTAVAIL;
                 case "No space left on device":
                     return Errno.ENOSPC;
