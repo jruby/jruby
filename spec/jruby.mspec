@@ -80,6 +80,8 @@ class MSpecScript
 
   get(:xtags) << 'critical'
   get(:ci_xtags) << 'critical'
+  get(:xtags) << 'hangs'
+  get(:ci_xtags) << 'hangs'
 
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
 
