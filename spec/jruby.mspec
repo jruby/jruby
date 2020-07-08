@@ -80,8 +80,14 @@ class MSpecScript
 
   get(:xtags) << 'critical'
   get(:ci_xtags) << 'critical'
+  get(:xtags) << 'hangs'
+  get(:ci_xtags) << 'hangs'
 
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
+
+  if (ENV["TRAVIS"] == "true")
+    get(:ci_xtags) << "travis" # Failing only on Travis
+  end
 
   get(:ci_xtags) << RbConfig::CONFIG['host_os']
 
