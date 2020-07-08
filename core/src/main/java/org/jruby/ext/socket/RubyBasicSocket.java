@@ -284,14 +284,18 @@ public class RubyBasicSocket extends RubyIO {
 
                 dgram.receive(buffer);
 
-                buffer.flip();
-                bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+                if (buffer.position() == 0) {
+                    bytes = null;
+                } else {
+                    buffer.flip();
+                    bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+                }
             } catch (Exception e) {
-                throwErrorFromException(runtime, e);
-                return null; // not reached
+                if (exception) throwErrorFromException(runtime, e);
+                return context.nil;
             }
         } else {
-            bytes = doReadNonblock(context, buffer);
+            bytes = doReadNonblock(context, buffer, exception);
         }
 
         if (bytes == null) {
@@ -612,7 +616,7 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    protected final ByteList doReadNonblock(ThreadContext context, final ByteBuffer buffer) {
+    protected final ByteList doReadNonblock(ThreadContext context, final ByteBuffer buffer, boolean exception) {
         Channel channel = getChannel();
 
         if ( ! (channel instanceof SelectableChannel) ) {
@@ -634,8 +638,8 @@ public class RubyBasicSocket extends RubyIO {
                     selectable.configureBlocking(oldBlocking);
                 }
             } catch (Exception e) {
-                throwErrorFromException(context.runtime, e);
-                return null; // not reached
+                if (exception) throwErrorFromException(context.runtime, e);
+                return null;
             }
         }
     }
