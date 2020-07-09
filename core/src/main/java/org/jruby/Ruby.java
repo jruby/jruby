@@ -4443,6 +4443,21 @@ public final class Ruby implements Constantizable {
         return posix;
     }
 
+    /**
+     * Get the native POSIX associated with this runtime.
+     *
+     * If native is not supported, this will return null.
+     *
+     * @return a native POSIX, or null if native is not supported
+     */
+    public POSIX getNativePosix() {
+        POSIX nativePosix = this.nativePosix;
+        if (nativePosix == null && config.isNativeEnabled()) {
+            this.nativePosix = nativePosix = POSIXFactory.getNativePOSIX(new JRubyPOSIXHandler(this));
+        }
+        return nativePosix;
+    }
+
     public void setRecordSeparatorVar(GlobalVariable recordSeparatorVar) {
         this.recordSeparatorVar = recordSeparatorVar;
     }
@@ -5205,6 +5220,7 @@ public final class Ruby implements Constantizable {
     private ThreadService threadService;
 
     private final POSIX posix;
+    private POSIX nativePosix;
 
     private final ObjectSpace objectSpace = new ObjectSpace();
 
