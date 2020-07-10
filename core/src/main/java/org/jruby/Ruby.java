@@ -242,9 +242,6 @@ public final class Ruby implements Constantizable {
      * The logger used to log relevant bits.
      */
     private static final Logger LOG = LoggerFactory.getLogger(Ruby.class);
-    static { // enable DEBUG output
-        if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.setDebugEnable(true);
-    }
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the

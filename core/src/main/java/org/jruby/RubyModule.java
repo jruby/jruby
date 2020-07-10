@@ -1228,24 +1228,19 @@ public class RubyModule extends RubyObject {
     }
 
     public static TypePopulator loadPopulatorFor(Class<?> type) {
-        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load()) {
-            // we want non-generated invokers or need full traces, use default (slow) populator
-            LOG.debug("trace mode, using default populator");
-        } else {
-            try {
-                String qualifiedName = Constants.GENERATED_PACKAGE + type.getCanonicalName().replace('.', '$');
-                String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
-                String fullPath = fullName.replace('.', '/') + ".class";
-                if (LOG.isDebugEnabled()) LOG.debug("looking for populator " + fullName);
+        try {
+            String qualifiedName = Constants.GENERATED_PACKAGE + type.getCanonicalName().replace('.', '$');
+            String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
+            String fullPath = fullName.replace('.', '/') + ".class";
+            if (LOG.isDebugEnabled()) LOG.debug("looking for populator " + fullName);
 
-                if (Ruby.getClassLoader().getResource(fullPath) == null) {
-                    LOG.debug("could not find it, using default populator");
-                } else {
-                    return (TypePopulator) Class.forName(fullName).newInstance();
-                }
-            } catch (Throwable ex) {
-                if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
+            if (Ruby.getClassLoader().getResource(fullPath) == null) {
+                LOG.debug("could not find it, using default populator");
+            } else {
+                return (TypePopulator) Class.forName(fullName).newInstance();
             }
+        } catch (Throwable ex) {
+            if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
         }
 
         return new TypePopulator.ReflectiveTypePopulator(type);
