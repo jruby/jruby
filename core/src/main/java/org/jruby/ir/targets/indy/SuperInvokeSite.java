@@ -50,11 +50,20 @@ public abstract class SuperInvokeSite extends SelfInvokeSite {
             case "invokeInstanceSuper":
                 site = new InstanceSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;
+            case "invokeInstanceSuperIter":
+                site = new InstanceSuperIterInvokeSite(type, superName, splatmapString, file, line);
+                break;
             case "invokeClassSuper":
                 site = new ClassSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;
+            case "invokeClassSuperIter":
+                site = new ClassSuperIterInvokeSite(type, superName, splatmapString, file, line);
+                break;
             case "invokeUnresolvedSuper":
                 site = new UnresolvedSuperInvokeSite(type, superName, splatmapString, file, line);
+                break;
+            case "invokeUnresolvedSuperIter":
+                site = new UnresolvedSuperIterInvokeSite(type, superName, splatmapString, file, line);
                 break;
             case "invokeZSuper":
                 site = new ZSuperInvokeSite(type, superName, splatmapString, file, line);
