@@ -1,7 +1,7 @@
 package org.jruby.ir.runtime;
 
 import com.headius.invokebinder.Signature;
-import java.io.ByteArrayInputStream;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -40,7 +40,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
-import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
@@ -1179,10 +1178,14 @@ public class IRRuntimeHelpers {
         return instanceSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
     }
 
+    @JIT // for JVM6
+    public static IRubyObject instanceSuperIterSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return instanceSuperIter(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
+    }
+
     @Interp
     public static IRubyObject instanceSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
-        RubyClass superClass = definingModule.getMethodLocation().getSuperClass();
-        CacheEntry entry = superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
+        CacheEntry entry = getSuperMethodEntry(id, definingModule);
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -1192,26 +1195,62 @@ public class IRRuntimeHelpers {
         return method.call(context, self, entry.sourceModule, id, args, block);
     }
 
+    @Interp
+    public static IRubyObject instanceSuperIter(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        try {
+            return instanceSuper(context, self, id, definingModule, args, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    private static CacheEntry getSuperMethodEntry(String id, RubyModule definingModule) {
+        RubyClass superClass = definingModule.getMethodLocation().getSuperClass();
+        return superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
+    }
+
     @JIT // for JVM6
     public static IRubyObject classSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
         return classSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
     }
 
-    @Interp
-    public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
-        RubyClass superClass = definingModule.getMetaClass().getMethodLocation().getSuperClass();
-        CacheEntry entry = superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
-        DynamicMethod method = entry.method;
-        IRubyObject rVal = method.isUndefined() ?
-            Helpers.callMethodMissing(context, self, method.getVisibility(), id, CallType.SUPER, args, block)
-                : method.call(context, self, entry.sourceModule, id, args, block);
-        return rVal;
+    @JIT // for JVM6
+    public static IRubyObject classSuperIterSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return classSuperIter(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
     }
 
+    @Interp
+    public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        CacheEntry entry = getSuperMethodEntry(id, definingModule.getMetaClass());
+        DynamicMethod method = entry.method;
+
+        if (method.isUndefined()) {
+            return Helpers.callMethodMissing(context, self, method.getVisibility(), id, CallType.SUPER, args, block);
+        }
+
+        return method.call(context, self, entry.sourceModule, id, args, block);
+    }
+
+    @Interp
+    public static IRubyObject classSuperIter(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        try {
+            return classSuper(context, self, id, definingModule, args, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    @JIT
     public static IRubyObject unresolvedSuperSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
         return unresolvedSuper(context, self, splatArguments(args, splatMap), block);
     }
 
+    @JIT
+    public static IRubyObject unresolvedSuperIterSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return unresolvedSuperIter(context, self, splatArguments(args, splatMap), block);
+    }
+
+    @Interp
     public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         // We have to rely on the frame stack to find the implementation class
         RubyModule klazz = context.getFrameKlazz();
@@ -1230,6 +1269,15 @@ public class IRRuntimeHelpers {
         }
 
         return rVal;
+    }
+
+    @Interp
+    public static IRubyObject unresolvedSuperIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        try {
+            return unresolvedSuper(context, self, args, block);
+        } finally {
+            block.escape();
+        }
     }
 
     // MRI: vm_search_normal_superclass
