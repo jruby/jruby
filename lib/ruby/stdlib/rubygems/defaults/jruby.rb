@@ -44,18 +44,6 @@ module Gem
     ]
   end
 
-  ##
-  # Is this a windows platform?
-  #
-  # JRuby: Look in CONFIG['host_os'] as well.
-  def self.win_platform?
-    if @@win_platform.nil? then
-      @@win_platform = !!WIN_PATTERNS.find { |r| RUBY_PLATFORM =~ r || RbConfig::CONFIG["host_os"] =~ r }
-    end
-
-    @@win_platform
-  end
-
   # Allow specifying jar and classpath type gem path entries
   def self.path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
