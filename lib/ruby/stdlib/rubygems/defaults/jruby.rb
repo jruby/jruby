@@ -12,6 +12,7 @@ module Gem
       ruby_path
     end
 
+    private
     def jarred_path?(p)
       p =~ /^(file|uri|jar|classpath):/
     end
@@ -76,22 +77,14 @@ class Gem::Specification
       }.compact + spec_directories_from_classpath
     end
 
-    def add_dir dir
-      new_dirs = [ dir ] + (@@dirs||[]).collect { |d| d.sub(/.specifications/, '') }
-      self.reset
-
-      # ugh
-      @@dirs = new_dirs.map { |d| File.join d, "specifications" }
-    end
-
     # Replace existing dirs=
     def dirs= dirs
       self.reset
 
-      # ugh
       @@dirs = Array(dirs).map { |d| File.join d, "specifications" } + spec_directories_from_classpath
     end
 
+    private
     def spec_directories_from_classpath
       stuff = [ 'uri:classloader://specifications' ]
       JRuby::Util.extra_gem_paths.each do |path|
