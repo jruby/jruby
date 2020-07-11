@@ -87,14 +87,6 @@ class Gem::Specification
 end
 ## END JAR FILES
 
-if (Gem::win_platform?)
-  module Process
-    def self.uid
-      0
-    end
-  end
-end
-
 # Check for jruby_native and load it if present. jruby_native
 # indicates the native launcher is installed and will override
 # env-shebang and possibly other options.
