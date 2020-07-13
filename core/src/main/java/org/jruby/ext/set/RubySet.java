@@ -239,6 +239,18 @@ public class RubySet extends RubyObject implements Set {
         throw context.runtime.newArgumentError("value must be enumerable");
     }
 
+    // YAML doesn't have proper treatment for Set serialization, it dumps it just like
+    // any Ruby object, meaning on YAML.load will allocate an "initialize" all i-vars!
+    @Override
+    public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
+        if (getRuntime().newSymbol("@hash").equals(name)) {
+            if (value instanceof RubyHash) {
+                setHash((RubyHash) value); return value;
+            }
+        }
+        return super.instance_variable_set(name, value);
+    }
+
     IRubyObject invokeAdd(final ThreadContext context, final IRubyObject val) {
         return this.callMethod(context,"add", val); // TODO site-cache
     }
@@ -313,7 +325,7 @@ public class RubySet extends RubyObject implements Set {
 
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p(ThreadContext context) {
-        return context.runtime.newBoolean( isEmpty() );
+        return RubyBoolean.newBoolean(context,  isEmpty() );
     }
 
     @JRubyMethod(name = "clear")
@@ -325,7 +337,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     protected void clearImpl() {
-        hash.rb_clear();
+        hash.rb_clear(getRuntime().getCurrentContext());
     }
 
     /**
@@ -469,7 +481,7 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "include?", alias = { "member?", "===" })
     public RubyBoolean include_p(final ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean( containsImpl(obj) );
+        return RubyBoolean.newBoolean(context,  containsImpl(obj) );
     }
 
     final boolean containsImpl(IRubyObject obj) {
@@ -491,7 +503,7 @@ public class RubySet extends RubyObject implements Set {
                 return this.hash.op_ge(context, ((RubySet) set).hash);
             }
             // size >= set.size && set.all? { |o| include?(o) }
-            return context.runtime.newBoolean(
+            return RubyBoolean.newBoolean(context,
                     size() >= ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
@@ -506,7 +518,7 @@ public class RubySet extends RubyObject implements Set {
                 return this.hash.op_gt(context, ((RubySet) set).hash);
             }
             // size >= set.size && set.all? { |o| include?(o) }
-            return context.runtime.newBoolean(
+            return RubyBoolean.newBoolean(context,
                     size() > ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
@@ -520,7 +532,7 @@ public class RubySet extends RubyObject implements Set {
                 return this.hash.op_le(context, ((RubySet) set).hash);
             }
             // size >= set.size && set.all? { |o| include?(o) }
-            return context.runtime.newBoolean(
+            return RubyBoolean.newBoolean(context,
                     size() <= ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
@@ -534,7 +546,7 @@ public class RubySet extends RubyObject implements Set {
                 return this.hash.op_lt(context, ((RubySet) set).hash);
             }
             // size >= set.size && set.all? { |o| include?(o) }
-            return context.runtime.newBoolean(
+            return RubyBoolean.newBoolean(context,
                     size() < ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
@@ -547,7 +559,7 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod(name = "intersect?")
     public IRubyObject intersect_p(final ThreadContext context, IRubyObject set) {
         if ( set instanceof RubySet ) {
-            return context.runtime.newBoolean( intersect((RubySet) set) );
+            return RubyBoolean.newBoolean(context,  intersect((RubySet) set) );
         }
         throw context.runtime.newArgumentError("value must be a set");
     }
@@ -575,7 +587,7 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod(name = "disjoint?")
     public IRubyObject disjoint_p(final ThreadContext context, IRubyObject set) {
         if ( set instanceof RubySet ) {
-            return context.runtime.newBoolean( ! intersect((RubySet) set) );
+            return RubyBoolean.newBoolean(context,  ! intersect((RubySet) set) );
         }
         throw context.runtime.newArgumentError("value must be a set");
     }
@@ -591,12 +603,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     private RubyEnumerator.SizeFn enumSize() {
-        return new RubyEnumerator.SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return getRuntime().newFixnum( RubySet.this.size() );
-            }
-        };
+        return (context, recv, args) -> context.runtime.newFixnum( size() );
     }
 
     /**
@@ -615,7 +622,7 @@ public class RubySet extends RubyObject implements Set {
 
     protected void addImplSet(final ThreadContext context, final RubySet set) {
         // NOTE: MRI cheats - does not call Set#add thus we do not care ...
-        hash.merge_bang(context, set.hash, Block.NULL_BLOCK);
+        hash.merge_bang(context, new IRubyObject[]{set.hash}, Block.NULL_BLOCK);
     }
 
     /**
@@ -712,7 +719,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     // Equivalent to Set#keep_if, but returns nil if no changes were made.
-    @JRubyMethod(name = "select!")
+    @JRubyMethod(name = "select!", alias = "filter!")
     public IRubyObject select_bang(final ThreadContext context, Block block) {
         if ( ! block.isGiven() ) {
             return enumeratorizeWithSize(context, this, "select!", enumSize());
@@ -878,7 +885,7 @@ public class RubySet extends RubyObject implements Set {
 
     @JRubyMethod(name = "reset")
     public IRubyObject reset(ThreadContext context) {
-        this.hash.rehash();
+        this.hash.rehash(context);
         return this;
     }
 

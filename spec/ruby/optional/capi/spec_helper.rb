@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+# Require the main spec_helper.rb at the end to let `ruby ...spec.rb` work
 
 # MRI magic to use built but not installed ruby
 $extmk = false
@@ -6,24 +6,36 @@ $extmk = false
 require 'rbconfig'
 
 OBJDIR ||= File.expand_path("../../../ext/#{RUBY_ENGINE}/#{RUBY_VERSION}", __FILE__)
-mkdir_p(OBJDIR)
-
-def extension_path
-  File.expand_path("../ext", __FILE__)
-end
 
 def object_path
-  OBJDIR
+  path = OBJDIR
+  if ENV['SPEC_CAPI_CXX'] == 'true'
+    path = "#{path}/cxx"
+  end
+  mkdir_p(path)
+  path
 end
 
 def compile_extension(name)
   debug = false
+  cxx = ENV['SPEC_CAPI_CXX'] == 'true'
   run_mkmf_in_process = RUBY_ENGINE == 'truffleruby'
+
+  core_ext_dir = File.expand_path("../ext", __FILE__)
+
+  spec_caller_location = caller_locations.find { |c| c.path.end_with?('_spec.rb') }
+  spec_file_path = spec_caller_location.path
+  spec_ext_dir = File.expand_path("../ext", spec_file_path)
 
   ext = "#{name}_spec"
   lib = "#{object_path}/#{ext}.#{RbConfig::CONFIG['DLEXT']}"
   ruby_header = "#{RbConfig::CONFIG['rubyhdrdir']}/ruby.h"
-  libruby_so = RbConfig::CONFIG['LIBRUBY_SO'] if RbConfig::CONFIG["ENABLE_SHARED"] == "yes"
+
+  if RbConfig::CONFIG["ENABLE_SHARED"] == "yes"
+    libdirname = RbConfig::CONFIG['LIBPATHENV'] == 'PATH' ? 'bindir' :
+                   RbConfig::CONFIG['libdirname'] # defined since 2.1
+    libruby_so = "#{RbConfig::CONFIG[libdirname]}/#{RbConfig::CONFIG['LIBRUBY_SO']}"
+  end
 
   begin
     mtime = File.mtime(lib)
@@ -31,10 +43,10 @@ def compile_extension(name)
     # not found, then compile
   else
     case # if lib is older than headers, source or libruby, then recompile
-    when mtime <= File.mtime("#{extension_path}/rubyspec.h")
-    when mtime <= File.mtime("#{extension_path}/#{ext}.c")
+    when mtime <= File.mtime("#{core_ext_dir}/rubyspec.h")
+    when mtime <= File.mtime("#{spec_ext_dir}/#{ext}.c")
     when mtime <= File.mtime(ruby_header)
-    when libruby_so && mtime <= File.mtime("#{RbConfig::CONFIG['libdir']}/#{libruby_so}")
+    when libruby_so && mtime <= File.mtime(libruby_so)
     else
       return lib # up-to-date
     end
@@ -44,8 +56,12 @@ def compile_extension(name)
   tmpdir = tmp("cext_#{name}")
   Dir.mkdir(tmpdir)
   begin
-    ["rubyspec.h", "#{ext}.c"].each do |file|
-      cp "#{extension_path}/#{file}", "#{tmpdir}/#{file}"
+    ["#{core_ext_dir}/rubyspec.h", "#{spec_ext_dir}/#{ext}.c"].each do |file|
+      if cxx and file.end_with?('.c')
+        cp file, "#{tmpdir}/#{File.basename(file, '.c')}.cpp"
+      else
+        cp file, "#{tmpdir}/#{File.basename(file)}"
+      end
     end
 
     Dir.chdir(tmpdir) do
@@ -55,11 +71,13 @@ def compile_extension(name)
         init_mkmf unless required
         create_makefile(ext, tmpdir)
       else
-        File.write("extconf.rb", "require 'mkmf'\n" +
-          "$ruby = ENV.values_at('RUBY_EXE', 'RUBY_FLAGS').join(' ')\n" +
+        File.write("extconf.rb", <<-RUBY)
+          require 'mkmf'
+          $ruby = ENV.values_at('RUBY_EXE', 'RUBY_FLAGS').join(' ')
           # MRI magic to consider building non-bundled extensions
-          "$extout = nil\n" +
-          "create_makefile(#{ext.inspect})\n")
+          $extout = nil
+          create_makefile(#{ext.inspect})
+        RUBY
         output = ruby_exe("extconf.rb")
         raise "extconf failed:\n#{output}" unless $?.success?
         $stderr.puts output if debug
@@ -107,9 +125,11 @@ def setup_make
 end
 
 def load_extension(name)
-  require compile_extension(name)
-rescue LoadError
-  if %r{/usr/sbin/execerror ruby "\(ld 3 1 main ([/a-zA-Z0-9_\-.]+_spec\.so)"} =~ $!.message
+  ext_path = compile_extension(name)
+  require ext_path
+  ext_path
+rescue LoadError => e
+  if %r{/usr/sbin/execerror ruby "\(ld 3 1 main ([/a-zA-Z0-9_\-.]+_spec\.so)"} =~ e.message
     system('/usr/sbin/execerror', "#{RbConfig::CONFIG["bindir"]}/ruby", "(ld 3 1 main #{$1}")
   end
   raise
@@ -117,3 +137,7 @@ end
 
 # Constants
 CAPI_SIZEOF_LONG = [0].pack('l!').size
+
+# Require the main spec_helper.rb only here so load_extension() is defined
+# when running specs with `ruby ...spec.rb`
+require_relative '../../spec_helper'

@@ -2,7 +2,7 @@
 
 # default versions will be overwritten by pom.rb from root directory
 properties( 'jruby.plugins.version' => '1.0.10',
-            'mavengem.wagon.version' => '0.2.0',
+            'mavengem.wagon.version' => '1.0.3',
             'jruby.version' => '9.0.5.0' )
 
 gemfile

@@ -47,7 +47,7 @@ public class LocalContext {
 
     private final RubyInstanceConfig config;
     private final LocalVariableBehavior behavior;
-    private boolean lazy;
+    private final boolean lazy;
 
     private Ruby runtime = null;
 

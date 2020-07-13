@@ -1,26 +1,31 @@
 package org.jruby.runtime.backtrace;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class BacktraceData implements Serializable {
 
     public static final StackTraceElement[] EMPTY_STACK_TRACE = new StackTraceElement[0];
 
     private RubyStackTraceElement[] backtraceElements;
-    private final StackTraceElement[] javaTrace;
-    private final BacktraceElement[] rubyTrace;
+    private final Stream<StackWalker.StackFrame> stackStream;
+    private final Stream<BacktraceElement> rubyTrace;
     private final boolean fullTrace;
     private final boolean maskNative;
     private final boolean includeNonFiltered;
 
-    public BacktraceData(StackTraceElement[] javaTrace, BacktraceElement[] rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
-        this.javaTrace = javaTrace;
+    public BacktraceData(Stream<StackWalker.StackFrame> stackStream, Stream<BacktraceElement> rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
+        this.stackStream = stackStream;
         this.rubyTrace = rubyTrace;
         this.fullTrace = fullTrace;
         this.maskNative = maskNative;
@@ -28,8 +33,8 @@ public class BacktraceData implements Serializable {
     }
 
     public static final BacktraceData EMPTY = new BacktraceData(
-            EMPTY_STACK_TRACE,
-            BacktraceElement.EMPTY_ARRAY,
+            Stream.empty(),
+            Stream.empty(),
             false,
             false,
             false);
@@ -41,51 +46,63 @@ public class BacktraceData implements Serializable {
         return backtraceElements;
     }
 
+    public final RubyStackTraceElement[] getPartialBacktrace(Ruby runtime, int level) {
+        if (backtraceElements == null) {
+            backtraceElements = constructBacktrace(runtime.getBoundMethods(), level);
+        }
+        return backtraceElements;
+    }
+
     @SuppressWarnings("unchecked")
     public RubyStackTraceElement[] getBacktraceWithoutRuby() {
         return constructBacktrace(Collections.EMPTY_MAP);
+
+    }
+    private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods) {
+        return constructBacktrace(boundMethods, Integer.MAX_VALUE);
     }
 
-    private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods) {
-        ArrayList<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
+    private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods, int count) {
+        ArrayList<RubyStackTraceElement> trace = new ArrayList<>();
 
         // used for duplicating the previous Ruby frame when masking native calls
         boolean dupFrame = false; String dupFrameName = null;
 
-        // a running index into the Ruby backtrace stack, incremented for each
-        // interpreter frame we encounter in the Java backtrace.
-        int rubyFrameIndex = rubyTrace == null ? -1 : rubyTrace.length - 1;
-
         // loop over all elements in the Java stack trace
-        for (int i = 0; i < javaTrace.length; i++) {
-
-            StackTraceElement element = javaTrace[i];
+        Iterator<StackWalker.StackFrame> stackIter = stackStream.iterator();
+        Iterator<BacktraceElement> backIter = rubyTrace.iterator();
+        while (stackIter.hasNext() && trace.size() < count) {
+            StackWalker.StackFrame element = stackIter.next();
 
             // skip unnumbered frames
             int line = element.getLineNumber();
 
-            String className = element.getClassName();
-            String methodName = element.getMethodName();
             String filename = element.getFileName();
+            String methodName = element.getMethodName();
+            String className = element.getClassName();
 
             if (filename != null) {
 
                 // Don't process .java files
                 if (!filename.endsWith(".java")) {
+                    List<String> mangledTuple = JavaNameMangler.decodeMethodTuple(methodName);
+                    if (mangledTuple != null) {
+                        FrameType type = JavaNameMangler.decodeFrameTypeFromMangledName(mangledTuple.get(1));
+                        String decodedName = JavaNameMangler.decodeMethodName(type, mangledTuple);
 
-                    String decodedName = JavaNameMangler.decodeMethodForBacktrace(methodName);
+                        if (decodedName != null) {
+                            // construct Ruby trace element
+                            RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, decodedName, filename, line, false, type);
 
-                    if (decodedName != null) {
-                        // construct Ruby trace element
-                        RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, decodedName, filename, line, false);
+                            // add duplicate if masking native and previous frame was native (Kernel#caller)
+                            if (maskNative && dupFrame) {
+                                dupFrame = false;
+                                trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false, type));
+                            }
+                            trace.add(rubyElement);
+                            continue;
 
-                        // add duplicate if masking native and previous frame was native (Kernel#caller)
-                        if (maskNative && dupFrame) {
-                            dupFrame = false;
-                            trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false));
                         }
-                        trace.add(rubyElement);
-                        continue;
                     }
                 }
             }
@@ -113,29 +130,31 @@ public class BacktraceData implements Serializable {
 
             // Interpreted frames
             final FrameType frameType;
-            if ( rubyFrameIndex >= 0 && (frameType = FrameType.getInterpreterFrame(className, methodName)) != null ) {
+            if ( backIter.hasNext() && (frameType = FrameType.getInterpreterFrame(className, methodName)) != null ) {
 
                 // pop interpreter frame
-                BacktraceElement rubyFrame = rubyTrace[rubyFrameIndex--];
+                BacktraceElement rubyFrame = backIter.next();
 
                 // construct Ruby trace element
                 final String newName;
                 switch (frameType) {
                     case METHOD: newName = rubyFrame.method; break;
-                    case BLOCK: newName = "block in " + rubyFrame.method; break;
+                    case BLOCK: newName = rubyFrame.method; break;
                     case CLASS: newName = "<class:" + rubyFrame.method + '>'; break;
                     case MODULE: newName = "<module:" + rubyFrame.method + '>'; break;
                     case METACLASS: newName = "singleton class"; break;
                     case ROOT: newName = "<main>"; break;
-                    case EVAL: newName = "<eval>"; break;
+                    case EVAL:
+                        newName = rubyFrame.method == null || rubyFrame.method.isEmpty() ? "<main>" : rubyFrame.method;
+                        break;
                     default: newName = rubyFrame.method;
                 }
-                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", newName, rubyFrame.filename, rubyFrame.line + 1, false);
+                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", newName, rubyFrame.filename, rubyFrame.line + 1, false, frameType);
 
                 // dup if masking native and previous frame was native
                 if (maskNative && dupFrame) {
                     dupFrame = false;
-                    trace.add(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding()));
+                    trace.add(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding(), rubyElement.getFrameType()));
                 }
                 trace.add(rubyElement);
 
@@ -149,7 +168,7 @@ public class BacktraceData implements Serializable {
             }
         }
 
-        return trace.toArray(new RubyStackTraceElement[trace.size()]);
+        return trace.toArray(RubyStackTraceElement.EMPTY_ARRAY);
     }
 
     public static String getBoundMethodName(Map<String,Map<String,String>> boundMethods, String className, String methodName) {

@@ -17,8 +17,9 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityInstr {
+public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityInstr, Site {
     public final boolean unwrapArray;
+    private long callSiteId;
 
     public YieldInstr(Variable result, Operand block, Operand arg, boolean unwrapArray) {
         super(Operation.YIELD, result, block, arg == null ? UndefinedValue.UNDEFINED : arg);
@@ -26,6 +27,7 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
         assert result != null: "YieldInstr result is null";
 
         this.unwrapArray = unwrapArray;
+        this.callSiteId = CallBase.callSiteCounter++;
     }
 
     public Operand getBlockArg() {
@@ -77,7 +79,8 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
             if (unwrapArray && yieldOp instanceof Array && ((Array)yieldOp).size() > 1) {
                 // Special case this path!
                 // Don't build a RubyArray.
-                return blk.yieldValues(context, ((Array)yieldOp).retrieveArrayElts(context, self, currScope, currDynScope, temp));
+                IRubyObject[] args = ((Array) yieldOp).retrieveArrayElts(context, self, currScope, currDynScope, temp);
+                return IRRuntimeHelpers.yieldValues(context, blk, args);
             } else {
                 IRubyObject yieldVal = (IRubyObject) yieldOp.retrieve(context, self, currScope, currDynScope, temp);
                 return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
@@ -88,5 +91,15 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
     @Override
     public void visit(IRVisitor visitor) {
         visitor.YieldInstr(this);
+    }
+
+    @Override
+    public long getCallSiteId() {
+        return callSiteId;
+    }
+
+    @Override
+    public void setCallSiteId(long callSiteId) {
+        this.callSiteId = callSiteId;
     }
 }

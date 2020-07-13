@@ -87,6 +87,9 @@
 # MonitorMixin module.
 #
 module MonitorMixin
+  EXCEPTION_NEVER = {Exception => :never}.freeze
+  EXCEPTION_IMMEDIATE = {Exception => :immediate}.freeze
+
   #
   # FIXME: This isn't documented in Nutshell.
   #
@@ -103,13 +106,17 @@ module MonitorMixin
     # even if no other thread doesn't signal.
     #
     def wait(timeout = nil)
-      @monitor.__send__(:mon_check_owner)
-      count = @monitor.__send__(:mon_exit_for_cond)
-      begin
-        @cond.wait(@monitor.instance_variable_get(:@mon_mutex), timeout)
-        return true
-      ensure
-        @monitor.__send__(:mon_enter_for_cond, count)
+      Thread.handle_interrupt(EXCEPTION_NEVER) do
+        @monitor.__send__(:mon_check_owner)
+        count = @monitor.__send__(:mon_exit_for_cond)
+        begin
+          Thread.handle_interrupt(EXCEPTION_IMMEDIATE) do
+            @cond.wait(@monitor.instance_variable_get(:@mon_mutex), timeout)
+          end
+          return true
+        ensure
+          @monitor.__send__(:mon_enter_for_cond, count)
+        end
       end
     end
 
@@ -221,11 +228,13 @@ module MonitorMixin
   # +MonitorMixin+.
   #
   def mon_synchronize
-    mon_enter
+    # Prevent interrupt on handling interrupts; for example timeout errors
+    # it may break locking state.
+    Thread.handle_interrupt(EXCEPTION_NEVER){ mon_enter }
     begin
       yield
     ensure
-      mon_exit
+      Thread.handle_interrupt(EXCEPTION_NEVER){ mon_exit }
     end
   end
   alias synchronize mon_synchronize
@@ -251,9 +260,13 @@ module MonitorMixin
   # Initializes the MonitorMixin after being included in a class or when an
   # object has been extended with the MonitorMixin
   def mon_initialize
+    if defined?(@mon_mutex) && @mon_mutex_owner_object_id == object_id
+      raise ThreadError, "already initialized"
+    end
+    @mon_mutex = Thread::Mutex.new
+    @mon_mutex_owner_object_id = object_id
     @mon_owner = nil
     @mon_count = 0
-    @mon_mutex = Thread::Mutex.new
   end
 
   def mon_check_owner

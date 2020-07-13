@@ -1,6 +1,8 @@
 package org.jruby.runtime;
 
 import java.io.ByteArrayOutputStream;
+
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
@@ -16,23 +18,23 @@ import org.jruby.util.log.LoggerFactory;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
-    protected boolean pushScope;
-    protected boolean reuseParentScope;
+    protected final boolean pushScope;
+    protected final boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private int callCount = 0;
     private InterpreterContext interpreterContext;
     private InterpreterContext fullInterpreterContext;
+    private final IRClosure closure;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
         this.pushScope = true;
         this.reuseParentScope = false;
+        this.closure = closure;
 
-        // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
-        // promote to full build here if we are -X-C.
-        if (closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() || Options.JIT_THRESHOLD.load() == -1) {
-            callCount = -1;
-        }
+        // -1 jit.threshold is way of having interpreter not promote full builds
+        // regardless of compile mode (even when OFF full-builds are promoted)
+        if (closure.getManager().getInstanceConfig().getJitThreshold() == -1) setCallCount(-1);
     }
 
     @Override
@@ -65,21 +67,22 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             displayedCFG = true;
         }
 
-        if (interpreterContext == null) {
+        InterpreterContext ic = interpreterContext;
+        if (ic == null) {
             if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
                 LOG.info("Printing simple IR for " + closure.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
-            interpreterContext = closure.getInterpreterContext();
-            fullInterpreterContext = interpreterContext;
+            ic = closure.getInterpreterContext();
+            interpreterContext = ic;
         }
-        return interpreterContext;
+        return ic;
     }
 
     @Override
-    public String getClassName(ThreadContext context) {
+    public String getOwnerName() {
         return null;
     }
 
@@ -90,21 +93,19 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     @Override
     public boolean canCallDirect() {
-        return interpreterContext != null && interpreterContext.hasExplicitCallProtocol();
+        return fullInterpreterContext != null && fullInterpreterContext.hasExplicitCallProtocol();
     }
 
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        context.setCurrentBlockType(Block.Type.PROC);
-        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, null, ic, args, block.getBinding().getMethod(), blockArg);
+        ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, null, fullInterpreterContext, args, block.getBinding().getMethod(), blockArg);
     }
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        context.setCurrentBlockType(Block.Type.NORMAL);
-        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+        ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, self, fullInterpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }
 
     @Override
@@ -112,11 +113,6 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();
-
-        // Update interpreter context for next time this block is executed
-        // This ensures that if we had determined canCallDirect() is false
-        // based on the old IC, we continue to execute with it.
-        interpreterContext = fullInterpreterContext;
 
         Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();
@@ -146,15 +142,29 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
     private void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
+        final Ruby runtime = context.runtime;
+        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-            context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        if (this.callCount < 0) return;
+        // we don't synchronize callCount++ it does not matter if count isn't accurate
+        if (this.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
+            synchronized (this) { // disable same jit tasks from entering queue twice
+                if (this.callCount >= 0) {
+                    this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
+
+                    runtime.getJITCompiler().buildThresholdReached(context, this);
+                }
+            }
         }
     }
 
     public RubyModule getImplementationClass() {
         return null;
+    }
+
+    @Override
+    public IRClosure getScope() {
+        return closure;
     }
 
 }

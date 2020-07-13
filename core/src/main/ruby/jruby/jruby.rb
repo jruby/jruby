@@ -38,6 +38,11 @@ module JRuby
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def compile(content, filename = '', extra_position_info = false); end if false
 
+    # Get all known subclasses of passed class.
+    # If recurse: true, include all (non-direct) descendants recursively.
+    # @return Enumerable[Class]
+    def subclasses_of(klass, recurse: false) end if false
+
   end
 
   # NOTE: This is not a public API and is subject to change at our whim.

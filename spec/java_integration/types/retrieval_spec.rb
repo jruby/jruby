@@ -26,6 +26,15 @@ describe "Java::JavaClass.for_name" do
     expect(Java::JavaClass.for_name("float")).to eq(Java::float.java_class)
     expect(Java::JavaClass.for_name("double")).to eq(Java::double.java_class)
   end
+
+  it "should return Java class from JRuby class-path" do
+    expect(Java::JavaClass.for_name('java_integration.fixtures.Reflector')).to_not be nil
+  end
+
+  it "should also accept Java string argument" do
+    str = 'java.util.Base64'.to_java
+    expect(Java::JavaClass.for_name(str)).to_not be nil
+  end
 end
 
 describe "Java classes with nested enums" do
@@ -178,16 +187,20 @@ describe "A Java class with inner classes" do
     end
   end
 
-  it "raises error importing lower-case names" do
-    expect do
-      java_import InnerClasses::lowerInnerClass
-    end.to raise_error(ArgumentError)
+  # jruby/jruby#5835 and ruboto/JRuby9K_POC#7
+  it "allows const_missing on a Java class to trigger properly" do
+    expect {
+      InnerClasses::NonExistentClass
+    }.to raise_error(NameError, "uninitialized constant Java::Java_integrationFixtures::InnerClasses::NonExistentClass")
   end
 
-  it "imports upper-case names successfully" do
-    expect do
-      java_import InnerClasses::CapsInnerClass
-    end.not_to raise_error
-    expect(CapsInnerClass).to eq(InnerClasses::CapsInnerClass)
+  describe "with static final fields of the same name" do
+    it "defines a constant pointing at the field" do
+      err = with_stderr_captured do
+        expect(InnerClasses::ConflictsWithStaticFinalField.ok()).to be true
+      end
+
+      err.should be_empty
+    end
   end
 end

@@ -187,6 +187,16 @@ class TestRubyOptimization < Test::Unit::TestCase
     assert_redefine_method('String', '<<', 'assert_equal "b", "a" << "b"')
   end
 
+  def test_fixnum_and
+    assert_equal 1, 1&3
+    assert_redefine_method('Integer', '&', 'assert_equal 3, 1&3')
+  end
+
+  def test_fixnum_or
+    assert_equal 3, 1|3
+    assert_redefine_method('Integer', '|', 'assert_equal 1, 3|1')
+  end
+
   def test_array_plus
     assert_equal [1,2], [1]+[2]
     assert_redefine_method('Array', '+', 'assert_equal [2], [1]+[2]')
@@ -557,12 +567,30 @@ class TestRubyOptimization < Test::Unit::TestCase
       when "1.8.0"..."1.8.8" then :bar
       end
     end;
-    iseq = RubyVM::InstructionSequence.compile(code)
-    insn = iseq.disasm
-    assert_match %r{putobject\s+#{Regexp.quote('"1.8.0"..."1.8.8"')}}, insn
-    assert_match %r{putobject\s+#{Regexp.quote('"2.0.0".."2.3.2"')}}, insn
-    assert_no_match(/putstring/, insn)
-    assert_no_match(/newrange/, insn)
+    [ true, false ].each do |opt|
+      iseq = RubyVM::InstructionSequence.compile(code,
+                                                 frozen_string_literal: opt)
+      insn = iseq.disasm
+      assert_match %r{putobject\s+#{Regexp.quote('"1.8.0"..."1.8.8"')}}, insn
+      assert_match %r{putobject\s+#{Regexp.quote('"2.0.0".."2.3.2"')}}, insn
+      assert_no_match(/putstring/, insn)
+      assert_no_match(/newrange/, insn)
+    end
+  end
+
+  def test_peephole_dstr
+    code = "#{<<~'begin;'}\n#{<<~'end;'}"
+    begin;
+      exp = -'a'
+      z = 'a'
+      [exp, -"#{z}"]
+    end;
+    [ false, true ].each do |fsl|
+      iseq = RubyVM::InstructionSequence.compile(code,
+                                                 frozen_string_literal: fsl)
+      assert_same(*iseq.eval,
+                  "[ruby-core:85542] [Bug #14475] fsl: #{fsl}")
+    end
   end
 
   def test_branch_condition_backquote
@@ -677,7 +705,7 @@ class TestRubyOptimization < Test::Unit::TestCase
         $SAFE = 1
         b.call
       end
-      assert_equal 0, foo{$SAFE}
+      assert_equal 1, foo{$SAFE}
     END
   end
 
@@ -689,7 +717,7 @@ class TestRubyOptimization < Test::Unit::TestCase
   end
 
   def test_clear_unreachable_keyword_args
-    assert_separately [], <<-END
+    assert_separately [], <<-END, timeout: 30
       script =  <<-EOS
         if true
         else
@@ -703,10 +731,26 @@ class TestRubyOptimization < Test::Unit::TestCase
     END
   end
 
+  def test_callinfo_unreachable_path
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      iseq = RubyVM::InstructionSequence.compile("if false; foo(bar: :baz); else :ok end")
+      bin = iseq.to_binary
+      iseq = RubyVM::InstructionSequence.load_from_binary(bin)
+      assert_instance_of(RubyVM::InstructionSequence, iseq)
+      assert_equal(:ok, iseq.eval)
+    end;
+  end
+
   def test_side_effect_in_popped_splat
     bug = '[ruby-core:84340] [Bug #14201]'
     eval("{**(bug = nil; {})};42")
     assert_nil(bug)
+
+    bug = '[ruby-core:85486] [Bug #14459]'
+    h = {}
+    assert_equal(bug, eval('{ok: 42, **h}; bug'))
+    assert_equal(:ok, eval('{ok: bug = :ok, **h}; bug'))
   end
 
   def test_overwritten_blockparam
@@ -717,5 +761,67 @@ class TestRubyOptimization < Test::Unit::TestCase
       :ng
     end
     assert_equal(:ok, obj.a())
+  end
+
+  def test_blockparam_in_rescue
+    obj = Object.new
+    def obj.foo(&b)
+      raise
+    rescue
+      b.call
+    end
+    result = nil
+    assert_equal(42, obj.foo {result = 42})
+    assert_equal(42, result)
+  end
+
+  def test_unconditional_branch_to_leave_block
+    assert_valid_syntax("#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      tap {true || tap {}}
+    end;
+  end
+
+  def test_jump_elimination_with_optimized_out_block
+    x = Object.new
+    def x.bug(obj)
+      if obj || obj
+        obj = obj
+      else
+        raise "[ruby-core:87830] [Bug #14897]"
+      end
+      obj
+    end
+    assert_equal(:ok, x.bug(:ok))
+  end
+
+  def test_jump_elimination_with_optimized_out_block_2
+    x = Object.new
+    def x.bug
+      a = "aaa"
+      ok = :NG
+      if a == "bbb" || a == "ccc" then
+        a = a
+      else
+        ok = :ok
+      end
+      ok
+    end
+    assert_equal(:ok, x.bug)
+  end
+
+  def test_peephole_jump_after_newarray
+    i = 0
+    %w(1) || 2 while (i += 1) < 100
+    assert_equal(100, i)
+  end
+
+  def test_optimized_empty_ensure
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}", timeout: 1)
+    begin;
+      assert_raise(RuntimeError) {
+        begin raise ensure nil if nil end
+      }
+    end;
   end
 end

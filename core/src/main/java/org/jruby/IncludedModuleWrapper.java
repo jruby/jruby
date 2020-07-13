@@ -116,16 +116,6 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected synchronized Map<String, IRubyObject> getClassVariables() {
-        return origin.getClassVariables();
-    }
-
-    @Override
-    protected Map<String, IRubyObject> getClassVariablesForRead() {
-        return origin.getClassVariablesForRead();
-    }
-
-    @Override
     protected boolean variableTableContains(String name) {
         return origin.variableTableContains(name);
     }

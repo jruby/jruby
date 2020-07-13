@@ -12,7 +12,7 @@ describe "File::Stat#pipe?" do
     touch(filename)
 
     st = File.stat(filename)
-    st.pipe?.should == false
+    st.should_not.pipe?
 
     rm_r filename
   end
@@ -20,10 +20,10 @@ describe "File::Stat#pipe?" do
   platform_is_not :windows do
     it "returns true if the file is a pipe" do
       filename = tmp("i_am_a_pipe")
-      system "mkfifo #{filename}"
+      File.mkfifo(filename)
 
       st = File.stat(filename)
-      st.pipe?.should == true
+      st.should.pipe?
 
       rm_r filename
     end

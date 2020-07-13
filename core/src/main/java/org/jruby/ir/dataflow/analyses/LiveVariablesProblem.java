@@ -109,8 +109,8 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     }
 
     /* ----------- Private Interface ------------ */
-    private HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
-    private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
-    private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
-    private Collection<LocalVariable> varsLiveOnScopeExit;
+    private final HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
+    private final HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
+    private final HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
+    private final Collection<LocalVariable> varsLiveOnScopeExit;
 }

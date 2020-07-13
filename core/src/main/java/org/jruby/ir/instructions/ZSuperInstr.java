@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -12,12 +13,18 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZSuperInstr extends UnresolvedSuperInstr {
+    public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure,
+                       boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined, callSite, callSiteId);
+    }
+
     public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure, boolean isPotentiallyRefined) {
         super(scope, Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined);
     }
@@ -32,7 +39,8 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ZSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
+                isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public static ZSuperInstr decode(IRReaderDecoder d) {
@@ -40,7 +48,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         int callTypeOrdinal = d.decodeInt();
         CallType callType = CallType.fromOrdinal(callTypeOrdinal);
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, calltype(ord):  " + callType);
-        String methAddr = d.decodeString();
+        RubySymbol methAddr = d.decodeSymbol();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, methaddr:  " + methAddr);
         Operand receiver = d.decodeOperand();
         int argsCount = d.decodeInt();

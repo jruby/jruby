@@ -39,7 +39,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.Exception;
 import org.jruby.exceptions.JumpException.FlowControlException;
 import org.jruby.exceptions.RaiseException;
@@ -53,13 +52,13 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  *
@@ -68,18 +67,52 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
 
+    private static class Backtrace {
+        private BacktraceData backtraceData;
+        private IRubyObject backtraceObject;
+        private IRubyObject backtraceLocations;
+
+        public void copy(Backtrace clone) {
+            this.backtraceData = clone.backtraceData;
+            this.backtraceObject = clone.backtraceObject;
+            this.backtraceLocations = clone.backtraceLocations;
+        }
+
+        /**
+         * Generate a new backtrace (or returns nil if no backtrace data exists).
+         * @param runtime
+         * @return the generated Ruby backtrace
+         */
+        public IRubyObject generateBacktrace(Ruby runtime) {
+            final BacktraceData backtraceData = this.backtraceData;
+            if (backtraceData == null || backtraceData == BacktraceData.EMPTY) return runtime.getNil();
+            return TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
+        }
+
+        /**
+         * Generate an array of backtrace location objects for this backtrace.
+         *
+         * @param context the current thread context
+         * @return the array of backtrace locations
+         */
+        public IRubyObject generateBacktraceLocations(ThreadContext context) {
+            final BacktraceData backtraceData = this.backtraceData;
+            if (backtraceData == null) return context.nil;
+
+            final Ruby runtime = context.runtime;
+            return RubyThread.Location.newLocationArray(runtime, backtraceData.getBacktrace(runtime));
+        }
+    }
+
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;
     public static final int TRACE_MAX = RubyException.TRACE_HEAD + RubyException.TRACE_TAIL + 6;
-    public static final String[] FULL_MESSAGE_KEYS = {"highlight", "order"};
-    protected BacktraceData backtraceData;
+
+    private final Backtrace backtrace = new Backtrace();
+
     IRubyObject message;
-    // We initialize this to UNDEF to know whether cause has been initialized (from ruby space we will just see nil
-    // but internally we want to know if there was a cause or it was set to nil explicitly).
-    IRubyObject cause = UNDEF;
-    private IRubyObject backtrace;
+    private IRubyObject cause = null;
     private RaiseException throwable;
-    private IRubyObject backtraceLocations;
 
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
@@ -120,7 +153,6 @@ public class RubyException extends RubyObject {
 
     public static RubyClass createExceptionClass(Ruby runtime) {
         RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
-        runtime.setException(exceptionClass);
 
         exceptionClass.setClassIndex(ClassIndex.EXCEPTION);
         exceptionClass.setReifiedClass(RubyException.class);
@@ -131,87 +163,76 @@ public class RubyException extends RubyObject {
         return exceptionClass;
     }
 
-    public static ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
+    public static final ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
 
-    private static final ObjectMarshal EXCEPTION_MARSHAL = new ObjectMarshal() {
+    private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+        public void marshalTo(Ruby runtime, RubyException exc, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
-            RubyException exc = (RubyException)obj;
-
             marshalStream.registerLinkTarget(exc);
             List<Variable<Object>> attrs = exc.getVariableList();
-            attrs.add(new VariableEntry<Object>("mesg", exc.getMessage()));
-            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
+            attrs.add(new VariableEntry<>("mesg", exc.getMessage()));
+            attrs.add(new VariableEntry<>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
-            RubyException exc = (RubyException)type.allocate();
+        public RubyException unmarshalFrom(Ruby runtime, RubyClass type,
+                                           UnmarshalStream unmarshalStream) throws IOException {
+            RubyException exc = (RubyException) type.allocate();
 
             unmarshalStream.registerLinkTarget(exc);
             // FIXME: Can't just pull these off the wire directly? Or maybe we should
             // just use real vars all the time for these?
             unmarshalStream.defaultVariablesUnmarshal(exc);
 
-            exc.setMessage((IRubyObject)exc.removeInternalVariable("mesg"));
-            exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
+            exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
+            exc.set_backtrace((IRubyObject) exc.removeInternalVariable("bt"));
 
             return exc;
         }
     };
 
-    public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
+    public static RubyException newException(Ruby runtime, RubyClass exceptionClass, String msg) {
         if (msg == null) {
             msg = "No message available";
         }
 
-        return (RubyException) excptnClass.newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, msg), Block.NULL_BLOCK);
+        return (RubyException) exceptionClass.newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, msg), Block.NULL_BLOCK);
     }
 
+    /**
+     * Construct a new RubyException object from the given exception class and message.
+     *
+     * @param context the current thread context
+     * @param exceptionClass the exception class
+     * @param message the message for the exception
+     * @return the new exception object
+     */
+    public static RubyException newException(ThreadContext context, RubyClass exceptionClass, RubyString message) {
+        return (RubyException) exceptionClass.newInstance(context, message, Block.NULL_BLOCK);
+    }
 
-    @Deprecated
-    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
-        return exceptionClass.callMethod(context, "new", message.convertToString());
+    /**
+     * Construct a new RubyException object from the given exception class and message.
+     *
+     * @param context the current thread context
+     * @param exceptionClass the exception class
+     * @param args the arguments for the exception's constructor
+     * @return the new exception object
+     */
+    public static RubyException newException(ThreadContext context, RubyClass exceptionClass, IRubyObject... args) {
+        return (RubyException) exceptionClass.newInstance(context, args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod
     public IRubyObject full_message(ThreadContext context) {
-        return RubyString.newString(context.runtime, TraceType.Format.MRI.printBacktrace(this, false));
+        return full_message(context, null);
     }
 
     @JRubyMethod
     public IRubyObject full_message(ThreadContext context, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
-        boolean highlight = false;
-        boolean reverse = false;
-
-        if (!optArg.isNil()) {
-            IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
-
-            IRubyObject vHigh = highlightOrder[0];
-            if (vHigh == UNDEF) vHigh = context.nil;
-            if (vHigh != context.nil && vHigh != context.fals && vHigh != context.tru) {
-                throw runtime.newArgumentError("expected true or false as highlight: " + vHigh);
-            }
-            highlight = vHigh.isTrue();
-
-            IRubyObject vOrder = highlightOrder[1];
-            if (vOrder != UNDEF) {
-                vOrder = TypeConverter.checkID(vOrder);
-                if (vOrder == runtime.newSymbol("bottom")) reverse = true;
-                else if (vOrder == runtime.newSymbol("top")) reverse = false;
-                else {
-                    throw runtime.newArgumentError("expected :top or :bottom as order: " + vOrder);
-                }
-            }
-        }
-
-        // TODO: reverse
-        return RubyString.newString(runtime, TraceType.Format.MRI.printBacktrace(this, highlight));
+        return RubyString.newString(context.runtime, TraceType.printFullMessage(context, this, opts));
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
@@ -232,13 +253,11 @@ public class RubyException extends RubyObject {
         return backtrace();
     }
 
-    private void setBacktrace(IRubyObject obj) {
-        if (obj.isNil()) {
-            backtrace = null;
-        } else if (isArrayOfStrings(obj)) {
-            backtrace = obj;
+    public void setBacktrace(IRubyObject obj) {
+        if (obj.isNil() || isArrayOfStrings(obj)) {
+            backtrace.backtraceObject = obj;
         } else if (obj instanceof RubyString) {
-            backtrace = RubyArray.newArray(getRuntime(), obj);
+            backtrace.backtraceObject = RubyArray.newArray(getRuntime(), obj);
         } else {
             throw getRuntime().newTypeError("backtrace must be Array of String");
         }
@@ -246,16 +265,9 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(omit = true)
     public IRubyObject backtrace_locations(ThreadContext context) {
+        IRubyObject backtraceLocations = backtrace.backtraceLocations;
         if (backtraceLocations != null) return backtraceLocations;
-
-        if (backtraceData == null) {
-            backtraceLocations = context.nil;
-        } else {
-            Ruby runtime = context.runtime;
-            backtraceLocations = RubyThread.Location.newLocationArray(runtime, backtraceData.getBacktrace(runtime));
-        }
-
-        return backtraceLocations;
+        return backtrace.backtraceLocations = backtrace.generateBacktraceLocations(context);
     }
 
     @JRubyMethod(optional = 1)
@@ -295,15 +307,12 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
         // rb_class_name skips intermediate classes (JRUBY-6786)
-        String rubyClass = getMetaClass().getRealClass().getName();
+        RubyString rubyClass = getMetaClass().getRealClass().rubyName();
         RubyString exception = RubyString.objAsString(context, this);
 
-        if (exception.isEmpty()) return context.runtime.newString(rubyClass);
+        if (exception.isEmpty()) return rubyClass;
 
-        return RubyString.newString(context.runtime,
-                new StringBuilder(2 + rubyClass.length() + 2 + exception.size() + 1).
-                    append("#<").append(rubyClass).append(": ").append(exception.getByteList()).append('>')
-        );
+        return RubyString.newString(context.runtime, str(context.runtime, "#<", rubyClass, ": ", exception, ">"));
     }
 
     @Override
@@ -315,13 +324,12 @@ public class RubyException extends RubyObject {
                 getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
                 callMethod(context, "message").equals(other.callMethod(context, "message")) &&
                 callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
-        return context.runtime.newBoolean(equal);
+        return RubyBoolean.newBoolean(context, equal);
     }
 
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
-        assert cause != null;
-        return cause == RubyBasicObject.UNDEF ? context.nil : cause;
+        return cause == null ? context.nil : cause;
     }
 
     /**
@@ -335,9 +343,9 @@ public class RubyException extends RubyObject {
      * @return the converted result
      */
     @Override
-    public Object toJava(Class target) {
-        if (target.isAssignableFrom(RaiseException.class)) {
-            return target.cast(throwable);
+    public <T> T toJava(Class<T> target) {
+        if (target != Object.class && target.isAssignableFrom(RaiseException.class)) {
+            return target.cast(toThrowable());
         }
         return super.toJava(target);
     }
@@ -360,75 +368,61 @@ public class RubyException extends RubyObject {
 
     public void setCause(IRubyObject cause) {
         this.cause = cause;
+
+        // don't do anything to throwable for null/nil cause to avoid forcing backtrace
+        // * if we have no cause yet, it's a no-op
+        // * if we have a cause, we can't change it
+        if (cause == null || cause.isNil()) return;
+
+        Throwable t = toThrowable();
+        Object javaCause;
+
+        if (t.getCause() == null) {
+            if (cause instanceof RubyException) {
+                t.initCause(((RubyException) cause).toThrowable());
+            } else if (cause instanceof ConcreteJavaProxy && (javaCause = ((ConcreteJavaProxy) cause).getObject()) instanceof Throwable) {
+                t.initCause((Throwable) javaCause);
+            }
+        }
     }
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause == UNDEF ? null : cause;
-    }
-
-    public void setBacktraceData(BacktraceData backtraceData) {
-        this.backtraceData = backtraceData;
-    }
-
-    public BacktraceData getBacktraceData() {
-        return backtraceData;
+        return cause;
     }
 
     public RubyStackTraceElement[] getBacktraceElements() {
-        if (backtraceData == null) {
+        if (backtrace.backtraceData == null) {
             return RubyStackTraceElement.EMPTY_ARRAY;
         }
-        return backtraceData.getBacktrace(getRuntime());
+        return backtrace.backtraceData.getBacktrace(getRuntime());
     }
 
-    public void prepareBacktrace(ThreadContext context) {
-        // if it's null, build a backtrace
-        if (backtraceData == null) {
-            backtraceData = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context);
-        }
-    }
-
-    /**
-     * Prepare an "integrated" backtrace that includes the normal Ruby trace plus non-filtered Java frames. Used by
-     * Java integration to show the Java frames for a JI-called method.
-     *
-     * @param context
-     * @param javaTrace
-     */
-    public void prepareIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
-        // if it's null, build a backtrace
-        if (backtraceData == null) {
-            backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
-        }
-    }
-
-    public void forceBacktrace(IRubyObject backtrace) {
-        backtraceData = (backtrace != null && backtrace.isNil()) ? null : BacktraceData.EMPTY;
-        setBacktrace(backtrace);
+    public void captureBacktrace(ThreadContext context) {
+        backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context);
     }
 
     public IRubyObject getBacktrace() {
-        if (backtrace == null) {
-            initBacktrace();
-        }
-        return backtrace;
+        IRubyObject backtraceObject = backtrace.backtraceObject;
+        if (backtraceObject != null) return backtraceObject;
+
+        return backtrace.backtraceObject = backtrace.generateBacktrace(getRuntime());
     }
 
-    public void initBacktrace() {
-        Ruby runtime = getRuntime();
-        if (backtraceData == null) {
-            backtrace = runtime.getNil();
-        } else {
-            backtrace = TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
-        }
+    /**
+     * Retrieve the current backtrace object for a given exception.
+     * @param exception
+     * @return set (or already generated) backtrace, null otherwise
+     * @note Internal API.
+     */
+    public static IRubyObject retrieveBacktrace(RubyException exception) {
+        return exception.backtrace.backtraceObject;
     }
 
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
-        exception.backtraceData = backtraceData;
-        exception.backtrace = backtrace;
+        exception.backtrace.copy(backtrace);
         exception.message = message;
     }
 
@@ -450,19 +444,7 @@ public class RubyException extends RubyObject {
      */
     public void printBacktrace(PrintStream errorStream, int skip) {
         IRubyObject trace = callMethod(getRuntime().getCurrentContext(), "backtrace");
-        if ( trace.isNil() ) return;
-        if ( trace instanceof RubyArray ) {
-            IRubyObject[] elements = ((RubyArray) trace).toJavaArrayMaybeUnsafe();
-            for (int i = skip; i < elements.length; i++) {
-                IRubyObject stackTraceLine = elements[i];
-                if (stackTraceLine instanceof RubyString) {
-                    errorStream.println("\tfrom " + stackTraceLine);
-                }
-                else {
-                    errorStream.println("\t" + stackTraceLine);
-                }
-            }
-        }
+        TraceType.printBacktraceToStream(trace, errorStream, skip);
     }
 
     private boolean isArrayOfStrings(IRubyObject backtrace) {
@@ -477,7 +459,7 @@ public class RubyException extends RubyObject {
         return true;
     }
 
-    /**
+     /**
      * @return error message if provided or nil
      */
     public IRubyObject getMessage() {
@@ -495,5 +477,41 @@ public class RubyException extends RubyObject {
     public String getMessageAsJavaString() {
         final IRubyObject msg = getMessage();
         return msg.isNil() ? null : msg.toString();
+    }
+
+    // Note: we override this because we do not use traditional internal variables (concurrency complications)
+    // for a few fields but MRI does.  Both marshal and oj (native extensions) expect to see these.
+    @Override
+    public List<Variable<Object>> getVariableList() {
+        List<Variable<Object>> attrs = super.getVariableList();
+
+        attrs.add(new VariableEntry<>("mesg", getMessage()));
+        IRubyObject backtrace = getBacktrace();
+        attrs.add(new VariableEntry<>("bt", backtrace));
+
+        return attrs;
+    }
+
+    @Override
+    public List<String> getVariableNameList() {
+        List<String> names = super.getVariableNameList();
+
+        names.add("mesg");
+        names.add("bt");
+
+        return names;
+    }
+
+    @Deprecated
+    public void prepareIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
+        // if it's null, build a backtrace
+        if (backtrace.backtraceData == null) {
+            backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
+        }
+    }
+
+    @Deprecated
+    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
+        return newException(context, exceptionClass, message.convertToString());
     }
 }

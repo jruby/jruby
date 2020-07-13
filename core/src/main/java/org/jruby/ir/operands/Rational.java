@@ -60,4 +60,9 @@ public class Rational extends ImmutableLiteral {
     public ImmutableLiteral getDenominator() {
         return denominator;
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

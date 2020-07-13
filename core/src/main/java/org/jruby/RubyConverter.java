@@ -116,17 +116,18 @@ public class RubyConverter extends RubyObject {
 
     public static RubyClass createConverterClass(Ruby runtime) {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getData(), CONVERTER_ALLOCATOR, runtime.getEncoding());
-        runtime.setConverter(converterc);
+
         converterc.setClassIndex(ClassIndex.CONVERTER);
         converterc.setReifiedClass(RubyConverter.class);
         converterc.kindOf = new RubyModule.JavaClassKindOf(RubyConverter.class);
 
         converterc.defineAnnotatedMethods(RubyConverter.class);
         converterc.defineAnnotatedConstants(RubyConverter.class);
+
         return converterc;
     }
 
-    private static ObjectAllocator CONVERTER_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator CONVERTER_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyConverter(runtime, klass);
@@ -541,7 +542,7 @@ public class RubyConverter extends RubyObject {
         EncodingUtils.econvArgs(context, argv, encNames, encs, ecflags_p, ecopts_p);
 
         TranscoderDB.searchPath(encNames[0], encNames[1], new TranscoderDB.SearchPathCallback() {
-            EncodingService es = runtime.getEncodingService();
+            final EncodingService es = runtime.getEncodingService();
 
             public void call(byte[] source, byte[] destination, int depth) {
                 IRubyObject v;
@@ -647,7 +648,7 @@ public class RubyConverter extends RubyObject {
 
         ec2 = ((RubyConverter)other).ec;
 
-        return context.runtime.newBoolean(ec1.equals(ec2));
+        return RubyBoolean.newBoolean(context, ec1.equals(ec2));
     }
     
     public static class EncodingErrorMethods {

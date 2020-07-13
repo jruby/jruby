@@ -44,7 +44,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class BlockArgNode extends Node implements INameNode {
     private final int count;
-    private RubySymbol name;
+    private final RubySymbol name;
 
     public BlockArgNode(ISourcePosition position, int count, RubySymbol name) {
         super(position, false);

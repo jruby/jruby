@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 
 package org.jruby.util;
-// FIXME: this probably belongs in a different package.
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;

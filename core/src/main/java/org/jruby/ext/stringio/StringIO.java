@@ -33,18 +33,7 @@ package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.ObjectFlags;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyIO;
-import org.jruby.RubyInteger;
-import org.jruby.RubyKernel;
-import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -57,6 +46,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.runtime.marshal.DataType;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -71,7 +62,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name="StringIO")
-public class StringIO extends RubyObject implements EncodingCapable {
+public class StringIO extends RubyObject implements EncodingCapable, DataType {
     static class StringIOData {
         /**
          * ATTN: the value of internal might be reset to null
@@ -89,7 +80,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     private static final int STRIO_WRITABLE = ObjectFlags.STRIO_WRITABLE;
     private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
 
-    private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new StringIO(runtime, klass);
         }
@@ -117,8 +108,9 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return stringIOClass;
     }
 
+    // mri: get_enc
     public Encoding getEncoding() {
-        return ptr.enc;
+        return ptr.enc != null ? ptr.enc : ptr.string.getEncoding();
     }
 
     public void setEncoding(Encoding enc) {
@@ -205,7 +197,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             }
 
             ptr.string = string;
-            ptr.enc = string.getEncoding();
+            ptr.enc = null;
             ptr.pos = 0;
             ptr.lineno = 0;
             // funky way of shifting readwrite flags into object flags
@@ -229,7 +221,15 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = {"binmode", "flush"})
+    @JRubyMethod
+    public IRubyObject binmode(ThreadContext context) {
+        ptr.enc = EncodingUtils.ascii8bitEncoding(context.runtime);
+        if (writable()) ptr.string.setEncoding(ptr.enc);
+
+        return this;
+    }
+
+    @JRubyMethod(name = "flush")
     public IRubyObject strio_self() {
         return this;
     }
@@ -360,7 +360,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 return each(context, args[0], args[1], args[2], block);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -405,7 +405,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 return each_line(context, args[0], args[1], args[2], block);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -458,9 +458,8 @@ public class StringIO extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"eof", "eof?"})
     public IRubyObject eof(ThreadContext context) {
         checkReadable();
-        Ruby runtime = context.runtime;
-        if (ptr.pos < ptr.string.size()) return runtime.getFalse();
-        return runtime.getTrue();
+        if (ptr.pos < ptr.string.size()) return context.fals;
+        return context.tru;
     }
 
     private boolean isEndOfString() {
@@ -505,15 +504,15 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         synchronized (ptr) {
             final RubyString string = ptr.string;
-            final ByteList stringByteList = string.getByteList();
-            final byte[] stringBytes = stringByteList.getUnsafeBytes();
+            final ByteList stringBytes = string.getByteList();
             int rlen = string.size() - pos;
 
             if (len > rlen) len = rlen;
             if (len < 0) len = 0;
 
             if (len == 0) return RubyString.newEmptyString(runtime, enc);
-            return RubyString.newStringShared(runtime, stringBytes, stringByteList.getBegin() + pos, len, enc);
+            string.setByteListShared(); // we only share the byte[] buffer but its easier this way
+            return RubyString.newStringShared(runtime, stringBytes.getUnsafeBytes(), stringBytes.getBegin() + pos, len, enc);
         }
     }
 
@@ -580,7 +579,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 return gets(context, args[0], args[1], args[2]);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -588,7 +587,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         @Override
         public IRubyObject getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
             if (limit == 0) {
-                return RubyString.newEmptyString(context.runtime, self.ptr.enc);
+                return RubyString.newEmptyString(context.runtime, self.getEncoding());
             }
 
             IRubyObject result = self.getline(context, rs, limit, chomp);
@@ -638,7 +637,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     private IRubyObject getline(ThreadContext context, final IRubyObject rs, int limit, boolean chomp) {
         Ruby runtime = context.runtime;
 
-        IRubyObject str;
+        RubyString str;
 
         checkReadable();
 
@@ -649,7 +648,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
 
         StringIOData ptr = this.ptr;
-        Encoding enc = ptr.enc;
+        Encoding enc = getEncoding();
 
         synchronized (ptr) {
             final ByteList string = ptr.string.getByteList();
@@ -661,9 +660,9 @@ public class StringIO extends RubyObject implements EncodingCapable {
             int w = 0;
 
             if (limit > 0 && s + limit < e) {
-                e = ptr.enc.rightAdjustCharHead(stringBytes, s, s + limit, e);
+                e = getEncoding().rightAdjustCharHead(stringBytes, s, s + limit, e);
             }
-            if (rs.isNil()) {
+            if (rs == context.nil) {
                 if (chomp) {
                     w = chompNewlineWidth(stringBytes, s, e);
                 }
@@ -782,8 +781,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
     }
 
     private void strioExtend(int pos, int len) {
-        checkModifiable();
-
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
@@ -791,6 +788,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             if (pos + len > olen) {
                 ptr.string.resize(pos + len);
                 if (pos > olen) {
+                    ptr.string.modify19();
                     ByteList ptrByteList = ptr.string.getByteList();
                     // zero the gap
                     Arrays.fill(ptrByteList.getUnsafeBytes(),
@@ -862,7 +860,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 case 0:
                     len = ptr.string.size();
                     if (len <= ptr.pos) {
-                        Encoding enc = binary ? ASCIIEncoding.INSTANCE : ptr.enc;
+                        Encoding enc = binary ? ASCIIEncoding.INSTANCE : getEncoding();
                         if (str.isNil()) {
                             str = runtime.newString();
                         } else {
@@ -879,7 +877,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             }
 
             if (str.isNil()) {
-                Encoding enc = binary ? ASCIIEncoding.INSTANCE : ptr.enc;
+                Encoding enc = binary ? ASCIIEncoding.INSTANCE : getEncoding();
                 string = strioSubstr(runtime, ptr.pos, len, enc);
             } else {
                 string = (RubyString) str;
@@ -894,7 +892,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 if (binary) {
                     string.setEncoding(ASCIIEncoding.INSTANCE);
                 } else {
-                    string.setEncoding(ptr.enc);
+                    string.setEncoding(ptr.string.getEncoding());
                 }
             }
             ptr.pos += string.size();
@@ -935,7 +933,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 return readlines(context, args[0], args[1], args[2]);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -1155,8 +1153,8 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         checkModifiable();
 
-        if (arg instanceof RubyFixnum) {
-            ungetbyteCommon(RubyNumeric.fix2int(arg));
+        if (arg instanceof RubyInteger) {
+            ungetbyteCommon(((RubyInteger) ((RubyInteger) arg).op_mod(context, 256)).getIntValue());
         } else {
             ungetbyteCommon(arg.convertToString());
         }
@@ -1191,14 +1189,14 @@ public class StringIO extends RubyObject implements EncodingCapable {
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
-            final Encoding enc = ptr.enc;
+            final Encoding enc = getEncoding();
             final Encoding encStr = str.getEncoding();
-            final ByteList strByteList = str.getByteList();
             if (enc != encStr && enc != EncodingUtils.ascii8bitEncoding(runtime)
                     // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
                     && encStr != ASCIIEncoding.INSTANCE) {
                 str = EncodingUtils.strConvEnc(context, str, encStr, enc);
             }
+            final ByteList strByteList = str.getByteList();
             len = str.size();
             if (len == 0) return 0;
             checkModifiable();
@@ -1207,13 +1205,18 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 ptr.pos = olen;
             }
             if (ptr.pos == olen) {
-                EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
+                    EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                    ptr.string.infectBy(str);
+                } else {
+                    ptr.string.cat19(str);
+                }
             } else {
                 strioExtend(ptr.pos, len);
                 ByteList ptrByteList = ptr.string.getByteList();
                 System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + ptr.pos, len);
+                ptr.string.infectBy(str);
             }
-            ptr.string.infectBy(str);
             ptr.string.infectBy(this);
             ptr.pos += len;
         }
@@ -1258,7 +1261,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject external_encoding(ThreadContext context) {
-        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.enc);
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(getEncoding());
     }
 
     @JRubyMethod
@@ -1277,7 +1280,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
-            final Encoding enc = ptr.enc;
+            final Encoding enc = getEncoding();
             final ByteList string = ptr.string.getByteList();
             final byte[] stringBytes = string.getUnsafeBytes();
             int begin = string.getBegin();
@@ -1341,18 +1344,19 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
         public static IRubyObject read_nonblock(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
 
+            boolean exception = true;
             IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
-
-            if (!opts.isNil()) args = Arrays.copyOf(args, args.length - 1);
-
-            boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
+            if (opts != context.nil) {
+                args = ArraySupport.newCopy(args, args.length - 1);
+                exception = Helpers.extractExceptionOnlyArg(context, (RubyHash) opts);
+            }
 
             IRubyObject val = self.callMethod(context, "read", args);
-            if (val.isNil()) {
+            if (val == context.nil) {
                 if (!exception) return context.nil;
-                throw context.runtime.newEOFError();
+                throw runtime.newEOFError();
             }
 
             return val;

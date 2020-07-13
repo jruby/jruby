@@ -1,5 +1,4 @@
-require_relative '../../../spec_helper'
-require 'socket'
+require_relative '../spec_helper'
 
 describe "Addrinfo#ipv6_multicast?" do
   describe "for an ipv4 socket" do
@@ -8,7 +7,7 @@ describe "Addrinfo#ipv6_multicast?" do
       @other     = Addrinfo.tcp("0.0.0.0", 80)
     end
 
-    it "returns true for the loopback address" do
+    it "returns true for a multicast address" do
       @multicast.ipv6_multicast?.should be_false
     end
 
@@ -18,21 +17,24 @@ describe "Addrinfo#ipv6_multicast?" do
   end
 
   describe "for an ipv6 socket" do
-    before :each do
-      @multicast = Addrinfo.tcp("ff02::1", 80)
-      @other     = Addrinfo.tcp("::", 80)
-    end
+    it "returns true for a multicast address" do
+      Addrinfo.ip('ff00::').should.ipv6_multicast?
+      Addrinfo.ip('ff00::1').should.ipv6_multicast?
+      Addrinfo.ip('ff08::1').should.ipv6_multicast?
+      Addrinfo.ip('fff8::1').should.ipv6_multicast?
 
-    it "returns false for the loopback address" do
-      @multicast.ipv6_multicast?.should be_true
+      Addrinfo.ip('ff02::').should.ipv6_multicast?
+      Addrinfo.ip('ff02::1').should.ipv6_multicast?
+      Addrinfo.ip('ff0f::').should.ipv6_multicast?
     end
 
     it "returns false for another address" do
-      @other.ipv6_multicast?.should be_false
+      Addrinfo.ip('::1').should_not.ipv6_multicast?
+      Addrinfo.ip('fe80::').should_not.ipv6_multicast?
     end
   end
 
-  platform_is_not :windows do
+  with_feature :unix_socket do
     describe "for a unix socket" do
       before :each do
         @addrinfo = Addrinfo.unix("/tmp/sock")

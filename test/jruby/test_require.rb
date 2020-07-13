@@ -8,9 +8,9 @@ class TestRequire < Test::Unit::TestCase
   def test_require_fires_once_across_threads
     $foo = 0
     100.times do
-      [1,2,3,4,5].map do
-        Thread.new {require "test/foo_for_test_require_once"}
-      end.each {|t| t.join}
+      (1..(ENV['THREAD_COUNT'] || 5).to_i).map do
+        Thread.new { require 'test/jruby/test_require_once_foo' }
+      end.each { |t| t.join }
       raise "Concurrent requires caused double-loading" if $foo != 1
       $foo = 0
       $".pop
@@ -73,13 +73,27 @@ OUT
     $LOADED_FEATURES.delete 'gh4091-sample.rb'
   end
 
+  module ::ASimpleLib; end
+
+  def test_define_class_type_mismatch
+    ASimpleLib.const_set :Error, 1
+
+    # MRI: TypeError: Error is not a class
+    assert_raise(TypeError) do
+      require_relative('a_simple_lib')
+    end
+  ensure
+    ASimpleLib.send :remove_const, :Error
+  end
+
   # module ::Zlib; end
   #
-  # def test_define_class_type_mismatch
+  # def test_define_class_type_mismatch_ext
   #   return if $LOADED_FEATURES.include?('zlib')
   #
   #   Zlib.const_set :Error, 1
   #
+  #   # MRI: TypeError: Zlib::Error is not a class (Integer)
   #   assert_raise(TypeError) do
   #     require('zlib')
   #   end
@@ -87,12 +101,12 @@ OUT
   #   Zlib.send :remove_const, :Error
   # end
 
-  # def test_define_class_type_mismatch
+  # def test_define_class_type_mismatch_ext2
   #   return if $LOADED_FEATURES.include?('socket')
   #
   #   Object.const_set :BasicSocket, Class.new
   #
-  #   assert_raise(NameError) do
+  #   assert_raise(TypeError) do # superclass mismatch for class BasicSocket
   #     require('socket')
   #   end
   # ensure

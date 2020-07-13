@@ -3,11 +3,8 @@ package org.jruby.util;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.unicode.UnicodeEncoding;
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+
+import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
@@ -66,12 +63,13 @@ public class RubyStringBuilder {
         byte bytes[] = byteList.getUnsafeBytes();
         int p = byteList.getBegin();
         int end = p + byteList.getRealSize();
-        RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
+        RubyString result = RubyString.newStringLight(runtime, new ByteList(end - p + 2));
+        result.getByteList().setBegin(1); // just in-case we need to prepend a '"'
+
         Encoding resultEnc = runtime.getDefaultInternalEncoding();
         boolean isUnicode = enc.isUnicode();
         boolean asciiCompat = enc.isAsciiCompatible();
         boolean needsQuotes = false;
-
 
         if (resultEnc == null) resultEnc = runtime.getDefaultExternalEncoding();
         if (!resultEnc.isAsciiCompatible()) resultEnc = USASCIIEncoding.INSTANCE;
@@ -154,12 +152,9 @@ public class RubyStringBuilder {
 
         if (p > prev) result.cat(bytes, prev, p - prev);
 
-        // FIXME: bytelist_love: This is weird and should be done differently
         if (needsQuotes) {
-            RubyString newResult = runtime.newString("\"");
-            newResult.cat(result);
-            newResult.cat('"');
-            result = newResult;
+            result.prepend('"');
+            result.cat('"');
         }
         return result;
     }
@@ -167,7 +162,7 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, IRubyObject value, String message) {
         RubyString buf = (RubyString) value.asString().dup();
 
-        buf.cat19(runtime.newString(message));
+        catUTF8(runtime, buf, message);
 
         return buf.toString();
     }
@@ -184,7 +179,7 @@ public class RubyStringBuilder {
         RubyString buf = runtime.newString(messageBegin);
 
         buf.cat19(value.asString());
-        buf.cat19(runtime.newString(messageEnd));
+        catUTF8(runtime, buf, messageEnd);
 
         return buf.toString();
     }
@@ -192,7 +187,7 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, IRubyObject value, String message, IRubyObject value2) {
         RubyString buf = (RubyString) value.asString().dup();
 
-        buf.cat19(runtime.newString(message));
+        catUTF8(runtime, buf, message);
         buf.cat19(value2.asString());
 
         return buf.toString();
@@ -201,9 +196,9 @@ public class RubyStringBuilder {
     public static String str(Ruby runtime, IRubyObject value, String message, IRubyObject value2, String message2) {
         RubyString buf = (RubyString) value.asString().dup();
 
-        buf.cat19(runtime.newString(message));
+        catUTF8(runtime, buf, message);
         buf.cat19(value2.asString());
-        buf.cat19(runtime.newString(message2));
+        catUTF8(runtime, buf, message2);
 
         return buf.toString();
     }
@@ -212,7 +207,7 @@ public class RubyStringBuilder {
         RubyString buf = runtime.newString(messageBegin);
 
         buf.cat19(value.asString());
-        buf.cat19(runtime.newString(messageMiddle));
+        catUTF8(runtime, buf, messageMiddle);
         buf.cat19(value2.asString());
 
         return buf.toString();
@@ -222,9 +217,9 @@ public class RubyStringBuilder {
         RubyString buf = runtime.newString(messageBegin);
 
         buf.cat19(value.asString());
-        buf.cat19(runtime.newString(messageMiddle));
+        catUTF8(runtime, buf, messageMiddle);
         buf.cat19(value2.asString());
-        buf.cat19(runtime.newString(messageEnd));
+        catUTF8(runtime, buf, messageEnd);
 
         return buf.toString();
     }
@@ -235,14 +230,19 @@ public class RubyStringBuilder {
         RubyString buf = runtime.newString(messageBegin);
 
         buf.cat19(value.asString());
-        buf.cat19(runtime.newString(messageMiddle));
-        buf.cat19(value2.asString());
-        buf.cat19(runtime.newString(messageMiddle2));
+        catUTF8(runtime, buf, messageMiddle);
+        buf.cat19(value2);
+        catUTF8(runtime, buf, messageMiddle2);
         buf.cat19(value3.asString());
-        buf.cat19(runtime.newString(messageMiddle3));
-        buf.cat19(value4.asString());
-        buf.cat19(runtime.newString(messageEnd));
+        catUTF8(runtime, buf, messageMiddle3);
+        buf.cat19(value4);
+        catUTF8(runtime, buf, messageEnd);
 
         return buf.toString();
     }
+
+    private static void catUTF8(final Ruby runtime, final RubyString str, final String value) {
+        EncodingUtils.encStrBufCat(runtime, str, value);
+    }
+
 }

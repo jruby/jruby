@@ -10,6 +10,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.targets.simple.ConstantLookupSite;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -23,12 +24,12 @@ import org.jruby.runtime.opto.Invalidator;
  * call const_missing.
  */
 public class SearchModuleForConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private RubySymbol constantName;
+    private final RubySymbol constantName;
     private final boolean noPrivateConsts;
     private final boolean callConstMissing;
 
     // Constant caching
-    private volatile transient ConstantCache cache;
+    private final ConstantLookupSite site;
 
     public SearchModuleForConstInstr(Variable result, Operand currentModule, RubySymbol constantName, boolean noPrivateConsts) {
         this(result, currentModule, constantName, noPrivateConsts, true);
@@ -41,6 +42,7 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
         this.constantName = constantName;
         this.noPrivateConsts = noPrivateConsts;
         this.callConstMissing = callConstMissing;
+        this.site = new ConstantLookupSite(constantName);
     }
 
     public Operand getCurrentModule() {
@@ -74,16 +76,6 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
         return new String[] { "name: " + constantName, "no_priv: " + noPrivateConsts};
     }
 
-    private Object cache(Ruby runtime, RubyModule module) {
-        String id = getId();
-        Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(id, false) : module.getConstantNoConstMissing(id);
-        if (constant != null) {
-            Invalidator invalidator = runtime.getConstantInvalidator(id);
-            cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
-        }
-        return constant;
-    }
-
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
@@ -102,21 +94,7 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object cmVal = getCurrentModule().retrieve(context, self, currScope, currDynScope, temp);
 
-        if (!(cmVal instanceof RubyModule)) throw context.runtime.newTypeError(cmVal + " is not a type/class");
-
-        RubyModule module = (RubyModule) cmVal;
-        ConstantCache cache = this.cache;
-        Object result = !ConstantCache.isCachedFrom(module, cache) ? cache(context.runtime, module) : cache.value;
-
-        if (result == null) {
-            if (callConstMissing) {
-                result = module.callMethod(context, "const_missing", getName());
-            } else {
-                result = UndefinedValue.UNDEFINED;
-            }
-        }
-
-        return result;
+        return site.searchModuleForConst(context, (IRubyObject) cmVal, noPrivateConsts, callConstMissing);
     }
 
     @Override

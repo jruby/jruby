@@ -1,11 +1,11 @@
 #include "ruby.h"
+#include "ruby/util.h"
 #include "rubyspec.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef HAVE_RB_SCAN_ARGS
 VALUE util_spec_rb_scan_args(VALUE self, VALUE argv, VALUE fmt, VALUE expected, VALUE acc) {
   int i, result, argc = (int)RARRAY_LEN(argv);
   VALUE args[6], failed, a1, a2, a3, a4, a5, a6;
@@ -17,19 +17,32 @@ VALUE util_spec_rb_scan_args(VALUE self, VALUE argv, VALUE fmt, VALUE expected, 
     args[i] = rb_ary_entry(argv, i);
   }
 
-  result = rb_scan_args(argc, args, RSTRING_PTR(fmt), &a1, &a2, &a3, &a4, &a5, &a6);
+#ifdef RB_SCAN_ARGS_KEYWORDS
+  if (*RSTRING_PTR(fmt) == 'k') {
+    result = rb_scan_args_kw(RB_SCAN_ARGS_KEYWORDS, argc, args, RSTRING_PTR(fmt)+1, &a1, &a2, &a3, &a4, &a5, &a6);
+  } else {
+#endif
+    result = rb_scan_args(argc, args, RSTRING_PTR(fmt), &a1, &a2, &a3, &a4, &a5, &a6);
+#ifdef RB_SCAN_ARGS_KEYWORDS
+  }
+#endif
 
   switch(NUM2INT(expected)) {
   case 6:
     rb_ary_unshift(acc, a6);
+    /* FALLTHROUGH */
   case 5:
     rb_ary_unshift(acc, a5);
+    /* FALLTHROUGH */
   case 4:
     rb_ary_unshift(acc, a4);
+    /* FALLTHROUGH */
   case 3:
     rb_ary_unshift(acc, a3);
+    /* FALLTHROUGH */
   case 2:
     rb_ary_unshift(acc, a2);
+    /* FALLTHROUGH */
   case 1:
     rb_ary_unshift(acc, a1);
     break;
@@ -39,55 +52,70 @@ VALUE util_spec_rb_scan_args(VALUE self, VALUE argv, VALUE fmt, VALUE expected, 
 
   return INT2NUM(result);
 }
-#endif
 
-#ifdef HAVE_RB_LONG2INT
+static VALUE util_spec_rb_get_kwargs(VALUE self, VALUE keyword_hash, VALUE keys, VALUE required, VALUE optional) {
+  int req = FIX2INT(required);
+  int opt = FIX2INT(optional);
+  int len = RARRAY_LENINT(keys);
+
+  int values_len = req + (opt < 0 ? -1 - opt : opt);
+  int i = 0;
+
+  ID *ids = (ID*) malloc(sizeof(VALUE) * len);
+  VALUE *results = (VALUE*) malloc(sizeof(VALUE) * values_len);
+  int extracted = 0;
+  VALUE ary = Qundef;
+
+  for (i = 0; i < len; i++) {
+    ids[i] = SYM2ID(rb_ary_entry(keys, i));
+  }
+
+  extracted = rb_get_kwargs(keyword_hash, ids, req, opt, results);
+  ary = rb_ary_new_from_values(extracted, results);
+  free(results);
+  free(ids);
+  return ary;
+}
+
 static VALUE util_spec_rb_long2int(VALUE self, VALUE n) {
   return INT2NUM(rb_long2int(NUM2LONG(n)));
 }
-#endif
 
-#ifdef HAVE_RB_ITER_BREAK
 static VALUE util_spec_rb_iter_break(VALUE self) {
   rb_iter_break();
   return Qnil;
 }
-#endif
 
-#ifdef HAVE_RB_SOURCEFILE
 static VALUE util_spec_rb_sourcefile(VALUE self) {
   return rb_str_new2(rb_sourcefile());
 }
-#endif
 
-#ifdef HAVE_RB_SOURCELINE
 static VALUE util_spec_rb_sourceline(VALUE self) {
   return INT2NUM(rb_sourceline());
 }
-#endif
+
+static VALUE util_spec_strtod(VALUE self, VALUE string) {
+  char *endptr = NULL;
+  double value = strtod(RSTRING_PTR(string), &endptr);
+  return rb_ary_new_from_args(2, rb_float_new(value), endptr ? rb_str_new2(endptr) : Qnil);
+}
+
+static VALUE util_spec_ruby_strtod(VALUE self, VALUE string) {
+  char *endptr = NULL;
+  double value = ruby_strtod(RSTRING_PTR(string), &endptr);
+  return rb_ary_new_from_args(2, rb_float_new(value), endptr ? rb_str_new2(endptr) : Qnil);
+}
 
 void Init_util_spec(void) {
   VALUE cls = rb_define_class("CApiUtilSpecs", rb_cObject);
-
-#ifdef HAVE_RB_SCAN_ARGS
   rb_define_method(cls, "rb_scan_args", util_spec_rb_scan_args, 4);
-#endif
-
-#ifdef HAVE_RB_LONG2INT
+  rb_define_method(cls, "rb_get_kwargs", util_spec_rb_get_kwargs, 4);
   rb_define_method(cls, "rb_long2int", util_spec_rb_long2int, 1);
-#endif
-
-#ifdef HAVE_RB_ITER_BREAK
   rb_define_method(cls, "rb_iter_break", util_spec_rb_iter_break, 0);
-#endif
-
-#ifdef HAVE_RB_SOURCEFILE
   rb_define_method(cls, "rb_sourcefile", util_spec_rb_sourcefile, 0);
-#endif
-
-#ifdef HAVE_RB_SOURCELINE
   rb_define_method(cls, "rb_sourceline", util_spec_rb_sourceline, 0);
-#endif
+  rb_define_method(cls, "strtod", util_spec_strtod, 1);
+  rb_define_method(cls, "ruby_strtod", util_spec_ruby_strtod, 1);
 }
 
 #ifdef __cplusplus

@@ -31,9 +31,16 @@ package org.jruby.parser;
 
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.function.BiConsumer;
+import java.util.function.IntFunction;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
@@ -45,6 +52,7 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -55,6 +63,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.IdUtil;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -68,13 +77,12 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * 
  */
 public class StaticScope implements Serializable {
-    private static final int MAX_SPECIALIZED_SIZE = 50;
+    public static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
 
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
-    final protected StaticScope enclosingScope;
+    protected StaticScope enclosingScope;
 
     // Live reference to module
     private transient RubyModule cref = null;
@@ -119,6 +127,8 @@ public class StaticScope implements Serializable {
 
     private volatile MethodHandle constructor;
 
+    private volatile Collection<String> ivarNames;
+
     public enum Type {
         LOCAL, BLOCK, EVAL;
 
@@ -131,9 +141,7 @@ public class StaticScope implements Serializable {
      *
      */
     protected StaticScope(Type type, StaticScope enclosingScope, String file) {
-        this(type, enclosingScope, NO_NAMES);
-
-        this.file = file;
+        this(type, enclosingScope, file, NO_NAMES, -1);
     }
 
     /**
@@ -143,7 +151,7 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      */
     protected StaticScope(Type type, StaticScope enclosingScope) {
-        this(type, enclosingScope, NO_NAMES);
+        this(type, enclosingScope, null, NO_NAMES, -1);
     }
 
     /**
@@ -156,20 +164,25 @@ public class StaticScope implements Serializable {
      * @param names          The list of interned String variable names.
      */
     protected StaticScope(Type type, StaticScope enclosingScope, String[] names, int firstKeywordIndex) {
+        this(type, enclosingScope, null ,names, firstKeywordIndex);
+    }
+
+    protected StaticScope(Type type, StaticScope enclosingScope, String file, String[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
 
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
         this.variableNamesLength = names.length;
         this.type = type;
-        this.irScope = enclosingScope == null ? null : enclosingScope.irScope;
+        if (enclosingScope != null) this.scopeType = enclosingScope.getScopeType();
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
         this.firstKeywordIndex = firstKeywordIndex;
+        this.file = file;
     }
 
     protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
-        this(type, enclosingScope, names, -1);
+        this(type, enclosingScope, null, names, -1);
     }
 
     public int getFirstKeywordIndex() {
@@ -284,11 +297,7 @@ public class StaticScope implements Serializable {
     }
 
     public String[] getVariables() {
-        String[] newVars = new String[variableNames.length];
-        for (int i = 0; i < variableNames.length; i++) {
-            newVars[i] = variableNames[i];
-        }
-        return newVars;
+        return variableNames;
     }
 
     public int getNumberOfVariables() {
@@ -359,6 +368,10 @@ public class StaticScope implements Serializable {
      */
     public StaticScope getEnclosingScope() {
         return enclosingScope;
+    }
+
+    public void setEnclosingScope(StaticScope parent) {
+        this.enclosingScope = parent;
     }
 
     /**
@@ -434,19 +447,55 @@ public class StaticScope implements Serializable {
      * @return a list of all names (sans $~ and $_ which are special names)
      */
     public String[] getAllNamesInScope() {
-        String[] names = getVariables();
-        if (isBlockOrEval) {
-            String[] ourVariables = names;
-            String[] variables = enclosingScope.getAllNamesInScope();
+        return collectVariables(ArrayList::new, ArrayList::add).stream().toArray(String[]::new);
+    }
 
-            // we know variables cannot be null since this IRStaticScope always returns a non-null array
-            names = new String[variables.length + ourVariables.length];
+    /**
+     * Populate a deduplicated collection of variable names in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
+    public <T> T collectVariables(IntFunction<T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        StaticScope current = this;
 
-            System.arraycopy(variables, 0, names, 0, variables.length);
-            System.arraycopy(ourVariables, 0, names, variables.length, ourVariables.length);
+        T collection = collectionFactory.apply(current.variableNamesLength);
+
+        HashMap<String, Object> dedup = new HashMap<>();
+
+        while (current.isBlockOrEval) {
+            for (String name : current.variableNames) {
+                dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
+            }
+            current = current.enclosingScope;
         }
 
-        return names;
+        // once more for method scope
+        for (String name : current.variableNames) {
+            dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
+        }
+
+        return collection;
+    }
+
+    /**
+     * Convenience wrapper around {@link #collectVariables(IntFunction, BiConsumer)}.
+     *
+     * @param runtime current runtime
+     * @return populated RubyArray
+     */
+    public RubyArray getLocalVariables(Ruby runtime) {
+        return collectVariables(
+                runtime::newArray,
+                (array, id) -> {
+                    RubySymbol symbol = runtime.newSymbol(id);
+                    if (symbol.validLocalVariableName()) array.append(symbol);
+                });
     }
 
     public int isDefined(String name, int depth) {
@@ -639,6 +688,18 @@ public class StaticScope implements Serializable {
         this.namedCaptures = newNamedCaptures;
     }
 
+    /**
+     * Determine if we happen to be within a method definition.
+     * @return true if so
+     */
+    public boolean isWithinMethod() {
+        for (StaticScope current = this; current != null; current = current.getEnclosingScope()) {
+            if (current.getScopeType().isMethod()) return true;
+        }
+
+        return false;
+    }
+
     public boolean isNamedCapture(int index) {
         boolean[] namedCaptures = this.namedCaptures;
         return namedCaptures != null && index < namedCaptures.length && namedCaptures[index];
@@ -658,6 +719,10 @@ public class StaticScope implements Serializable {
         return file;
     }
 
+    public void setFile(String file) {
+        this.file = file;
+    }
+
     public StaticScope duplicate() {
         StaticScope dupe = new StaticScope(type, enclosingScope, variableNames == null ? NO_NAMES : variableNames);
         // irScope is not guaranteed to be set onto StaticScope until it is executed for the first time.
@@ -666,6 +731,7 @@ public class StaticScope implements Serializable {
         dupe.setScopeType(scopeType);
         dupe.setPreviousCRefScope(previousCRefScope);
         dupe.setModule(cref);
+        dupe.setFile(file);
         dupe.setSignature(signature);
 
         return dupe;
@@ -681,5 +747,41 @@ public class StaticScope implements Serializable {
             overlayModule = omod = RubyModule.newModule(context.runtime);
         }
         return omod;
+    }
+
+    /**
+     * Duplicate the parent scope's refinements overlay to get a moment-in-time snapshot.  Caller must
+     * decide whether this scope is using (or maybe) using refinements.
+     *
+     * @param context
+     */
+    public void captureParentRefinements(ThreadContext context) {
+        for (StaticScope cur = this.getEnclosingScope(); cur != null; cur = cur.getEnclosingScope()) {
+            RubyModule overlay = cur.getOverlayModuleForRead();
+            if (overlay != null && !overlay.getRefinements().isEmpty()) {
+                // capture current refinements at definition time
+                RubyModule myOverlay = getOverlayModuleForWrite(context);
+
+                // FIXME: MRI does a copy-on-write thing here with the overlay
+                myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
+
+                // only search until we find an overlay
+                break;
+            }
+        }
+    }
+
+    public Collection<String> getInstanceVariableNames() {
+        if (ivarNames != null) return ivarNames;
+
+        if (irScope instanceof IRMethod) {
+            return ivarNames = ((IRMethod) irScope).getMethodData().getIvarNames();
+        }
+
+        return ivarNames = Collections.EMPTY_LIST;
+    }
+
+    public void setInstanceVariableNames(Collection<String> ivarWrites) {
+        this.ivarNames = ivarWrites;
     }
 }

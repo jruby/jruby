@@ -260,17 +260,25 @@ class TestNumeric < Test::Unit::TestCase
     assert_raise(ArgumentError) { 1.step(10, 1, 0) { } }
     assert_raise(ArgumentError) { 1.step(10, 1, 0).size }
     assert_raise(ArgumentError) { 1.step(10, 0) { } }
-    assert_raise(ArgumentError) { 1.step(10, 0).size }
     assert_raise(ArgumentError) { 1.step(10, "1") { } }
     assert_raise(ArgumentError) { 1.step(10, "1").size }
     assert_raise(TypeError) { 1.step(10, nil) { } }
-    assert_raise(TypeError) { 1.step(10, nil).size }
+    assert_nothing_raised { 1.step(10, 0).size }
+    assert_nothing_raised { 1.step(10, nil).size }
     assert_nothing_raised { 1.step(by: 0, to: nil) }
     assert_nothing_raised { 1.step(by: 0, to: nil).size }
     assert_nothing_raised { 1.step(by: 0) }
     assert_nothing_raised { 1.step(by: 0).size }
     assert_nothing_raised { 1.step(by: nil) }
     assert_nothing_raised { 1.step(by: nil).size }
+
+    assert_kind_of(Enumerator::ArithmeticSequence, 1.step(10))
+    assert_kind_of(Enumerator::ArithmeticSequence, 1.step(10, 2))
+    assert_kind_of(Enumerator::ArithmeticSequence, 1.step(10, by: 2))
+    assert_kind_of(Enumerator::ArithmeticSequence, 1.step(by: 2))
+    assert_kind_of(Enumerator::ArithmeticSequence, 1.step(by: 2, to: nil))
+    assert_kind_of(Enumerator::ArithmeticSequence, 1.step(by: 2, to: 10))
+    assert_kind_of(Enumerator::ArithmeticSequence, 1.step(by: -1))
 
     bug9811 = '[ruby-dev:48177] [Bug #9811]'
     assert_raise(ArgumentError, bug9811) { 1.step(10, foo: nil) {} }
@@ -289,7 +297,6 @@ class TestNumeric < Test::Unit::TestCase
     i <<= 1 until (bigflo - i).to_i < bignum
     bigflo -= i >> 1
     assert_equal(bigflo.to_i, (0.0).step(bigflo-1.0, 1.0).size)
-    assert_operator((0.0).step(bignum.to_f, 1.0).size, :>=, bignum) # may loose precision
 
     assert_step [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [1, 10]
     assert_step [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [1, to: 10]
@@ -400,6 +407,11 @@ class TestNumeric < Test::Unit::TestCase
                  2120078484650058507891187874713297895455.
                     pow(5478118174010360425845660566650432540723,
                         5263488859030795548286226023720904036518))
+
+    assert_equal(12, 12.pow(1, 10000000000), '[Bug #14259]')
+    assert_equal(12, 12.pow(1, 10000000001), '[Bug #14259]')
+    assert_equal(12, 12.pow(1, 10000000002), '[Bug #14259]')
+    assert_equal(17298641040, 12.pow(72387894339363242, 243682743764), '[Bug #14259]')
   end
 
 end

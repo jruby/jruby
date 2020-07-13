@@ -1,0 +1,1 @@
+fails:String#each_grapheme_cluster works if the String's contents is invalid for its encoding

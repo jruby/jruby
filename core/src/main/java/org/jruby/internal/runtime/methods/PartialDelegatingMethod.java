@@ -49,14 +49,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class PartialDelegatingMethod extends DynamicMethod {
-    private DynamicMethod method;
+    private final DynamicMethod method;
 
     /**
      * Constructor for PartialDelegatingMethod.
      * @param visibility
      */
     public PartialDelegatingMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
-        super(implementationClass, visibility, method.getName()   );
+        super(implementationClass, visibility, method.getName());
         this.method = method;
     }
     
@@ -110,6 +110,10 @@ public class PartialDelegatingMethod extends DynamicMethod {
     
     public DynamicMethod getRealMethod() {
         return method.getRealMethod();
+    }
+
+    public DynamicMethod getDelegate() {
+        return method;
     }
 
     @Override

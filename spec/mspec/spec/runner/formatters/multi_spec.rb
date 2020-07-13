@@ -1,6 +1,8 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
+require 'mspec/runner/formatters/dotted'
 require 'mspec/runner/formatters/multi'
 require 'mspec/runner/example'
+require 'yaml'
 
 describe MultiFormatter, "#aggregate_results" do
   before :each do
@@ -9,12 +11,12 @@ describe MultiFormatter, "#aggregate_results" do
     @file = double("file").as_null_object
 
     File.stub(:delete)
-    YAML.stub(:load)
+    File.stub(:read)
 
     @hash = { "files"=>1, "examples"=>1, "expectations"=>2, "failures"=>0, "errors"=>0 }
-    File.stub(:open).and_yield(@file).and_return(@hash)
+    YAML.stub(:load).and_return(@hash)
 
-    @formatter = MultiFormatter.new
+    @formatter = DottedFormatter.new.extend(MultiFormatter)
     @formatter.timer.stub(:format).and_return("Finished in 42 seconds")
   end
 

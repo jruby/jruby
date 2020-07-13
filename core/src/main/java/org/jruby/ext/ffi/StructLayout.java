@@ -40,7 +40,6 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -54,7 +53,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
@@ -144,11 +142,6 @@ public final class StructLayout extends Type {
         RubyClass arrayFieldClass = runtime.defineClassUnder("Array", fieldClass,
                 ArrayFieldAllocator.INSTANCE, layoutClass);
         arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
-
-        RubyClass mappedFieldClass = runtime.defineClassUnder("Mapped", fieldClass,
-                MappedFieldAllocator.INSTANCE, layoutClass);
-        mappedFieldClass.defineAnnotatedMethods(MappedField.class);
-
 
         return layoutClass;
     }
@@ -312,20 +305,47 @@ public final class StructLayout extends Type {
         return RubyArray.newArray(context.runtime, fields);
     }
 
-    final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
-        if (!(ptr instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
+    @JRubyMethod(name = "__union!")
+    public IRubyObject union_bang(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        NativeType[] alignmentTypes = {
+                NativeType.CHAR, NativeType.SHORT, NativeType.INT, NativeType.LONG,
+                NativeType.FLOAT, NativeType.DOUBLE, NativeType.LONGDOUBLE
+        };
+
+        NativeType t = null;
+        int count, i;
+
+        for (NativeType alignmentType : alignmentTypes) {
+            if (Type.getNativeAlignment(alignmentType) == alignment) {
+                t = alignmentType;
+                break;
+            }
         }
 
-        return getMember(context.runtime, name).get(context, cache, (AbstractMemory) ptr);
+        if (t == null) {
+            throw runtime.newRuntimeError("cannot create libffi union representation for alignment " + alignment);
+        }
+
+        // FIXME: wot
+//        count = layout.size / Type.getNativeSize(t);
+//        layout.ffiTypes = xcalloc(count + 1, sizeof(ffi_type *));
+//        layout.base.ffiType->elements = layout->ffiTypes;
+//
+//        for (i = 0; i < count; ++i) {
+//            layout->ffiTypes[i] = t;
+//        }
+
+        return this;
+    }
+
+    final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
+        return getMember(context.runtime, name).get(context, cache, AbstractMemory.cast(context, ptr));
     }
 
     final void putValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr, IRubyObject value) {
-        if (!(ptr instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
-        }
-
-        getMember(context.runtime, name).put(context, cache, (AbstractMemory) ptr, value);
+        getMember(context.runtime, name).put(context, cache, AbstractMemory.cast(context, ptr), value);
     }
 
     @Override
@@ -486,7 +506,7 @@ public final class StructLayout extends Type {
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
-         * @param runtime The ruby runtime
+         * @param context the current context
          * @param cache The value cache
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
@@ -519,7 +539,7 @@ public final class StructLayout extends Type {
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
-         * @param runtime The ruby runtime
+         * @param context the current context
          * @param cache The value cache
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
@@ -594,6 +614,9 @@ public final class StructLayout extends Type {
         /** The offset within the memory area of this member */
         private int offset;
 
+        /** The memory operation for this field type */
+        private MemoryOp memoryOp;
+
 
         Field(Ruby runtime, RubyClass klass) {
             this(runtime, klass, DefaultFieldIO.INSTANCE);
@@ -611,12 +634,15 @@ public final class StructLayout extends Type {
             this.type = type;
             this.offset = offset;
             this.io = io;
+            this.memoryOp = MemoryOp.getMemoryOp(type);
         }
 
         void init(IRubyObject name, IRubyObject type, IRubyObject offset) {
             this.name = name;
-            this.type = checkType(type);
+            Type realType = checkType(type);
+            this.type = realType;
             this.offset = RubyNumeric.num2int(offset);
+            this.memoryOp = MemoryOp.getMemoryOp(realType);
         }
 
         void init(IRubyObject name, IRubyObject type, IRubyObject offset, FieldIO io) {
@@ -730,6 +756,29 @@ public final class StructLayout extends Type {
         @JRubyMethod
         public final IRubyObject name(ThreadContext context) {
             return name;
+        }
+
+        @JRubyMethod
+        public final IRubyObject get(ThreadContext context, IRubyObject pointer) {
+            MemoryOp memoryOp = this.memoryOp;
+            if (memoryOp == null) {
+                throw context.runtime.newArgumentError("get not supported for " + type.nativeType.name());
+            }
+
+            return memoryOp.get(context, AbstractMemory.cast(context, pointer), offset);
+        }
+
+        @JRubyMethod
+        public final IRubyObject put(ThreadContext context, IRubyObject pointer, IRubyObject value) {
+            MemoryOp memoryOp = this.memoryOp;
+
+            if (memoryOp == null) {
+                throw context.runtime.newArgumentError("put not supported for " + type.nativeType.name());
+            }
+
+            memoryOp.put(context, AbstractMemory.cast(context, pointer), offset, value);
+
+            return this;
         }
     }
 
@@ -894,39 +943,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class MappedFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new MappedField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new MappedFieldAllocator();
-    }
-
-    @JRubyClass(name="FFI::StructLayout::Mapped", parent="FFI::StructLayout::Field")
-    public static final class MappedField extends Field {
-
-        public MappedField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass, DefaultFieldIO.INSTANCE);
-        }
-
-        @JRubyMethod(required = 4, visibility = PRIVATE)
-        public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-            if (!(args[2] instanceof MappedType)) {
-                throw context.runtime.newTypeError(args[2],
-                        context.runtime.getModule("FFI").getClass("Type").getClass("Mapped"));
-            }
-
-            if (!(args[3] instanceof Field)) {
-                throw context.runtime.newTypeError(args[3],
-                        context.runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
-            }
-
-            init(args[0], args[2], args[1], new MappedFieldIO((MappedType) args[2], ((Field) args[3]).getFieldIO()));
-
-            return this;
-        }
-    }
-
-
     public static interface Storage {
         IRubyObject getCachedValue(Member member);
         void putCachedValue(Member member, IRubyObject value);
@@ -963,12 +979,12 @@ public final class StructLayout extends Type {
                     || type.getComponentType() instanceof StructByValue);
         }
 
-        private final long getOffset(int index) {
+        private long getOffset(int index) {
             if (index < 0 || (index >= arrayType.length() && arrayType.length() > 0)) {
                 throw getRuntime().newIndexError("index " + index + " out of bounds");
             }
 
-            return (long) (index * arrayType.getComponentType().getNativeSize());
+            return index * (long) arrayType.getComponentType().getNativeSize();
         }
 
         private IRubyObject get(ThreadContext context, int index) {

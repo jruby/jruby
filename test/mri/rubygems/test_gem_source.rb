@@ -36,18 +36,6 @@ class TestGemSource < Gem::TestCase
     assert_equal repository, source.uri
   end
 
-  def test_api_uri
-    assert_equal @source.api_uri, @source.uri
-  end
-
-  def test_api_uri_resolved_from_remote_fetcher
-    uri = URI.parse "http://gem.example/foo"
-    @fetcher.api_endpoints[uri] = URI.parse "http://api.blah"
-
-    src = Gem::Source.new uri
-    assert_equal URI.parse("http://api.blah"), src.api_uri
-  end
-
   def test_cache_dir_escapes_windows_paths
     uri = URI.parse("file:///C:/WINDOWS/Temp/gem_repo")
     root = Gem.spec_cache_dir
@@ -110,7 +98,7 @@ class TestGemSource < Gem::TestCase
 
     cache_file = File.join cache_dir, a1.spec_name
 
-    open cache_file, 'wb' do |io|
+    File.open cache_file, 'wb' do |io|
       Marshal.dump a1, io
     end
 
@@ -163,7 +151,7 @@ class TestGemSource < Gem::TestCase
 
     cache_file = File.join cache_dir, "latest_specs.#{Gem.marshal_version}"
 
-    open cache_file, 'wb' do |io|
+    File.open cache_file, 'wb' do |io|
       Marshal.dump latest_specs, io
     end
 
@@ -187,7 +175,7 @@ class TestGemSource < Gem::TestCase
 
     cache_file = File.join cache_dir, "latest_specs.#{Gem.marshal_version}"
 
-    open cache_file, 'wb' do |io|
+    File.open cache_file, 'wb' do |io|
       # Setup invalid data in the cache:
       io.write Marshal.dump(latest_specs)[0, 10]
     end
@@ -248,4 +236,3 @@ class TestGemSource < Gem::TestCase
   end
 
 end
-

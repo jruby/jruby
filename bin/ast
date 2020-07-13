@@ -188,7 +188,6 @@ def ir_setup(root)
   runtime = JRuby::runtime
   manager = runtime.ir_manager
 
-  manager.dry_run = true
   JRuby::IR.compiler_debug = true
 
 

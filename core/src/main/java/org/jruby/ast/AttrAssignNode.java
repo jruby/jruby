@@ -13,7 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006-2007 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -41,22 +41,24 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     protected final Node receiverNode;
-    private RubySymbol name;
+    private final RubySymbol name;
     private Node argsNode;
+    private final Node blockNode;
     private final boolean isLazy;
 
-    public AttrAssignNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode, boolean isLazy) {
+    public AttrAssignNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode, Node blockNode, boolean isLazy) {
         super(position, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
-        
+
         assert receiverNode != null : "receiverNode is not null";
-        // TODO: At least ParserSupport.attrset passes argsNode as null.  ImplicitNil is wrong magic for 
+        // TODO: At least ParserSupport.attrset passes argsNode as null.  ImplicitNil is wrong magic for
         // setupArgs since it will IRubyObject[] { nil }.  So we need to figure out a nice fast
         // null pattern for setupArgs.
         // assert argsNode != null : "receiverNode is not null";
-        
+
         this.receiverNode = receiverNode;
         this.name = name;
         this.argsNode = argsNode;
+        this.blockNode = blockNode;
         this.isLazy = isLazy;
     }
 
@@ -68,7 +70,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      * Accept for the visitor pattern.
      * @param visitor the visitor
      **/
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitAttrAssignNode(this);
     }
 
@@ -80,6 +82,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     public RubySymbol getName() {
         return name;
     }
+
     /**
      * Gets the receiverNode.
      * receiverNode is the object on which the method is being called
@@ -88,7 +91,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     public Node getReceiverNode() {
         return receiverNode;
     }
-    
+
     /**
      * Gets the argsNode.
      * argsNode representing the method's arguments' value for this call.
@@ -97,10 +100,14 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     public Node getArgsNode() {
         return argsNode;
     }
-    
+
+    public Node getBlockNode() {
+        return blockNode;
+    }
+
     /**
      * Set the argsNode
-     * 
+     *
      * @param argsNode set the arguments for this node.
      */
     public Node setArgsNode(Node argsNode) {

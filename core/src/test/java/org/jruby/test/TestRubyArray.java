@@ -37,7 +37,7 @@ import org.jruby.RubyArray;
 /**
  * Test case for functionality in RubyArray
  */
-public class TestRubyArray extends TestRubyBase {
+public class TestRubyArray extends Base {
     private String result;
 
     public TestRubyArray(final String name) {
@@ -189,4 +189,10 @@ public class TestRubyArray extends TestRubyBase {
         final RubyArray rubyArray = (RubyArray)runtime.evalScriptlet("$h = ['foo', 'bar', 'baz', 'anything']");
         assertSublistContainsCorrectSubset(rubyArray);
     }
+
+    public void testRubyCollect() {
+        String result = eval("a = ['a', 'b'].collect {|x| \"#{x}\"}; p a");
+        assertEquals("Bug: [ #502036 ]", "[\"a\", \"b\"]", result);
+    }
+
 }

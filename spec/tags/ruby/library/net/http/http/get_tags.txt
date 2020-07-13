@@ -1,0 +1,4 @@
+critical(setup hangs on travis):Net::HTTP.get when passed URI returns the body of the specified uri
+critical(setup hangs on travis):Net::HTTP.get when passed host, path, port returns the body of the specified host-path-combination
+critical(setup hangs on travis):Net::HTTP.get when reading gzipped contents propagates exceptions interrupting the thread and does not replace it with Zlib::BufError
+critical(setup hangs on travis):Net::HTTP.get when reading gzipped contents lets the kill Thread exception goes through and does not replace it with Zlib::BufError

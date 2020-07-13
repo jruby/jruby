@@ -1,4 +1,5 @@
 exclude :test_block_parameter_should_not_create_objects, "requires ObjectSpace count_objects"
+exclude :test_callinfo_unreachable_path, "depends on RubyVM, tests RubyVM::InstructionSequence"
 exclude :test_clear_unreachable_keyword_args, "depends on RubyVM"
 exclude :test_fixnum_minus, "needs investigation"
 exclude :test_fixnum_plus, "needs investigation"

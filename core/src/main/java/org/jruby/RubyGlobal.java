@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -49,6 +50,7 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
@@ -57,7 +59,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
-import org.jruby.util.Numeric;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
@@ -94,7 +95,7 @@ public class RubyGlobal {
         String[] argv = runtime.getInstanceConfig().getArgv();
 
         for (String arg : argv) {
-            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg));
+            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg).tainted());
         }
 
         if (runtime.getObject().getConstantNoConstMissing("ARGV") != null) {
@@ -105,7 +106,7 @@ public class RubyGlobal {
         }
     }
 
-    public static void createGlobals(ThreadContext context, Ruby runtime) {
+    public static void createGlobals(Ruby runtime) {
         GlobalVariables globals = runtime.getGlobalVariables();
 
         runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
@@ -126,30 +127,38 @@ public class RubyGlobal {
         globals.define("$0", d, GLOBAL);
 
         // Version information:
-        IRubyObject version = null;
-        IRubyObject patchlevel = null;
-        IRubyObject release = runtime.newString(Constants.COMPILE_DATE).freeze(context);
-        IRubyObject platform = runtime.newString(Constants.PLATFORM).freeze(context);
-        IRubyObject engine = runtime.newString(Constants.ENGINE).freeze(context);
+        IRubyObject version;
+        IRubyObject patchlevel;
+        IRubyObject release = runtime.newString(Constants.COMPILE_DATE);
+        release.setFrozen(true);
+        IRubyObject platform = runtime.newString(Constants.PLATFORM);
+        release.setFrozen(true);
+        IRubyObject engine = runtime.newString(Constants.ENGINE);
+        release.setFrozen(true);
 
-        version = runtime.newString(Constants.RUBY_VERSION).freeze(context);
+        version = runtime.newString(Constants.RUBY_VERSION);
+        release.setFrozen(true);
         patchlevel = runtime.newFixnum(0);
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
         runtime.defineGlobalConstant("RUBY_PLATFORM", platform);
 
-        IRubyObject description = runtime.newString(OutputStrings.getVersionString()).freeze(context);
+        IRubyObject description = runtime.newString(OutputStrings.getVersionString());
+        release.setFrozen(true);
         runtime.defineGlobalConstant("RUBY_DESCRIPTION", description);
 
-        IRubyObject copyright = runtime.newString(OutputStrings.getCopyrightString()).freeze(context);
+        IRubyObject copyright = runtime.newString(OutputStrings.getCopyrightString());
+        release.setFrozen(true);
         runtime.defineGlobalConstant("RUBY_COPYRIGHT", copyright);
 
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
 
-        IRubyObject jrubyVersion = runtime.newString(Constants.VERSION).freeze(context);
-        IRubyObject jrubyRevision = runtime.newString(Constants.REVISION).freeze(context);
+        IRubyObject jrubyVersion = runtime.newString(Constants.VERSION);
+        release.setFrozen(true);
+        IRubyObject jrubyRevision = runtime.newString(Constants.REVISION);
+        release.setFrozen(true);
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
 
@@ -166,7 +175,8 @@ public class RubyGlobal {
 
         runtime.defineVariable(kcodeGV, GLOBAL);
         runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV), GLOBAL);
-        IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator()).freeze(context);
+        IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator());
+        release.setFrozen(true);
         GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
@@ -188,7 +198,7 @@ public class RubyGlobal {
         }
 
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
-        IRubyObject verboseValue = null;
+        IRubyObject verboseValue;
         if (verbose == RubyInstanceConfig.Verbosity.NIL) {
             verboseValue = runtime.getNil();
         } else if(verbose == RubyInstanceConfig.Verbosity.TRUE) {
@@ -324,7 +334,7 @@ public class RubyGlobal {
 
             // try typical stdio stream and channel types
             int fileno = -1;
-            Channel channel = null;
+            Channel channel;
 
             if (stream instanceof Channel) {
                 channel = (Channel) stream;
@@ -433,9 +443,15 @@ public class RubyGlobal {
             return RubyString.newStringShared(getRuntime(), ENV);
         }
 
+        @Deprecated
+        public RubyHash to_h() {
+            return to_h(getRuntime().getCurrentContext(), Block.NULL_BLOCK);
+        }
+
         @JRubyMethod
-        public RubyHash to_h(){
-            return to_hash();
+        public RubyHash to_h(ThreadContext context, Block block){
+            RubyHash h = to_hash(context);
+            return block.isGiven() ? h.to_h_block(context, block) : h;
         }
 
     }
@@ -464,22 +480,21 @@ public class RubyGlobal {
         }
 
         @Override
-        public RubyHash to_hash() {
-            Ruby runtime = getRuntime();
-            RubyHash hash = RubyHash.newHash(runtime);
-            hash.replace(runtime.getCurrentContext(), this);
+        public RubyHash to_hash(ThreadContext context) {
+            RubyHash hash = RubyHash.newHash(context.runtime);
+            hash.replace(context, this);
             return hash;
         }
 
         @Override
-        protected RubyHashEntry internalGetEntry(IRubyObject key) {
-            if (size == 0) return NO_ENTRY;
+        protected IRubyObject internalGet(IRubyObject key) {
+            if (size == 0) return null;
 
             if (!isCaseSensitive()) {
                 key = getCorrectKey(key.convertToString());
             }
 
-            return super.internalGetEntry(key);
+            return super.internalGet(key);
         }
 
         @Override
@@ -676,12 +691,12 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return Helpers.getBackref(runtime, runtime.getCurrentContext());
+            return Helpers.getBackref(runtime.getCurrentContext());
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            Helpers.setBackref(runtime, runtime.getCurrentContext(), value);
+            Helpers.setBackref(runtime.getCurrentContext(), value);
             return value;
         }
     }
@@ -883,13 +898,12 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return Helpers.getLastLine(runtime, runtime.getCurrentContext());
+            return runtime.getCurrentContext().getLastLine();
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            Helpers.setLastLine(runtime, runtime.getCurrentContext(), value);
-            return value;
+            return runtime.getCurrentContext().setLastLine(value);
         }
     }
 

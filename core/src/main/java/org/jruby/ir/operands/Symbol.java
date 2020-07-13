@@ -36,7 +36,7 @@ public class Symbol extends ImmutableLiteral implements Stringable {
         return symbol;
     }
 
-    public String getString() { return symbol.idString(); }
+    public String getString() { return symbol == null ? null : symbol.idString(); }
 
     @Override
     public Object createCacheObject(ThreadContext context) {
@@ -61,15 +61,22 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
 
-        e.encode(getBytes());
+        e.encode(symbol);
     }
 
     public static Symbol decode(IRReaderDecoder d) {
-        return new Symbol(d.decodeSymbol());
+        RubySymbol symbol = d.decodeSymbol();
+
+        return symbol == null ? KW_REST_ARG_DUMMY : new Symbol(symbol);
     }
 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Symbol(this);
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
     }
 }

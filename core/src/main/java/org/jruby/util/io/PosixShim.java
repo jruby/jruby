@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
 
@@ -54,20 +55,20 @@ public class PosixShim {
                     case SEEK_END:
                         return fd.chSeek.position(fd.chSeek.size() + offset).position();
                     default:
-                        errno = Errno.EINVAL;
+                        setErrno(Errno.EINVAL);
                         return -1;
                 }
             } catch (IllegalArgumentException e) {
-                errno = Errno.EINVAL;
+                setErrno(Errno.EINVAL);
                 return -1;
             } catch (IOException ioe) {
-                errno = Helpers.errnoFromException(ioe);
+                setErrno(Helpers.errnoFromException(ioe));
                 return -1;
             }
         } else if (fd.chNative != null) {
             // native channel, use native lseek
             long ret = posix.lseekLong(fd.chNative.getFD(), offset, type);
-            if (ret == -1) errno = Errno.valueOf(posix.errno());
+            if (ret == -1) setErrno(Errno.valueOf(posix.errno()));
             return ret;
         }
 
@@ -80,7 +81,7 @@ public class PosixShim {
             // stdio is not...so this bothers me slightly. -CON
             //
             // Original change made in 66b024fedbb2ee32316ccd9de8387931d07993ec
-            errno = Errno.EPIPE;
+            setErrno(Errno.EPIPE);
             return -1;
         }
 
@@ -100,7 +101,7 @@ public class PosixShim {
             }
 
             if (fd.chWrite == null) {
-                errno = Errno.EACCES;
+                setErrno(Errno.EACCES);
                 return -1;
             }
             int written = fd.chWrite.write(tmp);
@@ -108,15 +109,15 @@ public class PosixShim {
             if (written == 0 && length > 0) {
                 // if it's a nonblocking write against a file and we've hit EOF, do EAGAIN
                 if (nonblock) {
-                    errno = Errno.EAGAIN;
+                    setErrno(Errno.EAGAIN);
                     return -1;
                 }
             }
 
             return written;
-        } catch (IOException ioe) {
-            errno = Helpers.errnoFromException(ioe);
-            error = ioe;
+        }  catch (Exception e) {
+            setErrno(Helpers.errnoFromException(e));
+            error = e;
             return -1;
         }
     }
@@ -140,13 +141,13 @@ public class PosixShim {
                         if (position != -1 && size != -1 && position < size) {
                             // there should be bytes available...proceed
                         } else {
-                            errno = Errno.EAGAIN;
+                            setErrno(Errno.EAGAIN);
                             return -1;
                         }
                     } else if (fd.chNative != null && fd.isNativeFile) {
                         // it's a native file, so we don't do selection or nonblock
                     } else {
-                        errno = Errno.EAGAIN;
+                        setErrno(Errno.EAGAIN);
                         return -1;
                     }
                 }
@@ -160,7 +161,7 @@ public class PosixShim {
                 if (read == JAVA_EOF) {
                     read = NATIVE_EOF; // still treat EOF as EOF
                 } else if (read == 0) {
-                    errno = Errno.EAGAIN;
+                    setErrno(Errno.EAGAIN);
                     return -1;
                 } else {
                     return read;
@@ -172,7 +173,7 @@ public class PosixShim {
 
             return read;
         } catch (IOException ioe) {
-            errno = Helpers.errnoFromException(ioe);
+            setErrno(Helpers.errnoFromException(ioe));
             return -1;
         }
     }
@@ -182,17 +183,16 @@ public class PosixShim {
         // TODO: null channel always succeeds for all locking operations
 //        if (descriptor.isNull()) return RubyFixnum.zero(runtime);
 
-        Channel channel = fd.ch;
         clear();
 
         int real_fd = fd.realFileno;
 
-        if (real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD && !Platform.IS_SOLARIS) {
+        if (posix.isNative() && real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD && !Platform.IS_SOLARIS) {
             // we have a real fd and not on Solaris...try native flocking
             // see jruby/jruby#3254 and jnr/jnr-posix#60
             int result = posix.flock(real_fd, lockMode);
             if (result < 0) {
-                errno = Errno.valueOf(posix.errno());
+                setErrno(Errno.valueOf(posix.errno()));
                 return -1;
             }
             return 0;
@@ -202,12 +202,12 @@ public class PosixShim {
             int ret = checkSharedExclusive(fd, lockMode);
             if (ret < 0) return ret;
 
-            if (!lockStateChanges(fd.currentLock, lockMode)) return 0;
+            if (!lockStateChanges(fd.currentLock.get(), lockMode)) return 0;
 
             try {
                 synchronized (fd.chFile) {
                     // check again, to avoid unnecessary overhead
-                    if (!lockStateChanges(fd.currentLock, lockMode)) return 0;
+                    if (!lockStateChanges(fd.currentLock.get(), lockMode)) return 0;
 
                     switch (lockMode) {
                         case LOCK_UN:
@@ -224,17 +224,17 @@ public class PosixShim {
                     }
                 }
             } catch (IOException ioe) {
-                errno = Helpers.errnoFromException(ioe);
+                setErrno(Helpers.errnoFromException(ioe));
                 return -1;
             } catch (OverlappingFileLockException ioe) {
-                errno = Errno.EINVAL;
+                setErrno(Errno.EINVAL);
                 errmsg = "overlapping file locks";
             }
             return lockFailedReturn(lockMode);
         } else {
             // We're not actually a real file, so we can't flock
             // FIXME: This needs to be ENOTSUP
-            errno = Errno.EINVAL;
+            setErrno(Errno.EINVAL);
             errmsg = "stream is not a file";
             return -1;
         }
@@ -259,7 +259,7 @@ public class PosixShim {
             if (errno == null) {
                 throw new RuntimeException("unknown IOException: " + ioe);
             }
-            this.errno = errno;
+            this.setErrno(errno);
             return -1;
         }
     }
@@ -280,11 +280,22 @@ public class PosixShim {
 
             return new Channel[]{source, sink};
         } catch (IOException ioe) {
-            errno = Helpers.errnoFromException(ioe);
+            setErrno(Helpers.errnoFromException(ioe));
             return null;
         }
     }
-    
+
+    /**
+     * The appropriate errno value for the last thrown error, if any.
+     */
+    public Errno getErrno() {
+        return errno.get();
+    }
+
+    public void setErrno(Errno errno) {
+        this.errno.set(errno);
+    }
+
     public interface WaitMacros {
         public abstract boolean WIFEXITED(long status);
         public abstract boolean WIFSIGNALED(long status);
@@ -341,7 +352,7 @@ public class PosixShim {
         private int __W_EXITCODE(int ret, int sig) { return (ret << 8) | sig; }
         private int __W_STOPCODE(int sig) { return (sig << 8) | 0x7f; }
         private static int __W_CONTINUED = 0xffff;
-        private static int __WCOREFLAG = 0x80;
+        private static final int __WCOREFLAG = 0x80;
 
         /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
         private int __WEXITSTATUS(long status) { return (int)((status & 0xff00) >> 8); }
@@ -389,7 +400,7 @@ public class PosixShim {
     public int setCloexec(int fd, boolean cloexec) {
         int ret = posix.fcntl(fd, Fcntl.F_GETFD);
         if (ret == -1) {
-            errno = Errno.valueOf(posix.errno());
+            setErrno(Errno.valueOf(posix.errno()));
             return -1;
         }
         if (
@@ -401,44 +412,54 @@ public class PosixShim {
                 ret | FcntlLibrary.FD_CLOEXEC :
                 ret & ~FcntlLibrary.FD_CLOEXEC;
         ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
-        if (ret == -1) errno = Errno.valueOf(posix.errno());
+        if (ret == -1) setErrno(Errno.valueOf(posix.errno()));
         return ret;
     }
 
     public int fcntlSetFD(int fd, int flags) {
         int ret = posix.fcntlInt(fd, Fcntl.F_SETFD, flags);
-        if (ret == -1) errno = Errno.valueOf(posix.errno());
+        if (ret == -1) setErrno(Errno.valueOf(posix.errno()));
         return ret;
     }
 
     public int fcntlGetFD(int fd) {
         int ret = posix.fcntl(fd, Fcntl.F_GETFD);
+        if (ret == -1) {
+            setErrno(Errno.valueOf(posix.errno()));
+        }
         return ret;
     }
 
-    public Channel open(String cwd, String path, ModeFlags flags, int perm) {
-        if ((path.equals("/dev/null") || path.equalsIgnoreCase("nul")) && Platform.IS_WINDOWS) {
+    public Channel open(String cwd, String path, int flags, int perm) {
+        if (Platform.IS_WINDOWS && (path.equals("/dev/null") || path.equalsIgnoreCase("nul"))) {
             path = "NUL:";
         }
 
         try {
             return JRubyFile.createResource(runtime, cwd, path).openChannel(flags, perm);
         } catch (ResourceException.FileExists e) {
-            errno = Errno.EEXIST;
+            setErrno(Errno.EEXIST);
         } catch (ResourceException.FileIsDirectory e) {
-            errno = Errno.EISDIR;
+            setErrno(Errno.EISDIR);
         } catch (ResourceException.FileIsNotDirectory e) {
-            errno = Errno.ENOTDIR;
+            setErrno(Errno.ENOTDIR);
         } catch (ResourceException.NotFound e) {
-            errno = Errno.ENOENT;
+            setErrno(Errno.ENOENT);
         } catch (ResourceException.PermissionDenied e) {
-            errno = Errno.EACCES;
+            setErrno(Errno.EACCES);
         } catch (ResourceException.TooManySymlinks e) {
-            errno = Errno.ELOOP;
-        } catch (ResourceException resourceException) {
-            throw resourceException.newRaiseException(runtime);
+            setErrno(Errno.ELOOP);
+        } catch (ResourceException ex) {
+            throw ex.newRaiseException(runtime);
+        } catch (IOException ex) {
+            throw runtime.newIOErrorFromException(ex);
         }
         return null;
+    }
+
+    // no longer used
+    public Channel open(String cwd, String path, ModeFlags flags, int perm) {
+        return open(cwd, path, flags, perm);
     }
 
     @Deprecated // special case is already handled with JRubyFile.createResource
@@ -482,17 +503,17 @@ public class PosixShim {
     public int ftruncate(ChannelFD fd, long pos) {
         if (fd.chNative != null) {
             int ret = posix.ftruncate(fd.chNative.getFD(), pos);
-            if (ret == -1) errno = Errno.valueOf(posix.errno());
+            if (ret == -1) setErrno(Errno.valueOf(posix.errno()));
             return ret;
         } else if (fd.chFile != null) {
             try {
                 fd.chFile.truncate(pos);
             } catch (IOException ioe) {
-                errno = Helpers.errnoFromException(ioe);
+                setErrno(Helpers.errnoFromException(ioe));
                 return -1;
             }
         } else {
-            errno = Errno.EINVAL;
+            setErrno(Errno.EINVAL);
             return -1;
         }
         return 0;
@@ -503,7 +524,7 @@ public class PosixShim {
             FileStat stat = posix.allocateStat();
             int ret = posix.fstat(fd.chNative.getFD(), stat);
             if (ret == -1) {
-                errno = Errno.valueOf(posix.errno());
+                setErrno(Errno.valueOf(posix.errno()));
                 return -1;
             }
             return stat.st_size();
@@ -511,18 +532,18 @@ public class PosixShim {
             try {
                 return fd.chSeek.size();
             } catch (IOException ioe) {
-                errno = Helpers.errnoFromException(ioe);
+                setErrno(Helpers.errnoFromException(ioe));
                 return -1;
             }
         } else {
             // otherwise just return -1 (should be rare, since size is only defined on File
-            errno = Errno.EINVAL;
+            setErrno(Errno.EINVAL);
             return -1;
         }
     }
 
     private void clear() {
-        errno = null;
+        setErrno(null);
         errmsg = null;
     }
 
@@ -537,7 +558,7 @@ public class PosixShim {
         // dependent, and so we will obey the JDK's policy of disallowing
         // exclusive locks on files opened only for read.
         if (fd.chWrite == null && (lockMode & LOCK_EX) > 0) {
-            errno = Errno.EINVAL;
+            setErrno(Errno.EINVAL);
             errmsg = "cannot acquire exclusive lock on File not opened for write";
             return -1;
         }
@@ -545,7 +566,7 @@ public class PosixShim {
         // Likewise, JDK does not allow acquiring a shared lock on files
         // that have not been opened for read. We comply here.
         if (fd.chRead == null && (lockMode & LOCK_SH) > 0) {
-            errno = Errno.EINVAL;
+            setErrno(Errno.EINVAL);
             errmsg = "cannot acquire shared lock on File not opened for read";
             return -1;
         }
@@ -586,9 +607,11 @@ public class PosixShim {
     }
 
     private int unlock(ChannelFD fd) throws IOException {
-        if (fd.currentLock != null) {
-            fd.currentLock.release();
-            fd.currentLock = null;
+        FileLock fileLock = fd.currentLock.get();
+
+        if (fileLock != null) {
+            fileLock.release();
+            fd.currentLock.remove();
 
             return 0;
         }
@@ -596,11 +619,15 @@ public class PosixShim {
     }
 
     private int lock(ChannelFD fd, boolean exclusive) throws IOException {
-        if (fd.currentLock != null) fd.currentLock.release();
+        FileLock fileLock = fd.currentLock.get();
 
-        fd.currentLock = fd.chFile.lock(0L, Long.MAX_VALUE, !exclusive);
+        if (fileLock != null) fileLock.release();
 
-        if (fd.currentLock != null) {
+        fileLock = fd.chFile.lock(0L, Long.MAX_VALUE, !exclusive);
+
+        fd.currentLock.set(fileLock);
+
+        if (fileLock != null) {
             return 0;
         }
 
@@ -608,11 +635,15 @@ public class PosixShim {
     }
 
     private int tryLock(ChannelFD fd, boolean exclusive) throws IOException {
-        if (fd.currentLock != null) fd.currentLock.release();
+        FileLock fileLock = fd.currentLock.get();
 
-        fd.currentLock = fd.chFile.tryLock(0L, Long.MAX_VALUE, !exclusive);
+        if (fileLock != null) fileLock.release();
 
-        if (fd.currentLock != null) {
+        fileLock = fd.chFile.tryLock(0L, Long.MAX_VALUE, !exclusive);
+
+        fd.currentLock.set(fileLock);
+
+        if (fileLock != null) {
             return 0;
         }
 
@@ -624,10 +655,7 @@ public class PosixShim {
      */
     public Throwable error;
 
-    /**
-     * The appropriate errno value for the last thrown error, if any.
-     */
-    public Errno errno;
+    private final ThreadLocal<Errno> errno = new ThreadLocal<>();
 
     /**
      * The recommended error message, if any.

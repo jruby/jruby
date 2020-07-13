@@ -60,7 +60,7 @@ public interface IRReaderDecoder {
 
     public Variable decodeVariable();
 
-    public List<Instr> decodeInstructionsAt(IRScope scope, int offset);
+    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int instructionOffset);
     public IRScope getCurrentScope();
     public Map<String, Operand> getVars();
 
@@ -71,4 +71,11 @@ public interface IRReaderDecoder {
 
     public TemporaryVariableType decodeTemporaryVariableType();
     public ByteList getFilename();
+
+    /**
+     * Duplicate this decoder to isolate any state changes.
+     *
+     * @return An identical decoder that's isolated from the original
+     */
+    public IRReaderDecoder dup();
 }

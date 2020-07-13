@@ -36,11 +36,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
+import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.jar.JarFile;
 
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -58,6 +64,9 @@ import org.jruby.util.log.LoggerFactory;
  * <code>require</code> and <code>load</code>
  */
 public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
+    static {
+        registerAsParallelCapable();
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(JRubyClassLoader.class);
 
@@ -65,7 +74,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static volatile File tempDir;
 
-    private List<String> cachedJarPaths = Collections.synchronizedList(new ArrayList<String>());
+    private final Map<String, URL> cachedJarPaths = new ConcurrentHashMap<>();
 
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
@@ -78,42 +87,30 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         // the temp file with the super URLClassLoader
         if (url.toString().contains( "!/" ) ||
             !(url.getProtocol().equals("file") || url.getProtocol().equals("http") || url.getProtocol().equals("https"))) {
-            InputStream in = null; OutputStream out = null;
             try {
                 File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
-                out = new BufferedOutputStream( new FileOutputStream( f ) );
-                in = new BufferedInputStream( url.openStream() );
-                int i = in.read();
-                while( i != -1 ) {
-                    out.write( i );
-                    i = in.read();
-                }
-                out.close();
-                in.close();
-                url = f.toURI().toURL();
 
-                cachedJarPaths.add(URLUtil.getPath(url));
-            }
-            catch (IOException e) {
+                try (FileOutputStream fileOut = new FileOutputStream(f);
+                     InputStream urlIn = url.openStream()) {
+
+                    OutputStream out = new BufferedOutputStream(fileOut);
+                    InputStream in = new BufferedInputStream(urlIn);
+
+                    int i = in.read();
+                    while (i != -1) {
+                        out.write(i);
+                        i = in.read();
+                    }
+                    out.flush();
+                    url = f.toURI().toURL();
+
+                    cachedJarPaths.put(URLUtil.getPath(url), url);
+                }
+            } catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
             }
-            finally {
-                // make sure we close everything
-                if ( out != null ) {
-                    try {
-                        out.close();
-                    }
-                    catch (IOException ex) { LOG.debug(ex); }
-                }
-                if ( in != null ) {
-                    try {
-                        in.close();
-                    }
-                    catch (IOException ex) { LOG.debug(ex); }
-                }
-            }
         }
-        super.addURL( url );
+        super.addURL(url);
     }
 
     private static synchronized File getTempDir() {
@@ -168,21 +165,20 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
     }
 
     /**
-     * @deprecated use {@link #close()} instead
-     */
-    public void tearDown(boolean debug) {
-        close();
-    }
-
-    /**
      * Called when the parent runtime is torn down.
      */
     @Override
     public void close() {
-        try {
-            super.close();
+        if (Options.JI_CLOSE_CLASSLOADER.load()) {
+            // We no longer unconditionally close the classloader due to JDK issues with the open jar files it may be
+            // holding references to.
+            // See jruby/jruby#6218 and https://bugs.openjdk.java.net/browse/JDK-8246714
+            try {
+                super.close();
+            } catch (Exception ex) {
+                LOG.debug(ex);
+            }
         }
-        catch (Exception ex) { LOG.debug(ex); }
 
         try {
             // A hack to allow unloading all JDBC Drivers loaded by this classloader.
@@ -195,18 +191,31 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
     }
 
     protected void terminateJarIndexCacheEntries() {
-        for (String jarPath : cachedJarPaths){
+        cachedJarPaths.forEach((path, url) -> {
+            // close the jar file associated with the connection, since this might be cached by JDK
             try {
+                URLConnection connection = url.openConnection();
+
+                if (connection instanceof JarURLConnection) {
+                    JarFile jarFile = ((JarURLConnection) connection).getJarFile();
+
+                    try {
+                        jarFile.close();
+                    } catch (IOException ioe) {
+                        // ignore and proceed to delete the file
+                    }
+                }
+
                 // Remove reference from jar cache
-                JarResource.removeJarResource(jarPath);
+                JarResource.removeJarResource(path);
 
                 // Delete temp jar on disk
-                File jarFile = new File(jarPath);
+                File jarFile = new File(path);
                 jarFile.delete();
             } catch (Exception e) {
                 // keep trying to clean up other temp jars
             }
-        }
+        });
     }
 
     @Deprecated

@@ -10,8 +10,8 @@
  */
 package org.jruby.util.io;
 
-import com.headius.modulator.Modulator;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.javasupport.Java;
 
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
@@ -112,7 +112,9 @@ public abstract class ChannelHelper {
             while (filteredStream instanceof FilterOutputStream) {
                 try {
                     OutputStream tmpStream =
-                            Modulator.trySetAccessible(filterOutField) ? (OutputStream) filterOutField.get(filteredStream) : null;
+                            Java.trySetAccessible(filterOutField)
+                                    ? (OutputStream) filterOutField.get(filteredStream)
+                                    : null;
 
                     // try to unwrap as a Drip stream
                     if (!(tmpStream instanceof FilterOutputStream)) {
@@ -151,7 +153,9 @@ public abstract class ChannelHelper {
             while (filteredStream instanceof FilterInputStream) {
                 try {
                     InputStream tmpStream =
-                            Modulator.trySetAccessible(filterInField) ? (InputStream) filterInField.get(filteredStream) : null;
+                            Java.trySetAccessible(filterInField)
+                                    ? (InputStream) filterInField.get(filteredStream)
+                                    : null;
 
                     // could not acquire
                     if (tmpStream == null) break;
@@ -181,7 +185,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field out = stream.getClass().getDeclaredField("out");
-                return Modulator.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
+                return Java.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
             } catch (Exception e) {
             }
         }
@@ -192,7 +196,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field in = stream.getClass().getDeclaredField("in");
-                return Modulator.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
+                return Java.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
             } catch (Exception e) {
             }
         }

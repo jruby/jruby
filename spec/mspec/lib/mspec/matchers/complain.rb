@@ -1,17 +1,28 @@
 require 'mspec/helpers/io'
 
 class ComplainMatcher
-  def initialize(complaint)
-    @complaint = complaint
+  def initialize(complaint = nil, options = nil)
+    # the proper solution is to use double splat operator e.g.
+    #   def initialize(complaint = nil, **options)
+    # but we are trying to minimize language features required to run MSpec
+    if complaint.is_a?(Hash)
+      @complaint = nil
+      @options = complaint
+    else
+      @complaint = complaint
+      @options = options || {}
+    end
   end
 
   def matches?(proc)
     @saved_err = $stderr
     @verbose = $VERBOSE
+    err = IOStub.new
+
+    Thread.current[:in_mspec_complain_matcher] = true
+    $stderr = err
+    $VERBOSE = @options.key?(:verbose) ? @options[:verbose] : false
     begin
-      err = $stderr = IOStub.new
-      $VERBOSE = false
-      Thread.current[:in_mspec_complain_matcher] = true
       proc.call
     ensure
       $VERBOSE = @verbose
@@ -54,7 +65,7 @@ class ComplainMatcher
 end
 
 module MSpecMatchers
-  private def complain(complaint=nil)
-    ComplainMatcher.new(complaint)
+  private def complain(complaint = nil, options = nil)
+    ComplainMatcher.new(complaint, options)
   end
 end

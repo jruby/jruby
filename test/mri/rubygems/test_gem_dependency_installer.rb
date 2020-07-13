@@ -424,14 +424,14 @@ class TestGemDependencyInstaller < Gem::TestCase
     extconf_rb = File.join @gemhome, 'gems', 'e-1', 'extconf.rb'
     FileUtils.mkdir_p File.dirname extconf_rb
 
-    open extconf_rb, 'w' do |io|
+    File.open extconf_rb, 'w' do |io|
       io.write <<-EXTCONF_RB
         require 'mkmf'
         create_makefile 'e'
       EXTCONF_RB
     end
 
-    e1 = new_spec 'e', '1', nil, 'extconf.rb' do |s|
+    e1 = util_spec 'e', '1', nil, 'extconf.rb' do |s|
       s.extensions << 'extconf.rb'
     end
     e1_gem = File.join @tempdir, 'gems', "#{e1.full_name}.gem"
@@ -445,9 +445,13 @@ class TestGemDependencyInstaller < Gem::TestCase
     FileUtils.mv f1_gem, @tempdir
     inst = nil
 
-    Dir.chdir @tempdir do
+    pwd = Dir.getwd
+    Dir.chdir @tempdir
+    begin
       inst = Gem::DependencyInstaller.new
       inst.install 'f'
+    ensure
+      Dir.chdir pwd
     end
 
     assert_equal %w[f-1], inst.installed_gems.map { |s| s.full_name }
@@ -893,7 +897,7 @@ class TestGemDependencyInstaller < Gem::TestCase
     assert_equal %w[a-1-cpu-other_platform-1], inst.installed_gems.map { |s| s.full_name }
   end
 
-  if defined? OpenSSL then
+  if defined? OpenSSL
     def test_install_security_policy
       util_setup_gems
 
@@ -918,7 +922,7 @@ class TestGemDependencyInstaller < Gem::TestCase
   end
 
   # Wrappers don't work on mswin
-  unless win_platform? then
+  unless win_platform?
     def test_install_no_wrappers
       util_setup_gems
 
@@ -1069,7 +1073,6 @@ class TestGemDependencyInstaller < Gem::TestCase
 
     assert_equal 'a-1', remote.spec.full_name, 'remote spec'
     assert_equal Gem::Source.new(@gem_repo), remote.source, 'remote path'
-
   end
 
   def test_find_gems_with_sources_prerelease

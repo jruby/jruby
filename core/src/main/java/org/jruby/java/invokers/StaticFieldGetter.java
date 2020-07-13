@@ -8,7 +8,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class StaticFieldGetter extends FieldMethodZero {
-
     public StaticFieldGetter(String name, RubyModule host, Field field) {
         super(name, host, field);
     }

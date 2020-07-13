@@ -60,7 +60,7 @@ public class ParserConfiguration {
     private boolean frozenStringLiteral = false;
 
     private Encoding defaultEncoding;
-    private Ruby runtime;
+    private final Ruby runtime;
 
     private int[] coverage = EMPTY_COVERAGE;
 

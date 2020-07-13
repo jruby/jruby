@@ -9,6 +9,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Variable;
+import org.jruby.runtime.DynamicScope;
 import org.objectweb.asm.Type;
 
 import java.util.HashMap;
@@ -20,19 +21,17 @@ import java.util.Map;
  */
 public class MethodData {
 
-    public MethodData(IRBytecodeAdapter method, IRScope scope, Signature signature, int specificArity) {
+    public MethodData(IRBytecodeAdapter method, IRScope scope, String scopeField, Signature signature, int specificArity) {
         this.method = method;
         this.scope = scope;
         this.signature = signature;
         this.specificArity = specificArity;
+        this.scopeField = scopeField;
 
         // incoming arguments
         for (int i = 0; i < signature.argCount(); i++) {
             local("$" + signature.argName(i), Type.getType(signature.argType(i)));
         }
-
-        // TODO: this should go into the PushBinding instruction
-        local("$dynamicScope");
     }
 
     public int local(Variable variable, Type type) {
@@ -70,6 +69,7 @@ public class MethodData {
     public final IRScope scope;
     public final Signature signature;
     public final int specificArity;
+    public final String scopeField;
     public final Map<String, Integer> varMap = new HashMap<String, Integer>();
     public final Map<Label, org.objectweb.asm.Label> labelMap = new HashMap<Label, org.objectweb.asm.Label>();
 

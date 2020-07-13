@@ -46,7 +46,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -71,7 +70,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
     }
 
-    private static ObjectAllocator TCPSERVER_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator TCPSERVER_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyTCPServer(runtime, klass);
         }
@@ -104,7 +103,11 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 break;
             case 1:
+                _host = context.nil;
                 _port = args[0];
+                break;
+            default:
+                throw runtime.newArgumentError(args.length, 1, 2);
         }
 
         int port = SocketUtils.getPortFrom(context, _port);
@@ -125,7 +128,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
 
         } catch(BindException e) {
-            throw runtime.newErrnoEADDRFromBindException(e);
+            throw runtime.newErrnoFromBindException(e, bindContextMessage(_host, port));
 
         } catch(SocketException e) {
             String msg = e.getMessage();
@@ -191,12 +194,8 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
 
     @JRubyMethod(name = "accept_nonblock")
-    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject _opts) {
-        Ruby runtime = context.runtime;
-
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", _opts) != runtime.getFalse();
-
-        return accept_nonblock(context, runtime, exception);
+    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
+        return accept_nonblock(context, context.runtime, extractExceptionArg(context, opts));
     }
 
     public IRubyObject accept_nonblock(ThreadContext context, Ruby runtime, boolean ex) {

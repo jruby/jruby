@@ -7,27 +7,25 @@
 extern "C" {
 #endif
 
-#ifdef HAVE_RB_PROC_NEW
-VALUE proc_spec_rb_proc_new_function(VALUE args) {
+VALUE proc_spec_rb_proc_new_function(RB_BLOCK_CALL_FUNC_ARGLIST(args, dummy)) {
   return rb_funcall(args, rb_intern("inspect"), 0);
 }
 
 VALUE proc_spec_rb_proc_new(VALUE self) {
   return rb_proc_new(proc_spec_rb_proc_new_function, Qnil);
 }
-#endif
 
-#ifdef HAVE_RB_PROC_ARITY
 VALUE proc_spec_rb_proc_arity(VALUE self, VALUE prc) {
   return INT2FIX(rb_proc_arity(prc));
 }
-#endif
 
-#ifdef HAVE_RB_PROC_CALL
 VALUE proc_spec_rb_proc_call(VALUE self, VALUE prc, VALUE args) {
   return rb_proc_call(prc, args);
 }
-#endif
+
+VALUE proc_spec_rb_obj_is_proc(VALUE self, VALUE prc) {
+  return rb_obj_is_proc(prc);
+}
 
 /* This helper is not strictly necessary but reflects the code in wxRuby that
  * originally exposed issues with this Proc.new behavior.
@@ -62,22 +60,12 @@ VALUE proc_spec_rb_Proc_new(VALUE self, VALUE scenario) {
 }
 
 void Init_proc_spec(void) {
-  VALUE cls;
-  cls = rb_define_class("CApiProcSpecs", rb_cObject);
-
-#ifdef HAVE_RB_PROC_NEW
+  VALUE cls = rb_define_class("CApiProcSpecs", rb_cObject);
   rb_define_method(cls, "rb_proc_new", proc_spec_rb_proc_new, 0);
-#endif
-
-#ifdef HAVE_RB_PROC_ARITY
   rb_define_method(cls, "rb_proc_arity", proc_spec_rb_proc_arity, 1);
-#endif
-
-#ifdef HAVE_RB_PROC_CALL
   rb_define_method(cls, "rb_proc_call", proc_spec_rb_proc_call, 2);
-#endif
-
   rb_define_method(cls, "rb_Proc_new", proc_spec_rb_Proc_new, 1);
+  rb_define_method(cls, "rb_obj_is_proc", proc_spec_rb_obj_is_proc, 1);
 }
 
 #ifdef __cplusplus

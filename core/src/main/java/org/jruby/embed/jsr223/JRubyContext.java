@@ -47,7 +47,7 @@ import org.jruby.embed.ScriptingContainer;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 class JRubyContext implements ScriptContext {
-    private ScriptingContainer container;
+    private final ScriptingContainer container;
     private final List<Integer> scopeList;
     private Bindings globalMap = null;
     private Bindings engineMap = new SimpleBindings();

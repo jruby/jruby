@@ -3,11 +3,11 @@ Building JRuby from Source
 
 Prerequisites:
 
-* A Java 7-compatible (or higher) Java development kit (JDK).
+* A [Java 8-compatible (or higher) Java development kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
   * If `JAVA_HOME` is not set on Mac OS X: `export JAVA_HOME=$(/usr/libexec/java_home)`
-* Maven 3+
-* Apache Ant 1.8+ (see https://github.com/jruby/jruby/issues/2236)
-* make and a C++ compiler for installing the jruby-launcher gem
+* [Maven](https://maven.apache.org/download.cgi) 3.3.0+ (Maven Wrapper provided with `./mvnw`)
+* [Apache Ant](https://ant.apache.org/bindownload.cgi) 1.8+ (see https://github.com/jruby/jruby/issues/2236)
+* [Make](https://www.gnu.org/software/make/) and a C++ compiler for installing the jruby-launcher gem
 
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
 RSpec, and MSpec for running integration tests.
@@ -23,7 +23,7 @@ command to execute is:
 ./mvnw
 ```
 
-This will run the default "install" goal (```mvn install```) and will do all of the following:
+This will run the default "install" goal (`mvn install`) and will do all of the following:
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
@@ -140,7 +140,21 @@ To run a given test with these excludes enabled, you can use the --excludes flag
 bin/jruby test/mri/runner.rb --excludes=test/mri/excludes <test file>
 ```
 
-#### Run a single Ruby spec
+#### Run a single spec using RSpec
+
+Most of the specs under the spec/ directory are written for rspec, and can be run with rspec.
+
+The notable exception is the "Ruby specs" under spec/ruby, which are run with mspec as described later in this document.
+
+rspec will be installed with `mvn package -Pbootstrap` or you can install it manually.
+
+```
+jruby -S rspec spec/path/to/spec
+```
+
+#### Run a single "Ruby spec" using mspec
+
+The specs under spec/ruby are part of the "Ruby spec" suite of tests and use the "mspec" tool to run.
 
 Individual specs can be run with the mspec tool:
 
@@ -157,7 +171,7 @@ If you are familiar with Java debuggers, you can attach one to a JRuby process u
 The exact flag may vary with debugger and platform:
 
 ```
-bin/jruby -T-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 <rest of arguments>
+JRUBY_OPTS="-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:5005" bin/jruby <rest of arguments>
 ```
 #### JRuby internal unit tests
 
@@ -225,7 +239,7 @@ Cleaning the build may be necessary after switching to a different
 version of JRuby (for example, after switching git branches) to ensure
 that everything is rebuilt properly.
 
-NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar**!
+NOTE: `mvn clean` just cleans the **jruby-core** artifact and the **./lib/jruby.jar**!
 
 Clean everything:
 

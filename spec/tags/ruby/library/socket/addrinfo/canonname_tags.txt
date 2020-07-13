@@ -1,0 +1,1 @@
+fails:Addrinfo#canonname when the canonical name is not available returns nil

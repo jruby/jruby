@@ -79,7 +79,7 @@ public class RubyDateFormatter {
     private final Ruby runtime;
     private final StrftimeLexer lexer;
 
-    static enum Format {
+    enum Format {
         /** encoding to give to output */
         FORMAT_ENCODING,
         /** raw string, no formatting */
@@ -159,25 +159,25 @@ public class RubyDateFormatter {
         FORMAT_MICROSEC_EPOCH;
 
         Format() {}
+
         Format(char conversion) {
-            CONVERSION2TOKEN[conversion] = new Token(this);
+            addToConversions(conversion, new Token(this));
         }
+
         Format(char conversion, char alias) {
             this(conversion);
-            CONVERSION2TOKEN[alias] = CONVERSION2TOKEN[conversion];
+            addToConversions(alias, conversionToToken(conversion));
         }
-    }
-    //static final Format INSTANTIATE_ENUM = Format.FORMAT_WEEK_LONG;
 
-    public static void main(String[] args) {
-        // composed + special, keys of the switch below
-        StringBuilder buf = new StringBuilder("cDxFnQRrTXtvZ+z");
-        for (int i = 'A'; i <= 'z'; i++) {
-            if (CONVERSION2TOKEN[i] != null) {
-                buf.append((char) i);
-            }
+        // This is still an ugly side effect but avoids jruby/jruby#5179 or class init hacks by forcing all accesses
+        // to initialize the Format class via the Token class.
+        private static void addToConversions(char conversion, Token token) {
+            CONVERSION2TOKEN[conversion] = token;
         }
-        System.out.println(buf.toString());
+
+        private static Token conversionToToken(int conversion) {
+            return CONVERSION2TOKEN[conversion];
+        }
     }
 
     public static class Token {
@@ -198,7 +198,7 @@ public class RubyDateFormatter {
         }
 
         public static Token format(char c) {
-            return CONVERSION2TOKEN[c];
+            return Format.conversionToToken(c);
         }
 
         public static Token zoneOffsetColons(int colons) {
@@ -265,7 +265,7 @@ public class RubyDateFormatter {
             throw runtime.newArgumentError("format should have ASCII compatible encoding");
         }
 
-        final List<Token> compiledPattern = new LinkedList<Token>();
+        final List<Token> compiledPattern = new LinkedList<>();
         if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
@@ -275,12 +275,37 @@ public class RubyDateFormatter {
         lexer.yyreset(reader);
 
         Token token;
+        RubyTimeOutputFormatter formatter = null;
         try {
             while ((token = lexer.yylex()) != null) {
-                if (token.format != Format.FORMAT_SPECIAL) {
+                if (token.format == Format.FORMAT_OUTPUT) {
+                    formatter = (RubyTimeOutputFormatter) token.data;
+                } else if (token.format != Format.FORMAT_SPECIAL) {
+                    if (formatter != null) {
+                        compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
+                        formatter = null;
+                    }
                     compiledPattern.add(token);
                 } else {
                     char c = (Character) token.data;
+
+                    // prepare padding if necessary
+                    if (formatter != null) {
+                        switch (c) {
+                            default:
+                                // force most formats to use spaces for padding unless otherwise specified
+                                if (formatter.flags == "" || formatter.flags == null) {
+                                    compiledPattern.add(new Token(Format.FORMAT_OUTPUT, new RubyTimeOutputFormatter("_", formatter.width)));
+                                    break;
+                                }
+                                // fall through
+                            case 'Q':
+                            case '+':
+                                compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
+                        }
+                        formatter = null;
+                    }
+
                     switch (c) {
                     case 'c':
                         addToPattern(compiledPattern, "a b e H:M:S Y");
@@ -340,9 +365,14 @@ public class RubyDateFormatter {
                         addToPattern(compiledPattern, " Y");
                         break;
                     default:
-                        throw new Error("Unknown special char: "+c);
+                        throw new AssertionError("Unknown special char: " + c);
                     }
                 }
+            }
+
+            // if formatter is still set we didn't use it, add it as is
+            if (formatter != null) {
+                compiledPattern.add(new Token(Format.FORMAT_OUTPUT, formatter));
             }
         } catch (IOException e) {
             throw new AssertionError(e); // IOException never happens
@@ -670,4 +700,5 @@ public class RubyDateFormatter {
     public Date parse(String source, ParsePosition pos) {
         throw new UnsupportedOperationException();
     }
+
 }

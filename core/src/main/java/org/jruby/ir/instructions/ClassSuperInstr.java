@@ -3,6 +3,8 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -15,9 +17,16 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassSuperInstr extends CallInstr {
-    public ClassSuperInstr(Variable result, Operand definingModule, RubySymbol name, Operand[] args, Operand closure,
+    // clone constructor
+    protected ClassSuperInstr(IRScope scope, Variable result, Operand receiver, RubySymbol name, Operand[] args,
+                              Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
+    }
+
+    // normal constructor
+    public ClassSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args, Operand closure,
                            boolean isPotentiallyRefined) {
-        super(Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
+        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
     }
 
     public Operand getDefiningModule() {
@@ -25,9 +34,18 @@ public class ClassSuperInstr extends CallInstr {
     }
 
     @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        super.computeScopeFlags(scope);
+        scope.getFlags().add(IRFlags.REQUIRES_CLASS); // for current class and method name
+        scope.getFlags().add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
+        return true;
+    }
+
+    @Override
     public Instr clone(CloneInfo ii) {
-        return new ClassSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), name,
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
+        return new ClassSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii),
+                name, cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
+                isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public static ClassSuperInstr decode(IRReaderDecoder d) {
@@ -49,21 +67,22 @@ public class ClassSuperInstr extends CallInstr {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
-        return new ClassSuperInstr(d.decodeVariable(), receiver, name, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return new ClassSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, name, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
+
+    /*
     // We cannot convert this into a NoCallResultInstr
     @Override
     public Instr discardResult() {
         return this;
     }
+    */
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
-        RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp);
-
-        return IRRuntimeHelpers.classSuper(context, self, getId(), definingModule, args, block);
+        return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
     }
 
     @Override

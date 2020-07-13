@@ -36,10 +36,23 @@ describe :kernel_singleton_methods_modules, shared: true do
   it "does not return any included methods for a class including a module" do
     ReflectSpecs::D.singleton_methods(*@object).should include(:ds_pro, :ds_pub)
   end
+
+  it "for a module does not return methods in a module prepended to Module itself" do
+    require_relative 'fixtures/singleton_methods'
+    mod = SingletonMethodsSpecs::SelfExtending
+    mod.method(:mspec_test_kernel_singleton_methods).owner.should == SingletonMethodsSpecs::Prepended
+
+    ancestors = mod.singleton_class.ancestors
+    ancestors[0...2].should == [ mod.singleton_class, mod ]
+    ancestors.should include(SingletonMethodsSpecs::Prepended)
+
+    # Do not search prepended modules of `Module`, as that's a non-singleton class
+    mod.singleton_methods.should == []
+  end
 end
 
 describe :kernel_singleton_methods_supers, shared: true do
-  it "returns the names of singleton methods for an object extented with a module" do
+  it "returns the names of singleton methods for an object extended with a module" do
     ReflectSpecs.oe.singleton_methods(*@object).should include(:m_pro, :m_pub)
   end
 
@@ -49,11 +62,11 @@ describe :kernel_singleton_methods_supers, shared: true do
     r.should == [:pro, :pub]
   end
 
-  it "returns the names of singleton methods for an object extented with two modules" do
+  it "returns the names of singleton methods for an object extended with two modules" do
     ReflectSpecs.oee.singleton_methods(*@object).should include(:m_pro, :m_pub, :n_pro, :n_pub)
   end
 
-  it "returns the names of singleton methods for an object extented with a module including a module" do
+  it "returns the names of singleton methods for an object extended with a module including a module" do
     ReflectSpecs.oei.singleton_methods(*@object).should include(:n_pro, :n_pub, :m_pro, :m_pub)
   end
 
@@ -99,7 +112,7 @@ describe :kernel_singleton_methods_private_supers, shared: true do
     ReflectSpecs.oee.singleton_methods(*@object).should_not include(:m_pri)
   end
 
-  it "does not return private singleton methods for an object extented with a module including a module" do
+  it "does not return private singleton methods for an object extended with a module including a module" do
     ReflectSpecs.oei.singleton_methods(*@object).should_not include(:n_pri, :m_pri)
   end
 
@@ -145,7 +158,6 @@ describe "Kernel#singleton_methods" do
     it_behaves_like :kernel_singleton_methods_supers, nil, true
     it_behaves_like :kernel_singleton_methods_modules, nil, true
     it_behaves_like :kernel_singleton_methods_private_supers, nil, true
-
   end
 
   describe "when passed false" do
@@ -153,11 +165,11 @@ describe "Kernel#singleton_methods" do
     it_behaves_like :kernel_singleton_methods_modules, nil, false
     it_behaves_like :kernel_singleton_methods_private_supers, nil, false
 
-    it "returns an empty Array for an object extented with a module" do
+    it "returns an empty Array for an object extended with a module" do
       ReflectSpecs.oe.singleton_methods(false).should == []
     end
 
-    it "returns an empty Array for an object extented with two modules" do
+    it "returns an empty Array for an object extended with two modules" do
       ReflectSpecs.oee.singleton_methods(false).should == []
     end
 

@@ -169,7 +169,7 @@ public class JavaClass extends JavaObject {
      * @return class
      */
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
-        return ((JavaClass) java_class(context, proxy)).javaClass();
+        return getJavaClassIfProxy(context, proxy);
     }
 
     /**
@@ -285,7 +285,11 @@ public class JavaClass extends JavaObject {
 
     @JRubyMethod(name = "for_name", required = 1, meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        return forNameVerbose(recv.getRuntime(), name.asJavaString());
+        return for_name(recv, name.asJavaString());
+    }
+
+    static JavaClass for_name(IRubyObject recv, String name) {
+        return forNameVerbose(recv.getRuntime(), name);
     }
 
     @JRubyMethod
@@ -774,7 +778,7 @@ public class JavaClass extends JavaObject {
             return new JavaConstructor(runtime, constructor);
         }
         catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("no matching java constructor", null);
+            throw runtime.newNameError("no matching java constructor", (String) null);
         }
     }
 
@@ -788,7 +792,7 @@ public class JavaClass extends JavaObject {
             return new JavaConstructor(runtime, constructor);
         }
         catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("no matching java constructor", null);
+            throw runtime.newNameError("no matching java constructor", (String) null);
         }
     }
 

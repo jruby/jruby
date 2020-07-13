@@ -1,10 +1,19 @@
 package org.jruby.ir;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.EnumSet;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.ast.DefNode;
+import org.jruby.ast.IScopingNode;
+import org.jruby.ast.ModuleNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.RootNode;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -25,7 +34,12 @@ import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.util.IGVInstrListener;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.FileResource;
+import org.jruby.util.JRubyFile;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
@@ -35,6 +49,10 @@ public class IRManager {
     public static final String DEFAULT_BUILD_PASSES = "";
     public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,DeadCodeElimination,OptimizeDynScopesPass,OptimizeDelegationPass,AddCallProtocolInstructions,AddMissingInitsPass";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
+    
+    public static final boolean IR_INLINER = Options.IR_INLINER.load();
+    public static final int IR_INLINER_THRESHOLD = Options.IR_INLINER_THRESHOLD.load();
+    public static final boolean IR_INLINER_VERBOSE = Options.IR_INLINER_VERBOSE.load();
 
     private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
     private final CompilerPass optimizeDynScopesPass = new OptimizeDynScopesPass();
@@ -52,27 +70,24 @@ public class IRManager {
     public final ToggleBacktraceInstr needsNoBacktrace = new ToggleBacktraceInstr(false);
 
     // Listeners for debugging and testing of IR
-    private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
-    private CompilerPassListener defaultListener = new BasicCompilerPassListener();
+    private final Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
+    private final CompilerPassListener defaultListener = new BasicCompilerPassListener();
 
     private InstructionsListener instrsListener = null;
     private IRScopeListener irScopeListener = null;
 
     // FIXME: Eventually make these attrs into either a) set b) part of state machine
-    private List<CompilerPass> compilerPasses;
-    private List<CompilerPass> inliningCompilerPasses;
-    private List<CompilerPass> jitPasses;
-    private List<CompilerPass> safePasses;
+    private final List<CompilerPass> compilerPasses;
+    private final List<CompilerPass> inliningCompilerPasses;
+    private final List<CompilerPass> jitPasses;
+    private final List<CompilerPass> safePasses;
     private final RubyInstanceConfig config;
     public final Ruby runtime;
-
-    // If true then code will not execute (see ir/ast tool)
-    private boolean dryRun = false;
 
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
         this.config = config;
-        object = new IRClassBody(this, null, runtime.newSymbol(OBJECT), 0, null);
+        object = new IRClassBody(this, null, OBJECT, 0, null, false);
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_BUILD_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
         jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
@@ -83,14 +98,6 @@ public class IRManager {
 
     public Ruby getRuntime() {
         return runtime;
-    }
-
-    public boolean isDryRun() {
-        return dryRun;
-    }
-
-    public void setDryRun(boolean value) {
-        this.dryRun = value;
     }
 
     public Nil getNil() {
@@ -123,7 +130,7 @@ public class IRManager {
 
     public static CompilerPassScheduler schedulePasses(final List<CompilerPass> passes) {
         CompilerPassScheduler scheduler = new CompilerPassScheduler() {
-            private Iterator<CompilerPass> iterator;
+            private final Iterator<CompilerPass> iterator;
             {
                 this.iterator = passes.iterator();
             }
@@ -204,6 +211,52 @@ public class IRManager {
         }
     }
 
+    private static final int CLOSURE_PREFIX_CACHE_SIZE = 300; // arbtrary.  one library in rails 6 uses over 270 in one scope...
+    private final String[] closurePrefixCache = new String[CLOSURE_PREFIX_CACHE_SIZE];
+
+    public String getClosurePrefix(int closureId) {
+        if (closureId >= CLOSURE_PREFIX_CACHE_SIZE) {
+            return "CL" + closureId + "_LBL";
+        }
+
+        String prefix = closurePrefixCache[closureId];
+
+        if (prefix == null) {
+            prefix = "CL" + closureId + "_LBL";
+            closurePrefixCache[closureId] = prefix;
+        }
+
+        return prefix;
+    }
+
+
+    private static final int FIXNUM_CACHE_HALF_SIZE = 16384;
+    private final Fixnum[] fixnums = new Fixnum[2 * FIXNUM_CACHE_HALF_SIZE];
+
+    // Fixnum operand caches end up providing twice the value since it will share the same instance of
+    // the same logical fixnum, but since immutable literals cache the actual RubyFixnum they end up
+    // sharing all occurences of those in Ruby code as well.h
+    public Fixnum newFixnum(long value) {
+        if (value < -FIXNUM_CACHE_HALF_SIZE || value > FIXNUM_CACHE_HALF_SIZE) return new Fixnum(value);
+
+        int adjustedValue = (int) value + FIXNUM_CACHE_HALF_SIZE; // adjust to where 0 is in signed range.
+
+        Fixnum fixnum;
+
+        if (adjustedValue >= 0 && adjustedValue < fixnums.length) {
+            fixnum = fixnums[adjustedValue];
+
+            if (fixnum == null) {
+                fixnum = new Fixnum(value);
+                fixnums[adjustedValue] = fixnum;
+            }
+        } else {
+            fixnum = new Fixnum(value);
+        }
+
+        return fixnum;
+    }
+
     public LineNumberInstr newLineNumber(int line) {
         if (line >= lineNumbers.length-1) growLineNumbersPool(line);
 
@@ -219,7 +272,7 @@ public class IRManager {
 
     }
 
-    private ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr(Self.SELF);
+    private final ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr(Self.SELF);
 
     public ReceiveSelfInstr getReceiveSelfInstr() {
         return receiveSelfInstr;
@@ -289,7 +342,7 @@ public class IRManager {
 
         EnumSet<IRFlags> flags = scope.getFlags();
 
-        if (!scope.isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
+        if (!flags.contains(REQUIRES_DYNSCOPE)) {
             if (flags.contains(RECEIVES_CLOSURE_ARG)) optimizeDelegationPass.run(scope);
             deadCodeEliminationPass.run(scope);
             optimizeDynScopesPass.run(scope);
@@ -298,5 +351,40 @@ public class IRManager {
 
     public RubyInstanceConfig getInstanceConfig() {
         return config;
+    }
+
+    // FIXME: needs info for specialized method selection.
+    // FIXME: should allow non-classpath loading for easier debugging and hacking.
+    public IRMethod loadInternalMethod(ThreadContext context, IRubyObject self, String method) {
+        try {
+            RubyModule type = self.getMetaClass();
+            String fileName = "classpath:/jruby/ruby_implementations/" + type + "/" + method + ".rb";
+            FileResource file = JRubyFile.createResourceAsFile(context.runtime, fileName);
+            Node parseResult = parse(context, file, fileName);
+            IScopingNode scopeNode = (IScopingNode) parseResult.childNodes().get(0);
+            scopeNode.getScope().setModule(type);
+            DefNode defNode = (DefNode) scopeNode.getBodyNode();
+            IRScriptBody script = new IRScriptBody(this, parseResult.getFile(), ((RootNode) parseResult).getStaticScope());
+            IRModuleBody containingScope;
+            if (scopeNode instanceof ModuleNode) {
+                containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
+            } else {
+                containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
+            }
+            IRMethod newMethod = new IRMethod(this, containingScope, defNode, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), CoverageData.NONE);
+
+            newMethod.prepareForCompilation();
+
+            return newMethod;
+        } catch (IOException e) {
+            e.printStackTrace(); // FIXME: More elegantly handle broken internal implementations
+            return null;
+        }
+    }
+
+    private Node parse(ThreadContext context, FileResource file, String fileName) throws IOException {
+        try (InputStream stream = file.openInputStream()) {
+            return context.runtime.parseFile(stream, fileName, null, 0);
+        }
     }
 }

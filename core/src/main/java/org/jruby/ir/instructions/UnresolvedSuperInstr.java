@@ -1,6 +1,8 @@
 package org.jruby.ir.instructions;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -12,22 +14,34 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-public class UnresolvedSuperInstr extends CallInstr {
-    public static final ByteList UNKNOWN_SUPER_TARGET =
-            new ByteList(new byte[] {'-', 'u', 'n', 'k', 'n', 'o', 'w', 'n', '-', 's', 'u', 'p', 'e', 'r', '-', 't', 'a', 'r', 'g', 'e', 't', '-'});
+// SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
 
-    // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
-    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args, Operand closure,
-                                boolean isPotentiallyRefined) {
-        super(op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(UNKNOWN_SUPER_TARGET), receiver, args, closure, isPotentiallyRefined);
+public class UnresolvedSuperInstr extends CallInstr {
+    private static final ByteList DYNAMIC_SUPER_TARGET =
+            new ByteList("-dynamic-super_target-".getBytes(), USASCIIEncoding.INSTANCE, false);
+
+    // clone constructor
+    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args,
+                                Operand closure, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
+                receiver, args, closure, isPotentiallyRefined, callSite, callSiteId);
     }
 
+    // normal constructor
+    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args, Operand closure,
+                                boolean isPotentiallyRefined) {
+        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
+                receiver, args, closure, isPotentiallyRefined);
+    }
+
+    // specific instr constructor
     public UnresolvedSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure,
                                 boolean isPotentiallyRefined) {
         this(scope, Operation.UNRESOLVED_SUPER, result, receiver, args, closure, isPotentiallyRefined);
@@ -43,8 +57,10 @@ public class UnresolvedSuperInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new UnresolvedSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
+        return new UnresolvedSuperInstr(ii.getScope(), Operation.UNRESOLVED_SUPER, ii.getRenamedVariable(getResult()),
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
+                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
+                isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public static UnresolvedSuperInstr decode(IRReaderDecoder d) {
@@ -52,7 +68,7 @@ public class UnresolvedSuperInstr extends CallInstr {
         int callTypeOrdinal = d.decodeInt();
         CallType callType = CallType.fromOrdinal(callTypeOrdinal);
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, calltype(ord):  " + callType);
-        String methAddr = d.decodeString();
+        RubySymbol methAddr = d.decodeSymbol();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, methaddr:  " + methAddr);
         Operand receiver = d.decodeOperand();
         int argsCount = d.decodeInt();
@@ -72,11 +88,13 @@ public class UnresolvedSuperInstr extends CallInstr {
         return new UnresolvedSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
+    /*
     // We cannot convert this into a NoCallResultInstr
     @Override
     public Instr discardResult() {
         return this;
     }
+    */
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {

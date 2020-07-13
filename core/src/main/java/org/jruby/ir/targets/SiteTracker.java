@@ -1,21 +1,21 @@
 package org.jruby.ir.targets;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.jruby.util.collections.IntHashMap;
 
 /**
  * Created by headius on 7/8/16.
  */
 public class SiteTracker {
-    private final Set<Integer> seenTypes = new HashSet<Integer>();
+
+    private final IntHashMap<?> seenTypes = new IntHashMap<>(4); // Set<int>
     private volatile int clearCount = 0;
 
     public synchronized boolean hasSeenType(int typeCode) {
-        return seenTypes.contains(typeCode);
+        return seenTypes.containsKey(typeCode);
     }
 
     public synchronized void addType(int typeCode) {
-        seenTypes.add(typeCode);
+        seenTypes.put(typeCode, null);
     }
 
     public synchronized int seenTypesCount() {
@@ -23,11 +23,17 @@ public class SiteTracker {
     }
 
     public synchronized void clearTypes() {
-        seenTypes.clear();
         clearCount++;
+        seenTypes.clear();
     }
 
     public int clearCount() {
         return clearCount;
+    }
+
+    @Override
+    public synchronized String toString() {
+        return getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this))
+                + this.seenTypes + "clearCount=" + clearCount;
     }
 }

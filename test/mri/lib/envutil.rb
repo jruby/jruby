@@ -147,7 +147,7 @@ module EnvUtil
       stderr = stderr_filter.call(stderr) if stderr_filter
       if timeout_error
         bt = caller_locations
-        msg = "execution of #{bt.shift.label} expired"
+        msg = "execution of #{bt.shift.label} expired timeout (#{timeout} sec)"
         msg = Test::Unit::Assertions::FailDesc[status, msg, [stdout, stderr].join("\n")].()
         raise timeout_error, msg, bt.map(&:to_s)
       end
@@ -291,7 +291,6 @@ if defined?(RbConfig)
     end
     dir = File.dirname(ruby)
     CONFIG['bindir'] = dir
-    Gem::ConfigMap[:bindir] = dir if defined?(Gem::ConfigMap)
   end
 end
 

@@ -52,7 +52,7 @@ import org.jruby.util.ByteList;
 public class RubyNil extends RubyObject implements Constantizable {
 
     private final int hashCode;
-    private final Object constant;
+    private final transient Object constant;
 
     public RubyNil(Ruby runtime) {
         super(runtime, runtime.getNilClass(), false);
@@ -69,16 +69,9 @@ public class RubyNil extends RubyObject implements Constantizable {
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
     }
     
-    public static final ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return runtime.getNil();
-        }
-    };
-    
     public static RubyClass createNilClass(Ruby runtime) {
-        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
-        runtime.setNilClass(nilClass);
+        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+
         nilClass.setClassIndex(ClassIndex.NIL);
         nilClass.setReifiedClass(RubyNil.class);
         
@@ -127,7 +120,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public static RubyFixnum to_i(ThreadContext context, IRubyObject recv) {
-        return RubyFixnum.zero(recv.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
     
     /**
@@ -166,7 +159,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     @Override
     @JRubyMethod
     public IRubyObject inspect() {
-        return RubyNil.inspect(getRuntime());
+        return RubyNil.inspect(metaClass.runtime);
     }
 
     static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")
@@ -174,6 +167,12 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     static RubyString inspect(Ruby runtime) {
         return RubyString.newStringShared(runtime, runtime.getString(), nil);
+    }
+
+    @Override
+    @JRubyMethod(name = "=~", required = 1)
+    public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
+        return this; // nil
     }
 
     /** nil_and
@@ -189,7 +188,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(name = "|", required = 1)
     public static RubyBoolean op_or(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.newBoolean(obj.isTrue());
+        return RubyBoolean.newBoolean(context, obj.isTrue());
     }
     
     /** nil_xor
@@ -197,10 +196,16 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(name = "^", required = 1)
     public static RubyBoolean op_xor(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.newBoolean(obj.isTrue());
+        return RubyBoolean.newBoolean(context, obj.isTrue());
     }
 
+    @Override
     @JRubyMethod(name = "nil?")
+    public RubyBoolean nil_p(ThreadContext context) {
+        return context.tru;
+    }
+
+    @Deprecated
     public IRubyObject nil_p() {
         return getRuntime().getTrue();
     }
@@ -217,7 +222,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @Override
     public RubyFixnum id() {
-        return getRuntime().newFixnum(8);
+        return RubyFixnum.newFixnum(metaClass.runtime, 8);
     }
     
     @Override
@@ -238,7 +243,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public static IRubyObject to_r(ThreadContext context, IRubyObject recv) {
-        return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(context.runtime));
+        return RubyRational.newRationalCanonicalize(context, 0);
     }
 
     /** nilclass_rationalize
@@ -269,4 +274,7 @@ public class RubyNil extends RubyObject implements Constantizable {
         }
         return null;
     }
+
+    @Deprecated
+    public static final ObjectAllocator NIL_ALLOCATOR = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 }

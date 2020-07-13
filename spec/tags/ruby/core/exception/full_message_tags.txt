@@ -1,0 +1,5 @@
+fails(jruby/jruby#5510):Exception#full_message supports :highlight option and adds escape sequences to highlight some strings
+fails(jruby/jruby#5510):Exception#full_message supports :order option and places the error message and the backtrace at the top or the bottom
+fails:Exception#full_message shows the caller if the exception has no backtrace
+fails(not implemented, jruby/jruby#6161):Exception#full_message contains cause of exception
+fails(not implemented, jruby/jruby#6161):Exception#full_message contains all the chain of exceptions

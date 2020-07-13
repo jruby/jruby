@@ -294,8 +294,8 @@ GEM
     assert_equal :token, parser.get
   end
 
-  def write_lockfile lockfile
-    open @lock_file, 'w' do |io|
+  def write_lockfile(lockfile)
+    File.open @lock_file, 'w' do |io|
       io.write lockfile
     end
   end

@@ -72,9 +72,10 @@ public class ModeFlags implements Cloneable {
     public static final int APPEND = OpenFlags.O_APPEND.intValue();
     /** nonblock flag, to perform all operations non-blocking. Unused currently */
     public static final int NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
-    /** binary flag, to ensure no encoding changes are made while writing */
-    public static final int BINARY = OpenFlags.O_BINARY.intValue();
-    public static final int TMPFILE = OpenFlags.O_TMPFILE.intValue();
+    /** binary flag, to ensure no encoding changes are made while writing (Windows only) */
+    public static final int BINARY = OpenFlags.O_BINARY.defined() ? OpenFlags.O_BINARY.intValue() : 0;
+    /** tmpfile flag (Linux only) **/
+    public static final int TMPFILE = OpenFlags.O_TMPFILE.defined() ? OpenFlags.O_TMPFILE.intValue() : 0;
     /** textmode flag, MRI has no equivalent but we use ModeFlags currently
      * to also capture what are oflags.
      */
@@ -140,6 +141,9 @@ public class ModeFlags implements Cloneable {
                     break;
                 case 't' :
                     modes |= TEXT;
+                    break;
+                case 'x':
+                    modes |= EXCL;
                     break;
                 case ':':
                     break ModifierLoop;
@@ -405,15 +409,18 @@ public class ModeFlags implements Cloneable {
         if ((flags & CREAT) != 0) {
             fmodeFlags |= OpenFile.CREATE;
         }
-        if ((flags & BINARY) == BINARY) {
+        if ((flags & BINARY) != 0) {
             fmodeFlags |= OpenFile.BINMODE;
         }
-        if ((flags & TMPFILE) == TMPFILE) {
+        if ((flags & TMPFILE) != 0) {
             fmodeFlags |= OpenFile.TMPFILE;
+        }
+        if ((flags & EXCL) != 0) {
+            fmodeFlags |= OpenFile.EXCLUSIVE;
         }
 
         // This is unique to us to keep bridge betweeen mode_flags and oflags
-        if ((flags & TEXT) == TEXT) {
+        if ((flags & TEXT) != 0) {
             fmodeFlags |= OpenFile.TEXTMODE;
         }
         

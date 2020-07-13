@@ -61,7 +61,6 @@ module JRuby::Compiler
     include AST::visitor::NodeVisitor
 
     java_import AST::NodeType
-    java_import org.jruby.parser.JavaSignatureParser
     java_import java.io.ByteArrayInputStream
 
     extend VisitorBuilder
@@ -163,7 +162,7 @@ module JRuby::Compiler
     def build_signature(signature)
       if signature.kind_of? String
         bytes = signature.to_java_bytes
-        return JavaSignatureParser.parse(ByteArrayInputStream.new(bytes))
+        return org.jruby.parser.JavaSignatureParser.parse(ByteArrayInputStream.new(bytes))
       else
         raise "java_signature must take a literal string"
       end
@@ -502,7 +501,7 @@ JAVA
      * from Ruby. Generally not for user comsumption.
      *
      * @param ruby The JRuby instance this object will belong to
-     * @param metaclass The RubyClass representing the Ruby class of this object
+     * @param metaClass The RubyClass representing the Ruby class of this object
      */
     public static IRubyObject __allocate__(Ruby ruby, RubyClass metaClass) {
         return new #{name.to_s}(ruby, metaClass);

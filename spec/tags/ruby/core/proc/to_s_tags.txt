@@ -1,0 +1,6 @@
+fails:Proc#to_s for a proc created with Symbol#to_proc returns a description including '(&:symbol)'
+fails:Proc#to_s for a proc created with Proc.new has a binary encoding
+fails:Proc#to_s for a proc created with lambda has a binary encoding
+fails:Proc#to_s for a proc created with proc has a binary encoding
+fails:Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding
+fails:Proc#to_s for a proc created with Symbol#to_proc has a binary encoding

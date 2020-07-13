@@ -2,6 +2,7 @@ package org.jruby.java.invokers;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -15,13 +16,8 @@ public final class SingletonMethodInvoker extends MethodInvoker {
 
     private final Object singleton;
 
-    public SingletonMethodInvoker(Object singleton, RubyClass host, List<Method> methods, String name) {
+    public SingletonMethodInvoker(Object singleton, RubyClass host, Supplier<Method[]> methods, String name) {
         super(host, methods, name);
-        this.singleton = singleton;
-    }
-
-    public SingletonMethodInvoker(Object singleton, RubyClass host, Method method, String name) {
-        super(host, method, name);
         this.singleton = singleton;
     }
 

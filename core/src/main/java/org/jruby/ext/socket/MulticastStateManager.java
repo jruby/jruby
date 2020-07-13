@@ -40,7 +40,7 @@ import java.util.ArrayList;
  */
 public class MulticastStateManager {
     private MulticastSocket multicastSocket;
-    private ArrayList membershipGroups;
+    private final ArrayList membershipGroups;
     public static final int IP_ADD_MEMBERSHIP = 12;
 
     public MulticastStateManager() {

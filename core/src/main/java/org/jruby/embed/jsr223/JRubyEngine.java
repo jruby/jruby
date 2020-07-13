@@ -53,7 +53,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 
     final ScriptingContainer container;
-    private JRubyEngineFactory factory;
+    private final JRubyEngineFactory factory;
     private ScriptContext context;
 
     JRubyEngine(ScriptingContainer container, JRubyEngineFactory factory) {
@@ -224,8 +224,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         }
     }
 
-    private NoSuchMethodException wrapMethodException(Exception e) {
-        return (NoSuchMethodException)new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
+    private static NoSuchMethodException wrapMethodException(Exception e) {
+        return (NoSuchMethodException) new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
     }
 
     public Object invokeFunction(String method, Object... args)

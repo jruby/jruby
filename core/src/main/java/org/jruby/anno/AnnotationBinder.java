@@ -550,7 +550,7 @@ public class AnnotationBinder extends AbstractProcessor {
         }
     }
 
-    private static String getBaseName(String[] names, ExecutableElement md) {
+    public static String getBaseName(String[] names, ExecutableElement md) {
         if (names.length == 0) {
             return md.getSimpleName().toString();
         }

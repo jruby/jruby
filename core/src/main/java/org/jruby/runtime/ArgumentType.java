@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubySymbol;
+import org.jruby.internal.runtime.methods.DescriptorInfo;
 
 /**
  * The diffierent types of arguments identified in a method.
@@ -35,11 +36,30 @@ public enum ArgumentType {
             case 'o': return opt;
             case 'r': return rest;
             case 'q': return req;
-            case 'n': return anonreq;
-            case 'O': return anonopt;
-            case 'R': return anonrest;
+            // These are sourced from DescriptorInfo because ArgumentType references Ruby.
+            case DescriptorInfo.ANONREQ_CHAR: return anonreq;
+            case DescriptorInfo.ANONOPT_CHAR: return anonopt;
+            case DescriptorInfo.ANONREST_CHAR: return anonrest;
             case 'N': return anonkeyrest;
             default: return null;
+        }
+    }
+
+    // FIXME: This could have been part of enum but I was concerned about whether any extension uses ArgumentType.
+    static char prefixFrom(ArgumentType type) {
+        switch (type) {
+            case key: return 'k';
+            case keyreq: return 'K';
+            case keyrest: return 'e';
+            case block: return 'b';
+            case opt: return 'o';
+            case rest: return 'r';
+            case req: return 'q';
+            case anonreq: return DescriptorInfo.ANONREQ_CHAR;
+            case anonopt: return DescriptorInfo.ANONOPT_CHAR;
+            case anonrest: return DescriptorInfo.ANONREST_CHAR;
+            case anonkeyrest: return 'N';
+            default: throw new IllegalArgumentException("Bogus type for ArgumentType: '" + type + "'");
         }
     }
 

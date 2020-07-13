@@ -34,7 +34,9 @@
 
 package org.jruby.javasupport;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -51,6 +53,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
@@ -59,6 +62,7 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.ThreadContext;
@@ -113,6 +117,8 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaUtilRegex.define(runtime);
         org.jruby.javasupport.ext.JavaIo.define(runtime);
         org.jruby.javasupport.ext.JavaNet.define(runtime);
+        org.jruby.javasupport.ext.JavaMath.define(runtime);
+        org.jruby.javasupport.ext.JavaTime.define(runtime);
 
         // load Ruby parts of the 'java' library
         runtime.getLoadService().load("jruby/java.rb", false);
@@ -367,12 +373,15 @@ public class Java implements Library {
     }
 
     public static RubyModule get_interface_module(final Ruby runtime, IRubyObject javaClassObject) {
-        JavaClass javaClass;
+        JavaClass javaClass; String javaName;
         if ( javaClassObject instanceof RubyString ) {
             javaClass = JavaClass.forNameVerbose(runtime, javaClassObject.asJavaString());
         }
         else if ( javaClassObject instanceof JavaClass ) {
             javaClass = (JavaClass) javaClassObject;
+        }
+        else if ( (javaName = unwrapJavaString(javaClassObject)) != null ) {
+            javaClass = JavaClass.forNameVerbose(runtime, javaName);
         }
         else {
             throw runtime.newArgumentError("expected JavaClass, got " + javaClassObject);
@@ -382,17 +391,28 @@ public class Java implements Library {
 
     public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
         final Ruby runtime = self.getRuntime();
-        final JavaClass javaClass;
+        final JavaClass javaClass; String javaName;
         if ( java_class instanceof RubyString ) {
             javaClass = JavaClass.for_name(self, java_class);
         }
         else if ( java_class instanceof JavaClass ) {
             javaClass = (JavaClass) java_class;
         }
+        else if ( (javaName = unwrapJavaString(java_class)) != null ) {
+            javaClass = JavaClass.for_name(self, javaName);
+        }
         else {
             throw runtime.newTypeError(java_class, runtime.getJavaSupport().getJavaClassClass());
         }
         return getProxyClass(runtime, javaClass);
+    }
+
+    private static String unwrapJavaString(IRubyObject arg) {
+        if (arg instanceof JavaProxy) {
+            Object str = ((JavaProxy) arg).getObject();
+            return str instanceof String ? (String) str : null;
+        }
+        return null;
     }
 
     public static RubyClass getProxyClassForObject(Ruby runtime, Object object) {
@@ -753,14 +773,13 @@ public class Java implements Library {
 
         final RubyModule parentModule; final String className;
 
-        if ( fullName.indexOf('$') != -1 ) { // inner classes must be nested
-            Class<?> declaringClass = clazz.getDeclaringClass();
-            if ( declaringClass == null ) {
-                // no containing class for a $ class; treat it as internal and don't define a constant
-                return;
-            }
-            parentModule = getProxyClass(runtime, JavaClass.get(runtime, clazz));
-            className = clazz.getSimpleName();
+        if ( fullName.indexOf('$') != -1 ) {
+            /*
+             We don't want to define an inner class constant here, because it may conflict with static fields.
+             Instead, we defer that constant definition to the declaring class's proxy initialization, which will deal
+             with naming conflicts appropriately. See GH-6196.
+             */
+            return;
         }
         else {
             final int endPackage = fullName.lastIndexOf('.');
@@ -902,6 +921,7 @@ public class Java implements Library {
             }
             catch (RuntimeException e) {
                 if ( e instanceof RaiseException ) throw e;
+                if (runtime.isDebug()) e.printStackTrace();
                 throw runtime.newNameError("missing class or uppercase package name (`" + fullName + "'), caused by " + e.getMessage(), fullName);
             }
         }
@@ -1165,6 +1185,8 @@ public class Java implements Library {
         if ( name.length() == 0 ) throw runtime.newArgumentError("empty class name");
 
         Class<?> enclosing = JavaClass.getJavaClass(context, enclosingClass);
+
+        if (enclosing == null) return null;
 
         final String fullName = enclosing.getName() + '$' + name;
 
@@ -1469,12 +1491,12 @@ public class Java implements Library {
         // normal new class implementing interfaces
         interfacesHashCode = 31 * interfacesHashCode + clazz.hashCode();
 
-        String implClassName;
+        String implClassName = Constants.GENERATED_PACKAGE;
         if (clazz.getBaseName() == null) {
             // no-name class, generate a bogus name for it
-            implClassName = "anon_class" + Math.abs(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
+            implClassName += "anon_class" + Math.abs(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
         } else {
-            implClassName = clazz.getName().replaceAll("::", "\\$\\$") + '_' + Math.abs(interfacesHashCode);
+            implClassName += StringSupport.replaceAll(clazz.getName(), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
         }
         Class<? extends IRubyObject> proxyImplClass;
         try {
@@ -1623,9 +1645,15 @@ public class Java implements Library {
     }
 
     /**
-     * @see JavaUtil#CAN_SET_ACCESSIBLE
+     * Try to set the given member to be accessible, considering open modules and avoiding the actual setAccessible
+     * call when it would produce a JPMS warning. All classes on Java 8 are considered open, allowing setAccessible
+     * to proceed.
+     *
+     * The open check is based on this class, Java.java, which will be in whatever core or dist JRuby module you are
+     * using.
      */
-    @SuppressWarnings("unused") private static final byte HIDDEN_STATIC_FIELD = 72;
-    public static final String HIDDEN_STATIC_FIELD_NAME = "HIDDEN_STATIC_FIELD";
+    public static <T extends AccessibleObject & Member> boolean trySetAccessible(T member) {
+        return Modules.trySetAccessible(member, Java.class);
+    }
 
 }

@@ -19,8 +19,7 @@ describe "A Ruby class generating a Java stub" do
       cls = generate("class Foo; end").classes[0]
       expect( cls.has_constructor? ).to be false
 
-      java = cls.to_s
-      java.should match EMPTY_INITIALIZE_PATTERN
+      expect( cls.to_s ).to match EMPTY_INITIALIZE_PATTERN
     end
   end
 
@@ -37,7 +36,7 @@ describe "A Ruby class generating a Java stub" do
         expect( init.args.length ).to eql 1
 
         java = init.to_s
-        java.should match OBJECT_INITIALIZE_PATTERN
+        expect( java ).to match OBJECT_INITIALIZE_PATTERN
 
         expect( def_cnstr = cls.methods[1] ).to_not be nil
         expect( def_cnstr.constructor? ).to be true
@@ -45,7 +44,7 @@ describe "A Ruby class generating a Java stub" do
         expect( def_cnstr.args.length ).to eql 0
 
         java = def_cnstr.to_s
-        java.should match EMPTY_INITIALIZE_PATTERN
+        expect( java ).to match EMPTY_INITIALIZE_PATTERN
       end
     end
 
@@ -110,7 +109,7 @@ describe "A Ruby class generating a Java stub" do
         cls = generate("class Foo; java_signature 'Foo() throws FooBarException,QuxBazException'; def initialize(); end; end").classes[0]
 
         method = cls.methods[0]
-        method.java_signature.to_s.should == 'Foo() throws FooBarException, QuxBazException'
+        expect( method.java_signature.to_s ).to eql 'Foo() throws FooBarException, QuxBazException'
       end
     end
 

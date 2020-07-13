@@ -38,16 +38,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.Ruby;
-import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.runtime.Helpers;
+import org.jruby.util.ASM;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.OneShotClassLoader;
@@ -55,6 +51,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
+import static org.jruby.RubyInstanceConfig.JAVA_VERSION;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -166,7 +163,7 @@ public class JavaProxyClassFactory {
     private JavaProxyClass generate(ClassDefiningClassLoader loader, String targetClassName,
                                     Class superClass, Class[] interfaces,
                                     Map<MethodKey, MethodData> methods, Type selfType) {
-        ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces);
+        ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces, loader);
 
         GeneratorAdapter clazzInit = createClassInitializer(selfType, cw);
 
@@ -209,11 +206,12 @@ public class JavaProxyClassFactory {
     }
 
     private static ClassWriter beginProxyClass(final String className,
-            final Class superClass, final Class[] interfaces) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        final Class superClass, final Class[] interfaces, final ClassDefiningClassLoader loader) {
+
+        ClassWriter cw = ASM.newClassWriter(loader.asClassLoader());
 
         // start class
-        cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
+        cw.visit(JAVA_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
                 toInternalClassName(className), /*signature*/ null,
                 toInternalClassName(superClass),
                 interfaceNamesForProxyClass(interfaces));
@@ -325,7 +323,7 @@ public class JavaProxyClassFactory {
         String field_name = "__mth$" + md.getName() + md.scrambledSignature();
 
         // private static JavaProxyMethod __mth$sort$java_util_Comparator;
-        FieldVisitor fv = cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+        FieldVisitor fv = cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
                 field_name, PROXY_METHOD_TYPE.getDescriptor(), null, null);
         fv.visitEnd();
 
@@ -336,6 +334,7 @@ public class JavaProxyClassFactory {
         clazzInit.push(md.isImplemented());
         // JavaProxyMethod initProxyMethod(JavaProxyClass proxyClass, String name, String desc, boolean hasSuper)
         clazzInit.invokeStatic(INTERNAL_PROXY_HELPER_TYPE, initProxyMethod);
+        // __mth$sort$java_util_Comparator = initProxyMethod(...)
         clazzInit.putStatic(selfType, field_name, PROXY_METHOD_TYPE);
 
         org.objectweb.asm.commons.Method sm = new org.objectweb.asm.commons.Method(

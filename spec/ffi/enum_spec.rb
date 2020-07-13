@@ -417,7 +417,17 @@ describe "All enums" do
   end
 
   it "duplicate enum keys rejected" do
-    expect { enum [ :a, 0xfee1dead, :b, 0xdeadbeef, :a, 0 ] }.to raise_error
-    expect { enum FFI::Type::UINT64, [ :a, 0xfee1dead, :b, 0xdeadbeef, :a, 0 ] }.to raise_error
+    expect do
+      Module.new do
+        extend FFI::Library
+        enum [ :a, 0xfee1dead, :b, 0xdeadbeef, :a, 0 ]
+      end
+    end.to raise_error(ArgumentError, /duplicate/)
+    expect do
+      Module.new do
+        extend FFI::Library
+        enum FFI::Type::UINT64, [ :a, 0xfee1dead, :b, 0xdeadbeef, :a, 0 ]
+      end
+    end.to raise_error(ArgumentError, /duplicate/)
   end
 end

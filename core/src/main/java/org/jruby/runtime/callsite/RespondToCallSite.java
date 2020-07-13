@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.RubyBoolean;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -7,7 +8,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
-public class RespondToCallSite extends NormalCachingCallSite {
+import static org.jruby.RubyBasicObject.getMetaClass;
+
+public class RespondToCallSite extends MonomorphicCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
     private final String respondToName;
     private RubySymbol respondToNameSym;
@@ -56,7 +59,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name) { 
-        RubyClass klass = self.getMetaClass();
+        RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = name.asJavaString();
@@ -68,7 +71,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name, IRubyObject bool) {
-        RubyClass klass = self.getMetaClass();
+        RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = name.asJavaString();
@@ -79,7 +82,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self) {
-        RubyClass klass = self.getMetaClass();
+        RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = respondToName;
@@ -90,14 +93,14 @@ public class RespondToCallSite extends NormalCachingCallSite {
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self, boolean includePrivate) {
-        RubyClass klass = self.getMetaClass();
+        RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = respondToName;
             if (strName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, getRespondToNameSym(context), context.runtime.newBoolean(includePrivate)).isTrue();
+        return super.call(context, caller, self, getRespondToNameSym(context), RubyBoolean.newBoolean(context, includePrivate)).isTrue();
     }
 
     private RubySymbol getRespondToNameSym(ThreadContext context) {
@@ -111,13 +114,13 @@ public class RespondToCallSite extends NormalCachingCallSite {
     @Override
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
         CacheEntry entry = selfType.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
+        final DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg);
+            return callMethodMissing(context, self, selfType, method, arg);
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        if (entry.method.isBuiltin()) {
+        if (method.isBuiltin()) {
             String name = arg.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
 
@@ -130,20 +133,20 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // normal logic if it's not the builtin respond_to? method
-        cache = entry;
-        return method.call(context, self, selfType, methodName, arg);
+        entry = setCache(entry, self); // cache = entry;
+        return method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
     @Override
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
         CacheEntry entry = selfType.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
+        final DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg0, arg1);
+            return callMethodMissing(context, self, selfType, method, arg0, arg1);
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        if (entry.method.equals(context.runtime.getRespondToMethod())) {
+        if (method.equals(context.runtime.getRespondToMethod())) {
             String name = arg0.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, !arg1.isTrue(), context);
 
@@ -156,14 +159,14 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // normal logic if it's not the builtin respond_to? method
-        cache = entry;
-        return method.call(context, self, selfType, methodName, arg0, arg1);
+        entry = setCache(entry, self); // cache = entry;
+        return method.call(context, self, entry.sourceModule, methodName, arg0, arg1);
     }
 
     private static RespondToTuple recacheRespondsTo(CacheEntry respondToMethod, String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {
         CacheEntry respondToLookupResult = klass.searchWithCache(newString);
         boolean respondsTo = Helpers.respondsToMethod(respondToLookupResult.method, checkVisibility);
 
-        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, context.runtime.newBoolean(respondsTo));
+        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, RubyBoolean.newBoolean(context, respondsTo));
     }
 }

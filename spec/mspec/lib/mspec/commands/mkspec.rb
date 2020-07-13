@@ -19,7 +19,7 @@ class MkSpec
     @map = NameMap.new true
   end
 
-  def options(argv=ARGV)
+  def options(argv = ARGV)
     options = MSpecOptions.new "mkspec [options]", 32
 
     options.on("-c", "--constant", "CONSTANT",
@@ -75,7 +75,7 @@ class MkSpec
     parents = '../' * (sub.split('/').length + 1)
 
     File.open(file, 'w') do |f|
-      f.puts "require File.expand_path('../#{parents}spec_helper', __FILE__)"
+      f.puts "require_relative '#{parents}spec_helper'"
       config[:requires].each do |lib|
         f.puts "require '#{lib}'"
       end

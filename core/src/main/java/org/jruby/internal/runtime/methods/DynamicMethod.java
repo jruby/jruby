@@ -30,12 +30,12 @@
 
 package org.jruby.internal.runtime.methods;
 
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
@@ -73,12 +73,13 @@ public abstract class DynamicMethod {
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
 
-    private static final int BUILTIN_FLAG = 0x1;
-    private static final int NOTIMPL_FLAG = 0x2;
+    private static final int BUILTIN_FLAG = 0b1;
+    private static final int NOTIMPL_FLAG = 0b10;
+    private static final int REFINED_FLAG = 0b100;
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Version {
-        int version = 0;
+        public int version() default 0;
     }
 
     /**
@@ -529,6 +530,10 @@ public abstract class DynamicMethod {
     public MethodData getMethodData() {
         return MethodData.NULL;
     }
+
+    public Collection<String> getInstanceVariableNames() {
+        return Collections.EMPTY_LIST;
+    }
     
     /**
      * Set whether this method is "not implemented".
@@ -539,6 +544,10 @@ public abstract class DynamicMethod {
         } else {
             flags &= ~NOTIMPL_FLAG;
         }
+    }
+
+    public boolean isRefined() {
+        return false;
     }
 
     @Deprecated

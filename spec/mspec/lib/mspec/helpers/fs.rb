@@ -1,12 +1,6 @@
 # Copies a file
 def cp(source, dest)
-  File.open(dest, "wb") do |d|
-    File.open(source, "rb") do |s|
-      while data = s.read(1024)
-        d.write data
-      end
-    end
-  end
+  IO.copy_stream source, dest
 end
 
 # Creates each directory in path that does not exist.
@@ -61,7 +55,7 @@ end
 
 # Creates a file +name+. Creates the directory for +name+
 # if it does not exist.
-def touch(name, mode="w")
+def touch(name, mode = "w")
   mkdir_p File.dirname(name)
 
   File.open(name, mode) do |f|

@@ -44,7 +44,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Object class) when referring to a constant or method.
  */
 public class Colon3Node extends Node implements INameNode {
-    protected RubySymbol name;
+    protected final RubySymbol name;
 
     public Colon3Node(ISourcePosition position, RubySymbol name) {
         this(position, name, false);

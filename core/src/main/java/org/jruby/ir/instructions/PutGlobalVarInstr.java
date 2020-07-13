@@ -26,17 +26,17 @@ public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInst
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
-        String name = getTarget().getId();
-
-        if (name.equals("$_") || name.equals("$LAST_READ_LINE")) {
-            scope.getFlags().add(IRFlags.REQUIRES_LASTLINE);
-        } else if (name.equals("$~") || name.equals("$`") || name.equals("$'") ||
-                name.equals("$+") || name.equals("$LAST_MATCH_INFO") ||
-                name.equals("$PREMATCH") || name.equals("$POSTMATCH") || name.equals("$LAST_PAREN_MATCH")) {
-            scope.getFlags().add(IRFlags.REQUIRES_BACKREF);
-            return true;
+        switch (getTarget().getId()) {
+            case "$_" : case "$LAST_READ_LINE" :
+                scope.getFlags().add(IRFlags.REQUIRES_LASTLINE);
+                break;
+            case "$~" : case "$LAST_MATCH_INFO" :
+            case "$`" : case "$PREMATCH" :
+            case "$'" : case "$POSTMATCH" :
+            case "$+" : case "$LAST_PAREN_MATCH" :
+                scope.getFlags().add(IRFlags.REQUIRES_BACKREF);
+                return true;
         }
-
         return false;
     }
 

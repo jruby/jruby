@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable {
     public static class Copy extends GlobalVariable {
-        private GlobalVariable other;
+        private final GlobalVariable other;
 
         public Copy(Ruby runtime, String name, GlobalVariable other) {
             super(runtime, name, other.get());

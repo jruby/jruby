@@ -70,6 +70,6 @@ class RubyVM::InstructionSequence
     # return value
     i2_bin if CHECK_TO_BINARY
   end if CHECK_TO_A || CHECK_TO_BINARY
-end
+end if defined?(RubyVM)
 
 #require_relative 'x'; exit(1)

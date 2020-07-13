@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.RubySymbol;
 import org.jruby.anno.FrameField;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -23,13 +24,13 @@ import java.util.Set;
 
 import static org.jruby.ir.IRFlags.*;
 
-public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
-    private static long callSiteCounter = 1;
+public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr, Site {
+    public static long callSiteCounter = 1;
     private static final EnumSet<FrameField> ALL = EnumSet.allOf(FrameField.class);
 
-    public transient final long callSiteId;
+    public transient long callSiteId;
     private final CallType callType;
-    protected RubySymbol name;
+    protected final RubySymbol name;
     protected final transient CallSite callSite;
     protected final transient int argsCount;
     protected final transient boolean hasClosure;
@@ -40,21 +41,28 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
     private transient boolean dontInline;
     private transient boolean[] splatMap;
-    private transient boolean procNew;
-    private boolean potentiallyRefined;
+    protected transient boolean procNew;
+    private final boolean potentiallyRefined;
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 
-    protected CallBase(Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
-                       boolean potentiallyRefined) {
+    // main constructor
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                       Operand[] args, Operand closure, boolean potentiallyRefined) {
+        this(scope, op, callType, name, receiver, args, closure, potentiallyRefined, null, callSiteCounter++);
+    }
+
+    // clone constructor
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                       Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
         super(op, arrayifyOperands(receiver, args, closure));
 
-        this.callSiteId = callSiteCounter++;
+        this.callSiteId = callSiteId;
         argsCount = args.length;
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, name.idString(), potentiallyRefined);
+        this.callSite = callSite == null ? getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined) : callSite;
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
@@ -81,7 +89,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         }
 
         if (hasClosure) e.encode(getClosureArg(null));
-
     }
 
     // FIXME: Convert this to some Signature/Arity method
@@ -95,6 +102,14 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
      */
     public String getId() {
         return name.idString();
+    }
+
+    public long getCallSiteId() {
+        return callSiteId;
+    }
+
+    public void setCallSiteId(long callSiteId) {
+        this.callSiteId = callSiteId;
     }
 
     public RubySymbol getName() {
@@ -113,6 +128,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     public Operand getReceiver() {
         return operands[0];
     }
+
+    // CallInstr and descendents have results and this method is obvious.
+    // NoResultCallInstr still provides an impl (returns null) to make processing in JIT simpler.
+    public abstract Variable getResult();
 
     /**
      * This getter is potentially unsafe if you do not know you have >=1 arguments to the call.  It may return
@@ -158,14 +177,24 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return dontInline;
     }
 
-    protected static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
+    protected static CallSite getCallSiteFor(IRScope scope, CallType callType, String name, long callsiteId, boolean hasLiteralClosure, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
-        if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
+        if (potentiallyRefined) return new RefinedCachingCallSite(name, scope.getStaticScope(), callType);
 
         switch (callType) {
-            case NORMAL: return MethodIndex.getCallSite(name);
-            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
+            case NORMAL:
+                if (IRManager.IR_INLINER && hasLiteralClosure) {
+                    return MethodIndex.getProfilingCallSite(callType, name, scope, callsiteId);
+                } else {
+                    return MethodIndex.getCallSite(name);
+                }
+            case FUNCTIONAL:
+                if (IRManager.IR_INLINER && hasLiteralClosure) {
+                    return MethodIndex.getProfilingCallSite(callType, name, scope, callsiteId);
+                } else {
+                    return MethodIndex.getFunctionalCallSite(name);
+                }
             case VARIABLE: return MethodIndex.getVariableCallSite(name);
             case SUPER: return MethodIndex.getSuperCallSite();
             case UNKNOWN:
@@ -239,14 +268,21 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
         if (potentiallySend(getId(), argsCount)) { // ok to look at raw string since we know we are looking for 7bit names.
             Operand meth = getArg1();
-            if (meth instanceof StringLiteral) {
+
+            if (isPotentiallyRefined()) {
+                // send within a refined scope needs to reflect refinements
+                modifiedScope = true;
+                flags.add(REQUIRES_DYNSCOPE);
+            }
+
+            if (meth instanceof MutableString) {
                 // This logic is intended to reduce the framing impact of send if we can
                 // statically determine the sent name and we know it does not need to be
                 // either framed or scoped. Previously it only did this logic for
                 // send(:local_variables).
 
                 // This says getString but I believe this will also always be an id string in this case so it is ok.
-                String sendName = ((StringLiteral) meth).getString();
+                String sendName = ((MutableString) meth).getString();
                 if (MethodIndex.SCOPE_AWARE_METHODS.contains(sendName)) {
                     modifiedScope = true;
                     flags.add(REQUIRES_DYNSCOPE);
@@ -260,12 +296,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                 modifiedScope = true;
                 flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
             }
-        }
-
-        // Refined scopes require dynamic scope in order to get the static scope
-        if (potentiallyRefined) {
-            modifiedScope = true;
-            flags.add(REQUIRES_DYNSCOPE);
         }
 
         return modifiedScope;
@@ -328,9 +358,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
         if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (!(meth instanceof StringLiteral)) return true; // We don't know
+            if (!(meth instanceof MutableString)) return true; // We don't know
 
-            String name = ((StringLiteral) meth).getString();
+            String name = ((MutableString) meth).getString();
             // FIXME: ENEBO - Half of these are name and half mname?
             return name.equals("call") || name.equals("eval") || mname.equals("module_eval") ||
                     mname.equals("class_eval") || mname.equals("instance_eval") || name.equals("send") ||
@@ -351,9 +381,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             return true;
         } else if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
+            if (!(meth instanceof MutableString)) return true; // We don't know -- could be anything
 
-            return MethodIndex.SCOPE_AWARE_METHODS.contains(((StringLiteral) meth).getString());
+            return MethodIndex.SCOPE_AWARE_METHODS.contains(((MutableString) meth).getString());
         }
 
         /* -------------------------------------------------------------
@@ -555,6 +585,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     public Block prepareBlock(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         if (getClosureArg() == null) return Block.NULL_BLOCK;
 
-        return IRRuntimeHelpers.getBlockFromObject(context, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        if (potentiallyRefined) {
+            return IRRuntimeHelpers.getRefinedBlockFromObject(context, currScope, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        } else {
+            return IRRuntimeHelpers.getBlockFromObject(context, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        }
     }
 }

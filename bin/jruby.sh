@@ -226,7 +226,8 @@ do
         else
           JAVACMD="$JAVA_HOME/bin/jdb"
         fi 
-        java_args="${java_args} -sourcepath $JRUBY_HOME/lib/ruby/1.9:."
+        JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
+        java_args="${java_args} -sourcepath ${JDB_SOURCEPATH}"
         JRUBY_OPTS="${JRUBY_OPTS} -X+C" ;;
      --client)
         JAVA_VM=-client ;;
@@ -279,7 +280,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]; then
+if [[ "$NO_BOOTCLASSPATH" != "" || ( "$VERIFY_JRUBY" != "" ) ]]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi

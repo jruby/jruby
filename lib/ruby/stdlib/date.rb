@@ -162,10 +162,10 @@
 # DateTime instance will use the time zone offset of this
 # instance.
 
-org.jruby.ext.date.DateLibrary.load JRuby.runtime
+# Load built-in date library
+JRuby::Util.load_ext("org.jruby.ext.date.DateLibrary")
 
 require 'date/format'
-require 'date.jar'
 
 # Class representing a date.
 #
@@ -276,11 +276,11 @@ class Date
 
   # The Julian Day Number of the Day of Calendar Reform for Italy
   # and the Catholic countries.
-  ITALY     = 2299161 # 1582-10-15
+  #ITALY     = 2299161 # 1582-10-15
 
   # The Julian Day Number of the Day of Calendar Reform for England
   # and her Colonies.
-  ENGLAND   = 2361222 # 1752-09-14
+  #ENGLAND   = 2361222 # 1752-09-14
 
   # A constant used to indicate that a Date should always use the
   # Julian calendar.
@@ -523,28 +523,6 @@ class Date
     define_method(n.downcase + '?') { wday == i }
   end
 
-  # The relationship operator for Date.
-  #
-  # Compares dates by Julian Day Number.  When comparing
-  # two DateTime instances, or a DateTime with a Date,
-  # the instances will be regarded as equivalent if they
-  # fall on the same date in local time.
-  def === (other)
-    case other
-    when Numeric
-      jd == other
-    when Date
-      jd == other.jd
-    else
-      begin
-        l, r = other.coerce(self)
-        l === r
-      rescue NoMethodError
-        false
-      end
-    end
-  end
-
   # Step the current date forward +step+ days at a
   # time (or backward, if +step+ is negative) until
   # we reach +limit+ (inclusive), yielding the resultant
@@ -559,7 +537,12 @@ class Date
       return to_enum(:step, limit, step)
     end
     da = self
-    op = %w(- <= >=)[step <=> 0]
+    step_cmp = step <=> 0
+    if step_cmp.nil?
+      raise ArgumentError.new("comparison of #{step.class} with 0 failed")
+    end
+    step_cmp = step_cmp > 0 ? 1 : step_cmp < 0 ? -1 : 0
+    op = %w(- <= >=)[step_cmp]
     while da.__send__(op, limit)
       yield da
       da += step
@@ -686,10 +669,21 @@ class DateTime < Date
   def self.new_by_frags(elem, sg) # :nodoc:
     raise ArgumentError, 'invalid date' unless elem
     
-    elem = rewrite_frags(elem)
-    elem = complete_frags(elem)
-    unless (jd = valid_date_frags?(elem, sg)) &&
-           (fr = valid_time_frags?(elem))
+
+    # More work to do if not :civil
+    if !elem.key?(:jd) && !elem.key?(:yday) &&
+        (year = elem[:year]) && (mon = elem[:mon]) && (mday = elem[:mday])
+      jd = Date._valid_civil?(year, mon, mday, sg)
+      elem[:hour] ||= 0
+      elem[:min] ||= 0
+      elem[:sec] ||= 0
+      elem[:sec] = 59 if elem[:sec] == 60
+    else
+      elem = rewrite_frags(elem)
+      elem = complete_frags(elem)
+      jd = valid_date_frags?(elem, sg)
+    end
+    unless jd && (fr = valid_time_frags?(elem))
       raise ArgumentError, 'invalid date'
     end
     fr += (elem[:sec_fraction] || 0) / 86400

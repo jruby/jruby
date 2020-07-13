@@ -9,9 +9,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   inherit 'org.sonatype.oss:oss-parent:7'
   packaging 'pom'
 
-  description 'JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.'
+  description 'JRuby is the effort to recreate the Ruby (https://www.ruby-lang.org) interpreter in Java.'
 
-  organization 'JRuby', 'http://jruby.org'
+  organization 'JRuby', 'https://www.jruby.org'
 
   [ 'headius', 'enebo', 'wmeissner', 'BanzaiMan', 'mkristian' ].each do |name|
     developer name do
@@ -65,32 +65,32 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
-              'json.version' => '2.1.0',
-              'rspec.version' => '3.4.0',
-              'rspec-core.version' => '3.4.4',
-              'rspec-expectations.version' => '3.4.0',
-              'rspec-mocks.version' => '3.4.1',
-              'rspec-support.version' => '3.4.1',
-              'minitest.version' => '5.10.3',
-              'test-unit.version' => '3.2.7',
-              'power_assert.version' => '1.1.1',
+              'json.version' => '2.3.0',
+              'rspec.version' => '3.7.0',
+              'rspec-core.version' => '3.7.0',
+              'rspec-expectations.version' => '3.7.0',
+              'rspec-mocks.version' => '3.7.0',
+              'rspec-support.version' => '3.7.0',
+              'minitest.version' => '5.11.3',
+              'test-unit.version' => '3.2.9',
+              'power_assert.version' => '1.1.3',
 
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
-              'rdoc.version' => '6.0.1',
-              'rake.version' => '12.3.0',
-              'jar-dependencies.version' => '0.3.12',
-              'jruby-launcher.version' => '1.1.1',
-              'ant.version' => '1.9.2',
-              'asm.version' => '6.0',
-              'jffi.version' => '1.2.17',
-              'joda.time.version' => '2.9.9' )
+              'rdoc.version' => '6.1.2',
+              'rake.version' => '12.3.2',
+              'jar-dependencies.version' => '0.4.0',
+              'jruby-launcher.version' => '1.1.6',
+              'ant.version' => '1.9.8',
+              'asm.version' => '7.1',
+              'jffi.version' => '1.2.23',
+              'joda.time.version' => '2.10.5' )
 
   plugin_management do
-    jar( 'junit:junit:4.11',
+    jar( 'junit:junit:4.12',
          :scope => 'test' )
 
-    plugin( 'org.apache.felix:maven-bundle-plugin:2.4.0',
+    plugin( 'org.apache.felix:maven-bundle-plugin:4.2.1',
             'instructions' => {
               'Export-Package' =>  'org.jruby.*;version=${project.version}',
               'Import-Package' =>  '!org.jruby.*, *;resolution:=optional',
@@ -99,6 +99,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'Bundle-Description' =>  '${bundle.name} ${project.version} OSGi bundle',
               'Bundle-SymbolicName' =>  '${bundle.symbolic_name}'
             } ) do
+      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '4.3.1')
       execute_goals( 'manifest',
                      :phase => 'prepare-package' )
     end
@@ -106,7 +107,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin( :site, '3.3', 'skipDeploy' =>  'true' )
     plugin 'org.codehaus.mojo:build-helper-maven-plugin:1.8'
     plugin 'org.codehaus.mojo:exec-maven-plugin:1.2.1'
-    plugin :antrun, '1.7'
+    plugin :antrun, '1.8'
     plugin :source, '2.1.2'
     plugin :assembly, '2.4'
     plugin :install, '2.4'
@@ -128,7 +129,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin :compiler, '3.3'
     plugin :shade, '3.1.0'
-    plugin :surefire, '2.15'
+    plugin :surefire, '3.0.0-M2'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
             'properties' => { 'jruby.version' => '${project.version}',
@@ -147,9 +148,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '1.0-beta-2'
-    plugin 'org.apache.felix:maven-bundle-plugin' do
-      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '3.5.0')
-    end
   end
 
   plugin( :site,

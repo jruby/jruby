@@ -8,13 +8,18 @@ task :test => "test:short"
 
 if ENV['CI']
   # MRI tests have a different flag for color
-  ADDITIONAL_TEST_OPTIONS = "-v --color=never --tty=no"
+  ADDITIONAL_TEST_OPTIONS = "--color=never --tty=no"
 
   # for normal test/unit tests
-  ENV['TESTOPT'] = "-v --no-use-color"
+  ENV['TESTOPT'] = "--no-use-color"
+
+  # extend timeouts in MRI tests
+  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '20'
 else
   ADDITIONAL_TEST_OPTIONS = ""
 end
+
+AVAILABLE_PROCESSORS = (ENV['JOBS'] || java.lang.Runtime.runtime.available_processors.to_i / 2 + 1)
 
 namespace :test do
   desc "Compile test code"
@@ -48,7 +53,7 @@ namespace :test do
   task :rake_targets => long_tests
   task :extended => long_tests
 
-  max_meta_size = ENV_JAVA['java.specification.version'] > '1.7' ? '-XX:MaxMetaspaceSize' : '-XX:MaxPermSize'
+  max_meta_size = "-XX:MaxMetaspaceSize"
   get_meta_size = proc do |default_size = 452|
     (ENV['JAVA_OPTS'] || '').index(max_meta_size) || (ENV['JRUBY_OPTS'] || '').index(max_meta_size) ?
         '' : "-J#{max_meta_size}=#{default_size}M"
@@ -56,7 +61,8 @@ namespace :test do
 
   compile_flags = {
     :default => :int,
-    :int => ["-X-C"],
+    # interpreter is set to threshold=1 to encourage full builds to run for code called twice
+    :int => ["-X-C", "-Xjit.threshold=1", "-Xjit.background=false"],
     # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
     :fullint => ["-X-C", "-Xjit.threshold=0", "-Xjit.background=false"],
     :jit => ["-Xjit.threshold=0", "-Xjit.background=false", get_meta_size.call()],
@@ -74,30 +80,37 @@ namespace :test do
   end
 
   namespace :mri do
-    mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
-    task :int do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X-C"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
+    jruby_opts = {
+        # interpreter is set to threshold=1 to encourage full builds to run for code called twice
+        int: "--dev -Xjit.threshold=1 -Xjit.background=false",
+        fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
+        jit: "-Xjit.threshold=0 -Xjit.background=false",
+        aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
+    }
+
+    mri_suites = [:core, :extra, :stdlib]
+
+    mri_suites.each do |suite|
+      files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
+
+      namespace suite do
+
+        jruby_opts.each do |task, opts|
+
+          task task do
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} --disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+            ruby "test/mri/runner.rb -j#{AVAILABLE_PROCESSORS} #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
+          end
+        end
+      end
+
+      # add int shortcut names
+      task suite => "test:mri:#{suite}:int"
     end
 
-    task :fullint do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X-C -Xjit.threshold=0 -Xjit.background=false"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task :jit do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -Xjit.threshold=0 -Xjit.background=false #{get_meta_size.call()}"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task :aot do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X+C -Xjit.background=false #{get_meta_size.call()}"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task all: %s[int jit aot]
+    task all: jruby_opts.keys
   end
-  task mri: 'test:mri:int'
+  task mri: ['test:mri:core:int', 'test:mri:extra:int', 'test:mri:stdlib:int']
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
     files = []
@@ -109,7 +122,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.ruby_opts << '-Xaot.loadClasses=true' # disabled by default now
     t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
@@ -128,7 +140,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.test_files = files_in_file 'test/slow.index'
     t.ruby_opts << '-J-ea' << '-I.'
     t.ruby_opts << '-J-cp target/test-classes'
@@ -144,7 +155,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-X+O'
   end
@@ -157,25 +167,5 @@ namespace :test do
     
     puts cmd
     system cmd
-  end
-  
-  namespace :junit do
-    test_class_path = [
-      "target/junit.jar",
-      "target/livetribe-jsr223.jar",
-      "target/bsf.jar",
-      "target/commons-logging.jar",
-      "lib/jruby.jar",
-      "target/test-classes",
-      "test/jruby/requireTest.jar",
-      "test"
-    ]
-    
-    desc "Run the main JUnit test suite"
-    task :main => 'test:compile' do
-      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite", :maxmemory => '500M' do
-        jvmarg :line => '-ea'
-      end
-    end
   end
 end

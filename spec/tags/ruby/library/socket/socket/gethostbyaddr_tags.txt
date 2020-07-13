@@ -1,0 +1,5 @@
+fails:Socket.gethostbyaddr using an IPv4 address without an explicit address family the returned Array includes the hostname as the first value
+fails:Socket.gethostbyaddr using an IPv4 address with an explicit address family raises SocketError when the address is not supported by the family
+fails:Socket.gethostbyaddr using an IPv6 address without an explicit address family the returned Array includes the hostname as the first value
+fails:Socket.gethostbyaddr using an IPv6 address without an explicit address family the returned Array includes the address type as the 3rd value
+fails:Socket.gethostbyaddr using an IPv6 address with an explicit address family raises SocketError when the address is not supported by the family

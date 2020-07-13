@@ -17,6 +17,8 @@ module JRuby::Compiler
   IRWriter = org.jruby.ir.persistence.IRWriter
   MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
 
+  BYTECODE_VERSION = org.jruby.RubyInstanceConfig::JAVA_VERSION # e.g. Opcodes::V1_8
+
   DEFAULT_PREFIX = ''
 
   def default_options
@@ -161,7 +163,7 @@ module JRuby::Compiler
 
           cls = ClassWriter.new(ClassWriter::COMPUTE_MAXS | ClassWriter::COMPUTE_FRAMES)
           cls.visit(
-              Opcodes::V1_7,
+              BYTECODE_VERSION,
               Opcodes::ACC_PUBLIC,
               pathname.gsub('.', '/'),
               nil,

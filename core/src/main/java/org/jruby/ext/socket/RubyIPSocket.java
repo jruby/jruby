@@ -59,7 +59,7 @@ public class RubyIPSocket extends RubyBasicSocket {
         runtime.getObject().setConstant("IPsocket",rb_cIPSocket);
     }
 
-    private static ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyIPSocket(runtime, klass);
         }
@@ -114,7 +114,7 @@ public class RubyIPSocket extends RubyBasicSocket {
             hostAddress = sender.getAddress().getHostAddress();
         }
 
-        IRubyObject addressArray = context.runtime.newArray(
+        IRubyObject addressArray = context.runtime.newArrayNoCopy(
                 runtime.newString("AF_INET"),
                 runtime.newFixnum(port),
                 runtime.newString(hostName),
@@ -186,15 +186,15 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
 
     public static Boolean doReverseLookup(ThreadContext context, IRubyObject noreverse) {
-        Ruby runtime = context.runtime;
-
-        if (noreverse == runtime.getTrue()) {
+        if (noreverse == context.tru) {
             return false;
-        } else if (noreverse == runtime.getFalse()) {
+        } else if (noreverse == context.fals) {
             return true;
         } else if (noreverse == context.nil) {
             return null;
         } else {
+            Ruby runtime = context.runtime;
+
             TypeConverter.checkType(context, noreverse, runtime.getSymbol());
             switch (noreverse.toString()) {
                 case "numeric": return true;

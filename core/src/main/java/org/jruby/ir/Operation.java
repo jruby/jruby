@@ -66,6 +66,7 @@ public enum Operation {
     NORESULT_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ATTR_ASSIGN(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     ARRAY_DEREF(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    AS_STRING(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     INSTANCE_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     UNRESOLVED_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
@@ -119,7 +120,6 @@ public enum Operation {
     /** constant operations */
     LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),
     INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
-    CONST_MISSING(OpFlags.f_can_raise_exception),
     SEARCH_CONST(OpFlags.f_can_raise_exception),
     SEARCH_MODULE_FOR_CONST(OpFlags.f_can_raise_exception),
 
@@ -141,10 +141,10 @@ public enum Operation {
     /** debugging ops **/
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
     TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
+    COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
     ARG_SCOPE_DEPTH(0),
-    BACKTICK_STRING(OpFlags.f_can_raise_exception),
     BINDING_LOAD(OpFlags.f_is_load),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BUILD_BACKREF(OpFlags.f_can_raise_exception),
@@ -230,7 +230,7 @@ public enum Operation {
     PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception);
 
     public final OpClass opClass;
-    private int flags;
+    private final int flags;
 
     Operation(int flags) {
         this.flags = flags;

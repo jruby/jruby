@@ -9,22 +9,34 @@ import org.jruby.ir.operands.Variable;
  * Context info for simple cloning operation.
  */
 public class SimpleCloneInfo extends CloneInfo {
-    private boolean isEnsureBlock;
+    private final boolean isEnsureBlock;
+    private boolean cloneIPC;
 
-    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock) {
+    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock, boolean cloneIPC) {
         super(scope);
 
         this.isEnsureBlock = isEnsureBlock;
+    }
+
+    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock) {
+        this(scope, isEnsureBlock, false);
     }
 
     public boolean isEnsureBlockCloneMode() {
         return this.isEnsureBlock;
     }
 
+    public boolean shouldCloneIPC() {
+        return cloneIPC;
+    }
+
     public Variable getRenamedVariable(Variable variable) {
         Variable renamed = super.getRenamedVariable(variable);
 
-        // FIXME: I don't understand how this case can possibly exist.  If it does a qualitative comment should be added here.
+        // WrappedIRClosure operands in ensure blocks processing will cloneForInlining and inherit the top-scopes
+        // SimpleCloneInfo instance which will already contain a depth 0 version of this "local" variable.  We are
+        // in a closure in early stages of cloning it around anywhere it should be for ensure (we copy same ensure
+        // bodies to all possible exit paths) We know closures containing lvars will have the wrong depth.
         if (variable instanceof LocalVariable && !((LocalVariable) variable).isSameDepth((LocalVariable) renamed)) {
             return ((LocalVariable) renamed).cloneForDepth(((LocalVariable) variable).getScopeDepth());
         }
@@ -39,7 +51,7 @@ public class SimpleCloneInfo extends CloneInfo {
         return isEnsureBlock ? l : l.clone();
     }
 
-    protected Variable getRenamedSelfVariable(Variable self) {
+    public Variable getRenamedSelfVariable(Variable self) {
         return self;
     }
 

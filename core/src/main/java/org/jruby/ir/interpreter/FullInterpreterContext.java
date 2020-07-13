@@ -1,28 +1,34 @@
 package org.jruby.ir.interpreter;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.jruby.RubyInstanceConfig;
+import java.util.Set;
+
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
+import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.instructions.Site;
+import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
  * Created by enebo on 2/27/15.
  */
 public class FullInterpreterContext extends InterpreterContext {
-    private CFG cfg;
+    private final CFG cfg;
 
     // Creation of this field will happen in generateInstructionsForInterpretation or during IRScope.prepareForCompilation.
     // FIXME: At some point when we relinearize after running another phase of passes we should document that here to know how this field is changed
@@ -32,7 +38,27 @@ public class FullInterpreterContext extends InterpreterContext {
     private Map<String, DataFlowProblem> dataFlowProblems;
 
     /** What passes have been run on this scope? */
-    private List<CompilerPass> executedPasses = new ArrayList<>();
+    private final List<CompilerPass> executedPasses = new ArrayList<>();
+
+
+    /** Local variables defined in this scope */
+    private Set<LocalVariable> definedLocalVars;
+
+    /** Local variables used in this scope */
+    private Set<LocalVariable> usedLocalVars;
+
+    // FIXME: When inlining these unboxed indexes and even defined/used can be cloned as starting point?
+    public int floatVariableIndex = -1;
+    public int fixnumVariableIndex = -1;
+    public int booleanVariableIndex = -1;
+
+    // For duplicate()
+    public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList) {
+        super(scope, (List<Instr>) null);
+
+        this.cfg = cfg;
+        this.linearizedBBList = linearizedBBList;
+    }
 
     // FIXME: Perhaps abstract IC into interface of base class so we do not have a null instructions field here
     public FullInterpreterContext(IRScope scope, Instr[] instructions) {
@@ -138,7 +164,7 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         instructions = linearizedInstrArray;
-        temporaryVariablecount = getScope().getTemporaryVariablesCount();
+        temporaryVariableCount = getScope().getTemporaryVariablesCount();
 
         // System.out.println("SCOPE: " + getScope().getId());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
@@ -177,6 +203,33 @@ public class FullInterpreterContext extends InterpreterContext {
         return "\nCFG:\n" + cfg.toStringGraph() + "\nInstructions:\n" + cfg.toStringInstrs();
     }
 
+    public String toStringLinearized() {
+        StringBuilder buf = new StringBuilder();
+
+        for (BasicBlock bb: getLinearizedBBList()) {
+            buf.append(bb + bb.toStringInstrs());
+        }
+
+        return buf.toString();
+    }
+
+    public FullInterpreterContext duplicate() {
+        try {
+            CFG newCFG = cfg.clone(new SimpleCloneInfo(getScope(), false, true), getScope());
+            BasicBlock[] newLinearizedBBList = new BasicBlock[linearizedBBList.length];
+
+            for (int i = 0; i < linearizedBBList.length; i++) {
+                newLinearizedBBList[i] = newCFG.getBBForLabel(linearizedBBList[i].getLabel());
+            }
+
+            return new FullInterpreterContext(getScope(), newCFG, newLinearizedBBList);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return null;
+        }
+    }
+
+
     public int determineRPC(int ipc) {
         int length = rescueIPCs.length;
         for (int i = 0; i + 1 < length; i += 2) {
@@ -184,5 +237,72 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc);
+    }
+
+    public BasicBlock findBasicBlockOf(long callsiteId) {
+        for (BasicBlock basicBlock: linearizeBasicBlocks()) {
+            for (Instr instr: basicBlock.getInstrs()) {
+                if (instr instanceof Site) {
+                    Site site = (Site) instr;
+
+                    if (site.getCallSiteId() == callsiteId) return basicBlock;
+                }
+            }
+        }
+
+        throw new RuntimeException("Bug: Looking for callsiteId: " + callsiteId + " in " + this);
+    }
+
+    /**
+     * Get all variables referenced by this scope.
+     */
+    public Set<LocalVariable> getUsedLocalVariables() {
+        return usedLocalVars;
+    }
+
+    public void setUpUseDefLocalVarMaps() {
+        definedLocalVars = new HashSet<>(1);
+        usedLocalVars = new HashSet<>(1);
+        for (BasicBlock bb : getCFG().getBasicBlocks()) {
+            for (Instr i : bb.getInstrs()) {
+                for (Variable v : i.getUsedVariables()) {
+                    if (v instanceof LocalVariable) usedLocalVars.add((LocalVariable) v);
+                }
+
+                if (i instanceof ResultInstr) {
+                    Variable v = ((ResultInstr) i).getResult();
+
+                    if (v instanceof LocalVariable && !((LocalVariable)v).isOuterScopeVar()) {
+                        definedLocalVars.add((LocalVariable) v);
+                    }
+                }
+            }
+        }
+
+        for (IRClosure cl : getScope().getClosures()) {
+            cl.getFullInterpreterContext().setUpUseDefLocalVarMaps();
+        }
+    }
+
+    public boolean usesLocalVariable(Variable v) {
+        if (usedLocalVars == null) setUpUseDefLocalVarMaps();
+        if (usedLocalVars.contains(v)) return true;
+
+        for (IRClosure cl : getScope().getClosures()) {
+            if (cl.getFullInterpreterContext().usesLocalVariable(v)) return true;
+        }
+
+        return false;
+    }
+
+    public boolean definesLocalVariable(Variable v) {
+        if (definedLocalVars == null) setUpUseDefLocalVarMaps();
+        if (definedLocalVars.contains(v)) return true;
+
+        for (IRClosure cl : getScope().getClosures()) {
+            if (cl.getFullInterpreterContext().definesLocalVariable(v)) return true;
+        }
+
+        return false;
     }
 }

@@ -12,24 +12,6 @@ describe :rb_enc_get_index, shared: true do
   it "returns the index of the encoding of a Regexp" do
     @s.send(@method, /regexp/).should >= 0
   end
-
-  it "returns the index of the encoding of an Object" do
-    obj = mock("rb_enc_get_index string")
-    @s.rb_enc_set_index(obj, 1)
-    @s.send(@method, obj).should == 1
-  end
-
-  it "returns the index of the dummy encoding of an Object" do
-    obj = mock("rb_enc_get_index string")
-    index = Encoding.list.index(Encoding::UTF_16)
-    @s.rb_enc_set_index(obj, index)
-    @s.send(@method, obj).should == index
-  end
-
-  it "returns 0 for an object without an encoding" do
-    obj = mock("rb_enc_get_index string")
-    @s.send(@method, obj).should == 0
-  end
 end
 
 describe :rb_enc_set_index, shared: true do
@@ -39,7 +21,7 @@ describe :rb_enc_set_index, shared: true do
 
     # This is used because indexes should be considered implementation
     # dependent. So a pair is returned:
-    #   [rb_enc_find_index()->name, rb_enc_get(obj)->name]
+    #   [rb_enc_find_index() -> name, rb_enc_get(obj) -> name]
     result.first.should == result.last
   end
 
@@ -49,22 +31,30 @@ describe :rb_enc_set_index, shared: true do
     result.first.should == result.last
   end
 
-  it "associates an encoding with an object" do
-    obj = mock("rb_enc_set_index string")
-    result = @s.send(@method, obj, 1)
-    result.first.should == result.last
+  ruby_version_is "2.6" do
+    it "raises an ArgumentError for a non-encoding capable object" do
+      obj = Object.new
+      -> {
+        result = @s.send(@method, obj, 1)
+      }.should raise_error(ArgumentError, "cannot set encoding on non-encoding capable object")
+    end
   end
 end
 
 describe "C-API Encoding function" do
+  @n = 0
+
   before :each do
     @s = CApiEncodingSpecs.new
   end
 
-  describe "rb_encdb_alias" do
-    it "creates an alias for an existing Encoding" do
-      @s.rb_encdb_alias("ZOMGWTFBBQ", "UTF-8").should >= 0
-      Encoding.find("ZOMGWTFBBQ").name.should == "UTF-8"
+  ruby_version_is "2.6" do
+    describe "rb_enc_alias" do
+      it "creates an alias for an existing Encoding" do
+        name = "ZOMGWTFBBQ#{@n += 1}"
+        @s.rb_enc_alias(name, "UTF-8").should >= 0
+        Encoding.find(name).name.should == "UTF-8"
+      end
     end
   end
 
@@ -92,9 +82,51 @@ describe "C-API Encoding function" do
     end
   end
 
+  describe "rb_enc_isalnum" do
+    it "returns non-zero for alpha-numeric characters" do
+      @s.rb_enc_isalnum("a".ord, Encoding::US_ASCII).should == true
+      @s.rb_enc_isalnum("2".ord, Encoding::US_ASCII).should == true
+      @s.rb_enc_isalnum("a".ord, Encoding::UTF_8).should == true
+      @s.rb_enc_isalnum("2".ord, Encoding::UTF_8).should == true
+      @s.rb_enc_isalnum("é".encode(Encoding::ISO_8859_1).ord, Encoding::ISO_8859_1).should == true
+    end
+
+    it "returns zero for non alpha-numeric characters" do
+      @s.rb_enc_isalnum("-".ord, Encoding::US_ASCII).should == false
+      @s.rb_enc_isalnum(" ".ord, Encoding::US_ASCII).should == false
+      @s.rb_enc_isalnum("-".ord, Encoding::UTF_8).should == false
+      @s.rb_enc_isalnum(" ".ord, Encoding::UTF_8).should == false
+    end
+  end
+
+  describe "rb_enc_isspace" do
+    it "returns non-zero for space characters" do
+      @s.rb_enc_isspace(" ".ord, Encoding::US_ASCII).should == true
+      @s.rb_enc_isspace(" ".ord, Encoding::UTF_8).should == true
+    end
+
+    it "returns zero for non space characters" do
+      @s.rb_enc_isspace("-".ord, Encoding::US_ASCII).should == false
+      @s.rb_enc_isspace("A".ord, Encoding::US_ASCII).should == false
+      @s.rb_enc_isspace("3".ord, Encoding::US_ASCII).should == false
+      @s.rb_enc_isspace("-".ord, Encoding::UTF_8).should == false
+      @s.rb_enc_isspace("A".ord, Encoding::UTF_8).should == false
+      @s.rb_enc_isspace("3".ord, Encoding::UTF_8).should == false
+    end
+  end
+
   describe "rb_enc_from_index" do
     it "returns an Encoding" do
       @s.rb_enc_from_index(0).should be_an_instance_of(String)
+    end
+  end
+
+  describe "rb_enc_mbc_to_codepoint" do
+    it "returns the correct codepoint for the given character and size" do
+       @s.rb_enc_mbc_to_codepoint("é", 2).should == 0x00E9
+       @s.rb_enc_mbc_to_codepoint("éa", 2).should == 0x00E9
+       @s.rb_enc_mbc_to_codepoint("éa", 1).should == 0xC3
+       @s.rb_enc_mbc_to_codepoint("éa", 3).should == 0x00E9
     end
   end
 
@@ -105,7 +137,7 @@ describe "C-API Encoding function" do
   end
 
   describe "rb_ascii8bit_encoding" do
-    it "returns the encoding for Encoding::ASCII_8BIT" do
+    it "returns the encoding for Encoding::BINARY" do
       @s.rb_ascii8bit_encoding.should == "ASCII-8BIT"
     end
   end
@@ -135,16 +167,39 @@ describe "C-API Encoding function" do
   end
 
   describe "rb_enc_get" do
-    it "returns the encoding ossociated with an object" do
-      str = "abc".encode Encoding::ASCII_8BIT
+    it "returns the encoding associated with an object" do
+      str = "abc".encode Encoding::BINARY
       @s.rb_enc_get(str).should == "ASCII-8BIT"
     end
   end
 
+  describe "rb_enc_precise_mbclen" do
+    it "returns the correct length for single byte characters" do
+      @s.rb_enc_precise_mbclen("hello", 7).should == 1
+      @s.rb_enc_precise_mbclen("hello", 5).should == 1
+      @s.rb_enc_precise_mbclen("hello", 1).should == 1
+      @s.rb_enc_precise_mbclen("hello", 0).should == -2
+      @s.rb_enc_precise_mbclen("hello", -1).should == -2
+      @s.rb_enc_precise_mbclen("hello", -5).should == -2
+    end
+
+    it "returns the correct length for multi-byte characters" do
+      @s.rb_enc_precise_mbclen("ésumé", 2).should == 2
+      @s.rb_enc_precise_mbclen("ésumé", 3).should == 2
+      @s.rb_enc_precise_mbclen("ésumé", 0).should == -2
+      @s.rb_enc_precise_mbclen("ésumé", 1).should == -2
+      @s.rb_enc_precise_mbclen("あ", 20).should == 3
+      @s.rb_enc_precise_mbclen("あ", 3).should == 3
+      @s.rb_enc_precise_mbclen("あ", 2).should == -2
+      @s.rb_enc_precise_mbclen("あ", 0).should == -2
+      @s.rb_enc_precise_mbclen("あ", -2).should == -2
+    end
+  end
+
   describe "rb_obj_encoding" do
-    it "returns the encoding ossociated with an object" do
-      str = "abc".encode Encoding::ASCII_8BIT
-      @s.rb_obj_encoding(str).should == Encoding::ASCII_8BIT
+    it "returns the encoding associated with an object" do
+      str = "abc".encode Encoding::BINARY
+      @s.rb_obj_encoding(str).should == Encoding::BINARY
     end
   end
 
@@ -152,15 +207,22 @@ describe "C-API Encoding function" do
     it_behaves_like :rb_enc_get_index, :rb_enc_get_index
 
     it "returns the index of the encoding of a Symbol" do
-      @s.send(@method, :symbol).should >= 0
+      @s.rb_enc_get_index(:symbol).should >= 0
     end
 
     it "returns -1 as the index of nil" do
-      @s.send(@method, nil).should == -1
+      @s.rb_enc_get_index(nil).should == -1
     end
 
     it "returns -1 as the index for immediates" do
-      @s.send(@method, 1).should == -1
+      @s.rb_enc_get_index(1).should == -1
+    end
+
+    ruby_version_is "2.6" do
+      it "returns -1 for an object without an encoding" do
+        obj = Object.new
+        @s.rb_enc_get_index(obj).should == -1
+      end
     end
   end
 
@@ -176,16 +238,36 @@ describe "C-API Encoding function" do
     end
   end
 
+  describe "rb_enc_str_new_cstr" do
+    it "creates a new ruby string from a c string literal" do
+      result = @s.rb_enc_str_new_cstr_constant(Encoding::US_ASCII)
+      result.should  == "test string literal"
+      result.encoding.should == Encoding::US_ASCII
+    end
+
+    it "creates a new ruby string from a c string variable" do
+      result = @s.rb_enc_str_new_cstr("test string", Encoding::US_ASCII)
+      result.should == "test string"
+      result.encoding.should == Encoding::US_ASCII
+    end
+
+    it "when null encoding is given with a c string literal, it creates a new ruby string with ASCII_8BIT encoding" do
+      result = @s.rb_enc_str_new_cstr_constant(nil)
+      result.should == "test string literal"
+      result.encoding.should == Encoding::ASCII_8BIT
+    end
+  end
+
   describe "rb_enc_str_coderange" do
-    describe "when the encoding is ASCII-8BIT" do
+    describe "when the encoding is BINARY" do
       it "returns ENC_CODERANGE_7BIT if there are no high bits set" do
-        result = @s.rb_enc_str_coderange("abc".force_encoding("ascii-8bit"))
+        result = @s.rb_enc_str_coderange("abc".force_encoding("binary"))
         result.should == :coderange_7bit
       end
 
       it "returns ENC_CODERANGE_VALID if there are high bits set" do
         xEE = [0xEE].pack('C').force_encoding('utf-8')
-        result = @s.rb_enc_str_coderange(xEE.force_encoding("ascii-8bit"))
+        result = @s.rb_enc_str_coderange(xEE.force_encoding("binary"))
         result.should == :coderange_valid
       end
     end
@@ -217,6 +299,17 @@ describe "C-API Encoding function" do
         result = @s.rb_enc_str_coderange([0xEE].pack('C').force_encoding("us-ascii"))
         result.should == :coderange_broken
       end
+    end
+  end
+
+  describe "MBCLEN_CHARFOUND_P" do
+    it "returns non-zero for valid character" do
+      @s.MBCLEN_CHARFOUND_P("a".ord).should == 1
+    end
+
+    it "returns zero for invalid characters" do
+      @s.MBCLEN_CHARFOUND_P(0).should == 0
+      @s.MBCLEN_CHARFOUND_P(-1).should == 0
     end
   end
 
@@ -260,6 +353,14 @@ describe "C-API Encoding function" do
 
       @s.rb_to_encoding(obj).should == "UTF-8"
     end
+
+    describe "when the rb_encoding struct is stored in native memory" do
+      it "can still read the name of the encoding" do
+        address = @s.rb_to_encoding_native_store(Encoding::UTF_8)
+        address.should be_kind_of(Integer)
+        @s.rb_to_encoding_native_name(address).should == "UTF-8"
+      end
+    end
   end
 
   describe "rb_to_encoding_index" do
@@ -286,7 +387,7 @@ describe "C-API Encoding function" do
 
   describe "rb_enc_compatible" do
     it "returns 0 if the encodings of the Strings are not compatible" do
-      a = [0xff].pack('C').force_encoding "ascii-8bit"
+      a = [0xff].pack('C').force_encoding "binary"
       b = "\u3042".encode("utf-8")
       @s.rb_enc_compatible(a, b).should == 0
     end
@@ -311,11 +412,11 @@ describe "C-API Encoding function" do
     end
 
     it "raises a RuntimeError if the second argument is a Symbol" do
-      lambda { @s.rb_enc_copy(:symbol, @obj) }.should raise_error(RuntimeError)
+      -> { @s.rb_enc_copy(:symbol, @obj) }.should raise_error(RuntimeError)
     end
 
     it "sets the encoding of a Regexp to that of the second argument" do
-      @s.rb_enc_copy(/regexp/, @obj).encoding.should == Encoding::US_ASCII
+      @s.rb_enc_copy(/regexp/.dup, @obj).encoding.should == Encoding::US_ASCII
     end
   end
 
@@ -351,45 +452,45 @@ describe "C-API Encoding function" do
     end
 
     it "returns the encoding for Encoding.default_external" do
-      Encoding.default_external = "BINARY"
+      Encoding.default_external = "ASCII-8BIT"
       @s.rb_default_external_encoding.should == "ASCII-8BIT"
     end
   end
 
   describe "rb_enc_associate" do
     it "sets the encoding of a String to the encoding" do
-      @s.rb_enc_associate("string", "ASCII-8BIT").encoding.should == Encoding::ASCII_8BIT
+      @s.rb_enc_associate("string", "BINARY").encoding.should == Encoding::BINARY
     end
 
     it "raises a RuntimeError if the argument is Symbol" do
-      lambda { @s.rb_enc_associate(:symbol, "US-ASCII") }.should raise_error(RuntimeError)
+      -> { @s.rb_enc_associate(:symbol, "US-ASCII") }.should raise_error(RuntimeError)
     end
 
     it "sets the encoding of a Regexp to the encoding" do
-      @s.rb_enc_associate(/regexp/, "ASCII-8BIT").encoding.should == Encoding::ASCII_8BIT
+      @s.rb_enc_associate(/regexp/.dup, "BINARY").encoding.should == Encoding::BINARY
     end
 
     it "sets the encoding of a String to a default when the encoding is NULL" do
-      @s.rb_enc_associate("string", nil).encoding.should == Encoding::ASCII_8BIT
+      @s.rb_enc_associate("string", nil).encoding.should == Encoding::BINARY
     end
   end
 
   describe "rb_enc_associate_index" do
     it "sets the encoding of a String to the encoding" do
-      index = @s.rb_enc_find_index("ASCII-8BIT")
+      index = @s.rb_enc_find_index("BINARY")
       enc = @s.rb_enc_associate_index("string", index).encoding
-      enc.should == Encoding::ASCII_8BIT
+      enc.should == Encoding::BINARY
     end
 
     it "sets the encoding of a Regexp to the encoding" do
       index = @s.rb_enc_find_index("UTF-8")
-      enc = @s.rb_enc_associate_index(/regexp/, index).encoding
+      enc = @s.rb_enc_associate_index(/regexp/.dup, index).encoding
       enc.should == Encoding::UTF_8
     end
 
     it "sets the encoding of a Symbol to the encoding" do
       index = @s.rb_enc_find_index("UTF-8")
-      lambda { @s.rb_enc_associate_index(:symbol, index) }.should raise_error(RuntimeError)
+      -> { @s.rb_enc_associate_index(:symbol, index) }.should raise_error(RuntimeError)
     end
   end
 
@@ -443,13 +544,13 @@ describe "C-API Encoding function" do
 
   describe "rb_enc_codepoint_len" do
     it "raises ArgumentError if an empty string is given" do
-      lambda do
+      -> do
         @s.rb_enc_codepoint_len("")
       end.should raise_error(ArgumentError)
     end
 
     it "raises ArgumentError if an invalid byte sequence is given" do
-      lambda do
+      -> do
         @s.rb_enc_codepoint_len([0xa0, 0xa1].pack('CC').force_encoding('utf-8')) # Invalid sequence identifier
       end.should raise_error(ArgumentError)
     end
@@ -480,6 +581,33 @@ describe "C-API Encoding function" do
 
       codepoint.should == 0x24B62
       length.should == 4
+    end
+  end
+
+  describe "rb_enc_str_asciionly_p" do
+    it "returns true for an ASCII string" do
+      @s.rb_enc_str_asciionly_p("hello").should be_true
+    end
+
+    it "returns false for a non-ASCII string" do
+      @s.rb_enc_str_asciionly_p("hüllo").should be_false
+    end
+  end
+
+  describe "rb_uv_to_utf8" do
+    it 'converts a Unicode codepoint to a UTF-8 C string' do
+      str = ' ' * 6
+      {
+        0  => "\x01",
+        0x7f => "\xC2\x80",
+        0x7ff => "\xE0\xA0\x80",
+        0xffff => "\xF0\x90\x80\x80",
+        0x1fffff => "\xF8\x88\x80\x80\x80",
+        0x3ffffff => "\xFC\x84\x80\x80\x80\x80",
+      }.each do |num, result|
+        len = @s.rb_uv_to_utf8(str, num + 1)
+        str[0..len-1].should == result
+      end
     end
   end
 end

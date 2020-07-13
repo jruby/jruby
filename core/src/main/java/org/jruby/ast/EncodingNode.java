@@ -47,7 +47,7 @@ public class EncodingNode extends Node {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitEncodingNode(this);
     }
 

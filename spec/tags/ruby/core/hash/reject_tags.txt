@@ -1,1 +1,0 @@
-fails:Hash#reject with extra state does not taint the resulting hash

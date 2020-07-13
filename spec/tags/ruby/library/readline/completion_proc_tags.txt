@@ -1,2 +1,0 @@
-fails(JRUBY-5671):Readline.completion_proc returns nil
-fails(JRUBY-5671):Readline.completion_proc= returns the passed Proc

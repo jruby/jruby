@@ -31,6 +31,7 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
@@ -46,6 +47,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.lexer.LexingCommon.*;
 
 public class RubyRipper extends RubyObject {
     public static void initRipper(Ruby runtime) {
@@ -65,7 +68,7 @@ public class RubyRipper extends RubyObject {
 
     private static void defineLexStateConstants(Ruby runtime, RubyClass ripper) {
         for (int i = 0; i < lexStateNames.length; i++) {
-            ripper.defineConstant(lexStateNames[i], runtime.newFixnum((1 << i)));
+            ripper.defineConstant(lexStateNames[i], runtime.newFixnum(lexStateValues[i]));
         }
     }
     
@@ -188,6 +191,7 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("if"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("if_mod"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("ifop"), runtime.newFixnum(3));
+        hash.fastASet(runtime.newSymbol("kwrest_param"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("lambda"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("magic_comment"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("massign"), runtime.newFixnum(2));
@@ -307,12 +311,12 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(name = "end_seen?")
     public IRubyObject end_seen_p(ThreadContext context) {
-        return context.runtime.newBoolean(parser.isEndSeen());
+        return RubyBoolean.newBoolean(context, parser.isEndSeen());
     }
 
     @JRubyMethod(name = "error?")
     public IRubyObject error_p(ThreadContext context) {
-        return context.runtime.newBoolean(parser.isError());
+        return RubyBoolean.newBoolean(context, parser.isError());
     }
     @JRubyMethod
     public IRubyObject filename(ThreadContext context) {
@@ -351,7 +355,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject yydebug(ThreadContext context) {
-        return context.runtime.newBoolean(parser.getYYDebug());
+        return RubyBoolean.newBoolean(context, parser.getYYDebug());
     }
     
     @JRubyMethod(name = "yydebug=")
@@ -380,8 +384,8 @@ public class RubyRipper extends RubyObject {
 
         boolean needsSeparator = false;
         RubyString name = null;
-        for (int i = 0; i < lexStateNames.length; i++) {
-            if ((lexState & (1<<i)) != 0) {
+        for (int i = 0; i < singleStateLexStateNames; i++) {
+            if ((lexState & lexStateValues[i]) != 0) {
                 if (!needsSeparator) {
                     name = context.runtime.newString(lexStateNames[i]);
                     needsSeparator = true;
@@ -424,10 +428,18 @@ public class RubyRipper extends RubyObject {
     private IRubyObject filename = null;
     private boolean parseStarted = false;
 
-    // FIXME: Consider moving this to LexingCommon but it is very specific to ripper (perhaps I can make it more useful wit debuggin?).
-    // These are ordered in same order as LexerCommon.  Any changes to lex_state should update this.
+    // Number of expr states which represent a distinct value.  unions expr values occur after these.
+    private static int singleStateLexStateNames = 13; // EXPR_BEG -> EXPR_FITEM
     private static String[] lexStateNames = new String[] {
-            "EXPR_BEG", "EXPR_END", "EXPR_ENDARG", "EXPR_ENDFN", "EXPR_ARG", "EXPR_CMDARG",
-            "EXPR_MID", "EXPR_FNAME", "EXPR_DOT", "EXPR_CLASS", "EXPR_LABEL", "EXPR_LABELED", "EXPR_FITEM"
+            "EXPR_BEG", "EXPR_END", "EXPR_ENDARG", "EXPR_ENDFN", "EXPR_ARG", "EXPR_CMDARG", "EXPR_MID",
+            "EXPR_FNAME", "EXPR_DOT", "EXPR_CLASS", "EXPR_LABEL", "EXPR_LABELED", "EXPR_FITEM", // end of single states
+            "EXPR_VALUE", "EXPR_BEG_ANY", "EXPR_ARG_ANY", "EXPR_END_ANY"
     };
+
+    private static int[] lexStateValues = new int[] {
+            EXPR_BEG, EXPR_END, EXPR_ENDARG, EXPR_ENDFN, EXPR_ARG, EXPR_CMDARG, EXPR_MID, EXPR_FNAME,
+            EXPR_DOT, EXPR_CLASS, EXPR_LABEL, EXPR_LABELED, EXPR_FITEM, EXPR_VALUE, EXPR_BEG_ANY,
+            EXPR_ARG_ANY, EXPR_END_ANY
+    };
+
 }

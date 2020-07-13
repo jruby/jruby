@@ -1,0 +1,48 @@
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using an unbound socket raises an exception extending IO::WaitReadable
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket without any data available raises an exception extending IO::WaitReadable
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available returns an Array containing the data, an Addrinfo and the flags
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available without a maximum message length reads all the available data
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available with a maximum message length reads up to the maximum amount of bytes
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available the returned Array stores the message at index 0
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available the returned Array stores an Addrinfo at index 1
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available the returned Array stores the flags at index 2
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the IP address of the client
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the correct address family
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the correct protocol family
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the correct socket type
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the port number of the client
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket without any data available raises IO::WaitReadable
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available returns an Array containing the data, an Addrinfo and the flags
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available the returned Array stores the message at index 0
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available the returned Array stores an Addrinfo at index 1
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available the returned Array stores the flags at index 2
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available the returned Array the returned Addrinfo raises when receiving the ip_address message
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available the returned Array the returned Addrinfo uses the correct address family
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available the returned Array the returned Addrinfo uses 0 for the protocol family
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available the returned Array the returned Addrinfo uses the correct socket type
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected socket with data available the returned Array the returned Addrinfo raises when receiving the ip_port message
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using an unbound socket raises an exception extending IO::WaitReadable
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket without any data available raises an exception extending IO::WaitReadable
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available returns an Array containing the data, an Addrinfo and the flags
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available without a maximum message length reads all the available data
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available with a maximum message length reads up to the maximum amount of bytes
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available the returned Array stores the message at index 0
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available the returned Array stores an Addrinfo at index 1
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available the returned Array stores the flags at index 2
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the IP address of the client
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the correct address family
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the correct protocol family
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the correct socket type
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket with data available the returned Array the returned Addrinfo uses the port number of the client
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket without any data available raises IO::WaitReadable
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available returns an Array containing the data, an Addrinfo and the flags
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array stores the message at index 0
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array stores an Addrinfo at index 1
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array stores the flags at index 2
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array the returned Addrinfo raises when receiving the ip_address message
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array the returned Addrinfo uses the correct address family
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array the returned Addrinfo uses 0 for the protocol family
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array the returned Addrinfo uses the correct socket type
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array the returned Addrinfo raises when receiving the ip_port message
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket without any data available returns :wait_readable with exception: false
+fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket without any data available returns :wait_readable with exception: false

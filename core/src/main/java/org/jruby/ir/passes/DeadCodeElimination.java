@@ -4,10 +4,11 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class DeadCodeElimination extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(LiveVariableAnalysis.class);
+    public static final List<Class<? extends CompilerPass>> DEPENDENCIES = Collections.singletonList(LiveVariableAnalysis.class);
 
     public String getLabel() {
         return "Dead Code Elimination";

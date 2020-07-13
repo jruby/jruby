@@ -1,5 +1,7 @@
 # frozen_string_literal: false
-require 'digest.so'
+
+# Load built-in digest library
+JRuby::Util.load_ext("org.jruby.ext.digest.DigestLibrary")
 
 module Digest
   # A mutex for Digest().
@@ -9,7 +11,7 @@ module Digest
     Digest::REQUIRE_MUTEX.synchronize do
       case name
       when :SHA256, :SHA384, :SHA512
-        lib = 'digest/sha2.so'
+        lib = 'digest/sha2'
       else
         lib = File.join('digest', name.to_s.downcase)
       end

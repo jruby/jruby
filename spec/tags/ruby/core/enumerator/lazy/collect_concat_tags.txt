@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#collect_concat sets #size to nil
-fails:Enumerator::Lazy#collect_concat on a nested Lazy sets #size to nil

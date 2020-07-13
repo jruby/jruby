@@ -33,25 +33,23 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
-import java.net.PortUnreachableException;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.INAddr;
 import jnr.constants.platform.IPProto;
 import jnr.constants.platform.NameInfo;
@@ -62,8 +60,6 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
 import jnr.netdb.Protocol;
-import jnr.unixsocket.UnixServerSocket;
-import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 
@@ -73,17 +69,14 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.Sockaddr;
 
@@ -147,7 +140,7 @@ public class RubySocket extends RubyBasicSocket {
         rb_cSocket.defineAnnotatedMethods(RubySocket.class);
     }
 
-    private static ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubySocket(runtime, klass);
@@ -208,13 +201,9 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-
         SocketAddress addr = addressForChannel(context, arg);
 
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
-
-        return doConnectNonblock(context, addr, exception);
+        return doConnectNonblock(context, addr, extractExceptionArg(context, opts));
     }
 
     @JRubyMethod()
@@ -285,19 +274,19 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject getifaddrs(ThreadContext context, IRubyObject recv) {
         RubyArray list = RubyArray.newArray(context.runtime);
+        RubyClass Ifaddr = (RubyClass) context.runtime.getClassFromPath("Socket::Ifaddr");
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
-            RubyClass Ifaddr = (RubyClass) context.runtime.getClassFromPath("Socket::Ifaddr");
             while (en.hasMoreElements()) {
-                NetworkInterface ni = en.nextElement();
+                NetworkInterface iface = en.nextElement();
                 // create interface link layer ifaddr
-                list.append(new Ifaddr(context.runtime, Ifaddr, ni));
-                for ( InterfaceAddress ia :  ni.getInterfaceAddresses() ) {
-                    list.append(new Ifaddr(context.runtime, Ifaddr, ni, ia));
+                list.append(new Ifaddr(context.runtime, Ifaddr, iface));
+                for ( InterfaceAddress iaddr : iface.getInterfaceAddresses() ) {
+                    list.append(new Ifaddr(context.runtime, Ifaddr, iface, iaddr));
                 }
             }
         }
-        catch (Exception ex) {
+        catch (SocketException|RuntimeException ex) {
             if ( ex instanceof RaiseException ) throw (RaiseException) ex;
             throw SocketUtils.sockerr_with_trace(context.runtime, "getifaddrs: " + ex.toString(), ex.getStackTrace());
         }
@@ -514,88 +503,90 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private IRubyObject doConnectNonblock(ThreadContext context, SocketAddress addr, boolean ex) {
+        Ruby runtime = context.runtime;
+
         Channel channel = getChannel();
 
         if ( ! (channel instanceof SelectableChannel) ) {
-            throw context.runtime.newErrnoENOPROTOOPTError();
+            throw runtime.newErrnoENOPROTOOPTError();
         }
 
-        SelectableChannel selectable = (SelectableChannel) channel;
-        synchronized (selectable.blockingLock()) {
-            boolean oldBlocking = selectable.isBlocking();
-            try {
-                selectable.configureBlocking(false);
+        boolean result = tryConnect(context, runtime, channel, addr, ex, false);
 
-                try {
-                    return doConnect(context, addr, ex);
-
-                } finally {
-                    selectable.configureBlocking(oldBlocking);
-                }
-
-            }
-            catch (ClosedChannelException e) {
-                throw context.runtime.newErrnoECONNREFUSEDError();
-            }
-            catch (IOException e) {
-                throw sockerr(context.runtime, "connect(2): name or service not known", e);
-            }
+        if ( !result ) {
+            if (!ex) return runtime.newSymbol("wait_writable");
+            throw runtime.newErrnoEINPROGRESSWritableError();
         }
+
+        return runtime.newFixnum(0);
     }
 
     protected IRubyObject doConnect(ThreadContext context, SocketAddress addr, boolean ex) {
         Ruby runtime = context.runtime;
         Channel channel = getChannel();
 
-        try {
-            boolean result = true;
-            if (channel instanceof SocketChannel) {
-                SocketChannel socket = (SocketChannel) channel;
-
-                if (socket.isConnectionPending()) {
-                    // connection initiated but not finished
-                    result = socket.finishConnect();
-                } else {
-                    result = socket.connect(addr);
-                }
-            }
-            else if (channel instanceof UnixSocketChannel) {
-                result = ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
-
-            }
-            else if (channel instanceof DatagramChannel) {
-                ((DatagramChannel)channel).connect(addr);
-            }
-            else {
-                throw runtime.newErrnoENOPROTOOPTError();
-            }
-
-            if ( ! result ) {
-                if (!ex) return runtime.newSymbol("wait_writable");
-                throw runtime.newErrnoEINPROGRESSWritableError();
-            }
-        }
-        catch (AlreadyConnectedException e) {
-            if (!ex) return runtime.newFixnum(0);
-            throw runtime.newErrnoEISCONNError();
-        }
-        catch (ConnectionPendingException e) {
-            throw runtime.newErrnoEINPROGRESSWritableError();
-        }
-        catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
-        }
-        catch (SocketException e) {
-            handleSocketException(runtime, e, "connect(2)", addr);
-        }
-        catch (IOException e) {
-            throw sockerr(runtime, "connect(2): name or service not known", e);
-        }
-        catch (IllegalArgumentException e) {
-            throw sockerr(runtime, e.getMessage(), e);
-        }
+        tryConnect(context, runtime, channel, addr, ex, true);
 
         return runtime.newFixnum(0);
+    }
+
+    private boolean tryConnect(ThreadContext context, Ruby runtime, Channel channel, SocketAddress addr, boolean ex, boolean blocking) {
+        SelectableChannel selectable = (SelectableChannel) channel;
+        try {
+            synchronized (selectable.blockingLock()) {
+                boolean oldBlocking = selectable.isBlocking();
+                try {
+                    selectable.configureBlocking(false);
+
+                    while (true) {
+                        boolean result = true;
+                        if (channel instanceof SocketChannel) {
+                            SocketChannel socket = (SocketChannel) channel;
+
+                            if (socket.isConnectionPending()) {
+                                // connection initiated but not finished
+                                result = socket.finishConnect();
+                            } else {
+                                result = socket.connect(addr);
+                            }
+                        } else if (channel instanceof UnixSocketChannel) {
+                            result = ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
+
+                        } else if (channel instanceof DatagramChannel) {
+                            ((DatagramChannel) channel).connect(addr);
+                        } else {
+                            throw runtime.newErrnoENOPROTOOPTError();
+                        }
+
+                        if (!blocking || result) return result;
+
+                        while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
+                            context.pollThreadEvents();
+                        }
+                    }
+                } finally {
+                    selectable.configureBlocking(oldBlocking);
+                }
+            }
+        } catch (ClosedChannelException e) {
+            throw context.runtime.newErrnoECONNREFUSEDError();
+        } catch (AlreadyConnectedException e) {
+            if (!ex) return false;
+            throw runtime.newErrnoEISCONNError();
+        } catch (ConnectionPendingException e) {
+            throw runtime.newErrnoEINPROGRESSWritableError();
+        } catch (UnknownHostException e) {
+            throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
+        } catch (SocketException e) {
+            // Subclasses of SocketException all indicate failure to connect, which leaves the channel closed.
+            // At this point the socket channel is no longer usable, so we clean up.
+            getOpenFile().cleanup(runtime, true);
+            throw buildSocketException(runtime, e, "connect(2)", addr);
+        } catch (IOException e) {
+            throw sockerr(runtime, "connect(2): name or service not known", e);
+        } catch (IllegalArgumentException e) {
+            throw sockerr(runtime, e.getMessage(), e);
+        }
     }
 
     protected void doBind(ThreadContext context, SocketAddress iaddr) {
@@ -623,7 +614,7 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, e, "bind(2)", iaddr); // throws
+            throw buildSocketException(runtime, e, "bind(2)", iaddr); // throws
         }
         catch (IOException e) {
             throw sockerr(runtime, "bind(2): name or service not known", e);
@@ -633,36 +624,31 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    static void handleSocketException(final Ruby runtime, final SocketException ex,
+    static RaiseException buildSocketException(final Ruby runtime, final SocketException ex,
         final String caller, final SocketAddress addr) {
 
-        final String message = ex.getMessage();
-        if ( message != null ) {
-            switch ( message ) {
-                case "permission denied" :
-                case "Permission denied" :
-                    if ( addr == null ) {
-                        throw runtime.newErrnoEACCESError(caller + " - " + message);
-                    }
-                    throw runtime.newErrnoEACCESError("Address already in use - " + caller + " for " + formatAddress(addr));
-                case "Address already in use" :
-                    throw runtime.newErrnoEADDRINUSEError(caller + " for " + formatAddress(addr));
-                case "Protocol family unavailable" :
-                    throw runtime.newErrnoEADDRNOTAVAILError(caller + " for " + formatAddress(addr));
-            }
+        final Errno errno = Helpers.errnoFromException(ex);
+        final String callerWithAddr = caller + " for " + formatAddress(addr);
 
+        if (errno != null) {
+            return runtime.newErrnoFromErrno(errno, callerWithAddr);
+        }
+
+        final String message = ex.getMessage();
+
+        if (message != null) {
             // This is ugly, but what can we do, Java provides the same exception type
             // for different situations, so we differentiate the errors
             // based on the exception's message.
             if (ALREADY_BOUND_PATTERN.matcher(message).find()) {
-                throw runtime.newErrnoEINVALError(caller + " - " + message);
+                return runtime.newErrnoEINVALError(callerWithAddr);
             }
             if (ADDR_NOT_AVAIL_PATTERN.matcher(message).find()) {
-                throw runtime.newErrnoEADDRNOTAVAILError(caller + " - " + message);
+                return runtime.newErrnoEADDRNOTAVAILError(callerWithAddr);
             }
         }
 
-        throw runtime.newErrnoEADDRINUSEError(caller + " - " + message);
+        return runtime.newIOError(callerWithAddr);
     }
 
     private static CharSequence formatAddress(final SocketAddress addr) {

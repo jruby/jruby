@@ -20,7 +20,7 @@ public class MRIRecursionGuard {
     private final Ruby runtime;
     private final RubySymbol recursiveKey;
     private final ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
-    private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<>();
+    private final ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<>();
 
     @Deprecated
     public MRIRecursionGuard(Ruby runtime) {
@@ -143,6 +143,7 @@ public class MRIRecursionGuard {
 
     private void recursivePush(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
         IRubyObject pair_list;
+        Ruby runtime = this.runtime;
         final ThreadContext context = runtime.getCurrentContext();
         if (paired_obj == null) {
             ((RubyHash) list).op_aset(context, obj, runtime.getTrue());

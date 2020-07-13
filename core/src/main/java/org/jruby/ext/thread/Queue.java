@@ -309,7 +309,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
         initializedCheck();
-        return context.runtime.newBoolean(count.get() == 0);
+        return RubyBoolean.newBoolean(context, count.get() == 0);
     }
 
     @JRubyMethod(name = {"length", "size"})
@@ -378,7 +378,7 @@ public class Queue extends RubyObject implements DataType {
         if (e == null) throw new NullPointerException();
         // Note: convention in all put/takeInternal/etc is to preset local var
         // holding count negative to indicate failure unless set.
-        int c = -1;
+        int c;
         Node node = new Node(e);
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;
@@ -481,7 +481,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "closed?")
     public IRubyObject closed_p(ThreadContext context) {
         initializedCheck();
-        return context.runtime.newBoolean(closed);
+        return RubyBoolean.newBoolean(context, closed);
     }
 
     public synchronized void shutdown() throws InterruptedException {

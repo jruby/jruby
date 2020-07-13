@@ -12,9 +12,9 @@ import org.jruby.util.CommonByteLists;
  * A::B ||= 1
  */
 public class OpAsgnConstDeclNode extends Node implements BinaryOperatorNode {
-    private Node lhs;
-    private RubySymbol operator;
-    private Node rhs;
+    private final Node lhs;
+    private final RubySymbol operator;
+    private final Node rhs;
 
     public OpAsgnConstDeclNode(ISourcePosition position, Node lhs, RubySymbol operator, Node rhs) {
         super(position, lhs.containsVariableAssignment() || rhs.containsVariableAssignment());

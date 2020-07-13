@@ -49,7 +49,7 @@
 require 'socket'
 require 'io/wait'
 require 'weakref'
-require 'drb/eq'
+require_relative 'eq'
 
 #
 # == Overview
@@ -361,7 +361,7 @@ module DRb
   # drb remains valid only while that object instance remains alive
   # within the server runtime.
   #
-  # For alternative mechanisms, see DRb::TimerIdConv in rdb/timeridconv.rb
+  # For alternative mechanisms, see DRb::TimerIdConv in drb/timeridconv.rb
   # and DRbNameIdConv in sample/name.rb in the full drb distribution.
   #
   # JRuby Notes:
@@ -841,7 +841,7 @@ module DRb
     module_function :uri_option
 
     def auto_load(uri)  # :nodoc:
-      if uri =~ /^drb([a-z0-9]+):/
+      if /\Adrb([a-z0-9]+):/ =~ uri
         require("drb/#{$1}") rescue nil
       end
     end
@@ -857,13 +857,13 @@ module DRb
     # :stopdoc:
     private
     def self.parse_uri(uri)
-      if uri =~ /^druby:\/\/(.*?):(\d+)(\?(.*))?$/
+      if /\Adruby:\/\/(.*?):(\d+)(\?(.*))?\z/ =~ uri
         host = $1
         port = $2.to_i
         option = $4
         [host, port, option]
       else
-        raise(DRbBadScheme, uri) unless uri =~ /^druby:/
+        raise(DRbBadScheme, uri) unless uri.start_with?('druby:')
         raise(DRbBadURI, 'can\'t parse uri:' + uri)
       end
     end
@@ -888,7 +888,11 @@ module DRb
     def self.getservername
       host = Socket::gethostname
       begin
-        Socket::gethostbyname(host)[0]
+        Socket::getaddrinfo(host, nil,
+                                  Socket::AF_UNSPEC,
+                                  Socket::SOCK_STREAM,
+                                  0,
+                                  Socket::AI_PASSIVE)[0][3]
       rescue
         'localhost'
       end
@@ -990,6 +994,7 @@ module DRb
     # returned by #open or by #accept, then it closes this particular
     # client-server session.
     def close
+      shutdown
       if @socket
         @socket.close
         @socket = nil
@@ -998,14 +1003,8 @@ module DRb
     end
 
     def close_shutdown_pipe
-      if @shutdown_pipe_r && !@shutdown_pipe_r.closed?
-        @shutdown_pipe_r.close
-        @shutdown_pipe_r = nil
-      end
-      if @shutdown_pipe_w && !@shutdown_pipe_w.closed?
-        @shutdown_pipe_w.close
-        @shutdown_pipe_w = nil
-      end
+      @shutdown_pipe_w.close
+      @shutdown_pipe_r.close
     end
     private :close_shutdown_pipe
 
@@ -1038,7 +1037,7 @@ module DRb
 
     # Graceful shutdown
     def shutdown
-      @shutdown_pipe_w.close if @shutdown_pipe_w && !@shutdown_pipe_w.closed?
+      @shutdown_pipe_w.close
     end
 
     # Check to see if this connection is alive.
@@ -1213,7 +1212,7 @@ module DRb
       bt = []
       result.backtrace.each do |x|
         break if /`__send__'$/ =~ x
-        if /^\(druby:\/\// =~ x
+        if /\A\(druby:\/\// =~ x
           bt.push(x)
         else
           bt.push(prefix + x)
@@ -1612,17 +1611,23 @@ module DRb
         if $SAFE < @safe_level
           info = Thread.current['DRb']
           if @block
-            @result = Thread.new {
+            @result = Thread.new do
               Thread.current['DRb'] = info
+              prev_safe_level = $SAFE
               $SAFE = @safe_level
               perform_with_block
-            }.value
+            ensure
+              $SAFE = prev_safe_level
+            end.value
           else
-            @result = Thread.new {
+            @result = Thread.new do
               Thread.current['DRb'] = info
+              prev_safe_level = $SAFE
               $SAFE = @safe_level
               perform_without_block
-            }.value
+            ensure
+              $SAFE = prev_safe_level
+            end.value
           end
         else
           if @block
@@ -1674,7 +1679,7 @@ module DRb
 
     end
 
-    require 'drb/invokemethod'
+    require_relative 'invokemethod'
     class InvokeMethod
       include InvokeMethod18Mixin
     end
@@ -1902,6 +1907,11 @@ module DRb
   # Removes +server+ from the list of registered servers.
   def remove_server(server)
     @server.delete(server.uri)
+    mutex.synchronize do
+      if @primary_server == server
+        @primary_server = nil
+      end
+    end
   end
   module_function :remove_server
 

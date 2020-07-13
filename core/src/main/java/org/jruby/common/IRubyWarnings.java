@@ -38,7 +38,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  */
 public interface IRubyWarnings {
-    public enum ID {
+    enum ID {
         AMBIGUOUS_ARGUMENT,
         ACCESSOR_NOT_INITIALIZED,
         ACCESSOR_MODULE_FUNCTION,
@@ -107,14 +107,14 @@ public interface IRubyWarnings {
         }
     }
 
-    public abstract Ruby getRuntime();
-    public abstract boolean isVerbose();
+    Ruby getRuntime();
+    boolean isVerbose();
 
-    public abstract void warn(ID id, ISourcePosition position, String message);
-    public abstract void warn(ID id, String fileName, int lineNumber, String message);
-    public abstract void warn(ID id, String fileName, String message);
-    public abstract void warn(ID id, String message);
-    public abstract void warning(ID id, String message);
-    public abstract void warning(ID id, ISourcePosition position, String message);
-    public abstract void warning(ID id, String fileName, int lineNumber, String message);
+    @Deprecated void warn(ID id, ISourcePosition position, String message);
+    void warn(ID id, String fileName, int lineNumber, String message);
+    void warn(ID id, String fileName, String message);
+    void warn(ID id, String message);
+    void warning(ID id, String message);
+    @Deprecated void warning(ID id, ISourcePosition position, String message);
+    void warning(ID id, String fileName, int lineNumber, String message);
 }

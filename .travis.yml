@@ -1,12 +1,15 @@
 language: java
 
-sudo: false
-
 dist: trusty
 
+# don't need more than a few levels for our builds
+git:
+  depth: 10
+  quiet: true
+
 cache:
- directories:
-   - $HOME/.m2
+  directories:
+    - $HOME/.m2
 
 before_install:
   - unset _JAVA_OPTIONS
@@ -24,97 +27,242 @@ before_script:
   - echo $MAVEN_OPTS
 
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 os:
   - linux
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx720M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
-  matrix:
-    - PHASE='-Ptest'
-    - PHASE='-Prake -Dtask=test:jruby'
-    #- PHASE='-Prake -Dtask=test:jruby:fullint' # included with OpenJDK bellow
-    - PHASE='-Prake -Dtask=test:jruby:jit'
-    - PHASE='-Prake -Dtask=test:jruby:aot'
-    - PHASE='-Prake -Dtask=test:mri'
-    - PHASE='-Prake -Dtask=test:mri:fullint'
-    - PHASE='-Prake -Dtask=test:mri:jit'
-    - PHASE='-Prake -Dtask=test:slow_suites'
-    - PHASE='-Prake -Dtask=spec:ji'
-    - PHASE='-Prake -Dtask=spec:compiler'
-    - PHASE='-Prake -Dtask=spec:compiler' JRUBY_OPTS=-Xcompile.invokedynamic
-    - PHASE='-Prake -Dtask=spec:ffi'
-    - PHASE='-Prake -Dtask=spec:regression'
-    - PHASE='-Prake -Dtask=spec:ruby:fast'
-    - PHASE='-Prake -Dtask=spec:jruby'
-    - PHASE='-Prake -Dtask=spec:jrubyc'
-    - PHASE='-Prake -Dtask=spec:profiler'
+
+install: true
 
 matrix:
-  include:
-    - env: PHASE='-Ptest'
-      jdk: openjdk8
-    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
-      jdk: openjdk8
-    # these profile do no need to run for all JDKs
-    - env: PHASE='-Pdist'
-      jdk: openjdk8
-    - env: PHASE='-Pjruby-jars'
-      jdk: openjdk8
-    - env: PHASE='-Pmain'
-      jdk: oraclejdk8
-    - env: PHASE='-Pcomplete'
-      jdk: oraclejdk8
-    - env: PHASE='-Posgi'
-      jdk: oraclejdk8
-    - env: PHASE='-Pj2ee'
-      jdk: oraclejdk8
-    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-      jdk: oraclejdk8
-    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-      jdk: oraclejdk8
-    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
-      jdk: oraclejdk8
-    - env: COMMAND=test/check_versions.sh
-      jdk: oraclejdk8
-    - env: PHASE='-Prake -Dtask=test:jruby:jit'
-      jdk: oraclejdk9
-    - env: PHASE='-Prake -Dtask=test:mri:jit'
-      jdk: oraclejdk9
-    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-      jdk: oraclejdk9
-    - env: PHASE='-Pmain'
-      jdk: oraclejdk9
-    - env: PHASE='-Pcomplete'
-      jdk: oraclejdk9
-  allow_failures:
-    - env: PHASE='-Prake -Dtask=test:jruby:jit'
-      jdk: oraclejdk9
-    - env: PHASE='-Prake -Dtask=test:mri:jit'
-      jdk: oraclejdk9
-    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-      jdk: oraclejdk9
+  fast_finish: true
 
-install:
-  - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
-script: tool/travis-script.sh
+  include:
+    - stage: test
+      name: MRI core int
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:core:int
+      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+
+    - name: MRI core jit
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:core:jit
+
+    - name: MRI core jit jdk11
+      jdk: openjdk11
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:core:jit
+
+    - name: MRI core jit jdk14
+      jdk: openjdk14
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:core:jit
+
+    - name: MRI extra
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:extra
+      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+
+    - name: MRI stdlib
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:stdlib
+      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+
+    - name: spec/ruby fast
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ruby:fast
+
+    - name: spec/ruby fast jdk11
+      jdk: openjdk11
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ruby:fast
+
+    - name: spec/ruby fast jdk14
+      jdk: openjdk14
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ruby:fast
+
+    - name: spec/ruby slow
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ruby:slow
+
+    - env: COMMAND=test/check_versions.sh
+
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+
+    - name: sequel
+      script: tool/sequel-travis.sh
+      addons:
+        postgresql: "9.6"
+      services:
+        - postgresql
+
+    - name: concurrent ruby
+      script: tool/concurrent-ruby-travis.sh
+
+    - name: JRuby tests int
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby:int
+
+    - name: JRuby tests jit indy jdk11
+      jdk: openjdk11
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: JRuby tests jit indy jdk14
+      jdk: openjdk14
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: JRuby tests jit indy
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: JRuby tests aot
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby:aot
+
+    - name: JRuby slow tests
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:slow_suites
+
+    - name: JI specs
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ji
+
+    - name: JI specs jdk11
+      jdk: openjdk11
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ji
+
+    - name: JI specs jdk14
+      jdk: openjdk14
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ji
+
+    - name: Compiler specs
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:compiler
+
+    - name: Compiler specs indy
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:compiler
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: Compiler specs indy jdk11
+      jdk: openjdk11
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:compiler
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: Compiler specs indy jdk14
+      jdk: openjdk14
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:compiler
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: FFI specs
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ffi
+
+    - name: FFI specs jdk11
+      jdk: openjdk11
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ffi
+
+    - name: Regression specs
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:regression
+
+    - name: Regression specs jit
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:regression
+      env: JRUBY_OPTS=-Xjit.threshold=0
+
+    - name: JRuby specs
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:jruby
+
+    - name: jrubyc specs
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:jrubyc
+
+    - name: Profilers specs
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:profiler
+
+    - name: -Pmain openj9 jdk8
+      env: PHASE='-Ptest'
+      script:
+        - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+        - source install-jdk.sh --url https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u202-b08_openj9-0.12.1/OpenJDK8U-jdk_x64_linux_openj9_8u202b08_openj9-0.12.1.tar.gz
+        - tool/maven-ci-script.sh
+
+    - stage: deploy
+      name: deploy snapshots
+      script:
+        - cp .travis-maven-settings.xml $HOME/.m2/settings.xml
+        - ./mvnw clean deploy -Prelease
+      if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.2) # only master and maintenance pushes
+
+  allow_failures:
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - name: concurrent ruby # temporary, see ruby-concurrency/concurrent-ruby#862
+
+script: tool/maven-ci-script.sh
 
 notifications:
   irc:
-    channels:
-      - "irc.freenode.org#jruby"
     on_success: change
     on_failure: always
+    only:
+      branch:
+        - master
+        - jruby-9.1
     template:
-      - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
-    skip_join: true
-
-# we are on a branch
-    on_success: always
-    on_failure: never
+      - "%{repository_slug} (%{branch}:%{commit} by %{author}): %{message} %{build_url} [%{duration}]"
+    channels:
+      # - "irc.freenode.org#jruby"
+      # note: `travis encrypt -r "jruby/jruby" "irc.freenode.org#jruby"`
+      secure: "2DmwSfKvhnrdcC6LTXHHJ4QlSRXDlVUa9jEjXcdgIIZZm4ghbg/mmLjD6bv/ueCC8idQrYyuXRLeKIdaIss64q/lbbaj5VVV1p91fkZ3H+AhgHRPviboEm2bweSmjSWr7luXg4qifoL7YcXEtXw0YKGmub8WSZj4uPZbm5ce2l8="
 
 services:
   - redis-server
@@ -123,5 +271,4 @@ services:
 addons:
   apt:
     packages:
-#      - oracle-java9-installer
       - haveged

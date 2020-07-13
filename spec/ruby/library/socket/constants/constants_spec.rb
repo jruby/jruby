@@ -1,6 +1,5 @@
-require_relative '../../../spec_helper'
+require_relative '../spec_helper'
 require_relative '../fixtures/classes'
-include Socket::Constants
 
 describe "Socket::Constants" do
   it "defines socket types" do
@@ -69,7 +68,7 @@ describe "Socket::Constants" do
     end
   end
 
-  platform_is_not :solaris, :windows, :aix do
+  platform_is_not :solaris, :windows, :aix, :android do
     it "defines multicast options" do
       consts = ["IP_MAX_MEMBERSHIPS"]
       consts.each do |c|
@@ -85,6 +84,25 @@ describe "Socket::Constants" do
     end
     consts.each do |c|
       Socket::Constants.should have_constant(c)
+    end
+  end
+
+  platform_is_not :windows do
+    it 'defines SCM options' do
+      Socket::Constants.should have_constant('SCM_RIGHTS')
+    end
+
+    it 'defines error options' do
+      consts = ["EAI_ADDRFAMILY", "EAI_NODATA"]
+
+      # FreeBSD (11.1, at least) obsoletes EAI_ADDRFAMILY and EAI_NODATA
+      platform_is :freebsd do
+        consts = %w(EAI_MEMORY)
+      end
+
+      consts.each do |c|
+        Socket::Constants.should have_constant(c)
+      end
     end
   end
 end

@@ -11,21 +11,21 @@ describe "A Ruby class generating a Java stub" do
     it "generates imports into the java source" do
       script = generate("java_import 'org.foo.Bar'; class Foo; end")
 
-      script.imports.length.should > 1
-      script.imports.should include "org.foo.Bar"
+      expect( script.imports.length ).to be > 1
+      expect( script.imports ).to include "org.foo.Bar"
 
       java = script.to_s
-      java.should match /import org\.foo\.Bar;/
+      expect( java ).to match /import org\.foo\.Bar;/
 
       script = generate("java_import 'org.foo.Bar', 'org.foo.Baz'; class Foo; end")
 
-      script.imports.length.should > 2
-      script.imports.should include "org.foo.Bar"
-      script.imports.should include "org.foo.Baz"
+      expect( script.imports.length ).to be > 2
+      expect( script.imports ).to include "org.foo.Bar"
+      expect( script.imports ).to include "org.foo.Baz"
 
       java = script.to_s
-      java.should match /import org\.foo\.Bar;/
-      java.should match /import org\.foo\.Baz;/
+      expect( java ).to match /import org\.foo\.Bar;/
+      expect( java ).to match /import org\.foo\.Baz;/
     end
   end
 end

@@ -13,7 +13,7 @@ import java.util.Map;
 public class BasicCompilerPassListener implements CompilerPassListener {
     private static final Logger LOG = LoggerFactory.getLogger(BasicCompilerPassListener.class);
 
-    private Map<CompilerPass, Long> times = new HashMap<CompilerPass, Long>();
+    private final Map<CompilerPass, Long> times = new HashMap<>();
 
     @Override
     public void alreadyExecuted(CompilerPass passClass, IRScope scope, Object data, boolean childScope) {
@@ -50,9 +50,9 @@ public class BasicCompilerPassListener implements CompilerPassListener {
 
     private String getScopeUUID(IRScope scope) {
         if (scope instanceof IRScriptBody || scope instanceof IRClosure) {
-            return scope.getFileName() + '#' + scope.getLineNumber() + '#';
+            return scope.getFile() + '#' + scope.getLine() + '#';
         }
 
-        return scope.getFileName() + '#' + scope.getLineNumber() + '#' + scope.getId();
+        return scope.getFile() + '#' + scope.getLine() + '#' + scope.getId();
     }
 }

@@ -45,7 +45,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents an assignment to a global variable.
  */
 public class GlobalAsgnNode extends AssignableNode implements INameNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
     public GlobalAsgnNode(ISourcePosition position, RubySymbol name, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());

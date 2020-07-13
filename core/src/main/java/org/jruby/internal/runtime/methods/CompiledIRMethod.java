@@ -1,12 +1,14 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
+
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -14,33 +16,60 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class CompiledIRMethod extends AbstractIRMethod {
-    private final MethodHandle variable;
+public class CompiledIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod>  {
 
-    private final MethodHandle specific;
+    private MethodHandle specific;
     private final int specificArity;
+    private final String encodedArgumentDescriptors;
+    private final boolean needsToFindImplementer;
 
-    private final boolean hasKwargs;
-
-    public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility,
-                            RubyModule implementationClass, boolean hasKwargs) {
-        this(variable, null, -1, method, visibility, implementationClass, hasKwargs);
+    public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope, Visibility visibility,
+                            RubyModule implementationClass, String encodedArgumentDescriptors, boolean recievesKeywordArgs, boolean needsToFindImplementer) {
+        this(variable, null, -1, id, line, scope, visibility, implementationClass, encodedArgumentDescriptors, recievesKeywordArgs, needsToFindImplementer);
     }
 
+    // Used by spec:compiler
+    public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility, RubyModule implementationClass,
+                            String encodedArgumentDescriptors) {
+        this(variable, null, -1, method.getId(), method.getLine(), method.getStaticScope(),
+                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs(),
+                !(method instanceof IRMethod && !method.getFlags().contains(IRFlags.REQUIRES_CLASS)));
+    }
+
+    // Used by spec:compiler
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
-                            Visibility visibility, RubyModule implementationClass, boolean hasKwargs) {
-        super(method, visibility, implementationClass);
-        this.variable = variable;
+                            Visibility visibility, RubyModule implementationClass, String encodedArgumentDescriptors) {
+        this(variable, specific, specificArity, method.getId(), method.getLine(), method.getStaticScope(),
+                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs(),
+                !(method instanceof IRMethod && !method.getFlags().contains(IRFlags.REQUIRES_CLASS)));
+    }
+
+    // Ruby Class/Module constructor (feels like we should maybe have a subtype here...
+    public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope,
+                            Visibility visibility, RubyModule implementationClass) {
+        this(variable, null, -1, id, line, scope, visibility, implementationClass, "", false, false);
+    }
+
+    public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, String id, int line,
+                            StaticScope scope, Visibility visibility, RubyModule implementationClass,
+                            String encodedArgumentDescriptors, boolean receivesKeywordArgs, boolean needsToFindImplementer) {
+            super(scope, id, line, visibility, implementationClass);
+
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
-        this.specificArity = hasKwargs ? -1 : specificArity;
-        this.method.getStaticScope().determineModule();
-        this.hasKwargs = hasKwargs;
+        this.specificArity = receivesKeywordArgs ? -1 : specificArity;
+        staticScope.determineModule();
 
-        assert method.hasExplicitCallProtocol();
+        this.encodedArgumentDescriptors = encodedArgumentDescriptors;
+        //assert method.hasExplicitCallProtocol();
 
         setHandle(variable);
+
+        this.needsToFindImplementer = needsToFindImplementer;
+
+        // FIXME: inliner breaks with this line commented out
+        // method.compilable = this;
     }
 
     public MethodHandle getHandleFor(int arity) {
@@ -51,28 +80,33 @@ public class CompiledIRMethod extends AbstractIRMethod {
         return null;
     }
 
+    public void setVariable(MethodHandle variable) {
+        super.setHandle(variable);
+    }
+
+    public void setSpecific(MethodHandle specific) {
+        this.specific = specific;
+    }
+
+
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        return ((IRMethod)method).getArgumentDescriptors();
+        return ArgumentDescriptor.decode(implementationClass.getRuntime(), encodedArgumentDescriptors);
     }
 
     @Override
-    public InterpreterContext ensureInstrsReady() {
-        // FIXME: duplicated from MixedModeIRMethod
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
+    public void completeBuild(DynamicMethod buildResult) {
+        // unused but part of compilable interface.  jit task uses setVariable and setSpecific to update code.
+    }
 
-        InterpreterContext ic = method.getInterpreterContext();
-
-        return ic;
+    @Override
+    protected void printMethodIR() {
+        // no-op
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, signature);
-
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
+            return (IRubyObject) ((MethodHandle) this.handle).invokeExact(context, staticScope, self, args, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -85,7 +119,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, block, implementationClass, name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -98,7 +132,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, block, implementationClass, name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -111,7 +145,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, implementationClass, name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -124,7 +158,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, block);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -134,10 +168,8 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, signature);
-
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, implementationClass, name);
+            return (IRubyObject) ((MethodHandle) this.handle).invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -150,7 +182,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, Block.NULL_BLOCK, implementationClass, name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -163,7 +195,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, Block.NULL_BLOCK, implementationClass, name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -176,7 +208,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, Block.NULL_BLOCK, implementationClass, name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -189,7 +221,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, Block.NULL_BLOCK);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, Block.NULL_BLOCK, implementationClass, name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -197,21 +229,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
         }
     }
 
-    public String getFile() {
-        return method.getFileName();
+    public boolean needsToFindImplementer() {
+        return needsToFindImplementer;
     }
-
-    public int getLine() {
-        return method.getLineNumber();
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
-    }
-
-    public boolean hasKwargs() {
-        return hasKwargs;
-    }
-
 }

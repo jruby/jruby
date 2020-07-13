@@ -6,6 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -20,9 +21,13 @@ public abstract class FieldMethodZero extends JavaMethod.JavaMethodZero {
         this(host, field, name);
     }
 
+    public Field getField() {
+        return field;
+    }
+
     protected FieldMethodZero(RubyModule host, Field field, String name) {
         super(host, Visibility.PUBLIC, name);
-        if ( ! Ruby.isSecurityRestricted() ) field.setAccessible(true);
+        Java.trySetAccessible(field);
         this.field = field;
     }
 

@@ -291,9 +291,10 @@ class TestPathname < Test::Unit::TestCase
   end
 
   def relative_path_from(dest_directory, base_directory)
-    Pathname.new(dest_directory).relative_path_from(Pathname.new(base_directory)).to_s
+    Pathname.new(dest_directory).relative_path_from(base_directory).to_s
   end
 
+  defassert(:relative_path_from, "../a", Pathname.new("a"), "b")
   defassert(:relative_path_from, "../a", "a", "b")
   defassert(:relative_path_from, "../a", "a", "b/")
   defassert(:relative_path_from, "../a", "a/", "b")
@@ -1336,6 +1337,7 @@ class TestPathname < Test::Unit::TestCase
         assert_equal([Pathname("d"), Pathname("d/x")], a)
 
         skip "no meaning test on Windows" if /mswin|mingw/ =~ RUBY_PLATFORM
+        skip 'skipped in root privilege' if Process.uid == 0
         a = [];
         assert_raise_with_message(Errno::EACCES, %r{d/x}) do
           Pathname(".").find(ignore_error: false) {|v| a << v }
@@ -1411,6 +1413,8 @@ class TestPathname < Test::Unit::TestCase
       $SAFE = 1
       assert_equal("foo/bar", File.join(Pathname.new("foo"), Pathname.new("bar").taint))
     }.call
+  ensure
+    $SAFE = 0
   end
 
   def test_relative_path_from_casefold
@@ -1424,5 +1428,20 @@ class TestPathname < Test::Unit::TestCase
       bar = Pathname.new("b\u{e4}r".encode("ISO-8859-1"))
       assert_instance_of(Pathname, foo.relative_path_from(bar))
     end;
+  end
+
+  def test_relative_path_from_mock
+    assert_equal(
+      Pathname.new("../bar"),
+      Pathname.new("/foo/bar").relative_path_from(Pathname.new("/foo/baz")))
+    assert_equal(
+      Pathname.new("../bar"),
+      Pathname.new("/foo/bar").relative_path_from("/foo/baz"))
+    obj = Object.new
+    def obj.cleanpath() Pathname.new("/foo/baz") end
+    def obj.is_a?(m) m == Pathname end
+    assert_equal(
+      Pathname.new("../bar"),
+      Pathname.new("/foo/bar").relative_path_from(obj))
   end
 end

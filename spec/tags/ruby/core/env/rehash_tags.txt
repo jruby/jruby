@@ -1,0 +1,1 @@
+fails:ENV.rehash returns nil

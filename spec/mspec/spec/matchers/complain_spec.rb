@@ -8,7 +8,7 @@ describe ComplainMatcher do
     ComplainMatcher.new(nil).matches?(proc).should == true
   end
 
-  it "maches when executing the proc results in the expected output to $stderr" do
+  it "matches when executing the proc results in the expected output to $stderr" do
     proc = lambda { warn "Que haces?" }
     ComplainMatcher.new("Que haces?\n").matches?(proc).should == true
     ComplainMatcher.new("Que pasa?\n").matches?(proc).should == false
@@ -48,5 +48,50 @@ describe ComplainMatcher do
     matcher.matches?(proc)
     matcher.negative_failure_message.should ==
       ["Expected warning not to match: /ou/", "but got: \"ouch\""]
+  end
+
+  context "`verbose` option specified" do
+    before do
+      $VERBOSE, @verbose = nil, $VERBOSE
+    end
+
+    after do
+      $VERBOSE = @verbose
+    end
+
+    it "sets $VERBOSE with specified second optional parameter" do
+      verbose = nil
+      proc = lambda { verbose = $VERBOSE }
+
+      ComplainMatcher.new(nil, verbose: true).matches?(proc)
+      verbose.should == true
+
+      ComplainMatcher.new(nil, verbose: false).matches?(proc)
+      verbose.should == false
+    end
+
+    it "sets $VERBOSE with false by default" do
+      verbose = nil
+      proc = lambda { verbose = $VERBOSE }
+
+      ComplainMatcher.new(nil).matches?(proc)
+      verbose.should == false
+    end
+
+    it "does not have side effect" do
+      proc = lambda { safe_value = $VERBOSE }
+
+      lambda do
+        ComplainMatcher.new(nil, verbose: true).matches?(proc)
+      end.should_not change { $VERBOSE }
+    end
+
+    it "accepts a verbose level as single argument" do
+      verbose = nil
+      proc = lambda { verbose = $VERBOSE }
+
+      ComplainMatcher.new(verbose: true).matches?(proc)
+      verbose.should == true
+    end
   end
 end

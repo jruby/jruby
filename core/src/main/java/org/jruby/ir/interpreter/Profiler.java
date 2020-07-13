@@ -36,8 +36,8 @@ public class Profiler {
     }
 
     private static class CallSiteProfile {
-        IRCallSite cs;
-        HashMap<IRScope, Counter> counters;
+        final IRCallSite cs;
+        final HashMap<IRScope, Counter> counters;
 
         public CallSiteProfile(IRCallSite cs) {
             this.cs = new IRCallSite(cs);
@@ -45,7 +45,7 @@ public class Profiler {
         }
     }
 
-    private static IRCallSite callerSite = new IRCallSite();
+    private static final IRCallSite callerSite = new IRCallSite();
 
     private static int inlineCount = 0;
     private static int globalThreadPollCount = 0;
@@ -53,7 +53,7 @@ public class Profiler {
     private static int numCyclesWithNoModifications = 0;
     private static int versionCount = 1;
 
-    private static HashMap<IRScope, Integer> scopeVersionMap = new HashMap<IRScope, Integer>();
+    private static final HashMap<IRScope, Integer> scopeVersionMap = new HashMap<IRScope, Integer>();
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
     private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<Long, CallSiteProfile>();
     private static HashMap<Operation, Counter> opStats = new HashMap<Operation, Counter>();
@@ -219,6 +219,10 @@ public class Profiler {
 
     private static void outputProfileStats() {
         ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
+        // ENEBO: Removes when getThreadPollInstrsCount()...when profiling revisited we need to find good metric.
+        //   I am unsure total count of threadpoll has much correlation to # visited since one may be on back end of
+        //   a single loop and all the rest are never actually visited.
+        /*
         Collections.sort(scopes, new java.util.Comparator<IRScope> () {
             @Override
             public int compare(IRScope a, IRScope b) {
@@ -234,7 +238,7 @@ public class Profiler {
                 if (aCount == bCount) return 0;
                 return (aCount < bCount) ? 1 : -1;
             }
-        });
+        });*/
 
 
         /*
@@ -250,7 +254,7 @@ public class Profiler {
         for (IRScope s: scopes) {
             long n = scopeThreadPollCounts.get(s).count;
             float p1 =  ((n*1000)/globalThreadPollCount)/10.0f;
-            String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + p1 + "%)";
+            String msg = i + ". " + s + " [file:" + s.getFile() + ":" + s.getLine() + "] = " + n + "; (" + p1 + "%)";
             if (s instanceof IRClosure) {
                 IRMethod m = s.getNearestMethod();
                 //if (m != null) LOG.info(msg + " -- nearest enclosing method: " + m);

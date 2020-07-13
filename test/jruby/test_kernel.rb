@@ -348,26 +348,6 @@ class TestKernel < Test::Unit::TestCase
 
   end
 
-  def test_sleep_arg
-    sleep SecDuration.new(0.01)
-
-    begin
-      sleep SecDuration.new(-0.01)
-    rescue ArgumentError => e
-      assert_equal "time interval must be positive", e.message
-    else
-      fail 'argument error expected'
-    end
-
-    begin
-      sleep []
-    rescue TypeError => e
-      assert_equal "can't convert Array into time interval", e.message
-    else
-      fail 'type error expected'
-    end
-  end
-
   class SecDuration19
 
     def initialize(value); @value = value end

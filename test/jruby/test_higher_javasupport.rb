@@ -304,7 +304,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal [10, 1234], array.entries
     assert_equal 10, array.min
 
-    assert_raises(ArgumentError) { array[3] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[3] } # IndexOutOfBoundsException
 
     array = Java::int[5].new
     assert_equal 5, array.size
@@ -313,8 +313,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 1, array[1]
     assert_equal 4, array.max
 
-    assert_raises(ArgumentError) { array[6] } # IndexOutOfBoundsException
-    assert_raises(ArgumentError) { array[-1] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[6] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[-1] } # IndexOutOfBoundsException
 
     room_array = Room[1].new
     assert_equal 1, room_array.length
@@ -464,7 +464,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     begin
       Class.new(Java::long); fail 'extended a primitive type!'
     rescue TypeError => e
-      assert /can not extend .* long/.match(e.message)
+      assert(/can not extend .* long/.match(e.message))
     end
 
     begin
@@ -496,7 +496,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     begin
       Class.new(Java::void); fail 'extended void type!'
     rescue TypeError => e
-      assert /can not extend .* void/.match(e.message)
+      assert(/can not extend .* void/.match(e.message))
     end
 
     # NOTE: Java::Void is simply a package stub -
@@ -633,6 +633,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal("java.nio.channels.Pipe$SinkChannel",
                  Pipe::SinkChannel.java_class.name)
     assert(Pipe::SinkChannel.instance_methods.include?(:keyFor))
+  end
+  
+  def test_inner_classes_should_not_be_nested
+    Java::JavaAwt::Desktop::Action
+    assert_raises(NameError){ Java::JavaAwt::Desktop::Action::Action }
   end
 
   def test_subclasses_and_their_return_types
@@ -912,7 +917,27 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(0, a.size)
   end
 
+  def test_open_reflected_field
+    java_fields = Java::JavaClass.for_name('java_integration.fixtures.JavaFields')
+    begin
+      java_fields.field('privateIntField')
+      fail('value field is not public!')
+    rescue NameError => e
+      assert e
+    end
+    value_field = java_fields.declared_field('privateIntField')
+    assert_equal false, value_field.static?
+    assert_equal false, value_field.public?
+    assert_equal true, value_field.final?
+    assert_equal false, value_field.accessible?
+    value_field.accessible = true
+    assert_equal 1, value_field.value( java_fields.constructor.new_instance )
+    assert_equal 'int', value_field.value_type
+  end
+
   def test_reflected_field
+    skip if JAVA_9
+
     j_integer = Java::JavaClass.for_name('java.lang.Integer')
     begin
       j_integer.field('value')
@@ -1051,6 +1076,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert org.jruby.singleton_class.is_a?(Class)
     assert_not_equal org.jruby.singleton_class, org.jruby.class
     assert_not_equal org.jruby.singleton_class, org.jruby.javasupport.singleton_class
+
+    # really to avoid unexpected outcomes for Class instances :
+
+    assert Java::JavaPackage.is_a?(Module)
+    # can not make it a Module instance "only", really
+    if Java::JavaPackage.is_a?(Class)
+      assert_equal Module, Java::JavaPackage.superclass
+    end
   end
 
   def test_package_name_colliding_with_name_method
@@ -1376,6 +1409,19 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_string_from_bytes
     assert_equal('foo', String.from_java_bytes('foo'.to_java_bytes))
+  end
+
+  def test_string_as_charsequence
+    str = 'fo0'.to_java('java.lang.CharSequence')
+    assert_equal 'o'.ord, str.charAt(1)
+    assert_equal 3, str.length
+    assert_equal 'f', str.subSequence(0, 1)
+    assert_equal 'o0', str.subSequence(1, 3)
+    assert 'fo0'.to_java.contentEquals('fo0')
+    assert_java_raises(java.lang.StringIndexOutOfBoundsException) { str.charAt(5) }
+    assert_java_raises(java.lang.StringIndexOutOfBoundsException) { str.charAt(-2) }
+    assert_java_raises(java.lang.StringIndexOutOfBoundsException) { str.subSequence(3, 2) }
+    assert_java_raises(java.lang.StringIndexOutOfBoundsException) { str.subSequence(0, -2) }
   end
 
   # JRUBY-2088
@@ -1823,7 +1869,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue ArgumentError => e
       msg = e.message
-      assert msg.start_with?("wrong number of arguments calling `length` (1 for 0)"), msg
+      assert msg.start_with?("wrong number of arguments calling `length` (given 1, expected 0)"), msg
     end
 
     begin # array proxy class
@@ -1872,22 +1918,49 @@ CLASSDEF
     assert ! output.index('ambiguous'), output
   end
 
-# NOTE: this might be desired to be implemented - except coercion it's all in
-#  def test_java_constructor_with_prefered_match
-#    output = with_stderr_captured do # exact match should not warn :
-#      color = java.awt.Color.new(10, 10, 1.0)
-#      assert_equal 10, color.getRed # assert we called (int,int,int)
-#    end
-#    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
-#    assert ! output.index('ambiguous'), output
-#
-#    output = with_stderr_captured do # exact match should not warn :
-#      color = java.awt.Color.new(1.0, 0.1, 1)
-#      assert_equal 255, color.getRed # assert we called (float,float,float)
-#    end
-#    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
-#    assert ! output.index('ambiguous'), output
-#  end
+  # NOTE: this might be desired to be implemented - except coercion it's all in
+  def test_java_constructor_with_prefered_match
+    color = nil
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(10, 10, java.lang.Short.new(1))
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+    assert_equal 10, color.getRed # assert we called (int,int,int)
+
+    output = with_stderr_captured do
+      color = java.awt.Color.new(1, 1, 1.0) # (float,float,float)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    # TODO should not warn
+    #assert ! output.index('ambiguous'), output
+    assert_equal 255, color.getRed
+
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(1.0, 0.1, 1)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    # TODO should not warn
+    #assert ! output.index('ambiguous'), output
+    pend('[ji] did not select (float,float,float) ctor') if color.getRed != 255
+    assert_equal 255, color.getRed # assert we called (float,float,float)
+  end
+
+  class Runner
+    def run; end
+  end
+
+  def test_concurrent_interface_proxy_generation
+    100.times do |_|
+      runner = Runner.new
+
+      assert_nothing_raised do
+        3.times.map do
+          Thread.start { assert runner.to_java(java.lang.Runnable) }
+        end.each(&:join)
+      end
+    end
+  end
 
   # original report: https://jira.codehaus.org/browse/JRUBY-5582
   # NOTE: we're not testing this "early" on still a good JI exercise

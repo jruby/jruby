@@ -454,12 +454,12 @@ public class EncodingUtils {
         int len = sByteList.getRealSize();
 
         Ptr sp = new Ptr(0);
-        int se = 0;
-        int ds = 0;
+        int se;
+        int ds;
         int ss = sByteList.getBegin();
         byte[] dBytes;
         Ptr dp = new Ptr(0);
-        int de = 0;
+        int de;
         EConvResult res;
         int maxOutput;
 
@@ -904,7 +904,7 @@ public class EncodingUtils {
                     if (!ecopts.isNil()) {
                         rep = ((RubyHash)ecopts).op_aref(context, runtime.newSymbol("replace"));
                     }
-                    dest = ((RubyString)str).scrub(context, rep, Block.NULL_BLOCK);
+                    dest = ((RubyString)str).encStrScrub(context, senc_p[0], rep, Block.NULL_BLOCK);
                     if (dest.isNil()) dest = str;
                     self_p[0] = dest;
                     return dencindex;
@@ -1205,10 +1205,9 @@ public class EncodingUtils {
     /**
      * Fallback function to provide replacements for characters that fail to transcode.
      *
-     * @param <State> Runtime state necessary for the function to work
      * @param <Data> Data needed for the function to execute
      */
-    public interface TranscodeFallback<State, Data> {
+    public interface TranscodeFallback<Data> {
         /**
          * Return a replacement character for the given byte range and encoding.
          *
@@ -1217,10 +1216,10 @@ public class EncodingUtils {
          * @param ec the transcoder that stumbled over the character
          * @return true if the character was successfully replaced; false otherwise
          */
-        boolean call(State context, Data fallback, EConv ec);
+        boolean call(ThreadContext context, Data fallback, EConv ec);
     }
 
-    private static abstract class AbstractTranscodeFallback implements TranscodeFallback<ThreadContext, IRubyObject> {
+    private static abstract class AbstractTranscodeFallback implements TranscodeFallback<IRubyObject> {
         @Override
         public boolean call(ThreadContext context, IRubyObject fallback, EConv ec) {
             Ruby runtime = context.runtime;
@@ -1259,7 +1258,7 @@ public class EncodingUtils {
     private static final AbstractTranscodeFallback PROC_FALLBACK = new AbstractTranscodeFallback() {
         @Override
         protected IRubyObject innerCall(ThreadContext context, IRubyObject fallback, IRubyObject c) {
-            return ((RubyProc)fallback).call(context, new IRubyObject[]{c});
+            return ((RubyProc)fallback).call(context, c);
         }
     };
 
@@ -1289,7 +1288,6 @@ public class EncodingUtils {
     public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
         Ruby runtime = context.runtime;
         EConv ec;
-        Ptr outStop = new Ptr(_outStop);
         IRubyObject fallback = context.nil;
         TranscodeFallback fallbackFunc = null;
 
@@ -1377,7 +1375,7 @@ public class EncodingUtils {
      *
      * @param ec the encoding converter
      * @param fallbackFunc the fallback function for non-transcodable characters, or null if none
-     * @param s runtime state to pass into the fallback
+     * @param context runtime state to pass into the fallback
      * @param fallbackData call state to pass into the fallback
      * @param inBytes the incoming byte array
      * @param inPos the position from which to start in the incoming bytearray
@@ -1387,11 +1385,10 @@ public class EncodingUtils {
      * @param outStop the number of bytes at which to stop in the output
      * @param destination the ByteList to hold the eventual output
      * @param resizeFunction a function to use to grow the destination
-     * @param <State> type of state for the fallback function
      * @param <Data> type of data for the fallback function
      * @return
      */
-    public static <State,Data> boolean transcodeLoop(EConv ec, TranscodeFallback<State,Data> fallbackFunc, State s, Data fallbackData, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int outStop, ByteList destination, ResizeFunction resizeFunction) {
+    public static <Data> boolean transcodeLoop(EConv ec, TranscodeFallback<Data> fallbackFunc, ThreadContext context, Data fallbackData, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int outStop, ByteList destination, ResizeFunction resizeFunction) {
         Ptr outstopPos = new Ptr(outStop);
         Transcoding lastTC = ec.lastTranscoding;
         int maxOutput = lastTC != null ? lastTC.transcoder.maxOutput : 1;
@@ -1403,7 +1400,7 @@ public class EncodingUtils {
             EConvResult ret = ec.convert(inBytes, inPos, inStop, outBytes, outPos, outstopPos.p, 0);
 
             if (fallbackFunc != null && ret == EConvResult.UndefinedConversion) {
-                if (fallbackFunc.call(s, fallbackData, ec)) {
+                if (fallbackFunc.call(context, fallbackData, ec)) {
                     continue;
                 }
             }
@@ -1411,7 +1408,14 @@ public class EncodingUtils {
             if (ret == EConvResult.InvalidByteSequence ||
                     ret == EConvResult.IncompleteInput ||
                     ret == EConvResult.UndefinedConversion) {
-                return false;
+
+                RaiseException exc = makeEconvException(context.runtime, ec);
+
+                ec.close();
+
+                destination.setRealSize(outPos.p);
+
+                throw exc;
             }
 
             if (ret == EConvResult.DestinationBufferFull) {
@@ -1759,11 +1763,9 @@ public class EncodingUtils {
             }
         } else {
             if (!EncodingUtils.encAsciicompat(strEnc) || !EncodingUtils.encAsciicompat(ptrEnc)) {
-                if (len == 0) {
-                    return ptr_cr;
-                }
+                if (len == 0) return ptr_cr;
                 if (str.getByteList().getRealSize() == 0) {
-                    rbStrBufCat(runtime, str, ptrBytes, ptr, len);
+                    strBufCat(runtime, str, ptrBytes, ptr, len);
                     str.getByteList().setEncoding(ptrEnc);
                     str.setCodeRange(ptr_cr);
                     return ptr_cr;
@@ -2005,7 +2007,7 @@ public class EncodingUtils {
                 throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
             case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
             case 0:
-                throw runtime.newRangeError(Long.toString(i) + " out of char range");
+                throw runtime.newRangeError(i + " out of char range");
         }
 
         ByteList strBytes = new ByteList(n);
@@ -2142,81 +2144,7 @@ public class EncodingUtils {
     }
 
     public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
-        Encoding enc = str.getEncoding();
-        ByteList pByteList = str.getByteList();
-        byte[] pBytes = pByteList.unsafeBytes();
-        int p = pByteList.begin();
-        int pend = p + pByteList.realSize();
-        int prev = p;
-        byte[] buf;
-        RubyString result = RubyString.newEmptyString(runtime);
-        boolean unicode_p = enc.isUnicode();
-        boolean asciicompat = enc.isAsciiCompatible();
-
-        while (p < pend) {
-            long c, cc;
-            int n = StringSupport.preciseLength(enc, pBytes, p, pend);
-            if (!StringSupport.MBCLEN_CHARFOUND_P(n)) {
-                if (p > prev) result.cat(pBytes, prev, p - prev);
-                n = enc.minLength();
-                if (pend < p + n)
-                    n = (int) (pend - p);
-                while ((n--) != 0) {
-                    buf = String.format("x%02X", pBytes[p] & 0377).getBytes();
-                    result.cat(buf, 0, buf.length);
-                    prev = ++p;
-                }
-                continue;
-            }
-            n = StringSupport.MBCLEN_CHARFOUND_LEN(n);
-            c = enc.mbcToCode(pBytes, p, pend);
-            p += n;
-            switch ((int)c) {
-                case '\n':
-                    cc = 'n';
-                    break;
-                case '\r':
-                    cc = 'r';
-                    break;
-                case '\t':
-                    cc = 't';
-                    break;
-                case '\f':
-                    cc = 'f';
-                    break;
-                case '\013':
-                    cc = 'v';
-                    break;
-                case '\010':
-                    cc = 'b';
-                    break;
-                case '\007':
-                    cc = 'a';
-                    break;
-                case 033:
-                    cc = 'e';
-                    break;
-                default:
-                    cc = 0;
-                    break;
-            }
-            if (cc != 0) {
-                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
-                buf = new byte[] {(byte)'\\', (byte)cc};
-                result.cat(buf, 0, 2);
-                prev = p;
-            } else if (asciicompat && Encoding.isAscii((byte)c) && c > 31 /*ISPRINT(c)*/) {
-            } else {
-                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
-                rbStrBufCatEscapedChar(result, c, unicode_p);
-                prev = p;
-            }
-        }
-        if (p > prev) result.cat(pBytes, prev, p - prev);
-        result.setEncodingAndCodeRange(USASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
-
-        result.setTaint(str.isTaint());
-        return result;
+        return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
     }
 
     public static int rbStrBufCatEscapedChar(RubyString result, long c, boolean unicode_p) {

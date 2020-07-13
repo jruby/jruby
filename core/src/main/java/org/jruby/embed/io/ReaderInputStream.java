@@ -42,6 +42,11 @@ import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.limitBuffer;
+import static com.headius.backport9.buffer.Buffers.rewindBuffer;
+
 /**
  * A ReaderInputStream converts java.io.Reader to java.io.InputStream. The
  * ReaderInputStream reads data in a given Reader object into its internal buffer
@@ -105,13 +110,13 @@ public class ReaderInputStream extends InputStream {
         ByteBuffer bbuf = ByteBuffer.allocate(DEFAULT_BYTE_BUFFER_SIZE);
         List<byte[]> list = new ArrayList<byte[]>();
         while (true) {
-            cbuf.clear();
+            clearBuffer(cbuf);
             int size = reader.read(cbuf);
             if (size <= 0) {
                 break;
             }
-            cbuf.limit(cbuf.position());
-            cbuf.rewind();
+            limitBuffer(cbuf, cbuf.position());
+            rewindBuffer(cbuf);
             boolean eof = false;
             while (!eof) {
                 CoderResult cr = encoder.encode(cbuf, bbuf, eof);
@@ -122,7 +127,7 @@ public class ReaderInputStream extends InputStream {
                     eof = true;
                 } else if (cr.isOverflow()) {
                     appendBytes(list, bbuf);
-                    bbuf.clear();
+                    clearBuffer(bbuf);
                 }
             }
         }
@@ -130,7 +135,7 @@ public class ReaderInputStream extends InputStream {
     }
 
     private void appendBytes(List<byte[]> list, ByteBuffer bb) {
-        bb.flip();
+        flipBuffer(bb);
         int length = bb.limit();
         totalBytes += length;
         byte[] dst = new byte[length];

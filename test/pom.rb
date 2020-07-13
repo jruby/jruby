@@ -8,7 +8,7 @@ project 'JRuby Integration Tests' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:0.2.0'
+  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
 
   repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
   plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
@@ -58,14 +58,10 @@ project 'JRuby Integration Tests' do
       'gemPath' => '${gem.home}',
       'gemHome' => '${gem.home}',
       'binDirectory' => '${jruby.home}/bin',
-      'includeRubygemsInTestResources' => 'false' }
+      'includeRubygemsInTestResources' => 'false',
+      'jrubyVersion' => '9.2.9.0'
+    }
 
-    if version =~ /-SNAPSHOT/
-      options[ 'jrubyVersion' ] = '9.1.8.0'
-    else
-      options[ 'libDirectory' ] = '${jruby.home}/lib'
-      options[ 'jrubyJvmArgs' ] = '-Djruby.home=${jruby.home}'
-    end
     execute_goals( 'initialize', options )
   end
 
@@ -114,12 +110,6 @@ project 'JRuby Integration Tests' do
   build do
     default_goal 'test'
     test_source_directory '.'
-  end
-
-  profile 'bootstrap' do
-    unless version =~ /-SNAPSHOT/
-      gem 'rubygems:jruby-launcher:${jruby-launcher.version}'
-    end
   end
 
   profile 'rake' do

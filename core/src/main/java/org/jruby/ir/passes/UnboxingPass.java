@@ -4,10 +4,11 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class UnboxingPass extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(LiveVariableAnalysis.class);
+    public static final List<Class<? extends CompilerPass>> DEPENDENCIES = Collections.singletonList(LiveVariableAnalysis.class);
 
     public String getLabel() {
         return "Unboxing Pass";

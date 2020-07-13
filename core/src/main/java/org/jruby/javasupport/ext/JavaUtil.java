@@ -29,12 +29,10 @@
 package org.jruby.javasupport.ext;
 
 import org.jruby.*;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -42,9 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
 
-import static org.jruby.javasupport.JavaUtil.CAN_SET_ACCESSIBLE;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
@@ -137,7 +133,7 @@ public abstract class JavaUtil {
         @JRubyMethod(name = { "include?", "member?" }) // @override Enumerable#include?
         public static RubyBoolean include_p(final ThreadContext context, final IRubyObject self, final IRubyObject obj) {
             final java.util.Collection coll = unwrapIfJavaObject(self);
-            return context.runtime.newBoolean( coll.contains( obj.toJava(java.lang.Object.class) ) );
+            return RubyBoolean.newBoolean(context,  coll.contains( obj.toJava(java.lang.Object.class) ) );
         }
 
         // NOTE: first might conflict with some Java types (e.g. java.util.Deque) thus providing a ruby_ alias
@@ -603,7 +599,7 @@ public abstract class JavaUtil {
                 }
             }
             if ( best != null ) {
-                if ( CAN_SET_ACCESSIBLE ) best.setAccessible(true);
+                if ( RubyInstanceConfig.SET_ACCESSIBLE ) Java.trySetAccessible(best);
                 return (java.util.Collection) best.newInstance(coll);
             }
         }

@@ -64,9 +64,9 @@ class TestBlock < Test::Unit::TestCase
   end
 
   def test_proc_arity
-    assert_equal(-1, Proc.new { 1 }.arity)
-    #assert_equal(0, Proc.new{|| 1 }.arity)
-    #assert_equal(2, Proc.new {|x,y| 1}.arity)
+    assert_equal(0, Proc.new { 1 }.arity)
+    assert_equal(0, Proc.new{|| 1 }.arity)
+    assert_equal(2, Proc.new {|x,y| 1}.arity)
     assert_equal(-1, Proc.new{|*x| 1}.arity)
   end
 
@@ -156,7 +156,6 @@ class TestBlock < Test::Unit::TestCase
     assert_equal(["C: b true", "D: c false", "C: a true"], $results)
   end
 
-  if defined? instance_exec
   def test_instance_exec_self
     o = Object.new
     assert_equal(o, o.instance_exec { self })
@@ -179,14 +178,13 @@ class TestBlock < Test::Unit::TestCase
 
   def test_instance_exec_no_block
     o = Object.new
-    assert_raise(ArgumentError) { o.instance_exec }
+    assert_raise(LocalJumpError) { o.instance_exec }
   end
 
   def test_instance_exec_no_block_args
     o = Object.new
-    assert_raise(ArgumentError) { o.instance_exec(1) }
+    assert_raise(LocalJumpError) { o.instance_exec(1) }
   end
-  end # if defined? instance_exec
   
   # ensure proc-ified blocks can be yielded to when no block arg is specified in declaration
   class Holder
@@ -229,12 +227,6 @@ class TestBlock < Test::Unit::TestCase
   def bar(a, b)
     yield a, b
   end
-  
-  def test_block_hash_args
-    h = Hash.new
-    bar(1, 2) { |h[:v], h[:u]| }
-    puts h[:v], h[:u]
-  end
 
   def block_arg_that_breaks_while(&block)
     while true
@@ -268,4 +260,272 @@ class TestBlock < Test::Unit::TestCase
     assert_equal 1, yield_arg([1,2]) { |a,b| a }
     assert_equal 1, block_call_arg([1,2]) { |a,b| a }
   end
+end
+
+
+class TestVarArgBlock < Test::Unit::TestCase
+  def blockyield(arg)
+    yield arg
+  end
+
+  def blockarg(arg, &b)
+    b.call(arg)
+  end
+
+  def test_vararg_blocks
+    Proc.new { |*element| assert_equal [["a"]], element }.call( ["a"] )
+    Proc.new { |*element| assert_equal ["a"], element }.call( "a" )
+    proc { |*element| assert_equal [["a"]], element }.call( ["a"] )
+    proc { |*element| assert_equal ["a"], element }.call( "a" )
+    lambda { |*element| assert_equal [["a"]], element }.call( ["a"] )
+    lambda { |*element| assert_equal ["a"], element }.call( "a" )
+    blockyield(["a"]) { |*element| assert_equal [["a"]], element }
+    blockyield("a") { |*element| assert_equal ["a"], element }
+    blockyield(["a"], &Proc.new { |*element| assert_equal [["a"]], element })
+    blockyield("a", &Proc.new { |*element| assert_equal ["a"], element })
+    blockyield(["a"], &proc { |*element| assert_equal [["a"]], element })
+    blockyield("a", &proc { |*element| assert_equal ["a"], element })
+    blockyield(["a"], &lambda { |*element| assert_equal [["a"]], element })
+    blockyield("a", &lambda { |*element| assert_equal ["a"], element })
+    blockarg(["a"]) { |*element| assert_equal [["a"]], element }
+    blockarg("a") { |*element| assert_equal ["a"], element }
+    blockarg(["a"], &Proc.new { |*element| assert_equal [["a"]], element })
+    blockarg("a", &Proc.new { |*element| assert_equal ["a"], element })
+    blockarg(["a"], &proc { |*element| assert_equal [["a"]], element })
+    blockarg("a", &proc { |*element| assert_equal ["a"], element })
+    blockarg(["a"], &lambda { |*element| assert_equal [["a"]], element })
+    blockarg("a", &lambda { |*element| assert_equal ["a"], element })
+  end
+
+  def test_requiredarg_blocks
+    Proc.new { |element| assert_equal ["a"], element }.call( ["a"] )
+    Proc.new { |element| assert_equal "a", element }.call( "a" )
+    proc { |element| assert_equal ["a"], element }.call( ["a"] )
+    proc { |element| assert_equal "a", element }.call( "a" )
+    lambda { |element| assert_equal ["a"], element }.call( ["a"] )
+    lambda { |element| assert_equal "a", element }.call( "a" )
+    blockyield(["a"]) { |element| assert_equal ["a"], element }
+    blockyield("a") { |element| assert_equal "a", element }
+    blockyield(["a"], &Proc.new { |element| assert_equal ["a"], element })
+    blockyield("a", &Proc.new { |element| assert_equal "a", element })
+    blockyield(["a"], &proc { |element| assert_equal ["a"], element })
+    blockyield("a", &proc { |element| assert_equal "a", element })
+    blockyield(["a"], &lambda { |element| assert_equal ["a"], element })
+    blockyield("a", &lambda { |element| assert_equal "a", element })
+    blockarg(["a"]) { |element| assert_equal ["a"], element }
+    blockarg("a") { |element| assert_equal "a", element }
+    blockarg(["a"], &Proc.new { |element| assert_equal ["a"], element })
+    blockarg("a", &Proc.new { |element| assert_equal "a", element })
+    blockarg(["a"], &proc { |element| assert_equal ["a"], element })
+    blockarg("a", &proc { |element| assert_equal "a", element })
+    blockarg(["a"], &lambda { |element| assert_equal ["a"], element })
+    blockarg("a", &lambda { |element| assert_equal "a", element })
+  end
+
+  def test_requiredargs_blocks
+    Proc.new { |element, a| assert_equal "a", element }.call( ["a"] )
+    Proc.new { |element, a| assert_equal "a", element }.call( "a" )
+      proc { |element, a| assert_equal "a", element }.call( ["a"] )
+      proc { |element, a| assert_equal "a", element }.call( "a" )
+    assert_raises(ArgumentError) {
+      lambda { |element, a| assert_equal ["a"], element }.call( ["a"] )
+    }
+    assert_raises(ArgumentError) {
+      lambda { |element, a| assert_equal "a", element }.call( "a" )
+    }
+    blockyield(["a"]) { |element, a| assert_equal "a", element }
+    blockyield("a") { |element, a| assert_equal "a", element }
+    blockyield(["a"], &Proc.new { |element, a| assert_equal "a", element })
+    blockyield("a", &Proc.new { |element, a| assert_equal "a", element })
+    blockyield(["a"], &proc { |element, a| assert_equal "a", element })
+    blockyield("a", &proc { |element, a| assert_equal "a", element })
+    assert_raises(ArgumentError) {
+      blockyield(["a"], &lambda { |element, a| assert_equal "a", element })
+    }
+    assert_raises(ArgumentError) {
+      blockyield("a", &lambda { |element, a| assert_equal "a", element })
+    }
+      blockarg(["a"]) { |element, a| assert_equal "a", element }
+      blockarg("a") { |element, a| assert_equal "a", element }
+      blockarg(["a"], &Proc.new { |element, a| assert_equal "a", element })
+      blockarg("a", &Proc.new { |element, a| assert_equal "a", element })
+      blockarg(["a"], &proc { |element, a| assert_equal "a", element })
+      blockarg("a", &proc { |element, a| assert_equal "a", element })
+    assert_raises(ArgumentError) {
+      blockarg(["a"], &lambda { |element, a| assert_equal ["a"], element })
+    }
+    assert_raises(ArgumentError) {
+      blockarg("a", &lambda { |element, a| assert_equal "a", element })
+    }
+  end
+
+  def check_all_definemethods(obj)
+    results = obj.foo1 ["a"]
+    assert_equal(results[0], results[1])
+    results = obj.foo2 "a"
+    assert_equal(results[0], results[1])
+    results = obj.foo3 ["a"]
+    assert_equal(results[0], results[1])
+    results = obj.foo4 "a"
+    assert_equal(results[0], results[1])
+    results = obj.foo5 ["a"]
+    assert_equal(results[0], results[1])
+    results = obj.foo6 "a"
+    assert_equal(results[0], results[1])
+    results = obj.foo7 ["a"]
+    assert_equal(results[0], results[1])
+    results = obj.foo8 "a"
+    assert_equal(results[0], results[1])
+    results = obj.foo9 ["a"]
+    assert_equal(results[0], results[1])
+    results = obj.foo10 "a"
+    assert_equal(results[0], results[1])
+    results = obj.foo11 ["a"]
+    assert_equal(results[0], results[1])
+    results = obj.foo12 "a"
+    assert_equal(results[0], results[1])
+    results = obj.foo13 ["a"]
+    assert_equal(results[0], results[1])
+    results = obj.foo14 "a"
+    assert_equal(results[0], results[1])
+  end
+
+  def check_requiredargs_definemethods(obj)
+    assert_raises(ArgumentError) { results = obj.foo1 ["a"] }
+    # assert_equal(results[0], results[1])
+    assert_raises(ArgumentError) { results = obj.foo2 "a" }
+    # assert_equal(results[0], results[1])
+    assert_raises(ArgumentError) { results = obj.foo3 ["a"] }
+    assert_raises(ArgumentError) { results = obj.foo4 "a" }
+    assert_raises(ArgumentError) { results = obj.foo5 ["a"] }
+    assert_raises(ArgumentError) { results = obj.foo6 "a" }
+    assert_raises(ArgumentError) { results = obj.foo7 ["a"] }
+    assert_raises(ArgumentError) { results = obj.foo8 "a" }
+    assert_raises(ArgumentError) { results = obj.foo9 ["a"] }
+    assert_raises(ArgumentError) { results = obj.foo10 "a" }
+    assert_raises(ArgumentError) { results = obj.foo11 ["a"] }
+    assert_raises(ArgumentError) { results = obj.foo12 "a" }
+    assert_raises(ArgumentError) { results = obj.foo13 ["a"] }
+    assert_raises(ArgumentError) { results = obj.foo14 "a" }
+  end
+
+  def test_definemethods
+    obj = Object.new
+
+    class << obj
+      define_method :foo1, Proc.new { |*element| [[["a"]], element] }
+      define_method :foo2, Proc.new { |*element| [["a"], element] }
+      define_method :foo3, proc { |*element| [[["a"]], element] }
+      define_method :foo4, proc { |*element| [["a"], element] }
+      define_method :foo5, lambda { |*element| [[["a"]], element] }
+      define_method :foo6, lambda { |*element| [["a"], element] }
+      define_method(:foo7) { |*element| [[["a"]], element] }
+      define_method(:foo8) { |*element| [["a"], element] }
+      define_method :foo9, &Proc.new { |*element| [[["a"]], element] }
+      define_method :foo10, &Proc.new { |*element| [["a"], element] }
+      define_method :foo11, &proc { |*element| [[["a"]], element] }
+      define_method :foo12, &proc { |*element| [["a"], element] }
+      define_method :foo13, &lambda { |*element| [[["a"]], element] }
+      define_method :foo14, &lambda { |*element| [["a"], element] }
+    end
+
+    check_all_definemethods(obj)
+
+    class << obj
+      define_method :foo1, Proc.new { |element| [["a"], element] }
+      define_method :foo2, Proc.new { |element| ["a", element] }
+      define_method :foo3, proc { |element| [["a"], element] }
+      define_method :foo4, proc { |element| ["a", element] }
+      define_method :foo5, lambda { |element| [["a"], element] }
+      define_method :foo6, lambda { |element| ["a", element] }
+      define_method(:foo7) { |element| [["a"], element] }
+      define_method(:foo8) { |element| ["a", element] }
+      define_method :foo9, &Proc.new { |element| [["a"], element] }
+      define_method :foo10, &Proc.new { |element| ["a", element] }
+      define_method :foo11, &proc { |element| [["a"], element] }
+      define_method :foo12, &proc { |element| ["a", element] }
+      define_method :foo13, &lambda { |element| [["a"], element] }
+      define_method :foo14, &lambda { |element| ["a", element] }
+    end
+
+    check_all_definemethods(obj)
+
+    class << obj
+      define_method :foo1, Proc.new { |element, a| ["a", element] }
+      define_method :foo2, Proc.new { |element, a| ["a", element] }
+      define_method :foo3, proc { |element, a| [["a"], element] }
+      define_method :foo4, proc { |element, a| ["a", element] }
+      define_method :foo5, lambda { |element, a| [["a"], element] }
+      define_method :foo6, lambda { |element, a| ["a", element] }
+      define_method(:foo7) { |element, a| [["a"], element] }
+      define_method(:foo8) { |element, a| ["a", element] }
+      define_method :foo9, &Proc.new { |element, a| [["a"], element] }
+      define_method :foo10, &Proc.new { |element, a| ["a", element] }
+      define_method :foo11, &proc { |element, a| [["a"], element] }
+      define_method :foo12, &proc { |element, a| ["a", element] }
+      define_method :foo13, &lambda { |element, a| [["a"], element] }
+      define_method :foo14, &lambda { |element, a| ["a", element] }
+    end
+
+    check_requiredargs_definemethods(obj)
+  end
+end
+
+
+class TestCrazyBlocks < Test::Unit::TestCase
+  def foo(a)
+    p = proc { a.each {|x| yield x } }
+    1.times { p.call }
+  end
+
+  def bar(&b)
+    [[1,2],[3,4]].each(&b)
+  end
+
+  def baz
+    bar {|a| foo(a) { |x| yield x } }
+  end
+
+  def test_crazy
+    a = []
+    p = proc {|y| a << y}
+    baz {|x| p.call x}
+    assert_equal [1,2,3,4], a
+  end
+
+  def hello(&b)
+    1.times { b.call }
+  end
+
+  def test_crazy2
+    a = []
+    hello {
+      p = proc {|y| a << y}
+      baz{|x| p.call x}
+    }
+    assert_equal [1,2,3,4], a
+  end
+
+  def test_crazy3
+    a = []
+    p = proc {|y| a << y}
+    self.class.send(:define_method, :goodbye) {
+      hello {
+        baz {|x| p.call(x)}
+      }
+    }
+    goodbye
+    assert_equal [1,2,3,4], a
+  end
+
+  def test_crazy4
+    a = []
+    p = proc {|x| a << x}
+    hello {
+      p2 = proc { |x| eval "p.call x" }
+      baz { |x| eval "p2.call x" }
+    }
+    assert_equal [1,2,3,4], a
+  end
+
 end

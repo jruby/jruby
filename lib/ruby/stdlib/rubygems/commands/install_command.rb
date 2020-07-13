@@ -117,6 +117,13 @@ to write the specification by hand.  For example:
   some_extension_gem (1.0)
   $
 
+Command Alias
+==========================
+
+You can use `i` command instead of `install`.
+
+  $ gem i GEMNAME
+
     EOF
   end
 
@@ -125,7 +132,7 @@ to write the specification by hand.  For example:
   end
 
   def check_install_dir # :nodoc:
-    if options[:install_dir] and options[:user_install] then
+    if options[:install_dir] and options[:user_install]
       alert_error "Use --install-dir or --user-install but not both"
       terminate_interaction 1
     end
@@ -133,22 +140,22 @@ to write the specification by hand.  For example:
 
   def check_version # :nodoc:
     if options[:version] != Gem::Requirement.default and
-         get_all_gem_names.size > 1 then
-      alert_error "Can't use --version w/ multiple gems. Use name:ver instead."
+         get_all_gem_names.size > 1
+      alert_error "Can't use --version with multiple gems. You can specify multiple gems with" \
+                  " version requirements using `gem install 'my_gem:1.0.0' 'my_other_gem:~>2.0.0'`"
       terminate_interaction 1
     end
   end
 
   def execute
-
-    if options.include? :gemdeps then
+    if options.include? :gemdeps
       install_from_gemdeps
       return # not reached
     end
 
     @installed_specs = []
 
-    ENV.delete 'GEM_PATH' if options[:install_dir].nil? and RUBY_VERSION > '1.9'
+    ENV.delete 'GEM_PATH' if options[:install_dir].nil?
 
     check_install_dir
     check_version
@@ -181,13 +188,13 @@ to write the specification by hand.  For example:
     terminate_interaction
   end
 
-  def install_gem name, version # :nodoc:
+  def install_gem(name, version) # :nodoc:
     return if options[:conservative] and
       not Gem::Dependency.new(name, version).matching_specs.empty?
 
     req = Gem::Requirement.create(version)
 
-    if options[:ignore_dependencies] then
+    if options[:ignore_dependencies]
       install_gem_without_dependencies name, req
     else
       inst = Gem::DependencyInstaller.new options
@@ -209,11 +216,11 @@ to write the specification by hand.  For example:
     end
   end
 
-  def install_gem_without_dependencies name, req # :nodoc:
+  def install_gem_without_dependencies(name, req) # :nodoc:
     gem = nil
 
-    if local? then
-      if name =~ /\.gem$/ and File.file? name then
+    if local?
+      if name =~ /\.gem$/ and File.file? name
         source = Gem::Source::SpecificFile.new name
         spec = source.spec
       else
@@ -223,7 +230,7 @@ to write the specification by hand.  For example:
       gem = source.download spec if spec
     end
 
-    if remote? and not gem then
+    if remote? and not gem
       dependency = Gem::Dependency.new name, req
       dependency.prerelease = options[:prerelease]
 
@@ -250,16 +257,21 @@ to write the specification by hand.  For example:
 
     get_all_gem_names_and_versions.each do |gem_name, gem_version|
       gem_version ||= options[:version]
+      domain = options[:domain]
+      domain = :local unless options[:suggest_alternate]
 
       begin
         install_gem gem_name, gem_version
       rescue Gem::InstallError => e
         alert_error "Error installing #{gem_name}:\n\t#{e.message}"
         exit_code |= 1
-      rescue Gem::GemNotFoundException, Gem::UnsatisfiableDependencyError => e
-        domain = options[:domain]
-        domain = :local unless options[:suggest_alternate]
+      rescue Gem::GemNotFoundException => e
         show_lookup_failure e.name, e.version, e.errors, domain
+
+        exit_code |= 2
+      rescue Gem::UnsatisfiableDependencyError => e
+        show_lookup_failure e.name, e.version, e.errors, domain,
+                            "'#{gem_name}' (#{gem_version})"
 
         exit_code |= 2
       end
@@ -280,7 +292,7 @@ to write the specification by hand.  For example:
     require 'rubygems/rdoc'
   end
 
-  def show_install_errors errors # :nodoc:
+  def show_install_errors(errors) # :nodoc:
     return unless errors
 
     errors.each do |x|
@@ -300,4 +312,3 @@ to write the specification by hand.  For example:
   end
 
 end
-

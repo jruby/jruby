@@ -16,6 +16,7 @@ import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PopBlockFrameInstr;
 import org.jruby.ir.instructions.PushBlockFrameInstr;
+import org.jruby.ir.instructions.PushMethodFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
@@ -64,6 +65,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**
@@ -115,8 +117,7 @@ public class InterpreterEngine {
         Object    exception = null;
         boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        // Blocks with explicit call protocol shouldn't do this before args are prepared
-        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
+        if (acceptsKeywordArgument) {
             args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
         }
 
@@ -382,11 +383,12 @@ public class InterpreterEngine {
                 context.postYieldNoScope((Frame) retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_METHOD_FRAME:
-                context.preMethodFrameOnly(implClass, name, self, blockArg);
-                // Only the top-level script scope has PRIVATE visibility.
-                // This is already handled as part of Interpreter.execute above.
-                // Everything else is PUBLIC by default.
-                context.setCurrentVisibility(Visibility.PUBLIC);
+                context.preMethodFrameOnly(
+                        implClass,
+                        name,
+                        self,
+                        ((PushMethodFrameInstr) instr).getVisibility(),
+                        blockArg);
                 break;
             case PUSH_BACKREF_FRAME:
                 context.preBackrefMethod();
@@ -405,25 +407,22 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr) instr).checkArity(context, currScope, args, block == null ? null : block.type);
+                ((CheckArityInstr) instr).checkArity(context, currScope, args, block);
                 break;
             case LINE_NUM:
-                context.setLine(((LineNumberInstr)instr).lineNumber);
+                LineNumberInstr line = (LineNumberInstr) instr;
+                context.setLine(line.lineNumber);
+                if (line.coverage) {
+                    IRRuntimeHelpers.updateCoverage(context, currScope.getFile(), line.lineNumber);
+                    if (line.oneshot) line.coverage = false;
+                }
                 break;
             case TOGGLE_BACKTRACE:
                 context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
                 break;
-            case TRACE: {
-                if (context.runtime.hasEventHooks()) {
-                    TraceInstr trace = (TraceInstr) instr;
-                    // FIXME: Try and statically generate END linenumber instead of hacking it.
-                    int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
-
-                    context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
-                            trace.getFilename(), linenumber);
-                }
+            case TRACE:
+                instr.interpret(context, currScope, currDynScope, self, temp);
                 break;
-            }
         }
     }
 
@@ -448,7 +447,7 @@ public class InterpreterEngine {
             case NONLOCAL_RETURN: {
                 NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, block, rv);
+                return IRRuntimeHelpers.initiateNonLocalReturn(currDynScope, block, rv);
             }
             case RETURN_OR_RETHROW_SAVED_EXC: {
                 IRubyObject retVal = (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);
@@ -461,7 +460,6 @@ public class InterpreterEngine {
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
                                          StaticScope currScope, Object[] temp, IRubyObject self,
                                          double[] floats, long[] fixnums, boolean[] booleans) {
-        Block.Type blockType = block == null ? null : block.type;
         Object result;
         switch(operation) {
             case RECV_SELF:
@@ -480,27 +478,15 @@ public class InterpreterEngine {
                 break;
             }
 
-            case SEARCH_CONST: {
-                SearchConstInstr sci = (SearchConstInstr)instr;
-                ConstantCache cache = sci.getConstantCache();
-                if (!ConstantCache.isCached(cache)) {
-                    result = sci.cache(context, currScope, currDynScope, self, temp);
-                } else {
-                    result = cache.value;
-                }
-                setResult(temp, currDynScope, sci.getResult(), result);
-                break;
-            }
-
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block));
                 break;
             }
 
             case CHECK_FOR_LJE:
-                ((CheckForLJEInstr) instr).check(context, currDynScope, blockType);
+                ((CheckForLJEInstr) instr).check(context, currDynScope, block);
                 break;
 
             case BOX_FLOAT: {
@@ -516,7 +502,7 @@ public class InterpreterEngine {
             }
 
             case BOX_BOOLEAN: {
-                RubyBoolean f = context.runtime.newBoolean(getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
+                RubyBoolean f = RubyBoolean.newBoolean(context, getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
                 setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
                 break;
             }

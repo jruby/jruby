@@ -53,15 +53,8 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import org.objectweb.asm.Opcodes;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -146,12 +139,10 @@ public class RubyInstanceConfig {
     }
 
     private void initEnvironment() {
-        environment = new HashMap<String,String>();
         try {
-            environment.putAll(System.getenv());
+            setEnvironment(System.getenv());
         }
         catch (SecurityException se) { /* ignore missing getenv permission */ }
-        setupEnvironment(getJRubyHome());
     }
 
     public RubyInstanceConfig(final InputStream in, final PrintStream out, final PrintStream err) {
@@ -265,7 +256,7 @@ public class RubyInstanceConfig {
             }
 
             in.mark(8192);
-            reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"), 8192);
+            reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.ISO_8859_1), 8192);
             String firstLine = reader.readLine();
 
             boolean usesEnv = false;
@@ -355,7 +346,7 @@ public class RubyInstanceConfig {
         if ("uri:classloader://META-INF/jruby.home".equals(home) || "uri:classloader:/META-INF/jruby.home".equals(home)) {
             return home;
         }
-        if (home.equals(".")) {
+        if (".".equals(home)) {
             home = SafePropertyAccessor.getProperty("user.dir");
         }
         else if (home.startsWith("cp:")) {
@@ -365,7 +356,7 @@ public class RubyInstanceConfig {
                 home.startsWith("classpath:") || home.startsWith("uri:")) {
             error.println("Warning: JRuby home with uri like paths may not have full functionality - use at your own risk");
         }
-        // do not normalize on plain jar like pathes coming from jruby-rack
+        // do not normalize on plain jar like paths coming from jruby-rack
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
             File file = new File(home);
             if (!file.exists()) {
@@ -414,9 +405,9 @@ public class RubyInstanceConfig {
                         if (isXFlag()) {
                             // search for a shebang line and
                             // return the script between shebang and __END__ or CTRL-Z (0x1A)
-                            return findScript(resource.inputStream());
+                            return findScript(resource.openInputStream());
                         }
-                        return resource.inputStream();
+                        return resource.openInputStream();
                     }
                     else {
                         throw new FileNotFoundException(script + " (Not a file)");
@@ -432,21 +423,28 @@ public class RubyInstanceConfig {
     }
 
     private static InputStream findScript(InputStream is) throws IOException {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(64);
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String currentLine = br.readLine();
-        while (currentLine != null && !isRubyShebangLine(currentLine)) {
-            currentLine = br.readLine();
+
+        boolean foundRubyShebang = false;
+        String currentLine;
+        while ((currentLine = br.readLine()) != null) {
+            if (isRubyShebangLine(currentLine)) {
+                foundRubyShebang = true;
+                break;
+            }
         }
 
-        buf.append(currentLine);
-        buf.append("\n");
+        if (!foundRubyShebang) {
+            throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
+        }
+
+        buf.append(currentLine).append('\n');
 
         do {
             currentLine = br.readLine();
             if (currentLine != null) {
-                buf.append(currentLine);
-                buf.append("\n");
+                buf.append(currentLine).append('\n');
             }
         } while (!(currentLine == null || currentLine.contains("__END__") || currentLine.contains("\026")));
         return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
@@ -498,8 +496,8 @@ public class RubyInstanceConfig {
     }
 
     public void setJRubyHome(String home) {
-        jrubyHome = verifyHome(home, error);
-        setupEnvironment(jrubyHome);
+        jrubyHome = home != null ? verifyHome(home, error) : null;
+        resetEnvRuby();
     }
 
     public CompileMode getCompileMode() {
@@ -588,6 +586,13 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * @return true if JIT compilation is enabled
+     */
+    public boolean isJitEnabled() {
+        return getJitThreshold() >= 0 && getCompileMode().shouldJIT();
+    }
+
+    /**
      * @see Options#LAUNCH_INPROC
      */
     public boolean isRunRubyInProcess() {
@@ -670,23 +675,25 @@ public class RubyInstanceConfig {
     }
 
     public void setEnvironment(Map<String, String> newEnvironment) {
-        environment = new HashMap<String, String>();
+        environment = new HashMap<>();
         if (newEnvironment != null) {
             environment.putAll(newEnvironment);
-        }
-        setupEnvironment(getJRubyHome());
-    }
-
-    private void setupEnvironment(String jrubyHome) {
-        if (RubyFile.PROTOCOL_PATTERN.matcher(jrubyHome).matches() && !environment.containsKey("RUBY")) {
-            // the assumption that if JRubyHome is not a regular file that jruby
-            // got launched in an embedded fashion
-            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
         }
     }
 
     public Map<String, String> getEnvironment() {
+        if (!environment.containsKey("RUBY") && RubyFile.PROTOCOL_PATTERN.matcher(getJRubyHome()).matches()) {
+            // assumption: if JRubyHome is not a regular file than jruby got launched in an embedded fashion
+            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
+            setEnvRuby = true;
+        }
         return environment;
+    }
+
+    private transient boolean setEnvRuby;
+
+    private void resetEnvRuby() { // when jruby-home changes, we might need to recompute
+        if (setEnvRuby) environment.remove("RUBY");
     }
 
     public ClassLoader getLoader() {
@@ -1474,6 +1481,10 @@ public class RubyInstanceConfig {
         this.debuggingFrozenStringLiteral = debuggingFrozenStringLiteral;
     }
 
+    public boolean isInterruptibleRegexps() {
+        return interruptibleRegexps;
+    }
+
     public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
@@ -1541,14 +1552,14 @@ public class RubyInstanceConfig {
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
     private Set<String> excludedMethods = new HashSet<String>();
-    private StringBuffer inlineScript = new StringBuffer();
+    private final StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
-    private Collection<String> requiredLibraries = new LinkedHashSet<String>();
+    private final Collection<String> requiredLibraries = new LinkedHashSet<String>();
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = Options.CLI_ASSUME_LOOP.load();
     private boolean assumePrinting = Options.CLI_ASSUME_PRINT.load();
-    private Map<String, String> optionGlobals = new HashMap<String, String>();
+    private final Map<String, String> optionGlobals = new HashMap<String, String>();
     private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
     private boolean split = Options.CLI_AUTOSPLIT.load();
     private Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();
@@ -1577,6 +1588,7 @@ public class RubyInstanceConfig {
     private boolean hasScriptArgv = false;
     private boolean frozenStringLiteral = false;
     private boolean debuggingFrozenStringLiteral = false;
+    private final boolean interruptibleRegexps = Options.REGEXP_INTERRUPTIBLE.load();
     private String jrubyHome;
 
     /**
@@ -1650,7 +1662,7 @@ public class RubyInstanceConfig {
     /**
      * The version to use for generated classes. Set to current JVM version by default
      */
-    public static final int JAVA_VERSION = initGlobalJavaVersion();
+    public static final int JAVA_VERSION = initJavaBytecodeVersion();
 
     /**
      * The number of lines at which a method, class, or block body is split into
@@ -1677,14 +1689,14 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.compile.fastest</tt> system property.
      */
-    public static boolean FASTEST_COMPILE_ENABLED = Options.COMPILE_FASTEST.load();
+    public static final boolean FASTEST_COMPILE_ENABLED = Options.COMPILE_FASTEST.load();
 
     /**
      * Enable fast operator compiler optimizations.
      *
      * Set with the <tt>jruby.compile.fastops</tt> system property.
      */
-    public static boolean FASTOPS_COMPILE_ENABLED
+    public static final boolean FASTOPS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED || Options.COMPILE_FASTOPS.load();
 
     /**
@@ -1743,13 +1755,6 @@ public class RubyInstanceConfig {
     public static final int FIBER_POOL_TTL = Options.FIBER_THREADPOOL_TTL.load();
 
     /**
-     * Enable use of the native Java version of the 'net/protocol' library.
-     *
-     * Set with the <tt>jruby.native.net.protocol</tt> system property.
-     */
-    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
-
-    /**
      * Enable tracing of method calls.
      *
      * Set with the <tt>jruby.debug.fullTrace</tt> system property.
@@ -1759,6 +1764,8 @@ public class RubyInstanceConfig {
     /**
      * Comma-separated list of methods to exclude from JIT compilation.
      * Specify as "Module", "Module#method" or "method".
+     *
+     * Also supports excluding based on implementation_file.rb syntax.
      *
      * Set with the <tt>jruby.jit.exclude</tt> system property.
      */
@@ -1840,7 +1847,7 @@ public class RubyInstanceConfig {
 
     public static final boolean JIT_LOADING_DEBUG = Options.JIT_DEBUG.load();
 
-    public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
+    public static final boolean SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
 
     // properties for logging exceptions, backtraces, and caller invocations
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
@@ -1851,18 +1858,18 @@ public class RubyInstanceConfig {
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
     public static final boolean STOPITERATION_BACKTRACE = Options.STOPITERATION_BACKTRACE.load();
 
-    public static boolean IR_DEBUG = Options.IR_DEBUG.load();
-    public static String IR_DEBUG_IGV = Options.IR_DEBUG_IGV.load();
-    public static boolean IR_PROFILE = Options.IR_PROFILE.load();
-    public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
-    public static boolean IR_WRITING = Options.IR_WRITING.load();
-    public static boolean IR_READING = Options.IR_READING.load();
-    public static boolean IR_READING_DEBUG = Options.IR_READING_DEBUG.load();
-    public static boolean IR_WRITING_DEBUG = Options.IR_WRITING_DEBUG.load();
-    public static boolean IR_VISUALIZER = Options.IR_VISUALIZER.load();
-    public static boolean IR_UNBOXING = Options.IR_UNBOXING.load();
-    public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
-    public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
+    public static final boolean IR_DEBUG = Options.IR_DEBUG.load();
+    public static final String IR_DEBUG_IGV = Options.IR_DEBUG_IGV.load();
+    public static final boolean IR_PROFILE = Options.IR_PROFILE.load();
+    public static final boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
+    public static final boolean IR_WRITING = Options.IR_WRITING.load();
+    public static final boolean IR_READING = Options.IR_READING.load();
+    public static final boolean IR_READING_DEBUG = Options.IR_READING_DEBUG.load();
+    public static final boolean IR_WRITING_DEBUG = Options.IR_WRITING_DEBUG.load();
+    public static final boolean IR_VISUALIZER = Options.IR_VISUALIZER.load();
+    public static final boolean IR_UNBOXING = Options.IR_UNBOXING.load();
+    public static final String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
+    public static final String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
     public static boolean RECORD_LEXICAL_HIERARCHY = Options.RECORD_LEXICAL_HIERARCHY.load();
 
@@ -1882,14 +1889,25 @@ public class RubyInstanceConfig {
     // Static initializers
     ////////////////////////////////////////////////////////////////////////////
 
-    private static int initGlobalJavaVersion() {
+    private static int initJavaBytecodeVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
             case "1.6" :
-            case "1.7" : throw new UnsupportedClassVersionError("JRuby requires Java 8 or higher");
-            case "1.8" : case "8" : return Opcodes.V1_8; // 52
-            default :
+                return Opcodes.V1_6;
+            case "1.7" :
+                return Opcodes.V1_7;
+            case "1.8" : case "8" : default :
+                return Opcodes.V1_8; // 52
+            case "9" :
                 return Opcodes.V9;
+            case "10" :
+                return Opcodes.V10;
+            case "11" :
+                return Opcodes.V11;
+            case "12" :
+                return Opcodes.V12;
+            case "13" :
+                return Opcodes.V13;
         }
     }
 
@@ -2032,4 +2050,14 @@ public class RubyInstanceConfig {
     @Deprecated
     public void setCompatVersion(CompatVersion compatVersion) {
     }
+
+    /**
+     * Enable use of the native Java version of the 'net/protocol' library.
+     *
+     * Set with the <tt>jruby.native.net.protocol</tt> system property.
+     */
+    @Deprecated
+    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
+    @Deprecated
+    public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
 }

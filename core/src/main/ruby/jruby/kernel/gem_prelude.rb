@@ -1,15 +1,14 @@
-if defined?(Gem)
+if Object.const_defined?(:Gem)
   begin
-    require 'rubygems'
-  rescue LoadError
-    # For JRUBY-5333, gracefully fail to load, since stdlib may not be available
+    require 'rubygems.rb'
+  rescue LoadError # java -jar lib/jruby.jar -e '...'
     warn 'RubyGems not found; disabling gems' if $VERBOSE
   else
     begin
       gem 'did_you_mean'
       require 'did_you_mean'
       Gem.clear_paths
-    rescue Gem::LoadError, LoadError
-    end if defined?(DidYouMean)
+    rescue LoadError # Gem::LoadError < LoadError
+    end if Object.const_defined?(:DidYouMean)
   end
 end

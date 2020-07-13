@@ -102,15 +102,15 @@ public class ConvertDouble {
             return true;
         }
 
-        private boolean isDigit(byte b) {
+        private static boolean isDigit(byte b) {
             return b >= '0' && b <= '9';
         }
 
-        private boolean isExponent(byte b) {
+        private static boolean isExponent(byte b) {
             return b == 'e' || b == 'E';
         }
 
-        private boolean isWhitespace(byte b) {
+        private static boolean isWhitespace(byte b) {
             return b == ' ' || (b <= 13 && b >= 9 && b != 11);
         }
 

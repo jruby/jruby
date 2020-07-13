@@ -30,25 +30,21 @@ package org.jruby.ext.socket;
 
 import jnr.constants.platform.Sock;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketException;
-import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
 import java.nio.channels.Channel;
 import java.nio.channels.IllegalBlockingModeException;
@@ -67,7 +63,7 @@ public class RubyServerSocket extends RubySocket {
         rb_cSocket.defineAnnotatedMethods(RubyServerSocket.class);
     }
 
-    private static ObjectAllocator SERVER_SOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator SERVER_SOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyServerSocket(runtime, klass);
         }
@@ -131,7 +127,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
-        return doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.fals);
+        return doAcceptNonblock(this, context, extractExceptionArg(context, opts));
     }
 
     @Override
@@ -239,7 +235,7 @@ public class RubyServerSocket extends RubySocket {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, e, "bind(2)", iaddr);
+            throw buildSocketException(runtime, e, "bind(2)", iaddr);
         }
         catch (IOException e) {
             throw sockerr(runtime, "bind(2): name or service not known", e);

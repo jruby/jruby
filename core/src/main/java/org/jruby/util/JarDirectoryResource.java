@@ -1,11 +1,10 @@
 package org.jruby.util;
 
-import jnr.posix.POSIX;
-import org.jruby.util.io.ModeFlags;
 import java.io.IOException;
 import java.io.InputStream;
 
 import java.nio.channels.Channel;
+import java.nio.file.attribute.FileTime;
 
 /**
  * Represents a directory in a jar.
@@ -15,6 +14,7 @@ import java.nio.channels.Channel;
  * just that.</p>
  */
 class JarDirectoryResource extends JarResource {
+
     private final String path;
     private final String[] contents;
 
@@ -40,16 +40,27 @@ class JarDirectoryResource extends JarResource {
     }
 
     @Override
-    public long lastModified() {
-        // Iterating over matching entries is expensive, so let's return that we've never been
-        // modified
+    public long length() {
+        // this pseudo-directory doesn't take up any space
         return 0L;
     }
 
     @Override
-    public long length() {
-        // this pseudo-directory doesn't take up any space
+    public long lastModified() {
+        // Iterating over matching entries is expensive, so let's return that we've never been modified
         return 0L;
+    }
+
+    public FileTime creationTime() {
+        return null; // NOTE: not implemented
+    }
+
+    public FileTime lastAccessTime() {
+        return null; // NOTE: not implemented
+    }
+
+    public FileTime lastModifiedTime() {
+        return null; // NOTE: not implemented
     }
 
     @Override
@@ -62,14 +73,21 @@ class JarDirectoryResource extends JarResource {
     }
 
     @Override
-    InputStream openInputStream() throws IOException {
+    public InputStream openInputStream() throws IOException {
         throw new ResourceException.FileIsDirectory(path);
     }
 
     @Override
-    public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
-        // opening a directory seems to blow up with EACCESS in jruby (although MRI allows instantiation but blows up on read).
+    public Channel openChannel(final int flags, int perm) throws ResourceException {
+        // opening a directory seems to blow up with EACCESS in jruby
+        // (although MRI allows instantiation but blows up on read).
         // So mimicking that for now.
         throw new ResourceException.PermissionDenied(absolutePath());
     }
+
+    @Override
+    public <T> T unwrap(Class<T> type) {
+        throw new UnsupportedOperationException("unwrap: " + type.getName());
+    }
+
 }

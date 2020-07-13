@@ -40,15 +40,9 @@ public class ReifyClosureInstr extends OneOperandResultBaseInstr implements Fixe
     public Instr clone(CloneInfo info) {
         if (info instanceof SimpleCloneInfo) return new ReifyClosureInstr(info.getRenamedVariable(getResult()), info.getRenamedVariable(getSource()));
 
-        // SSS FIXME: This code below is for inlining and is untested.
-
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
-        // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
-        // operand type that converts the static code block to a proc which is a closure.
-        if (ii.getCallClosure() instanceof WrappedIRClosure) return NopInstr.NOP;
-
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getSource()));
     }
 
     @Override

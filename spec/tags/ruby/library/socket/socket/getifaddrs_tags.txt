@@ -1,0 +1,3 @@
+fails:Socket.getifaddrs each returned Socket::Ifaddr has a set of flags
+fails:Socket.getifaddrs the Socket::Ifaddr address has an address family
+fails:Socket.getifaddrs the Socket::Ifaddr broadcast address has an address family

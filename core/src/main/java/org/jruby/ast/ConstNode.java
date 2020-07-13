@@ -43,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * The access to a Constant.
  */
 public class ConstNode extends Node implements INameNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
     public ConstNode(ISourcePosition position, RubySymbol name) {
         super(position, false);

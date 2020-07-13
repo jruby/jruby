@@ -1,5 +1,3 @@
-exclude :test_bsearch_for_float, "needs investigation"
 exclude :test_bsearch_for_other_numerics, "needs investigation"
 exclude :test_comparison_when_recursive, "needs investigation"
-exclude :test_range_bsearch_for_floats, "needs investigation"
-exclude :test_eqq_time, "TypeError: can't iterate from Time"
+exclude :test_uninitialized_range, "Unsupported partial initialization of objects"

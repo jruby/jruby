@@ -1,0 +1,6 @@
+fails:Socket.tcp returns a Socket when no block is given
+fails:Socket.tcp yields the Socket when a block is given
+fails:Socket.tcp closes the Socket automatically when a block is given
+fails:Socket.tcp binds to a local address and port when specified
+fails:Socket.tcp raises ArgumentError when 6 arguments are provided
+fails:Socket.tcp connects to the server

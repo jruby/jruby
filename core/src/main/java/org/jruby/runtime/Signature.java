@@ -14,6 +14,8 @@ import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
+
 /**
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
  */
@@ -269,7 +271,7 @@ public class Signature {
 
     public void checkArity(Ruby runtime, IRubyObject[] args) {
         if (args.length < required()) {
-            throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + required() + ")");
+            throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
         }
         if (rest == Rest.NONE || rest == Rest.ANON) {
             // no rest, so we have a maximum
@@ -277,10 +279,10 @@ public class Signature {
                 if (hasKwargs() && !TypeConverter.checkHashType(runtime, args[args.length - 1]).isNil()) {
                     // we have kwargs and a potential kwargs hash, check with length - 1
                     if (args.length - 1 > required() + opt()) {
-                        throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
+                        throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
                     }
                 } else {
-                    throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
+                    throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
                 }
             }
         }

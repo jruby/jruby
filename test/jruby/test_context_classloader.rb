@@ -1,13 +1,11 @@
 require 'test/unit'
-require 'jruby'
 require 'test/jruby/test_helper'
 
 class TestContextClassloader < Test::Unit::TestCase
   include TestHelper
-  JThread = java.lang.Thread
-  Runnable = java.lang.Runnable
   
   def setup
+    require 'jruby'
     @jruby_classloader = JRuby.runtime.jruby_class_loader
   end
   
@@ -19,7 +17,7 @@ class TestContextClassloader < Test::Unit::TestCase
   end
   
   def test_ruby_thread
-    t = Thread.new { JThread.current_thread.context_class_loader }
+    t = Thread.new { java.lang.Thread.current_thread.context_class_loader }
     assert_equal(@jruby_classloader, t.value)
   end
 end

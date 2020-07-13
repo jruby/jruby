@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-require 'socket.so'
+# Load built-in socket library
+JRuby::Util.load_ext("org.jruby.ext.socket.SocketLibrary")
+
 require 'io/wait'
 
 class Addrinfo
@@ -77,7 +79,7 @@ class Addrinfo
       sock
     end
   end
-  private :connect_internal
+  protected :connect_internal
 
   # :call-seq:
   #   addrinfo.connect_from([local_addr_args], [opts]) {|socket| ... }
@@ -158,7 +160,7 @@ class Addrinfo
   #
   def connect_to(*args, timeout: nil, &block)
     remote_addrinfo = family_addrinfo(*args)
-    remote_addrinfo.send(:connect_internal, self, timeout, &block)
+    remote_addrinfo.connect_internal(self, timeout, &block)
   end
 
   # creates a socket bound to self.

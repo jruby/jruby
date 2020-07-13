@@ -25,14 +25,14 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         HANDLE_PROPAGATED_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, RESTORE_EXCEPTION_VAR;
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS;
 
         public static Methods fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
         }
     }
 
-    Methods    helperMethod;
+    final Methods    helperMethod;
 
     public RuntimeHelperCall(Variable result, Methods helperMethod, Operand[] args) {
         super(Operation.RUNTIME_HELPER, result, args);
@@ -88,7 +88,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         return new String[] { "method: " + helperMethod};
     }
 
-    public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
+    public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Operand[] operands = getOperands();
 
         if (helperMethod == Methods.IS_DEFINED_BACKREF) {
@@ -114,11 +114,11 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
 
         switch (helperMethod) {
             case HANDLE_PROPAGATED_BREAK:
-                return IRRuntimeHelpers.handlePropagatedBreak(context, currDynScope, arg1, blockType);
+                return IRRuntimeHelpers.handlePropagatedBreak(context, currDynScope, arg1);
             case HANDLE_NONLOCAL_RETURN:
-                return IRRuntimeHelpers.handleNonlocalReturn(currScope, currDynScope, arg1, blockType);
+                return IRRuntimeHelpers.handleNonlocalReturn(currDynScope, arg1);
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
-                return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, currScope, currDynScope, arg1, blockType);
+                return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, currDynScope, arg1, block);
             case IS_DEFINED_CALL:
                 return IRRuntimeHelpers.isDefinedCall(
                         context,
@@ -130,7 +130,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                 return IRRuntimeHelpers.isDefinedConstantOrMethod(
                         context,
                         (IRubyObject) arg1,
-                        ((FrozenString) operands[1]).getString(),
+                        ((FrozenString) operands[1]).retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) operands[2].retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_INSTANCE_VAR:
@@ -158,16 +158,6 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,
                         (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));
-            case RESTORE_EXCEPTION_VAR:
-                Object exc = getArgs()[0].retrieve(context, self, currScope, currDynScope, temp);
-                // SSS FIXME: These are non-local control-flow exit scenarios that just
-                // happen to use exceptions for exiting scopes and we should
-                // continue to clear $! for them.
-                if (exc instanceof IRReturnJump || exc instanceof IRBreakJump) {
-                    IRubyObject savedExc = (IRubyObject)getArgs()[1].retrieve(context, self, currScope, currDynScope, temp);
-                    context.runtime.getGlobalVariables().set("$!", savedExc);
-                }
-                return null;
         }
 
         throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);

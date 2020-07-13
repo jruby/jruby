@@ -87,6 +87,15 @@ describe "java package" do
     else; fail 'error not raised' end
   end
 
+  # See GH issue ruboto/JRuby9K_POC#7
+  it "allows calling const_missing" do
+    expect(java.lang.const_missing(:System)).to eq(java.lang.System)
+  end
+
+  it "allows calling method_missing" do
+    expect(java.lang.method_missing(:reflect)).to eq(java.lang.reflect)
+  end
+
 end
 
 # for DefaultPackageClass
@@ -113,4 +122,10 @@ describe "class in default package" do
       Java::BadStaticInit.new
     end.to raise_error(NameError)
   end
+
+  it "has accessible public fields" do
+    expect( Java::DefaultPackageClass.new.x ).to eql 0
+    expect( Java::DefaultPackageClass.anY ).to eql 1
+  end
+
 end

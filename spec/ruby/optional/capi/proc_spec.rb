@@ -54,6 +54,25 @@ describe "C-API Proc function" do
       @p.rb_proc_call(prc, [6, 7]).should == 42
     end
   end
+
+  describe "rb_obj_is_proc" do
+    it "returns true for Proc" do
+      prc = Proc.new {|a,b| a * b }
+      @p.rb_obj_is_proc(prc).should be_true
+    end
+
+    it "returns true for subclass of Proc" do
+      prc = Class.new(Proc).new {}
+      @p.rb_obj_is_proc(prc).should be_true
+    end
+
+    it "returns false for non Proc instances" do
+      @p.rb_obj_is_proc("aoeui").should be_false
+      @p.rb_obj_is_proc(123).should be_false
+      @p.rb_obj_is_proc(true).should be_false
+      @p.rb_obj_is_proc([]).should be_false
+    end
+  end
 end
 
 describe "C-API when calling Proc.new from a C function" do
@@ -69,40 +88,44 @@ describe "C-API when calling Proc.new from a C function" do
   # For example: C -> Ruby <- C -> Ruby means a C function called into Ruby
   # code which returned to C, then C called into Ruby code again.
 
-  #   Ruby -> C -> rb_funcall(Proc.new)
-  it "returns the Proc passed by the Ruby code calling the C function" do
-    prc = @p.rb_Proc_new(0) { :called }
-    prc.call.should == :called
-  end
+  ruby_version_is ""..."2.7" do
+    #   Ruby -> C -> rb_funcall(Proc.new)
+    it "returns the Proc passed by the Ruby code calling the C function" do
+      prc = @p.rb_Proc_new(0) { :called }
+      prc.call.should == :called
+    end
 
-  #   Ruby -> C -> Ruby <- C -> rb_funcall(Proc.new)
-  it "returns the Proc passed to the Ruby method when the C function calls other Ruby methods before calling Proc.new" do
-    prc = @p.rb_Proc_new(1) { :called }
-    prc.call.should == :called
+    #   Ruby -> C -> Ruby <- C -> rb_funcall(Proc.new)
+    it "returns the Proc passed to the Ruby method when the C function calls other Ruby methods before calling Proc.new" do
+      prc = @p.rb_Proc_new(1) { :called }
+      prc.call.should == :called
+    end
   end
 
   # Ruby -> C -> Ruby -> Proc.new
   it "raises an ArgumentError when the C function calls a Ruby method that calls Proc.new" do
     def @p.Proc_new() Proc.new end
-    lambda { @p.rb_Proc_new(2) { :called } }.should raise_error(ArgumentError)
+    -> { @p.rb_Proc_new(2) { :called } }.should raise_error(ArgumentError)
   end
 
   # Ruby -> C -> Ruby -> C -> rb_funcall(Proc.new)
   it "raises an ArgumentError when the C function calls a Ruby method and that method calls a C function that calls Proc.new" do
     def @p.redispatch() rb_Proc_new(0) end
-    lambda { @p.rb_Proc_new(3) { :called } }.should raise_error(ArgumentError)
+    -> { @p.rb_Proc_new(3) { :called } }.should raise_error(ArgumentError)
   end
 
-  # Ruby -> C -> Ruby -> C (with new block) -> rb_funcall(Proc.new)
-  it "returns the most recent Proc passed when the Ruby method called the C function" do
-    prc = @p.rb_Proc_new(4) { :called }
-    prc.call.should == :calling_with_block
-  end
+  ruby_version_is ""..."2.7" do
+    # Ruby -> C -> Ruby -> C (with new block) -> rb_funcall(Proc.new)
+    it "returns the most recent Proc passed when the Ruby method called the C function" do
+      prc = @p.rb_Proc_new(4) { :called }
+      prc.call.should == :calling_with_block
+    end
 
-  # Ruby -> C -> Ruby -> C (with new block) <- Ruby <- C -> # rb_funcall(Proc.new)
-  it "returns the Proc passed from the original Ruby call to the C function" do
-    prc = @p.rb_Proc_new(5) { :called }
-    prc.call.should == :called
+    # Ruby -> C -> Ruby -> C (with new block) <- Ruby <- C -> # rb_funcall(Proc.new)
+    it "returns the Proc passed from the original Ruby call to the C function" do
+      prc = @p.rb_Proc_new(5) { :called }
+      prc.call.should == :called
+    end
   end
 
   # Ruby -> C -> Ruby -> block_given?

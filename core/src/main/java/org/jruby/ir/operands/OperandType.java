@@ -8,7 +8,6 @@ package org.jruby.ir.operands;
 public enum OperandType {
 
     ARRAY("ary", (byte) 'A'),
-    AS_STRING("tostr", (byte) 'a'),
     BIGNUM("big", (byte) 'B'),
     BOOLEAN("bool", (byte) 'b'),
     COMPLEX("com", (byte) 'C'),
@@ -44,7 +43,8 @@ public enum OperandType {
     FROZEN_STRING("fstr", (byte) 'z'),
     NULL_BLOCK("noblock", (byte) 'o'),
     FILENAME("file", (byte) 'm'),
-    SYMBOL_PROC("symproc", (byte) 'P')
+    SYMBOL_PROC("symproc", (byte) 'P'),
+    SCOPE("scope", (byte) '#')
     ;
 
     private final String shortName;

@@ -1,11 +1,11 @@
-require 'tempfile'
-require 'java' if defined?(JRUBY_VERSION)
 require 'test/unit'
-require 'fileutils'
 
-class TestTempfilesCleanUp < Test::Unit::TestCase
+class TestTempfileCleanup < Test::Unit::TestCase
 
   def setup
+    require 'jruby' if defined?(JRUBY_VERSION)
+    require 'tempfile'; require 'fileutils'
+
     @tmpdir = Dir.mktmpdir(File.basename(__FILE__) + $$.to_s)
     FileUtils.rm_f @tmpdir rescue nil
     Dir.mkdir @tmpdir rescue nil

@@ -8,15 +8,14 @@ describe "Zlib::GzipFile#close" do
     Zlib::GzipWriter.wrap io do |gzio|
       gzio.close
 
-      gzio.closed?.should == true
+      gzio.should.closed?
 
-      lambda { gzio.orig_name }.should \
+      -> { gzio.orig_name }.should \
         raise_error(Zlib::GzipFile::Error, 'closed gzip stream')
-      lambda { gzio.comment }.should \
+      -> { gzio.comment }.should \
         raise_error(Zlib::GzipFile::Error, 'closed gzip stream')
     end
 
     io.string[10..-1].should == ([3] + Array.new(9,0)).pack('C*')
   end
 end
-

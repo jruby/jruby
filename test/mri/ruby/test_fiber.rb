@@ -260,16 +260,29 @@ class TestFiber < Test::Unit::TestCase
   end
 
   def test_fork_from_fiber
-    begin
-      pid = Process.fork{}
-    rescue NotImplementedError
-      return
-    else
-      Process.wait(pid)
-    end
+    skip 'fork not supported' unless Process.respond_to?(:fork)
+    pid = nil
     bug5700 = '[ruby-core:41456]'
     assert_nothing_raised(bug5700) do
-      Fiber.new{ pid = fork {} }.resume
+      Fiber.new do
+        pid = fork do
+          xpid = nil
+          Fiber.new {
+            xpid = fork do
+              # enough to trigger GC on old root fiber
+              count = 10000
+              count = 1000 if /openbsd/i =~ RUBY_PLATFORM
+              count.times do
+                Fiber.new {}.transfer
+                Fiber.new { Fiber.yield }
+              end
+              exit!(0)
+            end
+          }.transfer
+          _, status = Process.waitpid2(xpid)
+          exit!(status.success?)
+        end
+      end.resume
     end
     pid, status = Process.waitpid2(pid)
     assert_equal(0, status.exitstatus, bug5700)
@@ -377,5 +390,24 @@ class TestFiber < Test::Unit::TestCase
     f.resume
     assert_match(/terminated/, f.to_s)
     assert_match(/resumed/, Fiber.current.to_s)
+  end
+
+  def test_create_fiber_in_new_thread
+    ret = Thread.new{
+      Thread.new{
+        Fiber.new{Fiber.yield :ok}.resume
+      }.value
+    }.value
+    assert_equal :ok, ret, '[Bug #14642]'
+  end
+
+  def test_machine_stack_gc
+    assert_normal_exit <<-RUBY, '[Bug #14561]', timeout: 10
+      enum = Enumerator.new { |y| y << 1 }
+      thread = Thread.new { enum.peek }
+      thread.join
+      sleep 5     # pause until thread cache wait time runs out. Native thread exits.
+      GC.start
+    RUBY
   end
 end

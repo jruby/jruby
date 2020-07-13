@@ -52,7 +52,7 @@ class TestGemRequestSet < Gem::TestCase
     rs = Gem::RequestSet.new
     installed = []
 
-    open 'gem.deps.rb', 'w' do |io|
+    File.open 'gem.deps.rb', 'w' do |io|
       io.puts 'gem "a"'
       io.flush
 
@@ -78,7 +78,7 @@ class TestGemRequestSet < Gem::TestCase
 
     rs = Gem::RequestSet.new
 
-    open 'gem.deps.rb', 'w' do |io|
+    File.open 'gem.deps.rb', 'w' do |io|
       io.puts 'gem "a"'
       io.flush
 
@@ -104,7 +104,7 @@ Gems to install:
     rs = Gem::RequestSet.new
     installed = []
 
-    open 'gem.deps.rb', 'w' do |io|
+    File.open 'gem.deps.rb', 'w' do |io|
       io.puts 'gem "a"'
     end
 
@@ -128,7 +128,7 @@ Gems to install:
 
     rs = Gem::RequestSet.new
 
-    open 'gem.deps.rb', 'w' do |io|
+    File.open 'gem.deps.rb', 'w' do |io|
       io.puts 'gem "a"'
       io.flush
 
@@ -150,7 +150,7 @@ Gems to install:
     rs = Gem::RequestSet.new
     installed = []
 
-    open 'gem.deps.rb.lock', 'w' do |io|
+    File.open 'gem.deps.rb.lock', 'w' do |io|
       io.puts <<-LOCKFILE
 GEM
   remote: #{@gem_repo}
@@ -167,7 +167,7 @@ DEPENDENCIES
       LOCKFILE
     end
 
-    open 'gem.deps.rb', 'w' do |io|
+    File.open 'gem.deps.rb', 'w' do |io|
       io.puts 'gem "b"'
     end
 
@@ -190,7 +190,7 @@ DEPENDENCIES
     rs = Gem::RequestSet.new
     installed = []
 
-    open 'gem.deps.rb', 'w' do |io|
+    File.open 'gem.deps.rb', 'w' do |io|
       io.puts <<-GEM_DEPS
 gem "a"
 ruby "0"
@@ -218,7 +218,7 @@ ruby "0"
       assert_kind_of Gem::RequestSet::GemDependencyAPI, gem_deps
       io
     end
-    tf.close! if tf.respond_to? :close!
+    tf.close!
 
     assert_equal [dep('a')], rs.dependencies
 
@@ -239,7 +239,7 @@ ruby "0"
       assert_kind_of Gem::RequestSet::GemDependencyAPI, gem_deps
       io
     end
-    tf.close! if tf.respond_to? :close!
+    tf.close!
 
     assert_equal [dep('a')], rs.dependencies
   end
@@ -254,7 +254,7 @@ ruby "0"
       rs.load_gemdeps io.path, [:test]
       io
     end
-    tf.close! if tf.respond_to? :close!
+    tf.close!
 
     assert_empty rs.dependencies
   end
@@ -346,7 +346,7 @@ ruby "0"
       rs.load_gemdeps io.path
       io
     end
-    tf.close! if tf.respond_to? :close!
+    tf.close!
 
     res = rs.resolve
     assert_equal 1, res.size
@@ -410,7 +410,7 @@ ruby "0"
       rs.load_gemdeps io.path
       io
     end
-    tf.close! if tf.respond_to? :close!
+    tf.close!
 
     res = rs.resolve
     assert_equal 2, res.size

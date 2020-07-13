@@ -244,7 +244,7 @@ class TestClass < Test::Unit::TestCase
   class SubClass < BaseClass
     define_method(:foo) do
       $foo_calls << SubClass
-      super
+      super()
     end
   end
 
@@ -337,4 +337,60 @@ class TestClass < Test::Unit::TestCase
     Object.const_set klass_name, klass
     assert_equal klass_name, klass.name
   end
+
+  class S1
+    class << self
+      include Enumerable
+      class << self
+        def foo; :foo end
+      end
+      def self.bar; :bar end
+    end
+    include Kernel
+  end
+
+  class S2 < S1
+    include Enumerable
+  end
+
+  def test_singleton_class_user_class
+    assert_same S1.singleton_class, S2.singleton_class.superclass
+
+    singleton_singleton_class = S1.singleton_class.singleton_class
+    assert_same singleton_singleton_class, S2.singleton_class.singleton_class.superclass
+
+    assert_same Object.singleton_class.singleton_class, singleton_singleton_class.superclass
+  end
+
+  def test_singleton_class_base_hierarchy
+    assert_same BasicObject.singleton_class.singleton_class, Object.singleton_class.singleton_class.superclass
+    assert_equal '#<Class:Class>', Class.singleton_class.inspect
+    assert_same Class.singleton_class, BasicObject.singleton_class.singleton_class.superclass
+    assert_same Module.singleton_class, BasicObject.singleton_class.singleton_class.superclass.superclass
+  end
+
+  def test_singleton_class_subclasses
+    classes = ObjectSpace.each_object(S1.singleton_class.singleton_class).to_a
+    assert_include classes, S1.singleton_class
+    assert_include classes, S2.singleton_class
+    assert_equal 3, classes.size, classes.inspect
+
+    classes = ObjectSpace.each_object(S2.singleton_class.singleton_class).to_a
+    assert_equal [ S2.singleton_class ], classes
+  end
+
+  def test_singleton_class_methods
+    methods = S1.singleton_class.methods(false)
+    assert_include methods, :foo
+    assert_include methods, :bar
+
+    methods = S2.singleton_class.methods
+    #assert_include methods, :foo
+    #assert_include methods, :bar
+
+    methods = Class.new(S1).singleton_class.methods
+    #assert_include methods, :foo
+    #assert_include methods, :bar
+  end
+
 end

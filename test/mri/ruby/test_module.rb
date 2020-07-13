@@ -338,6 +338,17 @@ class TestModule < Test::Unit::TestCase
     assert_raise(NameError) {self.class.const_defined?(const)}
   end
 
+  def test_nested_defined_inheritance
+    assert_send([Object, :const_defined?, [self.class.name, 'User', 'MIXIN'].join('::')])
+    assert_send([self.class, :const_defined?, 'User::MIXIN'])
+    assert_send([Object, :const_defined?, 'File::SEEK_SET'])
+
+    # const_defined? with `false`
+    assert_not_send([Object, :const_defined?, [self.class.name, 'User', 'MIXIN'].join('::'), false])
+    assert_not_send([self.class, :const_defined?, 'User::MIXIN', false])
+    assert_not_send([Object, :const_defined?, 'File::SEEK_SET', false])
+  end
+
   def test_nested_defined_bad_class
     assert_raise(TypeError) do
       self.class.const_defined?('User::USER::Foo')
@@ -462,26 +473,48 @@ class TestModule < Test::Unit::TestCase
     assert_equal([:cClass], (class << CClass; self; end).instance_methods(false))
     assert_equal([], (class << BClass; self; end).instance_methods(false))
     assert_equal([:cm2], (class << AClass; self; end).instance_methods(false))
-    # Ruby 1.8 feature change:
-    # #instance_methods includes protected methods.
-    #assert_equal([:aClass], AClass.instance_methods(false))
     assert_equal([:aClass, :aClass2], AClass.instance_methods(false).sort)
     assert_equal([:aClass, :aClass2],
         (AClass.instance_methods(true) - Object.instance_methods(true)).sort)
   end
 
   def test_method_defined?
-    assert !User.method_defined?(:wombat)
-    assert User.method_defined?(:mixin)
-    assert User.method_defined?(:user)
-    assert User.method_defined?(:user2)
-    assert !User.method_defined?(:user3)
+    [User, Class.new{include User}, Class.new{prepend User}].each do |klass|
+      [[], [true]].each do |args|
+        assert !klass.method_defined?(:wombat, *args)
+        assert klass.method_defined?(:mixin, *args)
+        assert klass.method_defined?(:user, *args)
+        assert klass.method_defined?(:user2, *args)
+        assert !klass.method_defined?(:user3, *args)
 
-    assert !User.method_defined?("wombat")
-    assert User.method_defined?("mixin")
-    assert User.method_defined?("user")
-    assert User.method_defined?("user2")
-    assert !User.method_defined?("user3")
+        assert !klass.method_defined?("wombat", *args)
+        assert klass.method_defined?("mixin", *args)
+        assert klass.method_defined?("user", *args)
+        assert klass.method_defined?("user2", *args)
+        assert !klass.method_defined?("user3", *args)
+      end
+    end
+  end
+
+  def test_method_defined_without_include_super
+    assert User.method_defined?(:user, false)
+    assert !User.method_defined?(:mixin, false)
+    assert Mixin.method_defined?(:mixin, false)
+
+    User.const_set(:FOO, c = Class.new)
+
+    c.prepend(User)
+    assert !c.method_defined?(:user, false)
+    c.define_method(:user){}
+    assert c.method_defined?(:user, false)
+
+    assert !c.method_defined?(:mixin, false)
+    c.define_method(:mixin){}
+    assert c.method_defined?(:mixin, false)
+
+    assert !c.method_defined?(:userx, false)
+    c.define_method(:userx){}
+    assert c.method_defined?(:userx, false)
   end
 
   def module_exec_aux
@@ -977,8 +1010,8 @@ class TestModule < Test::Unit::TestCase
   end
 
   def test_method_defined
-    c = Class.new
-    c.class_eval do
+    cl = Class.new
+    def_methods = proc do
       def foo; end
       def bar; end
       def baz; end
@@ -986,33 +1019,47 @@ class TestModule < Test::Unit::TestCase
       protected :bar
       private :baz
     end
+    cl.class_eval(&def_methods)
+    sc = Class.new(cl)
+    mod = Module.new(&def_methods)
+    only_prepend = Class.new{prepend(mod)}
+    empty_prepend = cl.clone
+    empty_prepend.prepend(Module.new)
+    overlap_prepend = cl.clone
+    overlap_prepend.prepend(mod)
 
-    assert_equal(true, c.public_method_defined?(:foo))
-    assert_equal(false, c.public_method_defined?(:bar))
-    assert_equal(false, c.public_method_defined?(:baz))
+    [[], [true], [false]].each do |args|
+      [cl, sc, only_prepend, empty_prepend, overlap_prepend].each do |c|
+        always_false = [sc, only_prepend].include?(c) && args == [false]
 
-    # Test if string arguments are converted to symbols
-    assert_equal(true, c.public_method_defined?("foo"))
-    assert_equal(false, c.public_method_defined?("bar"))
-    assert_equal(false, c.public_method_defined?("baz"))
+        assert_equal(always_false ? false : true, c.public_method_defined?(:foo, *args))
+        assert_equal(always_false ? false : false, c.public_method_defined?(:bar, *args))
+        assert_equal(always_false ? false : false, c.public_method_defined?(:baz, *args))
 
-    assert_equal(false, c.protected_method_defined?(:foo))
-    assert_equal(true, c.protected_method_defined?(:bar))
-    assert_equal(false, c.protected_method_defined?(:baz))
+        # Test if string arguments are converted to symbols
+        assert_equal(always_false ? false : true, c.public_method_defined?("foo", *args))
+        assert_equal(always_false ? false : false, c.public_method_defined?("bar", *args))
+        assert_equal(always_false ? false : false, c.public_method_defined?("baz", *args))
 
-    # Test if string arguments are converted to symbols
-    assert_equal(false, c.protected_method_defined?("foo"))
-    assert_equal(true, c.protected_method_defined?("bar"))
-    assert_equal(false, c.protected_method_defined?("baz"))
+        assert_equal(always_false ? false : false, c.protected_method_defined?(:foo, *args))
+        assert_equal(always_false ? false : true, c.protected_method_defined?(:bar, *args))
+        assert_equal(always_false ? false : false, c.protected_method_defined?(:baz, *args))
 
-    assert_equal(false, c.private_method_defined?(:foo))
-    assert_equal(false, c.private_method_defined?(:bar))
-    assert_equal(true, c.private_method_defined?(:baz))
+        # Test if string arguments are converted to symbols
+        assert_equal(always_false ? false : false, c.protected_method_defined?("foo", *args))
+        assert_equal(always_false ? false : true, c.protected_method_defined?("bar", *args))
+        assert_equal(always_false ? false : false, c.protected_method_defined?("baz", *args))
 
-    # Test if string arguments are converted to symbols
-    assert_equal(false, c.private_method_defined?("foo"))
-    assert_equal(false, c.private_method_defined?("bar"))
-    assert_equal(true, c.private_method_defined?("baz"))
+        assert_equal(always_false ? false : false, c.private_method_defined?(:foo, *args))
+        assert_equal(always_false ? false : false, c.private_method_defined?(:bar, *args))
+        assert_equal(always_false ? false : true, c.private_method_defined?(:baz, *args))
+
+        # Test if string arguments are converted to symbols
+        assert_equal(always_false ? false : false, c.private_method_defined?("foo", *args))
+        assert_equal(always_false ? false : false, c.private_method_defined?("bar", *args))
+        assert_equal(always_false ? false : true, c.private_method_defined?("baz", *args))
+      end
+    end
   end
 
   def test_top_public_private
@@ -1352,21 +1399,55 @@ class TestModule < Test::Unit::TestCase
     assert_raise(ArgumentError, bug8540) { c.new.send :foo= }
   end
 
-  def test_private_constant
+  def test_private_constant_in_class
     c = Class.new
     c.const_set(:FOO, "foo")
     assert_equal("foo", c::FOO)
     c.private_constant(:FOO)
-    assert_raise(NameError) { c::FOO }
+    e = assert_raise(NameError) {c::FOO}
+    assert_equal(c, e.receiver)
+    assert_equal(:FOO, e.name)
     assert_equal("foo", c.class_eval("FOO"))
     assert_equal("foo", c.const_get("FOO"))
     $VERBOSE, verbose = nil, $VERBOSE
     c.const_set(:FOO, "foo")
     $VERBOSE = verbose
-    assert_raise(NameError) { c::FOO }
-    assert_raise_with_message(NameError, /#{c}::FOO/) do
+    e = assert_raise(NameError) {c::FOO}
+    assert_equal(c, e.receiver)
+    assert_equal(:FOO, e.name)
+    e = assert_raise_with_message(NameError, /#{c}::FOO/) do
       Class.new(c)::FOO
     end
+    assert_equal(c, e.receiver)
+    assert_equal(:FOO, e.name)
+  end
+
+  def test_private_constant_in_module
+    m = Module.new
+    m.const_set(:FOO, "foo")
+    assert_equal("foo", m::FOO)
+    m.private_constant(:FOO)
+    e = assert_raise(NameError) {m::FOO}
+    assert_equal(m, e.receiver)
+    assert_equal(:FOO, e.name)
+    assert_equal("foo", m.class_eval("FOO"))
+    assert_equal("foo", m.const_get("FOO"))
+    $VERBOSE, verbose = nil, $VERBOSE
+    m.const_set(:FOO, "foo")
+    $VERBOSE = verbose
+    e = assert_raise(NameError) {m::FOO}
+    assert_equal(m, e.receiver)
+    assert_equal(:FOO, e.name)
+    e = assert_raise(NameError, /#{m}::FOO/) do
+      Module.new {include m}::FOO
+    end
+    assert_equal(m, e.receiver)
+    assert_equal(:FOO, e.name)
+    e = assert_raise(NameError, /#{m}::FOO/) do
+      Class.new {include m}::FOO
+    end
+    assert_equal(m, e.receiver)
+    assert_equal(:FOO, e.name)
   end
 
   def test_private_constant2
@@ -1389,6 +1470,21 @@ class TestModule < Test::Unit::TestCase
         private_constant
       end
     RUBY
+  end
+
+  def test_private_constant_const_missing
+    c = Class.new
+    c.const_set(:FOO, "foo")
+    c.private_constant(:FOO)
+    class << c
+      attr_reader :const_missing_arg
+      def const_missing(name)
+        @const_missing_arg = name
+	name == :FOO ? const_get(:FOO) : super
+      end
+    end
+    assert_equal("foo", c::FOO)
+    assert_equal(:FOO, c.const_missing_arg)
   end
 
   class PrivateClass
@@ -1427,6 +1523,17 @@ class TestModule < Test::Unit::TestCase
     assert_warn(/#{c}::FOO is deprecated/) {Class.new(c)::FOO}
     bug12382 = '[ruby-core:75505] [Bug #12382]'
     assert_warn(/deprecated/, bug12382) {c.class_eval "FOO"}
+  end
+
+  NIL = nil
+  FALSE = false
+  deprecate_constant(:NIL, :FALSE)
+
+  def test_deprecate_nil_constant
+    w = EnvUtil.verbose_warning {2.times {FALSE}}
+    assert_equal(1, w.scan("::FALSE").size, w)
+    w = EnvUtil.verbose_warning {2.times {NIL}}
+    assert_equal(1, w.scan("::NIL").size, w)
   end
 
   def test_constants_with_private_constant
@@ -1876,6 +1983,25 @@ class TestModule < Test::Unit::TestCase
     assert_raise(ArgumentError) { Module.new { prepend } }
   end
 
+  def test_prepend_private_super
+    wrapper = Module.new do
+      def wrapped
+        super + 1
+      end
+    end
+
+    klass = Class.new do
+      prepend wrapper
+
+      def wrapped
+        1
+      end
+      private :wrapped
+    end
+
+    assert_equal(2, klass.new.wrapped)
+  end
+
   def test_class_variables
     m = Module.new
     m.class_variable_set(:@@foo, 1)
@@ -2235,6 +2361,24 @@ class TestModule < Test::Unit::TestCase
         require 'etc'
       }
     end;
+  end
+
+  def test_private_extended_module
+    assert_separately [], %q{
+      class Object
+        def bar; "Object#bar"; end
+      end
+      module M1
+        def bar; super; end
+      end
+      module M2
+        include M1
+        private(:bar)
+        def foo; bar; end
+      end
+      extend M2
+      assert_equal 'Object#bar', foo
+    }
   end
 
   private

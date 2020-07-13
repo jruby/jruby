@@ -1,0 +1,1 @@
+fails:RbConfig::CONFIG['UNICODE_VERSION'] is 10.0.0 for Ruby 2.5

@@ -1,2 +1,3 @@
 unstable(JRUBY-4110,linux,intermittent failure):IO#close on an IO.popen stream sets $?
 windows:IO#close on an IO.popen stream sets $?
+fails(spurious):IO#close raises an IOError with a clear message

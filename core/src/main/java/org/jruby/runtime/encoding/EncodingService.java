@@ -10,7 +10,7 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
-import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.Java;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -19,6 +19,9 @@ import java.io.Console;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
@@ -45,16 +48,16 @@ public final class EncodingService {
     private static final ByteList EXTERNAL_BL = ByteList.create("external");
     private static final ByteList INTERNAL_BL = ByteList.create("internal");
     private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
+    private static final Pattern MS_CP_PATTERN = Pattern.compile("^MS([0-9]+)$");
 
-    public EncodingService (Ruby runtime) {
+    public EncodingService(Ruby runtime) {
         this.runtime = runtime;
         encodings = EncodingDB.getEncodings();
         aliases = EncodingDB.getAliases();
         ascii8bit = encodings.get("ASCII-8BIT".getBytes()).getEncoding();
 
-        Charset javaDefaultCharset = Charset.defaultCharset();
-        ByteList javaDefaultBL = new ByteList(javaDefaultCharset.name().getBytes());
-        Entry javaDefaultEntry = findEncodingOrAliasEntry(javaDefaultBL);
+        String javaDefaultCharset = Charset.defaultCharset().name();
+        Entry javaDefaultEntry = findEncodingOrAliasEntry(javaDefaultCharset.getBytes());
         javaDefault = javaDefaultEntry == null ? ascii8bit : javaDefaultEntry.getEncoding();
 
         encodingList = new IRubyObject[encodings.size()];
@@ -76,7 +79,7 @@ public final class EncodingService {
             if (console != null) {
                 final String CONSOLE_CHARSET = "cs";
                 Field fcs = Console.class.getDeclaredField(CONSOLE_CHARSET);
-                fcs.setAccessible(true);
+                Java.trySetAccessible(fcs);
                 Charset cs = (Charset) fcs.get(console);
                 consoleEncoding = loadEncoding(ByteList.create(cs.name()));
             }
@@ -162,26 +165,30 @@ public final class EncodingService {
     public Encoding loadEncoding(ByteList name) {
         Entry entry = findEncodingOrAliasEntry(name);
         if (entry == null) return null;
+        loadEncodingEntry(entry); // should not attempt RubyEncoding#getEncoding() here
+        return entry.getEncoding();
+    }
+
+    private RubyEncoding loadEncodingEntry(final Entry entry) {
         Encoding enc = entry.getEncoding(); // load the encoding
         int index = enc.getIndex();
+        RubyEncoding[] encodingIndex = this.encodingIndex;
         if (index >= encodingIndex.length) {
-            RubyEncoding tmp[] = new RubyEncoding[index + 4];
-            System.arraycopy(encodingIndex, 0, tmp, 0, encodingIndex.length);
-            encodingIndex = tmp;
+            encodingIndex = this.encodingIndex = Arrays.copyOf(encodingIndex, index + 4);
         }
-        encodingIndex[index] = (RubyEncoding)encodingList[entry.getIndex()];
-        return enc;
+        return encodingIndex[index] = (RubyEncoding) encodingList[entry.getIndex()];
     }
 
     public RubyEncoding getEncoding(Encoding enc) {
         int index = enc.getIndex();
         RubyEncoding rubyEncoding;
+        RubyEncoding[] encodingIndex = this.encodingIndex;
         if (index < encodingIndex.length && (rubyEncoding = encodingIndex[index]) != null) {
             return rubyEncoding;
         }
-
-        enc = loadEncoding(new ByteList(enc.getName(), false));
-        return encodingIndex[enc.getIndex()];
+        // loadEncoding :
+        Entry entry = findEncodingOrAliasEntry(enc.getName());
+        return loadEncodingEntry(entry);
     }
 
     public void defineEncodings() {
@@ -201,15 +208,15 @@ public final class EncodingService {
     }
 
     public void defineAliases() {
-        HashEntryIterator hei = aliases.entryIterator();
-        while (hei.hasNext()) {
+        HashEntryIterator i = aliases.entryIterator();
+        while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
-                    ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
-            Entry ee = e.value;
+                    ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
+            Entry entry = e.value;
 
             // The constant names must be treated by the the <code>encodingNames</code> helper.
             for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
-                defineEncodingConstant(runtime, (RubyEncoding) encodingList[ee.getIndex()], constName);
+                defineEncodingConstant(runtime, (RubyEncoding) encodingList[entry.getIndex()], constName);
             }
         }
     }
@@ -219,18 +226,15 @@ public final class EncodingService {
     }
 
     public IRubyObject getDefaultExternal() {
-        IRubyObject defaultExternal = convertEncodingToRubyEncoding(runtime.getDefaultExternalEncoding());
-
-        if (defaultExternal.isNil()) {
+        Encoding defaultEncoding = runtime.getDefaultExternalEncoding();
+        if (defaultEncoding == null) {
             // TODO: MRI seems to default blindly to US-ASCII and we were using Charset default from Java...which is right?
             ByteList encodingName = ByteList.create("US-ASCII");
-            Encoding encoding = runtime.getEncodingService().loadEncoding(encodingName);
+            defaultEncoding = runtime.getEncodingService().loadEncoding(encodingName);
 
-            runtime.setDefaultExternalEncoding(encoding);
-            defaultExternal = convertEncodingToRubyEncoding(encoding);
+            runtime.setDefaultExternalEncoding(defaultEncoding);
         }
-
-        return defaultExternal;
+        return getEncoding(defaultEncoding);
     }
 
     public IRubyObject getDefaultInternal() {
@@ -282,11 +286,7 @@ public final class EncodingService {
         if ( ! ((RubyString) arg).getEncoding().isAsciiCompatible() ) {
             return null;
         }
-        if (error) {
-            return findEncoding((RubyString)arg);
-        } else {
-            return findEncodingNoError((RubyString)arg);
-        }
+        return findEncodingCommon(((RubyString) arg).getByteList(), error);
     }
 
     private Encoding getEncodingFromNKFName(final String name) {
@@ -356,7 +356,9 @@ public final class EncodingService {
 
         SpecialEncoding special = SpecialEncoding.valueOf(name);
         if (special != null) {
-            return special.toEncoding(runtime);
+            Encoding specialEncoding = special.toEncoding(runtime);
+            if (specialEncoding == null) specialEncoding = ASCIIEncoding.INSTANCE;
+            return specialEncoding;
         }
 
         if (error) return findEncodingWithError(name);
@@ -404,8 +406,8 @@ public final class EncodingService {
      * @return the charset
      */
     public Charset charsetForEncoding(Encoding encoding) {
-        if (encoding.toString().equals("ASCII-8BIT")) {
-            return Charset.forName("ISO-8859-1");
+        if (encoding == ASCIIEncoding.INSTANCE) {
+            return RubyEncoding.ISO;
         }
 
         if (encoding == ISO8859_16Encoding.INSTANCE) {
@@ -413,7 +415,7 @@ public final class EncodingService {
         }
 
         try {
-            return Charset.forName(encoding.toString());
+            return EncodingUtils.charsetForEncoding(encoding);
         } catch (UnsupportedCharsetException uce) {
             throw runtime.newEncodingCompatibilityError("no java.nio.charset.Charset found for encoding `" + encoding.toString() + "'");
         }
@@ -423,6 +425,28 @@ public final class EncodingService {
         if (!name.getEncoding().isAsciiCompatible()) {
             throw runtime.newArgumentError("invalid name encoding (non ASCII)");
         }
+    }
+
+    public Encoding getWindowsFilesystemEncoding(Ruby ruby) {
+        String encoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
+        Encoding filesystemEncoding = loadEncoding(ByteList.create(encoding));
+
+        // Use default external if file.encoding does not point at an encoding we recognize
+        if (filesystemEncoding == null) {
+            // if the encoding name matches /^MS[0-9]+/ we can assume it's a Windows code page and use CP### to look it up.
+            Matcher match = MS_CP_PATTERN.matcher(encoding);
+            if (match.find()) {
+                String cpEncoding = "CP" + match.group(1);
+                filesystemEncoding = loadEncoding(ByteList.create(cpEncoding));
+            }
+        }
+
+        if (filesystemEncoding == null) {
+            ruby.getWarnings().warn("unrecognized system encoding \"" + encoding + "\", using default external");
+            filesystemEncoding = ruby.getDefaultExternalEncoding();
+        }
+
+        return filesystemEncoding;
     }
 
     /**
@@ -445,14 +469,13 @@ public final class EncodingService {
         }
 
         public Encoding toEncoding(Ruby runtime) {
-            EncodingService service = runtime.getEncodingService();
             switch (this) {
-            case LOCALE: return service.getLocaleEncoding();
+            case LOCALE: return runtime.getEncodingService().getLocaleEncoding();
             case EXTERNAL: return runtime.getDefaultExternalEncoding();
             case INTERNAL: return runtime.getDefaultInternalEncoding();
             case FILESYSTEM: return runtime.getDefaultFilesystemEncoding();
             default:
-                throw new RuntimeException("invalid SpecialEncoding: " + this);
+                throw new AssertionError("invalid SpecialEncoding: " + this);
             }
         }
     }
@@ -483,7 +506,7 @@ public final class EncodingService {
 
     private Entry findEntryFromEncoding(Encoding e) {
         if (e == null) return null;
-        return findEncodingEntry(new ByteList(e.getName()));
+        return findEncodingEntry(e.getName());
     }
 
     @Deprecated

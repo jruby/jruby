@@ -8,30 +8,69 @@ describe "String#upcase" do
     "hello".upcase.should == "HELLO"
   end
 
-  ruby_version_is ''...'2.4' do
-    it "is locale insensitive (only replaces a-z)" do
-      "äöü".upcase.should == "äöü"
-
-      str = Array.new(256) { |c| c.chr }.join
-      expected = Array.new(256) do |i|
-        c = i.chr
-        c.between?("a", "z") ? c.upcase : c
-      end.join
-
-      str.upcase.should == expected
-    end
-  end
-
-  ruby_version_is '2.4' do
-    it "works for all of Unicode" do
+  describe "full Unicode case mapping" do
+    it "works for all of Unicode with no option" do
       "äöü".upcase.should == "ÄÖÜ"
     end
+
+    it "updates string metadata" do
+      upcased = "aßet".upcase
+
+      upcased.should == "ASSET"
+      upcased.size.should == 5
+      upcased.bytesize.should == 5
+      upcased.ascii_only?.should be_true
+    end
   end
 
-  it "taints result when self is tainted" do
-    "".taint.upcase.tainted?.should == true
-    "X".taint.upcase.tainted?.should == true
-    "x".taint.upcase.tainted?.should == true
+  describe "ASCII-only case mapping" do
+    it "does not upcase non-ASCII characters" do
+      "aßet".upcase(:ascii).should == "AßET"
+    end
+  end
+
+  describe "full Unicode case mapping adapted for Turkic languages" do
+    it "upcases ASCII characters according to Turkic semantics" do
+      "i".upcase(:turkic).should == "İ"
+    end
+
+    it "allows Lithuanian as an extra option" do
+      "i".upcase(:turkic, :lithuanian).should == "İ"
+    end
+
+    it "does not allow any other additional option" do
+      -> { "i".upcase(:turkic, :ascii) }.should raise_error(ArgumentError)
+    end
+  end
+
+  describe "full Unicode case mapping adapted for Lithuanian" do
+    it "currently works the same as full Unicode case mapping" do
+      "iß".upcase(:lithuanian).should == "ISS"
+    end
+
+    it "allows Turkic as an extra option (and applies Turkic semantics)" do
+      "iß".upcase(:lithuanian, :turkic).should == "İSS"
+    end
+
+    it "does not allow any other additional option" do
+      -> { "iß".upcase(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+    end
+  end
+
+  it "does not allow the :fold option for upcasing" do
+    -> { "abc".upcase(:fold) }.should raise_error(ArgumentError)
+  end
+
+  it "does not allow invalid options" do
+    -> { "abc".upcase(:invalid_option) }.should raise_error(ArgumentError)
+  end
+
+  ruby_version_is ''...'2.7' do
+    it "taints result when self is tainted" do
+      "".taint.upcase.should.tainted?
+      "X".taint.upcase.should.tainted?
+      "x".taint.upcase.should.tainted?
+    end
   end
 
   it "returns a subclass instance for subclasses" do
@@ -46,13 +85,92 @@ describe "String#upcase!" do
     a.should == "HELLO"
   end
 
+  it "modifies self in place for non-ascii-compatible encodings" do
+    a = "HeLlO".encode("utf-16le")
+    a.upcase!
+    a.should == "HELLO".encode("utf-16le")
+  end
 
-  ruby_version_is '2.4' do
-    it "modifies self in place for all of Unicode" do
+  describe "full Unicode case mapping" do
+    it "modifies self in place for all of Unicode with no option" do
       a = "äöü"
-      a.upcase!.should equal(a)
+      a.upcase!
       a.should == "ÄÖÜ"
     end
+
+    it "works for non-ascii-compatible encodings" do
+      a = "äöü".encode("utf-16le")
+      a.upcase!
+      a.should == "ÄÖÜ".encode("utf-16le")
+    end
+
+    it "updates string metadata for self" do
+      upcased = "aßet"
+      upcased.upcase!
+
+      upcased.should == "ASSET"
+      upcased.size.should == 5
+      upcased.bytesize.should == 5
+      upcased.ascii_only?.should be_true
+    end
+  end
+
+  describe "modifies self in place for ASCII-only case mapping" do
+    it "does not upcase non-ASCII characters" do
+      a = "aßet"
+      a.upcase!(:ascii)
+      a.should == "AßET"
+    end
+
+    it "works for non-ascii-compatible encodings" do
+      a = "abc".encode("utf-16le")
+      a.upcase!(:ascii)
+      a.should == "ABC".encode("utf-16le")
+    end
+  end
+
+  describe "modifies self in place for full Unicode case mapping adapted for Turkic languages" do
+    it "upcases ASCII characters according to Turkic semantics" do
+      a = "i"
+      a.upcase!(:turkic)
+      a.should == "İ"
+    end
+
+    it "allows Lithuanian as an extra option" do
+      a = "i"
+      a.upcase!(:turkic, :lithuanian)
+      a.should == "İ"
+    end
+
+    it "does not allow any other additional option" do
+      -> { a = "i"; a.upcase!(:turkic, :ascii) }.should raise_error(ArgumentError)
+    end
+  end
+
+  describe "modifies self in place for full Unicode case mapping adapted for Lithuanian" do
+    it "currently works the same as full Unicode case mapping" do
+      a = "iß"
+      a.upcase!(:lithuanian)
+      a.should == "ISS"
+    end
+
+    it "allows Turkic as an extra option (and applies Turkic semantics)" do
+      a = "iß"
+      a.upcase!(:lithuanian, :turkic)
+      a.should == "İSS"
+    end
+
+    it "does not allow any other additional option" do
+      -> { a = "iß"; a.upcase!(:lithuanian, :ascii) }.should raise_error(ArgumentError)
+    end
+  end
+
+  it "does not allow the :fold option for upcasing" do
+    -> { a = "abc"; a.upcase!(:fold) }.should raise_error(ArgumentError)
+  end
+
+  it "does not allow invalid options" do
+    -> { a = "abc"; a.upcase!(:invalid_option) }.should raise_error(ArgumentError)
   end
 
   it "returns nil if no modifications were made" do
@@ -61,8 +179,8 @@ describe "String#upcase!" do
     a.should == "HELLO"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
-    lambda { "HeLlo".freeze.upcase! }.should raise_error(frozen_error_class)
-    lambda { "HELLO".freeze.upcase! }.should raise_error(frozen_error_class)
+  it "raises a FrozenError when self is frozen" do
+    -> { "HeLlo".freeze.upcase! }.should raise_error(FrozenError)
+    -> { "HELLO".freeze.upcase! }.should raise_error(FrozenError)
   end
 end

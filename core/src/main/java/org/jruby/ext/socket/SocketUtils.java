@@ -33,6 +33,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -80,12 +81,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getLocalHost().getHostName());
+            return RubyString.newString(context.runtime, InetAddress.getLocalHost().getHostName());
 
         } catch(UnknownHostException e) {
 
             try {
-                return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
+                return RubyString.newString(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
 
             } catch(UnknownHostException e2) {
                 throw sockerr(runtime, "gethostname: name or service not known");
@@ -152,12 +153,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            InetAddress addr = getRubyInetAddresses(hostname.convertToString().getByteList())[0];
+            InetAddress addr = getRubyInetAddress(hostname.convertToString().toString());
             IRubyObject ret0, ret1, ret2, ret3;
 
             ret0 = runtime.newString(addr.getCanonicalHostName());
             ret1 = runtime.newArray();
-            ret2 = runtime.newFixnum(2); // AF_INET
+            ret2 = runtime.newFixnum(AF_INET);
             ret3 = runtime.newString(new ByteList(addr.getAddress()));
             return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
 
@@ -440,20 +441,40 @@ public class SocketUtils {
         }
     }
 
+    @Deprecated
     public static InetAddress[] getRubyInetAddresses(ByteList address) throws UnknownHostException {
         // switched to String because the ByteLists were not comparing properly in 1.9 mode (encoding?
         // FIXME: Need to properly decode this string (see Helpers.decodeByteList)
         String addressString = Helpers.byteListToString(address);
-
-        if (addressString.equals(BROADCAST)) {
-            return new InetAddress[] {InetAddress.getByAddress(INADDR_BROADCAST)};
-
-        } else if (addressString.equals(ANY)) {
-            return new InetAddress[] {InetAddress.getByAddress(INADDR_ANY)};
-
+        return getRubyInetAddresses(addressString);
+    }
+    
+    public static InetAddress[] getRubyInetAddresses(String addressString) throws UnknownHostException {
+        InetAddress specialAddress = specialAddress(addressString);
+        if (specialAddress != null) {
+            return new InetAddress[] {specialAddress};
         } else {
             return InetAddress.getAllByName(addressString);
+        }
+    }
+    
+    public static InetAddress getRubyInetAddress(String addressString) throws UnknownHostException {
+        InetAddress specialAddress = specialAddress(addressString);
+        if (specialAddress != null) {
+            return specialAddress;
+        } else {
+            return InetAddress.getByName(addressString);
 
+        }
+    }
+    
+    private static InetAddress specialAddress(String addressString) throws UnknownHostException {
+        if (addressString.equals(BROADCAST)) {
+            return InetAddress.getByAddress(INADDR_BROADCAST);
+        } else if (addressString.equals(ANY)) {
+            return InetAddress.getByAddress(INADDR_ANY);
+        } else {
+            return null;
         }
     }
 

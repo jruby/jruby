@@ -14,30 +14,35 @@ def log(message=nil)
   puts message unless MORE_QUIET
 end
 
-class ImportedGem
-  attr_reader :name, :version, :default_spec
-
-  def initialize( name, version, default_spec = true )
-    @name = name
-    @version = version
-    @default_spec = default_spec
-  end
-end
-
 default_gems = [
-    ImportedGem.new('cmath', '1.0.0'),
-    ImportedGem.new('csv', '1.0.0'),
-    ImportedGem.new('fileutils', '1.1.0'),
-    ImportedGem.new('ipaddr', '1.2.0'),
-    ImportedGem.new('jar-dependencies', '${jar-dependencies.version}'),
-    ImportedGem.new('jruby-readline', '1.2.2'),
-    ImportedGem.new('jruby-openssl', '0.10.0'),
-    ImportedGem.new('json', '${json.version}'),
-    ImportedGem.new('psych', '3.0.2'),
-    ImportedGem.new('rake-ant', '1.0.4'),
-    ImportedGem.new('rdoc', '${rdoc.version}'),
-    ImportedGem.new('scanf', '1.0.0'),
-    ImportedGem.new('webrick', '1.4.2'),
+    ['cmath', '1.0.0'],
+    ['csv', '3.1.2'],
+    ['e2mmap', '0.1.0'],
+    ['fileutils', '1.4.1'],
+    ['forwardable', '1.2.0'],
+    ['ipaddr', '1.2.2'],
+    ['irb', '1.0.0'],
+    ['jar-dependencies', '${jar-dependencies.version}'],
+    ['jruby-readline', '1.3.7'],
+    ['jruby-openssl', '0.10.4'],
+    ['json', '${json.version}'],
+    ['logger', '1.3.0'],
+    ['matrix', '0.3.0'],
+    ['mutex_m', '0.1.0'],
+    #['ostruct', '#####'], # waiting on https://github.com/ruby/ostruct/issues/11
+    ['prime', '0.1.0'],
+    ['psych', '3.1.0'],
+    ['racc', '1.5.0'],
+    ['rake-ant', '1.0.4'],
+    ['rdoc', '${rdoc.version}'],
+    ['rexml', '3.1.9'],
+    ['rss', '0.2.7'],
+    ['scanf', '1.0.0'],
+    ['shell', '0.7'],
+    ['sync', '0.5.0'],
+    ['thwait', '0.1.0'],
+    ['tracer', '0.1.0'],
+    ['webrick', '1.6.0'],
 ]
 
 bundled_gems = [
@@ -71,15 +76,13 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:1.0.1'
+  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
 
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
   # for testing out jruby-ossl before final release :
-  #repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots',
-  #            :id => 'gem-snaphots' )
-  #repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
-  #            :id => 'gem-staging' )
+  # repository :id => 'gem-snaphots', :url => 'https://oss.sonatype.org/content/repositories/snapshots'
+  # repository :id => 'gem-staging', :url => 'http://oss.sonatype.org/content/repositories/staging'
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
@@ -88,9 +91,9 @@ project 'JRuby Lib Setup' do
                            :includes => [ 'org/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
-  default_gems.each do |g|
+  default_gems.each do |name, version|
     # use provided scope so it is not a real dependency for runtime
-    dependency 'rubygems', g.name, g.version, :type => 'gem', :scope => :provided do
+    dependency 'rubygems', name, version, :type => 'gem', :scope => :provided do
       exclusion 'rubygems:jar-dependencies'
     end
   end
@@ -102,7 +105,7 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  default_gemnames = default_gems.collect { |g| g.name }
+  default_gemnames = default_gems.collect(&:first)
 
   plugin :dependency,
     :useRepositoryLayout => true,
@@ -123,6 +126,7 @@ project 'JRuby Lib Setup' do
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
     jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
+    jruby_bin = File.join( ctx.project.basedir.to_pathname, '../bin')
     default_specs = File.join( jruby_gems, 'specifications', 'default' )
     bin_stubs = File.join( jruby_gems, 'gems' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
@@ -158,29 +162,32 @@ project 'JRuby Lib Setup' do
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         log a.file.to_pathname
         installer = Gem::Installer.new( a.file.to_pathname,
-                                        :wrappers => true,
-                                        :ignore_dependencies => true,
-                                        :install_dir => ghome )
+                                        wrappers: true,
+                                        ignore_dependencies: true,
+                                        install_dir: ghome,
+                                        bin_dir: jruby_bin,
+                                        env_shebang: true )
         def installer.ensure_required_ruby_version_met; end
         installer.install
       end
     end
 
-    default_gems.each do |g|
-      pom_version = ctx.project.properties.get( g.version[2..-2] ) || g.version
-      version = pom_version.sub( /-SNAPSHOT/, '' )
+    default_gems.each do |name, version|
+      version = ctx.project.properties.get(version[2..-2]) || version
+      version = version.sub( /-SNAPSHOT/, '' )
+      gem_name = "#{name}-#{version}"
 
       # install the gem unless already installed
-      if Dir[ File.join( default_specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
+      if Dir[ File.join( default_specs, "#{gem_name}*.gemspec" ) ].empty?
 
         log
-        log "--- gem #{g.name}-#{version} ---"
+        log "--- gem #{gem_name} ---"
 
         # copy the gem content to stdlib
 
         log "copy gem content to #{stdlib_dir}"
         # assume default require_path
-        require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
+        require_base = File.join( gems, "#{gem_name}*", 'lib' )
         require_files = File.join( require_base, '*' )
 
         # copy in new ones and mark writable for future updates (e.g. minitest)
@@ -201,32 +208,33 @@ project 'JRuby Lib Setup' do
           FileUtils.chmod_R(0644, f)
         end
 
+        # get gemspec
+        specfile_wildcard = "#{gem_name}*.gemspec"
+        specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
+
+        unless specfile
+          raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
+        end
+
+        specname = File.basename( specfile )
+        log "copy to specifications/default: #{specname}"
+
+        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
+
         # copy bin files if the gem has any
-        bin = File.join( gems, "#{g.name}-#{version}", 'bin' )
-        if File.exists? bin
-          Dir[ File.join( bin, '*' ) ].each do |f|
-            log "copy to bin: #{File.basename( f )}"
-            target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
-            FileUtils.mkdir_p( File.dirname( target ) )
-            FileUtils.cp_r( f, target )
+        Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir || 'bin' )) do |bin|
+          if File.exists?(bin)
+            Dir[ File.join( bin, '*' ) ].each do |f|
+              log "copy to bin: #{File.basename( f )}"
+              target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
+              FileUtils.mkdir_p( File.dirname( target ) )
+              FileUtils.cp_r( f, target )
+            end
           end
         end
 
-        if g.default_spec
-          specfile_wildcard = "#{g.name}-#{version}*.gemspec"
-          specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
-
-          unless specfile
-            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
-          end
-
-          specname = File.basename( specfile )
-          log "copy to specifications/default: #{specname}"
-
-          spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
-          File.open( File.join( default_specs, specname ), 'w' ) do |f|
-            f.print( spec.to_ruby )
-          end
+        File.open( File.join( default_specs, specname ), 'w' ) do |f|
+          f.print( spec.to_ruby )
         end
       end
     end
@@ -298,12 +306,23 @@ project 'JRuby Lib Setup' do
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
   build do
-
-    # both resources are includes for the $jruby_home/lib directory
+    resource do
+      directory '${gem.home}'
+      # assume all dependencies are met with this gems + the default gems
+      incl = (default_gems + bundled_gems).collect do |name, version|
+        [
+          "cache/#{name}*#{version}.gem",
+          "gems/#{name}*#{version}/**",
+          "specifications/#{name}*#{version}.gemspec"
+        ]
+      end.flatten
+      includes incl
+      target_path '${jruby.complete.gems}'
+    end
 
     resource do
       directory '${gem.home}'
-      includes 'gems/rake-${rake.version}/bin/r*', 'gems/rdoc-${rdoc.version}/bin/r*', 'specifications/default/*.gemspec'
+      includes 'specifications/default/*.gemspec'
       target_path '${jruby.complete.gems}'
     end
 

@@ -42,13 +42,13 @@ import java.util.*;
 
 @JRubyModule(name="Signal")
 public class RubySignal {
-    private final static SignalFacade SIGNALS = getSignalFacade();
 
-    private final static SignalFacade getSignalFacade() {
+    private final static SignalFacade SIGNAL_FACADE = initSignalFacade();
+
+    private final static SignalFacade initSignalFacade() {
         try {
-            Class realFacadeClass = Class.forName("org.jruby.util.SunSignalFacade");
-            return (SignalFacade)realFacadeClass.newInstance();
-        } catch(Throwable e) {
+            return org.jruby.util.SunSignalFacade.class.newInstance();
+        } catch (Throwable e) {
             return new NoFunctionalitySignalFacade();
         }
     }
@@ -70,29 +70,67 @@ public class RubySignal {
         mSignal.defineAnnotatedMethods(RubySignal.class);
         //registerThreadDumpSignalHandler(runtime);
     }
-    
-    public static Map<String, Integer> list() {
-        Map<String, Integer> signals = new HashMap<String, Integer>();
 
-        for (Signal s : Signal.values()) {
-            if (!s.description().startsWith(SIGNAME_PREFIX))
-                continue;
-            if (!RUBY_18_SIGNALS.contains(signmWithoutPrefix(s.description())))
-                continue;
+    private static final String SIGNAME_PREFIX = "SIG";
+    private static final Map<String, Integer> SIGNAME_MAP;
+    private static final Map<Integer, String> SIGNUM_MAP;
+
+    static {
+        HashMap<String, Integer> signals = new HashMap<>();
+        HashMap<Integer, String> signums = new HashMap<>();
+
+        Signal[] values = Signal.values();
+        for (Signal s : values) {
+            // Skip signals not defined on this platform
+            if (!s.defined()) continue;
+
+            String desc = s.description();
+            if (!desc.startsWith(SIGNAME_PREFIX)) continue;
+
+            desc = signmWithoutPrefix(desc);
+            if (!SIGNAME(desc)) continue;
 
             // replace CLD with CHLD value
             int signo = s.intValue();
-            if (s == Signal.SIGCLD)
-                signo = Signal.SIGCHLD.intValue();
+            if (s == Signal.SIGCHLD || s == Signal.SIGCLD) {
+                // skip these because Ruby does them weirdly
+                continue;
+            }
 
             // omit unsupported signals
-            if (signo >= 20000)
-                continue;
+            if (signo >= 20000) continue;
 
-            signals.put(signmWithoutPrefix(s.description()), signo);
+            signals.put(desc, signo);
+            signums.put(signo, desc);
         }
 
-        return signals;
+        // We always define KILL as 9 on Windows
+        if (Platform.IS_WINDOWS) {
+            signals.put("KILL", 9);
+        }
+
+        // map SIGCLD and SIGCHLD like Ruby
+        int CHLD;
+        if (Signal.SIGCLD.defined()) {
+            CHLD = Signal.SIGCLD.intValue();
+        } else if (Signal.SIGCHLD.defined()) {
+            CHLD = Signal.SIGCHLD.intValue();
+        } else {
+            CHLD = 0;
+        }
+
+        if (CHLD != 0) {
+            signals.put("CLD", CHLD);
+            signals.put("CHLD", CHLD);
+            signums.put(CHLD, "CHLD");
+        }
+
+        SIGNAME_MAP = Collections.unmodifiableMap(signals);
+        SIGNUM_MAP = Collections.unmodifiableMap(signums);
+    }
+    
+    public static Map<String, Integer> list() {
+        return SIGNAME_MAP;
     }
 
     @JRubyMethod(meta = true)
@@ -119,22 +157,22 @@ public class RubySignal {
 
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
-        return SIGNALS.trap(recv, block, sig);
+        return SIGNAL_FACADE.trap(recv, block, sig);
     }
 
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_platform_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNALS.restorePlatformDefault(recv, sig);
+        return SIGNAL_FACADE.restorePlatformDefault(recv, sig);
     }
 
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_osdefault_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNALS.restoreOSDefault(recv, sig);
+        return SIGNAL_FACADE.restoreOSDefault(recv, sig);
     }
 
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNALS.ignore(recv, sig);
+        return SIGNAL_FACADE.ignore(recv, sig);
     }
 
     @JRubyMethod(required = 1, meta = true)
@@ -153,20 +191,16 @@ public class RubySignal {
 
     // MRI: signo2signm
     public static String signo2signm(long no) {
-        for (Signal s : Signal.values()) {
-            if (s.intValue() == no) {
-                return signmWithoutPrefix(s.name());
-            }
-        }
-        return null;
+        return SIGNUM_MAP.get((int) no);
     }
 
     // MRI: signm2signo
     public static long signm2signo(String nm) {
-        for (Signal s : Signal.values()) {
-            if (signmWithoutPrefix(s.name()).equals(nm)) return s.longValue();
-        }
-        return 0;
+        Integer signo = SIGNAME_MAP.get(nm);
+
+        if (signo == null) return 0;
+
+        return signo;
     }
 
     public static String signmWithPrefix(String nm) {
@@ -177,58 +211,56 @@ public class RubySignal {
         return (nm.startsWith(SIGNAME_PREFIX)) ? nm.substring(SIGNAME_PREFIX.length()) : nm;
     }
 
-    private static final Set<String> RUBY_18_SIGNALS;
-    static {
-        RUBY_18_SIGNALS = new HashSet<String>();
-        for (String name : new String[] {
-                "EXIT",
-                "HUP",
-                "INT",
-                "QUIT",
-                "ILL",
-                "TRAP",
-                "IOT",
-                "ABRT",
-                "EMT",
-                "FPE",
-                "KILL",
-                "BUS",
-                "SEGV",
-                "SYS",
-                "PIPE",
-                "ALRM",
-                "TERM",
-                "URG",
-                "STOP",
-                "TSTP",
-                "CONT",
-                "CHLD",
-                "CLD",
-                "TTIN",
-                "TTOU",
-                "IO",
-                "XCPU",
-                "XFSZ",
-                "VTALRM",
-                "PROF",
-                "WINCH",
-                "USR1",
-                "USR2",
-                "LOST",
-                "MSG",
-                "PWR",
-                "POLL",
-                "DANGER",
-                "MIGRATE",
-                "PRE",
-                "GRANT",
-                "RETRACT",
-                "SOUND",
-                "INFO",
-        }) {
-            RUBY_18_SIGNALS.add(name);
+    private static boolean SIGNAME(final String name) {
+        switch (name) {
+            case "EXIT":
+            case "HUP" :
+            case "INT" :
+            case "QUIT":
+            case "ILL" :
+            case "TRAP":
+            case "IOT" :
+            case "ABRT":
+            case "EMT" :
+            case "FPE" :
+            case "KILL":
+            case "BUS" :
+            case "SEGV":
+            case "SYS" :
+            case "PIPE":
+            case "ALRM":
+            case "TERM":
+            case "URG" :
+            case "STOP":
+            case "TSTP":
+            case "CONT":
+            case "CHLD":
+            case "CLD" :
+            case "TTIN":
+            case "TTOU":
+            case "IO"  :
+            case "XCPU":
+            case "XFSZ":
+            case "PROF":
+            case "VTALRM":
+            case "WINCH":
+            case "USR1":
+            case "USR2":
+            case "LOST":
+            case "MSG" :
+            case "PWR" :
+            case "POLL":
+            case "DANGER":
+            case "MIGRATE":
+            case "PRE" :
+            case "GRANT":
+            case "RETRACT":
+            case "SOUND":
+            case "INFO":
+                return true;
+            default:
+                return false;
         }
     }
 
-    private static final String SIGNAME_PREFIX = "SIG";
-}// RubySignal
+}

@@ -20,13 +20,13 @@ public class RationalNode extends NumericNode implements SideEffectFree {
 
     public RationalNode(ISourcePosition position, NumericNode numerator, NumericNode denominator) {
         super(position);
-        
+
         this.numerator = numerator;
         this.denominator = denominator;
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitRationalNode(this);
     }
 
@@ -37,7 +37,7 @@ public class RationalNode extends NumericNode implements SideEffectFree {
 
     @Override
     public List<Node> childNodes() {
-        return EMPTY_LIST;
+        return Node.createList(numerator, denominator);
     }
 
     @Override

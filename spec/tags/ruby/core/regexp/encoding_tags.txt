@@ -1,0 +1,1 @@
+fails:Regexp#encoding allows otherwise invalid characters if NOENCODING is specified

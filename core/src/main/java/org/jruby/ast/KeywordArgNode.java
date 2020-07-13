@@ -13,15 +13,15 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author enebo
  */
 public class KeywordArgNode extends Node {
-    private AssignableNode assignable;
-    
+    private final AssignableNode assignable;
+
     public KeywordArgNode(ISourcePosition position, AssignableNode assignable) {
         super(position, true);
         this.assignable = assignable;
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitKeywordArgNode(this);
     }
 
@@ -42,5 +42,5 @@ public class KeywordArgNode extends Node {
     public AssignableNode getAssignable() {
         return assignable;
     }
-    
+
 }

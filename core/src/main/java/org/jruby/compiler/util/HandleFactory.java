@@ -83,7 +83,7 @@ public class HandleFactory {
         Class returnType = method.getReturnType();
         Class[] paramTypes = method.getParameterTypes();
         ClassVisitor cv = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cv.visit(ACC_PUBLIC | ACC_FINAL | ACC_SUPER, V1_5, name, null, p(Handle.class), null);
+        cv.visit(V1_8, ACC_PUBLIC | ACC_FINAL | ACC_SUPER, name, null, p(Handle.class), null);
 
         SkinnyMethodAdapter m;
         String signature;
@@ -256,14 +256,10 @@ public class HandleFactory {
                 for (Method method : klass.getMethods()) {
                     String name = createHandleName(method);
                     byte[] bytes = createHandleBytes(method, name);
-                    FileOutputStream fos = null;
-                    try {
-                        fos = new FileOutputStream(new File(target, name + ".class"));
+                    try (FileOutputStream fos = new FileOutputStream(new File(target, name + ".class"))) {
                         fos.write(bytes);
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
-                    } finally {
-                        try {fos.close();} catch (IOException ioe) {}
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
                     }
                 }
             } catch (ClassNotFoundException cnfe) {

@@ -276,18 +276,6 @@ public class Main {
         final Ruby runtime = _runtime;
         final AtomicBoolean didTeardown = new AtomicBoolean();
 
-        if (runtime != null && config.isHardExit()) {
-            // we're the command-line JRuby, and should set a shutdown hook for
-            // teardown.
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    if (didTeardown.compareAndSet(false, true)) {
-                        runtime.tearDown();
-                    }
-                }
-            });
-        }
-
         try {
             if (runtime != null) {
                 doSetContextClassLoader(runtime);
@@ -296,9 +284,6 @@ public class Main {
             if (in == null) {
                 // no script to run, return success
                 return new Status();
-            } else if (config.isXFlag() && !config.hasShebangLine()) {
-                // no shebang was found and x option is set
-                throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
             } else if (config.getShouldCheckSyntax()) {
                 // check syntax only and exit
                 return doCheckSyntax(runtime, in, filename);
@@ -307,7 +292,7 @@ public class Main {
                 return doRunFromMain(runtime, in, filename);
             }
         } finally {
-            if (runtime != null && didTeardown.compareAndSet(false, true)) {
+            if (runtime != null) {
                 runtime.tearDown();
             }
         }

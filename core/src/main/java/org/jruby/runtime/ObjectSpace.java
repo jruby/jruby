@@ -60,7 +60,7 @@ public class ObjectSpace {
     private final ReferenceQueue<ObjectGroup> objectGroupReferenceQueue = new ReferenceQueue<>();
     private WeakReferenceListNode top;
 
-    private ReferenceQueue deadIdentityReferences = new ReferenceQueue();
+    private final ReferenceQueue deadIdentityReferences = new ReferenceQueue();
     private final Map<Long, IdReference> identities = new HashMap<>(64);
     private final Map<IRubyObject, Long> identitiesByObject = new WeakIdentityHashMap(64);
     private static final AtomicLong maxId = new AtomicLong(1000);

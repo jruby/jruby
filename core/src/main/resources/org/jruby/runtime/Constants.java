@@ -40,6 +40,8 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.stringio.StringIO;
 
+import java.util.Arrays;
+
 public final class Constants {
     public static final String PLATFORM = "java";
 
@@ -67,33 +69,47 @@ public final class Constants {
      * Default size for chained compilation.
      */
     public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = 500;
-    
+
+    /**
+     * The max count of active methods and blocks eligible for JIT-compilation.
+     * After this numbers of JIT-ed classes the compiler stops compiling.
+     */
+    public static final int JIT_MAX_LIMIT = 10000;
+
     /**
      * The max count of active methods eligible for JIT-compilation.
      */
-    public static final int JIT_MAX_METHODS_LIMIT = 4096;
+    @Deprecated
+    public static final int JIT_MAX_METHODS_LIMIT = JIT_MAX_LIMIT;
 
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
      */
-    public static final int JIT_MAX_SIZE_LIMIT = 2000;
+    public static final int JIT_MAX_SIZE_LIMIT = 1000;
 
     /**
      * The JIT threshold to the specified method invocation count.
      */
     public static final int JIT_THRESHOLD = 50;
+
+    /**
+     * The default package into which we generate non-jit code
+     */
+    public static final String GENERATED_PACKAGE = "org.jruby.gen.";
     
     private static String jruby_revision = "@jruby.revision@";
 
     @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
 
+    public static final String BOGUS_REVISION = "ffffffffff";
+
     static {
         // This is populated here to avoid javac propagating the value to consumers
         // Broken apart like this to prevent substitution
         if (jruby_revision.equals("@" + "jruby.revision" + "@")) {
             // use a bogus revision
-            REVISION = "fffffff";
+            REVISION = BOGUS_REVISION;
         } else {
             REVISION = jruby_revision;
         }

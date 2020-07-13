@@ -31,6 +31,7 @@
 package org.jruby.ast;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -45,8 +46,15 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ListNode extends Node implements Iterable<Node> {
     private static final Node[] EMPTY = new Node[0];
     private static final int INITIAL_SIZE = 4;
-    private Node[] list;
+    private Node[] list = EMPTY;
     private int size = 0;
+
+    /**
+     * This is used to reduce the need to allocate an array for the many single-element ListNode instances
+     * in a typical Ruby app. The methods below detect if single has been set and act accordingly, expanding
+     * it to an array lazily only when needed.
+     */
+    private Node single;
 
     /**
      * Create a new ListNode.
@@ -56,22 +64,20 @@ public class ListNode extends Node implements Iterable<Node> {
      */
     public ListNode(ISourcePosition position, Node firstNode) {
         super(position, firstNode != null && firstNode.containsVariableAssignment);
-        
-        list = new Node[INITIAL_SIZE];
-        addInternal(firstNode);
+
+        single = firstNode;
+        size = 1;
     }
     
     public ListNode(ISourcePosition position) {
         super(position, false);
-        
-        list = EMPTY;
     }
 
     public NodeType getNodeType() {
         return NodeType.LISTNODE;
     }
 
-    protected void growList(int mustBeDelta) {
+    private Node[] growList(int mustBeDelta) {
         int newSize = list.length * 2;
         // Fairly arbitrary to scale 1.5 here but this means we are adding a lot so I think
         // we can taper the multiplier
@@ -79,22 +85,63 @@ public class ListNode extends Node implements Iterable<Node> {
 
         Node[] newList = new Node[newSize];
         System.arraycopy(list, 0, newList, 0, size);
-        list = newList;
+        return list = newList;
     }
 
     protected void addInternal(Node node) {
+        Node single = this.single;
+
+        if (single != null) {
+            addToSingle(this.single, node);
+            return;
+        }
+
         if (size >= list.length) growList(1);
 
         list[size++] = node;
     }
 
     protected void addAllInternal(ListNode other) {
-        if (size + other.size() >= list.length) growList(other.size);
+        if (other.size == 0) return;
+
+        Node[] list;
+
+        Node single = this.single;
+
+        if (single != null) {
+            list = arrayifySingle(single);
+        } else {
+            list = this.list;
+        }
+
+        if (size + other.size() >= list.length) list = growList(other.size);
+
+        Node otherSingle = other.single;
+
+        if (otherSingle != null) {
+            list[size++] = otherSingle;
+            return;
+        }
 
         System.arraycopy(other.list, 0, list, size, other.size);
+
         size += other.size;
     }
-    
+
+    private void addToSingle(Node single, Node node) {
+        arrayifySingle(single)[size++] = node;
+    }
+
+    private Node[] arrayifySingle(Node single) {
+        Node[] list = new Node[INITIAL_SIZE];
+        list[0] = single;
+
+        this.list = list;
+        this.single = null;
+
+        return list;
+    }
+
     public ListNode add(Node node) {
         // Ruby Grammar productions return plenty of nulls.
         if (node == null || node == NilImplicitNode.NIL) {
@@ -133,6 +180,19 @@ public class ListNode extends Node implements Iterable<Node> {
     }
 
     public ListNode addAll(Node[] other, int index, int length) {
+        Node single = this.single;
+
+        if (single != null) {
+            list = new Node[length + 1];
+            list[0] = single;
+            this.single = null;
+            System.arraycopy(other, index, list, 1, length);
+        }
+
+        if (size + length < list.length) {
+            growList(length);
+        }
+
         for (int i = 0; i < length; i++) {
             addInternal(other[index + i]);
         }
@@ -151,7 +211,11 @@ public class ListNode extends Node implements Iterable<Node> {
     }
     
     public Node getLast() {
-    	return size == 0 ? null : list[size - 1];
+        int size = this.size;
+
+        if (size == 0) return null;
+
+        return get(size - 1);
     }
 
     public boolean isEmpty() {
@@ -159,6 +223,10 @@ public class ListNode extends Node implements Iterable<Node> {
     }
 
     public Node[] children() {
+        Node single = this.single;
+
+        if (single != null) return new Node[] {single};
+
         Node[] properList = new Node[size];
         System.arraycopy(list, 0, properList, 0, size);
         return properList;
@@ -166,6 +234,10 @@ public class ListNode extends Node implements Iterable<Node> {
 
     @Deprecated
     public List<Node> childNodes() {
+        Node single = this.single;
+
+        if (single != null) return Collections.singletonList(single);
+
         return Arrays.asList(children());
     }
     
@@ -174,6 +246,10 @@ public class ListNode extends Node implements Iterable<Node> {
     }
     
     public Node get(int idx) {
+        Node single = this.single;
+
+        if (idx == 0 && single != null) return single;
+
         return list[idx];
     }
 

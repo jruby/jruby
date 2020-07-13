@@ -1,0 +1,1 @@
+critical(hangs on Travis):Net::HTTP#get2 when passed no block sends a GET request to the passed path and returns the response

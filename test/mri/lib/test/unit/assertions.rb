@@ -474,7 +474,7 @@ EOT
         failed = []
         obj.each do |*a, &b|
           if blk.call(*a, &b)
-            failed << a.size > 1 ? a : a[0]
+            failed << (a.size > 1 ? a : a[0])
           end
         end
         assert(failed.empty?, message(m) {failed.pretty_inspect})
@@ -595,6 +595,8 @@ EOT
 
       def assert_in_out_err(args, test_stdin = "", test_stdout = [], test_stderr = [], message = nil,
                             success: nil, **opt)
+        args = Array(args).dup
+        args.insert((Hash === args[0] ? 1 : 0), '--disable=gems')
         stdout, stderr, status = EnvUtil.invoke_ruby(args, test_stdin, true, true, **opt)
         if signo = status.termsig
           EnvUtil.diagnostic_reports(Signal.signame(signo), status.pid, Time.now)
@@ -703,7 +705,20 @@ eom
         assert_warning(*args) {$VERBOSE = false; yield}
       end
 
+      def assert_no_warning(pat, msg = nil)
+        stderr = EnvUtil.verbose_warning {
+          EnvUtil.with_default_internal(pat.encoding) {
+            yield
+          }
+        }
+        msg = message(msg) {diff pat, stderr}
+        refute(pat === stderr, msg)
+      end
+
       def assert_no_memory_leak(args, prepare, code, message=nil, limit: 2.0, rss: false, **opt)
+        # TODO: consider choosing some appropriate limit for MJIT and stop skipping this once it does not randomly fail
+        skip 'assert_no_memory_leak may consider MJIT memory usage as leak' if defined?(RubyVM::MJIT) && RubyVM::MJIT.enabled?
+
         require_relative '../../memory_status'
         raise MiniTest::Skip, "unsupported platform" unless defined?(Memory::Status)
 

@@ -20,10 +20,10 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     private final boolean needsDynamicScope;
     private final MethodHandle variable;
 
-    public CompiledIRNoProtocolMethod(MethodHandle handle, IRScope scope, RubyModule implementationClass) {
-        super(scope, Visibility.PUBLIC, implementationClass);
+    public CompiledIRNoProtocolMethod(MethodHandle handle, StaticScope scope, String file, int line, RubyModule implementationClass, boolean needsDynamicScope) {
+        super(scope, file, line, Visibility.PUBLIC, implementationClass);
 
-        this.needsDynamicScope = !scope.getExecutionContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        this.needsDynamicScope = needsDynamicScope;
         this.variable = handle;
     }
 
@@ -77,19 +77,23 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
 
     protected void pre(ThreadContext context, StaticScope staticScope, RubyModule implementationClass, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, needsDynamicScope, etc.)
-        context.preMethodFrameOnly(implementationClass, name, self, block);
+        context.preMethodFrameOnly(implementationClass, name, self, getVisibility(), block);
         if (needsDynamicScope) {
             // Add a parent-link to current dynscope to support non-local returns cheaply
             // This doesn't affect variable scoping since local variables will all have
             // the right needsDynamicScope depth.
             context.pushScope(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
         }
-        context.setCurrentVisibility(getVisibility());
     }
 
     @Override
     public InterpreterContext ensureInstrsReady() {
         // AbstractIRMethod.getMethodData() calls this and we want IC since we have not eliminated any get/put fields.
-        return method.getInterpreterContext();
+        return getIRScope().getInterpreterContext();
+    }
+
+    @Override
+    protected void printMethodIR() {
+        // no-op
     }
 }

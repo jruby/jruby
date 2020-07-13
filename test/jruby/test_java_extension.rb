@@ -62,7 +62,7 @@ class TestJavaExtension < Test::Unit::TestCase
         msg = 'java.lang.Integer cannot be cast to java.lang.Short'
         unless msg.eql? e.message
           # IBM Java: #<TypeError: java.lang.Integer incompatible with java.lang.Short>
-          assert_match /java.lang.Integer.*java.lang.Short/, e.message
+          assert_match(/java.lang.Integer.*java.lang.Short/, e.message)
         end
       end
     end
@@ -346,6 +346,18 @@ class TestJavaExtension < Test::Unit::TestCase
     assert wrapped2 == wrapped1
     assert wrapped1.eql? wrapped2
     assert ! wrapped1.equal?(wrapped2)
+  end
+
+
+  import org.jruby.test.Runner
+
+  def test_deadlock_due_to_java_object_wrapping_locking_on_java_instances
+    Runner.getRunner.runJob java.lang.Runnable.impl {
+      Thread.new do
+        runner = Runner.getRunner
+        assert runner.isRunning, "runner should be running"
+      end.join
+    }
   end
 
 end

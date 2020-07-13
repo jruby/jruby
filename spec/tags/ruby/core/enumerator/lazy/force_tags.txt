@@ -1,1 +1,0 @@
-fails:Enumerator::Lazy#force passes given arguments to receiver.each

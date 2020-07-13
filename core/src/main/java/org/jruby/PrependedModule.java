@@ -29,10 +29,12 @@
 
 package org.jruby;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.RefinedMarker;
 
 /**
  * This class is used as an intermediate superclass for Module#prepend
@@ -42,16 +44,42 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
  */
 public class PrependedModule extends IncludedModule {
 
-    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
-        super(runtime, superClass, origin);
-        methods = origin.methods;
-        origin.methods = new ConcurrentHashMap<>(0, 0.9f, 1);
-        origin.methodLocation = this;
+    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule klass) {
+        super(runtime, superClass, klass);
+        this.methods = klass.methods;
+        klass.methods = Collections.EMPTY_MAP;
+        klass.methodLocation = this;
         for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
-            method.setImplementationClass(this);
-            method.setDefinedClass(origin);
+            if (moveRefinedMethod(entry.getKey(), method, klass)) {
+                methods.remove(entry.getKey());
+            }
         }
+    }
+
+    /**
+     * Transfer refined methods from the prepend stub to the origin as markers so they trigger refinements
+     *
+     * MRI: move_refined_method
+     */
+    private boolean moveRefinedMethod(String key, DynamicMethod method, RubyModule klass) {
+        if (method.isRefined()) {
+            if (method instanceof RefinedMarker) {
+                // marker, add to actual class and remove from prepend
+                klass.getMethodsForWrite().put(key, method);
+
+                return true;
+            } else {
+                // real method as refinement, add marker to actual class
+                klass.getMethodsForWrite().put(key, new RefinedMarker(klass, method.getVisibility(), method.getName()));
+
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+
     }
 
     @Override

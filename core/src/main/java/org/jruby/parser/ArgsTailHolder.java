@@ -9,10 +9,10 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Simple struct to hold values until they can be inserted into the AST.
  */
 public class ArgsTailHolder {
-    private ISourcePosition position;
-    private BlockArgNode blockArg;
-    private ListNode keywordArgs;
-    private KeywordRestArgNode keywordRestArg;
+    private final ISourcePosition position;
+    private final BlockArgNode blockArg;
+    private final ListNode keywordArgs;
+    private final KeywordRestArgNode keywordRestArg;
     
     public ArgsTailHolder(ISourcePosition position, ListNode keywordArgs,
             KeywordRestArgNode keywordRestArg, BlockArgNode blockArg) {

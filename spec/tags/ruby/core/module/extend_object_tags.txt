@@ -1,1 +1,0 @@
-fails:Module#extend_object on Class raises a TypeError if calling after rebinded to Class

@@ -121,7 +121,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 // be considered live since they can be accessed downstream
                 // of this call.
                 for (Variable x: problem.getNonSelfLocalVars()) {
-                    if (x instanceof LocalVariable && ((LocalVariable)x).getScopeDepth() > 0) {
+                    if (x instanceof LocalVariable && ((LocalVariable)x).isOuterScopeVar()) {
                         living.set(problem.getDFVar(x));
                     }
                 }
@@ -251,7 +251,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     // be considered live since they can be accessed downstream
                     // of this call.
                     for (Variable x: problem.getNonSelfLocalVars()) {
-                        if (x instanceof LocalVariable && ((LocalVariable)x).getScopeDepth() > 0) {
+                        if (x instanceof LocalVariable && ((LocalVariable)x).isOuterScopeVar()) {
                             living.set(problem.getDFVar(x));
                         }
                     }

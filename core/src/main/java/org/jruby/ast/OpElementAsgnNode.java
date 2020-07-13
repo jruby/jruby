@@ -36,11 +36,9 @@ import java.util.List;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
-import org.jruby.util.StringSupport;
 
 /** Represents an operator assignment to an element.
  * 
@@ -55,9 +53,11 @@ public class OpElementAsgnNode extends Node {
     private final Node receiverNode;
     private final Node argsNode;
     private final Node valueNode;
+    private final Node blockNode;
     private final RubySymbol operatorName;
 
-    public OpElementAsgnNode(ISourcePosition position, Node receiverNode, RubySymbol operatorName, Node argsNode, Node valueNode) {
+    public OpElementAsgnNode(ISourcePosition position, Node receiverNode, RubySymbol operatorName, Node argsNode,
+                             Node valueNode, Node blockNode) {
         super(position, receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
@@ -67,6 +67,7 @@ public class OpElementAsgnNode extends Node {
         this.argsNode = argsNode;
         this.valueNode = valueNode;
         this.operatorName = operatorName;
+        this.blockNode = blockNode;
     }
 
     public NodeType getNodeType() {
@@ -127,6 +128,10 @@ public class OpElementAsgnNode extends Node {
      */
     public Node getValueNode() {
         return valueNode;
+    }
+
+    public Node getBlockNode() {
+        return blockNode;
     }
 
     public List<Node> childNodes() {

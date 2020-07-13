@@ -52,7 +52,7 @@ public class SetCapturedVarInstr extends OneOperandResultBaseInstr implements Fi
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getMatch2Result());
-        e.encode(getId());
+        e.encode(getName());
     }
 
     public static SetCapturedVarInstr decode(IRReaderDecoder d) {

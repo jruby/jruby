@@ -556,6 +556,10 @@ class TestTime < Test::Unit::TestCase
 
   def test_zone
     assert_zone_encoding Time.now
+    t = Time.now.utc
+    assert_equal("UTC", t.zone)
+    assert_nil(t.getlocal(0).zone)
+    assert_nil(t.getlocal("+02:00").zone)
   end
 
   def test_plus_minus_succ
@@ -1056,6 +1060,29 @@ class TestTime < Test::Unit::TestCase
       assert_equal(min, t.min)
       assert_equal(sec, t.sec)
     }
+    assert_equal(Time.local(2038,3,1), Time.local(2038,2,29))
+    assert_equal(Time.local(2038,3,2), Time.local(2038,2,30))
+    assert_equal(Time.local(2038,3,3), Time.local(2038,2,31))
+    assert_equal(Time.local(2040,2,29), Time.local(2040,2,29))
+    assert_equal(Time.local(2040,3,1), Time.local(2040,2,30))
+    assert_equal(Time.local(2040,3,2), Time.local(2040,2,31))
+    n = 2 ** 64
+    n += 400 - n % 400 # n is over 2^64 and multiple of 400
+    assert_equal(Time.local(n,2,29),Time.local(n,2,29))
+    assert_equal(Time.local(n,3,1), Time.local(n,2,30))
+    assert_equal(Time.local(n,3,2), Time.local(n,2,31))
+    n += 100
+    assert_equal(Time.local(n,3,1), Time.local(n,2,29))
+    assert_equal(Time.local(n,3,2), Time.local(n,2,30))
+    assert_equal(Time.local(n,3,3), Time.local(n,2,31))
+    n += 4
+    assert_equal(Time.local(n,2,29),Time.local(n,2,29))
+    assert_equal(Time.local(n,3,1), Time.local(n,2,30))
+    assert_equal(Time.local(n,3,2), Time.local(n,2,31))
+    n += 1
+    assert_equal(Time.local(n,3,1), Time.local(n,2,29))
+    assert_equal(Time.local(n,3,2), Time.local(n,2,30))
+    assert_equal(Time.local(n,3,3), Time.local(n,2,31))
   end
 
   def test_future
@@ -1104,14 +1131,19 @@ class TestTime < Test::Unit::TestCase
   end
 
   def test_strftime_no_hidden_garbage
+    skip unless Thread.list.size == 1
+
     fmt = %w(Y m d).map { |x| "%#{x}" }.join('-') # defeats optimization
     t = Time.at(0).getutc
     ObjectSpace.count_objects(res = {}) # creates strings on first call
+    GC.disable
     before = ObjectSpace.count_objects(res)[:T_STRING]
     val = t.strftime(fmt)
     after = ObjectSpace.count_objects(res)[:T_STRING]
     assert_equal before + 1, after, 'only new string is the created one'
     assert_equal '1970-01-01', val
+  ensure
+    GC.enable
   end
 
   def test_num_exact_error
@@ -1133,6 +1165,7 @@ class TestTime < Test::Unit::TestCase
     case size
     when 20 then expect = 50
     when 40 then expect = 86
+    when 48 then expect = 94
     else
       flunk "Unsupported RVALUE_SIZE=#{size}, update test_memsize"
     end

@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jruby.ParseResult;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -48,7 +47,7 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class Node implements ISourcePositionHolder, ParseResult, ISourcePosition {
+public abstract class Node implements ISourcePositionHolder, ISourcePosition {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<>();
 
@@ -135,6 +134,15 @@ public abstract class Node implements ISourcePositionHolder, ParseResult, ISourc
         return toString(false, 0);
     }
 
+    /**
+     * Not all interesting info in the AST is from Node data.  This method will print
+     * out anything else of note (e.g. FixnumNode's long value).
+     * @return null for no extra info or something otherwise.
+     */
+    public String toStringExtraInfo() {
+       return null;
+    }
+
     public String toString(boolean indent, int indentation) {
         if (this instanceof InvisibleNode) return "";
 
@@ -150,7 +158,10 @@ public abstract class Node implements ISourcePositionHolder, ParseResult, ISourc
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
-        builder.append(" ").append(getPosition().getLine());
+        builder.append(" line: ").append(getPosition().getLine());
+
+        String extraInfo = toStringExtraInfo();
+        if (extraInfo != null) builder.append(", ").append(extraInfo);
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 
@@ -249,5 +260,16 @@ public abstract class Node implements ISourcePositionHolder, ParseResult, ISourc
      */
     public boolean containsVariableAssignment() {
         return containsVariableAssignment;
+    }
+
+    /**
+     * @return is it possible this node will execute only once.  Note: This is not
+     * comprehensive.  It is used to look from root node down to class/module nodes
+     * to make sure that narrow case can execute once.  It is possible much deeper
+     * down the tree some nodes can only execute once but it will be marked as false
+     * because that case is not what this is for.
+     */
+    public boolean executesOnce() {
+        return false;
     }
 }

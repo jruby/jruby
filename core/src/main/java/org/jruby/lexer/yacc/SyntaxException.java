@@ -80,25 +80,36 @@ public class SyntaxException extends RuntimeException {
     private String file;
     private int line;
     private PID pid;
+    private int column;
 
     @Deprecated
     public SyntaxException(PID pid, ISourcePosition position, String lastLine, String message, Object... data) {
         this(pid, position.getFile(), position.getLine(), lastLine, message, data);
     }
 
+    @Deprecated
     public SyntaxException(PID pid, String file, int line, String lastLine, String message, Object... data) {
-        super(prepareMessage(message, lastLine));
+        this(pid, file, line, lastLine, message, -1);
+    }
+
+    public SyntaxException(PID pid, String file, int line, String lastLine, String message, int column) {
+        super(prepareMessage(message, lastLine, column));
 
         this.pid = pid;
         this.file = file;
         this.line = line;
+        this.column = column;
     }
 
 
-    private static String prepareMessage(String message, String line) {
+    private static String prepareMessage(String message, String line, int column) {
         if (line != null && line.length() > 5) {
-            boolean addNewline = message != null && ! message.endsWith("\n");
-            return message + (addNewline ? "\n" : "") + line;
+            boolean addNewline = message != null && !message.endsWith("\n");
+            message += (addNewline ? "\n" : "") + line;
+            if (column >= 0) {
+                addNewline = !line.endsWith("\n");
+                return message += (addNewline ? "\n" : "") + new String(new char[column - 1]).replace("\0", " ") + "^";
+            }
         }
         
         return message;

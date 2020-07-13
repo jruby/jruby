@@ -2,6 +2,8 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -43,6 +45,16 @@ public class Self extends Variable {
     public Variable clone(SimpleCloneInfo ii) {
         return this;
     }
+
+    @Override
+    public Operand cloneForInlining(CloneInfo ii) {
+        if (ii instanceof InlineCloneInfo) {
+            return ((InlineCloneInfo) ii).getRenamedSelfVariable(this);
+        } else {
+            return super.cloneForInlining(ii);
+        }
+    }
+
 
     @Override
     public void encode(IRWriterEncoder e) {

@@ -15,7 +15,6 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Complex;
@@ -41,7 +40,7 @@ import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
-import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.SymbolProc;
 import org.jruby.ir.operands.TemporaryBooleanVariable;
@@ -64,9 +63,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class IRDumper extends IRVisitor {
     private final PrintStream stream;
@@ -105,20 +104,22 @@ public class IRDumper extends IRVisitor {
         Map<RubySymbol, LocalVariable> localVariables = ic.getScope().getLocalVariables();
 
         if (localVariables != null && !localVariables.isEmpty()) {
-            println("declared variables");
+            println("declared variables:");
 
             for (Map.Entry<RubySymbol, LocalVariable> entry : localVariables.entrySet()) {
                 println(ansiStr(VARIABLE_COLOR, "  " + entry.getValue().toString()));
             }
         }
 
-        Set<LocalVariable> usedVariables = ic.getScope().getUsedLocalVariables();
-
-        if (usedVariables != null && !usedVariables.isEmpty()) {
-            println("used variables");
-
-            for (LocalVariable var : usedVariables) {
-                println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
+        FullInterpreterContext fullInterpreterContext = ic.getScope().getFullInterpreterContext();
+        if (fullInterpreterContext != null) {
+            Collection<LocalVariable> usedVariables = fullInterpreterContext.getUsedLocalVariables();
+            
+            if (usedVariables != null && !usedVariables.isEmpty()) {
+                println("used variables:");
+                for (LocalVariable var : usedVariables) {
+                    println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
+                }
             }
         }
 
@@ -128,7 +129,7 @@ public class IRDumper extends IRVisitor {
         int longest = 0;
         int largestBlock = 0;
 
-        if (instrs != null) {
+        if (instrs != null && instrs.length > 0) {
             largestBlock = instrs.length;
             for (Instr i : instrs) {
                 if (i instanceof ResultInstr) {
@@ -155,7 +156,9 @@ public class IRDumper extends IRVisitor {
         String varSpaces = spaces(longest + " := ".length());
         String ipcFormat = "  %0" + instrLog + "d: ";
 
-        if (instrs != null) {
+        if (instrs != null && instrs.length > 0) {
+            println();
+
             for (int i = 0; i < instrs.length; i++) {
                 formatInstr(instrs[i], varFormat, varSpaces, ipcFormat, instrs[i], i);
             }
@@ -285,13 +288,12 @@ public class IRDumper extends IRVisitor {
             visit(o);
         }
     }
-    public void AsString(AsString asstring) { visit(asstring.getSource()); }
     public void Bignum(Bignum bignum) { print(bignum.value); }
     public void Boolean(org.jruby.ir.operands.Boolean bool) { print(bool.isTrue() ? "t" : "f"); }
     public void UnboxedBoolean(UnboxedBoolean bool) { print(bool.isTrue() ? "t" : "f"); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { LocalVariable(closurelocalvariable); }
+    public void CurrentScope(CurrentScope currentscope) { }
     public void Complex(Complex complex) { visit(complex.getNumber()); }
-    public void CurrentScope(CurrentScope currentscope) { print(currentscope.getScopeNestingDepth()); }
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) { print(dynamicsymbol.getSymbolName()); }
     public void Filename(Filename filename) { }
     public void Fixnum(Fixnum fixnum) { print(fixnum.getValue()); }
@@ -310,6 +312,10 @@ public class IRDumper extends IRVisitor {
             print("=>");
             visit(pair.getValue());
         }
+        if (hash.isKWArgsHash) {
+            if (comma) print(',');
+            print("kwargs=true");
+        }
     }
     public void IRException(IRException irexception) { print(irexception.getType()); }
     public void Label(Label label) { print(label.toString()); }
@@ -324,7 +330,7 @@ public class IRDumper extends IRVisitor {
     public void Self(Self self) { print("%self"); }
     public void Splat(Splat splat) { visit(splat.getArray()); }
     public void StandardError(StandardError standarderror) {  }
-    public void StringLiteral(StringLiteral stringliteral) { print(stringliteral.getByteList()); }
+    public void MutableString(MutableString mutablestring) { print(mutablestring.getByteList()); }
     public void SValue(SValue svalue) { visit(svalue.getArray()); }
     public void Symbol(Symbol symbol) { print(symbol.getBytes()); }
     public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getName().idString()); }

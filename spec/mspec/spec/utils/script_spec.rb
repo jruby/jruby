@@ -250,8 +250,8 @@ describe MSpecScript, "#register" do
 
   it "registers :formatter with the formatter instance" do
     @formatter.stub(:new).and_return(@formatter)
-    MSpec.should_receive(:store).with(:formatter, @formatter)
     @script.register
+    MSpec.formatter.should be(@formatter)
   end
 
   it "does not register :formatter if config[:formatter] is false" do
@@ -350,20 +350,20 @@ describe MSpecScript, "#entries" do
   before :each do
     @script = MSpecScript.new
 
-    File.stub(:expand_path).and_return("name")
+    File.stub(:realpath).and_return("name")
     File.stub(:file?).and_return(false)
     File.stub(:directory?).and_return(false)
   end
 
   it "returns the pattern in an array if it is a file" do
-    File.should_receive(:expand_path).with("file").and_return("file/expanded.rb")
+    File.should_receive(:realpath).with("file").and_return("file/expanded.rb")
     File.should_receive(:file?).with("file/expanded.rb").and_return(true)
     @script.entries("file").should == ["file/expanded.rb"]
   end
 
   it "returns Dir['pattern/**/*_spec.rb'] if pattern is a directory" do
     File.should_receive(:directory?).with("name").and_return(true)
-    File.stub(:expand_path).and_return("name","name/**/*_spec.rb")
+    File.stub(:realpath).and_return("name", "name/**/*_spec.rb")
     Dir.should_receive(:[]).with("name/**/*_spec.rb").and_return(["dir1", "dir2"])
     @script.entries("name").should == ["dir1", "dir2"]
   end
@@ -382,13 +382,13 @@ describe MSpecScript, "#entries" do
 
     it "returns the pattern in an array if it is a file" do
       name = "#{@name}.rb"
-      File.should_receive(:expand_path).with(name).and_return(name)
+      File.should_receive(:realpath).with(name).and_return(name)
       File.should_receive(:file?).with(name).and_return(true)
       @script.entries("name.rb").should == [name]
     end
 
     it "returns Dir['pattern/**/*_spec.rb'] if pattern is a directory" do
-      File.stub(:expand_path).and_return(@name, @name+"/**/*_spec.rb")
+      File.stub(:realpath).and_return(@name, @name+"/**/*_spec.rb")
       File.should_receive(:directory?).with(@name).and_return(true)
       Dir.should_receive(:[]).with(@name + "/**/*_spec.rb").and_return(["dir1", "dir2"])
       @script.entries("name").should == ["dir1", "dir2"]
@@ -406,7 +406,7 @@ describe MSpecScript, "#files" do
     @script = MSpecScript.new
   end
 
-  it "accumlates the values returned by #entries" do
+  it "accumulates the values returned by #entries" do
     @script.should_receive(:entries).and_return(["file1"], ["file2"])
     @script.files(["a", "b"]).should == ["file1", "file2"]
   end

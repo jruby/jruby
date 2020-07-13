@@ -9,65 +9,60 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 
-import java.io.PrintWriter;
-import java.util.Stack;
+import java.util.ArrayDeque;
 
-import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.objectweb.asm.Opcodes.*;
 
-// This class represents JVM as the target of compilation
-// and outputs bytecode
-public abstract class JVM {
-    //private static final Logger LOG = LoggerFactory.getLogger(JVM.class);
+// This class represents JVM as the target of compilation and outputs bytecode
+public class JVM {
 
-    Stack<ClassData> clsStack = new Stack();
-    ClassWriter writer;
+    final ArrayDeque<ClassData> classStack = new ArrayDeque<>();
+    private ClassWriter writer;
 
-    public JVM() {
-    }
-
-    public static final int CMP_EQ = 0;
-
-    public byte[] code() {
+    public byte[] toByteCode() {
         return writer.toByteArray();
     }
 
     public ClassVisitor cls() {
-        return clsData().cls;
+        return classData().cls;
     }
 
-    public ClassData clsData() {
-        return clsStack.peek();
+    public ClassData classData() {
+        return classStack.getFirst(); // peek()
     }
 
     public MethodData methodData() {
-        return clsData().methodData();
+        return classData().methodData();
     }
 
-    public abstract void pushscript(String clsName, String filename);
+    public void pushscript(JVMVisitor visitor, String clsName, String filename) {
+        writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        classStack.push(new ClassData(clsName, writer, visitor));
+
+        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, clsName, null, p(Object.class), null);
+        cls().visitSource(filename, null);
+    }
 
     public void popclass() {
-        clsStack.pop();
+        classStack.pop();
     }
 
     public IRBytecodeAdapter method() {
-        return clsData().method();
+        return classData().method();
     }
 
-    public void pushmethod(String name, IRScope scope, Signature signature, boolean specificArity) {
-        clsData().pushmethod(name, scope, signature, specificArity);
+    public void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity) {
+        classData().pushmethod(name, scope, scopeField, signature, specificArity);
         method().startMethod();
     }
 
     public void popmethod() {
-        clsData().popmethod();
+        classData().popmethod();
     }
 
     public static String scriptToClass(String name) {

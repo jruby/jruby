@@ -41,9 +41,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.NullMethod;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.TypeConverter;
@@ -72,10 +70,6 @@ public class JavaPackage extends RubyModule {
         JavaPackage.setParent(Java);
         Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
         // JavaPackage.setReifiedClass(JavaPackage.class);
-
-        // @deprecated JavaPackageModuleTemplate used previously
-        runtime.getObject().setConstant("JavaPackageModuleTemplate", JavaPackage); // JavaPackageModuleTemplate
-        runtime.getObject().deprecateConstant(runtime, "JavaPackageModuleTemplate");
 
         JavaPackage.defineAnnotatedMethods(JavaPackage.class);
         return JavaPackage;
@@ -122,10 +116,10 @@ public class JavaPackage extends RubyModule {
     @JRubyMethod(name = "===")
     public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
         // maybe we could handle java.lang === java.lang.reflect as well ?
-        return context.runtime.newBoolean(obj == this || isInstance(obj));
+        return RubyBoolean.newBoolean(context, obj == this || isInstance(obj));
     }
 
-    @JRubyMethod(name = "const_missing", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "const_missing", required = 1)
     public IRubyObject const_missing(final ThreadContext context, final IRubyObject name) {
         return relativeJavaClassOrPackage(context, name, false);
     }
@@ -220,8 +214,8 @@ public class JavaPackage extends RubyModule {
         */
 
         //if ( ! (mname instanceof RubySymbol) ) mname = context.runtime.newSymbol(name);
-        //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, context.runtime.newBoolean(includePrivate));
-        //return context.runtime.newBoolean(respond.isTrue());
+        //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, RubyBoolean.newBoolean(context, includePrivate));
+        //return RubyBoolean.newBoolean(context, respond.isTrue());
 
         return context.nil; // NOTE: this is wrong - should be true but compatibility first, for now
     }
@@ -249,16 +243,16 @@ public class JavaPackage extends RubyModule {
     }
 
     private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        return context.runtime.newBoolean(BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
+        return RubyBoolean.newBoolean(context, BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
     }
 
-    @JRubyMethod(name = "method_missing", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "method_missing")
     public IRubyObject method_missing(ThreadContext context, final IRubyObject name) {
         // NOTE: getProxyOrPackageUnderPackage binds the (cached) method for us
         return Java.getProxyOrPackageUnderPackage(context, this, name.toString(), true);
     }
 
-    @JRubyMethod(name = "method_missing", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "method_missing", rest = true)
     public IRubyObject method_missing(ThreadContext context, final IRubyObject[] args) {
         if (args.length > 1) {
             throw packageMethodArgumentMismatch(context.runtime, this, args[0].toString(), args.length - 1);
@@ -282,14 +276,14 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod(name = "available?")
     public IRubyObject available_p(ThreadContext context) {
-        return context.runtime.newBoolean(isAvailable());
+        return RubyBoolean.newBoolean(context, isAvailable());
     }
 
     @JRubyMethod(name = "sealed?")
     public IRubyObject sealed_p(ThreadContext context) {
         final Package pkg = Package.getPackage(packageName);
         if ( pkg == null ) return context.nil;
-        return context.runtime.newBoolean(pkg.isSealed());
+        return RubyBoolean.newBoolean(context, pkg.isSealed());
     }
 
     @Override
@@ -346,12 +340,44 @@ public class JavaPackage extends RubyModule {
         @Override
         protected DynamicMethod searchMethodCommon(String id) {
             // this module is special and only searches itself;
-
-            // TODO implement a switch to allow for 'more-aligned' behavior
-
+            if ("superclass".equals(id)) {
+                return new MethodValue(id, superClass); // JavaPackage.superclass
+            }
             return (id = handlesMethod(id)) != null ? superClass.searchMethodInner(id) : NullMethod.INSTANCE;
         }
 
+        private static class MethodValue extends DynamicMethod {
+
+            private final IRubyObject value;
+
+            MethodValue(final String name, final IRubyObject value) {
+                super(name);
+                this.value = value;
+            }
+
+            public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                return call(context, self, clazz, name);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+                return value;
+            }
+
+            @Override
+            public DynamicMethod dup() {
+                try {
+                    return (DynamicMethod) super.clone();
+                }
+                catch (CloneNotSupportedException ex) {
+                    throw new AssertionError(ex);
+                }
+            }
+
+            @Override
+            public Arity getArity() { return Arity.NO_ARGUMENTS; }
+
+        }
         private static String handlesMethod(final String name) {
             // FIXME: We should consider pure-bytelist search here.
             switch (name) {

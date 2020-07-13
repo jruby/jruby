@@ -1,7 +1,7 @@
 inherit_from: .rubocop_todo.yml
 
 AllCops:
-  TargetRubyVersion: 2.4
+  TargetRubyVersion: 2.5
   DisplayCopNames: true
   Exclude:
     - command_line/fixtures/bad_syntax.rb
@@ -9,6 +9,15 @@ AllCops:
 
 Layout/TrailingWhitespace:
   Enabled: true
+
+Layout/TrailingEmptyLines:
+  Enabled: true
+  Exclude:
+    - library/coverage/fixtures/some_class.rb
+
+Layout/SpaceInLambdaLiteral:
+  Enabled: true
+  EnforcedStyle: require_space
 
 Lint:
   Enabled: true
@@ -29,7 +38,10 @@ Lint/InterpolationCheck:
 Lint/LiteralAsCondition:
   Enabled: false
 
-Lint/UnneededRequireStatement:
+Lint/RedundantRequireStatement:
+  Enabled: false
+
+Lint/RedundantSplatExpansion:
   Enabled: false
 
 Lint/UnifiedInteger:
@@ -47,7 +59,6 @@ Lint/UselessAssignment:
 Lint/UselessComparison:
   Enabled: false
 
-# The cop registers too many false positives to `.should == something`
 Lint/Void:
   Enabled: false
 
@@ -60,11 +71,59 @@ Lint/EmptyWhen:
     - language/case_spec.rb
     - optional/capi/spec_helper.rb
 
+Lint/FormatParameterMismatch:
+  Exclude:
+    - 'core/kernel/shared/sprintf.rb'
+    - 'core/string/modulo_spec.rb'
+
 Lint/NestedMethodDefinition:
   Exclude:
     - language/def_spec.rb
     - language/fixtures/def.rb
 
+Lint/ShadowingOuterLocalVariable:
+  Exclude:
+    - 'core/binding/local_variables_spec.rb'
+    - 'core/kernel/local_variables_spec.rb'
+    - 'language/block_spec.rb'
+    - 'language/proc_spec.rb'
+
+Lint/UnreachableCode:
+  Exclude:
+    - 'core/enumerator/lazy/fixtures/classes.rb'
+    - 'core/kernel/catch_spec.rb'
+    - 'core/kernel/throw_spec.rb'
+    - 'language/break_spec.rb'
+    - 'language/fixtures/break.rb'
+    - 'language/fixtures/break_lambda_toplevel.rb'
+    - 'language/fixtures/break_lambda_toplevel_block.rb'
+    - 'language/fixtures/break_lambda_toplevel_method.rb'
+    - 'language/fixtures/return.rb'
+    - 'language/next_spec.rb'
+    - 'language/return_spec.rb'
+    - 'optional/capi/kernel_spec.rb'
+    - 'shared/kernel/raise.rb'
+
 Lint/UriRegexp:
   Exclude:
     - 'library/uri/regexp_spec.rb'
+
+Lint/Debugger:
+  Exclude:
+    - 'core/binding/fixtures/irb.rb'
+
+Style/Lambda:
+  Enabled: true
+  EnforcedStyle: literal
+  Exclude:
+    - 'language/lambda_spec.rb'
+    - 'language/proc_spec.rb'
+    - 'language/numbered_parameters_spec.rb'
+    - 'core/kernel/lambda_spec.rb'
+
+Style/EmptyLambdaParameter:
+  Enabled: true
+
+Style/StabbyLambdaParentheses:
+  Enabled: true
+  EnforcedStyle: require_no_parentheses

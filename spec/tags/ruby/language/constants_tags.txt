@@ -7,3 +7,4 @@ fails(2.3 feature):Constant resolution within a singleton class (class << obj) u
 fails(2.3 feature):Constant resolution within a singleton class (class << obj) allows nested modules to have proper resolution
 fails:Module#private_constant marked constants in a module cannot be reopened as a module from scope where constant would be private
 fails:Module#private_constant marked constants in a module cannot be reopened as a class from scope where constant would be private
+fails:Allowed characters does not allow not ASCII upcased characters at the beginning

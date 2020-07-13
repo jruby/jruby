@@ -22,14 +22,26 @@ describe "Enumerator::Yielder#<<" do
     (y << 1).should equal(y)
   end
 
-  it "requires multiple arguments" do
-    Enumerator::Yielder.instance_method(:<<).arity.should < 0
-  end
+  context "when multiple arguments passed" do
+    ruby_version_is '' ... '2.6' do
+      it "yields the arguments list to the block" do
+        ary = []
+        y = Enumerator::Yielder.new { |*x| ary << x }
+        y.<<(1, 2)
 
-  it "yields with passed arguments" do
-    yields = []
-    y = Enumerator::Yielder.new {|*args| yields << args }
-    y.<<(1, 2)
-    yields.should == [[1, 2]]
+        ary.should == [[1, 2]]
+      end
+    end
+
+    ruby_version_is '2.6' do
+      it "raises an ArgumentError" do
+        ary = []
+        y = Enumerator::Yielder.new { |*x| ary << x }
+
+        -> {
+          y.<<(1, 2)
+        }.should raise_error(ArgumentError, /wrong number of arguments/)
+      end
+    end
   end
 end

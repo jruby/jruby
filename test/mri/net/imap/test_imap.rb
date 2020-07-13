@@ -231,7 +231,7 @@ class IMAPTest < Test::Unit::TestCase
         in_idle = false
         exception_raised = false
         c = m.new_cond
-        @threads << Thread.start do
+        raiser = Thread.start do
           m.synchronize do
             until in_idle
               c.wait(0.1)
@@ -243,6 +243,7 @@ class IMAPTest < Test::Unit::TestCase
             c.signal
           end
         end
+        @threads << raiser
         imap.idle do |res|
           m.synchronize do
             in_idle = true
@@ -260,6 +261,7 @@ class IMAPTest < Test::Unit::TestCase
       imap.logout
     ensure
       imap.disconnect if imap
+      raiser.kill unless in_idle
     end
   end
 
@@ -524,6 +526,43 @@ class IMAPTest < Test::Unit::TestCase
       assert_raise(Net::IMAP::DataFormatError) do
         imap.send(:send_command, "TEST", Net::IMAP::MessageSet.new(4294967296))
       end
+      imap.logout
+    ensure
+      imap.disconnect
+    end
+  end
+
+  def test_send_literal
+    server = create_tcp_server
+    port = server.addr[1]
+    requests = []
+    literal = nil
+    @threads << Thread.start do
+      sock = server.accept
+      begin
+        sock.print("* OK test server\r\n")
+        line = sock.gets
+        requests.push(line)
+        size = line.slice(/{(\d+)}\r\n/, 1).to_i
+        sock.print("+ Ready for literal data\r\n")
+        literal = sock.read(size)
+        requests.push(sock.gets)
+        sock.print("RUBY0001 OK TEST completed\r\n")
+        sock.gets
+        sock.print("* BYE terminating connection\r\n")
+        sock.print("RUBY0002 OK LOGOUT completed\r\n")
+      ensure
+        sock.close
+        server.close
+      end
+    end
+    begin
+      imap = Net::IMAP.new(server_addr, :port => port)
+      imap.send(:send_command, "TEST", ["\xDE\xAD\xBE\xEF".b])
+      assert_equal(2, requests.length)
+      assert_equal("RUBY0001 TEST ({4}\r\n", requests[0])
+      assert_equal("\xDE\xAD\xBE\xEF".b, literal)
+      assert_equal(")\r\n", requests[1])
       imap.logout
     ensure
       imap.disconnect

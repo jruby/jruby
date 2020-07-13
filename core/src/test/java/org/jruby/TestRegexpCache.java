@@ -1,11 +1,11 @@
 package org.jruby;
 
 import org.joni.Regex;
-import org.jruby.test.TestRubyBase;
+import org.jruby.test.Base;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 
-public class TestRegexpCache extends TestRubyBase {
+public class TestRegexpCache extends Base {
 
     // GH-2078
     public void testCacheRetention() {
@@ -48,14 +48,14 @@ public class TestRegexpCache extends TestRubyBase {
 
         // Should be the same object if cached
         RubyRegexp regexp = new RubyRegexp(runtime);
-        regexp.initialize_m19(str); // Regexp.new(str)
+        regexp.initialize_m(str); // Regexp.new(str)
 
         assertEquals(1, RubyRegexp.patternCache.size());
 
         assertNotNull( RubyRegexp.patternCache.get(strBytes) );
 
         // str[0] = 'R'
-        str.op_aset19(runtime.getCurrentContext(), runtime.newFixnum(0), RubyString.newString(runtime, "R"));
+        str.op_aset(runtime.getCurrentContext(), runtime.newFixnum(0), RubyString.newString(runtime, "R"));
 
         assertEquals(ByteList.create("Regexp"), strBytes);
 

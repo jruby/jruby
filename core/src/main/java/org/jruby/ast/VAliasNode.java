@@ -44,8 +44,8 @@ import org.jruby.util.StringSupport;
  * Represents an alias of a global variable.
  */
 public class VAliasNode extends Node {
-    private RubySymbol oldName;
-    private RubySymbol newName;
+    private final RubySymbol oldName;
+    private final RubySymbol newName;
 
     public VAliasNode(ISourcePosition position, RubySymbol newName, RubySymbol oldName) {
         super(position, false);

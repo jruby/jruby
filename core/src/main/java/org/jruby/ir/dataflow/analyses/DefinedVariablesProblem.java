@@ -57,7 +57,7 @@ public class DefinedVariablesProblem extends DataFlowProblem<DefinedVariablesPro
     }
 
     /* ----------- Private Interface ------------ */
-    private HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
-    private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
-    private HashSet<Variable> vars = new HashSet<Variable>();
+    private final HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
+    private final HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
+    private final HashSet<Variable> vars = new HashSet<Variable>();
 }

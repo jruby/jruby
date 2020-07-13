@@ -42,8 +42,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * variable we will also keep a list of it's location.
  */
 public class ArgumentNode extends Node implements INameNode {
-    private RubySymbol identifier;
-    private int location;
+    private final RubySymbol identifier;
+    private final int location;
 
     public ArgumentNode(ISourcePosition position, RubySymbol identifier, int location) {
         super(position, false);

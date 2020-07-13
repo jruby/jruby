@@ -152,16 +152,24 @@ class Gem::Command
   #--
   # TODO: replace +domain+ with a parameter to suppress suggestions
 
-  def show_lookup_failure(gem_name, version, errors, domain)
+  def show_lookup_failure(gem_name, version, errors, domain, required_by = nil)
+    gem = "'#{gem_name}' (#{version})"
+    msg = String.new "Could not find a valid gem #{gem}"
+
     if errors and !errors.empty?
-      msg = "Could not find a valid gem '#{gem_name}' (#{version}), here is why:\n".dup
+      msg << ", here is why:\n"
       errors.each { |x| msg << "          #{x.wordy}\n" }
-      alert_error msg
     else
-      alert_error "Could not find a valid gem '#{gem_name}' (#{version}) in any repository"
+      if required_by and gem != required_by
+        msg << " (required by #{required_by}) in any repository"
+      else
+        msg << " in any repository"
+      end
     end
 
-    unless domain == :local then # HACK
+    alert_error msg
+
+    unless domain == :local  # HACK
       suggestions = Gem::SpecFetcher.fetcher.suggest_gems_from_name gem_name
 
       unless suggestions.empty?
@@ -176,7 +184,7 @@ class Gem::Command
   def get_all_gem_names
     args = options[:args]
 
-    if args.nil? or args.empty? then
+    if args.nil? or args.empty?
       raise Gem::CommandLineError,
             "Please specify at least one gem name (e.g. gem build GEMNAME)"
     end
@@ -206,12 +214,12 @@ class Gem::Command
   def get_one_gem_name
     args = options[:args]
 
-    if args.nil? or args.empty? then
+    if args.nil? or args.empty?
       raise Gem::CommandLineError,
             "Please specify a gem name on the command line (e.g. gem build GEMNAME)"
     end
 
-    if args.size > 1 then
+    if args.size > 1
       raise Gem::CommandLineError,
             "Too many gem names (#{args.join(', ')}); please specify only one"
     end
@@ -305,9 +313,9 @@ class Gem::Command
       self.ui = ui = Gem::SilentUI.new
     end
 
-    if options[:help] then
+    if options[:help]
       show_help
-    elsif @when_invoked then
+    elsif @when_invoked
       @when_invoked.call options
     else
       execute
@@ -353,7 +361,7 @@ class Gem::Command
 
   def remove_option(name)
     @option_groups.each do |_, option_list|
-      option_list.reject! { |args, _| args.any? { |x| x =~ /^#{name}/ } }
+      option_list.reject! { |args, _| args.any? { |x| x.is_a?(String) && x =~ /^#{name}/ } }
     end
   end
 
@@ -443,7 +451,7 @@ class Gem::Command
   # Adds a section with +title+ and +content+ to the parser help view.  Used
   # for adding command arguments and default arguments.
 
-  def add_parser_run_info title, content
+  def add_parser_run_info(title, content)
     return if content.empty?
 
     @parser.separator nil
@@ -496,7 +504,6 @@ class Gem::Command
     @parser.separator "  #{header}Options:"
 
     option_list.each do |args, handler|
-      args.select { |arg| arg =~ /^-/ }
       @parser.on(*args) do |value|
         handler.call(value, @options)
       end
@@ -523,7 +530,7 @@ class Gem::Command
   add_common_option('-V', '--[no-]verbose',
                     'Set the verbose level of output') do |value, options|
     # Set us to "really verbose" so the progress meter works
-    if Gem.configuration.verbose and value then
+    if Gem.configuration.verbose and value
       Gem.configuration.verbose = 1
     else
       Gem.configuration.verbose = value
@@ -562,7 +569,7 @@ class Gem::Command
 
   # :stopdoc:
 
-  HELP = <<-HELP
+  HELP = <<-HELP.freeze
 RubyGems is a sophisticated package manager for Ruby.  This is a
 basic help message containing pointers to more information.
 

@@ -11,6 +11,7 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
+import org.jruby.runtime.Visibility;
 
 import java.util.ListIterator;
 
@@ -84,6 +85,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (!explicitCallProtocolSupported(scope)) return null;
 
+        scope.getFlags().remove(IRFlags.FLAGS_COMPUTED);
+        scope.computeScopeFlags();
+
         CFG cfg = scope.getCFG();
 
         // For now, we always require frame for closures
@@ -124,7 +128,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         if (arityValue == 1) {
                             prologueBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
                         } else {
-                            prologueBB.addInstr(PrepareFixedBlockArgsInstr.INSTANCE);
+                            prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
                         }
                     } else {
                         prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
@@ -135,7 +139,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     if (scope.needsOnlyBackref()) {
                         entryBB.addInstr(new PushBackrefFrameInstr());
                     } else {
-                        entryBB.addInstr(new PushMethodFrameInstr(scope.getName()));
+                        entryBB.addInstr(new PushMethodFrameInstr(
+                                scope.getName(),
+                                scope.isScriptScope() ? Visibility.PRIVATE : Visibility.PUBLIC));
                     }
                 }
                 if (requireBinding) entryBB.addInstr(new PushMethodBindingInstr());
@@ -164,7 +170,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     // Breaks & non-local returns in blocks will throw exceptions
                     // and pops for them will be handled in the GEB
                     if (!bb.isExitBB() && i instanceof ReturnInstr) {
-                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
+                        // Frame holds backref and lastline, binding holds heap scopes
+                        if (requireFrame || requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         i = instrs.previous();
                         popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
@@ -176,7 +183,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 if (bb.isExitBB() && !bb.isEmpty()) {
                     // Last instr could be a return -- so, move iterator one position back
                     if (i != null && i instanceof ReturnInstr) {
-                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
+                        // Frame holds backref and lastline, binding holds heap scopes
+                        if (requireFrame || requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         instrs.previous();
                     }
                     popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);

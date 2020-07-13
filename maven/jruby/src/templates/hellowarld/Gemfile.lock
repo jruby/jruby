@@ -19,11 +19,11 @@ GEM
       leafy-health (~> 0.6.2)
       leafy-logger (~> 0.6.2)
       leafy-metrics (~> 0.6.2)
-    puma (2.13.4-java)
-    rack (1.6.4)
+    puma (3.12.6-java)
+    rack (1.6.11)
     rack-protection (1.5.5)
       rack
-    rake (10.4.2)
+    rake (12.3.3)
     sinatra (1.4.6)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -51,10 +51,10 @@ PLATFORMS
 
 DEPENDENCIES
   leafy-complete (~> 0.6)
-  puma (~> 2.13)
+  puma (= 3.12.6)
   rake (~> 10.2)
   sinatra (~> 1.4)
   torquebox (= 4.0.0.beta2)
 
 BUNDLED WITH
-   1.10.6
+   1.17.1

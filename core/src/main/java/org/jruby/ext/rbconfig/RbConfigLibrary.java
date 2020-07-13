@@ -39,22 +39,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jnr.posix.util.Platform;
-
+import org.jcodings.Config;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
-import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
-import org.jruby.anno.JRubyMethod;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyModule;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
-
-import static org.jruby.platform.Platform.IS_WINDOWS;
 
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
@@ -64,12 +59,13 @@ public class RbConfigLibrary implements Library {
     private static final String RUBY_WIN32 = "mswin32";
     private static final String RUBY_SOLARIS = "solaris";
     private static final String RUBY_FREEBSD = "freebsd";
+    private static final String RUBY_DRAGONFLYBSD = "dragonflybsd";
     private static final String RUBY_AIX = "aix";
 
     private static String normalizedHome;
 
     /** This is a map from Java's "friendly" OS names to those used by Ruby */
-    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<String, String>();
+    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<>(24, 1);
     static {
         RUBY_OS_NAMES.put("Mac OS X", RUBY_DARWIN);
         RUBY_OS_NAMES.put("Darwin", RUBY_DARWIN);
@@ -89,24 +85,24 @@ public class RbConfigLibrary implements Library {
         RUBY_OS_NAMES.put("Solaris", RUBY_SOLARIS);
         RUBY_OS_NAMES.put("SunOS", RUBY_SOLARIS);
         RUBY_OS_NAMES.put("FreeBSD", RUBY_FREEBSD);
+        RUBY_OS_NAMES.put("DragonFlyBSD", RUBY_DRAGONFLYBSD);
         RUBY_OS_NAMES.put("AIX", RUBY_AIX);
     }
 
     public static String getOSName() {
-        if (Platform.IS_WINDOWS) {
-            return RUBY_WIN32;
-        }
+        if (Platform.IS_LINUX) return RUBY_LINUX;
+        if (Platform.IS_MAC) return RUBY_DARWIN;
+        if (Platform.IS_WINDOWS) return RUBY_WIN32;
 
-        String OSName = Platform.getOSName();
-        String theOSName = RUBY_OS_NAMES.get(OSName);
-
-        return theOSName == null ? OSName : theOSName;
+        String osName = SafePropertyAccessor.getProperty("os.name");
+        String rubyName = RUBY_OS_NAMES.get(osName);
+        return rubyName == null ? osName : rubyName;
     }
 
     public static String getArchitecture() {
         String architecture = Platform.ARCH;
         if (architecture == null) architecture = "unknown";
-        if (architecture.equals("amd64")) architecture = "x86_64";
+        if ("amd64".equals(architecture)) architecture = "x86_64";
 
         return architecture;
     }
@@ -117,7 +113,7 @@ public class RbConfigLibrary implements Library {
 
     public static String getNormalizedHome(Ruby runtime) {
         normalizedHome = runtime.getJRubyHome();
-        if ((normalizedHome == null) && Ruby.isSecurityRestricted()) {
+        if (normalizedHome == null && Ruby.isSecurityRestricted()) {
             normalizedHome = "SECURITY RESTRICTED";
         }
         return normalizedHome;
@@ -217,55 +213,68 @@ public class RbConfigLibrary implements Library {
      * <code>EXEEXT</code>.
      */
     public void load(Ruby runtime, boolean wrap) {
-        RubyModule configModule;
+        ThreadContext context = runtime.getCurrentContext();
 
-        configModule = runtime.defineModule("RbConfig");
-        RubyKernel.autoload(runtime.getCurrentContext(), runtime.getObject(), runtime.newSymbol("Config"), runtime.newString("rbconfig/obsolete.rb"));
+        final RubyModule rbConfig = runtime.defineModule("RbConfig");
 
-        configModule.defineAnnotatedMethods(RbConfigLibrary.class);
+        normalizedHome = getNormalizedHome(runtime);
 
-        RubyHash configHash = RubyHash.newHash(runtime);
-        configModule.defineConstant("CONFIG", configHash);
+        // Ruby installed directory.
+        rbConfig.setConstant("TOPDIR", RubyString.newString(runtime, normalizedHome));
+        RubyString destDir = RubyString.newEmptyString(runtime);
+        // DESTDIR on make install.
+        rbConfig.setConstant("DESTDIR", destDir);
+
+        // The hash configurations stored.
+        final RubyHash CONFIG = new RubyHash(runtime, 48);
+
+        CONFIG.fastASetCheckString(runtime, runtime.newString("DESTDIR"), destDir);
 
         String[] versionParts;
         versionParts = Constants.RUBY_VERSION.split("\\.");
 
-        setConfig(configHash, "MAJOR", versionParts[0]);
-        setConfig(configHash, "MINOR", versionParts[1]);
-        setConfig(configHash, "TEENY", versionParts[2]);
-        setConfig(configHash, "ruby_version", versionParts[0] + '.' + versionParts[1] + ".0");
+        String major = versionParts[0];
+        String minor = versionParts[1];
+        String teeny = versionParts[2];
+        setConfig(context, CONFIG, "MAJOR", major);
+        setConfig(context, CONFIG, "MINOR", minor);
+        setConfig(context, CONFIG, "TEENY", teeny);
+        setConfig(context, CONFIG, "ruby_version", major + '.' + minor + ".0");
         // Rubygems is too specific on host cpu so until we have real need lets default to universal
-        //setConfig(configHash, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
-        setConfig(configHash, "arch", "universal-java" + System.getProperty("java.specification.version"));
-
-        normalizedHome = getNormalizedHome(runtime);
+        //setConfig(CONFIG, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
+        setConfig(context, CONFIG, "arch", "universal-java" + System.getProperty("java.specification.version"));
 
         // Use property for binDir if available, otherwise fall back to common bin default
         String binDir = SafePropertyAccessor.getProperty("jruby.bindir");
         if (binDir == null) {
             binDir = newFile(normalizedHome, "bin").getPath();
         }
-        setConfig(configHash, "bindir", binDir);
+        setConfig(context, CONFIG, "bindir", binDir);
 
-        setConfig(configHash, "RUBY_INSTALL_NAME", jrubyScript());
-        setConfig(configHash, "RUBYW_INSTALL_NAME", IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
-        setConfig(configHash, "ruby_install_name", jrubyScript());
-        setConfig(configHash, "rubyw_install_name", IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
-        setConfig(configHash, "SHELL", jrubyShell());
-        setConfig(configHash, "prefix", normalizedHome);
-        setConfig(configHash, "exec_prefix", normalizedHome);
+        setConfig(context, CONFIG, "RUBY_INSTALL_NAME", jrubyScript());
+        setConfig(context, CONFIG, "RUBY_BASE_NAME", jrubyScript());
+        setConfig(context, CONFIG, "RUBYW_INSTALL_NAME", Platform.IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
+        setConfig(context, CONFIG, "ruby_install_name", jrubyScript());
+        setConfig(context, CONFIG, "rubyw_install_name", Platform.IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
+        setConfig(context, CONFIG, "SHELL", jrubyShell());
+        setConfig(context, CONFIG, "prefix", normalizedHome);
+        setConfig(context, CONFIG, "exec_prefix", normalizedHome);
 
-        setConfig(configHash, "host_os", getOSName());
-        setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
-        setConfig(configHash, "host_cpu", getArchitecture());
+        final String osName = getOSName();
+        final String arch = getArchitecture();
+        final String vendor = SafePropertyAccessor.getProperty("java.vendor");
 
-        String host = String.format("%s-%s-%s", getOSName(), System.getProperty("java.vendor"), getArchitecture());
-        setConfig(configHash, "host", host);
-        setConfig(configHash, "host_alias", host);
+        setConfig(context, CONFIG, "host_os", osName);
+        setConfig(context, CONFIG, "host_vendor", vendor);
+        setConfig(context, CONFIG, "host_cpu", arch);
 
-        setConfig(configHash, "target_os", getOSName());
+        String host = String.format("%s-%s-%s", osName, vendor, arch);
+        setConfig(context, CONFIG, "host", host);
+        setConfig(context, CONFIG, "host_alias", host);
 
-        setConfig(configHash, "target_cpu", getArchitecture());
+        setConfig(context, CONFIG, "target_os", osName);
+
+        setConfig(context, CONFIG, "target_cpu", arch);
 
         String jrubyJarFile = "jruby.jar";
         URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource("/org/jruby/Ruby.class");
@@ -277,13 +286,13 @@ public class RbConfigLibrary implements Library {
                 jrubyJarFile = jarMatcher.group(1);
             }
         }
-        setConfig(configHash, "LIBRUBY", jrubyJarFile);
-        setConfig(configHash, "LIBRUBY_SO", jrubyJarFile);
-        setConfig(configHash, "LIBRUBY_SO", jrubyJarFile);
-        setConfig(configHash, "LIBRUBY_ALIASES", jrubyJarFile);
+        setConfig(context, CONFIG, "LIBRUBY", jrubyJarFile);
+        setConfig(context, CONFIG, "LIBRUBY_SO", jrubyJarFile);
+        setConfig(context, CONFIG, "LIBRUBY_SO", jrubyJarFile);
+        setConfig(context, CONFIG, "LIBRUBY_ALIASES", jrubyJarFile);
 
-        setConfig(configHash, "build", Constants.BUILD);
-        setConfig(configHash, "target", Constants.TARGET);
+        setConfig(context, CONFIG, "build", Constants.BUILD);
+        setConfig(context, CONFIG, "target", Constants.TARGET);
 
 
         String shareDir = newFile(normalizedHome, "share").getPath();
@@ -302,86 +311,102 @@ public class RbConfigLibrary implements Library {
         String siteArchDir = getSiteArchDir(runtime);
         String sysConfDir = getSysConfDir(runtime);
 
-        setConfig(configHash, "libdir", vendorDirGeneral);
-        setConfig(configHash, "rubylibprefix", vendorDirGeneral + "/ruby");
-        setConfig(configHash, "rubylibdir",     rubyLibDir);
-        setConfig(configHash, "rubysharedlibdir", rubySharedLibDir);
+        setConfig(context, CONFIG, "libdir", vendorDirGeneral);
+        setConfig(context, CONFIG, "rubylibprefix", vendorDirGeneral + "/ruby");
+        setConfig(context, CONFIG, "rubylibdir",     rubyLibDir);
+        setConfig(context, CONFIG, "rubysharedlibdir", rubySharedLibDir);
         if (!isSiteVendorSame(runtime)) {
-        setConfig(configHash, "vendordir",      vendorDir);
-        setConfig(configHash, "vendorlibdir",   vendorLibDir);
-        setConfig(configHash, "vendorarchdir",    vendorArchDir);
+            setConfig(context, CONFIG, "vendordir",      vendorDir);
+            setConfig(context, CONFIG, "vendorlibdir",   vendorLibDir);
+            setConfig(context, CONFIG, "vendorarchdir",    vendorArchDir);
         }
-        setConfig(configHash, "sitedir",        siteDir);
-        setConfig(configHash, "sitelibdir",     siteLibDir);
-        setConfig(configHash, "sitearchdir",    siteArchDir);
-        setConfig(configHash, "sitearch", "java");
-        setConfig(configHash, "archdir",   archDir);
-        setConfig(configHash, "topdir",   archDir);
-        setConfig(configHash, "includedir",   includeDir);
-        setConfig(configHash, "rubyhdrdir",   includeDir);
-        setConfig(configHash, "configure_args", "");
-        setConfig(configHash, "datadir", shareDir);
-        setConfig(configHash, "mandir", newFile(normalizedHome, "man").getPath());
-        setConfig(configHash, "sysconfdir", sysConfDir);
-        setConfig(configHash, "localstatedir", newFile(normalizedHome, "var").getPath());
-        setConfig(configHash, "DLEXT", "jar");
-        if (getRubygemsDir(runtime) != null) {
-            setConfig(configHash, "rubygemsdir", newFile(getRubygemsDir(runtime)).getPath());
+        setConfig(context, CONFIG, "sitedir",        siteDir);
+        setConfig(context, CONFIG, "sitelibdir",     siteLibDir);
+        setConfig(context, CONFIG, "sitearchdir",    siteArchDir);
+        setConfig(context, CONFIG, "sitearch", "java");
+        setConfig(context, CONFIG, "archdir",   archDir);
+        setConfig(context, CONFIG, "topdir",   archDir);
+        setConfig(context, CONFIG, "includedir",   includeDir);
+        setConfig(context, CONFIG, "rubyhdrdir",   includeDir);
+        setConfig(context, CONFIG, "configure_args", "");
+        setConfig(context, CONFIG, "datadir", shareDir);
+        setConfig(context, CONFIG, "mandir", newFile(normalizedHome, "man").getPath());
+        setConfig(context, CONFIG, "sysconfdir", sysConfDir);
+        setConfig(context, CONFIG, "localstatedir", newFile(normalizedHome, "var").getPath());
+        setConfig(context, CONFIG, "DLEXT", "jar");
+        if (Platform.IS_WINDOWS) {
+            setConfig(context, CONFIG, "RUBY_SO_NAME", ((arch.equals("x86_64")) ? "x64-" : "") + "msvcrt-" + jrubyScript());
+        } else {
+            setConfig(context, CONFIG, "RUBY_SO_NAME", "ruby");
+        }
+
+        final String rubygemsDir = getRubygemsDir(runtime);
+        if (rubygemsDir != null) {
+            setConfig(context, CONFIG, "rubygemsdir", newFile(rubygemsDir).getPath());
         }
 
         if (Platform.IS_WINDOWS) {
-            setConfig(configHash, "EXEEXT", ".exe");
+            setConfig(context, CONFIG, "EXEEXT", ".exe");
         } else {
-            setConfig(configHash, "EXEEXT", "");
+            setConfig(context, CONFIG, "EXEEXT", "");
         }
 
-        setConfig(configHash, "ridir", newFile(shareDir, "ri").getPath());
+        setConfig(context, CONFIG, "ridir", newFile(shareDir, "ri").getPath());
 
         // These will be used as jruby defaults for rubygems if found
         String gemhome = SafePropertyAccessor.getProperty("jruby.gem.home");
         String gempath = SafePropertyAccessor.getProperty("jruby.gem.path");
-        if (gemhome != null) setConfig(configHash, "default_gem_home", gemhome);
-        if (gempath != null) setConfig(configHash, "default_gem_path", gempath);
+        if (gemhome != null) setConfig(context, CONFIG, "default_gem_home", gemhome);
+        if (gempath != null) setConfig(context, CONFIG, "default_gem_path", gempath);
 
-        setConfig(configHash, "joda-time.version", Constants.JODA_TIME_VERSION);
-        setConfig(configHash, "tzdata.version",    Constants.TZDATA_VERSION);
+        setConfig(context, CONFIG, "joda-time.version", Constants.JODA_TIME_VERSION);
+        setConfig(context, CONFIG, "tzdata.version",    Constants.TZDATA_VERSION);
 
-        RubyHash mkmfHash = RubyHash.newHash(runtime);
+        setConfig(context, CONFIG, "UNICODE_VERSION", Config.UNICODE_VERSION_STRING);
+        setConfig(context, CONFIG, "UNICODE_EMOJI_VERSION", Config.UNICODE_EMOJI_VERSION_STRING);
+
+        rbConfig.defineConstant("CONFIG", CONFIG);
 
 
-        setConfig(mkmfHash, "libdir", vendorDirGeneral);
-        setConfig(mkmfHash, "arch", "java");
-        setConfig(mkmfHash, "rubylibdir",     rubyLibDir);
-        setConfig(mkmfHash, "rubysharedlibdir", rubySharedLibDir);
+        // TODO CONFIG and MAKEFILE_CONFIG seems to be the same Hash in Ruby 2.5
+        final RubyHash mkmfHash = new RubyHash(runtime, 64);
+
+        setConfig(context, mkmfHash, "libdir", vendorDirGeneral);
+        setConfig(context, mkmfHash, "arch", "java");
+        setConfig(context, mkmfHash, "rubylibdir",     rubyLibDir);
+        setConfig(context, mkmfHash, "rubysharedlibdir", rubySharedLibDir);
         if (!isSiteVendorSame(runtime)) {
-        setConfig(mkmfHash, "vendordir",      vendorDir);
-        setConfig(mkmfHash, "vendorlibdir",   vendorLibDir);
-        setConfig(mkmfHash, "vendorarchdir",  vendorArchDir);
+            setConfig(context, mkmfHash, "vendordir",      vendorDir);
+            setConfig(context, mkmfHash, "vendorlibdir",   vendorLibDir);
+            setConfig(context, mkmfHash, "vendorarchdir",  vendorArchDir);
         }
-        setConfig(mkmfHash, "sitedir",        siteDir);
-        setConfig(mkmfHash, "sitelibdir",     siteLibDir);
-        setConfig(mkmfHash, "sitearchdir",    siteArchDir);
-        setConfig(mkmfHash, "sitearch", "java");
-        setConfig(mkmfHash, "archdir",    archDir);
-        setConfig(mkmfHash, "topdir",    archDir);
-        setConfig(mkmfHash, "configure_args", "");
-        setConfig(mkmfHash, "datadir", newFile(normalizedHome, "share").getPath());
-        setConfig(mkmfHash, "mandir", newFile(normalizedHome, "man").getPath());
-        setConfig(mkmfHash, "sysconfdir", sysConfDir);
-        setConfig(mkmfHash, "localstatedir", newFile(normalizedHome, "var").getPath());
-        if (getRubygemsDir(runtime) != null) {
-            setConfig(mkmfHash, "rubygemsdir", newFile(getRubygemsDir(runtime)).getPath());
+        setConfig(context, mkmfHash, "sitedir",        siteDir);
+        setConfig(context, mkmfHash, "sitelibdir",     siteLibDir);
+        setConfig(context, mkmfHash, "sitearchdir",    siteArchDir);
+        setConfig(context, mkmfHash, "sitearch", "java");
+        setConfig(context, mkmfHash, "archdir",    archDir);
+        setConfig(context, mkmfHash, "topdir",    archDir);
+        setConfig(context, mkmfHash, "configure_args", "");
+        setConfig(context, mkmfHash, "datadir", newFile(normalizedHome, "share").getPath());
+        setConfig(context, mkmfHash, "mandir", newFile(normalizedHome, "man").getPath());
+        setConfig(context, mkmfHash, "sysconfdir", sysConfDir);
+        setConfig(context, mkmfHash, "localstatedir", newFile(normalizedHome, "var").getPath());
+        if (rubygemsDir != null) {
+            setConfig(context, mkmfHash, "rubygemsdir", newFile(rubygemsDir).getPath());
         }
 
-        setupMakefileConfig(configModule, mkmfHash);
+        setupMakefileConfig(context, mkmfHash);
+
+        rbConfig.defineConstant("MAKEFILE_CONFIG", mkmfHash);
 
         runtime.getLoadService().load("jruby/kernel/rbconfig.rb", false);
     }
 
-    private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
-        Ruby ruby = configModule.getRuntime();
+    private static final boolean IS_64_BIT = jnr.posix.util.Platform.IS_64_BIT;
 
-        RubyHash envHash = (RubyHash) ruby.getObject().fetchConstant("ENV");
+    private static void setupMakefileConfig(ThreadContext context, final RubyHash mkmfHash) {
+
+        RubyHash envHash = (RubyHash) context.runtime.getObject().fetchConstant("ENV");
         String cc = getRubyEnv(envHash, "CC", "cc");
         String cpp = getRubyEnv(envHash, "CPP", "cc -E");
         String cxx = getRubyEnv(envHash, "CXX", "c++");
@@ -400,80 +425,79 @@ public class RbConfigLibrary implements Library {
         String dldflags = "";
         String ldsharedflags = " -shared ";
 
-        String archflags = " -m" + (Platform.IS_64_BIT ? "64" : "32");
+        String archflags = " -m" + (IS_64_BIT ? "64" : "32");
 
         String hdr_dir = newFile(normalizedHome, "lib/native/include/").getPath();
 
         // A few platform specific values
         if (Platform.IS_WINDOWS) {
-            ldflags += " -L" + newFile(normalizedHome, "lib/native/" + (Platform.IS_64_BIT ? "x86_64" : "i386") + "-Windows").getPath();
+            ldflags += " -L" + newFile(normalizedHome, "lib/native/" + (IS_64_BIT ? "x86_64" : "i386") + "-Windows").getPath();
             ldsharedflags += " $(if $(filter-out -g -g0,$(debugflags)),,-s)";
             dldflags = "-Wl,--enable-auto-image-base,--enable-auto-import $(DEFFILE)";
             archflags += " -march=native -mtune=native";
-            setConfig(mkmfHash, "DLEXT", "dll");
-            setConfig(mkmfHash, "EXEEXT", ".exe");
+            setConfig(context, mkmfHash, "DLEXT", "dll");
+            setConfig(context, mkmfHash, "EXEEXT", ".exe");
         } else if (Platform.IS_MAC) {
             ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
-            cflags = " -fPIC -DTARGET_RT_MAC_CFM=0 " + cflags;
-            archflags = " -arch " + Platform.ARCH;
+            cflags = " -DTARGET_RT_MAC_CFM=0 " + cflags;
+            archflags = " -arch " + getArchitecture();
             cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE " + cppflags;
-            setConfig(mkmfHash, "DLEXT", "bundle");
-	    setConfig(mkmfHash, "EXEEXT", "");
+            setConfig(context, mkmfHash, "DLEXT", "bundle");
+	        setConfig(context, mkmfHash, "EXEEXT", "");
         } else {
-            cflags = " -fPIC " + cflags;
-            setConfig(mkmfHash, "DLEXT", "so");
-	    setConfig(mkmfHash, "EXEEXT", "");
+            setConfig(context, mkmfHash, "DLEXT", "so");
+	        setConfig(context, mkmfHash, "EXEEXT", "");
         }
 
         String libext = "a";
         String objext = "o";
 
-        setConfig(mkmfHash, "configure_args", "");
-        setConfig(mkmfHash, "CFLAGS", cflags);
-        setConfig(mkmfHash, "CPPFLAGS", cppflags);
-        setConfig(mkmfHash, "CXXFLAGS", cxxflags);
-        setConfig(mkmfHash, "ARCH_FLAG", archflags);
-        setConfig(mkmfHash, "LDFLAGS", ldflags);
-        setConfig(mkmfHash, "DLDFLAGS", dldflags);
-        setConfig(mkmfHash, "DEFS", "");
-        setConfig(mkmfHash, "LIBEXT", libext);
-        setConfig(mkmfHash, "OBJEXT", objext);
-        setConfig(mkmfHash, "LIBRUBYARG_STATIC", "");
-        setConfig(mkmfHash, "LIBRUBYARG_SHARED", "");
-        setConfig(mkmfHash, "LIBS", "");
-        setConfig(mkmfHash, "DLDLIBS", "");
-        setConfig(mkmfHash, "ENABLED_SHARED", "");
-        setConfig(mkmfHash, "LIBRUBY", "");
-        setConfig(mkmfHash, "LIBRUBY_A", "");
-        setConfig(mkmfHash, "LIBRUBYARG", "");
-        setConfig(mkmfHash, "prefix", " "); // This must not be empty for some extconf.rb's to work
-        setConfig(mkmfHash, "ruby_install_name", jrubyScript());
-        setConfig(mkmfHash, "LDSHARED", cc + ldsharedflags);
-        setConfig(mkmfHash, "LDSHAREDXX", cxx + ldsharedflags);
-        setConfig(mkmfHash, "RUBY_PLATFORM", getOSName());
-        setConfig(mkmfHash, "RUBY_SO_NAME", "jruby");
-        setConfig(mkmfHash, "CC", cc);
-        setConfig(mkmfHash, "CPP", cpp);
-        setConfig(mkmfHash, "CXX", cxx);
-        setConfig(mkmfHash, "OUTFLAG", "-o ");
-        setConfig(mkmfHash, "COMMON_HEADERS", "ruby.h");
-        setConfig(mkmfHash, "PATH_SEPARATOR", ":");
-        setConfig(mkmfHash, "INSTALL", "install -c ");
-        setConfig(mkmfHash, "RM", "rm -f");
-        setConfig(mkmfHash, "CP", "cp ");
-        setConfig(mkmfHash, "MAKEDIRS", "mkdir -p ");
-        setConfig(mkmfHash, "includedir", hdr_dir);
-        setConfig(mkmfHash, "rubyhdrdir", hdr_dir);
-        setConfig(mkmfHash, "archdir", hdr_dir);
+        setConfig(context, mkmfHash, "configure_args", "");
+        setConfig(context, mkmfHash, "CCDLFLAGS", "-fPIC");
+        setConfig(context, mkmfHash, "CFLAGS", cflags);
+        setConfig(context, mkmfHash, "CPPFLAGS", cppflags);
+        setConfig(context, mkmfHash, "CXXFLAGS", cxxflags);
+        setConfig(context, mkmfHash, "ARCH_FLAG", archflags);
+        setConfig(context, mkmfHash, "LDFLAGS", ldflags);
+        setConfig(context, mkmfHash, "DLDFLAGS", dldflags);
+        setConfig(context, mkmfHash, "DEFS", "");
+        setConfig(context, mkmfHash, "LIBEXT", libext);
+        setConfig(context, mkmfHash, "OBJEXT", objext);
+        setConfig(context, mkmfHash, "LIBRUBYARG_STATIC", "");
+        setConfig(context, mkmfHash, "LIBRUBYARG_SHARED", "");
+        setConfig(context, mkmfHash, "LIBS", "");
+        setConfig(context, mkmfHash, "DLDLIBS", "");
+        setConfig(context, mkmfHash, "ENABLED_SHARED", "");
+        setConfig(context, mkmfHash, "LIBRUBY", "");
+        setConfig(context, mkmfHash, "LIBRUBY_A", "");
+        setConfig(context, mkmfHash, "LIBRUBYARG", "");
+        setConfig(context, mkmfHash, "prefix", " "); // This must not be empty for some extconf.rb's to work
+        setConfig(context, mkmfHash, "ruby_install_name", jrubyScript());
+        setConfig(context, mkmfHash, "LDSHARED", cc + ldsharedflags);
+        setConfig(context, mkmfHash, "LDSHAREDXX", cxx + ldsharedflags);
+        setConfig(context, mkmfHash, "RUBY_PLATFORM", getOSName());
+        setConfig(context, mkmfHash, "RUBY_SO_NAME", "jruby");
+        setConfig(context, mkmfHash, "CC", cc);
+        setConfig(context, mkmfHash, "CPP", cpp);
+        setConfig(context, mkmfHash, "CXX", cxx);
+        setConfig(context, mkmfHash, "OUTFLAG", "-o ");
+        setConfig(context, mkmfHash, "COUTFLAG", "-o ");
+        setConfig(context, mkmfHash, "COMMON_HEADERS", "ruby.h");
+        setConfig(context, mkmfHash, "PATH_SEPARATOR", ":");
+        setConfig(context, mkmfHash, "INSTALL", "install -c ");
+        setConfig(context, mkmfHash, "RM", "rm -f");
+        setConfig(context, mkmfHash, "CP", "cp ");
+        setConfig(context, mkmfHash, "MAKEDIRS", "mkdir -p ");
+        setConfig(context, mkmfHash, "includedir", hdr_dir);
+        setConfig(context, mkmfHash, "rubyhdrdir", hdr_dir);
+        setConfig(context, mkmfHash, "archdir", hdr_dir);
 
-        ruby.getObject().defineConstant("CROSS_COMPILING", ruby.getNil());
-
-        configModule.defineConstant("MAKEFILE_CONFIG", mkmfHash);
+        context.runtime.getObject().defineConstant("CROSS_COMPILING", context.nil);
     }
 
-    private static void setConfig(RubyHash hash, String key, String value) {
-        Ruby runtime = hash.getRuntime();
-        hash.op_aset(runtime.getCurrentContext(), runtime.newString(key), runtime.newString(value));
+    private static void setConfig(ThreadContext context, RubyHash hash, String key, String value) {
+        final Ruby runtime = context.runtime;
+        hash.fastASetCheckString(runtime, runtime.newString(key), runtime.newString(value));
     }
 
     public static String jrubyScript() {
@@ -485,18 +509,6 @@ public class RbConfigLibrary implements Library {
         return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
     }
 
-    @JRubyMethod(name = "ruby", meta = true)
-    public static IRubyObject ruby(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        RubyHash configHash = (RubyHash) runtime.getModule("RbConfig").getConstant("CONFIG");
-
-        IRubyObject bindir            = configHash.op_aref(context, runtime.newString("bindir"));
-        IRubyObject ruby_install_name = configHash.op_aref(context, runtime.newString("ruby_install_name"));
-        IRubyObject exeext            = configHash.op_aref(context, runtime.newString("EXEEXT"));
-
-        return Helpers.invoke(context, runtime.getClass("File"), "join", bindir, ruby_install_name.callMethod(context, "+", exeext));
-    }
-
     private static String getRubyEnv(RubyHash envHash, String var, String default_value) {
         var = (String) envHash.get(var);
         return var == null ? default_value : var;
@@ -505,6 +517,7 @@ public class RbConfigLibrary implements Library {
     private static File newFile(final String path) {
         return new org.jruby.util.NormalizedFile(path);
     }
+
     private static File newFile(final String parent, final String child) {
         return new org.jruby.util.NormalizedFile(parent, child);
     }

@@ -44,7 +44,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents an instance variable assignment.
  */
 public class InstAsgnNode extends AssignableNode implements INameNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
     /**
      * @param name the name of the instance variable
