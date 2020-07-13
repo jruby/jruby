@@ -40,6 +40,7 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -293,7 +294,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             }
             return this;
         }
-        return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn());
+        return RubyEnumerator.enumeratorizeWithSize(context, this, "times", RubyInteger::timesSize);
     }
     /** rb_fix_ceil
      *

@@ -1412,9 +1412,18 @@ public class RubyKernel {
         if (block.isGiven()) {
             return block.yield(context, recv);
         } else {
-            SizeFn enumSizeFn = RubyArray.newArray(context.runtime, context.nil).enumLengthFn();
-            return RubyEnumerator.enumeratorizeWithSize(context, recv, "yield_self", enumSizeFn);
+            return RubyEnumerator.enumeratorizeWithSize(context, recv, "yield_self", RubyKernel::objectSize);
         }
+    }
+
+    /**
+     * An exactly-one size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject objectSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        // always 1
+        return RubyFixnum.one(context.runtime);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -1520,7 +1529,7 @@ public class RubyKernel {
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
         if ( ! block.isGiven() ) {
-            return enumeratorizeWithSize(context, recv, "loop", loopSizeFn());
+            return enumeratorizeWithSize(context, recv, "loop", RubyKernel::loopSize);
         }
         final Ruby runtime = context.runtime;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
@@ -1543,8 +1552,13 @@ public class RubyKernel {
         }
     }
 
-    private static SizeFn loopSizeFn() {
-        return (context, self, args) -> RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
+    /**
+     * A loop size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject loopSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
     }
 
     @JRubyMethod(required = 2, optional = 1, module = true, visibility = PRIVATE)
