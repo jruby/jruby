@@ -39,7 +39,7 @@ public class InterpreterContext {
 
     // Cached computed fields
     protected boolean hasExplicitCallProtocol;
-    protected boolean dynamicScopeEliminated;
+    private boolean pushNewDynScope;
     private boolean reuseParentDynScope;
     private boolean popDynScope;
     private boolean receivesKeywordArguments;
