@@ -13,6 +13,7 @@ import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -160,6 +161,7 @@ public class JVMVisitor extends IRVisitor {
 
     protected void emitScope(IRScope scope, String name, Signature signature, boolean specificArity, boolean print) {
         BasicBlock[] bbs = scope.prepareForCompilation();
+        FullInterpreterContext fullIC = scope.getFullInterpreterContext();
 
         if (print && IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(scope, true);
@@ -177,12 +179,12 @@ public class JVMVisitor extends IRVisitor {
 
         jvm.pushmethod(name, scope, scopeField, signature, specificArity);
 
-        if (scope.needsBinding() || !scope.hasExplicitCallProtocol()) {
+        if (scope.needsBinding() || !fullIC.hasExplicitCallProtocol()) {
             // declare dynamic scope local only if we'll need it
             jvm.methodData().local("$dynamicScope", Type.getType(DynamicScope.class));
         }
 
-        if (!scope.hasExplicitCallProtocol()) {
+        if (!fullIC.hasExplicitCallProtocol()) {
             // No call protocol, dynscope has been prepared for us
             jvmMethod().loadContext();
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));

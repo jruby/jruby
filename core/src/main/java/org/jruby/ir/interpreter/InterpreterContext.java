@@ -38,7 +38,7 @@ public class InterpreterContext {
     protected int[] rescueIPCs = null;
 
     // Cached computed fields
-    private boolean hasExplicitCallProtocol;
+    protected boolean hasExplicitCallProtocol;
     private boolean pushNewDynScope;
     private boolean reuseParentDynScope;
     private boolean popDynScope;
@@ -93,7 +93,6 @@ public class InterpreterContext {
 
     private void retrieveFlags() {
         this.temporaryVariableCount = scope.getTemporaryVariablesCount();
-        this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         // FIXME: Centralize this out of InterpreterContext
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
@@ -206,6 +205,10 @@ public class InterpreterContext {
         if (instructions == null) getEngine();
 
         return hasExplicitCallProtocol;
+    }
+
+    public void setExplicitCallProtocol(boolean callProtocol) {
+        this.hasExplicitCallProtocol = callProtocol;
     }
 
     public boolean pushNewDynScope() {

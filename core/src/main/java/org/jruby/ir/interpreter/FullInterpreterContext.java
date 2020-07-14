@@ -93,7 +93,7 @@ public class FullInterpreterContext extends InterpreterContext {
 
     @Override
     public boolean hasExplicitCallProtocol() {
-        return getScope().getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
+        return hasExplicitCallProtocol;
     }
 
     @Override
