@@ -38,8 +38,6 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         this.specificArity = method.receivesKeywordArgs() ? -1 : specificArity;
         this.method.getStaticScope().determineModule();
 
-        assert method.hasExplicitCallProtocol();
-
         setHandle(variable);
 
         method.compilable = this;

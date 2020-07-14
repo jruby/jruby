@@ -388,14 +388,6 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(HAS_LOOPS);
     }
 
-    public boolean hasExplicitCallProtocol() {
-        return flags.contains(HAS_EXPLICIT_CALL_PROTOCOL);
-    }
-
-    public void setExplicitCallProtocolFlag() {
-        flags.add(HAS_EXPLICIT_CALL_PROTOCOL);
-    }
-
     public boolean receivesKeywordArgs() {
         return flags.contains(RECEIVES_KEYWORD_ARGS);
     }
