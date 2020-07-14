@@ -44,7 +44,6 @@ public enum IRFlags {
     CAN_RECEIVE_NONLOCAL_RETURNS, // may receive a non-local return during execution
     HAS_BREAK_INSTRS,             // contains at least one break
     HAS_END_BLOCKS,               // has an end block. big de-opt flag
-    HAS_EXPLICIT_CALL_PROTOCOL,   // contains call protocol instrs => we don't need to manage bindings frame implicitly
     HAS_LOOPS,                    // has a loop
     HAS_NONLOCAL_RETURNS,         // has a non-local return
     MAYBE_USING_REFINEMENTS,      // a call to 'using' discovered...is it "the" using...maybe?

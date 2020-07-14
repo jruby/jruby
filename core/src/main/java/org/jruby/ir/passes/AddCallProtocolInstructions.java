@@ -2,6 +2,7 @@ package org.jruby.ir.passes;
 
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.runtime.Signature;
 import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Label;
@@ -88,7 +89,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
         scope.getFlags().remove(IRFlags.FLAGS_COMPUTED);
         scope.computeScopeFlags();
 
-        CFG cfg = scope.getCFG();
+        FullInterpreterContext fullIC = scope.prepareFullBuild();
+        CFG cfg = fullIC.getCFG();
 
         // For now, we always require frame for closures
         boolean requireFrame = scope.needsFrame();
@@ -208,7 +210,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 */
 
         // This scope has an explicit call protocol flag now
-        scope.setExplicitCallProtocolFlag();
+        fullIC.setExplicitCallProtocol(true);
 
         // LVA information is no longer valid after the pass
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
