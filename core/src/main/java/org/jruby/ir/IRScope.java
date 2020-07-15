@@ -1162,14 +1162,6 @@ public abstract class IRScope implements ParseResult {
         return backrefSeen;
     }
 
-    public boolean reuseParentScope() {
-        return getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-    }
-
-    public boolean needsBinding() {
-        return reuseParentScope() || !getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-    }
-
     // FIXME: This should become some heuristic later
     public boolean inliningAllowed() {
         return !alreadyHasInline;

@@ -39,7 +39,7 @@ public class InterpreterContext {
 
     // Cached computed fields
     protected boolean hasExplicitCallProtocol;
-    private boolean pushNewDynScope;
+    protected boolean dynamicScopeEliminated;
     private boolean reuseParentDynScope;
     private boolean popDynScope;
     private boolean receivesKeywordArguments;
@@ -69,6 +69,10 @@ public class InterpreterContext {
         this.instructionsCallback = instructions;
     }
 
+    protected void initialize() {
+        if (instructions == null) getEngine();
+    }
+
     public InterpreterEngine getEngine() {
         if (engine == null) {
             setInstructions(instructionsCallback.get());
@@ -82,7 +86,7 @@ public class InterpreterContext {
     }
 
     public Instr[] getInstructions() {
-        if (instructions == null) getEngine();
+        initialize();
 
         return instructions == null ? NO_INSTRUCTIONS : instructions;
     }
@@ -93,10 +97,6 @@ public class InterpreterContext {
 
     private void retrieveFlags() {
         this.temporaryVariableCount = scope.getTemporaryVariablesCount();
-        // FIXME: Centralize this out of InterpreterContext
-        this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
-        this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
 
@@ -202,7 +202,7 @@ public class InterpreterContext {
     }
 
     public boolean hasExplicitCallProtocol() {
-        if (instructions == null) getEngine();
+        initialize();
 
         return hasExplicitCallProtocol;
     }
@@ -211,26 +211,38 @@ public class InterpreterContext {
         this.hasExplicitCallProtocol = callProtocol;
     }
 
-    public boolean pushNewDynScope() {
-        if (instructions == null) getEngine();
+    public boolean isDynamicScopeEliminated() {
+        return dynamicScopeEliminated;
+    }
 
-        return pushNewDynScope;
+    public void setDynamicScopeEliminated(boolean dynamicScopeEliminated) {
+        this.dynamicScopeEliminated = dynamicScopeEliminated;
+    }
+
+    public boolean pushNewDynScope() {
+        initialize();
+
+        return !dynamicScopeEliminated && !reuseParentDynScope;
     }
 
     public boolean reuseParentDynScope() {
-        if (instructions == null) getEngine();
+        initialize();
 
         return reuseParentDynScope;
     }
 
-    public boolean popDynScope() {
-        if (instructions == null) getEngine();
+    public void setReuseParentDynScope(boolean reuseParentDynScope) {
+        this.reuseParentDynScope = reuseParentDynScope;
+    }
 
-        return popDynScope;
+    public boolean popDynScope() {
+        initialize();
+
+        return pushNewDynScope() || this.reuseParentDynScope();
     }
 
     public boolean receivesKeywordArguments() {
-        if (instructions == null) getEngine();
+        initialize();
 
         return receivesKeywordArguments;
     }

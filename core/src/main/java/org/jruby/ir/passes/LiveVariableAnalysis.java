@@ -12,6 +12,7 @@ import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -72,9 +73,9 @@ public class LiveVariableAnalysis extends CompilerPass {
             // We have to conservatively assume that any dirtied variables
             // that belong to an outer scope are live on exit.
             Set<LocalVariable> nlVars = new HashSet<LocalVariable>();
-            EnumSet<IRFlags> flags = scope.getExecutionContext().getFlags();
+            FullInterpreterContext fullIC = scope.getExecutionContext();
 
-            collectNonLocalDirtyVars((IRClosure)scope, nlVars, flags.contains(IRFlags.DYNSCOPE_ELIMINATED) ? -1 : 0);
+            collectNonLocalDirtyVars((IRClosure)scope, nlVars, fullIC.isDynamicScopeEliminated() ? -1 : 0);
 
             // Init DF vars from this set
             for (Variable v: nlVars) {

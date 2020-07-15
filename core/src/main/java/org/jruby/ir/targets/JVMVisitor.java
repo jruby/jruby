@@ -179,7 +179,7 @@ public class JVMVisitor extends IRVisitor {
 
         jvm.pushmethod(name, scope, scopeField, signature, specificArity);
 
-        if (scope.needsBinding() || !fullIC.hasExplicitCallProtocol()) {
+        if (fullIC.needsBinding() || !fullIC.hasExplicitCallProtocol()) {
             // declare dynamic scope local only if we'll need it
             jvm.methodData().local("$dynamicScope", Type.getType(DynamicScope.class));
         }
@@ -1865,8 +1865,9 @@ public class JVMVisitor extends IRVisitor {
         IRScope scope = jvm.methodData().scope;
 
         // FIXME: Centralize this out of InterpreterContext
-        boolean reuseParentDynScope = scope.getExecutionContext().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        boolean pushNewDynScope = !scope.getExecutionContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
+        FullInterpreterContext fullIC = scope.getExecutionContext();
+        boolean reuseParentDynScope = fullIC.reuseParentDynScope();
+        boolean pushNewDynScope = !fullIC.isDynamicScopeEliminated() && !reuseParentDynScope;
 
         if (pushNewDynScope) {
             if (reuseParentDynScope) {

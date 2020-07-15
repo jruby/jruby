@@ -7,6 +7,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.LoadLocalVarInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -39,9 +40,9 @@ public class OptimizeDynScopesPass extends CompilerPass {
         assert s.getClosures().isEmpty() : "We assume that if a scope has nested closures, it uses a dynamic scoope.";
 
         Map<Operand, Operand> varRenameMap = new HashMap<>();
-        EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
+        FullInterpreterContext fullIC = s.getExecutionContext();
 
-        flags.add(IRFlags.DYNSCOPE_ELIMINATED); // Record the fact that we eliminated the scope
+        fullIC.setDynamicScopeEliminated(true); // Record the fact that we eliminated the scope
 
         // Since the scope does not require a binding, no need to do
         // any analysis. It is sufficient to rename all local var uses
@@ -110,7 +111,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
             }
         }
 
-        if (parentScopeNeeded) flags.add(IRFlags.REUSE_PARENT_DYNSCOPE);
+        if (parentScopeNeeded) fullIC.setReuseParentDynScope(true);
 
         // Rename all local var uses with their tmp-var stand-ins
         for (BasicBlock b: s.getCFG().getBasicBlocks()) {
