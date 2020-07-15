@@ -6,6 +6,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.representations.BasicBlock;
 
@@ -35,10 +36,10 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     @Override
     public Object execute(IRScope s, Object... data) {
         StoreLocalVarPlacementProblem slvp = new StoreLocalVarPlacementProblem();
-        EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
+        FullInterpreterContext fullIC = s.getExecutionContext();
 
         // Only run if we are pushing a scope or we are reusing the parents scope.
-        if (!flags.contains(IRFlags.DYNSCOPE_ELIMINATED) || flags.contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
+        if (!fullIC.isDynamicScopeEliminated() || fullIC.reuseParentDynScope()) {
             Map<Operand, Operand> varRenameMap = new HashMap<>();
             // 1. Figure out required stores
             // 2. Add stores

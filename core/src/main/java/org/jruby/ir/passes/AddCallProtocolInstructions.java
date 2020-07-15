@@ -94,7 +94,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
         // For now, we always require frame for closures
         boolean requireFrame = scope.needsFrame();
-        boolean requireBinding = scope.needsBinding();
+        boolean requireBinding = fullIC.needsBinding();
 
         if (scope instanceof IRClosure || requireBinding || requireFrame) {
             BasicBlock entryBB = cfg.getEntryBB();

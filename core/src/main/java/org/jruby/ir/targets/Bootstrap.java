@@ -1370,7 +1370,7 @@ public class Bootstrap {
 
         // This optimization can't happen until we can see into the method we're calling to know if it reifies the block
         if (false) {
-            if (scope.needsBinding()) {
+            if (scope.getExecutionContext().needsBinding()) {
                 if (scope.needsFrame()) {
                     binder = binder.fold(FRAME_SCOPE_BINDING);
                 } else {
