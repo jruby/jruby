@@ -96,19 +96,8 @@ public class FullInterpreterContext extends InterpreterContext {
         return hasExplicitCallProtocol;
     }
 
-    @Override
-    public boolean pushNewDynScope() {
-        return !getScope().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope();
-    }
-
-    @Override
-    public boolean popDynScope() {
-        return pushNewDynScope() || reuseParentDynScope();
-    }
-
-    @Override
-    public boolean reuseParentDynScope() {
-        return getScope().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+    public boolean needsBinding() {
+        return reuseParentDynScope() || !isDynamicScopeEliminated();
     }
 
     /** We plan on running this in full interpreted mode.  This will fixup ipc, rpc, and generate instr list */
@@ -304,5 +293,9 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         return false;
+    }
+
+    protected void initialize() {
+        // no initialize, avoid parent
     }
 }
