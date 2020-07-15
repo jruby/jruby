@@ -1428,6 +1428,7 @@ public class Bootstrap {
             /*
             if (needsBinding) {
                 if (needsFrame) {
+rg/jruby/ir/targets/Bootstrap.java
                     binder = binder.fold(FRAME_SCOPE_BINDING);
                 } else {
                     binder = binder.fold(SCOPE_BINDING);
