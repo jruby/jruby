@@ -66,6 +66,7 @@ matrix:
         - mvn clean package -Pbootstrap
         - gem install bundler
         - bundle install
+<<<<<<< HEAD
         - jruby -S rake test:mri:core:jit
 
     - name: MRI core jit jdk14
@@ -74,6 +75,8 @@ matrix:
         - mvn clean package -Pbootstrap
         - gem install bundler
         - bundle install
+=======
+>>>>>>> So not in the mood for this
         - jruby -S rake test:mri:core:jit
 
     - name: MRI extra
@@ -97,6 +100,7 @@ matrix:
         - mvn clean package -Pbootstrap
         - gem install bundler
         - bundle install
+<<<<<<< HEAD
         - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby fast jdk11
@@ -113,6 +117,8 @@ matrix:
         - mvn clean package -Pbootstrap
         - gem install bundler
         - bundle install
+=======
+>>>>>>> So not in the mood for this
         - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby slow
