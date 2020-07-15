@@ -82,14 +82,19 @@ public abstract class IRScope implements ParseResult {
     /** Unique global scope id */
     private final int scopeId;
 
-    /** Name */
-    private ByteList name;
-
     /** Starting line for this scope's definition */
     private final int lineNumber;
 
     /** Lexical parent scope */
     private final IRScope lexicalParent;
+
+    /** Parser static-scope that this IR scope corresponds to */
+    private final StaticScope staticScope;
+
+    private final IRManager manager;
+
+    /** Name */
+    private ByteList name;
 
     /** List of (nested) closures in this scope */
     private List<IRClosure> nestedClosures;
@@ -100,9 +105,6 @@ public abstract class IRScope implements ParseResult {
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
     private final List<IRScope> lexicalChildren = Collections.synchronizedList(new ArrayList<>());
-
-    /** Parser static-scope that this IR scope corresponds to */
-    private final StaticScope staticScope;
 
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
