@@ -80,14 +80,19 @@ public abstract class IRScope implements ParseResult {
     /** Unique global scope id */
     private final int scopeId;
 
-    /** Name */
-    private ByteList name;
-
     /** Starting line for this scope's definition */
     private final int lineNumber;
 
     /** Lexical parent scope */
-    private IRScope lexicalParent;
+    private final IRScope lexicalParent;
+
+    /** Parser static-scope that this IR scope corresponds to */
+    private final StaticScope staticScope;
+
+    private final IRManager manager;
+
+    /** Name */
+    private ByteList name;
 
     /** List of (nested) closures in this scope */
     private List<IRClosure> nestedClosures;
@@ -98,9 +103,6 @@ public abstract class IRScope implements ParseResult {
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
     private List<IRScope> lexicalChildren;
-
-    /** Parser static-scope that this IR scope corresponds to */
-    private final StaticScope staticScope;
 
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
@@ -119,8 +121,6 @@ public abstract class IRScope implements ParseResult {
     Map<RubySymbol, LocalVariable> localVars;
 
     final EnumSet<IRFlags> flags;
-
-    private IRManager manager;
 
     private boolean alreadyHasInline;
     private String inlineFailed;
