@@ -7,8 +7,6 @@ strategy:
   matrix:
     linux:
       imageName: 'Ubuntu-16.04'
-    windows:
-      imageName: 'windows-2019'
 
 trigger:
 - master
