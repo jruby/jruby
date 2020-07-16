@@ -424,17 +424,6 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
-    public CFG getCFG() {
-        if (getOptimizedInterpreterContext() != null) {
-            return getOptimizedInterpreterContext().getCFG();
-        }
-        // FIXME: MARKED FOR DEATH
-        // A child scope may not have been prepared yet so we advance it to point of have a fresh CFG.
-        if (getFullInterpreterContext() == null) prepareFullBuild();
-
-        return fullInterpreterContext.getCFG();
-    }
-
     public List<CompilerPass> getExecutedPasses() {
         return fullInterpreterContext == null ? new ArrayList<CompilerPass>(1) : fullInterpreterContext.getExecutedPasses();
     }
@@ -443,18 +432,18 @@ public abstract class IRScope implements ParseResult {
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
     private void runCompilerPasses(FullInterpreterContext fic, List<CompilerPass> passes, IGVDumper dumper) {
-        if (dumper != null) dumper.dump(getCFG(), "Start");
+        if (dumper != null) dumper.dump(fic.getCFG(), "Start");
 
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
         for (CompilerPass pass : scheduler) {
             pass.run(fic);
-            if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
+            if (dumper != null) dumper.dump(fic.getCFG(), pass.getShortLabel());
         }
 
         if (RubyInstanceConfig.IR_UNBOXING) {
             CompilerPass pass = new UnboxingPass();
             pass.run(fic);
-            if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
+            if (dumper != null) dumper.dump(fic.getCFG(), pass.getShortLabel());
         }
 
         if (dumper != null) dumper.close();
@@ -562,11 +551,11 @@ public abstract class IRScope implements ParseResult {
     // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even
     // construct a new fullInterpreterContext.  Primary obstacles is JITFlags and linearization of BBs.
 
-    public Map<BasicBlock, Label> buildJVMExceptionTable() {
+    public Map<BasicBlock, Label> buildJVMExceptionTable(FullInterpreterContext fic) {
         Map<BasicBlock, Label> map = new HashMap<>(1);
 
-        for (BasicBlock bb: fullInterpreterContext.getLinearizedBBList()) {
-            BasicBlock rescueBB = getCFG().getRescuerBBFor(bb);
+        for (BasicBlock bb: fic.getLinearizedBBList()) {
+            BasicBlock rescueBB = fic.getCFG().getRescuerBBFor(bb);
             if (rescueBB != null) {
                 map.put(bb, rescueBB.getLabel());
             }
