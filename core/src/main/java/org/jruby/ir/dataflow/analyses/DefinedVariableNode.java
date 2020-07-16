@@ -87,10 +87,10 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
     }
 
     private void identifyUndefinedVarsInClosure(Set<Variable> undefinedVars, IRClosure cl, int nestingLevel) {
-        FullInterpreterContext fullIC = cl.getFullInterpreterContext();
-        int clBaseDepth = nestingLevel + (fullIC.reuseParentDynScope() ? 0 : 1);
-        fullIC.setUpUseDefLocalVarMaps();
-        for (LocalVariable lv: cl.getUsedLocalVariables()) {
+        FullInterpreterContext fic = cl.getFullInterpreterContext();
+        int clBaseDepth = nestingLevel + (fic.reuseParentDynScope() ? 0 : 1);
+        fic.setUpUseDefLocalVarMaps();
+        for (LocalVariable lv: fic.getUsedLocalVariables()) {
             // This can happen where an outer scope variable
             // is not used in this scope but is used in a nested
             // scope. Ex: ~jruby/bin/ast:21
