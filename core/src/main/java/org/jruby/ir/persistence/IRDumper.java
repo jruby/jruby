@@ -171,9 +171,7 @@ public class IRDumper extends IRVisitor {
                 printAnsi(BLOCK_COLOR, "\nblock #" + bb.getID());
 
                 Iterable<BasicBlock> outs;
-                if (scope.getCFG() != null &&
-                        (outs = scope.getCFG().getOutgoingDestinations(bb)) != null &&
-                        outs.iterator().hasNext()) {
+                if ((outs = ic.getCFG().getOutgoingDestinations(bb)) != null && outs.iterator().hasNext()) {
 
                     printAnsi(BLOCK_COLOR, " (out: ");
 

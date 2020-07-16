@@ -145,7 +145,7 @@ public class JVMVisitor extends IRVisitor {
             LOG.info("Printing JIT IR for " + scope.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
-        Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
+        Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable(fullIC);
 
         emitClosures(scope, print);
 
