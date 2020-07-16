@@ -46,8 +46,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
 
     @Override
     public void applyTransferFunction(Instr i) {
-        IRScope scope = problem.getScope();
-        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+        boolean scopeBindingHasEscaped = problem.getFIC().getScope().bindingHasEscaped();
 
         // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
         if (i instanceof ResultInstr) {
@@ -83,7 +82,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
                 Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
                 for (LocalVariable v: reqdLoads) {
-                    if (!scope.definesLocalVariable(v)) newReqdLoads.remove(v);
+                    if (!problem.getFIC().getScope().definesLocalVariable(v)) newReqdLoads.remove(v);
                 }
                 reqdLoads = newReqdLoads;
             }
@@ -140,8 +139,8 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
     }
 
     public void addLoads(Map<Operand, Operand> varRenameMap) {
-        IRScope scope                  = problem.getScope();
-        boolean isEvalScript           = scope instanceof IREvalScript;
+        IRScope scope                  = problem.getFIC().getScope();
+        boolean isEvalScript           = problem.getFIC().getScope() instanceof IREvalScript;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
         List<Instr>         instrs    = basicBlock.getInstrs();
@@ -247,7 +246,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         }
 
         // Load first use of variables in closures
-        if (scope instanceof IRClosure && basicBlock.isEntryBB()) {
+        if (problem.getFIC().getScope() instanceof IRClosure && basicBlock.isEntryBB()) {
             // System.out.println("\n[In Entry BB] For CFG " + getCFG() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {

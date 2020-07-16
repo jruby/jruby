@@ -12,7 +12,6 @@ import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRFlags;
 import org.jruby.ir.representations.BasicBlock;
 
 import java.util.*;
@@ -114,7 +113,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
     }
 
     public void identifyInits(Set<Variable> undefinedVars) {
-        int parentScopeDepth = problem.getScope().getExecutionContext().reuseParentDynScope() ? 0 : 1;
+        int parentScopeDepth = problem.getFIC().reuseParentDynScope() ? 0 : 1;
 
         initSolution();
         for (Instr i: basicBlock.getInstrs()) {

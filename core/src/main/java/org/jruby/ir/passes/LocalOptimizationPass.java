@@ -5,6 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -23,22 +24,22 @@ public class LocalOptimizationPass extends CompilerPass {
     }
 
     @Override
-    public Object execute(IRScope s, Object... data) {
-        for (BasicBlock b: s.getCFG().getBasicBlocks()) {
-            runLocalOptsOnBasicBlock(s, b);
+    public Object execute(FullInterpreterContext fic, Object... data) {
+        for (BasicBlock b: fic.getCFG().getBasicBlocks()) {
+            runLocalOptsOnBasicBlock(fic.getScope(), b);
         }
 
         // SSS FIXME: What is this about? 
         // Why 'Only after running local opts'? Figure out and document.
         //
         // Only after running local opts, compute various execution scope flags.
-        s.computeScopeFlags();
+        fic.getScope().computeScopeFlags();
 
         // LVA information is no longer valid after this pass
         // Currently, we don't run this after LVA, but just in case ...
         //
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
-        (new LiveVariableAnalysis()).invalidate(s);
+        (new LiveVariableAnalysis()).invalidate(fic);
 
         return null;
     }

@@ -6,8 +6,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
-import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
-import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.FullInterpreterContext;
@@ -409,60 +407,13 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
-    public void putLiveVariablesProblem(LiveVariablesProblem problem) {
-        // Technically this is if a pass is invalidated which has never run on a scope with no CFG/FIC yet.
-        if (fullInterpreterContext == null) {
-            // This should never trigger unless we got sloppy
-            if (problem != null) throw new IllegalStateException("LVP being stored when no FIC");
-            return;
-        }
-        fullInterpreterContext.getDataFlowProblems().put(LiveVariablesProblem.NAME, problem);
-    }
-
-    public LiveVariablesProblem getLiveVariablesProblem() {
-        if (fullInterpreterContext == null) return null; // no fic so no pass-related info
-
-        return (LiveVariablesProblem) fullInterpreterContext.getDataFlowProblems().get(LiveVariablesProblem.NAME);
-    }
-
-    public void putStoreLocalVarPlacementProblem(StoreLocalVarPlacementProblem problem) {
-        // Technically this is if a pass is invalidated which has never run on a scope with no CFG/FIC yet.
-        if (fullInterpreterContext == null) {
-            // This should never trigger unless we got sloppy
-            if (problem != null) throw new IllegalStateException("StoreLocalVarPlacementProblem being stored when no FIC");
-            return;
-        }
-        fullInterpreterContext.getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, problem);
-    }
-
-    public StoreLocalVarPlacementProblem getStoreLocalVarPlacementProblem() {
-        if (fullInterpreterContext == null) return null; // no fic so no pass-related info
-
-        return (StoreLocalVarPlacementProblem) fullInterpreterContext.getDataFlowProblems().get(StoreLocalVarPlacementProblem.NAME);
-    }
-
-    public void putUnboxableOpsAnalysisProblem(UnboxableOpsAnalysisProblem problem) {
-        // Technically this is if a pass is invalidated which has never run on a scope with no CFG/FIC yet.
-        if (fullInterpreterContext == null) {
-            // This should never trigger unless we got sloppy
-            if (problem != null) throw new IllegalStateException("UboxableOpsAnalysisProblem being stored when no FIC");
-            return;
-        }
-        fullInterpreterContext.getDataFlowProblems().put(UnboxableOpsAnalysisProblem.NAME, problem);
-    }
-
-    public UnboxableOpsAnalysisProblem getUnboxableOpsAnalysisProblem() {
-        if (fullInterpreterContext == null) return null; // no fic so no pass-related info
-
-        return (UnboxableOpsAnalysisProblem) fullInterpreterContext.getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
-    }
-
     public CFG getCFG() {
         if (getOptimizedInterpreterContext() != null) {
             return getOptimizedInterpreterContext().getCFG();
         }
+        // FIXME: MARKED FOR DEATH
         // A child scope may not have been prepared yet so we advance it to point of have a fresh CFG.
-        if (getFullInterpreterContext() == null) prepareFullBuildCommon();
+        if (getFullInterpreterContext() == null) prepareFullBuild();
 
         return fullInterpreterContext.getCFG();
     }
@@ -474,18 +425,18 @@ public abstract class IRScope implements ParseResult {
     // SSS FIXME: We should configure different optimization levels
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
-    private void runCompilerPasses(List<CompilerPass> passes, IGVDumper dumper) {
+    private void runCompilerPasses(FullInterpreterContext fic, List<CompilerPass> passes, IGVDumper dumper) {
         if (dumper != null) dumper.dump(getCFG(), "Start");
 
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
         for (CompilerPass pass : scheduler) {
-            pass.run(this);
+            pass.run(fic);
             if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
         }
 
         if (RubyInstanceConfig.IR_UNBOXING) {
             CompilerPass pass = new UnboxingPass();
-            pass.run(this);
+            pass.run(fic);
             if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
         }
 
@@ -525,41 +476,31 @@ public abstract class IRScope implements ParseResult {
         return newInstructions;
     }
 
-    private void prepareFullBuildCommon() {
-        // We already made it.
-        if (fullInterpreterContext != null) return;
-
-        // Clone instrs from startup interpreter so we do not swap out instrs out from under the
-        // startup interpreter as we are building the full interpreter.
-        fullInterpreterContext = new FullInterpreterContext(this, cloneInstrs());
-    }
-
     /**
      * This initializes a more complete(full) InterpreterContext which if used in mixed mode will be
      * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
      */
     public synchronized FullInterpreterContext prepareFullBuild() {
         if (optimizedInterpreterContext != null) return optimizedInterpreterContext;
-        // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
-        // for any nested closures which got a a fullInterpreterContext but have not run any passes
-        // or generated instructions.
-        if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext;
+        if (fullInterpreterContext != null) return fullInterpreterContext;
 
         for (IRScope scope: getClosures()) {
             scope.prepareFullBuild();
         }
 
-        prepareFullBuildCommon();
-        runCompilerPasses(getManager().getCompilerPasses(this), dumpToIGV());
-        getManager().optimizeIfSimpleScope(this);
+        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs());
+        runCompilerPasses(fic, getManager().getCompilerPasses(this), dumpToIGV());
+        getManager().optimizeIfSimpleScope(fic);
 
         // Always add call protocol instructions now since we are removing support for implicit stuff in interp.
         // FIXME: ACP as normal now since we have no BEGINs to make thing unsafe?
-        new AddCallProtocolInstructions().run(this);
+        new AddCallProtocolInstructions().run(fic);
 
-        fullInterpreterContext.generateInstructionsForInterpretation();
+        fic.generateInstructionsForInterpretation();
 
-        return fullInterpreterContext;
+        this.fullInterpreterContext = fic;
+
+        return fic;
     }
 
     // FIXME: bytelist_love - we should consider RubyString here if we care for proper printing (used for debugging).
@@ -584,23 +525,19 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
     public synchronized BasicBlock[] prepareForCompilation() {
-        if (optimizedInterpreterContext != null && optimizedInterpreterContext.buildComplete()) {
-            return optimizedInterpreterContext.getLinearizedBBList();
-        }
-        // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
-        // for any nested closures which got a a fullInterpreterContext but have not run any passes
-        // or generated instructions.
-        if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext.getLinearizedBBList();
+        if (optimizedInterpreterContext != null) return optimizedInterpreterContext.getLinearizedBBList();
+        if (fullInterpreterContext != null) return fullInterpreterContext.getLinearizedBBList();
 
         for (IRScope scope: getClosures()) {
             scope.prepareForCompilation();
         }
 
-        prepareFullBuildCommon();
+        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs());
+        runCompilerPasses(fic, getManager().getJITPasses(this), dumpToIGV());
 
-        runCompilerPasses(getManager().getJITPasses(this), dumpToIGV());
+        BasicBlock[] bbs = fic.linearizeBasicBlocks();
 
-        BasicBlock[] bbs = fullInterpreterContext.linearizeBasicBlocks();
+        this.fullInterpreterContext = fic;
 
         return bbs;
     }
@@ -975,7 +912,7 @@ public abstract class IRScope implements ParseResult {
         if (fic != null) {
             int i = 0;
             while (i < fic.getExecutedPasses().size()) {
-                if (!fic.getExecutedPasses().get(i).invalidate(this)) {
+                if (!fic.getExecutedPasses().get(i).invalidate(fic)) {
                     i++;
                 }
             }

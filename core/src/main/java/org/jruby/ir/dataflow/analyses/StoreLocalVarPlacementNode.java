@@ -49,7 +49,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
             //       i,j are dirty inside the block, but not used outside
             if (bb.isExitBB()) {
-                LiveVariablesProblem lvp = problem.getScope().getLiveVariablesProblem();
+                LiveVariablesProblem lvp = (LiveVariablesProblem) problem.getFIC().getDataFlowProblems().get(LiveVariablesProblem.NAME);
                 java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
                 if (liveVars != null) {
                     inDirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
@@ -73,8 +73,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
 
     @Override
     public void applyTransferFunction(Instr i) {
-        IRScope scope = problem.getScope();
-        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+        boolean scopeBindingHasEscaped = problem.getFIC().getScope().bindingHasEscaped();
 
         // Process closure accepting instrs specially -- these are the sites of binding stores!
         if (i instanceof ClosureAcceptingInstr) {
@@ -131,7 +130,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
             if (!getBB().isExitBB()) {
-                LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
+                LiveVariablesProblem lvp = (LiveVariablesProblem) problem.getFIC().getDataFlowProblems().get(LiveVariablesProblem.NAME);
                 java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
                 if (liveVars != null) {
                     dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
@@ -177,10 +176,9 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
     }
 
     public boolean addStores(Map<Operand, Operand> varRenameMap, Set<LocalVariable> excTargetDirtyVars) {
-        IRScope scope = problem.getScope();
+        IRScope scope = problem.getFIC().getScope();
 
         boolean addedStores            = false;
-        boolean isClosure              = scope instanceof IRClosure;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
         ListIterator<Instr> instrs    = basicBlock.getInstrs().listIterator();
@@ -263,7 +261,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
                 if (!basicBlock.isExitBB()) {
-                    LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
+                    LiveVariablesProblem lvp = (LiveVariablesProblem) problem.getFIC().getDataFlowProblems().get(LiveVariablesProblem.NAME);
                     java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
                     if (liveVars != null) {
                         dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
