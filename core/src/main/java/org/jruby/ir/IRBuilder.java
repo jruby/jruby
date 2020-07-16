@@ -299,6 +299,7 @@ public class IRBuilder {
     }
 
     protected final IRBuilder parent;
+    protected IRBuilder variableBuilder;
     protected final IRManager manager;
     protected final IRScope scope;
     protected final List<Instr> instructions;
@@ -314,7 +315,7 @@ public class IRBuilder {
     private TemporaryVariable yieldClosureVariable = null;
     private Variable currentModuleVariable = null;
 
-    public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
+    public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
         this.manager = manager;
         this.scope = scope;
         this.parent = parent;
@@ -323,6 +324,12 @@ public class IRBuilder {
         this.coverageMode = parent == null ? CoverageData.NONE : parent.coverageMode;
 
         if (parent != null) executesOnce = parent.executesOnce;
+
+        this.variableBuilder = variableBuilder;
+    }
+
+    public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
+        this(manager, scope, parent, null);
     }
 
     private boolean needsCodeCoverage() {
@@ -3477,7 +3484,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRBuilder builder = newIRBuilder(manager, scope);
+        IRBuilder builder = new IRBuilder(manager, scope, this, this);
 
         List<Instr> beginInstrs = builder.buildPreExeInner(preExeNode.getBodyNode());
 
@@ -3800,7 +3807,7 @@ public class IRBuilder {
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2);
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
@@ -4139,6 +4146,9 @@ public class IRBuilder {
     }
 
     private TemporaryVariable createTemporaryVariable() {
+        // BEGIN uses its parent builder to store any variables
+        if (variableBuilder != null) return variableBuilder.createTemporaryVariable();
+
         temporaryVariableIndex++;
 
         if (scope.getScopeType() == IRScopeType.CLOSURE) {
