@@ -7,6 +7,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 
@@ -129,16 +130,17 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         return "";
     }
 
-    private TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
+    private TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, FullInterpreterContext fic, Map<Operand, Operand> varRenameMap) {
          TemporaryLocalVariable value = (TemporaryLocalVariable)varRenameMap.get(v);
          if (value == null) {
-             value = scope.getNewTemporaryVariableFor(v);
+             value = fic.getNewTemporaryVariableFor(v);
              varRenameMap.put(v, value);
          }
          return value;
     }
 
     public void addLoads(Map<Operand, Operand> varRenameMap) {
+        FullInterpreterContext fic = problem.getFIC();
         IRScope scope                  = problem.getFIC().getScope();
         boolean isEvalScript           = problem.getFIC().getScope() instanceof IREvalScript;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
@@ -165,7 +167,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     for (Iterator<LocalVariable> iter = reqdLoads.iterator(); iter.hasNext();) {
                         LocalVariable v = iter.next();
                         if (cl.definesLocalVariable(v)) {
-                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                             it.previous();
                             iter.remove();
                         }
@@ -177,7 +179,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 if (scopeBindingHasEscaped) {
                     it.next();
                     for (LocalVariable v: reqdLoads) {
-                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                         it.previous();
                     }
                     it.previous();
@@ -190,7 +192,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     for (Iterator<LocalVariable> iter = reqdLoads.iterator(); iter.hasNext();) {
                         LocalVariable v = iter.next();
                         if (!scope.definesLocalVariable(v)) {
-                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                             it.previous();
                             iter.remove();
                         }
@@ -206,7 +208,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 // 2. Threads can update bindings, so we treat thread poll boundaries the same way.
                 it.next();
                 for (LocalVariable v : reqdLoads) {
-                    it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                    it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                     it.previous();
                 }
                 it.previous();
@@ -219,7 +221,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     reqdLoads.add(lv);
                     // SSS FIXME: Why is this reqd again?  Document with example
                     // Make sure there is a replacement var for all local vars
-                    getLocalVarReplacement(lv, scope, varRenameMap);
+                    getLocalVarReplacement(lv, fic, varRenameMap);
                 }
             } else {
                 // The variables used as arguments will need to be loaded
@@ -232,7 +234,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                         reqdLoads.add(lv);
                         // SSS FIXME: Why is this reqd again?  Document with example
                         // Make sure there is a replacement var for all local vars
-                        getLocalVarReplacement(lv, scope, varRenameMap);
+                        getLocalVarReplacement(lv, fic, varRenameMap);
                     }
                 }
             }
@@ -241,7 +243,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         // Add loads on entry of a rescue block.
         if (basicBlock.isRescueEntry()) {
             for (LocalVariable v : reqdLoads) {
-                it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
             }
         }
 
@@ -252,7 +254,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             for (LocalVariable v : reqdLoads) {
                 if (scope.usesLocalVariable(v) || scope.definesLocalVariable(v)) {
                     if (isEvalScript || !(v instanceof ClosureLocalVariable) || ((ClosureLocalVariable)v).isOuterScopeVar()) {
-                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                     }
                 }
             }

@@ -121,14 +121,14 @@ public class IRBuilder {
         public final Label    iterEndLabel;
         public final Variable loopResult;
 
-        public IRLoop(IRScope s, IRLoop outerLoop) {
+        public IRLoop(IRScope s, IRLoop outerLoop, Variable result) {
             container = s;
             parentLoop = outerLoop;
             loopStartLabel = s.getNewLabel("_LOOP_BEGIN");
             loopEndLabel   = s.getNewLabel("_LOOP_END");
             iterStartLabel = s.getNewLabel("_ITER_BEGIN");
             iterEndLabel   = s.getNewLabel("_ITER_END");
-            loopResult     = s.createTemporaryVariable();
+            loopResult     = result;
             s.setHasLoopsFlag();
         }
     }
@@ -305,6 +305,7 @@ public class IRBuilder {
     protected List<Object> argumentDescriptions;
     protected int coverageMode;
     private boolean executesOnce = true;
+    private int temporaryVariableIndex = -1;
 
     // Current index to put next BEGIN blocks and other things at the front of this scope.
     // Note: in the case of multiple BEGINs this index slides forward so they maintain proper
@@ -554,7 +555,7 @@ public class IRBuilder {
 
         handleBreakAndReturnsInLambdas();
 
-        return scope.allocateInterpreterContext(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
     }
 
     public Operand buildLambda(LambdaNode node) {
@@ -2106,7 +2107,7 @@ public class IRBuilder {
 
         ((IRMethod) scope).setArgumentDescriptors(argDesc);
 
-        return scope.allocateInterpreterContext(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
@@ -3013,7 +3014,7 @@ public class IRBuilder {
         // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
         if (!forNode) handleBreakAndReturnsInLambdas();
 
-        return scope.allocateInterpreterContext(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
     }
 
     public Operand buildIter(final IterNode iterNode) {
@@ -3444,7 +3445,7 @@ public class IRBuilder {
         // END does not have either explicit or implicit return, so we add one
         addInstr(new ReturnInstr(new Nil()));
 
-        return scope.allocateInterpreterContext(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
     }
 
     private List<Instr> buildPreExeInner(Node body) {
@@ -3799,7 +3800,7 @@ public class IRBuilder {
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
 
-        return scope.allocateInterpreterContext(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
@@ -3827,7 +3828,7 @@ public class IRBuilder {
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
-        return scope.allocateInterpreterContext(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
     }
 
     public Variable buildSelf() {
@@ -3915,7 +3916,7 @@ public class IRBuilder {
             build(conditionNode);
             return manager.getNil();
         } else {
-            IRLoop loop = new IRLoop(scope, getCurrentLoop());
+            IRLoop loop = new IRLoop(scope, getCurrentLoop(), createTemporaryVariable());
             Variable loopResult = loop.loopResult;
             Label setupResultLabel = getNewLabel();
 
@@ -4128,7 +4129,7 @@ public class IRBuilder {
 
         addInstr(new ReturnInstr(bodyReturnValue));
 
-        return scope.allocateInterpreterContext(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
     }
 
     private RubySymbol methodNameFor() {
@@ -4138,7 +4139,13 @@ public class IRBuilder {
     }
 
     private TemporaryVariable createTemporaryVariable() {
-        return scope.createTemporaryVariable();
+        temporaryVariableIndex++;
+
+        if (scope.getScopeType() == IRScopeType.CLOSURE) {
+            return new TemporaryClosureVariable(((IRClosure) scope).closureId, temporaryVariableIndex);
+        } else {
+            return manager.newTemporaryLocalVariable(temporaryVariableIndex);
+        }
     }
 
     public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
@@ -4268,8 +4275,17 @@ public class IRBuilder {
     }
 
     public Variable getCurrentModuleVariable() {
-        if (currentModuleVariable == null) currentModuleVariable = scope.createCurrentModuleVariable();
+        if (currentModuleVariable == null) currentModuleVariable = createCurrentModuleVariable();
 
         return currentModuleVariable;
+    }
+
+    public Variable createCurrentModuleVariable() {
+        // SSS: Used in only 3 cases in generated IR:
+        // -> searching a constant in the inheritance hierarchy
+        // -> searching a super-method in the inheritance hierarchy
+        // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
+        temporaryVariableIndex++;
+        return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
 }

@@ -56,7 +56,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
     TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, Map<Operand, Operand> varRenameMap) {
          TemporaryLocalVariable value = (TemporaryLocalVariable)varRenameMap.get(v);
          if (value == null) {
-             value = getFIC().getScope().getNewTemporaryVariableFor(v);
+             value = getFIC().getNewTemporaryVariableFor(v);
              varRenameMap.put(v, value);
          }
          return value;
@@ -120,7 +120,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
             ListIterator<Instr> instrs;
             BasicBlock geb = cfg.getGlobalEnsureBB();
             if (geb == null) {
-                Variable exc = fic.getScope().createTemporaryVariable();
+                Variable exc = fic.createTemporaryVariable();
                 geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
                 geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
                 geb.addInstr(new ThrowExceptionInstr(exc));

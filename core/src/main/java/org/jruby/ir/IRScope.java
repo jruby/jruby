@@ -6,12 +6,10 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
-import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.*;
 import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -112,8 +110,6 @@ public abstract class IRScope implements ParseResult {
     /** Speculatively optimized code */
     protected FullInterpreterContext optimizedInterpreterContext;
 
-    protected int temporaryVariableIndex;
-
     /** Keeps track of types of prefix indexes for variables and labels */
     private int nextLabelIndex = 0;
 
@@ -129,14 +125,13 @@ public abstract class IRScope implements ParseResult {
 
     private final int coverageMode;
 
-    // Used by cloning code
+    // Used by cloning code for inlining
     protected IRScope(IRScope s, IRScope lexicalParent) {
         this.lexicalParent = lexicalParent;
         this.manager = s.manager;
         this.lineNumber = s.lineNumber;
         this.staticScope = s.staticScope;
         this.nextClosureIndex = s.nextClosureIndex;
-        this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.interpreterContext = null;
 
         this.flags = s.flags.clone();
@@ -164,7 +159,6 @@ public abstract class IRScope implements ParseResult {
         this.lineNumber = lineNumber;
         this.staticScope = staticScope;
         this.nextClosureIndex = 0;
-        this.temporaryVariableIndex = -1;
         this.interpreterContext = null;
         this.flags = DEFAULT_SCOPE_FLAGS.clone();
 
@@ -191,10 +185,6 @@ public abstract class IRScope implements ParseResult {
     @Override
     public int hashCode() {
         return scopeId;
-    }
-
-    public void setInterpreterContext(InterpreterContext interpreterContext) {
-        this.interpreterContext = interpreterContext;
     }
 
     @Override
@@ -472,8 +462,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
-        interpreterContext = new InterpreterContext(this, instructions);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions, int tempVariableCount) {
+        interpreterContext = new InterpreterContext(this, instructions, tempVariableCount);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
@@ -481,8 +471,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions) {
-        interpreterContext = new InterpreterContext(this, instructions);
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions, int tempVariableCount) {
+        interpreterContext = new InterpreterContext(this, instructions, tempVariableCount);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
@@ -515,7 +505,7 @@ public abstract class IRScope implements ParseResult {
             scope.prepareFullBuild();
         }
 
-        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs());
+        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs(), interpreterContext.getTemporaryVariableCount());
         runCompilerPasses(fic, getManager().getCompilerPasses(this), dumpToIGV());
         getManager().optimizeIfSimpleScope(fic);
 
@@ -559,7 +549,7 @@ public abstract class IRScope implements ParseResult {
             scope.prepareForCompilation();
         }
 
-        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs());
+        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs(), interpreterContext.getTemporaryVariableCount());
         runCompilerPasses(fic, getManager().getJITPasses(this), dumpToIGV());
 
         BasicBlock[] bbs = fic.linearizeBasicBlocks();
@@ -744,15 +734,6 @@ public abstract class IRScope implements ParseResult {
         return Self.SELF;
     }
 
-    public Variable createCurrentModuleVariable() {
-        // SSS: Used in only 3 cases in generated IR:
-        // -> searching a constant in the inheritance hierarchy
-        // -> searching a super-method in the inheritance hierarchy
-        // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
-        temporaryVariableIndex++;
-        return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
-    }
-
     /**
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
@@ -805,77 +786,6 @@ public abstract class IRScope implements ParseResult {
         LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name.idString()));
         localVars.put(name, lvar);
         return lvar;
-    }
-
-    public TemporaryLocalVariable createTemporaryVariable() {
-        return getNewTemporaryVariable(TemporaryVariableType.LOCAL);
-    }
-
-    public TemporaryLocalVariable getNewTemporaryVariableFor(LocalVariable var) {
-        temporaryVariableIndex++;
-        return new TemporaryLocalReplacementVariable(var.getId(), temporaryVariableIndex);
-    }
-
-    public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
-        switch (type) {
-            case FLOAT: {
-                getFullInterpreterContext().floatVariableIndex++;
-                return new TemporaryFloatVariable(getFullInterpreterContext().floatVariableIndex);
-            }
-            case FIXNUM: {
-                getFullInterpreterContext().fixnumVariableIndex++;
-                return new TemporaryFixnumVariable(getFullInterpreterContext().fixnumVariableIndex);
-            }
-            case BOOLEAN: {
-                getFullInterpreterContext().booleanVariableIndex++;
-                return new TemporaryBooleanVariable(getFullInterpreterContext().booleanVariableIndex);
-            }
-            case LOCAL: {
-                temporaryVariableIndex++;
-                return manager.newTemporaryLocalVariable(temporaryVariableIndex);
-            }
-        }
-
-        throw new RuntimeException("Invalid temporary variable being alloced in this scope: " + type);
-    }
-
-    public void setTemporaryVariableCount(int count) {
-        temporaryVariableIndex = count + 1;
-    }
-
-    public TemporaryLocalVariable getNewUnboxedVariable(Class type) {
-        TemporaryVariableType varType;
-        if (type == Float.class) {
-            varType = TemporaryVariableType.FLOAT;
-        } else if (type == Fixnum.class) {
-            varType = TemporaryVariableType.FIXNUM;
-        } else if (type == java.lang.Boolean.class) {
-            varType = TemporaryVariableType.BOOLEAN;
-        } else {
-            varType = TemporaryVariableType.LOCAL;
-        }
-        return getNewTemporaryVariable(varType);
-    }
-
-    public int getTemporaryVariablesCount() {
-        return temporaryVariableIndex + 1;
-    }
-
-    // Generate a new variable for inlined code
-    public Variable getNewInlineVariable(ByteList inlinePrefix, Variable v) {
-        // FIXME: This should definitely not be polluting inlined scope with %i_old_var_name but we do want
-        //   a nice understandable temp var name so it is more easy to track.
-        /*
-        if (v instanceof LocalVariable) {
-            LocalVariable lv = (LocalVariable)v;
-            ByteList newName = inlinePrefix.dup();
-
-            newName.append(lv.getName().getBytes());
-
-            return getLocalVariable(getManager().getRuntime().newSymbol(newName), lv.getScopeDepth());
-        } else {*/
-            return createTemporaryVariable();
-        //}
     }
 
     public int getLocalVariablesCount() {
@@ -1138,9 +1048,8 @@ public abstract class IRScope implements ParseResult {
         file.encode(getScopeType()); // type is enum of kind of scope
         if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: line       = " + getLine());
         file.encode(getLine());
-        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: temp count = " + getTemporaryVariablesCount());
-        file.encode(getTemporaryVariablesCount());
-        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: next label = " + getTemporaryVariablesCount());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + getInterpreterContext().getTemporaryVariableCount());
+        file.encode(getInterpreterContext().getTemporaryVariableCount());
         file.encode(getNextLabelIndex());
     }
 }

@@ -40,28 +40,24 @@ public class IRReader implements IRPersistenceValues {
 
         IRScope firstScope = null;
         for (int i = 0; i < scopesToRead; i++) {
-            IRScope scope = decodeScopeHeader(manager, file);
+            IRScopeType type = file.decodeIRScopeType();
+            int line = file.decodeInt();
+            int tempVarsCount = file.decodeInt();
+            int nextLabelInt = file.decodeInt();
+            IRScope scope = decodeScopeHeader(manager, file, type, line);
+            scope.setNextLabelIndex(nextLabelInt);
             if (firstScope == null) firstScope = scope;
             int instructionsOffset = file.decodeInt();
             int poolOffset = file.decodeInt();
 
-            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset));
+            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset), tempVarsCount);
         }
 
         return firstScope; // topmost scope;
     }
 
-    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader");
-
-        IRScopeType type = decoder.decodeIRScopeType();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: type       = " + type);
-        int line = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: line       = " + line);
-        int tempVarsCount = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: temp count = " + tempVarsCount);
-        int nextLabelInt = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: next label = " + tempVarsCount);
+    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder, IRScopeType type, int line) {
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
 
         boolean isEND = false;
         if (type == IRScopeType.CLOSURE) {
@@ -101,9 +97,6 @@ public class IRReader implements IRPersistenceValues {
         if (scope instanceof IRClosure && isEND) {
             ((IRClosure) scope).setIsEND();
         }
-
-        scope.setTemporaryVariableCount(tempVarsCount);
-        scope.setNextLabelIndex(nextLabelInt);
 
         decoder.addScope(scope);
 

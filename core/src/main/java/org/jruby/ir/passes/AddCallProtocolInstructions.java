@@ -41,10 +41,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
      * If not, introduce a copy into a tmp-var before the pops and use the tmp-var
      * to return the right value.
      */
-    private void fixReturn(IRScope scope, ReturnBase i, ListIterator<Instr> instrs) {
+    private void fixReturn(FullInterpreterContext fic, ReturnBase i, ListIterator<Instr> instrs) {
         Operand retVal = i.getReturnValue();
         if (!(retVal instanceof ImmutableLiteral || retVal instanceof TemporaryVariable)) {
-            TemporaryVariable tmp = scope.createTemporaryVariable();
+            TemporaryVariable tmp = fic.createTemporaryVariable();
             CopyInstr copy = new CopyInstr(tmp, retVal);
             i.updateReturnValue(tmp);
             instrs.previous();
@@ -100,8 +100,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
             BasicBlock entryBB = cfg.getEntryBB();
             Variable savedViz = null, savedFrame = null;
             if (fic.getScope() instanceof IRClosure) {
-                savedViz = scope.createTemporaryVariable();
-                savedFrame = scope.createTemporaryVariable();
+                savedViz = fic.createTemporaryVariable();
+                savedFrame = fic.createTemporaryVariable();
 
                 // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
                 int insertIndex = 0;
@@ -156,7 +156,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
             BasicBlock geb = cfg.getGlobalEnsureBB();
             boolean gebProcessed = false;
             if (geb == null) {
-                Variable exc = scope.createTemporaryVariable();
+                Variable exc = fic.createTemporaryVariable();
                 geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
                 geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
                 geb.addInstr(new ThrowExceptionInstr(exc));
@@ -173,7 +173,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     // and pops for them will be handled in the GEB
                     if (!bb.isExitBB() && i instanceof ReturnInstr) {
                         // Frame holds backref and lastline, binding holds heap scopes
-                        if (requireFrame || requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
+                        if (requireFrame || requireBinding) fixReturn(fic, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         i = instrs.previous();
                         popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
@@ -186,7 +186,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     // Last instr could be a return -- so, move iterator one position back
                     if (i != null && i instanceof ReturnInstr) {
                         // Frame holds backref and lastline, binding holds heap scopes
-                        if (requireFrame || requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
+                        if (requireFrame || requireBinding) fixReturn(fic, (ReturnInstr)i, instrs);
                         instrs.previous();
                     }
                     popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);

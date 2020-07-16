@@ -1,6 +1,5 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -27,11 +26,11 @@ public class OptimizeDynScopesPass extends CompilerPass {
         return "Opt Dyn Scopes";
     }
 
-    private void setupLocalVarReplacement(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
-         if (varRenameMap.get(v) == null) varRenameMap.put(v, s.getNewTemporaryVariableFor(v));
+    private void setupLocalVarReplacement(LocalVariable v, FullInterpreterContext fic, Map<Operand, Operand> varRenameMap) {
+         if (varRenameMap.get(v) == null) varRenameMap.put(v, fic.getNewTemporaryVariableFor(v));
     }
 
-    private void decrementScopeDepth(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
+    private void decrementScopeDepth(LocalVariable v, Map<Operand, Operand> varRenameMap) {
          if (varRenameMap.get(v) == null) varRenameMap.put(v, v.cloneForDepth(v.getScopeDepth() - 1));
     }
 
@@ -57,10 +56,10 @@ public class OptimizeDynScopesPass extends CompilerPass {
                         LocalVariable lv = (LocalVariable)v;
                         if (lv.getScopeDepth() == 0) {
                             // Make sure there is a replacement tmp-var allocated for lv
-                            setupLocalVarReplacement(lv, fic.getScope(), varRenameMap);
+                            setupLocalVarReplacement(lv, fic, varRenameMap);
                         } else {
                             parentScopeNeeded = true;
-                            decrementScopeDepth(lv, fic.getScope(), varRenameMap);
+                            decrementScopeDepth(lv, varRenameMap);
                         }
                     }
                 }
@@ -86,7 +85,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
                             }
 
                             // Make sure there is a replacement tmp-var allocated for lv
-                            setupLocalVarReplacement(lv, fic.getScope(), varRenameMap);
+                            setupLocalVarReplacement(lv, fic, varRenameMap);
                         } else {
                             // SSS FIXME: Ugly/Dirty! Some abstraction is broken.
                             if (i instanceof LoadLocalVarInstr) {
@@ -102,7 +101,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
                             }
 
                             parentScopeNeeded = true;
-                            decrementScopeDepth(lv, fic.getScope(), varRenameMap);
+                            decrementScopeDepth(lv, varRenameMap);
                         }
                     }
                 }

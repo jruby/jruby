@@ -504,7 +504,7 @@ public final class Ruby implements Constantizable {
         // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
         IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
-        top.allocateInterpreterContext(Collections.EMPTY_LIST);
+        top.allocateInterpreterContext(Collections.EMPTY_LIST, 0);
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
