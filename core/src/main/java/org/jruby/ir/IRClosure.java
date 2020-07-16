@@ -60,7 +60,7 @@ public class IRClosure extends IRScope {
         this.body = null;
     }
 
-    /** Used by cloning code */
+    /** Used by cloning code for inlining */
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
     protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {
         super(c, lexicalParent);
@@ -120,16 +120,16 @@ public class IRClosure extends IRScope {
 
 
     @Override
-    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
-        interpreterContext = new ClosureInterpreterContext(this, instructions);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions, int temporaryVariableCount) {
+        interpreterContext = new ClosureInterpreterContext(this, instructions, temporaryVariableCount);
 
         return interpreterContext;
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions) {
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions, int temporaryVariableCount) {
         try {
-            interpreterContext = new ClosureInterpreterContext(this, instructions);
+            interpreterContext = new ClosureInterpreterContext(this, instructions, temporaryVariableCount);
         } catch (Exception e) {
             Helpers.throwException(e);
         }
@@ -148,21 +148,6 @@ public class IRClosure extends IRScope {
     @Override
     public int getNextClosureId() {
         return getLexicalParent().getNextClosureId();
-    }
-
-    @Override
-    public TemporaryLocalVariable createTemporaryVariable() {
-        return getNewTemporaryVariable(TemporaryVariableType.CLOSURE);
-    }
-
-    @Override
-    public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
-        if (type == TemporaryVariableType.CLOSURE) {
-            temporaryVariableIndex++;
-            return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
-        }
-
-        return super.getNewTemporaryVariable(type);
     }
 
     @Override
@@ -324,7 +309,7 @@ public class IRClosure extends IRScope {
             newInstrs.add(i.clone(clonedII));
         }
 
-        clone.allocateInterpreterContext(newInstrs);
+        clone.allocateInterpreterContext(newInstrs, interpreterContext.getTemporaryVariableCount());
 
 //        }
 

@@ -68,7 +68,7 @@ public class CFGInliner {
 
     // Use receivers variable if it is one.  Otherwise make a new temp for one.
     private Variable getReceiverVariable(Operand receiver) {
-        return receiver instanceof Variable ? (Variable) receiver : hostScope.createTemporaryVariable();
+        return receiver instanceof Variable ? (Variable) receiver : hostScope.getFullInterpreterContext().createTemporaryVariable();
     }
 
     public BasicBlock findCallsiteBB(CallBase call) {

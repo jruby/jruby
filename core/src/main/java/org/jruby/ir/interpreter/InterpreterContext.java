@@ -48,7 +48,7 @@ public class InterpreterContext {
 
     private final IRScope scope;
 
-    public InterpreterContext(IRScope scope, List<Instr> instructions) {
+    public InterpreterContext(IRScope scope, List<Instr> instructions, int temporaryVariableCount) {
         this.scope = scope;
 
         // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
@@ -58,13 +58,15 @@ public class InterpreterContext {
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         setInstructions(instructions);
         this.instructionsCallback = null; // engine != null
+        this.temporaryVariableCount = temporaryVariableCount;
     }
 
-    public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions) {
+    public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions, int temporaryVariableCount) {
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.instructionsCallback = instructions;
+        this.temporaryVariableCount = temporaryVariableCount;
     }
 
     protected void initialize() {
@@ -94,7 +96,6 @@ public class InterpreterContext {
     }
 
     private void retrieveFlags() {
-        this.temporaryVariableCount = scope.getTemporaryVariablesCount();
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
 
@@ -143,6 +144,10 @@ public class InterpreterContext {
 
     public CFG getCFG() {
         return null;
+    }
+
+    public int getTemporaryVariableCount() {
+        return temporaryVariableCount;
     }
 
     public Object[] allocateTemporaryVariables() {

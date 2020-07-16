@@ -12,12 +12,12 @@ import org.jruby.runtime.ThreadContext;
  * Interpreter knowledge needed to interpret a closure.
  */
 public class ClosureInterpreterContext extends InterpreterContext {
-    public ClosureInterpreterContext(IRClosure scope, List<Instr> instructions) {
-        super(scope, instructions);
+    public ClosureInterpreterContext(IRClosure scope, List<Instr> instructions, int temporaryVariableCount) {
+        super(scope, instructions, temporaryVariableCount);
     }
 
-    public ClosureInterpreterContext(IRClosure scope, Supplier<List<Instr>> instructions) {
-        super(scope, instructions);
+    public ClosureInterpreterContext(IRClosure scope, Supplier<List<Instr>> instructions, int temporaryVariableCount) {
+        super(scope, instructions, temporaryVariableCount);
     }
 
     /**
