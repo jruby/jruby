@@ -67,17 +67,6 @@ public class FullInterpreterContext extends InterpreterContext {
         cfg = buildCFG(instructions);
     }
 
-    /**
-     * have this interpretercontext fully built?  This is slightly more complicated than this simple check, but it
-     * should work.  In -X-C full builds we linearize at the beginning of our generateInstructionsForInterpretation
-     * method.  Last thing we do essentially is set instructions to be something.  For JIT builds last thing we
-     * need to check is whether we have linearized the BB list.
-     */
-    @Override
-    public boolean buildComplete() {
-        return linearizedBBList != null;
-    }
-
     public BasicBlock[] linearizeBasicBlocks() {
         linearizedBBList = CFGLinearizer.linearize(cfg);
         return linearizedBBList;

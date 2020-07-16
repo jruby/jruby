@@ -41,7 +41,6 @@ public class InterpreterContext {
     protected boolean hasExplicitCallProtocol;
     protected boolean dynamicScopeEliminated;
     private boolean reuseParentDynScope;
-    private boolean popDynScope;
     private boolean receivesKeywordArguments;
     private final boolean metaClassBodyScope;
 
@@ -141,15 +140,6 @@ public class InterpreterContext {
 
     public IRScope getScope() {
         return scope;
-    }
-
-    /**
-     * Is the build complete?  For startup builds, which this class represents, we finish build in the constructor
-     * so it is always complete.  For FullInterpreterContext this is more complicated (see javadocs there for more
-     * info).
-     */
-    public boolean buildComplete() {
-        return true;
     }
 
     public CFG getCFG() {

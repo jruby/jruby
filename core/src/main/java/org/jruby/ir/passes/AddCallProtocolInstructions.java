@@ -76,7 +76,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
     }
 
     @Override
-    public Object execute(IRScope scope, Object... data) {
+    public Object execute(FullInterpreterContext fic, Object... data) {
         // IRScriptBody do not get explicit call protocol instructions right now.
         // They dont push/pop a frame and do other special things like run begin/end blocks.
         // So, for now, they go through the runtime stub in IRScriptBody.
@@ -84,31 +84,31 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // Add explicit frame and binding push/pop instrs ONLY for methods -- we cannot handle this in closures and evals yet
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
-        if (!explicitCallProtocolSupported(scope)) return null;
+        if (!explicitCallProtocolSupported(fic.getScope())) return null;
 
-        scope.getFlags().remove(IRFlags.FLAGS_COMPUTED);
-        scope.computeScopeFlags();
+        fic.getFlags().remove(IRFlags.FLAGS_COMPUTED);
+        fic.getScope().computeScopeFlags();
 
-        FullInterpreterContext fullIC = scope.prepareFullBuild();
-        CFG cfg = fullIC.getCFG();
+        CFG cfg = fic.getCFG();
+        IRScope scope = fic.getScope();
 
         // For now, we always require frame for closures
         boolean requireFrame = scope.needsFrame();
-        boolean requireBinding = fullIC.needsBinding();
+        boolean requireBinding = fic.needsBinding();
 
-        if (scope instanceof IRClosure || requireBinding || requireFrame) {
+        if (fic.getScope() instanceof IRClosure || requireBinding || requireFrame) {
             BasicBlock entryBB = cfg.getEntryBB();
             Variable savedViz = null, savedFrame = null;
-            if (scope instanceof IRClosure) {
+            if (fic.getScope() instanceof IRClosure) {
                 savedViz = scope.createTemporaryVariable();
                 savedFrame = scope.createTemporaryVariable();
 
                 // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
                 int insertIndex = 0;
 
-                if (scope.needsFrame()) {
+                if (requireFrame) {
                     entryBB.insertInstr(insertIndex++, new SaveBindingVisibilityInstr(savedViz));
-                    entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, scope.getName()));
+                    entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, fic.getName()));
                 }
 
                 // NOTE: Order of these next two is important, since UBESI resets state PBBI needs.
@@ -121,7 +121,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 BasicBlock prologueBB = createPrologueBlock(cfg);
 
                 // Add the right kind of arg preparation instruction
-                Signature sig = ((IRClosure)scope).getSignature();
+                Signature sig = ((IRClosure)fic.getScope()).getSignature();
                 int arityValue = sig.arityValue();
                 if (arityValue == 0) {
                     prologueBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
@@ -142,8 +142,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         entryBB.addInstr(new PushBackrefFrameInstr());
                     } else {
                         entryBB.addInstr(new PushMethodFrameInstr(
-                                scope.getName(),
-                                scope.isScriptScope() ? Visibility.PRIVATE : Visibility.PUBLIC));
+                                fic.getName(),
+                                fic.getScope().isScriptScope() ? Visibility.PRIVATE : Visibility.PUBLIC));
                     }
                 }
                 if (requireBinding) entryBB.addInstr(new PushMethodBindingInstr());
@@ -210,11 +210,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
 */
 
         // This scope has an explicit call protocol flag now
-        fullIC.setExplicitCallProtocol(true);
+        fic.setExplicitCallProtocol(true);
 
         // LVA information is no longer valid after the pass
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
-        (new LiveVariableAnalysis()).invalidate(scope);
+        (new LiveVariableAnalysis()).invalidate(fic);
 
         return null;
     }
@@ -244,7 +244,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
     }
 
     @Override
-    public boolean invalidate(IRScope scope) {
+    public boolean invalidate(FullInterpreterContext fic) {
         // Cannot add call protocol instructions after we've added them once.
         return false;
     }

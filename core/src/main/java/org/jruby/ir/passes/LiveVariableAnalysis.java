@@ -1,13 +1,10 @@
 package org.jruby.ir.passes;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
@@ -35,12 +32,12 @@ public class LiveVariableAnalysis extends CompilerPass {
     }
 
     @Override
-    public Object previouslyRun(IRScope scope) {
-        return scope.getLiveVariablesProblem();
+    public Object previouslyRun(FullInterpreterContext fic) {
+        return fic.getDataFlowProblems().get(LiveVariablesProblem.NAME);
     }
 
-    private void collectNonLocalDirtyVars(IRClosure cl, Set<LocalVariable> vars, int minDepth) {
-        for (BasicBlock bb: cl.getCFG().getBasicBlocks()) {
+    private void collectNonLocalDirtyVars(FullInterpreterContext fic, Set<LocalVariable> vars, int minDepth) {
+        for (BasicBlock bb: fic.getCFG().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 // Collect local vars belonging to an outer scope dirtied here
                 if (i instanceof ResultInstr) {
@@ -55,7 +52,7 @@ public class LiveVariableAnalysis extends CompilerPass {
                 if (i instanceof ClosureAcceptingInstr) {
                     Operand clArg = ((ClosureAcceptingInstr)i).getClosureArg();
                     if (clArg instanceof WrappedIRClosure) {
-                        collectNonLocalDirtyVars(((WrappedIRClosure)clArg).getClosure(), vars, minDepth+1);
+                        collectNonLocalDirtyVars(((WrappedIRClosure)clArg).getClosure().getFullInterpreterContext(), vars, minDepth+1);
                     }
                 }
             }
@@ -63,19 +60,18 @@ public class LiveVariableAnalysis extends CompilerPass {
     }
 
     @Override
-    public Object execute(IRScope scope, Object... data) {
+    public Object execute(FullInterpreterContext fic, Object... data) {
         // Make sure flags are computed
-        scope.computeScopeFlags();
+        fic.getScope().computeScopeFlags();
 
-        LiveVariablesProblem lvp = new LiveVariablesProblem(scope);
+        LiveVariablesProblem lvp = new LiveVariablesProblem(fic);
 
-        if (scope instanceof IRClosure) {
+        if (fic.getScope() instanceof IRClosure) {
             // We have to conservatively assume that any dirtied variables
             // that belong to an outer scope are live on exit.
             Set<LocalVariable> nlVars = new HashSet<LocalVariable>();
-            FullInterpreterContext fullIC = scope.getExecutionContext();
 
-            collectNonLocalDirtyVars((IRClosure)scope, nlVars, fullIC.isDynamicScopeEliminated() ? -1 : 0);
+            collectNonLocalDirtyVars(fic, nlVars, fic.isDynamicScopeEliminated() ? -1 : 0);
 
             // Init DF vars from this set
             for (Variable v: nlVars) {
@@ -85,15 +81,15 @@ public class LiveVariableAnalysis extends CompilerPass {
         }
 
         lvp.compute_MOP_Solution();
-        scope.putLiveVariablesProblem(lvp);
+        fic.getDataFlowProblems().put(LiveVariablesProblem.NAME, lvp);
 
         return lvp;
     }
 
     @Override
-    public boolean invalidate(IRScope scope) {
-        super.invalidate(scope);
-        scope.putLiveVariablesProblem(null);
+    public boolean invalidate(FullInterpreterContext fic) {
+        super.invalidate(fic);
+        fic.getDataFlowProblems().put(LiveVariablesProblem.NAME, null);
         return true;
     }
 }

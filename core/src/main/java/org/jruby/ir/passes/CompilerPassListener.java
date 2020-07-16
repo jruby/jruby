@@ -1,6 +1,6 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 
 /**
  * To get information about all phases of executing a compiler pass.
@@ -15,17 +15,17 @@ public interface CompilerPassListener {
      * This dependent pass has been determined to already be satisfied and is
      * not going to call execute().
      */
-    public void alreadyExecuted(CompilerPass passClass, IRScope scope, Object data, boolean childScope);
+    public void alreadyExecuted(CompilerPass passClass, FullInterpreterContext fic, Object data, boolean childScope);
 
     /**
      * This pass is about to begin execute'ing.
      * @param pass
      */
-    public void startExecute(CompilerPass pass, IRScope scope, boolean childScope);
+    public void startExecute(CompilerPass pass, FullInterpreterContext fic, boolean childScope);
 
     /**
      * This pass has just finished execute'ing.  data is the result it is
      * returning.
      */
-    public void endExecute(CompilerPass pass, IRScope scope, Object data, boolean childScope);
+    public void endExecute(CompilerPass pass, FullInterpreterContext fic, Object data, boolean childScope);
 }
