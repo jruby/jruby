@@ -3886,7 +3886,12 @@ public final class Ruby implements Constantizable {
     public RaiseException newErrnoFromBindException(BindException be, String contextMessage) {
         Errno errno = Helpers.errnoFromException(be);
 
-        return newErrnoFromErrno(errno, contextMessage);
+        if (errno != null) {
+            return newErrnoFromErrno(errno, contextMessage);
+        }
+
+        // Messages may differ so revert to old behavior (jruby/jruby#6322)
+        return newErrnoEADDRFromBindException(be, contextMessage);
     }
 
     public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {
