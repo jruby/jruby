@@ -14,7 +14,6 @@ import org.jruby.ir.passes.*;
 import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.IGVDumper;
@@ -731,13 +730,6 @@ public abstract class IRScope implements ParseResult {
         return localVars;
     }
 
-    /**
-     * Get all variables referenced by this scope.
-     */
-    public Set<LocalVariable> getUsedLocalVariables() {
-        return getFullInterpreterContext().getUsedLocalVariables();
-    }
-
     public void setNextLabelIndex(int index) {
         nextLabelIndex = index;
     }
@@ -775,18 +767,6 @@ public abstract class IRScope implements ParseResult {
         LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name.idString()));
         localVars.put(name, lvar);
         return lvar;
-    }
-
-    public int getLocalVariablesCount() {
-        return localVars.size();
-    }
-
-    public boolean usesLocalVariable(Variable v) {
-        return getFullInterpreterContext().usesLocalVariable(v);
-    }
-
-    public boolean definesLocalVariable(Variable v) {
-        return getFullInterpreterContext().definesLocalVariable(v);
     }
 
     /**

@@ -157,9 +157,9 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
                     ensureInstrsReady();
                     closure.getNearestTopLocalVariableScope().prepareForCompilation();
 
-                    FullInterpreterContext fullIC = closure.getFullInterpreterContext();
+                    FullInterpreterContext fic = closure.getFullInterpreterContext();
 
-                    if (fullIC == null || !fullIC.hasExplicitCallProtocol()) {
+                    if (fic == null || !fic.hasExplicitCallProtocol()) {
                         if (Options.JIT_LOGGING.load()) {
                             LOG.info("JIT failed; no full IR or no call protocol found in block: " + closure);
                         }
