@@ -3,6 +3,7 @@ package org.jruby.ir.passes;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -16,35 +17,35 @@ public class BasicCompilerPassListener implements CompilerPassListener {
     private Map<CompilerPass, Long> times = new HashMap<CompilerPass, Long>();
 
     @Override
-    public void alreadyExecuted(CompilerPass passClass, IRScope scope, Object data, boolean childScope) {
+    public void alreadyExecuted(CompilerPass passClass, FullInterpreterContext fic, Object data, boolean childScope) {
     }
 
     @Override
-    public void startExecute(CompilerPass pass, IRScope scope, boolean childScope) {
+    public void startExecute(CompilerPass pass, FullInterpreterContext fic, boolean childScope) {
         times.put(pass, new Long(System.currentTimeMillis()));
-        LOG.info("Starting " + pass.getLabel() + " on scope " + scope);
+        LOG.info("Starting " + pass.getLabel() + " on scope " + fic.getScope());
     }
 
     @Override
-    public void endExecute(CompilerPass pass, IRScope scope, Object data, boolean childScope) {
+    public void endExecute(CompilerPass pass, FullInterpreterContext fic, Object data, boolean childScope) {
         Long startTime = times.get(pass);
         long timeTaken = startTime != null ? System.currentTimeMillis() - startTime.longValue() : -1;
 
-        CFG c = scope.getCFG();
+        CFG c = fic.getCFG();
 
         if (c != null) {
             LOG.info("\nGraph:\n" + c.toStringGraph());
-            LOG.info("\nInstructions[" + getScopeUUID(scope) + "," + scope.getClass().getSimpleName() + "," +
+            LOG.info("\nInstructions[" + getScopeUUID(fic.getScope()) + "," + fic.getScope().getClass().getSimpleName() + "," +
                     pass.getClass().getSimpleName() + "]:\n" + c.toStringInstrs() + "\n:Instructions");
         } else {
-            LOG.info("\n  instrs:\n" + scope.toStringInstrs());
+            LOG.info("\n  instrs:\n" + fic.toStringInstrs());
         }
 
 
         if (startTime > 0) {
             LOG.info("Finished " + pass.getLabel() + " on scope in " + timeTaken + "ms.");
         } else { // Not really sure we should allow same pass to be run twice in same pass order run...too defensive?
-            LOG.info("Finished " + pass.getLabel() + " on scope " + scope);
+            LOG.info("Finished " + pass.getLabel() + " on scope " + fic.getScope());
         }
     }
 
