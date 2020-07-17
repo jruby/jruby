@@ -23,9 +23,6 @@ public class AddMissingInitsPass extends CompilerPass {
 
     @Override
     public Object execute(FullInterpreterContext fic, Object... data) {
-        // Make sure flags are computed
-        fic.getScope().computeScopeFlags();
-
         // Find undefined vars
         DefinedVariablesProblem p = new DefinedVariablesProblem(fic);
         p.compute_MOP_Solution();

@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.GlobalVariable;
@@ -15,6 +14,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInstr {
     public PutGlobalVarInstr(RubySymbol varName, Operand value) {
         this(new GlobalVariable(varName), value);
@@ -25,16 +26,16 @@ public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInst
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
         switch (getTarget().getId()) {
             case "$_" : case "$LAST_READ_LINE" :
-                scope.getFlags().add(IRFlags.REQUIRES_LASTLINE);
+                flags.add(IRFlags.REQUIRES_LASTLINE);
                 break;
             case "$~" : case "$LAST_MATCH_INFO" :
             case "$`" : case "$PREMATCH" :
             case "$'" : case "$POSTMATCH" :
             case "$+" : case "$LAST_PAREN_MATCH" :
-                scope.getFlags().add(IRFlags.REQUIRES_BACKREF);
+                flags.add(IRFlags.REQUIRES_BACKREF);
                 return true;
         }
         return false;

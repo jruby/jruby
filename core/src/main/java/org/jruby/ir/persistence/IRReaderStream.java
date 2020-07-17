@@ -241,7 +241,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println(">INSTR = " + decodedInstr);
 
             // FIXME: It would be nice to not run this and just record flag state at encode time
-            decodedInstr.computeScopeFlags(scope);
+            decodedInstr.computeScopeFlags(scope.getFlags());
             instrs.add(decodedInstr);
         }
 

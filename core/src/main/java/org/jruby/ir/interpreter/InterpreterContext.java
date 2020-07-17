@@ -181,7 +181,7 @@ public class InterpreterContext {
 
     public void computeScopeFlagsFromInstructions() {
         for (Instr instr : getInstructions()) {
-            instr.computeScopeFlags(scope);
+            instr.computeScopeFlags(getFlags());
         }
     }
 

@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -14,6 +13,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class AliasInstr extends TwoOperandInstr implements FixedArityInstr {
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public AliasInstr(Operand newName, Operand oldName) {
@@ -21,8 +22,8 @@ public class AliasInstr extends TwoOperandInstr implements FixedArityInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+        flags.add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }
 

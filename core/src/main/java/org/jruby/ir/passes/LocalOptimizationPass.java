@@ -29,12 +29,6 @@ public class LocalOptimizationPass extends CompilerPass {
             runLocalOptsOnBasicBlock(fic.getScope(), b);
         }
 
-        // SSS FIXME: What is this about? 
-        // Why 'Only after running local opts'? Figure out and document.
-        //
-        // Only after running local opts, compute various execution scope flags.
-        fic.getScope().computeScopeFlags();
-
         // LVA information is no longer valid after this pass
         // Currently, we don't run this after LVA, but just in case ...
         //

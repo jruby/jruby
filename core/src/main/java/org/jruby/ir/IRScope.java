@@ -26,7 +26,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -383,10 +382,6 @@ public abstract class IRScope implements ParseResult {
         flags.add(HAS_LOOPS);
     }
 
-    public boolean hasLoops() {
-        return flags.contains(HAS_LOOPS);
-    }
-
     public boolean receivesKeywordArgs() {
         return flags.contains(RECEIVES_KEYWORD_ARGS);
     }
@@ -576,7 +571,7 @@ public abstract class IRScope implements ParseResult {
 
     private void initScopeFlags() {
         // .clear() does not work here for unknown reasons.  It is obviously removing something which should not be...
-        flags.remove(CAN_CAPTURE_CALLERS_BINDING);
+        /*flags.remove(CAN_CAPTURE_CALLERS_BINDING);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
         flags.remove(HAS_BREAK_INSTRS);
@@ -594,7 +589,7 @@ public abstract class IRScope implements ParseResult {
         flags.remove(REQUIRES_LINE);
         flags.remove(REQUIRES_CLASS);
         flags.remove(REQUIRES_FILENAME);
-        flags.remove(REQUIRES_SCOPE);
+        flags.remove(REQUIRES_SCOPE);*/
     }
 
     private void bindingEscapedScopeFlagsCheck() {
@@ -652,15 +647,18 @@ public abstract class IRScope implements ParseResult {
 
     // ENEBO: IRBuild adds more instrs after this so should we force a recompute?
     /**
+     * IRBuild Only.
+     *
      * This is called when building an IRMethod before it has completed the build and made an IC
-     * yet.
+     * yet.  We do this to detect stuff like potential non-local returns and then build stuff as
+     * a result.
      */
     public void computeScopeFlagsEarly(List<Instr> instructions) {
         initScopeFlags();
         bindingEscapedScopeFlagsCheck();
 
         for (Instr i : instructions) {
-            i.computeScopeFlags(this);
+            i.computeScopeFlags(getFlags());
         }
 
         calculateClosureScopeFlags();

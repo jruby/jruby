@@ -165,7 +165,7 @@ public class FullInterpreterContext extends InterpreterContext {
     public void computeScopeFlagsFromInstructions() {
         for (BasicBlock b: cfg.getBasicBlocks()) {
             for (Instr i: b.getInstrs()) {
-                i.computeScopeFlags(getScope());
+                i.computeScopeFlags(getFlags());
             }
         }
     }
