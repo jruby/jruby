@@ -354,7 +354,7 @@ public class IRBuilder {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.empty()) {
-            instr.computeScopeFlags(scope);
+            instr.computeScopeFlags(scope.getFlags());
 
             if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, instructions.size());
 
@@ -368,7 +368,7 @@ public class IRBuilder {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.empty()) {
-            instr.computeScopeFlags(scope);
+            instr.computeScopeFlags(scope.getFlags());
 
             if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, 0);
 

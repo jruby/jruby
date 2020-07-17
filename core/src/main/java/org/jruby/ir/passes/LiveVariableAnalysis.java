@@ -61,9 +61,6 @@ public class LiveVariableAnalysis extends CompilerPass {
 
     @Override
     public Object execute(FullInterpreterContext fic, Object... data) {
-        // Make sure flags are computed
-        fic.getScope().computeScopeFlags();
-
         LiveVariablesProblem lvp = new LiveVariablesProblem(fic);
 
         if (fic.getScope() instanceof IRClosure) {

@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -11,6 +10,8 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+
+import java.util.EnumSet;
 
 // NOTE: breaks that jump out of while/until loops would have
 // been transformed by the IR building into an ordinary jump.
@@ -43,9 +44,9 @@ public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.HAS_BREAK_INSTRS);
-        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+        flags.add(IRFlags.HAS_BREAK_INSTRS);
+        flags.add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }
 

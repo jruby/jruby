@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 // A generic IR instruction is of the form: v = OP(arg_array, attribute_array)
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
@@ -21,6 +22,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -163,7 +165,7 @@ public abstract class Instr {
      * Does this instruction do anything the scope is interested in?
      * @return true if it modified the scope.
      */
-    public boolean computeScopeFlags(IRScope scope) {
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
         return false;
     }
 

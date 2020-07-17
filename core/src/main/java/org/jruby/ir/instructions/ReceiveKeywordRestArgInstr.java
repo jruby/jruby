@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
@@ -11,6 +10,8 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.EnumSet;
 
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public final int required;
@@ -26,8 +27,8 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.RECEIVES_KEYWORD_ARGS);
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+        flags.add(IRFlags.RECEIVES_KEYWORD_ARGS);
         return true;
     }
 

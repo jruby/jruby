@@ -228,10 +228,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        boolean modifiedScope = super.computeScopeFlags(scope);
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+        boolean modifiedScope = super.computeScopeFlags(flags);
 
-        EnumSet<IRFlags> flags = scope.getFlags();
         if (targetRequiresCallersBinding()) {
             modifiedScope = true;
             flags.add(BINDING_HAS_ESCAPED);

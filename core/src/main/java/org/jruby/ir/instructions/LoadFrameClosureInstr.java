@@ -1,6 +1,6 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRScope;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
@@ -9,6 +9,8 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+
+import java.util.EnumSet;
 
 import static org.jruby.ir.IRFlags.REQUIRES_BLOCK;
 
@@ -44,9 +46,9 @@ public class LoadFrameClosureInstr extends NoOperandResultBaseInstr implements F
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
-        scope.getFlags().add(REQUIRES_BLOCK);
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(flags);
+        flags.add(REQUIRES_BLOCK);
         return true;
     }
 

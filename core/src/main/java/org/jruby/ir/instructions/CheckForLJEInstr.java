@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -12,6 +11,8 @@ import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
+
+import java.util.EnumSet;
 
 public class CheckForLJEInstr extends NoOperandInstr {
     // We know the proc/lambda was not lexically made within a method scope.  If it is a lambda
@@ -70,9 +71,9 @@ public class CheckForLJEInstr extends NoOperandInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
-        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(flags);
+        flags.add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }
 }
