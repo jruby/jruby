@@ -36,6 +36,8 @@ package org.jruby.runtime;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 /**
  * A Frame holds per-call information that needs to persist outside the
  * execution of a given method. Currently a frame holds the following:
@@ -83,10 +85,10 @@ public final class Frame {
     private Visibility visibility = Visibility.PUBLIC;
 
     /** backref **/
-    private IRubyObject backRef;
+    private volatile Object backRef;
 
     /** lastline **/
-    private IRubyObject lastLine;
+    private volatile Object lastLine;
 
     /** whether this frame has been captured into a binding **/
     boolean captured;
@@ -328,21 +330,94 @@ public final class Frame {
     }
 
     public IRubyObject getBackRef(IRubyObject nil) {
-        IRubyObject backRef = this.backRef;
-        return backRef == null ? nil : backRef;
+        Object backRef = this.backRef;
+        while (true) {
+            if (backRef == null) {
+                return nil;
+            } else if (backRef instanceof IRubyObject) {
+                return (IRubyObject) backRef;
+            } else {
+                backRef = ((ThreadLocal<IRubyObject>) backRef).get();
+                continue;
+            }
+        }
     }
 
+    private static final AtomicReferenceFieldUpdater<Frame, Object> BACKREF_UPDATER = AtomicReferenceFieldUpdater.newUpdater(Frame.class, Object.class, "backRef");
+    private static final AtomicReferenceFieldUpdater<Frame, Object> LASTLINE_UPDATER = AtomicReferenceFieldUpdater.newUpdater(Frame.class, Object.class, "lastLine");
+
     public IRubyObject setBackRef(IRubyObject backRef) {
-        return this.backRef = backRef;
+        if (captured) {
+            return setThreadLocalBackref(this, backRef);
+        }
+
+        this.backRef = backRef;
+
+        return backRef;
+    }
+
+    private static IRubyObject setThreadLocalBackref(Frame frame, IRubyObject backRef) {
+        ThreadLocal<IRubyObject> threadBackref;
+        while (true) {
+            Object directBackref = frame.backRef;
+            if (directBackref instanceof ThreadLocal) {
+                threadBackref = (ThreadLocal<IRubyObject>) directBackref;
+                break;
+            }
+
+            threadBackref = ThreadLocal.withInitial(() -> (IRubyObject) directBackref);
+            if (BACKREF_UPDATER.compareAndSet(frame, directBackref, threadBackref)) {
+                break;
+            }
+        }
+
+        threadBackref.set(backRef);
+
+        return backRef;
     }
 
     public IRubyObject getLastLine(IRubyObject nil) {
-        IRubyObject lastLine = this.lastLine;
-        return lastLine == null ? nil : lastLine;
+        Object lastLine = this.lastLine;
+        while (true) {
+            if (lastLine == null) {
+                return nil;
+            } else if (lastLine instanceof IRubyObject) {
+                return (IRubyObject) lastLine;
+            } else {
+                lastLine = ((ThreadLocal<IRubyObject>) lastLine).get();
+                continue;
+            }
+        }
     }
 
     public IRubyObject setLastLine(IRubyObject lastLine) {
-        return this.lastLine = lastLine;
+        if (captured) {
+            return setThreadLocalLastLine(this, lastLine);
+        }
+
+        this.lastLine = lastLine;
+
+        return lastLine;
+    }
+
+    private static IRubyObject setThreadLocalLastLine(Frame frame, IRubyObject lastLine) {
+        ThreadLocal<IRubyObject> threadlastLine;
+        while (true) {
+            Object directlastLine = frame.lastLine;
+            if (directlastLine instanceof ThreadLocal) {
+                threadlastLine = (ThreadLocal<IRubyObject>) directlastLine;
+                break;
+            }
+
+            threadlastLine = ThreadLocal.withInitial(() -> (IRubyObject) directlastLine);
+            if (LASTLINE_UPDATER.compareAndSet(frame, directlastLine, threadlastLine)) {
+                break;
+            }
+        }
+
+        threadlastLine.set(lastLine);
+
+        return lastLine;
     }
 
     public void setCaptured(boolean captured) {
