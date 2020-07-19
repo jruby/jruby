@@ -36,6 +36,7 @@ package org.jruby.runtime;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
@@ -337,7 +338,11 @@ public final class Frame {
             } else if (backRef instanceof IRubyObject) {
                 return (IRubyObject) backRef;
             } else {
-                backRef = ((ThreadLocal<IRubyObject>) backRef).get();
+                WeakReference<IRubyObject> backRefWR = ((ThreadLocal<WeakReference<IRubyObject>>) backRef).get();
+                if (backRefWR == null) {
+                    return nil;
+                }
+                backRef = backRefWR.get();
                 continue;
             }
         }
@@ -357,21 +362,22 @@ public final class Frame {
     }
 
     private static IRubyObject setThreadLocalBackref(Frame frame, IRubyObject backRef) {
-        ThreadLocal<IRubyObject> threadBackref;
+        ThreadLocal<WeakReference<IRubyObject>> threadBackref;
         while (true) {
             Object directBackref = frame.backRef;
             if (directBackref instanceof ThreadLocal) {
-                threadBackref = (ThreadLocal<IRubyObject>) directBackref;
+                threadBackref = (ThreadLocal<WeakReference<IRubyObject>>) directBackref;
                 break;
             }
 
-            threadBackref = ThreadLocal.withInitial(() -> (IRubyObject) directBackref);
+            WeakReference<IRubyObject> oldValue = new WeakReference<>((IRubyObject) directBackref);
+            threadBackref = ThreadLocal.withInitial(() -> oldValue);
             if (BACKREF_UPDATER.compareAndSet(frame, directBackref, threadBackref)) {
                 break;
             }
         }
 
-        threadBackref.set(backRef);
+        threadBackref.set(new WeakReference<>(backRef));
 
         return backRef;
     }
@@ -384,7 +390,11 @@ public final class Frame {
             } else if (lastLine instanceof IRubyObject) {
                 return (IRubyObject) lastLine;
             } else {
-                lastLine = ((ThreadLocal<IRubyObject>) lastLine).get();
+                WeakReference<IRubyObject> lastLineWR = ((ThreadLocal<WeakReference<IRubyObject>>) lastLine).get();
+                if (lastLineWR == null) {
+                    return nil;
+                }
+                lastLine = lastLineWR.get();
                 continue;
             }
         }
@@ -401,21 +411,22 @@ public final class Frame {
     }
 
     private static IRubyObject setThreadLocalLastLine(Frame frame, IRubyObject lastLine) {
-        ThreadLocal<IRubyObject> threadlastLine;
+        ThreadLocal<WeakReference<IRubyObject>> threadlastLine;
         while (true) {
             Object directlastLine = frame.lastLine;
             if (directlastLine instanceof ThreadLocal) {
-                threadlastLine = (ThreadLocal<IRubyObject>) directlastLine;
+                threadlastLine = (ThreadLocal<WeakReference<IRubyObject>>) directlastLine;
                 break;
             }
 
-            threadlastLine = ThreadLocal.withInitial(() -> (IRubyObject) directlastLine);
+            WeakReference<IRubyObject> oldValue = new WeakReference<>((IRubyObject) directlastLine);
+            threadlastLine = ThreadLocal.withInitial(() -> oldValue);
             if (LASTLINE_UPDATER.compareAndSet(frame, directlastLine, threadlastLine)) {
                 break;
             }
         }
 
-        threadlastLine.set(lastLine);
+        threadlastLine.set(new WeakReference<>(lastLine));
 
         return lastLine;
     }
