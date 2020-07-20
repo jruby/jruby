@@ -8,6 +8,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -178,7 +179,7 @@ public abstract class Instr {
          return !(hasSideEffects() || operation.isDebugOp() || canRaiseException() || transfersControl());
     }
 
-    public boolean canBeDeletedFromScope(IRScope s) {
+    public boolean canBeDeletedFromScope(FullInterpreterContext fic) {
         if (!isDeletable()) {
             return false;
         }
@@ -188,7 +189,7 @@ public abstract class Instr {
 
              // An escaped binding needs to preserve lvars since
              // consumers of that binding may access lvars.
-             if (s.bindingHasEscaped()) return !(r instanceof LocalVariable);
+             if (fic.bindingHasEscaped()) return !(r instanceof LocalVariable);
          }
 
         return true;
