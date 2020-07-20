@@ -48,7 +48,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
     @Override
     public void applyTransferFunction(Instr i) {
         FullInterpreterContext fic = problem.getFIC();
-        boolean scopeBindingHasEscaped = fic.getScope().bindingHasEscaped();
+        boolean scopeBindingHasEscaped = fic.bindingHasEscaped();
 
         // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
         if (i instanceof ResultInstr) {
@@ -144,7 +144,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         FullInterpreterContext fic = problem.getFIC();
         IRScope scope                  = problem.getFIC().getScope();
         boolean isEvalScript           = problem.getFIC().getScope() instanceof IREvalScript;
-        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+        boolean scopeBindingHasEscaped = fic.bindingHasEscaped();
 
         List<Instr>         instrs    = basicBlock.getInstrs();
         ListIterator<Instr> it        = instrs.listIterator(instrs.size());

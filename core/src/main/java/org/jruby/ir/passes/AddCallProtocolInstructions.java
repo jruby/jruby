@@ -55,20 +55,17 @@ public class AddCallProtocolInstructions extends CompilerPass {
         }
     }
 
-    private void popSavedState(IRScope scope, boolean isGEB, boolean requireBinding, boolean requireFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
-        if (scope instanceof IRClosure && isGEB) {
-            // Add before RethrowSavedExcInLambdaInstr
-            instrs.previous();
-        }
+    private void popSavedState(boolean needsOnlyBackref, boolean isClosure, boolean isGEB, boolean requireBinding, boolean needsFrame, Variable savedViz, Variable savedFrame, ListIterator<Instr> instrs) {
+        if (isClosure && isGEB) instrs.previous(); // Add before RethrowSavedExcInLambdaInstr
         if (requireBinding) instrs.add(new PopBindingInstr());
-        if (scope instanceof IRClosure) {
-            if (scope.needsFrame()) {
+        if (isClosure) {
+            if (needsFrame) {
                 instrs.add(new RestoreBindingVisibilityInstr(savedViz));
                 instrs.add(new PopBlockFrameInstr(savedFrame));
             }
         } else {
-            if (requireFrame) {
-                if (scope.needsOnlyBackref()) {
+            if (needsFrame) {
+                if (needsOnlyBackref) {
                     instrs.add(new PopBackrefFrameInstr());
                 } else {
                     instrs.add(new PopMethodFrameInstr());
@@ -89,23 +86,24 @@ public class AddCallProtocolInstructions extends CompilerPass {
         if (!explicitCallProtocolSupported(fic.getScope())) return null;
 
         CFG cfg = fic.getCFG();
-        IRScope scope = fic.getScope();
 
         // For now, we always require frame for closures
-        boolean requireFrame = scope.needsFrame();
+        boolean needsFrame = fic.needsFrame();
         boolean requireBinding = fic.needsBinding();
+        boolean isClosure = fic.getScope() instanceof IRClosure;
+        boolean needsOnlyBackref = fic.needsOnlyBackref();
 
-        if (fic.getScope() instanceof IRClosure || requireBinding || requireFrame) {
+        if (isClosure || requireBinding || needsFrame) {
             BasicBlock entryBB = cfg.getEntryBB();
             Variable savedViz = null, savedFrame = null;
-            if (fic.getScope() instanceof IRClosure) {
+            if (isClosure) {
                 savedViz = fic.createTemporaryVariable();
                 savedFrame = fic.createTemporaryVariable();
 
                 // FIXME: Hacky...need these to come before other stuff in entryBB so we insert instead of add
                 int insertIndex = 0;
 
-                if (requireFrame) {
+                if (needsFrame) {
                     entryBB.insertInstr(insertIndex++, new SaveBindingVisibilityInstr(savedViz));
                     entryBB.insertInstr(insertIndex++, new PushBlockFrameInstr(savedFrame, fic.getName()));
                 }
@@ -136,8 +134,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     }
                 }
             } else {
-                if (requireFrame) {
-                    if (scope.needsOnlyBackref()) {
+                if (needsFrame) {
+                    if (needsOnlyBackref) {
                         entryBB.addInstr(new PushBackrefFrameInstr());
                     } else {
                         entryBB.addInstr(new PushMethodFrameInstr(
@@ -172,10 +170,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     // and pops for them will be handled in the GEB
                     if (!bb.isExitBB() && i instanceof ReturnInstr) {
                         // Frame holds backref and lastline, binding holds heap scopes
-                        if (requireFrame || requireBinding) fixReturn(fic, (ReturnInstr)i, instrs);
+                        if (needsFrame || requireBinding) fixReturn(fic, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         i = instrs.previous();
-                        popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                        popSavedState(needsOnlyBackref, isClosure, bb == geb, requireBinding, needsFrame, savedViz, savedFrame, instrs);
                         if (bb == geb) gebProcessed = true;
                         break;
                     }
@@ -185,19 +183,19 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     // Last instr could be a return -- so, move iterator one position back
                     if (i != null && i instanceof ReturnInstr) {
                         // Frame holds backref and lastline, binding holds heap scopes
-                        if (requireFrame || requireBinding) fixReturn(fic, (ReturnInstr)i, instrs);
+                        if (needsFrame || requireBinding) fixReturn(fic, (ReturnInstr)i, instrs);
                         instrs.previous();
                     }
-                    popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    popSavedState(needsOnlyBackref, isClosure, bb == geb, requireBinding, needsFrame, savedViz, savedFrame, instrs);
                     if (bb == geb) gebProcessed = true;
                 } else if (!gebProcessed && bb == geb) {
                     // Add before throw-exception-instr which would be the last instr
                     if (i != null) {
                         // Assumption: Last instr should always be a control-transfer instruction
-                        assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + scope + " is " + i + ", not a control-xfer instruction";
+                        assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + fic.getScope() + " is " + i + ", not a control-xfer instruction";
                         instrs.previous();
                     }
-                    popSavedState(scope, true, requireBinding, requireFrame, savedViz, savedFrame, instrs);
+                    popSavedState(needsOnlyBackref, isClosure, true, requireBinding, needsFrame, savedViz, savedFrame, instrs);
                 }
             }
         }

@@ -59,7 +59,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
 
             // If this scope's binding has escaped, all variables
             // should be considered live on exit from the scope.
-            if (problem.getFIC().getScope().bindingHasEscaped()) {
+            if (problem.getFIC().bindingHasEscaped()) {
                 for (Variable x: problem.getNonSelfLocalVars()) {
                     in.set(problem.getDFVar(x));
                 }
@@ -96,7 +96,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
 
     @Override
     public void applyTransferFunction(Instr i) {
-        boolean scopeBindingHasEscaped = problem.getFIC().getScope().bindingHasEscaped();
+        boolean scopeBindingHasEscaped = problem.getFIC().bindingHasEscaped();
 
         // v is defined => It is no longer live before 'i'
         if (i instanceof ResultInstr) {
@@ -191,7 +191,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
 /* ---------- Protected / package fields, methods --------- */
     void markDeadInstructions() {
         // System.out.println("-- Identifying dead instructions for " + basicBlock.getID() + " -- ");
-        boolean scopeBindingHasEscaped = problem.getFIC().getScope().bindingHasEscaped();
+        boolean scopeBindingHasEscaped = problem.getFIC().bindingHasEscaped();
 
         if (in == null) {
             // 'in' cannot be null for reachable bbs

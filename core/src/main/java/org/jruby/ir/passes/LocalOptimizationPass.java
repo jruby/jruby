@@ -26,7 +26,7 @@ public class LocalOptimizationPass extends CompilerPass {
     @Override
     public Object execute(FullInterpreterContext fic, Object... data) {
         for (BasicBlock b: fic.getCFG().getBasicBlocks()) {
-            runLocalOptsOnBasicBlock(fic.getScope(), b);
+            runLocalOptsOnBasicBlock(fic, b);
         }
 
         // LVA information is no longer valid after this pass
@@ -55,11 +55,11 @@ public class LocalOptimizationPass extends CompilerPass {
         }
     }
 
-    public static Instr optInstr(IRScope s, Instr instr, Map<Operand,Operand> valueMap, Map<Variable,List<Variable>> simplificationMap) {
+    public static Instr optInstr(FullInterpreterContext fic, Instr instr, Map<Operand,Operand> valueMap, Map<Variable,List<Variable>> simplificationMap) {
         // System.out.println("BEFORE: " + instr);
 
         // Simplify instruction and record mapping between target variable and simplified value
-        Operand val = instr.simplifyAndGetResult(s, valueMap);
+        Operand val = instr.simplifyAndGetResult(fic.getScope(), valueMap);
 
         // Variable dst = (instr instanceof ResultInstr) ? ((ResultInstr) instr).getResult() : null;
         // System.out.println("AFTER: " + instr + "; dst = " + dst + "; val = " + val);
@@ -81,7 +81,7 @@ public class LocalOptimizationPass extends CompilerPass {
 
             if (!instr.hasSideEffects()) {
                 if (instr instanceof CopyInstr) {
-                    if (res.equals(val) && instr.canBeDeletedFromScope(s)) {
+                    if (res.equals(val) && instr.canBeDeletedFromScope(fic)) {
                         instr.markDead();
                     }
                 } else {
@@ -105,13 +105,14 @@ public class LocalOptimizationPass extends CompilerPass {
         return newInstr;
     }
 
-    public static void runLocalOptsOnInstrArray(IRScope s, Instr[] instrs) {
+    // FIXME: Currently dead but why was this made dead?
+    public static void runLocalOptsOnInstrArray(FullInterpreterContext fic, Instr[] instrs) {
         // Reset value map if this instruction is the start/end of a basic block
         Map<Operand,Operand> valueMap = new HashMap<>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<>();
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
-            Instr newInstr = optInstr(s, instr, valueMap, simplificationMap);
+            Instr newInstr = optInstr(fic, instr, valueMap, simplificationMap);
             if (newInstr != instr) {
                 instrs[i] = newInstr;
             }
@@ -137,14 +138,14 @@ public class LocalOptimizationPass extends CompilerPass {
         }
     }
 
-    public static void runLocalOptsOnBasicBlock(IRScope s, BasicBlock b) {
+    public static void runLocalOptsOnBasicBlock(FullInterpreterContext fic, BasicBlock b) {
         ListIterator<Instr> instrs = b.getInstrs().listIterator();
         // Reset value map if this instruction is the start/end of a basic block
         Map<Operand,Operand> valueMap = new HashMap<>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<>();
         while (instrs.hasNext()) {
             Instr instr = instrs.next();
-            Instr newInstr = optInstr(s, instr, valueMap, simplificationMap);
+            Instr newInstr = optInstr(fic, instr, valueMap, simplificationMap);
             if (newInstr.isDead()) {
                 instrs.remove();
             } else if (newInstr != instr) {

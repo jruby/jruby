@@ -386,10 +386,6 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(RECEIVES_KEYWORD_ARGS);
     }
 
-    public boolean bindingHasEscaped() {
-        return flags.contains(BINDING_HAS_ESCAPED);
-    }
-
     public boolean usesEval() {
         return flags.contains(USES_EVAL);
     }
@@ -931,54 +927,6 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isScriptScope() {
         return false;
-    }
-
-    public boolean needsFrame() {
-        boolean bindingHasEscaped = bindingHasEscaped();
-        boolean requireFrame = bindingHasEscaped || usesEval();
-
-        for (IRFlags flag : getFlags()) {
-            switch (flag) {
-                case BINDING_HAS_ESCAPED:
-                case CAN_CAPTURE_CALLERS_BINDING:
-                case REQUIRES_LASTLINE:
-                case REQUIRES_BACKREF:
-                case REQUIRES_VISIBILITY:
-                case REQUIRES_BLOCK:
-                case REQUIRES_SELF:
-                case REQUIRES_METHODNAME:
-                case REQUIRES_CLASS:
-                case USES_EVAL:
-                case USES_ZSUPER:
-                    requireFrame = true;
-            }
-        }
-
-        return requireFrame;
-    }
-
-    public boolean needsOnlyBackref() {
-        boolean backrefSeen = false;
-        for (IRFlags flag : getFlags()) {
-            switch (flag) {
-                case BINDING_HAS_ESCAPED:
-                case CAN_CAPTURE_CALLERS_BINDING:
-                case REQUIRES_LASTLINE:
-                case REQUIRES_VISIBILITY:
-                case REQUIRES_BLOCK:
-                case REQUIRES_SELF:
-                case REQUIRES_METHODNAME:
-                case REQUIRES_CLASS:
-                case USES_EVAL:
-                case USES_ZSUPER:
-                    return false;
-                case REQUIRES_BACKREF:
-                    backrefSeen = true;
-                    break;
-            }
-        }
-
-        return backrefSeen;
     }
 
     // FIXME: This should become some heuristic later

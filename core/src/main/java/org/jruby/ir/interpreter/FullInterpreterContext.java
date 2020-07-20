@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.dataflow.DataFlowProblem;
@@ -32,6 +33,8 @@ import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+
+import static org.jruby.ir.IRFlags.BINDING_HAS_ESCAPED;
 
 /**
  * Created by enebo on 2/27/15.
@@ -346,5 +349,57 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         throw new RuntimeException("Invalid temporary variable being alloced in this scope: " + type);
+    }
+
+    public boolean needsFrame() {
+        boolean bindingHasEscaped = bindingHasEscaped();
+        boolean requireFrame = bindingHasEscaped || getScope().usesEval();
+
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_BACKREF:
+                case REQUIRES_VISIBILITY:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    requireFrame = true;
+            }
+        }
+
+        return requireFrame;
+    }
+
+    public boolean bindingHasEscaped() {
+        return getFlags().contains(BINDING_HAS_ESCAPED);
+    }
+
+    public boolean needsOnlyBackref() {
+        boolean backrefSeen = false;
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_VISIBILITY:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    return false;
+                case REQUIRES_BACKREF:
+                    backrefSeen = true;
+                    break;
+            }
+        }
+
+        return backrefSeen;
     }
 }

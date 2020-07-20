@@ -11,6 +11,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.JIT;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
@@ -1428,7 +1429,9 @@ public class Bootstrap {
             /*
             if (needsBinding) {
                 if (needsFrame) {
-rg/jruby/ir/targets/Bootstrap.java
+            FullInterpreterContext fic = scope.getExecutionContext();
+            if (fic.needsBinding()) {
+                if (fic.needsFrame()) {
                     binder = binder.fold(FRAME_SCOPE_BINDING);
                 } else {
                     binder = binder.fold(SCOPE_BINDING);
