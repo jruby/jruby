@@ -386,31 +386,18 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(RECEIVES_KEYWORD_ARGS);
     }
 
+    // IRBuilder/Full: if closure uses eval we mark parent with other flags.
     public boolean usesEval() {
         return flags.contains(USES_EVAL);
     }
 
-    public boolean anyUsesEval() {
-        // Currently methods are only lazy scopes so we need to build them if we decide to persist them.
-        if (this instanceof IRMethod) {
-            ((IRMethod) this).lazilyAcquireInterpreterContext();
-        }
-
-        boolean usesEval = usesEval();
-
-        for (IRScope child : getLexicalScopes()) {
-            usesEval |= child.anyUsesEval();
-        }
-
-        return usesEval;
-    }
-
+    // IRBuilder/Full: if closure contains closure so does this scope.
     public boolean usesZSuper() {
         return flags.contains(USES_ZSUPER);
     }
 
+    // IRBuilder
     public boolean canReceiveNonlocalReturns() {
-        computeScopeFlags();
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
