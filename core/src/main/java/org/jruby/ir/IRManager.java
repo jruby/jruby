@@ -341,7 +341,7 @@ public class IRManager {
         // We cannot pick the passes if we want an explicit set to run.
         if (RubyInstanceConfig.IR_COMPILER_PASSES != null) return;
 
-        EnumSet<IRFlags> flags = fic.getScope().getFlags();
+        EnumSet<IRFlags> flags = fic.getFlags();
 
         if (!flags.contains(REQUIRES_DYNSCOPE)) {
             if (flags.contains(RECEIVES_CLOSURE_ARG)) optimizeDelegationPass.run(fic);
