@@ -462,6 +462,7 @@ public abstract class IRScope implements ParseResult {
         }
 
         FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs(), interpreterContext.getTemporaryVariableCount());
+        computeScopeFlags();
         runCompilerPasses(fic, getManager().getCompilerPasses(this), dumpToIGV());
         getManager().optimizeIfSimpleScope(fic);
 
@@ -506,6 +507,7 @@ public abstract class IRScope implements ParseResult {
         }
 
         FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs(), interpreterContext.getTemporaryVariableCount());
+        computeScopeFlags();
         runCompilerPasses(fic, getManager().getJITPasses(this), dumpToIGV());
 
         BasicBlock[] bbs = fic.linearizeBasicBlocks();
