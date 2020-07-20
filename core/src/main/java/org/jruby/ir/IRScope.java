@@ -374,16 +374,18 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(RECEIVES_KEYWORD_ARGS);
     }
 
+    // IRBuilder/Full: if closure uses eval we mark parent with other flags.
     public boolean usesEval() {
         return flags.contains(USES_EVAL);
     }
 
+    // IRBuilder/Full: if closure contains closure so does this scope.
     public boolean usesZSuper() {
         return flags.contains(USES_ZSUPER);
     }
 
+    // IRBuilder
     public boolean canReceiveNonlocalReturns() {
-        computeScopeFlags();
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
