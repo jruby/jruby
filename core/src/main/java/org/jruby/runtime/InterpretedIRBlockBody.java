@@ -158,7 +158,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     }
 
     public RubyModule getImplementationClass() {
-        return null;
+        return closure.getStaticScope().getModule();
     }
 
 }
