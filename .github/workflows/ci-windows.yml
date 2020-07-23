@@ -27,6 +27,10 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: bootstrap
         run: mvn -Pbootstrap clean package
+      - name: install bundler
+        run: bin/jruby -S gem install bundler
+      - name: bundle install
+        run: bin/jruby -S bundle install
       - name: rake test:jruby
         run: bin/jruby -S rake test:jruby
         env:
