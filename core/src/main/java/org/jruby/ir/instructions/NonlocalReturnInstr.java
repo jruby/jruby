@@ -25,8 +25,8 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
-        flags.add(IRFlags.HAS_NONLOCAL_RETURNS);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        scope.setHasNonLocalReturns();
         return true;
     }
 

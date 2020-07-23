@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.GlobalVariable;
@@ -26,7 +27,7 @@ public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInst
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         switch (getTarget().getId()) {
             case "$_" : case "$LAST_READ_LINE" :
                 flags.add(IRFlags.REQUIRES_LASTLINE);

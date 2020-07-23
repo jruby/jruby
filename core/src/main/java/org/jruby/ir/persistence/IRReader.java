@@ -15,6 +15,7 @@ import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Signature;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 import org.jruby.util.ByteList;
 
@@ -49,7 +50,8 @@ public class IRReader implements IRPersistenceValues {
             int instructionsOffset = file.decodeInt();
             int poolOffset = file.decodeInt();
 
-            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset), tempVarsCount);
+            EnumSet<IRFlags> flags = IRScope.allocateInitialFlags(scope);
+            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset, flags), tempVarsCount, flags);
         }
 
         return firstScope; // topmost scope;

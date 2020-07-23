@@ -28,7 +28,7 @@ public class DefineInstanceMethodInstr extends NoOperandInstr implements FixedAr
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         flags.add(IRFlags.REQUIRES_DYNSCOPE);
         flags.add(IRFlags.REQUIRES_VISIBILITY);
         return true;

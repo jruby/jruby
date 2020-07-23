@@ -32,9 +32,9 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
-        super.computeScopeFlags(flags);
-        flags.add(IRFlags.USES_ZSUPER);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
+        scope.usesZSuper();
         return true;
     }
 

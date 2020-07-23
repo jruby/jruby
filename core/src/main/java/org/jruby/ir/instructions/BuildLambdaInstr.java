@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyProc;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -25,7 +26,7 @@ public class BuildLambdaInstr extends OneOperandResultBaseInstr implements Fixed
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         flags.add(IRFlags.BINDING_HAS_ESCAPED);
         return true;
     }

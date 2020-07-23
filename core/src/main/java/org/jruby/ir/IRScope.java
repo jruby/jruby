@@ -112,11 +112,26 @@ public abstract class IRScope implements ParseResult {
 
     Map<RubySymbol, LocalVariable> localVars;
 
-    final EnumSet<IRFlags> flags;
-
     private boolean alreadyHasInline;
     private String inlineFailed;
     public Compilable compilable;
+
+    // At least until we change the design all of these state fields are true from IRBuild forward.  With IR
+    // optimization passes it is incredibly unlikely any of these could ever be unset anyways; So this is not
+    // a poor list of 'truisms' for this Scope.
+    private boolean hasBreakInstructions;
+    private boolean hasLoops;
+    private boolean hasNonLocalReturns;
+    private boolean receivesClosureArg;
+    private boolean receivesKeywordArgs;
+    private boolean accessesParentsLocalVariables;
+    private boolean maybeUsingRefinements;
+    private boolean canCaptureCallersBinding;
+    private boolean canReceiveBreaks;  // may receive a break during execution (from itself of child scope).
+    private boolean canRecieveNonLocalReturns;
+    private boolean usesZSuper;
+    private boolean needsCodeCoverage;
+    private boolean usesEval;
 
     // Used by cloning code for inlining
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -126,9 +141,6 @@ public abstract class IRScope implements ParseResult {
         this.staticScope = s.staticScope;
         this.nextClosureIndex = s.nextClosureIndex;
         this.interpreterContext = null;
-
-        this.flags = s.flags.clone();
-
         this.localVars = new HashMap<>(s.localVars);
         this.scopeId = globalScopeCount.getAndIncrement();
 
@@ -143,11 +155,10 @@ public abstract class IRScope implements ParseResult {
         this.staticScope = staticScope;
         this.nextClosureIndex = 0;
         this.interpreterContext = null;
-        this.flags = DEFAULT_SCOPE_FLAGS.clone();
 
         // We only can compute this once since 'module X; using A; class B; end; end' vs
         // 'module X; class B; using A; end; end'.  First case B can see refinements and in second it cannot.
-        if (parentMaybeUsingRefinements()) flags.add(MAYBE_USING_REFINEMENTS);
+        if (parentMaybeUsingRefinements()) setIsMaybeUsingRefinements();
 
         this.localVars = new HashMap<>(1);
         this.scopeId = globalScopeCount.getAndIncrement();
@@ -212,12 +223,12 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setIsMaybeUsingRefinements() {
-        flags.add(MAYBE_USING_REFINEMENTS);
+        maybeUsingRefinements = true;
     }
 
     public boolean parentMaybeUsingRefinements() {
         for (IRScope s = this; s != null; s = s.getLexicalParent()) {
-            if (s.getFlags().contains(MAYBE_USING_REFINEMENTS)) return true;
+            if (s.maybeUsingRefinements()) return true;
 
             // Evals cannot see outer scope 'using'
             if (s instanceof IREvalScript) return false;
@@ -227,7 +238,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public boolean maybeUsingRefinements() {
-        return getFlags().contains(MAYBE_USING_REFINEMENTS);
+        return maybeUsingRefinements;
     }
 
     /**
@@ -365,28 +376,101 @@ public abstract class IRScope implements ParseResult {
 
         return false;
     }
-
-    public void setHasLoopsFlag() {
-        flags.add(HAS_LOOPS);
+    
+    public void setHasBreakInstructions() {
+        hasBreakInstructions = true;
     }
 
+    public boolean hasBreakInstructions() {
+        return hasBreakInstructions;
+    }
+    
+    public void setReceivesKeywordArgs() {
+        receivesKeywordArgs = true;
+    }
+    
     public boolean receivesKeywordArgs() {
-        return flags.contains(RECEIVES_KEYWORD_ARGS);
+        return receivesKeywordArgs;
     }
 
-    // IRBuilder/Full: if closure uses eval we mark parent with other flags.
-    public boolean usesEval() {
-        return flags.contains(USES_EVAL);
+    public void setReceivesClosureArg() {
+        receivesClosureArg = true;
     }
 
-    // IRBuilder/Full: if closure contains closure so does this scope.
-    public boolean usesZSuper() {
-        return flags.contains(USES_ZSUPER);
+    public boolean receivesClosureArg() {
+        return receivesClosureArg;
     }
 
-    // IRBuilder
+    public void setAccessesParentsLocalVariables() {
+        accessesParentsLocalVariables = true;
+    }
+
+    public boolean accessesParentsLocalVariables() {
+        return accessesParentsLocalVariables;
+    }
+
+    public void setHasLoops() {
+        hasLoops = true;
+    }
+
+    public boolean hasLoops() {
+        return hasLoops;
+    }
+
+    public void setHasNonLocalReturns() {
+        hasNonLocalReturns = true;
+    }
+
+    public boolean hasNonLocalReturns() {
+        return hasNonLocalReturns;
+    }
+
+    public void setCanCaptureCallersBinding() {
+        canCaptureCallersBinding = true;
+    }
+
+    public boolean canCaptureCallersBinding() {
+        return canCaptureCallersBinding;
+    }
+
+    public void setCanReceiveBreaks() {
+        canReceiveBreaks = true;
+    }
+
+    public boolean canReceiveBreaks() {
+        return canReceiveBreaks;
+    }
+
+    public void setCanReceiveNonlocalReturns() {
+        canRecieveNonLocalReturns = true;
+    }
+
     public boolean canReceiveNonlocalReturns() {
-        return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
+        return canRecieveNonLocalReturns;
+    }
+    
+    public void setUsesEval() {
+        usesEval = true;
+    }
+    
+    public boolean usesEval() {
+        return usesEval;
+    }
+
+    public void setUsesZSuper() {
+        usesZSuper = true;
+    }
+
+    public boolean usesZSuper() {
+        return usesZSuper;
+    }
+
+    public void setNeedsCodeCoverage() {
+        needsCodeCoverage = true;
+    }
+
+    public boolean needsCodeCoverage() {
+        return needsCodeCoverage;
     }
 
     public List<CompilerPass> getExecutedPasses() {
@@ -416,8 +500,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(List<Instr> instructions, int tempVariableCount) {
-        interpreterContext = new InterpreterContext(this, instructions, tempVariableCount);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions, int tempVariableCount, EnumSet<IRFlags> flags) {
+        interpreterContext = new InterpreterContext(this, instructions, tempVariableCount, flags);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
@@ -425,8 +509,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions, int tempVariableCount) {
-        interpreterContext = new InterpreterContext(this, instructions, tempVariableCount);
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions, int tempVariableCount, EnumSet<IRFlags> flags) {
+        interpreterContext = new InterpreterContext(this, instructions, tempVariableCount, flags);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
@@ -459,8 +543,7 @@ public abstract class IRScope implements ParseResult {
             scope.prepareFullBuild();
         }
 
-        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs(), interpreterContext.getTemporaryVariableCount());
-        computeScopeFlags();
+        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs(), interpreterContext.getTemporaryVariableCount(), interpreterContext.getFlags().clone());
         runCompilerPasses(fic, getManager().getCompilerPasses(this), dumpToIGV());
         getManager().optimizeIfSimpleScope(fic);
 
@@ -504,8 +587,7 @@ public abstract class IRScope implements ParseResult {
             scope.prepareForCompilation();
         }
 
-        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs(), interpreterContext.getTemporaryVariableCount());
-        computeScopeFlags();
+        FullInterpreterContext fic = new FullInterpreterContext(this, cloneInstrs(), interpreterContext.getTemporaryVariableCount(), interpreterContext.getFlags().clone());
         runCompilerPasses(fic, getManager().getJITPasses(this), dumpToIGV());
 
         BasicBlock[] bbs = fic.linearizeBasicBlocks();
@@ -532,133 +614,6 @@ public abstract class IRScope implements ParseResult {
         // This could be optimized either during generation or as another pass over the table.  But, if the JVM
         // does that already, do we need to bother with it?
         return map;
-    }
-
-    public EnumSet<IRFlags> getFlags() {
-        return flags;
-    }
-
-    private void initScopeFlags() {
-        // .clear() does not work here for unknown reasons.  It is obviously removing something which should not be...
-        flags.remove(CAN_CAPTURE_CALLERS_BINDING);
-        flags.remove(CAN_RECEIVE_BREAKS);
-        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-        flags.remove(HAS_BREAK_INSTRS);
-        flags.remove(HAS_NONLOCAL_RETURNS);
-        flags.remove(USES_ZSUPER);
-        flags.remove(USES_EVAL);
-        flags.remove(REQUIRES_DYNSCOPE);
-
-        flags.remove(REQUIRES_LASTLINE);
-        flags.remove(REQUIRES_BACKREF);
-        flags.remove(REQUIRES_VISIBILITY);
-        flags.remove(REQUIRES_BLOCK);
-        flags.remove(REQUIRES_SELF);
-        flags.remove(REQUIRES_METHODNAME);
-        flags.remove(REQUIRES_LINE);
-        flags.remove(REQUIRES_CLASS);
-        flags.remove(REQUIRES_FILENAME);
-        flags.remove(REQUIRES_SCOPE);
-    }
-
-    private void bindingEscapedScopeFlagsCheck() {
-        // NOTE: bindingHasEscaped is the crucial flag and it effectively is
-        // unconditionally true whenever it has a call that receives a closure.
-        // See CallBase.computeRequiresCallersBindingFlag
-        if (this instanceof IREvalScript || this instanceof IRScriptBody) {
-            // For eval scopes, bindings are considered escaped.
-            // For top-level script scopes, bindings are considered escaped as well
-            // because TOPLEVEL_BINDING can be used in places besides the file
-            // that is being parsed?
-            flags.add(BINDING_HAS_ESCAPED);
-        } else {
-            flags.remove(BINDING_HAS_ESCAPED);
-        }
-    }
-
-    private void calculateClosureScopeFlags() {
-        // Compute flags for nested closures (recursively) and set derived flags.
-        for (IRClosure cl: getClosures()) {
-            cl.computeScopeFlags();
-            if (cl.usesEval()) {
-                flags.add(CAN_RECEIVE_BREAKS);
-                flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
-                flags.add(USES_ZSUPER);
-            } else {
-                if (cl.flags.contains(HAS_BREAK_INSTRS) || cl.flags.contains(CAN_RECEIVE_BREAKS)) {
-                    flags.add(CAN_RECEIVE_BREAKS);
-                }
-                if (cl.flags.contains(HAS_NONLOCAL_RETURNS) || cl.flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)) {
-                    flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
-                }
-                if (cl.usesZSuper()) {
-                    flags.add(USES_ZSUPER);
-                }
-            }
-        }
-    }
-
-    private static final EnumSet<IRFlags> DEFAULT_SCOPE_FLAGS =
-            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, USES_EVAL, REQUIRES_BACKREF,
-                    REQUIRES_LASTLINE, REQUIRES_DYNSCOPE, USES_ZSUPER);
-
-    private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
-            EnumSet.of(CAN_RECEIVE_BREAKS, HAS_NONLOCAL_RETURNS, CAN_RECEIVE_NONLOCAL_RETURNS, BINDING_HAS_ESCAPED);
-
-    private void computeNeedsDynamicScopeFlag() {
-        for (IRFlags f : NEEDS_DYNAMIC_SCOPE_FLAGS) {
-            if (flags.contains(f)) {
-                flags.add(REQUIRES_DYNSCOPE);
-                return;
-            }
-        }
-    }
-
-    // ENEBO: IRBuild adds more instrs after this so should we force a recompute?
-    /**
-     * IRBuild Only.
-     *
-     * This is called when building an IRMethod before it has completed the build and made an IC
-     * yet.  We do this to detect stuff like potential non-local returns and then build stuff as
-     * a result.
-     */
-    public void computeScopeFlagsEarly(List<Instr> instructions) {
-        initScopeFlags();
-        bindingEscapedScopeFlagsCheck();
-
-        for (Instr i : instructions) {
-            i.computeScopeFlags(getFlags());
-        }
-
-        calculateClosureScopeFlags();
-        computeNeedsDynamicScopeFlag();
-
-        flags.add(FLAGS_COMPUTED);
-    }
-
-
-    /**
-     * Calculate scope flags used by various passes to know things like whether a binding has escaped.
-     * We may recalculate flags in a few scenarios:
-     *  - once after IR generation and local optimizations propagates constants locally
-     *  - also potentially at later times after other opt passes
-     */
-    public void computeScopeFlags() {
-        if (flags.contains(FLAGS_COMPUTED)) return;
-
-        initScopeFlags();
-        bindingEscapedScopeFlagsCheck();
-
-        if (fullInterpreterContext != null) {
-            fullInterpreterContext.computeScopeFlagsFromInstructions();
-        } else {
-            interpreterContext.computeScopeFlagsFromInstructions();
-        }
-
-        calculateClosureScopeFlags();
-        computeNeedsDynamicScopeFlag();
-
-        flags.add(FLAGS_COMPUTED);
     }
 
     public abstract IRScopeType getScopeType();
@@ -788,7 +743,7 @@ public abstract class IRScope implements ParseResult {
         if (!methodToInline.getClosures().isEmpty()) {
             boolean accessInaccessibleLocalVariables = false;
             for (IRClosure closure: methodToInline.getClosures()) {
-                if (closure.flags.contains(ACCESS_PARENTS_LOCAL_VARIABLES)) {
+                if (closure.accessesParentsLocalVariables()) {
                     accessInaccessibleLocalVariables = true;
                     break;
                 }
@@ -947,5 +902,20 @@ public abstract class IRScope implements ParseResult {
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + getInterpreterContext().getTemporaryVariableCount());
         file.encode(getInterpreterContext().getTemporaryVariableCount());
         file.encode(getNextLabelIndex());
+    }
+
+    public static EnumSet<IRFlags> allocateInitialFlags(IRScope scope) {
+        // NOTE: bindingHasEscaped is the crucial flag and it effectively is
+        // unconditionally true whenever it has a call that receives a closure.
+        // See CallBase.computeRequiresCallersBindingFlag
+        if (scope instanceof IREvalScript || scope instanceof IRScriptBody) {
+                // For eval scopes, bindings are considered escaped.
+                // For top-level script scopes, bindings are considered escaped as well
+                // because TOPLEVEL_BINDING can be used in places besides the file
+                // that is being parsed?
+                return EnumSet.of(BINDING_HAS_ESCAPED);
+        } else {
+            return EnumSet.noneOf(IRFlags.class);
+        }
     }
 }

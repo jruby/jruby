@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -30,8 +31,8 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
-        flags.add(IRFlags.RECEIVES_KEYWORD_ARGS);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        scope.setReceivesKeywordArgs();
         return true;
     }
 

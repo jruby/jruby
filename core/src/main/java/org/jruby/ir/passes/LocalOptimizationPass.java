@@ -1,6 +1,5 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;

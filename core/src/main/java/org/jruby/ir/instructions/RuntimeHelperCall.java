@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
@@ -54,7 +55,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
      * @return true if it modified the scope.
      */
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         boolean modifiedScope = false;
 
         // FIXME: Impl of this helper uses frame class.  Determine if we can do this another way.

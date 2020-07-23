@@ -1,6 +1,7 @@
 package org.jruby.ir.interpreter;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,16 +66,16 @@ public class FullInterpreterContext extends InterpreterContext {
     public int booleanVariableIndex = -1;
 
     // For duplicate()
-    public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList, int temporaryVariableCount) {
-        super(scope, (List<Instr>) null, temporaryVariableCount);
+    public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList, int temporaryVariableCount, EnumSet<IRFlags> flags) {
+        super(scope, (List<Instr>) null, temporaryVariableCount, flags);
 
         this.cfg = cfg;
         this.linearizedBBList = linearizedBBList;
     }
 
     // FIXME: Perhaps abstract IC into interface of base class so we do not have a null instructions field here
-    public FullInterpreterContext(IRScope scope, Instr[] instructions, int temporaryVariableCount) {
-        super(scope, (List<Instr>)null, temporaryVariableCount);
+    public FullInterpreterContext(IRScope scope, Instr[] instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
+        super(scope, (List<Instr>)null, temporaryVariableCount, flags);
 
         cfg = buildCFG(instructions);
     }
@@ -168,7 +169,7 @@ public class FullInterpreterContext extends InterpreterContext {
     public void computeScopeFlagsFromInstructions() {
         for (BasicBlock b: cfg.getBasicBlocks()) {
             for (Instr i: b.getInstrs()) {
-                i.computeScopeFlags(getFlags());
+                i.computeScopeFlags(getScope(), getFlags());
             }
         }
     }
@@ -211,7 +212,7 @@ public class FullInterpreterContext extends InterpreterContext {
                 newLinearizedBBList[i] = newCFG.getBBForLabel(linearizedBBList[i].getLabel());
             }
 
-            return new FullInterpreterContext(getScope(), newCFG, newLinearizedBBList, temporaryVariableCount);
+            return new FullInterpreterContext(getScope(), newCFG, newLinearizedBBList, temporaryVariableCount, getFlags());
         } catch (Throwable t) {
             t.printStackTrace();
             return null;
@@ -353,12 +354,11 @@ public class FullInterpreterContext extends InterpreterContext {
 
     public boolean needsFrame() {
         boolean bindingHasEscaped = bindingHasEscaped();
-        boolean requireFrame = bindingHasEscaped || getScope().usesEval();
+        boolean requireFrame = bindingHasEscaped || getScope().usesEval() || getScope().usesZSuper() || getScope().canCaptureCallersBinding();
 
         for (IRFlags flag : getFlags()) {
             switch (flag) {
                 case BINDING_HAS_ESCAPED:
-                case CAN_CAPTURE_CALLERS_BINDING:
                 case REQUIRES_LASTLINE:
                 case REQUIRES_BACKREF:
                 case REQUIRES_VISIBILITY:
@@ -366,8 +366,6 @@ public class FullInterpreterContext extends InterpreterContext {
                 case REQUIRES_SELF:
                 case REQUIRES_METHODNAME:
                 case REQUIRES_CLASS:
-                case USES_EVAL:
-                case USES_ZSUPER:
                     requireFrame = true;
             }
         }
@@ -380,19 +378,18 @@ public class FullInterpreterContext extends InterpreterContext {
     }
 
     public boolean needsOnlyBackref() {
+        if (getScope().usesEval() || getScope().usesZSuper() || getScope().canCaptureCallersBinding()) return false;
+
         boolean backrefSeen = false;
         for (IRFlags flag : getFlags()) {
             switch (flag) {
                 case BINDING_HAS_ESCAPED:
-                case CAN_CAPTURE_CALLERS_BINDING:
                 case REQUIRES_LASTLINE:
                 case REQUIRES_VISIBILITY:
                 case REQUIRES_BLOCK:
                 case REQUIRES_SELF:
                 case REQUIRES_METHODNAME:
                 case REQUIRES_CLASS:
-                case USES_EVAL:
-                case USES_ZSUPER:
                     return false;
                 case REQUIRES_BACKREF:
                     backrefSeen = true;
