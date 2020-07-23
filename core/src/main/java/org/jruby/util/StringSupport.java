@@ -62,7 +62,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jruby.RubyString.scanForCodeRange;
+import static org.jruby.util.CodeRangeable.scanForCodeRange;
 
 public final class StringSupport {
     public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;

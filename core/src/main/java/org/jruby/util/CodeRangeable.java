@@ -27,14 +27,50 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
+import org.jruby.util.io.EncodingUtils;
+
+import static org.jruby.util.StringSupport.CR_BROKEN;
+import static org.jruby.util.StringSupport.CR_UNKNOWN;
+import static org.jruby.util.StringSupport.CR_VALID;
+import static org.jruby.util.StringSupport.codeRangeScan;
 
 public interface CodeRangeable extends ByteListHolder {
     int getCodeRange();
-    int scanForCodeRange();
-    boolean isCodeRangeValid();
     void setCodeRange(int codeRange);
     void clearCodeRange();
-    void keepCodeRange();
     void modifyAndKeepCodeRange();
     Encoding checkEncoding(CodeRangeable other);
+
+    // rb_enc_str_coderange
+    default int scanForCodeRange() {
+        int cr = getCodeRange();
+        int newCR = scanForCodeRange(getByteList(), cr);
+        if (cr == CR_BROKEN) {
+            setCodeRange(newCR);
+        }
+        return newCR;
+    }
+
+    default boolean isCodeRangeValid() {
+        return getCodeRange() == CR_VALID;
+    }
+
+    default void keepCodeRange() {
+        if (getCodeRange() == CR_BROKEN) clearCodeRange();
+    }
+
+    static int scanForCodeRange(ByteList value, int cr) {
+        if (cr == CR_UNKNOWN) {
+            cr = scanForCodeRange(value);
+        }
+        return cr;
+    }
+
+    static int scanForCodeRange(final ByteList bytes) {
+        Encoding enc = bytes.getEncoding();
+        if (enc.minLength() > 1 && enc.isDummy()) {
+            return CR_BROKEN;
+        }
+        return codeRangeScan(EncodingUtils.getActualEncoding(enc, bytes), bytes);
+    }
 }

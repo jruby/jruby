@@ -218,11 +218,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         flags &= ~CR_MASK;
     }
 
-    @Override
-    public final void keepCodeRange() {
-        if (getCodeRange() == CR_BROKEN) clearCodeRange();
-    }
-
     // ENC_CODERANGE_ASCIIONLY
     public final boolean isCodeRangeAsciiOnly() {
         return CodeRangeSupport.isCodeRangeAsciiOnly(this);
@@ -231,11 +226,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     // rb_enc_str_asciionly_p
     public final boolean isAsciiOnly() {
         return StringSupport.isAsciiOnly(this);
-    }
-
-    @Override
-    public final boolean isCodeRangeValid() {
-        return (flags & CR_MASK) == CR_VALID;
     }
 
     public final boolean isCodeRangeBroken() {
@@ -261,23 +251,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
-    // rb_enc_str_coderange
-    @Override
-    public final int scanForCodeRange() {
-        int cr = getCodeRange();
-        if (cr == CR_UNKNOWN) {
-            cr = scanForCodeRange(value);
-            setCodeRange(cr);
-        }
-        return cr;
-    }
-
+    // included for static method backward compatibility
     public static int scanForCodeRange(final ByteList bytes) {
-        Encoding enc = bytes.getEncoding();
-        if (enc.minLength() > 1 && enc.isDummy()) {
-            return CR_BROKEN;
-        }
-        return codeRangeScan(EncodingUtils.getActualEncoding(enc, bytes), bytes);
+        return CodeRangeable.scanForCodeRange(bytes);
     }
 
     final boolean singleByteOptimizable() {
@@ -1281,13 +1257,34 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     public int strHashCode(Ruby runtime) {
         final ByteList value = this.value;
+        final int cr = scanForCodeRange();
+        return strHash(runtime, value, cr);
+    }
+
+    public static int strHashCode(Ruby runtime, ByteList value, int cr) {
+        final int scannedCR = CodeRangeable.scanForCodeRange(value, cr);
+        return strHash(runtime, value, scannedCR);
+    }
+
+    protected static int strHash(Ruby runtime, ByteList value, int cr) {
         final Encoding enc = value.getEncoding();
-        long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(runtime.getHashSeedK0(),
-                runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
-                value.getRealSize()) : PerlHash.hash(runtime.getHashSeedK0(),
-                value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
-        hash ^= (enc.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : enc.getIndex());
-        return (int) hash;
+        long hash = hashStringBytes(runtime, value);
+        int e = (enc != ASCIIEncoding.INSTANCE && cr == CR_7BIT ? 0 : enc.getIndex());
+        return (int) hash ^ e;
+    }
+
+    protected static long hashStringBytes(Ruby runtime, ByteList value) {
+        long hash;
+        if (runtime.isSiphashEnabled()) {
+            hash = SipHashInline.hash24(runtime.getHashSeedK0(),
+                    runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
+                    value.getRealSize());
+        }
+        else {
+            hash = PerlHash.hash(runtime.getHashSeedK0(),
+                    value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
+        }
+        return hash;
     }
 
     /**
@@ -6163,18 +6160,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public RubySymbol intern() {
         final Ruby runtime = getRuntime();
 
-        if (scanForCodeRange() == CR_BROKEN) {
-            throw runtime.newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
-        }
-
-        RubySymbol symbol = runtime.getSymbolTable().getSymbol(value);
+        RubySymbol symbol = runtime.getSymbolTable().getSymbol(this);
         if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
         return symbol;
-    }
-
-    @Deprecated
-    public RubySymbol intern19() {
-        return intern();
     }
 
     @JRubyMethod
@@ -6945,4 +6933,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @Deprecated
     public IRubyObject scan19(ThreadContext context, IRubyObject arg, Block block) { return scan(context, arg, block); }
 
+    @Deprecated
+    public RubySymbol intern19() {
+        return intern();
+    }
 }
