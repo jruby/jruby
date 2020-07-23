@@ -3563,22 +3563,6 @@ public final class Ruby implements Constantizable {
         return symbolTable.getSymbol(name);
     }
 
-    /**
-     * Faster than {@link #newSymbol(String)} if you already have an interned
-     * name String. Don't intern your string just to call this version - the
-     * overhead of interning will more than wipe out any benefit from the faster
-     * lookup.
-     *
-     * @param internedName the symbol name, <em>must</em> be interned! if in
-     *                     doubt, call {@link #newSymbol(String)} instead.
-     * @return the symbol for name
-     */
-    public RubySymbol fastNewSymbol(String internedName) {
-        //        assert internedName == internedName.intern() : internedName + " is not interned";
-
-        return symbolTable.fastGetSymbol(internedName);
-    }
-
     public RubyTime newTime(long milliseconds) {
         return RubyTime.newTime(this, milliseconds);
     }
@@ -5731,6 +5715,11 @@ public final class Ruby implements Constantizable {
     @Deprecated
     public RaiseException newErrnoEADDRFromBindException(BindException be) {
         return newErrnoEADDRFromBindException(be, null);
+    }
+
+    @Deprecated
+    public RubySymbol fastNewSymbol(String internedName) {
+        return RubySymbol.newSymbol(this, internedName);
     }
 
 }

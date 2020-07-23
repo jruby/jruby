@@ -70,7 +70,7 @@ public class ConstantLookupSite extends MutableCallSite {
     private RubySymbol getSymbolicName(ThreadContext context) {
         RubySymbol symbolicName = this.symbolicName;
         if (symbolicName != null) return symbolicName;
-        return this.symbolicName = context.runtime.fastNewSymbol(name);
+        return this.symbolicName = RubySymbol.newSymbol(context.runtime, name);
     }
 
     public IRubyObject searchConst(ThreadContext context, StaticScope staticScope) {

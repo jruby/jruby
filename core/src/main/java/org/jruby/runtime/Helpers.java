@@ -1734,7 +1734,7 @@ public class Helpers {
 
     @Deprecated
     public static RubySymbol addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
-        return addInstanceMethod(containingClass, runtime.fastNewSymbol(name), method, visibility, context, runtime);
+        return addInstanceMethod(containingClass, RubySymbol.newSymbol(runtime, name), method, visibility, context, runtime);
     }
 
     public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {

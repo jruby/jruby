@@ -31,14 +31,10 @@
 
 package org.jruby.test;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-
 import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
-import org.jruby.util.ByteList;
 
 public class TestRubySymbol extends TestCase {
     private Ruby runtime;
@@ -61,23 +57,5 @@ public class TestRubySymbol extends TestCase {
         RubySymbol another = st.fastGetSymbol("another_name");
         assertSame(another, st.getSymbol("another_name"));
         assertSame(another, st.fastGetSymbol("another_name"));
-    }
-    
-    public void testSymbolHashCode() {
-        RubySymbol sym = RubySymbol.newSymbol(runtime, "somename");
-        assertTrue(sym.hashCode() != 0);
-        assertTrue(sym.hashCode() != sym.getId());
-        if (runtime.isSiphashEnabled()) {
-            assertEquals(1706472664, sym.hashCode());
-        }
-
-        // check that our ISO8859_1 byte-based hashcode calculation matches Java's for an ISO8859_1-sourced string
-        byte[] bytes = "abcd1234åøüê".getBytes(StandardCharsets.UTF_8);
-        ByteList byteList = new ByteList(bytes);
-        String isoStr1 = new String(bytes, StandardCharsets.ISO_8859_1);
-        String isoStr2 = byteList.toString();
-
-        assertEquals(isoStr1.hashCode(), RubySymbol.javaStringHashCode(byteList));
-        assertEquals(isoStr2.hashCode(), RubySymbol.javaStringHashCode(byteList));
     }
 }

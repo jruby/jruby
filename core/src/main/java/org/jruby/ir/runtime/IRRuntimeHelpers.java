@@ -1446,7 +1446,7 @@ public class IRRuntimeHelpers {
 
         // Call const_missing or cache
         if (constant == null) {
-            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
+            return module.callMethod(context, "const_missing", RubySymbol.newSymbol(context.runtime, constName));
         }
 
         return constant;

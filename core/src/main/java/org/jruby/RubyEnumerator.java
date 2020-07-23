@@ -152,7 +152,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
      */
     public static IRubyObject enumeratorizeWithSize(ThreadContext context, final IRubyObject object, String method, IRubyObject[] args, SizeFn sizeFn) {
         Ruby runtime = context.runtime;
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args, null, sizeFn);
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, RubySymbol.newSymbol(runtime, method), args, null, sizeFn);
     }
 
     public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method, SizeFn sizeFn) {
@@ -161,31 +161,31 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method, IRubyObject arg, IRubyObject size) {
         Ruby runtime = context.runtime;
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg }, size, null);
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, RubySymbol.newSymbol(runtime, method), new IRubyObject[] { arg }, size, null);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), IRubyObject.NULL_ARRAY);
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, RubySymbol.newSymbol(runtime, method), IRubyObject.NULL_ARRAY);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject arg) {
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg });
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, RubySymbol.newSymbol(runtime, method), new IRubyObject[] { arg });
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject... args) {
-        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args);
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, RubySymbol.newSymbol(runtime, method), args);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, RubyClass type, IRubyObject object, String method) {
-        return new RubyEnumerator(runtime, type, object, runtime.fastNewSymbol(method), IRubyObject.NULL_ARRAY);
+        return new RubyEnumerator(runtime, type, object, RubySymbol.newSymbol(runtime, method), IRubyObject.NULL_ARRAY);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, RubyClass type, IRubyObject object, String method, IRubyObject arg) {
-        return new RubyEnumerator(runtime, type, object, runtime.fastNewSymbol(method), new IRubyObject[] {arg});
+        return new RubyEnumerator(runtime, type, object, RubySymbol.newSymbol(runtime, method), new IRubyObject[] {arg});
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, RubyClass type, IRubyObject object, String method, IRubyObject[] args) {
-        return new RubyEnumerator(runtime, type, object, runtime.fastNewSymbol(method), args);
+        return new RubyEnumerator(runtime, type, object, RubySymbol.newSymbol(runtime, method), args);
     }
 
     // used internally to create lazy without block (from Enumerator/Enumerable)

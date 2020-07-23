@@ -4287,7 +4287,7 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject getConstantFromConstMissing(String name) {
         final Ruby runtime = metaClass.runtime;
-        return callMethod(runtime.getCurrentContext(), "const_missing", runtime.fastNewSymbol(name));
+        return callMethod(runtime.getCurrentContext(), "const_missing", RubySymbol.newSymbol(runtime, name));
     }
 
     @Deprecated
