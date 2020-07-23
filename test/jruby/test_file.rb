@@ -639,10 +639,10 @@ class TestFile < Test::Unit::TestCase
       assert(File.directory?("dir_tmp"))
       assert(! File.directory?("test/jruby/test_file.rb"))
       assert(! File.directory?("dir_not_tmp"))
-      result = jruby("-e 'print File.directory?(\"dir_not_tmp\");print File.directory?(\"dir_tmp\");print File.directory?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false')
+      result = jruby("-e \"print File.directory?('dir_not_tmp');print File.directory?('dir_tmp');print File.directory?('test/jruby/test_file.rb')\"", 'jruby.native.enabled' => 'false')
       assert_equal(result, 'falsetruefalse')
     ensure
-      Dir.rmdir("dir_tmp")
+      Dir.rmdir("dir_tmp") rescue nil
     end
   end
 
@@ -650,16 +650,16 @@ class TestFile < Test::Unit::TestCase
     assert(File.file?('test/jruby/test_file.rb'))
     assert(! File.file?('test'))
     assert(! File.file?('test_not'))
-    result = jruby("-e 'print File.file?(\"test_not\");print File.file?(\"test\");print File.file?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-    assert_equal(result, 'falsefalsetrue')
+    result = jruby("-e \"print File.file?('test_not');print File.file?('test');print File.file?('test/jruby/test_file.rb')\"", 'jruby.native.enabled' => 'false' )
+    assert_equal('falsefalsetrue', result)
   end
 
   def test_readable_query # - readable?
     assert(File.readable?('test/jruby/test_file.rb'))
     assert(File.readable?('test'))
     assert(! File.readable?('test_not'))
-    result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"test\");print File.readable?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-    assert_equal(result, 'falsetruetrue')
+    result = jruby("-e \"print File.readable?('test_not');print File.readable?('test');print File.readable?('test/jruby/test_file.rb')\"", 'jruby.native.enabled' => 'false' )
+    assert_equal('falsetruetrue', result)
   end
 
   [ :executable?, :executable_real? ].each do |method|
@@ -673,15 +673,15 @@ class TestFile < Test::Unit::TestCase
       assert(!File.send(method, 'test/test_file.rb'))
       assert(File.send(method, 'test'))
       assert(!File.send(method, 'test_not'))
-      result = jruby("-e 'print File.#{method}(\"#{exec_file}\");print File.#{method}(\"test_not\");print File.#{method}(\"test\");print File.#{method}(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
-      assert_equal(result, 'truefalsetruefalse')
+      result = jruby("-e \"print File.#{method}('#{exec_file}');print File.#{method}('test_not');print File.#{method}('test');print File.#{method}('test/test_file.rb')\"", 'jruby.native.enabled' => 'false' )
+      assert_equal('truefalsetruefalse', result)
     end
   end
 
   def test_file_exist_query
     assert(File.exist?('test'))
     assert(! File.exist?('test_not'))
-    assert(jruby("-e 'print File.exists?(\"test_not\");print File.exists?(\"test\")'", 'jruby.native.enabled' => 'false' ) == 'falsetrue')
+    assert(jruby("-e \"print File.exists?('test_not');print File.exists?('test')\"", 'jruby.native.enabled' => 'false' ) == 'falsetrue')
   end
 
   def test_file_exist_in_jar_file
