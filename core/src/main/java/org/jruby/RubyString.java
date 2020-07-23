@@ -68,7 +68,6 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.StringSites;
@@ -1256,35 +1255,31 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @return
      */
     public int strHashCode(Ruby runtime) {
-        final ByteList value = this.value;
-        final int cr = scanForCodeRange();
-        return strHash(runtime, value, cr);
+        return strHash(runtime, this.value, scanForCodeRange());
     }
 
     public static int strHashCode(Ruby runtime, ByteList value, int cr) {
-        final int scannedCR = CodeRangeable.scanForCodeRange(value, cr);
-        return strHash(runtime, value, scannedCR);
+        return strHash(runtime, value, CodeRangeable.scanForCodeRange(value, cr));
     }
 
     protected static int strHash(Ruby runtime, ByteList value, int cr) {
-        final Encoding enc = value.getEncoding();
-        long hash = hashStringBytes(runtime, value);
+        return hashFromBytesAndCodeRange(runtime, value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), value.getEncoding(), cr);
+    }
+
+    public static int hashFromBytesAndCodeRange(Ruby runtime, byte[] bytes, int start, int len, Encoding enc, int cr) {
+        long hash = hashFromBytes(runtime, bytes, start, len);
         int e = (enc != ASCIIEncoding.INSTANCE && cr == CR_7BIT ? 0 : enc.getIndex());
         return (int) hash ^ e;
     }
 
-    protected static long hashStringBytes(Ruby runtime, ByteList value) {
-        long hash;
+    protected static long hashFromBytes(Ruby runtime, byte[] bytes, int start, int len) {
+        final long seed0 = runtime.getHashSeedK0();
+
         if (runtime.isSiphashEnabled()) {
-            hash = SipHashInline.hash24(runtime.getHashSeedK0(),
-                    runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
-                    value.getRealSize());
+            return SipHashInline.hash24(seed0, runtime.getHashSeedK1(), bytes, start, len);
         }
-        else {
-            hash = PerlHash.hash(runtime.getHashSeedK0(),
-                    value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
-        }
-        return hash;
+
+        return PerlHash.hash(seed0, bytes, start, len);
     }
 
     /**

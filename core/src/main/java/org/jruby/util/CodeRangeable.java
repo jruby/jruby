@@ -27,6 +27,7 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.util.StringSupport.CR_BROKEN;
@@ -72,5 +73,9 @@ public interface CodeRangeable extends ByteListHolder {
             return CR_BROKEN;
         }
         return codeRangeScan(EncodingUtils.getActualEncoding(enc, bytes), bytes);
+    }
+
+    static int scanBytesForCodeRange(final byte[] bytes, int start, int len, Encoding enc) {
+        return codeRangeScan(enc, bytes, start, len);
     }
 }

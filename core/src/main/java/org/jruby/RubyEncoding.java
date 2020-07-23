@@ -225,6 +225,24 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
     }
 
+    /**
+     * Decode the given string to UTF-8 bytes, possibly using thread-local cached buffers.
+     *
+     * The resulting ByteBuffer should only be used within the same thread, ideally only within the calling method.
+     *
+     * @param name the string
+     * @return the encoded buffer
+     */
+    public static ByteBuffer doEncodeUTF8ThreadLocal(String name) {
+        ByteBuffer buffer;
+        if (name.length() > RubyEncoding.CHAR_THRESHOLD) {
+            buffer = UTF8.encode(CharBuffer.wrap(name));
+        } else {
+            buffer = getUTF8Coder().encode(name);
+        }
+        return buffer;
+    }
+
     static ByteList doEncodeUTF8(CharSequence str) {
         if (str.length() > CHAR_THRESHOLD) {
             return getByteList(UTF8.encode(toCharBuffer(str)), UTF8Encoding.INSTANCE, false);
