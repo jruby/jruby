@@ -101,7 +101,7 @@ class TestIO < Test::Unit::TestCase
     @to_close << f
     assert_raises(Errno::EINVAL) { IO.new(f.fileno, "w") }
     f.close
-  end
+  end unless WINDOWS # MRI (on Windows) does not raise anything
 
   def test_ios_with_compatible_flags
     ensure_files @file

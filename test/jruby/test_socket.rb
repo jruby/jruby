@@ -193,7 +193,7 @@ class SocketTest < Test::Unit::TestCase
       # Permission denied - bind(2) for nil port 42
       assert_equal 'Permission denied - bind(2) for nil port 42', e.message
     else; fail 'not raised'
-    end
+    end unless WINDOWS # MRI (on Windows) returns 0
 
     #begin
     #  UDPSocket.new.bind nil, nil
@@ -208,14 +208,14 @@ class SocketTest < Test::Unit::TestCase
     rescue Errno::EACCES
       # Permission denied - bind(2) for 0 port 42
     else; fail 'not raised'
-    end
+    end unless WINDOWS # MRI (on Windows) returns 0 (while triggering a Security Alert)
 
     begin
       UDPSocket.new.bind "127.0.0.1", 191
     rescue Errno::EACCES
       # Permission denied - bind(2) for "127.0.0.1" port 191
     else; fail 'not raised'
-    end
+    end unless WINDOWS # MRI (on Windows) returns 0
   end
 
   def test_tcp_socket_errors

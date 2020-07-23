@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'test/jruby/test_helper'
 
 class TestLoadingBuiltinLibraries < Test::Unit::TestCase
   def test_late_bound_libraries
@@ -26,7 +27,7 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
   # JRUBY-4962
   def test_require_pty
     assert_nothing_raised { require 'pty' }
-  end
+  end unless TestHelper::WINDOWS
 
   def test_jruby_libraries
     assert_nothing_raised {

@@ -1279,7 +1279,7 @@ class TestFile < Test::Unit::TestCase
     assert_raise(Errno::ENOENT) {
       File::Stat.new("file:" + File.expand_path("test/test_jar2.jar") + "!/foo_bar.rb").file?
     }
-  end
+  end unless WINDOWS
 
   # JRUBY-4859
   def test_file_delete_directory
@@ -1368,11 +1368,11 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_inspect
-    file = File.new('.')
-    assert_equal "#<File:.>", file.inspect
+    file = File.new('test/jruby/gem.jar')
+    assert_equal "#<File:test/jruby/gem.jar>", file.inspect
     file.define_singleton_method(:tty?) { true }
     def file.path; 'zzz' end
-    assert_equal "#<File:.>", file.inspect
+    assert_equal "#<File:test/jruby/gem.jar>", file.inspect
   end
 
 end
