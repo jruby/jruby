@@ -7,7 +7,6 @@ require 'stringio'
 class TestIO < Test::Unit::TestCase
   include TestHelper
 
-  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SOLARIS = RbConfig::CONFIG['host_os'] =~ /solaris/
 
   def setup
@@ -424,13 +423,13 @@ class TestIO < Test::Unit::TestCase
 
   def test_file_constants_included
     assert IO.include?(File::Constants)
-    constants = ["APPEND", "BINARY", "CREAT", "EXCL", "FNM_CASEFOLD",
-                   "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
-                   "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NONBLOCK",
-                   "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
-                   "WRONLY"]
+    constants = ["APPEND", "BINARY", "CREAT", "EXCL",
+                 "FNM_CASEFOLD", "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
+                 "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NONBLOCK",
+                 "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "TRUNC", "WRONLY"]
     constants = constants.map(&:to_sym)
     constants.each { |c| assert(IO.constants.include?(c), "#{c} is not included") }
+    assert IO.constants.include?(:SYNC), "SYNC not included" unless WINDOWS
   end
 
   #JRUBY-3012
