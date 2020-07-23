@@ -37,36 +37,69 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class UnmarshalCache {
     private final Ruby runtime;
-    private final List<IRubyObject> links = new ArrayList<IRubyObject>();
-    private final List<RubySymbol> symbols = new ArrayList<RubySymbol>();
+    private final List<IRubyObject> links = new ArrayList<>();
+    private final List<SymbolTuple> symbols = new ArrayList<>();
+
+    /**
+     * Representation of a linked symbol from the unmarshal stream.
+     *
+     * In order to unmarshal a new symbol, we must first pull in the bytes and register them in this cache, before we
+     * can proceed to unmarshal any encoding information that follows them. The cache holds a tuple of ByteList,
+     * RubySymbol so this is possible. Once the ByteList has been registered, we proceed to unmarshal the encoding,
+     * apply it to the ByteList, and then register the symbol with the global symbol table. By updating the tuple, we
+     * avoid having to look up the symbol again for a subsequent link as in CRuby.
+     */
+    public class SymbolTuple {
+        final ByteList symbolBytes;
+        RubySymbol symbol;
+
+        SymbolTuple(ByteList symbolBytes) {
+            this.symbolBytes = symbolBytes;
+        }
+
+        public RubySymbol getSymbol() {
+            RubySymbol symbol = this.symbol;
+
+            if (symbol == null) {
+                symbol = this.symbol = RubySymbol.newSymbol(runtime, symbolBytes);
+            }
+
+            return symbol;
+        }
+    }
 
     public UnmarshalCache(Ruby runtime) {
         this.runtime = runtime;
     }
 
     public void register(IRubyObject value) {
-        selectCache(value).add(value);
+        links.add(value);
     }
 
-    private List selectCache(IRubyObject value) {
-        return (value instanceof RubySymbol) ? symbols : links;
+    public SymbolTuple registerSymbol(ByteList value) {
+        SymbolTuple tuple = new SymbolTuple(value);
+        symbols.add(tuple);
+        return tuple;
     }
 
     public boolean isLinkType(int c) {
-        return c == ';' || c == '@';
+        return c == '@';
     }
 
-    public IRubyObject readLink(UnmarshalStream input, int type) throws IOException {
-        int i = input.unmarshalInt();
-        if (type == '@') {
-            return linkedByIndex(i);
-        }
+    public boolean isSymbolType(int c) {
+        return c == ';';
+    }
 
-        assert type == ';';
-        return symbolByIndex(i);
+    public IRubyObject readLink(UnmarshalStream input) throws IOException {
+        return linkedByIndex(input.unmarshalInt());
+    }
+
+    public RubySymbol readSymbol(UnmarshalStream input) throws IOException {
+        return symbolByIndex(input.unmarshalInt());
     }
 
     private IRubyObject linkedByIndex(int index) {
@@ -79,7 +112,7 @@ public class UnmarshalCache {
 
     private RubySymbol symbolByIndex(int index) {
         try {
-            return symbols.get(index);
+            return symbols.get(index).getSymbol();
         } catch (IndexOutOfBoundsException e) {
             throw runtime.newTypeError("bad symbol");
         }

@@ -61,6 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
+import org.jruby.runtime.marshal.UnmarshalCache;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
@@ -878,40 +879,41 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return recv.getRuntime().getSymbolTable().all_symbols();
     }
 
+    /**
+     * Unmarshal a symbol from the stream.
+     *
+     * As in CRuby, we first unmarshal the ByteList representing the Symbol's string value. That ByteList is registered
+     * as a {@link org.jruby.runtime.marshal.UnmarshalCache.SymbolTuple} and we proceed to unmarshal any encoding that
+     * follows. After this we have a properly encoded ByteList we can register as a symbol. We avoid having to look up
+     * the symbol again by setting it back into the tuple.
+     *
+     * @param input the unmarshaling stream from which to pull data
+     * @param state the current state of the unmarshaling stream
+     * @return a properly unmarshaled Symbol
+     * @throws java.io.IOException if there is an error reading from the stream
+     */
     public static RubySymbol unmarshalFrom(UnmarshalStream input, UnmarshalStream.MarshalState state) throws java.io.IOException {
         ByteList byteList = input.unmarshalString();
-        byteList.setEncoding(ASCIIEncoding.INSTANCE);
 
-        // Extra complicated interaction...
-        // We initially set to binary as newSymbol will make it US-ASCII if possible and code below will set explicit
-        // encoding otherwise.  Motivation here is binary is capable of being walked during symbol type calculation
-        // (and at this point the bytelist can be data of any encoding without us knowing what).  The proper type
-        // calculation will happen for non-US-ASCII below when it decodes the encoding.  setEncoding will recalculate
-        // symbol type properly.  This is all to work around registerLinkTarget being an ordered list.  So a symbol
-        // retrieved while decoding the encoding would make this symbol get registered out of order...
+        if (StringSupport.searchNonAscii(byteList) == -1) {
+            byteList.setEncoding(USASCIIEncoding.INSTANCE);
+        }
 
-        // Need symbol to register before encoding, so pass in a lambda for remaining unmarshal logic
-        RubySymbol result = newSymbol(input.getRuntime(), byteList,
-                (sym, newSym) -> {
-                    input.registerLinkTarget(sym);
+        UnmarshalCache.SymbolTuple tuple = input.registerSymbol(byteList);
 
-                    // get encoding from stream and set into symbol
-                    if (state.isIvarWaiting()) {
-                        try {
-                            input.unmarshalInt(); // throw-away, always single ivar of encoding
+        // get encoding from stream and set into symbol
+        if (state.isIvarWaiting()) {
+            input.unmarshalInt(); // throw-away, always single ivar of encoding
 
-                            Encoding enc = input.getEncodingFromUnmarshaled(input.unmarshalObject());
-                            if (enc == null) throw new RuntimeException("BUG: No encoding found in marshal stream");
+            Encoding enc = input.getEncodingFromUnmarshaled(input.unmarshalObject());
+            if (enc == null) throw new RuntimeException("BUG: No encoding found in marshal stream");
 
-                            // only change encoding if the symbol has been newly-created
-                            if (newSym) sym.setEncoding(enc);
+            byteList.setEncoding(enc);
 
-                            state.setIvarWaiting(false);
-                        } catch (Throwable t) {
-                            Helpers.throwException(t);
-                        }
-                    }
-                });
+            state.setIvarWaiting(false);
+        }
+
+        RubySymbol result = tuple.getSymbol();
 
         return result;
     }

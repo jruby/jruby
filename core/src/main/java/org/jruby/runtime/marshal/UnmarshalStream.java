@@ -139,8 +139,10 @@ public class UnmarshalStream extends InputStream {
         final int type = readUnsignedByte();
         final IRubyObject result;
         if (cache.isLinkType(type)) {
-            result = cache.readLink(this, type);
+            result = cache.readLink(this);
             if (callProc) return doCallProcForLink(result, type);
+        } else if (cache.isSymbolType(type)) {
+            result = cache.readSymbol(this);
         } else {
             result = unmarshalObjectDirectly(type, state, callProc);
         }
@@ -159,6 +161,10 @@ public class UnmarshalStream extends InputStream {
         if (MarshalStream.shouldBeRegistered(newObject)) {
             cache.register(newObject);
         }
+    }
+
+    public UnmarshalCache.SymbolTuple registerSymbol(ByteList byteList) {
+        return cache.registerSymbol(byteList);
     }
 
     public static RubyModule getModuleFromPath(Ruby runtime, String path) {
