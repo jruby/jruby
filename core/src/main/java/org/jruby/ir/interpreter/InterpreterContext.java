@@ -46,10 +46,11 @@ public class InterpreterContext {
 
     private InterpreterEngine engine;
     public final Supplier<List<Instr>> instructionsCallback;
+    private EnumSet<IRFlags> flags;
 
     private final IRScope scope;
 
-    public InterpreterContext(IRScope scope, List<Instr> instructions, int temporaryVariableCount) {
+    public InterpreterContext(IRScope scope, List<Instr> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
         this.scope = scope;
 
         // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
@@ -60,14 +61,16 @@ public class InterpreterContext {
         setInstructions(instructions);
         this.instructionsCallback = null; // engine != null
         this.temporaryVariableCount = temporaryVariableCount;
+        this.flags = flags;
     }
 
-    public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions, int temporaryVariableCount) {
+    public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.instructionsCallback = instructions;
         this.temporaryVariableCount = temporaryVariableCount;
+        this.flags = flags; // Note: This object must be the same object Supplier to populate instrs with.
     }
 
     protected void initialize() {
@@ -77,7 +80,6 @@ public class InterpreterContext {
     public InterpreterEngine getEngine() {
         if (engine == null) {
             setInstructions(instructionsCallback.get());
-            scope.computeScopeFlags();
 
             // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
             // For impl testing - engine = determineInterpreterEngine(scope);
@@ -97,7 +99,7 @@ public class InterpreterContext {
     }
 
     private void retrieveFlags() {
-        this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
+        this.receivesKeywordArguments = scope.receivesKeywordArgs();
     }
 
     private Instr[] prepareBuildInstructions(List<Instr> instructions) {
@@ -181,7 +183,7 @@ public class InterpreterContext {
 
     public void computeScopeFlagsFromInstructions() {
         for (Instr instr : getInstructions()) {
-            instr.computeScopeFlags(getFlags());
+            instr.computeScopeFlags(scope, getFlags());
         }
     }
 
@@ -286,6 +288,6 @@ public class InterpreterContext {
     }
 
     public EnumSet<IRFlags> getFlags() {
-        return scope.getFlags();
+        return flags;
     }
 }

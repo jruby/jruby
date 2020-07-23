@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 
+import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
@@ -129,7 +130,7 @@ public class IRBuilder {
             iterStartLabel = s.getNewLabel("_ITER_BEGIN");
             iterEndLabel   = s.getNewLabel("_ITER_END");
             loopResult     = result;
-            s.setHasLoopsFlag();
+            s.setHasLoops();
         }
     }
 
@@ -315,6 +316,8 @@ public class IRBuilder {
     private TemporaryVariable yieldClosureVariable = null;
     private Variable currentModuleVariable = null;
 
+    private EnumSet<IRFlags> flags;
+
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent, IRBuilder variableBuilder) {
         this.manager = manager;
         this.scope = scope;
@@ -326,6 +329,7 @@ public class IRBuilder {
         if (parent != null) executesOnce = parent.executesOnce;
 
         this.variableBuilder = variableBuilder;
+        this.flags = IRScope.allocateInitialFlags(scope);
     }
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
@@ -361,7 +365,7 @@ public class IRBuilder {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.isEmpty()) {
-            instr.computeScopeFlags(scope.getFlags());
+            instr.computeScopeFlags(scope, flags);
 
             if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, instructions.size());
 
@@ -375,7 +379,7 @@ public class IRBuilder {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.isEmpty()) {
-            instr.computeScopeFlags(scope.getFlags());
+            instr.computeScopeFlags(scope, flags);
 
             if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, 0);
 
@@ -562,7 +566,8 @@ public class IRBuilder {
 
         handleBreakAndReturnsInLambdas();
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     public Operand buildLambda(LambdaNode node) {
@@ -1041,7 +1046,7 @@ public class IRBuilder {
         // Check if we have to handle a break
         if (block == null ||
             !(block instanceof WrappedIRClosure) ||
-            !(((WrappedIRClosure)block).getClosure()).flags.contains(IRFlags.HAS_BREAK_INSTRS)) {
+            !(((WrappedIRClosure)block).getClosure()).hasBreakInstructions()) {
             // No protection needed -- add the call and return
             return codeBlock.run();
         }
@@ -2096,7 +2101,9 @@ public class IRBuilder {
 
         if (rv != null) addInstr(new ReturnInstr(rv));
 
-        scope.computeScopeFlagsEarly(instructions);
+        // We do an extra early one so we can look for non-local returns.
+        computeScopeFlagsFrom(instructions);
+
         // If the method can receive non-local returns
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
@@ -2114,7 +2121,9 @@ public class IRBuilder {
 
         ((IRMethod) scope).setArgumentDescriptors(argDesc);
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
+        computeScopeFlagsFrom(instructions);
+
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
@@ -2776,7 +2785,7 @@ public class IRBuilder {
                 IRClosure closure = ((WrappedIRClosure) block).getClosure();
 
                 // To convert to a method we need its variable scoping to appear like a normal method.
-                if (!closure.getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) &&
+                if (!closure.accessesParentsLocalVariables() &&
                         fcallNode.getIterNode() instanceof IterNode) {
                     closure.setSource((IterNode) fcallNode.getIterNode());
                 }
@@ -3021,7 +3030,8 @@ public class IRBuilder {
         // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
         if (!forNode) handleBreakAndReturnsInLambdas();
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     public Operand buildIter(final IterNode iterNode) {
@@ -3452,7 +3462,8 @@ public class IRBuilder {
         // END does not have either explicit or implicit return, so we add one
         addInstr(new ReturnInstr(new Nil()));
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     private List<Instr> buildPreExeInner(Node body) {
@@ -3731,7 +3742,7 @@ public class IRBuilder {
             addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
             addInstr(new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
-            scope.setHasLoopsFlag();
+            scope.setHasLoops();
         }
         return manager.getNil();
     }
@@ -3807,7 +3818,8 @@ public class IRBuilder {
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2);
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 2, flags);
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
@@ -3831,11 +3843,11 @@ public class IRBuilder {
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
 
-        scope.computeScopeFlagsEarly(instructions);
+        computeScopeFlagsFrom(instructions);
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     public Variable buildSelf() {
@@ -4136,7 +4148,8 @@ public class IRBuilder {
 
         addInstr(new ReturnInstr(bodyReturnValue));
 
-        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1);
+        computeScopeFlagsFrom(instructions);
+        return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
     }
 
     private RubySymbol methodNameFor() {
@@ -4298,4 +4311,40 @@ public class IRBuilder {
         temporaryVariableIndex++;
         return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
+
+    public void computeScopeFlagsFrom(List<Instr> instructions) {
+        for (Instr i : instructions) {
+            i.computeScopeFlags(scope, flags);
+        }
+
+        calculateClosureScopeFlags();
+
+        if (computeNeedsDynamicScopeFlag()) flags.add(REQUIRES_DYNSCOPE);
+
+        flags.add(FLAGS_COMPUTED);
+    }
+
+    private void calculateClosureScopeFlags() {
+        // Compute flags for nested closures (recursively) and set derived flags.
+        for (IRClosure cl: scope.getClosures()) {
+            if (cl.usesEval()) {
+                scope.setCanReceiveBreaks();
+                scope.setCanReceiveNonlocalReturns();
+                scope.setUsesZSuper();
+            } else {
+                if (cl.hasBreakInstructions() || cl.canReceiveBreaks()) scope.setCanReceiveBreaks();
+                if (cl.hasNonLocalReturns() || cl.canReceiveNonlocalReturns()) scope.setCanReceiveNonlocalReturns();
+                if (cl.usesZSuper()) scope.setUsesZSuper();
+            }
+        }
+    }
+
+    private boolean computeNeedsDynamicScopeFlag() {
+        return scope.canReceiveNonlocalReturns() ||
+                scope.canCaptureCallersBinding() ||
+                scope.canReceiveNonlocalReturns() ||
+                flags.contains(BINDING_HAS_ESCAPED);
+    }
+
+
 }

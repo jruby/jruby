@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -44,8 +45,8 @@ public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
-        flags.add(IRFlags.HAS_BREAK_INSTRS);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        scope.setHasBreakInstructions();
         flags.add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }

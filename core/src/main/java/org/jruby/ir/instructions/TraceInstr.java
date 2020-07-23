@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -88,7 +89,7 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
         return true;
     }

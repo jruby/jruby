@@ -34,8 +34,8 @@ public class MatchInstr extends CallInstr implements FixedArityInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
-        super.computeScopeFlags(flags);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
         // $~ is implicitly used since Backref and NthRef operands
         // access it and $~ is not made explicit in those operands.
         flags.add(REQUIRES_BACKREF);

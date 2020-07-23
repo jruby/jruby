@@ -12,6 +12,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -225,7 +227,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
-    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int offset) {
+    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int offset, EnumSet<IRFlags> flags) {
         decodeConstantPool(poolOffset);
         currentScope = scope;
         vars = new HashMap<>();
@@ -241,7 +243,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println(">INSTR = " + decodedInstr);
 
             // FIXME: It would be nice to not run this and just record flag state at encode time
-            decodedInstr.computeScopeFlags(scope.getFlags());
+            decodedInstr.computeScopeFlags(scope, flags);
             instrs.add(decodedInstr);
         }
 

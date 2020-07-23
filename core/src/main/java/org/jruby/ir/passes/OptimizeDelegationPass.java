@@ -29,7 +29,7 @@ public class OptimizeDelegationPass extends CompilerPass {
         EnumSet<IRFlags> flags = fic.getFlags();
 
         if (flags.contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
-        if (!flags.contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;
+        if (!fic.getScope().receivesClosureArg()) return null;
 
         optimizeDelegatedVars(fic);
 
@@ -55,7 +55,7 @@ public class OptimizeDelegationPass extends CompilerPass {
                     if (ri.getResult() instanceof LocalVariable) continue;
 
                     unusedExplicitBlocks.put(ri.getResult(), ri.getSource());
-                } else {
+                } else { 
                     Iterator<Operand> it = unusedExplicitBlocks.keySet().iterator();
                     while (it.hasNext()) {
                         Variable explicitBlock = (Variable) it.next();

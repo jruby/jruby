@@ -164,9 +164,9 @@ public abstract class Instr {
 
     /**
      * Does this instruction do anything the scope is interested in?
-     * @return true if it modified the scope.
+     * @return true if it modified the scope or set any flags.
      */
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         return false;
     }
 

@@ -42,7 +42,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 
 public class IRManager {
@@ -344,7 +343,7 @@ public class IRManager {
         EnumSet<IRFlags> flags = fic.getFlags();
 
         if (!flags.contains(REQUIRES_DYNSCOPE)) {
-            if (flags.contains(RECEIVES_CLOSURE_ARG)) optimizeDelegationPass.run(fic);
+            if (fic.getScope().receivesClosureArg()) optimizeDelegationPass.run(fic);
             deadCodeEliminationPass.run(fic);
             optimizeDynScopesPass.run(fic);
         }

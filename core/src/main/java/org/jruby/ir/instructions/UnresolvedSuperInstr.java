@@ -57,8 +57,8 @@ public class UnresolvedSuperInstr extends CallInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
-        super.computeScopeFlags(flags);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
         flags.add(IRFlags.REQUIRES_CLASS); // for current class and method name
         flags.add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
         return true;

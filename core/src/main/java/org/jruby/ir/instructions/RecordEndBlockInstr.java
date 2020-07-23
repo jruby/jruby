@@ -35,7 +35,7 @@ public class RecordEndBlockInstr extends OneOperandInstr implements FixedArityIn
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         flags.add(IRFlags.HAS_END_BLOCKS);
         return true;
     }

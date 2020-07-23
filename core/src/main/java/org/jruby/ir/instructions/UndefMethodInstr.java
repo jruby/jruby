@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -28,7 +29,7 @@ public class UndefMethodInstr extends OneOperandResultBaseInstr implements Fixed
     }
 
     @Override
-    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         flags.add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }
