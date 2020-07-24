@@ -4340,7 +4340,7 @@ public class IRBuilder {
     }
 
     private boolean computeNeedsDynamicScopeFlag() {
-        return scope.canReceiveNonlocalReturns() ||
+        return scope.hasNonLocalReturns() ||
                 scope.canCaptureCallersBinding() ||
                 scope.canReceiveNonlocalReturns() ||
                 flags.contains(BINDING_HAS_ESCAPED);
