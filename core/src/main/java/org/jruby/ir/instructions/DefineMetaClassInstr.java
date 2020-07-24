@@ -41,7 +41,7 @@ public class DefineMetaClassInstr extends OneOperandResultBaseInstr implements F
         // For now, conservatively assume that a scope with inner-classes
         // can receive non-local returns. (Alternatively, have to inspect
         // all lexically nested scopes, not just closures in computeScopeFlags())
-        scope.canReceiveNonlocalReturns();
+        scope.setCanReceiveNonlocalReturns();
 
         return true;
     }
