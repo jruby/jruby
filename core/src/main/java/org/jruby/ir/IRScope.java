@@ -130,7 +130,7 @@ public abstract class IRScope implements ParseResult {
     private boolean maybeUsingRefinements;
     private boolean canCaptureCallersBinding;
     private boolean canReceiveBreaks;  // may receive a break during execution (from itself of child scope).
-    private boolean canRecieveNonLocalReturns;
+    private boolean canReceiveNonLocalReturns;
     private boolean usesZSuper;
     private boolean needsCodeCoverage;
     private boolean usesEval;
@@ -450,11 +450,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setCanReceiveNonlocalReturns() {
-        canRecieveNonLocalReturns = true;
+        canReceiveNonLocalReturns = true;
     }
 
     public boolean canReceiveNonlocalReturns() {
-        return canRecieveNonLocalReturns;
+        return canReceiveNonLocalReturns;
     }
     
     public void setUsesEval() {
@@ -902,6 +902,23 @@ public abstract class IRScope implements ParseResult {
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + getInterpreterContext().getTemporaryVariableCount());
         file.encode(getInterpreterContext().getTemporaryVariableCount());
         file.encode(getNextLabelIndex());
+    }
+
+    public void persistScopeFlags(IRWriterEncoder file) {
+        file.encode(getInterpreterContext().getFlags());
+        file.encode(hasBreakInstructions());
+        file.encode(hasLoops());
+        file.encode(hasNonLocalReturns());
+        file.encode(receivesClosureArg());
+        file.encode(receivesKeywordArgs());
+        file.encode(accessesParentsLocalVariables());
+        file.encode(maybeUsingRefinements());
+        file.encode(canCaptureCallersBinding());
+        file.encode(canReceiveBreaks());
+        file.encode(canReceiveNonlocalReturns());
+        file.encode(usesZSuper());
+        file.encode(needsCodeCoverage());
+        file.encode(usesEval());
     }
 
     public static EnumSet<IRFlags> allocateInitialFlags(IRScope scope) {

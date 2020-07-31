@@ -227,7 +227,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
-    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int offset, EnumSet<IRFlags> flags) {
+    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int offset) {
         decodeConstantPool(poolOffset);
         currentScope = scope;
         vars = new HashMap<>();
@@ -242,8 +242,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println(">INSTR = " + decodedInstr);
 
-            // FIXME: It would be nice to not run this and just record flag state at encode time
-            decodedInstr.computeScopeFlags(scope, flags);
             instrs.add(decodedInstr);
         }
 
@@ -488,6 +486,19 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Signature decodeSignature() {
         return Signature.decode(decodeLong());
+    }
+
+    @Override
+    public EnumSet<IRFlags> decodeIRFlags() {
+        EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
+        IRFlags[] values = IRFlags.values();
+
+        for (int value = decodeInt(); value != 0; value ^= Integer.lowestOneBit(value)) {
+            int index = Integer.numberOfTrailingZeros(value);
+            flags.add(values[index]);
+        }
+
+        return flags;
     }
 
     @Override

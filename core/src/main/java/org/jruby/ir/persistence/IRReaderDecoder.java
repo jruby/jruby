@@ -59,10 +59,11 @@ public interface IRReaderDecoder {
     public RubyEvent decodeRubyEvent();
     public RubySymbol decodeSymbol();
     public Signature decodeSignature();
+    EnumSet<IRFlags> decodeIRFlags();
 
     public Variable decodeVariable();
 
-    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int instructionOffset, EnumSet<IRFlags> flags);
+    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int instructionOffset);
     public IRScope getCurrentScope();
     public Map<String, Operand> getVars();
 
