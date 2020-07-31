@@ -7,7 +7,6 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.*;
 import org.jruby.parser.StaticScope;
@@ -46,12 +45,26 @@ public class IRReader implements IRPersistenceValues {
             int nextLabelInt = file.decodeInt();
             IRScope scope = decodeScopeHeader(manager, file, type, line);
             scope.setNextLabelIndex(nextLabelInt);
+            EnumSet<IRFlags> flags = file.decodeIRFlags();
+            if (file.decodeBoolean()) scope.setHasBreakInstructions();
+            if (file.decodeBoolean()) scope.setHasLoops();
+            if (file.decodeBoolean()) scope.setHasNonLocalReturns();
+            if (file.decodeBoolean()) scope.setReceivesClosureArg();
+            if (file.decodeBoolean()) scope.setReceivesKeywordArgs();
+            if (file.decodeBoolean()) scope.setAccessesParentsLocalVariables();
+            if (file.decodeBoolean()) scope.setIsMaybeUsingRefinements();
+            if (file.decodeBoolean()) scope.setCanCaptureCallersBinding();
+            if (file.decodeBoolean()) scope.setCanReceiveBreaks();
+            if (file.decodeBoolean()) scope.setCanReceiveNonlocalReturns();
+            if (file.decodeBoolean()) scope.setUsesZSuper();
+            if (file.decodeBoolean()) scope.setNeedsCodeCoverage();
+            if (file.decodeBoolean()) scope.setUsesEval();
+
             if (firstScope == null) firstScope = scope;
             int instructionsOffset = file.decodeInt();
             int poolOffset = file.decodeInt();
 
-            EnumSet<IRFlags> flags = IRScope.allocateInitialFlags(scope);
-            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset, flags), tempVarsCount, flags);
+            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset), tempVarsCount, flags);
         }
 
         return firstScope; // topmost scope;
@@ -107,8 +120,6 @@ public class IRReader implements IRPersistenceValues {
 
     public static IRScope createScope(IRManager manager, IRScopeType type, ByteList byteName, String file, int line,
                                       IRScope lexicalParent, Signature signature, StaticScope staticScope) {
-        Ruby runtime = manager.getRuntime();
-
         switch (type) {
         case CLASS_BODY:
             // FIXME: add saving on noe-time usage to writeer/reader

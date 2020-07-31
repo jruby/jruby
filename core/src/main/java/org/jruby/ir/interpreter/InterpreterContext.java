@@ -37,10 +37,9 @@ public class InterpreterContext {
     protected int[] rescueIPCs = null;
 
     // Cached computed fields
-    protected boolean hasExplicitCallProtocol;
-    protected boolean dynamicScopeEliminated;
-    private boolean reuseParentDynScope;
-    private boolean receivesKeywordArguments;
+    protected boolean hasExplicitCallProtocol; // Only can be true in Full+
+    protected boolean dynamicScopeEliminated; // Only can be true in Full+
+    private boolean reuseParentDynScope; // Only can be true in Full+
     private boolean metaClassBodyScope;
 
     private InterpreterEngine engine;
@@ -54,7 +53,7 @@ public class InterpreterContext {
 
         // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
         // For impl testing - engine = determineInterpreterEngine(scope);
-        setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
+        this.engine = instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         setInstructions(instructions);
@@ -69,7 +68,7 @@ public class InterpreterContext {
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.instructionsCallback = instructions;
         this.temporaryVariableCount = temporaryVariableCount;
-        this.flags = flags; // Note: This object must be the same object Supplier to populate instrs with.
+        this.flags = flags;
     }
 
     protected void initialize() {
@@ -82,7 +81,7 @@ public class InterpreterContext {
 
             // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
             // For impl testing - engine = determineInterpreterEngine(scope);
-            setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
+            this.engine = instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER;
         }
         return engine;
     }
@@ -95,10 +94,6 @@ public class InterpreterContext {
 
     private void setInstructions(final List<Instr> instructions) {
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
-    }
-
-    private void retrieveFlags() {
-        this.receivesKeywordArguments = scope.receivesKeywordArgs();
     }
 
     private Instr[] prepareBuildInstructions(List<Instr> instructions) {
@@ -238,9 +233,7 @@ public class InterpreterContext {
     }
 
     public boolean receivesKeywordArguments() {
-        initialize();
-
-        return receivesKeywordArguments;
+        return scope.receivesKeywordArgs();
     }
 
     @Override
@@ -278,12 +271,6 @@ public class InterpreterContext {
         }*/
 
         return b.toString();
-    }
-
-    public void setEngine(InterpreterEngine engine) {
-        this.engine = engine;
-
-        retrieveFlags();
     }
 
     public EnumSet<IRFlags> getFlags() {
