@@ -1,6 +1,6 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.util.StringSupport;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -54,10 +54,10 @@ public abstract class CompilerPass {
     /**
      * Meat of an individual pass. run will call this after dependency
      * resolution.
-     * @param scope is the scope to run this pass on
+     * @param fic is the FullInterpreterContext to run this pass on
      * @param dependencyData is the data supplied to this pass to use to execute the pass
      */
-    public abstract Object execute(IRScope scope, Object... dependencyData);
+    public abstract Object execute(FullInterpreterContext fic, Object... dependencyData);
 
     public List<Class<? extends CompilerPass>> getDependencies() {
         return NO_DEPENDENCIES;
@@ -69,8 +69,8 @@ public abstract class CompilerPass {
      *
      * @returns data or null if it needs to be run
      */
-    public Object previouslyRun(IRScope scope) {
-        return scope.getExecutedPasses().contains(this) ? new Object() : null;
+    public Object previouslyRun(FullInterpreterContext fic) {
+        return fic.getExecutedPasses().contains(this) ? new Object() : null;
     }
 
     /**
@@ -81,20 +81,20 @@ public abstract class CompilerPass {
      * In that case, an execute() should still rebuild everything fine because
      * all compiler passes list their dependencies.
      *
-     * @param scope is where the pass stores its data.
+     * @param fic is where the pass stores its data.
      * @returns true if invalidation succeeded, false otherwise.
      */
-    public boolean invalidate(IRScope scope) {
+    public boolean invalidate(FullInterpreterContext fic) {
         // System.out.println("--- INVALIDATING " + this.getLabel() + " on scope: " + scope);
-        scope.getExecutedPasses().remove(this);
+        fic.getExecutedPasses().remove(this);
         return true;
     }
 
     // Run the pass on the passed in scope!
-    protected Object run(IRScope scope, boolean force, boolean childScope) {
+    protected Object run(FullInterpreterContext fic, boolean force, boolean childScope) {
         // System.out.println("--- RUNNING " + this.getLabel() + " on scope: " + scope);
         Object prevData = null;
-        if (!force && (prevData = previouslyRun(scope)) != null) {
+        if (!force && (prevData = previouslyRun(fic)) != null) {
             // System.out.println("--- RETURNING OLD RESULT ---");
             return prevData;
         }
@@ -103,42 +103,42 @@ public abstract class CompilerPass {
         Object data[] = new Object[dependencies.size()];
 
         for (int i = 0; i < data.length; i++) {
-            data[i] = makeSureDependencyHasRunOnce(dependencies.get(i), scope, childScope);
+            data[i] = makeSureDependencyHasRunOnce(dependencies.get(i), fic, childScope);
         }
 
-        for (CompilerPassListener listener: scope.getManager().getListeners()) {
-            listener.startExecute(this, scope, childScope);
+        for (CompilerPassListener listener: fic.getScope().getManager().getListeners()) {
+            listener.startExecute(this, fic, childScope);
         }
 
         // Record this pass
-        scope.getExecutedPasses().add(this);
+        fic.getExecutedPasses().add(this);
 
-        Object passData = execute(scope, data);
+        Object passData = execute(fic, data);
 
-        for (CompilerPassListener listener: scope.getManager().getListeners()) {
-            listener.endExecute(this, scope, passData, childScope);
+        for (CompilerPassListener listener: fic.getScope().getManager().getListeners()) {
+            listener.endExecute(this, fic, passData, childScope);
         }
 
         return passData;
     }
 
-    public Object run(IRScope scope, boolean force) {
-        return run(scope, force, false);
+    public Object run(FullInterpreterContext fic, boolean force) {
+        return run(fic, force, false);
     }
 
-    public Object run(IRScope scope) {
-        return run(scope, false, false);
+    public Object run(FullInterpreterContext fic) {
+        return run(fic, false, false);
     }
 
-    private Object makeSureDependencyHasRunOnce(Class<? extends CompilerPass> passClass, IRScope scope, boolean childScope) {
+    private Object makeSureDependencyHasRunOnce(Class<? extends CompilerPass> passClass, FullInterpreterContext fic, boolean childScope) {
         CompilerPass pass = createPassInstance(passClass);
-        Object data = pass.previouslyRun(scope);
+        Object data = pass.previouslyRun(fic);
 
         if (data == null) {
-            data = pass.run(scope, false, childScope);
+            data = pass.run(fic, false, childScope);
         } else {
-            for (CompilerPassListener listener: scope.getManager().getListeners()) {
-                listener.alreadyExecuted(pass, scope, data, childScope);
+            for (CompilerPassListener listener: fic.getScope().getManager().getListeners()) {
+                listener.alreadyExecuted(pass, fic, data, childScope);
             }
         }
         return data;

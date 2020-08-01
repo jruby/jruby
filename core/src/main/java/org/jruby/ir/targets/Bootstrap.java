@@ -12,6 +12,7 @@ import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.JIT;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
@@ -1370,14 +1371,15 @@ public class Bootstrap {
 
         // This optimization can't happen until we can see into the method we're calling to know if it reifies the block
         if (false) {
-            if (scope.needsBinding()) {
-                if (scope.needsFrame()) {
+            FullInterpreterContext fic = scope.getExecutionContext();
+            if (fic.needsBinding()) {
+                if (fic.needsFrame()) {
                     binder = binder.fold(FRAME_SCOPE_BINDING);
                 } else {
                     binder = binder.fold(SCOPE_BINDING);
                 }
             } else {
-                if (scope.needsFrame()) {
+                if (fic.needsFrame()) {
                     binder = binder.fold(FRAME_BINDING);
                 } else {
                     binder = binder.fold(SELF_BINDING);

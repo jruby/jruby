@@ -1,11 +1,9 @@
 package org.jruby.ir.passes;
 
-import java.util.EnumSet;
-import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.representations.BasicBlock;
 
@@ -33,12 +31,11 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     }
 
     @Override
-    public Object execute(IRScope s, Object... data) {
+    public Object execute(FullInterpreterContext fic, Object... data) {
         StoreLocalVarPlacementProblem slvp = new StoreLocalVarPlacementProblem();
-        EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
 
         // Only run if we are pushing a scope or we are reusing the parents scope.
-        if (!flags.contains(IRFlags.DYNSCOPE_ELIMINATED) || flags.contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
+        if (!fic.isDynamicScopeEliminated() || fic.reuseParentDynScope()) {
             Map<Operand, Operand> varRenameMap = new HashMap<>();
             // 1. Figure out required stores
             // 2. Add stores
@@ -46,7 +43,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
             // 4. Add loads
             //
             // Order is important since loads in 3. depend on stores in 2.
-            slvp.setup(s);
+            slvp.setup(fic);
             slvp.compute_MOP_Solution();
 
             // Add stores, assigning an equivalent tmp-var for each local var
@@ -54,36 +51,36 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
 
             // Once stores have been added, figure out required loads
             LoadLocalVarPlacementProblem llvp = new LoadLocalVarPlacementProblem();
-            llvp.setup(s);
+            llvp.setup(fic);
             llvp.compute_MOP_Solution();
 
             // Add loads
             llvp.addLoads(varRenameMap);
 
             // Rename all local var uses with their tmp-var stand-ins
-            for (BasicBlock b: s.getCFG().getBasicBlocks()) {
+            for (BasicBlock b: fic.getCFG().getBasicBlocks()) {
                 for (Instr i: b.getInstrs()) i.renameVars(varRenameMap);
             }
 
             // LVA information is no longer valid after this pass
             // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
-            (new LiveVariableAnalysis()).invalidate(s);
+            (new LiveVariableAnalysis()).invalidate(fic);
         }
 
-        s.putStoreLocalVarPlacementProblem(slvp);
+        fic.getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, slvp);
 
         return slvp;
     }
 
     @Override
-    public Object previouslyRun(IRScope scope) {
-        return scope.getStoreLocalVarPlacementProblem();
+    public Object previouslyRun(FullInterpreterContext fic) {
+        return fic.getDataFlowProblems().get(StoreLocalVarPlacementProblem.NAME);
     }
 
     @Override
-    public boolean invalidate(IRScope scope) {
-        super.invalidate(scope);
-        scope.putStoreLocalVarPlacementProblem(null);
+    public boolean invalidate(FullInterpreterContext fic) {
+        super.invalidate(fic);
+        fic.getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, null);
         return true;
     }
 }

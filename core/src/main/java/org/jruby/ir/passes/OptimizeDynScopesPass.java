@@ -1,12 +1,11 @@
 package org.jruby.ir.passes;
 
-import java.util.EnumSet;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.LoadLocalVarInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -27,27 +26,26 @@ public class OptimizeDynScopesPass extends CompilerPass {
         return "Opt Dyn Scopes";
     }
 
-    private void setupLocalVarReplacement(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
-         if (varRenameMap.get(v) == null) varRenameMap.put(v, s.getNewTemporaryVariableFor(v));
+    private void setupLocalVarReplacement(LocalVariable v, FullInterpreterContext fic, Map<Operand, Operand> varRenameMap) {
+         if (varRenameMap.get(v) == null) varRenameMap.put(v, fic.getNewTemporaryVariableFor(v));
     }
 
-    private void decrementScopeDepth(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
+    private void decrementScopeDepth(LocalVariable v, Map<Operand, Operand> varRenameMap) {
          if (varRenameMap.get(v) == null) varRenameMap.put(v, v.cloneForDepth(v.getScopeDepth() - 1));
     }
 
-    public void eliminateLocalVars(IRScope s) {
-        assert s.getClosures().isEmpty() : "We assume that if a scope has nested closures, it uses a dynamic scoope.";
+    public void eliminateLocalVars(FullInterpreterContext fic) {
+        assert fic.getScope().getClosures().isEmpty() : "We assume that if a scope has nested closures, it uses a dynamic scoope.";
 
         Map<Operand, Operand> varRenameMap = new HashMap<>();
-        EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
 
-        flags.add(IRFlags.DYNSCOPE_ELIMINATED); // Record the fact that we eliminated the scope
+        fic.setDynamicScopeEliminated(true); // Record the fact that we eliminated the scope
 
         // Since the scope does not require a binding, no need to do
         // any analysis. It is sufficient to rename all local var uses
         // with a temporary variable.
         boolean parentScopeNeeded = false;
-        for (BasicBlock b: s.getCFG().getBasicBlocks()) {
+        for (BasicBlock b: fic.getCFG().getBasicBlocks()) {
             ListIterator<Instr> instrs = b.getInstrs().listIterator();
             while (instrs.hasNext()) {
                 Instr i = instrs.next();
@@ -58,10 +56,10 @@ public class OptimizeDynScopesPass extends CompilerPass {
                         LocalVariable lv = (LocalVariable)v;
                         if (lv.getScopeDepth() == 0) {
                             // Make sure there is a replacement tmp-var allocated for lv
-                            setupLocalVarReplacement(lv, s, varRenameMap);
+                            setupLocalVarReplacement(lv, fic, varRenameMap);
                         } else {
                             parentScopeNeeded = true;
-                            decrementScopeDepth(lv, s, varRenameMap);
+                            decrementScopeDepth(lv, varRenameMap);
                         }
                     }
                 }
@@ -87,7 +85,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
                             }
 
                             // Make sure there is a replacement tmp-var allocated for lv
-                            setupLocalVarReplacement(lv, s, varRenameMap);
+                            setupLocalVarReplacement(lv, fic, varRenameMap);
                         } else {
                             // SSS FIXME: Ugly/Dirty! Some abstraction is broken.
                             if (i instanceof LoadLocalVarInstr) {
@@ -103,34 +101,31 @@ public class OptimizeDynScopesPass extends CompilerPass {
                             }
 
                             parentScopeNeeded = true;
-                            decrementScopeDepth(lv, s, varRenameMap);
+                            decrementScopeDepth(lv, varRenameMap);
                         }
                     }
                 }
             }
         }
 
-        if (parentScopeNeeded) flags.add(IRFlags.REUSE_PARENT_DYNSCOPE);
+        if (parentScopeNeeded) fic.setReuseParentDynScope(true);
 
         // Rename all local var uses with their tmp-var stand-ins
-        for (BasicBlock b: s.getCFG().getBasicBlocks()) {
+        for (BasicBlock b: fic.getCFG().getBasicBlocks()) {
             for (Instr i: b.getInstrs()) i.renameVars(varRenameMap);
         }
 
         // LVA information is no longer valid after this pass
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
-        (new LiveVariableAnalysis()).invalidate(s);
+        (new LiveVariableAnalysis()).invalidate(fic);
     }
 
     @Override
-    public Object execute(IRScope scope, Object... data) {
-        // Make sure flags are computed
-        scope.computeScopeFlags();
-
+    public Object execute(FullInterpreterContext fic, Object... data) {
         // Cannot run this on scopes that require dynamic scopes
-        if (scope.getExecutionContext().getFlags().contains(IRFlags.REQUIRES_DYNSCOPE)) return null;
+        if (fic.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE)) return null;
 
-        eliminateLocalVars(scope);
+        eliminateLocalVars(fic);
 
         // SSS FIXME: Why null? Return a non-null value so that we don't
         // run this repeatedly on the same scope.
@@ -138,7 +133,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
     }
 
     @Override
-    public boolean invalidate(IRScope scope) {
+    public boolean invalidate(FullInterpreterContext fic) {
         // No invalidation for this right now.
         // But, if necessary, we can reverse this operation.
         return false;

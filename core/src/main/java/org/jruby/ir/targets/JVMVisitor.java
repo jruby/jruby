@@ -13,6 +13,7 @@ import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -136,6 +137,7 @@ public class JVMVisitor extends IRVisitor {
         currentScopeName = name + "_IRScope";
 
         BasicBlock[] bbs = scope.prepareForCompilation();
+        FullInterpreterContext fullIC = scope.getFullInterpreterContext();
 
         if (print && IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(scope, true);
@@ -143,7 +145,7 @@ public class JVMVisitor extends IRVisitor {
             LOG.info("Printing JIT IR for " + scope.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
-        Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
+        Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable(fullIC);
 
         emitClosures(scope, print);
 
@@ -156,12 +158,12 @@ public class JVMVisitor extends IRVisitor {
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
         }
 
-        if (scope.needsBinding() || !scope.hasExplicitCallProtocol()) {
+        if (fullIC.needsBinding() || !fullIC.hasExplicitCallProtocol()) {
             // declare dynamic scope local only if we'll need it
             jvm.methodData().local("$dynamicScope", Type.getType(DynamicScope.class));
         }
 
-        if (!scope.hasExplicitCallProtocol()) {
+        if (!fullIC.hasExplicitCallProtocol()) {
             // No call protocol, dynscope has been prepared for us
             jvmMethod().loadContext();
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
@@ -1685,8 +1687,9 @@ public class JVMVisitor extends IRVisitor {
         IRScope scope = jvm.methodData().scope;
 
         // FIXME: Centralize this out of InterpreterContext
-        boolean reuseParentDynScope = scope.getExecutionContext().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        boolean pushNewDynScope = !scope.getExecutionContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
+        FullInterpreterContext fullIC = scope.getExecutionContext();
+        boolean reuseParentDynScope = fullIC.reuseParentDynScope();
+        boolean pushNewDynScope = !fullIC.isDynamicScopeEliminated() && !reuseParentDynScope;
 
         if (pushNewDynScope) {
             if (reuseParentDynScope) {

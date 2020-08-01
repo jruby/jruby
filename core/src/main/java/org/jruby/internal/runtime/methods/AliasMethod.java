@@ -76,8 +76,10 @@ public class AliasMethod extends DynamicMethod {
             irMethod.ensureInstrsReady();
 
             IRScope irScope = irMethod.getIRScope();
+            // FIXME: This flag check is safe based on the current design since once requires_class is toggled it will
+            //  not untoggle and fullinterpcontext inherits fields of interpretercontext.
             if (irScope instanceof IRMethod
-                    && !irScope.getFlags().contains(IRFlags.REQUIRES_CLASS)) {
+                    && !irScope.getInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS)) {
                 findImplementer = false;
             }
         }

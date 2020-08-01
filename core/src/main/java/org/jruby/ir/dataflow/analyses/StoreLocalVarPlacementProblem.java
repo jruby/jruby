@@ -56,14 +56,14 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
     TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, Map<Operand, Operand> varRenameMap) {
          TemporaryLocalVariable value = (TemporaryLocalVariable)varRenameMap.get(v);
          if (value == null) {
-             value = getScope().getNewTemporaryVariableFor(v);
+             value = getFIC().getNewTemporaryVariableFor(v);
              varRenameMap.put(v, value);
          }
          return value;
     }
 
     boolean addScopeExitStoreLocalVars(ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
-        IRScope scope        = getScope();
+        IRScope scope        = getFIC().getScope();
         boolean addedStores  = false;
         boolean isEvalScript = scope instanceof IREvalScript;
         for (LocalVariable v : dirtyVars) {
@@ -88,13 +88,12 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
         boolean mightRequireGlobalEnsureBlock = false;
 
         Set<LocalVariable> dirtyVars = null;
-        IRScope cfgScope = getScope();
-        CFG     cfg      = cfgScope.getCFG();
+        CFG     cfg      = fic.getCFG();
 
         this.scopeHasLocalVarStores      = false;
         this.scopeHasUnrescuedExceptions = false;
 
-        if (cfgScope instanceof IRClosure) {
+        if (fic.getScope() instanceof IRClosure) {
             mightRequireGlobalEnsureBlock = true;
             dirtyVars = new HashSet<LocalVariable>();
         }
@@ -121,7 +120,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
             ListIterator<Instr> instrs;
             BasicBlock geb = cfg.getGlobalEnsureBB();
             if (geb == null) {
-                Variable exc = cfgScope.createTemporaryVariable();
+                Variable exc = fic.createTemporaryVariable();
                 geb = new BasicBlock(cfg, Label.getGlobalEnsureBlockLabel());
                 geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
                 geb.addInstr(new ThrowExceptionInstr(exc));
@@ -131,7 +130,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
             instrs = geb.getInstrs().listIterator(geb.getInstrs().size());
             Instr i = instrs.previous();
             // Assumption: Last instr should always be a control-transfer instruction
-            assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + getScope() + " is " + i + ", not a control-xfer instruction";
+            assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + fic.getScope() + " is " + i + ", not a control-xfer instruction";
             addScopeExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
         }
     }

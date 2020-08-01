@@ -19,6 +19,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class ZSuperInstr extends UnresolvedSuperInstr {
     public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure,
                        boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
@@ -30,9 +32,9 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
-        scope.getFlags().add(IRFlags.USES_ZSUPER);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
+        scope.setUsesZSuper();
         return true;
     }
 

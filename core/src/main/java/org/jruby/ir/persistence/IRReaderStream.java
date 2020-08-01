@@ -10,6 +10,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -228,8 +230,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println(">INSTR = " + decodedInstr);
 
-            // FIXME: It would be nice to not run this and just record flag state at encode time
-            decodedInstr.computeScopeFlags(scope);
             instrs.add(decodedInstr);
         }
 
@@ -474,6 +474,19 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Signature decodeSignature() {
         return Signature.decode(decodeLong());
+    }
+
+    @Override
+    public EnumSet<IRFlags> decodeIRFlags() {
+        EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
+        IRFlags[] values = IRFlags.values();
+
+        for (int value = decodeInt(); value != 0; value ^= Integer.lowestOneBit(value)) {
+            int index = Integer.numberOfTrailingZeros(value);
+            flags.add(values[index]);
+        }
+
+        return flags;
     }
 
     @Override

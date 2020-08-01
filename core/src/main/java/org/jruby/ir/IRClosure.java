@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -60,7 +61,7 @@ public class IRClosure extends IRScope {
         this.body = null;
     }
 
-    /** Used by cloning code */
+    /** Used by cloning code for inlining */
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
     protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {
         super(c, lexicalParent);
@@ -115,21 +116,21 @@ public class IRClosure extends IRScope {
             }
         }
 
-        if (needsCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
+        if (needsCoverage) setNeedsCodeCoverage();
     }
 
 
     @Override
-    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
-        interpreterContext = new ClosureInterpreterContext(this, instructions);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
+        interpreterContext = new ClosureInterpreterContext(this, instructions, temporaryVariableCount, flags);
 
         return interpreterContext;
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions) {
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
         try {
-            interpreterContext = new ClosureInterpreterContext(this, instructions);
+            interpreterContext = new ClosureInterpreterContext(this, instructions, temporaryVariableCount, flags);
         } catch (Exception e) {
             Helpers.throwException(e);
         }
@@ -148,21 +149,6 @@ public class IRClosure extends IRScope {
     @Override
     public int getNextClosureId() {
         return getLexicalParent().getNextClosureId();
-    }
-
-    @Override
-    public TemporaryLocalVariable createTemporaryVariable() {
-        return getNewTemporaryVariable(TemporaryVariableType.CLOSURE);
-    }
-
-    @Override
-    public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
-        if (type == TemporaryVariableType.CLOSURE) {
-            temporaryVariableIndex++;
-            return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
-        }
-
-        return super.getNewTemporaryVariable(type);
     }
 
     @Override
@@ -195,14 +181,14 @@ public class IRClosure extends IRScope {
             if (!closure.isNestedClosuresSafeForMethodConversion()) return false;
         }
 
-        return !getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+        return !accessesParentsLocalVariables();
     }
 
     public IRMethod convertToMethod(ByteList name) {
         // We want variable scoping to be the same as a method and not see outside itself.
         if (source == null ||
-            getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) ||  // Built methods cannot search down past method scope
-            getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG) ||            // we pass in captured block at define_method as block so explicits ones not supported
+            accessesParentsLocalVariables() ||  // Built methods cannot search down past method scope
+            receivesClosureArg() ||            // we pass in captured block at define_method as block so explicits ones not supported
             !isNestedClosuresSafeForMethodConversion()) {
             source = null;
             return null;
@@ -211,7 +197,7 @@ public class IRClosure extends IRScope {
         DefNode def = source;
         source = null;
 
-        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLine(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
+        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLine(), getStaticScope(), needsCodeCoverage());
     }
 
     public void setSource(IterNode iter) {
@@ -228,7 +214,7 @@ public class IRClosure extends IRScope {
         if (newDepth >= 0) {
             lvar = getLexicalParent().findExistingLocalVariable(name, newDepth);
 
-            if (lvar != null) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+            if (lvar != null) setAccessesParentsLocalVariables();
         }
 
         return lvar;
@@ -241,7 +227,7 @@ public class IRClosure extends IRScope {
             return lvar;
         } else {
             // IRFor does not have it's own state
-            if (!(this instanceof IRFor)) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+            if (!(this instanceof IRFor)) setAccessesParentsLocalVariables();
             IRScope s = this;
             int     d = depth;
             do {
@@ -275,7 +261,7 @@ public class IRClosure extends IRScope {
         LocalVariable lvar;
         IRScope s = this;
         int d = depth;
-        if (depth > 0 && !(this instanceof IRFor)) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+        if (depth > 0 && !(this instanceof IRFor)) setAccessesParentsLocalVariables();
 
         if (depth == 0) return s.getNewLocalVariable(name, 0);
 
@@ -312,6 +298,7 @@ public class IRClosure extends IRScope {
         return lvar;
     }
 
+    // FIXME: This is all using interpreterContext but it should be using Full????
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
@@ -324,7 +311,7 @@ public class IRClosure extends IRScope {
             newInstrs.add(i.clone(clonedII));
         }
 
-        clone.allocateInterpreterContext(newInstrs);
+        clone.allocateInterpreterContext(newInstrs, interpreterContext.getTemporaryVariableCount(), interpreterContext.getFlags());
 
 //        }
 
