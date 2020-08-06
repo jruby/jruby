@@ -179,7 +179,9 @@ public class IRRuntimeHelpers {
 
             // We hit a method boundary (actual method or a define_method closure) or we exit out of a script/file.
             if (scopeType.isMethodType() ||                              // Contained within a method
-                    scopeType.isBlock() && staticScope.isArgumentScope() ||  // Contained within define_method closure
+                    scopeType.isBlock() && (
+                            staticScope.isArgumentScope() ||  // Contained within define_method closure
+                            current.isLambda()) ||
                     scopeType == IRScopeType.SCRIPT_BODY) {              // (2.5+) Contained within a script
                 return current;
             }
