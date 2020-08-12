@@ -128,17 +128,11 @@ public class IRRuntimeHelpers {
         if (inLambda(block.type)) return; // break/return in lambda is unconditionally a return.
 
         DynamicScope returnToScope = getContainingReturnToScope(currentScope);
-        if (returnToScope != null) { // we found a valid return scope...but is it higher up the stack?
-            StaticScope staticScope = returnToScope.getStaticScope();
-            boolean inDefineMethod = staticScope.isArgumentScope() && staticScope.getScopeType().isBlock();
-            boolean topLevel = staticScope.getScopeType() == IRScopeType.SCRIPT_BODY;
 
-            if ((definedWithinMethod || inDefineMethod || topLevel) && context.scopeExistsOnCallStack(returnToScope)) {
-                return;
-            }
+        if (returnToScope == null || !context.scopeExistsOnCallStack(returnToScope)) {
+            throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
 
-        throw IRException.RETURN_LocalJumpError.getException(context.runtime);
     }
 
     /*
@@ -174,17 +168,7 @@ public class IRRuntimeHelpers {
     // Finds static scope of where we want to *return* to.
     private static DynamicScope getContainingReturnToScope(DynamicScope returnLocationScope) {
         for (DynamicScope current = returnLocationScope; current != null; current = current.getParentScope()) {
-            StaticScope staticScope = current.getStaticScope();
-            IRScopeType scopeType = staticScope.getScopeType();
-
-            // We hit a method boundary (actual method or a define_method closure) or we exit out of a script/file.
-            if (scopeType.isMethodType() ||                              // Contained within a method
-                    scopeType.isBlock() && (
-                            staticScope.isArgumentScope() ||  // Contained within define_method closure
-                            current.isLambda()) ||
-                    scopeType == IRScopeType.SCRIPT_BODY) {              // (2.5+) Contained within a script
-                return current;
-            }
+            if (current.isReturnTarget()) return current;
         }
 
         return null;
