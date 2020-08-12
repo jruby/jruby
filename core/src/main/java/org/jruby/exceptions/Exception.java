@@ -27,6 +27,7 @@
 package org.jruby.exceptions;
 
 import org.jruby.RubyException;
+import org.jruby.javasupport.JavaUtil;
 
 /**
  * Represents a Ruby Exception as a throwable Java exception.
@@ -36,5 +37,19 @@ import org.jruby.RubyException;
 public class Exception extends RaiseException {
     public Exception(String message, RubyException exception) {
         super(message, exception);
+    }
+
+    @Override
+    public synchronized Throwable initCause(Throwable cause) {
+        Throwable t = super.initCause(cause);
+
+        // if init was successful, set Ruby exception's cause as well
+        if (cause instanceof Exception) {
+            getException().setCause(((Exception) cause).getException());
+        } else {
+            getException().setCause(JavaUtil.convertJavaToUsableRubyObject(getException().getRuntime(), cause));
+        }
+
+        return t;
     }
 }

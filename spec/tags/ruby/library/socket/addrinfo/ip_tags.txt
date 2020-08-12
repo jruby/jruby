@@ -1,2 +1,0 @@
-fails:Addrinfo.ip using IPv4 sets the protocol family
-fails:Addrinfo.ip using IPv6 sets the protocol family

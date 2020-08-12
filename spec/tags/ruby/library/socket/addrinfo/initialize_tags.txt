@@ -23,15 +23,8 @@ fails:Addrinfo#initialize with a sockaddr string with a family, socket type and 
 fails:Addrinfo#initialize with a sockaddr string with a family, socket type and protocol returns the specified socket type
 fails:Addrinfo#initialize with a sockaddr string with a family, socket type and protocol returns the specified protocol
 fails:Addrinfo#initialize with a sockaddr array without a family returns the Socket::UNSPEC pfamily
-fails:Addrinfo#initialize with a sockaddr array with a family given returns the Socket::UNSPEC pfamily
-fails:Addrinfo#initialize with a sockaddr array with a family and socket type returns the Socket::UNSPEC pfamily
 fails:Addrinfo#initialize with a sockaddr array with a family and socket type returns the 0 protocol
-fails:Addrinfo#initialize with a sockaddr array with a family, socket type and protocol returns the Socket::UNSPEC pfamily
 fails:Addrinfo#initialize with a sockaddr string without a family returns AF_INET as the default address family
-fails:Addrinfo#initialize with a sockaddr array without a family returns the Socket::PF_INET pfamily
-fails:Addrinfo#initialize with a sockaddr array with a valid IP address returns an Addrinfo with the correct IP
-fails:Addrinfo#initialize with a sockaddr array with a valid IP address returns an Addrinfo with the correct address family
-fails:Addrinfo#initialize with a sockaddr array with a valid IP address returns an Addrinfo with the correct protocol family
 fails:Addrinfo#initialize with a sockaddr array with an invalid IP address raises SocketError
 fails:Addrinfo#initialize with a sockaddr array with a family and socket type raises SocketError when using SOCK_RDM
 fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET6 address family and an explicit protocol family raises SocketError when using any Socket constant except except AF_INET(6)/PF_INET(6)

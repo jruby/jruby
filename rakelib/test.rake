@@ -61,7 +61,8 @@ namespace :test do
 
   compile_flags = {
     :default => :int,
-    :int => ["-X-C"],
+    # interpreter is set to threshold=1 to encourage full builds to run for code called twice
+    :int => ["-X-C", "-Xjit.threshold=1", "-Xjit.background=false"],
     # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
     :fullint => ["-X-C", "-Xjit.threshold=0", "-Xjit.background=false"],
     :jit => ["-Xjit.threshold=0", "-Xjit.background=false", get_meta_size.call()],
@@ -80,7 +81,8 @@ namespace :test do
 
   namespace :mri do
     jruby_opts = {
-        int: "--dev",
+        # interpreter is set to threshold=1 to encourage full builds to run for code called twice
+        int: "--dev -Xjit.threshold=1 -Xjit.background=false",
         fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
         jit: "-Xjit.threshold=0 -Xjit.background=false",
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"

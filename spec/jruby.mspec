@@ -4,6 +4,9 @@ require 'rbconfig'
 require 'java'
 require 'jruby'
 
+# Inherit from the default configuration
+load "#{__dir__}/ruby/default.mspec"
+
 # Some non-deterministic specs assume a GC will actually fire.  For spec
 # runs we change our noop version of GC.start to requesting we actually
 # perform a GC on the JVM.
@@ -21,29 +24,11 @@ SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
 TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 
 class MSpecScript
+  set :prefix, 'spec/ruby'
+
   jruby = RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
   jruby = File.expand_path("../../bin/#{jruby}", __FILE__)
   set :target, jruby
-
-  # Command Line specs
-  set :command_line, [
-    SPEC_DIR + '/command_line',
-  ]
-
-  # Language features specs
-  set :language, [
-    SPEC_DIR + '/language',
-  ]
-
-  # Core library specs
-  set :core, [
-    SPEC_DIR + '/core',
-  ]
-
-  # Standard library specs
-  set :library, [
-    SPEC_DIR + '/library',
-  ]
 
   slow_specs = [
       SPEC_DIR + '/core/process',
@@ -61,7 +46,8 @@ class MSpecScript
       SPEC_DIR + '/library/net/http',
       # This requires --debug which slows down or changes other spec results
       SPEC_DIR + '/core/tracepoint',
-      *get(:command_line)
+      *get(:command_line),
+      *get(:security),
   ]
 
   set :fast, [
@@ -94,8 +80,16 @@ class MSpecScript
 
   get(:xtags) << 'critical'
   get(:ci_xtags) << 'critical'
+  get(:xtags) << 'hangs'
+  get(:ci_xtags) << 'hangs'
 
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
+
+  if (ENV["TRAVIS"] == "true")
+    get(:ci_xtags) << "travis" # Failing only on Travis
+  end
+
+  get(:ci_xtags) << RbConfig::CONFIG['host_os']
 
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via
@@ -115,15 +109,14 @@ class MSpecScript
   end
 
   # This set of files is run by mspec ci
-  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
-
-  set :backtrace_filter, /mspec\//
+  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library) + get(:security)
 
   set :tags_patterns, [
                         [%r(^.*/language/),     TAGS_DIR + '/ruby/language/'],
                         [%r(^.*/core/),         TAGS_DIR + '/ruby/core/'],
                         [%r(^.*/command_line/), TAGS_DIR + '/ruby/command_line/'],
                         [%r(^.*/library/),      TAGS_DIR + '/ruby/library/'],
+                        [%r(^.*/security/),     TAGS_DIR + '/ruby/security/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 end

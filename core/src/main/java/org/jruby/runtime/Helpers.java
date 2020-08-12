@@ -5,8 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 
+import java.net.BindException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -261,16 +264,19 @@ public class Helpers {
         } catch (AccessDeniedException ade) {
             return Errno.EACCES;
         } catch (DirectoryNotEmptyException dnee) {
-            switch (dnee.getMessage()) {
-                case "File exists":
-                    return Errno.EEXIST;
-                case "Directory not empty":
-                    return Errno.ENOTEMPTY;
-            }
+            return errnoFromMessage(dnee);
+        } catch (BindException be) {
+            return errnoFromMessage(be);
+        } catch (NotYetConnectedException nyce) {
+            return Errno.ENOTCONN;
         } catch (Throwable t2) {
             // fall through
         }
 
+        return errnoFromMessage(t);
+    }
+
+    private static Errno errnoFromMessage(Throwable t) {
         final String errorMessage = t.getMessage();
 
         if (errorMessage != null) {
@@ -301,6 +307,9 @@ public class Helpers {
                     return Errno.ENETUNREACH;
                 case "Address already in use":
                     return Errno.EADDRINUSE;
+                case "Cannot assign requested address":
+                case "Can't assign requested address":
+                    return Errno.EADDRNOTAVAIL;
                 case "No space left on device":
                     return Errno.ENOSPC;
                 case "Message too large": // Alpine Linux
@@ -315,26 +324,73 @@ public class Helpers {
                 case "permission denied":
                 case "Permission denied":
                     return Errno.EACCES;
-                case "Protocol family unavailable":
-                    return Errno.EADDRNOTAVAIL;
+                case "Protocol family not supported":
+                    return Errno.EPFNOSUPPORT;
             }
         }
         return null;
     }
 
     /**
-     * Java does not give us enough information for specific error conditions
-     * so we are reduced to divining them through string matches...
+     * Construct an appropriate error (which may ultimately not be an IOError) for a given IOException.
      *
-     * TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
-     * TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
+     * If this method is used on an exception which can't be translated to a Ruby error using {@link #newErrorFromException(Ruby, Exception)}
+     * then a RuntimeError will be returned, due to the unhandled exception type.
+     *
+     * @param runtime the current runtime
+     * @param ex the exception to translate into a Ruby error
+     * @return a RaiseException subtype instance appropriate for the given exception
      */
     public static RaiseException newIOErrorFromException(Ruby runtime, IOException ex) {
-        Errno errno = errnoFromException(ex);
+        return (RaiseException) newErrorFromException(runtime, ex, (t) -> runtime.newRuntimeError("unexpected Java exception: " + ex.toString()));
+    }
 
-        if (errno == null) throw runtime.newIOError(ex.getLocalizedMessage());
+    /**
+     * Return a Ruby-friendly Throwable for a given Throwable.
+     *
+     * The following translations will be attempted in order:
+     *
+     * <ul>
+     *     <li>if the Throwable is already a Ruby exception type, return it as-is</li>
+     *     <li>convert to a Ruby Errno exception via {@link #errnoFromException(Throwable)}</li>
+     *     <li>convert to a Ruby IOError if the exception is a java.io.IOException</li>
+     *     <li>using the provided function as a fallback transformation</li>
+     * </ul>
+     *
+     * @param runtime the current runtime
+     * @param t the exception to translate into a Ruby error
+     * @param els a fallback function if the exception cannot be translated
+     * @return a RaiseException subtype instance appropriate for the given exception
+     */
+    public static Throwable newErrorFromException(Ruby runtime, Throwable t, Function<Throwable, Throwable> els) {
+        if (t instanceof RaiseException) {
+            // already a Ruby-friendly Throwable
+            return t;
+        }
 
-        throw runtime.newErrnoFromErrno(errno, ex.getLocalizedMessage());
+        Errno errno = errnoFromException(t);
+
+        if (errno != null) {
+            return runtime.newErrnoFromErrno(errno, t.getLocalizedMessage());
+        } else if (t instanceof IOException) {
+            return runtime.newIOError(t.getLocalizedMessage());
+        }
+
+        return els.apply(t);
+    }
+
+    /**
+     * Throw an appropriate Ruby-friendly error or exception for a given Java exception.
+     *
+     * This method will first attempt to translate the exception into a Ruby error using {@link #newErrorFromException(Ruby, Throwable, Function)}.
+     *
+     * Failing that, it will raise the original Java exception as-is.
+     *
+     * @param runtime the current runtime
+     * @param t the exception to raise as an error, if appropriate, or as itself otherwise
+     */
+    public static void throwErrorFromException(Ruby runtime, Throwable t) {
+        throwException(newErrorFromException(runtime, t, (t0) -> t0));
     }
 
     public static RubyModule getNthScopeModule(StaticScope scope, int depth) {
@@ -2618,6 +2674,17 @@ public class Helpers {
         }
 
         return (RubyFixnum) hval;
+    }
+
+    // MRI: mult_and_mix, roughly since we have no uint64 type
+    public static long multAndMix(long seed, long hash) {
+        long hm1 = seed >> 32, hm2 = hash >> 32;
+        long lm1 = seed, lm2 = hash;
+        long v64_128 = hm1 * hm2;
+        long v32_96 = hm1 * lm2 + lm1 * hm2;
+        long v1_32 = lm1 * lm2;
+
+        return (v64_128 + (v32_96 >> 32)) ^ ((v32_96 << 32) + v1_32);
     }
 
     public static long murmurCombine(long h, long i)

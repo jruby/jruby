@@ -990,37 +990,6 @@ public abstract class IRScope implements ParseResult {
                 "up wrong.  Use depends(build()) not depends(build).";
     }
 
-    public void resetState() {
-        interpreterContext = null;
-        fullInterpreterContext = null;
-
-        // reset flags
-        flags.remove(FLAGS_COMPUTED);
-        flags.add(CAN_CAPTURE_CALLERS_BINDING);
-        flags.add(BINDING_HAS_ESCAPED);
-        flags.add(USES_ZSUPER);
-
-        flags.remove(HAS_BREAK_INSTRS);
-        flags.remove(HAS_NONLOCAL_RETURNS);
-        flags.remove(CAN_RECEIVE_BREAKS);
-        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-
-        // Invalidate compiler pass state.
-        //
-        // SSS FIXME: Re-grabbing passes each iter is to get around concurrent-modification issues
-        // since CompilerPass.invalidate modifies this, but some passes cannot be invalidated.  This
-        // should be wrapped in an iterator.
-        FullInterpreterContext fic = getFullInterpreterContext();
-        if (fic != null) {
-            int i = 0;
-            while (i < fic.getExecutedPasses().size()) {
-                if (!fic.getExecutedPasses().get(i).invalidate(this)) {
-                    i++;
-                }
-            }
-        }
-    }
-
     private FullInterpreterContext inlineFailed(String reason) {
         inlineFailed = reason;
         return null;

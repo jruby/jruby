@@ -72,19 +72,94 @@ public class RaiseException extends JumpException {
         return this; // do not auto-fill from Throwable.<init> we fill (setStackTrace) in preRaise(...)
     }
 
-    @Deprecated
-    public static RaiseException from(RubyException exception, IRubyObject backtrace) {
-        return new RaiseException(exception, backtrace);
-    }
-
+    /**
+     * Construct a new throwable RaiseException appropriate for the target Ruby exception class.
+     *
+     * @param runtime the current JRuby runtime
+     * @param exceptionClass the class of the exception to construct and raise
+     * @param msg a simple message for the exception
+     * @return a RaiseException instance appropriate for the target Ruby exception class
+     */
     public static RaiseException from(Ruby runtime, RubyClass exceptionClass, String msg) {
         return RubyException.newException(runtime, exceptionClass, msg).toThrowable();
     }
 
+    /**
+     * Construct a new throwable RaiseException appropriate for the target Ruby exception class.
+     *
+     * @param runtime the current JRuby runtime
+     * @param exceptionClass the class of the exception to construct and raise
+     * @param msg a simple message for the exception
+     * @param backtrace a Ruby object (usually an Array) to use for the exception's backtrace
+     * @return a RaiseException instance appropriate for the target Ruby exception class
+     */
     public static RaiseException from(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
         RubyException exception = RubyException.newException(runtime, exceptionClass, msg);
         exception.setBacktrace(backtrace);
         return exception.toThrowable();
+    }
+
+    /**
+     * Construct a new throwable RaiseException appropriate for the target Ruby exception class.
+     *
+     * @param runtime the current JRuby runtime
+     * @param exceptionClass the class of the exception to construct and raise
+     * @param args the arguments for the exception's constructor
+     * @return a RaiseException instance appropriate for the target Ruby exception class
+     */
+    public static RaiseException from(Ruby runtime, RubyClass exceptionClass, IRubyObject... args) {
+        RubyException exception = RubyException.newException(runtime.getCurrentContext(), exceptionClass, args);
+        return exception.toThrowable();
+    }
+
+    /**
+     * Construct a new throwable RaiseException appropriate for the target Ruby exception class.
+     *
+     * @param runtime the current JRuby runtime
+     * @param exceptionPath a string representing the fully-qualified constant path to look up the exception
+     * @param msg a simple message for the exception
+     * @return a RaiseException instance appropriate for the target Ruby exception class
+     */
+    public static RaiseException from(Ruby runtime, String exceptionPath, String msg) {
+        RubyClass exceptionClass = findExceptionClass(runtime, exceptionPath);
+        return from(runtime, exceptionClass, msg);
+    }
+
+    /**
+     * Construct a new throwable RaiseException appropriate for the target Ruby exception class.
+     *
+     * @param runtime the current JRuby runtime
+     * @param exceptionPath a string representing the fully-qualified constant path to look up the exception
+     * @param msg a simple message for the exception
+     * @param backtrace a Ruby object (usually an Array) to use for the exception's backtrace
+     * @return a RaiseException instance appropriate for the target Ruby exception class
+     */
+    public static RaiseException from(Ruby runtime, String exceptionPath, String msg, IRubyObject backtrace) {
+        RubyClass exceptionClass = findExceptionClass(runtime, exceptionPath);
+        return from(runtime, exceptionClass, msg, backtrace);
+    }
+
+    /**
+     * Construct a new throwable RaiseException appropriate for the target Ruby exception class.
+     *
+     * @param runtime the current JRuby runtimeString exceptionPath
+     * @param args the arguments for the exception's constructor
+     * @return a RaiseException instance appropriate for the target Ruby exception class
+     */
+    public static RaiseException from(Ruby runtime, String exceptionPath, IRubyObject... args) {
+        RubyClass exceptionClass = findExceptionClass(runtime, exceptionPath);
+        return from(runtime, exceptionClass, args);
+    }
+
+    private static RubyClass findExceptionClass(Ruby runtime, String exceptionPath) {
+        IRubyObject exceptionClass = runtime.getObject().getConstant(exceptionPath);
+
+        if (exceptionClass == null) {
+            throw runtime.newNameError("exception class not found", exceptionPath);
+        } else if (!(exceptionClass instanceof RubyClass)) {
+            throw runtime.newTypeError("expected to find exception class for " + exceptionPath + " but got " + exceptionClass.inspect());
+        }
+        return (RubyClass) exceptionClass;
     }
 
     @Override
@@ -269,6 +344,11 @@ public class RaiseException extends JumpException {
         } else {
             setStackTrace(skipFillInStackTracePart(javaTrace));
         }
+    }
+
+    @Deprecated
+    public static RaiseException from(RubyException exception, IRubyObject backtrace) {
+        return new RaiseException(exception, backtrace);
     }
 
     private boolean requiresBacktrace(ThreadContext context) {

@@ -42,8 +42,8 @@ project 'JRuby Base' do
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-enxio:0.28', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.32', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.57', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.33', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.58', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.15', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.1.15'
   jar 'com.github.jnr:jffi:${jffi.version}'
@@ -73,7 +73,7 @@ project 'JRuby Base' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.7'
+  jar 'com.headius:backport9:1.8'
 
   jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
 
@@ -235,6 +235,9 @@ project 'JRuby Base' do
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
+          'environmentVariables' => {
+              'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
+          },
           includes: [
               'org/jruby/test/**/*Test*.java',
               'org/jruby/embed/**/*Test*.java',

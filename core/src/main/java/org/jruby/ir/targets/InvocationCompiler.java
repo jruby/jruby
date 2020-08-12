@@ -61,9 +61,10 @@ public interface InvocationCompiler {
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
+     * @param literalClosure whether the block passed is a literal closure
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a class context.
@@ -75,9 +76,10 @@ public interface InvocationCompiler {
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
+     * @param literalClosure whether the block passed is a literal closure
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from an unresolved context.
@@ -89,9 +91,10 @@ public interface InvocationCompiler {
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
+     * @param literalClosure whether the block passed is a literal closure
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a zsuper in a block.

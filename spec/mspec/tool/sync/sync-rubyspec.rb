@@ -35,6 +35,9 @@ BRIGHT_RED = "\e[31;1m"
 BRIGHT_YELLOW = "\e[33;1m"
 RESET = "\e[0m"
 
+# git filter-branch --subdirectory-filter works fine for our use case
+ENV['FILTER_BRANCH_SQUELCH_WARNING'] = '1'
+
 class RubyImplementation
   attr_reader :name
 
@@ -157,6 +160,9 @@ end
 def test_new_specs
   require "yaml"
   Dir.chdir(SOURCE_REPO) do
+    diff = `git diff master`
+    abort "#{BRIGHT_YELLOW}No new commits, aborting#{RESET}" if diff.empty?
+
     workflow = YAML.load_file(".github/workflows/ci.yml")
     job_name = MSPEC ? "test" : "specs"
     versions = workflow.dig("jobs", job_name, "strategy", "matrix", "ruby")
@@ -172,7 +178,7 @@ def test_new_specs
 
     run_test[min_version]
     run_test[max_version]
-    run_test["master"] if TEST_MASTER
+    run_test["ruby-master"] if TEST_MASTER
   end
 end
 

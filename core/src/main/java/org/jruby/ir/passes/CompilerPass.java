@@ -1,10 +1,14 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.IRScope;
+import org.jruby.ir.persistence.IRDumper;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.util.StringSupport;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,7 +117,15 @@ public abstract class CompilerPass {
         // Record this pass
         scope.getExecutedPasses().add(this);
 
+        if (Options.IR_PRINT_OPT.load()) {
+            LOG.info("Printing IR CFG before " + getLabel() + " for " + scope.getId() + ":\n" + scope.getFullInterpreterContext().toStringInstrs());
+        }
+
         Object passData = execute(scope, data);
+
+        if (Options.IR_PRINT_OPT.load()) {
+            LOG.info("Printing IR CFG after " + getLabel() + " for " + scope.getId() + ":\n" + scope.getFullInterpreterContext().toStringInstrs());
+        }
 
         for (CompilerPassListener listener: scope.getManager().getListeners()) {
             listener.endExecute(this, scope, passData, childScope);

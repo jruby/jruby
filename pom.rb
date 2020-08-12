@@ -129,7 +129,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin :compiler, '3.3'
     plugin :shade, '3.1.0'
-    plugin :surefire, '2.15'
+    plugin :surefire, '3.0.0-M2'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
             'properties' => { 'jruby.version' => '${project.version}',

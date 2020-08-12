@@ -114,10 +114,9 @@ public class IRDumper extends IRVisitor {
         FullInterpreterContext fullInterpreterContext = ic.getScope().getFullInterpreterContext();
         if (fullInterpreterContext != null) {
             Collection<LocalVariable> usedVariables = fullInterpreterContext.getUsedLocalVariables();
-
-            println("used variables:");
-
+            
             if (usedVariables != null && !usedVariables.isEmpty()) {
+                println("used variables:");
                 for (LocalVariable var : usedVariables) {
                     println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
                 }
@@ -130,7 +129,7 @@ public class IRDumper extends IRVisitor {
         int longest = 0;
         int largestBlock = 0;
 
-        if (instrs != null) {
+        if (instrs != null && instrs.length > 0) {
             largestBlock = instrs.length;
             for (Instr i : instrs) {
                 if (i instanceof ResultInstr) {
@@ -157,7 +156,7 @@ public class IRDumper extends IRVisitor {
         String varSpaces = spaces(longest + " := ".length());
         String ipcFormat = "  %0" + instrLog + "d: ";
 
-        if (instrs != null) {
+        if (instrs != null && instrs.length > 0) {
             println();
 
             for (int i = 0; i < instrs.length; i++) {

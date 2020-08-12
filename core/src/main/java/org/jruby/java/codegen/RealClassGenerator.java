@@ -720,14 +720,10 @@ public abstract class RealClassGenerator {
     }
 
     private static void writeClassFile(final String name, final byte[] bytecode) {
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(name + ".class");
+        try (FileOutputStream fos = new FileOutputStream(name + ".class")) {
             fos.write(bytecode);
-        }
-        catch (IOException ex) { ex.printStackTrace(); }
-        finally {
-            try { if ( fos != null ) fos.close(); } catch (Exception e) {}
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 

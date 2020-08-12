@@ -136,6 +136,7 @@ public class Options {
     public static final Option<Boolean> IR_INLINER_VERBOSE   = bool(IR, "ir.inliner.verbose", false, "Report inlining activity.");
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
+    public static final Option<Boolean>  IR_PRINT_OPT = bool(IR, "ir.print.opt", false, "Print the IR CFG before and after each optimization pass.");
     public static final Option<Boolean>  IR_PRINT_ALL = bool(IR, "ir.print.all", false, "Enable ir.print and include IR executed during JRuby's boot phase.");
     public static final Option<Boolean>  IR_PRINT = bool(IR, "ir.print", IR_PRINT_ALL.load(), "Print the final IR to be run before starting to execute each body of code.");
     public static final Option<Boolean>  IR_PRINT_COLOR = bool(IR, "ir.print.color", false, "Print the final IR with color highlighting.");
@@ -219,6 +220,7 @@ public class Options {
     public static final Option<Boolean> JI_AMBIGUOUS_CALLS_DEBUG = bool(JAVA_INTEGRATION, "ji.ambiguous.calls.debug", false, "Toggle verbose reporting of all ambiguous calls to Java objects");
     public static final Option<Boolean> AOT_LOADCLASSES = bool(JAVA_INTEGRATION, "aot.loadClasses", false, "Look for .class before .rb to load AOT-compiled code");
     public static final Option<Boolean> JI_LOAD_LAZY = bool(JAVA_INTEGRATION, "ji.load.lazy", true, "Load Java support (class extensions) lazily on demand or ahead of time.");
+    public static final Option<Boolean> JI_CLOSE_CLASSLOADER = bool(JAVA_INTEGRATION, "ji.close.classloader", false, "Close the JRubyClassLoader used by each runtime");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
 

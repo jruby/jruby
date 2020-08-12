@@ -33,6 +33,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -80,12 +81,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getLocalHost().getHostName());
+            return RubyString.newString(context.runtime, InetAddress.getLocalHost().getHostName());
 
         } catch(UnknownHostException e) {
 
             try {
-                return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
+                return RubyString.newString(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
 
             } catch(UnknownHostException e2) {
                 throw sockerr(runtime, "gethostname: name or service not known");

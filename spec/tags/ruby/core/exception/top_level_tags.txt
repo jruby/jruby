@@ -1,0 +1,2 @@
+fails:An Exception reaching the top level is printed on STDERR
+fails:An Exception reaching the top level with a custom backtrace is printed on STDERR
