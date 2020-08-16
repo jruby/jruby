@@ -1,1 +1,0 @@
-exclude :test_parse_big_integers, "needs work in json lib to gracefully handle Bignum (flori/json#336)"
