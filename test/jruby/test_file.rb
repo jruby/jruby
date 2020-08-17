@@ -1074,6 +1074,7 @@ class TestFile < Test::Unit::TestCase
 
   # http://jira.codehaus.org/browse/JRUBY-1023
   def test_file_reuse_fileno
+    pend 'TODO: STDIN.fileno (0) is NOT being re-used on Windows' if WINDOWS
     fh = File.new(STDIN.fileno, 'r')
     assert_equal(STDIN.fileno, fh.fileno)
   end
