@@ -32,6 +32,6 @@ jobs:
       - name: bundle install
         run: bin/jruby -S bundle install
       - name: rake test:jruby
-        run: bin/jruby -S rake test:jruby
+        run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
           JRUBY_OPTS: ''
