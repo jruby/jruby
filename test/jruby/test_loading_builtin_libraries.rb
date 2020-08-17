@@ -38,6 +38,8 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
   end if defined? JRUBY_VERSION
 
   def test_does_not_load_ji_on_boot
+    pend "TODO: JRuby (still) self-reflects on Windows" if TestHelper::WINDOWS
+
     code  = "all = []; ObjectSpace.each_object(Module) { |mod| all << mod }; "
     code += "p all.count { |m| m.is_a?(Java::JavaPackage) }; " # <= 3
     # org.jruby.java.util (SystemPropertiesMap) and dependencies :
