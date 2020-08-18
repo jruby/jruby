@@ -18,7 +18,8 @@ module GC
 end
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
-WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
+HOST_OS = RbConfig::CONFIG['host_os']
+WINDOWS = HOST_OS =~ /mswin/
 
 SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
 TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
@@ -89,14 +90,12 @@ class MSpecScript
     get(:ci_xtags) << "travis" # Failing only on Travis
   end
 
-  get(:ci_xtags) << RbConfig::CONFIG['host_os']
+  get(:ci_xtags) << HOST_OS
 
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via
     # ruby_exe() in-process (see core/argf/gets_spec.rb)
     JRuby.runtime.instance_config.run_ruby_in_process = false
-    # core
-    get(:core) << '^' + SPEC_DIR + '/core/file/stat'    # many failures
 
     # exclude specs tagged with 'windows' keyword
     get(:ci_xtags) << 'windows'
