@@ -329,7 +329,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "entries")
     public RubyArray entries() {
-        return newEntryArray(getRuntime(), snapshot, encoding, true);
+        return newEntryArray(getRuntime(), snapshot, encoding, false);
     }
 
     @Deprecated
