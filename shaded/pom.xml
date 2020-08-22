@@ -81,11 +81,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
@@ -134,11 +129,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
@@ -187,11 +177,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
@@ -240,11 +225,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
@@ -293,11 +273,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
@@ -346,11 +321,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
@@ -399,11 +369,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
@@ -452,11 +417,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
@@ -505,11 +465,6 @@ DO NOT MODIFIY - GENERATED CODE
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
