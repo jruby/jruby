@@ -1,6 +1,8 @@
 version = ENV['JRUBY_VERSION'] ||
   File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
+# note: we keep the legacy name since a lot of tests depends on it but
+#       rename artifact
 project 'JRuby Base' do
 
   model_version '4.0.0'
