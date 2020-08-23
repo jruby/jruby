@@ -106,5 +106,5 @@ jobs:
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
-          PHASE: '-Prelease -Dinvoker.test=GH-6081* integration-test'
+          PHASE: '-Pmain -Dinvoker.test=GH-6081* integration-test'
 
