@@ -103,10 +103,8 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
-          PHASE: '-rf :jruby-artifacts -Pmain -Dinvoker.test=GH-6081* integration-test'
+          PHASE: '-Pmain -Dinvoker.test=GH-6081* integration-test'
 
