@@ -33,15 +33,20 @@ import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 
 import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.IPProto;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.annotations.In;
+import jnr.posix.Timeval;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -70,8 +75,6 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
-import static jnr.constants.platform.IPProto.IPPROTO_TCP;
-import static jnr.constants.platform.IPProto.IPPROTO_IP;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
@@ -466,28 +469,80 @@ public class RubyBasicSocket extends RubyIO {
                     socketType.setSocketOption(channel, opt, asNumber(context, val));
                 }
 
-                break;
+                return RubyFixnum.zero(runtime);
 
             default:
-                int intLevel = (int)_level.convertToInteger().getLongValue();
-                int intOpt = (int)_opt.convertToInteger().getLongValue();
-                if (IPPROTO_TCP.intValue() == intLevel && TCP_NODELAY.intValue() == intOpt) {
-                    socketType.setTcpNoDelay(channel, asBoolean(context, val));
+                int intLevel = _level.convertToInteger().getIntValue();
+                int intOpt = _opt.convertToInteger().getIntValue();
+                ChannelFD fd = getOpenFile().fd();
+                IPProto proto = IPProto.valueOf(intLevel);
 
-                } else if (IPPROTO_IP.intValue() == intLevel) {
-                    if (MulticastStateManager.IP_ADD_MEMBERSHIP == intOpt) {
-                        joinMulticastGroup(val);
-                    }
+                switch (proto) {
+                    case IPPROTO_TCP:
+                        if (TCP_NODELAY.intValue() == intOpt) {
+                            socketType.setTcpNoDelay(channel, asBoolean(context, val));
+                        } else if (Platform.IS_LINUX && TCP_CORK == intOpt &&
+                                fd.realFileno > 0 && SETSOCKOPT != null) {
+                            int ret = SETSOCKOPT.setsockoptInt(fd.realFileno, intLevel, intOpt, val.convertToInteger().getIntValue());
 
-                } else {
-                    throw runtime.newErrnoENOPROTOOPTError();
+                            if (ret != 0) {
+                                throw runtime.newErrnoEINVALError(SETSOCKOPT.strerror(ret));
+                            }
+                        }
+
+                        break;
+
+                    case IPPROTO_IP:
+                    case IPPROTO_HOPOPTS: // these both have value 0 on several platforms
+                        if (MulticastStateManager.IP_ADD_MEMBERSHIP == intOpt) {
+                            joinMulticastGroup(val);
+                        }
+
+                        break;
+
+                    default:
+                        throw runtime.newErrnoENOPROTOOPTError();
                 }
+
+                return RubyFixnum.zero(runtime);
             }
         } catch (Exception e) {
             throwErrorFromException(context.runtime, e);
             return null; // not reached
         }
-        return runtime.newFixnum(0);
+    }
+
+    private static final int TCP_CORK = 3;
+
+    // FIXME: copied from jnr-unixsocket
+    static final String[] libnames = jnr.ffi.Platform.getNativePlatform().getOS() == jnr.ffi.Platform.OS.SOLARIS
+            ? new String[] { "socket", "nsl", jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName() }
+            : new String[] { jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName() };
+
+    public interface LibC {
+        int F_GETFL = jnr.constants.platform.Fcntl.F_GETFL.intValue();
+        int F_SETFL = jnr.constants.platform.Fcntl.F_SETFL.intValue();
+        int O_NONBLOCK = jnr.constants.platform.OpenFlags.O_NONBLOCK.intValue();
+
+        int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
+        int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
+        default int setsockoptInt(int s, int level, int optname, int value) {
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            buf.order(ByteOrder.nativeOrder());
+            buf.putInt(value).flip();
+            return SETSOCKOPT.setsockopt(s, level, optname, buf, buf.remaining());
+        }
+        String strerror(int error);
+    }
+
+    static final LibC SETSOCKOPT;
+
+    static {
+        LibraryLoader<LibC> loader = LibraryLoader.create(LibC.class);
+        for (String libraryName : libnames) {
+            loader.library(libraryName);
+        }
+        SETSOCKOPT = loader.load();
     }
 
     @JRubyMethod(name = "getsockname")
