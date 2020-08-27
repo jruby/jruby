@@ -961,15 +961,18 @@ public class ParserSupport {
     }
 
     public Node new_call(Node receiver, ByteList callType, ByteList name, Node argsNode, Node iter) {
+        return new_call(receiver, callType, name, argsNode, iter, position(receiver, argsNode));
+    }
+
+    public Node new_call(Node receiver, ByteList callType, ByteList name, Node argsNode, Node iter, int line) {
         if (argsNode instanceof BlockPassNode) {
             if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
 
             BlockPassNode blockPass = (BlockPassNode) argsNode;
-            return new CallNode(position(receiver, argsNode), receiver, symbolID(name), blockPass.getArgsNode(), blockPass, isLazy(callType));
+            return new CallNode(line, receiver, symbolID(name), blockPass.getArgsNode(), blockPass, isLazy(callType));
         }
 
-        return new CallNode(position(receiver, argsNode), receiver, symbolID(name), argsNode, iter, isLazy(callType));
-
+        return new CallNode(line, receiver, symbolID(name), argsNode, iter, isLazy(callType));
     }
 
     public Node new_call(Node receiver, ByteList name, Node argsNode, Node iter) {
@@ -1288,6 +1291,10 @@ public class ParserSupport {
      */
     public void yyerror(String message) {
         lexer.compile_error(PID.GRAMMAR_ERROR, message);
+    }
+
+    public void yyerror(String message, ProductionState state) {
+        lexer.compile_error(message, state.start, state.end);
     }
 
     /**

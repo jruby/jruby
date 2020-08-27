@@ -65,6 +65,7 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
+import org.jruby.parser.ProductionState;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
@@ -383,13 +384,17 @@ public class RubyLexer extends LexingCommon {
     }
 
     public void compile_error(String message) {
-        throw new SyntaxException(PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toString(), message, lex_p);
+        throw new SyntaxException(PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toString(), message, start, end);
+    }
+
+    public void compile_error(String message, int start, int end) {
+        throw new SyntaxException(PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toString(), message, start, end);
     }
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(PID pid, String message) {
         String src = createAsEncodedString(lex_lastline.unsafeBytes(), lex_lastline.begin(), lex_lastline.length(), getEncoding());
-        throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message, lex_p);
+        throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message, start, end);
     }
 
     public void heredoc_restore(HeredocTerm here) {
@@ -404,8 +409,20 @@ public class RubyLexer extends LexingCommon {
         flush();
     }
 
+    public int start = 0;
+    public int end = 0;
+
     public int nextToken() throws IOException {
         token = yylex();
+
+        int start_line = ruby_sourceline;
+        int start_column = this.tokp - lex_pbeg;
+        int end_line = ruby_sourceline;
+        int end_column = this.lex_p - lex_pbeg;
+
+        this.start = (start_line << 16) | start_column;
+        this.end = (end_line << 16) | end_column;
+
         return token == EOF ? 0 : token;
     }
 
@@ -877,6 +894,7 @@ public class RubyLexer extends LexingCommon {
 
         loop: for(;;) {
             last_state = lex_state;
+            flush();
             c = nextc();
             switch(c) {
             case '\000': /* NUL */

@@ -587,7 +587,7 @@ command_call    : command
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
                 | block_call call_op2 operation2 command_args {
-                    $$ = support.new_call($1, $2, $3, $4, null);
+                    $$ = support.new_call($1, $2, $3, $4, null, (@3.start >> 16));
                 }
 
 // :brace_block - [!null]
@@ -609,10 +609,10 @@ command        : fcall command_args %prec tLOWEST {
                     $$ = $1;
                 }
                 | primary_value call_op operation2 command_args %prec tLOWEST {
-                    $$ = support.new_call($1, $2, $3, $4, null);
+                    $$ = support.new_call($1, $2, $3, $4, null, (@3.start >> 16));
                 }
                 | primary_value call_op operation2 command_args cmd_brace_block {
-                    $$ = support.new_call($1, $2, $3, $4, $5); 
+                    $$ = support.new_call($1, $2, $3, $4, $5, (@3.start >> 16));
                 }
                 | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
                     $$ = support.new_call($1, $3, $4, null);
@@ -860,7 +860,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 }
 
 cname           : tIDENTIFIER {
-                    support.yyerror("class/module name must be CONSTANT");
+                    support.yyerror("class/module name must be CONSTANT", @1);
                 }
                 | tCONSTANT {
                    $$ = $1;
@@ -1944,13 +1944,13 @@ block_call      : command do_block {
                     $<Node>$.setLine($1.getLine());
                 }
                 | block_call call_op2 operation2 opt_paren_args {
-                    $$ = support.new_call($1, $2, $3, $4, null);
+                    $$ = support.new_call($1, $2, $3, $4, null, (@3.start >> 16));
                 }
                 | block_call call_op2 operation2 opt_paren_args brace_block {
-                    $$ = support.new_call($1, $2, $3, $4, $5);
+                    $$ = support.new_call($1, $2, $3, $4, $5, (@3.start >> 16));
                 }
                 | block_call call_op2 operation2 command_args do_block {
-                    $$ = support.new_call($1, $2, $3, $4, $5);
+                    $$ = support.new_call($1, $2, $3, $4, $5, (@3.start >> 16));
                 }
 
 // [!null]
@@ -1959,7 +1959,7 @@ method_call     : fcall paren_args {
                     $$ = $1;
                 }
                 | primary_value call_op operation2 opt_paren_args {
-                    $$ = support.new_call($1, $2, $3, $4, null);
+                    $$ = support.new_call($1, $2, $3, $4, null, (@3.start >> 16));
                 }
                 | primary_value tCOLON2 operation2 paren_args {
                     $$ = support.new_call($1, $3, $4, null);
@@ -1968,7 +1968,7 @@ method_call     : fcall paren_args {
                     $$ = support.new_call($1, $3, null, null);
                 }
                 | primary_value call_op paren_args {
-                    $$ = support.new_call($1, $2, LexingCommon.CALL, $3, null);
+                    $$ = support.new_call($1, $2, LexingCommon.CALL, $3, null, (@3.start >> 16));
                 }
                 | primary_value tCOLON2 paren_args {
                     $$ = support.new_call($1, LexingCommon.CALL, $3, null);
