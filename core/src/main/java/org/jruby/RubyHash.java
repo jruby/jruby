@@ -47,8 +47,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.HashSites;
@@ -56,6 +56,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -1204,7 +1205,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
-        return ((value = internalGet(key)) == null) ? sites(context).default_.call(context, this, this, key) : value;
+        return ((value = internalGet(key)) == null) ? sites(context).self_default.call(context, this, this, key) : value;
     }
 
     /** hash_le_i
@@ -1748,9 +1749,11 @@ public class RubyHash extends RubyObject implements Map {
             return result;
         }
 
-        if (isBuiltin("default")) return default_value_get(context, context.nil);
 
-        return sites(context).default_.call(context, this, this, context.nil);
+        CachingCallSite self_default = sites(context).self_default;
+        if (self_default.isBuiltin(this)) return default_value_get(context, context.nil);
+
+        return self_default.call(context, this, this, context.nil);
     }
 
     public final boolean fastDelete(IRubyObject key) {
