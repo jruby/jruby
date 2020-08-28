@@ -2,15 +2,13 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.DivCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.MulCallSite;
+import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
-
-import java.lang.invoke.MutableCallSite;
-
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /**
  * A collection of all call sites used for dynamic calls from JRuby's Java code.
@@ -125,6 +123,7 @@ public class JavaSites {
         public final CallSite op_cmp_sort = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt_sort = new FunctionalCachingCallSite(">");
         public final CallSite op_lt_sort = new FunctionalCachingCallSite("<");
+        public final CachingCallSite self_each = new FunctionalCachingCallSite("each");
     }
 
     public static class Array2Sites {
@@ -167,7 +166,7 @@ public class JavaSites {
 
     public static class HashSites {
         public final RespondToCallSite respond_to_to_hash = new RespondToCallSite("to_hash");
-        public final CallSite default_ = new FunctionalCachingCallSite("default");
+        public final CachingCallSite self_default = new FunctionalCachingCallSite("default");
         public final CallSite flatten_bang = new FunctionalCachingCallSite("flatten!");
         public final CallSite call = new FunctionalCachingCallSite("call");
     }
@@ -326,6 +325,21 @@ public class JavaSites {
     public static class EnumerableSites {
         public final CheckedSites size_checked = new CheckedSites("size");
         public final CachingCallSite to_enum = new FunctionalCachingCallSite("to_enum");
+        public final CachingCallSite each = new FunctionalCachingCallSite("each");
+        public final CallSite zip_next = new FunctionalCachingCallSite("next");
+        public final CallSite chunk_call = new FunctionalCachingCallSite("call");
+        public final CallSite chunk_op_lshift = new FunctionalCachingCallSite("<<");
+        public final CallSite cycle_op_mul = new MulCallSite();
+        public final CallSite detect_call = new FunctionalCachingCallSite("call");
+        public final CallSite sum_op_plus = new FunctionalCachingCallSite("+");
+        public final CallSite each_slice_op_plus = new PlusCallSite();
+        public final CallSite each_slice_op_div = new DivCallSite();
+        public final CallSite each_cons_op_plus = new PlusCallSite();
+        public final CallSite each_cons_op_cmp = new FunctionalCachingCallSite("<=>");
+        public final CallSite none_op_eqq = new FunctionalCachingCallSite("===");
+        public final CallSite one_op_eqq = new FunctionalCachingCallSite("===");
+        public final CallSite all_op_eqq = new FunctionalCachingCallSite("===");
+        public final CallSite any_op_eqq = new FunctionalCachingCallSite("===");
     }
 
     public static class ComparableSites {
@@ -439,6 +453,7 @@ public class JavaSites {
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CallSite each = new FunctionalCachingCallSite("each");
     }
 
     public static class WarningSites {
@@ -492,6 +507,7 @@ public class JavaSites {
     public static class FiberSites {
         public final CachingCallSite peek = new FunctionalCachingCallSite("peek");
         public final CachingCallSite next = new FunctionalCachingCallSite("next");
+        public final CallSite each = new FunctionalCachingCallSite("each");
     }
 
     public static class CheckedSites {

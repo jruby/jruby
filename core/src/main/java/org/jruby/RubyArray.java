@@ -4561,7 +4561,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public IRubyObject all_pCommon(ThreadContext context, IRubyObject arg, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, arg, block);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.all_pCommon(context, self_each, this, arg, block);
         boolean patternGiven = arg != null;
 
         if (block.isGiven() && patternGiven) {
@@ -4603,7 +4604,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public IRubyObject any_pCommon(ThreadContext context, IRubyObject arg, Block block) {
         if (isEmpty()) return context.fals;
-        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, arg, block);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.any_pCommon(context, self_each, this, arg, block);
         boolean patternGiven = arg != null;
 
         if (block.isGiven() && patternGiven) {
@@ -4644,7 +4646,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public IRubyObject none_pCommon(ThreadContext context, IRubyObject arg, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.none_pCommon(context, this, arg, block);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.none_pCommon(context, self_each, this, arg, block);
         boolean patternGiven = arg != null;
 
         if (block.isGiven() && patternGiven) {
@@ -4685,7 +4688,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public IRubyObject one_pCommon(ThreadContext context, IRubyObject arg, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.one_pCommon(context, this, arg, block);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.one_pCommon(context, self_each, this, arg, block);
         boolean patternGiven = arg != null;
 
         if (block.isGiven() && patternGiven) {
@@ -4732,14 +4736,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         final Ruby runtime = context.runtime;
         RubyFixnum zero = RubyFixnum.zero(runtime);
 
-        if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, zero, block);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.sumCommon(context, self_each, this, zero, block);
 
         return sumCommon(context, zero, block);
     }
 
     @JRubyMethod
     public IRubyObject sum(final ThreadContext context, IRubyObject init, final Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.sumCommon(context, this, init, block);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.sumCommon(context, self_each, this, init, block);
 
         return sumCommon(context, init, block);
     }
@@ -4947,13 +4953,15 @@ float_loop:
     }
 
     public IRubyObject find(ThreadContext context, IRubyObject ifnone, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.detectCommon(context, this, block);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.detectCommon(context, self_each, this, block);
 
         return detectCommon(context, ifnone, block);
     }
 
     public IRubyObject find_index(ThreadContext context, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.find_indexCommon(context, this, block, Signature.OPTIONAL);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.find_indexCommon(context, self_each, this, block, Signature.OPTIONAL);
 
         for (int i = 0; i < realLength; i++) {
             if (block.yield(context, eltOk(i)).isTrue()) return context.runtime.newFixnum(i);
@@ -4963,7 +4971,8 @@ float_loop:
     }
 
     public IRubyObject find_index(ThreadContext context, IRubyObject cond) {
-        if (!isBuiltin("each")) return RubyEnumerable.find_indexCommon(context, this, cond);
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.find_indexCommon(context, self_each, this, cond);
 
         for (int i = 0; i < realLength; i++) {
             if (eltOk(i).equals(cond)) return context.runtime.newFixnum(i);
