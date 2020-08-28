@@ -567,7 +567,6 @@ public class JVMVisitor extends IRVisitor {
         /* Compile the closure like a method */
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
 
-
         emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
         Handle handle = new Handle(
@@ -1621,6 +1620,7 @@ public class JVMVisitor extends IRVisitor {
         }
 
         boolean hasClosure = closure != null;
+        boolean literalClosure = closure instanceof WrappedIRClosure;
         if (hasClosure) {
             m.loadContext();
             if (instr.isPotentiallyRefined()) m.loadStaticScope();
@@ -1634,13 +1634,13 @@ public class JVMVisitor extends IRVisitor {
 
         switch (operation) {
             case INSTANCE_SUPER:
-                m.getInvocationCompiler().invokeInstanceSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeInstanceSuper(file, lastLine, name, args.length, hasClosure, literalClosure, splatMap);
                 break;
             case CLASS_SUPER:
-                m.getInvocationCompiler().invokeClassSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeClassSuper(file, lastLine, name, args.length, hasClosure, literalClosure, splatMap);
                 break;
             case UNRESOLVED_SUPER:
-                m.getInvocationCompiler().invokeUnresolvedSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeUnresolvedSuper(file, lastLine, name, args.length, hasClosure, literalClosure, splatMap);
                 break;
             case ZSUPER:
                 m.getInvocationCompiler().invokeZSuper(file, lastLine, name, args.length, hasClosure, splatMap);

@@ -44,6 +44,7 @@ import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -248,12 +249,17 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyFixnum hash() {
-        return newFixnum(metaClass.runtime, hashCode());
+        Ruby runtime = metaClass.runtime;
+        return newFixnum(runtime, fixHash(runtime, value));
     }
 
     @Override
     public final int hashCode() {
-        return (int) (value ^ value >>> 32);
+        return (int) fixHash(getRuntime(), value);
+    }
+
+    private static long fixHash(Ruby runtime, long value) {
+        return Helpers.multAndMix(runtime.getHashSeedK0(), value);
     }
 
     /*  ================

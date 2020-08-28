@@ -3882,9 +3882,11 @@ public final class Ruby implements Constantizable {
 
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 
-    public RaiseException newErrnoEADDRFromBindException(BindException be) {
-		return newErrnoEADDRFromBindException(be, null);
-	}
+    public RaiseException newErrnoFromBindException(BindException be, String contextMessage) {
+        Errno errno = Helpers.errnoFromException(be);
+
+        return newErrnoFromErrno(errno, contextMessage);
+    }
 
     public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {
         String msg = be.getMessage();
@@ -4438,6 +4440,21 @@ public final class Ruby implements Constantizable {
 
     public POSIX getPosix() {
         return posix;
+    }
+
+    /**
+     * Get the native POSIX associated with this runtime.
+     *
+     * If native is not supported, this will return null.
+     *
+     * @return a native POSIX, or null if native is not supported
+     */
+    public POSIX getNativePosix() {
+        POSIX nativePosix = this.nativePosix;
+        if (nativePosix == null && config.isNativeEnabled()) {
+            this.nativePosix = nativePosix = POSIXFactory.getNativePOSIX(new JRubyPOSIXHandler(this));
+        }
+        return nativePosix;
     }
 
     public void setRecordSeparatorVar(GlobalVariable recordSeparatorVar) {
@@ -5202,6 +5219,7 @@ public final class Ruby implements Constantizable {
     private ThreadService threadService;
 
     private final POSIX posix;
+    private POSIX nativePosix;
 
     private final ObjectSpace objectSpace = new ObjectSpace();
 
@@ -5707,6 +5725,11 @@ public final class Ruby implements Constantizable {
                     + "If you need this option please set it manually as a JVM property.\n"
                     + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
         }
+    }
+
+    @Deprecated
+    public RaiseException newErrnoEADDRFromBindException(BindException be) {
+        return newErrnoEADDRFromBindException(be, null);
     }
 
 }

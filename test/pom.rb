@@ -36,7 +36,6 @@ project 'JRuby Integration Tests' do
   jar( 'org.jruby:requireTest:1.0',
        :scope => 'system',
        :systemPath => '${project.basedir}/jruby/requireTest-1.0.jar' )
-  gem 'rspec', '${rspec.version}'
 
   overrides do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',

@@ -9,6 +9,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -17,16 +18,22 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassSuperInstr extends CallInstr {
+    private final boolean isLiteralBlock;
+
     // clone constructor
     protected ClassSuperInstr(IRScope scope, Variable result, Operand receiver, RubySymbol name, Operand[] args,
                               Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
         super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
+
+        isLiteralBlock = closure instanceof WrappedIRClosure;
     }
 
     // normal constructor
     public ClassSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args, Operand closure,
                            boolean isPotentiallyRefined) {
         super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
+
+        isLiteralBlock = closure instanceof WrappedIRClosure;
     }
 
     public Operand getDefiningModule() {
@@ -82,7 +89,12 @@ public class ClassSuperInstr extends CallInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
-        return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
+
+        if (isLiteralBlock) {
+            return IRRuntimeHelpers.unresolvedSuperIter(context, self, args, block);
+        } else {
+            return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
+        }
     }
 
     @Override

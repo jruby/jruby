@@ -205,17 +205,17 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
         }
         catch (BindException e) {
-            throw runtime.newErrnoEADDRFromBindException(e);
+            throw runtime.newErrnoFromBindException(e, bindContextMessage(host, port));
         }
         catch (AlreadyBoundException e) {
-            throw runtime.newErrnoEINVALError("bind(2) for " + host.inspect() + " port " + port);
+            throw runtime.newErrnoEINVALError(bindContextMessage(host, port));
         }
         catch (SocketException e) {
             final String message = e.getMessage();
             if ( message != null ) {
                 switch ( message ) {
                     case "Permission denied" :
-                        throw runtime.newErrnoEACCESError("bind(2) for " + host.inspect() + " port " + port);
+                        throw runtime.newErrnoEACCESError(bindContextMessage(host, port));
                 }
             }
             throw sockerr(runtime, "bind: name or service not known", e);
