@@ -35,10 +35,17 @@ public class NormalInvokeSite extends InvokeSite {
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, String file, int line) {
         boolean literalClosure = closureInt != 0;
-        String methodName = StringSupport.split(name, ':').get(1);
-        InvokeSite site = new NormalInvokeSite(type, JavaNameMangler.demangleMethodName(methodName), literalClosure, file, line);
+        String methodName = JavaNameMangler.demangleMethodName(StringSupport.split(name, ':').get(1));
 
-        return InvokeSite.bootstrap(site, lookup);
+        return newSite(lookup, methodName, type, literalClosure, file, line);
+    }
+
+    public static NormalInvokeSite newSite(MethodHandles.Lookup lookup, String methodName, MethodType type, boolean literalClosure, String file, int line) {
+        NormalInvokeSite site = new NormalInvokeSite(type, methodName, literalClosure, file, line);
+
+        InvokeSite.bootstrap(site, lookup);
+
+        return site;
     }
 
     @Override
