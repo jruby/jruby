@@ -11,9 +11,9 @@ end
 
 module TestLibrary
   def self.force_gc
-    if RUBY_PLATFORM =~ /java/
+    if RUBY_ENGINE == 'jruby'
       java.lang.System.gc
-    elsif defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
+    elsif RUBY_ENGINE == 'rbx'
       GC.run(true)
     else
       GC.start

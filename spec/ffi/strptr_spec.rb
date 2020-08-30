@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 #
 # This file is part of ruby-ffi.
 # For licensing, see LICENSE.SPECS
@@ -34,17 +35,18 @@ describe "functions returning :strptr" do
 
   it "should return [ String, Pointer ]" do
     result = StrPtr.strdup("test")
-    expect(result[0].is_a?(String)).to be true
-    expect(result[1].is_a?(FFI::Pointer)).to be true
+    expect(result[0]).to be_kind_of(String)
+    expect(result[1]).to be_kind_of(FFI::Pointer)
   end
 
   it "should return the correct value" do
-    result = StrPtr.strdup("test")
-    expect(result[0]).to eq("test")
+    result = StrPtr.strdup("testü")
+    expect(result[0]).to eq("testü".b)
   end
 
-  it "should return non-NULL pointer" do
-    result = StrPtr.strdup("test")
+  it "should return correct pointer" do
+    result = StrPtr.strdup("testö")
     expect(result[1]).not_to be_null
+    expect(result[1].read_string).to eq("testö".b)
   end
 end

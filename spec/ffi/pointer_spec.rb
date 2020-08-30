@@ -155,6 +155,7 @@ describe "Pointer" do
     end
 
     it "access beyond bounds should raise IndexError" do
+      skip "not yet supported on TruffleRuby" if RUBY_ENGINE == "truffleruby"
       expect { @mptr.slice(4, 4).get_int(4) }.to raise_error(IndexError)
     end
   end
