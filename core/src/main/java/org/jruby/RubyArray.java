@@ -515,7 +515,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_make_shared
     *
     */
-    private RubyArray makeShared() {
+    protected RubyArray makeShared() {
         // TODO: (CON) Some calls to makeShared could create packed array almost as efficiently
         unpack();
 
@@ -2568,6 +2568,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!block.isGiven()) return makeShared();
 
         final Ruby runtime = context.runtime;
+        final int realLength = this.realLength;
+
         IRubyObject[] arr = IRubyObject.array(realLength);
 
         int i = 0;
