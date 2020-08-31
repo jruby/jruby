@@ -172,6 +172,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         ensureInstrsReady(); // Ensure scope is ready for flags
 
         IRScope irScope = getIRScope();
-        return !(irScope instanceof IRMethod && !irScope.getFlags().contains(IRFlags.REQUIRES_CLASS));
+        // FIXME: This may stop working if we eliminate startup interp
+        return !(irScope instanceof IRMethod && !irScope.getInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS));
     }
 }

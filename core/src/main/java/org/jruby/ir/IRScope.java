@@ -6,6 +6,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -117,7 +118,7 @@ public abstract class IRScope implements ParseResult {
     private String inlineFailed;
     public Compilable compilable;
 
-    private final int coverageMode;
+    private int coverageMode;
     // At least until we change the design all of these state fields are true from IRBuild forward.  With IR
     // optimization passes it is incredibly unlikely any of these could ever be unset anyways; So this is not
     // a poor list of 'truisms' for this Scope.
@@ -425,6 +426,14 @@ public abstract class IRScope implements ParseResult {
         return hasLoops;
     }
 
+    public void setCoverageMode(int coverageMode) {
+        this.coverageMode = coverageMode;
+    }
+
+    public int getCoverageMode() {
+        return coverageMode;
+    }
+
     public void setHasNonLocalReturns() {
         hasNonLocalReturns = true;
     }
@@ -462,6 +471,21 @@ public abstract class IRScope implements ParseResult {
     }
     
     public boolean usesEval() {
+        return usesEval;
+    }
+
+    public boolean anyUsesEval() {
+        // Currently methods are only lazy scopes so we need to build them if we decide to persist them.
+        if (this instanceof IRMethod) {
+            ((IRMethod) this).lazilyAcquireInterpreterContext();
+        }
+
+        boolean usesEval = usesEval();
+
+        for (IRScope child : getLexicalScopes()) {
+            usesEval |= child.anyUsesEval();
+        }
+
         return usesEval;
     }
 
@@ -917,8 +941,8 @@ public abstract class IRScope implements ParseResult {
         file.encode(canReceiveBreaks());
         file.encode(canReceiveNonlocalReturns());
         file.encode(usesZSuper());
-        file.encode(needsCodeCoverage());
         file.encode(usesEval());
+        file.encode(getCoverageMode());
     }
 
     public static EnumSet<IRFlags> allocateInitialFlags(IRScope scope) {

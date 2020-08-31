@@ -6,7 +6,6 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -116,13 +115,13 @@ public abstract class CompilerPass {
         fic.getExecutedPasses().add(this);
 
         if (Options.IR_PRINT_OPT.load()) {
-            LOG.info("Printing IR CFG before " + getLabel() + " for " + scope.getId() + ":\n" + scope.getFullInterpreterContext().toStringInstrs());
+            LOG.info("Printing IR CFG before " + getLabel() + " for " + fic.getScope().getId() + ":\n" + fic.toStringInstrs());
         }
 
         Object passData = execute(fic, data);
 
         if (Options.IR_PRINT_OPT.load()) {
-            LOG.info("Printing IR CFG after " + getLabel() + " for " + scope.getId() + ":\n" + scope.getFullInterpreterContext().toStringInstrs());
+            LOG.info("Printing IR CFG after " + getLabel() + " for " + fic.getScope().getId() + ":\n" + fic.toStringInstrs());
         }
 
         for (CompilerPassListener listener: fic.getScope().getManager().getListeners()) {

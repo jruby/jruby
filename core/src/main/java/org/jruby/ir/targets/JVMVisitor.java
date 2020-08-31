@@ -1364,7 +1364,7 @@ public class JVMVisitor extends IRVisitor {
         visit(defineclassmethodinstr.getContainer());
         jvmAdapter().ldc(method.maybeUsingRefinements());
         jvmAdapter().ldc(method.receivesKeywordArgs());
-        jvmAdapter().ldc(method.getFlags().contains(IRFlags.REQUIRES_CLASS));
+        jvmAdapter().ldc(method.getFullInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS));
 
         // add method
         jvmMethod().adapter.invokestatic(p(IRRuntimeHelpers.class), "defCompiledClassMethod", defSignature);
@@ -1402,7 +1402,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         jvmAdapter().ldc(method.maybeUsingRefinements());
         jvmAdapter().ldc(method.receivesKeywordArgs());
-        jvmAdapter().ldc(method.getFlags().contains(IRFlags.REQUIRES_CLASS));
+        jvmAdapter().ldc(method.getFullInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS));
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);
@@ -1473,7 +1473,7 @@ public class JVMVisitor extends IRVisitor {
                 scopeHandle,
                 setScopeHandle,
                 metaClassBody.getLine(),
-                metaClassBody.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) ? 1 : 0,
+                metaClassBody.getFullInterpreterContext().isDynamicScopeEliminated() ? 1 : 0,
                 metaClassBody.maybeUsingRefinements() ? 1 : 0);
 
         jvmStoreLocal(definemetaclassinstr.getResult());

@@ -59,8 +59,8 @@ public class IRReader implements IRPersistenceValues {
             if (file.decodeBoolean()) scope.setCanReceiveBreaks();
             if (file.decodeBoolean()) scope.setCanReceiveNonlocalReturns();
             if (file.decodeBoolean()) scope.setUsesZSuper();
-            if (file.decodeBoolean()) scope.setNeedsCodeCoverage();
             if (file.decodeBoolean()) scope.setUsesEval();
+            scope.setCoverageMode(file.decodeInt());
 
             if (firstScope == null) firstScope = scope;
             int instructionsOffset = file.decodeInt();
