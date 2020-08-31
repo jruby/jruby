@@ -100,7 +100,6 @@ matrix:
         - mvn clean package -Pbootstrap
         - gem install bundler
         - bundle install
-<<<<<<< HEAD
         - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby fast jdk11
@@ -117,8 +116,6 @@ matrix:
         - mvn clean package -Pbootstrap
         - gem install bundler
         - bundle install
-=======
->>>>>>> So not in the mood for this
         - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby slow
