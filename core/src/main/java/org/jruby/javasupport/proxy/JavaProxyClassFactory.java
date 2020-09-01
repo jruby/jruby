@@ -172,14 +172,10 @@ public class JavaProxyClassFactory {
         
         Map<String, Map<Class, Map<String, Object>>> fieldannos;
         Map<String, Class> fields;
-        if (rclass != null)
-        {
+        if (rclass != null) {
         	fieldannos = rclass.getFieldAnnotations();
         	fields = rclass.getFieldSignatures();
-        	
-        }
-        else 
-        {
+        } else {
         	fieldannos = Collections.EMPTY_MAP;
         	fields = Collections.EMPTY_MAP;
         }
@@ -708,18 +704,11 @@ public class JavaProxyClassFactory {
         final Method mostSpecificMethod;
         final Class[] mostSpecificParameterTypes;
 
-        //private boolean hasPublicDecl = false;
-
         OverridedMethodData(final Method method, final Map<Class, Map<String, Object>> annos) {
         	super(annos);
             this.mostSpecificMethod = method;
             this.mostSpecificParameterTypes = mostSpecificMethod.getParameterTypes();
-            //hasPublicDecl = method.getDeclaringClass().isInterface() || Modifier.isPublic(method.getModifiers());
         }
-
-//        protected Class getDeclaringClass() {
-//            return mostSpecificMethod.getDeclaringClass();
-//        }
 
         protected String getName() {
             return mostSpecificMethod.getName();
@@ -766,7 +755,6 @@ public class JavaProxyClassFactory {
 
         protected void add(Method method) {
             methods.add(method);
-            //hasPublicDecl |= Modifier.isPublic(method.getModifiers());
         }
 
         Class getReturnType() {
