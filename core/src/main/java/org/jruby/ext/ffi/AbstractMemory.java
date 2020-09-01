@@ -100,7 +100,7 @@ abstract public class AbstractMemory extends MemoryObject {
 
     protected static final RubyArray checkArray(IRubyObject obj) {
         if (!(obj instanceof RubyArray)) {
-            throw obj.getRuntime().newArgumentError("Array expected");
+            throw obj.getRuntime().newTypeError("Array expected");
         }
         return (RubyArray) obj;
     }
@@ -108,7 +108,7 @@ abstract public class AbstractMemory extends MemoryObject {
     private static int checkArrayLength(IRubyObject val) {
         int i = RubyNumeric.num2int(val);
         if (i < 0) {
-            throw val.getRuntime().newArgumentError("negative array length");
+            throw val.getRuntime().newIndexError("negative array length (" + i + ")");
         }
 
         return i;

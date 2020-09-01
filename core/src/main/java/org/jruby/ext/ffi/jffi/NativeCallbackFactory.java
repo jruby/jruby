@@ -117,6 +117,7 @@ public class NativeCallbackFactory {
                 case ULONG:
                 case LONG_LONG:
                 case ULONG_LONG:
+//                case LONGDOUBLE:
                 case FLOAT:
                 case DOUBLE:
                 case POINTER:
@@ -153,6 +154,7 @@ public class NativeCallbackFactory {
                 case ULONG:
                 case LONG_LONG:
                 case ULONG_LONG:
+//                case LONGDOUBLE:
                 case FLOAT:
                 case DOUBLE:
                 case POINTER:
