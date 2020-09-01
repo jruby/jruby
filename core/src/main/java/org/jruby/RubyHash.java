@@ -48,7 +48,6 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock19;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.HashSites;
@@ -354,19 +353,46 @@ public class RubyHash extends RubyObject implements Map {
         private RubyHashEntry next;
         private RubyHashEntry prevAdded;
         private RubyHashEntry nextAdded;
-        private int hash;
+        private final int hash;
 
         RubyHashEntry() {
             key = NEVER;
+            hash = -1;
         }
 
         public RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e, RubyHashEntry head) {
-            key = k; value = v; next = e; hash = h;
+            key = k;
+            value = v;
+            next = e;
+            hash = h;
+
             if (head != null) {
-                prevAdded = head.prevAdded;
-                nextAdded = head;
-                nextAdded.prevAdded = this;
+                RubyHashEntry prevAdded = head.prevAdded;
+                RubyHashEntry nextAdded = head;
+
+                this.prevAdded = prevAdded;
                 prevAdded.nextAdded = this;
+
+                this.nextAdded = nextAdded;
+                nextAdded.prevAdded = this;
+            }
+        }
+
+        public RubyHashEntry(RubyHashEntry oldEntry, int newHash) {
+            this.hash = newHash;
+            this.key = oldEntry.key;
+            this.value = oldEntry.value;
+            this.next = oldEntry.next;
+
+            // prevAdded is never null
+            RubyHashEntry prevAdded = oldEntry.prevAdded;
+            this.prevAdded = prevAdded;
+            prevAdded.nextAdded = this;
+
+            RubyHashEntry nextAdded = oldEntry.nextAdded;
+            if (nextAdded != null) {
+                this.nextAdded = nextAdded;
+                nextAdded.prevAdded = this;
             }
         }
 
@@ -553,11 +579,13 @@ public class RubyHash extends RubyObject implements Map {
 
     protected IRubyObject internalPutNoResize(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         final int hash = hashValue(key);
+        final RubyHashEntry[] table = this.table;
+
         final int i = bucketIndex(hash, table.length);
 
         if (checkForExisting) {
             for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
-                if (internalKeyExist(entry, hash, key)) {
+                if (internalKeyExist(entry.hash, entry.key, hash, key)) {
                     IRubyObject existing = entry.value;
                     entry.value = value;
 
@@ -585,8 +613,10 @@ public class RubyHash extends RubyObject implements Map {
         if (size == 0) return NO_ENTRY;
 
         final int hash = hashValue(key);
+        final RubyHashEntry[] table = this.table;
+
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
-            if (internalKeyExist(entry, hash, key)) {
+            if (internalKeyExist(entry.hash, entry.key, hash, key)) {
                 return entry;
             }
         }
@@ -597,9 +627,9 @@ public class RubyHash extends RubyObject implements Map {
         return internalGetEntry(key);
     }
 
-    private boolean internalKeyExist(RubyHashEntry entry, int hash, IRubyObject key) {
-        return (entry.hash == hash
-            && (entry.key == key || (!isComparedByIdentity() && key.eql(entry.key))));
+    private boolean internalKeyExist(int entryHash, IRubyObject entryKey, int hash, IRubyObject key) {
+        return (entryHash == hash
+                && (entryKey == key || (!isComparedByIdentity() && key.eql(entryKey))));
     }
 
     // delete implementation
@@ -967,17 +997,26 @@ public class RubyHash extends RubyObject implements Map {
             oldTable[j] = null;
             while (entry != null) {
                 RubyHashEntry next = entry.next;
-                entry.hash = hashValue(entry.key); // update the hash value
-                int i = bucketIndex(entry.hash, newTable.length);
+                int oldHash = entry.hash;
+                IRubyObject key = entry.key;
+                int newHash = hashValue(key);
 
-                if (newTable[i] != null && internalKeyExist(newTable[i], entry.hash, entry.key)) {
+                int i = bucketIndex(newHash, newTable.length);
+
+                RubyHashEntry newEntry = newTable[i];
+                if (newEntry != null && internalKeyExist(newEntry.hash, newEntry.key, newHash, key)) {
                     RubyHashEntry tmpNext = entry.nextAdded;
                     RubyHashEntry tmpPrev = entry.prevAdded;
                     tmpPrev.nextAdded = tmpNext;
                     tmpPrev.prevAdded = tmpPrev;
                     size--;
                 } else {
-                    entry.next = newTable[i];
+                    // replace entry if hash changed
+                    if (oldHash != newHash) {
+                        entry = new RubyHashEntry(entry, newHash);
+                    }
+
+                    entry.next = newEntry;
                     newTable[i] = entry;
                 }
                 entry = next;

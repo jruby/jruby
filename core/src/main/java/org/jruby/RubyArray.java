@@ -515,7 +515,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_make_shared
     *
     */
-    private RubyArray makeShared() {
+    protected RubyArray makeShared() {
         // TODO: (CON) Some calls to makeShared could create packed array almost as efficiently
         unpack();
 
@@ -2568,6 +2568,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!block.isGiven()) return makeShared();
 
         final Ruby runtime = context.runtime;
+
         IRubyObject[] arr = IRubyObject.array(realLength);
 
         int i = 0;
@@ -5593,7 +5594,7 @@ float_loop:
         return safeArraySet(metaClass.runtime, values, i, value);
     }
 
-    private static IRubyObject safeArraySet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
+    protected static IRubyObject safeArraySet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
         try {
             return values[i] = value;
         } catch (ArrayIndexOutOfBoundsException ex) {

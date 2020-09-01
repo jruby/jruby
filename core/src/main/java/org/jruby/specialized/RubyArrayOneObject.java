@@ -260,4 +260,20 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         return new RubyArrayOneObject(this);
     }
+
+    @Override
+    public RubyArray collectCommon(ThreadContext context, Block block) {
+        if (!packed()) return super.collectCommon(context, block);
+
+        if (!block.isGiven()) return makeShared();
+
+        return new RubyArrayOneObject(context.runtime, block.yieldNonArray(context, value, null));
+    }
+
+    @Override
+    protected RubyArray makeShared() {
+        if (!packed()) return super.makeShared();
+
+        return new RubyArrayOneObject(this);
+    }
 }
