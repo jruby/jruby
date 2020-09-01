@@ -1039,7 +1039,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
             if (symbol == null) {
                 bytes = bytes.dup();
-                return createSymbol(bytes.toString(), bytes, handler, hash, hard);
+                return createSymbol(
+                        RubyEncoding.decodeRaw(bytes),
+                        bytes,
+                        handler,
+                        hash,
+                        hard);
             }
 
             handler.accept(symbol, false);
