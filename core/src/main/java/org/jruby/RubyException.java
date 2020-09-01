@@ -163,7 +163,7 @@ public class RubyException extends RubyObject {
         return exceptionClass;
     }
 
-    public static ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
+    public static final ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
 
     private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
@@ -201,13 +201,28 @@ public class RubyException extends RubyObject {
         return (RubyException) exceptionClass.newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, msg), Block.NULL_BLOCK);
     }
 
+    /**
+     * Construct a new RubyException object from the given exception class and message.
+     *
+     * @param context the current thread context
+     * @param exceptionClass the exception class
+     * @param message the message for the exception
+     * @return the new exception object
+     */
     public static RubyException newException(ThreadContext context, RubyClass exceptionClass, RubyString message) {
         return (RubyException) exceptionClass.newInstance(context, message, Block.NULL_BLOCK);
     }
 
-    @Deprecated
-    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
-        return newException(context, exceptionClass, message.convertToString());
+    /**
+     * Construct a new RubyException object from the given exception class and message.
+     *
+     * @param context the current thread context
+     * @param exceptionClass the exception class
+     * @param args the arguments for the exception's constructor
+     * @return the new exception object
+     */
+    public static RubyException newException(ThreadContext context, RubyClass exceptionClass, IRubyObject... args) {
+        return (RubyException) exceptionClass.newInstance(context, args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod
@@ -353,6 +368,22 @@ public class RubyException extends RubyObject {
 
     public void setCause(IRubyObject cause) {
         this.cause = cause;
+
+        // don't do anything to throwable for null/nil cause to avoid forcing backtrace
+        // * if we have no cause yet, it's a no-op
+        // * if we have a cause, we can't change it
+        if (cause == null || cause.isNil()) return;
+
+        Throwable t = toThrowable();
+        Object javaCause;
+
+        if (t.getCause() == null) {
+            if (cause instanceof RubyException) {
+                t.initCause(((RubyException) cause).toThrowable());
+            } else if (cause instanceof ConcreteJavaProxy && (javaCause = ((ConcreteJavaProxy) cause).getObject()) instanceof Throwable) {
+                t.initCause((Throwable) javaCause);
+            }
+        }
     }
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
@@ -477,5 +508,10 @@ public class RubyException extends RubyObject {
         if (backtrace.backtraceData == null) {
             backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
         }
+    }
+
+    @Deprecated
+    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
+        return newException(context, exceptionClass, message.convertToString());
     }
 }

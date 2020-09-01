@@ -94,7 +94,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
     }
 
     public void setAutoRelease(boolean autorelease) {
-        if (autorelease && !allocation.released) {
+        if (!allocation.released) {
             allocation.unmanaged = !autorelease;
         }
     }

@@ -2,9 +2,13 @@ package org.jruby.api;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
+import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PosixShim;
+
+import java.util.function.Supplier;
 
 public class API {
     public static IRubyObject rb_sys_fail_path(Ruby runtime, String path) {
@@ -64,5 +68,18 @@ public class API {
     public static void rb_maygvl_fd_fix_cloexec(Ruby runtime, int fd) {
         PosixShim shim = new PosixShim(runtime);
         OpenFile.fdFixCloexec(shim, fd);
+    }
+
+    public static <T> T rb_rescue_typeerror(ThreadContext context, T dflt, Supplier<T> func) {
+        boolean exceptionRequiresBacktrace = context.exceptionRequiresBacktrace;
+        try {
+            context.setExceptionRequiresBacktrace(false);
+
+            return func.get();
+        } catch (TypeError te) {
+            return dflt;
+        } finally {
+            context.setExceptionRequiresBacktrace(exceptionRequiresBacktrace);
+        }
     }
 }

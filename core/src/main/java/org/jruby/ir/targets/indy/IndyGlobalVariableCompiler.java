@@ -9,7 +9,7 @@ import org.jruby.util.JavaNameMangler;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyGlobalVariableCompiler implements GlobalVariableCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public IndyGlobalVariableCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

@@ -6,8 +6,8 @@ import java.util.List;
  *
  */
 public class Annotation implements AnnotationExpression {
-    private String name;
-    private List<AnnotationParameter> parameters;
+    private final String name;
+    private final List<AnnotationParameter> parameters;
     
     public Annotation(String name, List<AnnotationParameter> parameters) {
         this.name = name;

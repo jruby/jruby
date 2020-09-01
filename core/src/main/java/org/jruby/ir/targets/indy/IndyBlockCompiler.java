@@ -16,7 +16,7 @@ import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyBlockCompiler implements BlockCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public IndyBlockCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

@@ -54,7 +54,7 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     private final String languageName;
     //setting languageVersion in constructor causes runtime initialization before setting all configs.
     //changed to get info on demand.
-    private String languageVersion;
+    private final String languageVersion;
     private final List<String> mimeTypes;
     private final List<String> engineIds;
     private Map<String, Object> parameters;

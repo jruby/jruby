@@ -14,7 +14,7 @@ namespace :spec do
   task :'ruby:aot' => :ci_precompiled
 
   if ENV['CI']
-    MSPEC_FORMAT = "s"
+    MSPEC_FORMAT = "f"
   else
     MSPEC_FORMAT = "d"
   end
@@ -31,14 +31,14 @@ namespace :spec do
   task :'ruby:fast:jit' do
     mspec :compile_mode => "JIT",
           :jit_threshold => 0,
-          :format => 'd',
+          :format => MSPEC_FORMAT,
           :spec_target => ":fast"
   end
 
   desc "Run slow specs"
   task :'ruby:slow' do
     mspec :compile_mode => "OFF",
-          :format => MSPEC_FORMAT,
+          :format => "s",
           :spec_target => ":slow",
           :jruby_opts => "-I. --dev --debug"
   end

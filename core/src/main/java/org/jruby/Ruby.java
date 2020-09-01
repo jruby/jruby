@@ -169,7 +169,6 @@ import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
-import org.jruby.util.func.Function1;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
@@ -399,6 +398,10 @@ public final class Ruby implements Constantizable {
         threadGroupClass = profile.allowClass("ThreadGroup") ? RubyThreadGroup.createThreadGroupClass(this) : null;
         threadClass = profile.allowClass("Thread") ? RubyThread.createThreadClass(this) : null;
         exceptionClass = profile.allowClass("Exception") ? RubyException.createExceptionClass(this) : null;
+
+        // this is used in some kwargs conversions for numerics below
+        hashClass = profile.allowClass("Hash") ? RubyHash.createHashClass(this) : null;
+
         numericClass = profile.allowClass("Numeric") ? RubyNumeric.createNumericClass(this) : null;
         integerClass = profile.allowClass("Integer") ? RubyInteger.createIntegerClass(this) : null;
         fixnumClass = profile.allowClass("Fixnum") ? RubyFixnum.createFixnumClass(this) : null;
@@ -413,7 +416,6 @@ public final class Ruby implements Constantizable {
 
         complexClass = profile.allowClass("Complex") ? RubyComplex.createComplexClass(this) : null;
         rationalClass = profile.allowClass("Rational") ? RubyRational.createRationalClass(this) : null;
-        hashClass = profile.allowClass("Hash") ? RubyHash.createHashClass(this) : null;
 
         if (profile.allowClass("Array")) {
             arrayClass = RubyArray.createArrayClass(this);
@@ -462,10 +464,14 @@ public final class Ruby implements Constantizable {
             enumeratorClass = RubyEnumerator.defineEnumerator(this, enumerableModule);
             generatorClass = RubyGenerator.createGeneratorClass(this, enumeratorClass);
             yielderClass = RubyYielder.createYielderClass(this);
+            chainClass = RubyChain.createChainClass(this, enumeratorClass);
+            aseqClass = RubyArithmeticSequence.createArithmeticSequenceClass(this, enumeratorClass);
         } else {
             enumeratorClass = null;
             generatorClass = null;
             yielderClass = null;
+            chainClass = null;
+            aseqClass = null;
         }
 
         continuationClass = initContinuation();
@@ -498,7 +504,7 @@ public final class Ruby implements Constantizable {
         // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
         IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
-        top.allocateInterpreterContext(Collections.EMPTY_LIST);
+        top.allocateInterpreterContext(Collections.EMPTY_LIST, 0, IRScope.allocateInitialFlags(top));
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
@@ -1363,14 +1369,6 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    @Deprecated
-    public void eachModule(Function1<Object, IRubyObject> func) {
-        Enumeration<RubyModule> e = allModules.keys();
-        while (e.hasMoreElements()) {
-            func.apply(e.nextElement());
-        }
-    }
-
     /**
      * Retrieve the module with the given name from the Object namespace.
      *
@@ -1477,7 +1475,7 @@ public final class Ruby implements Constantizable {
             if (!(classObj instanceof RubyClass)) throw newTypeError(str(this, ids(this, id), " is not a class"));
             RubyClass klazz = (RubyClass)classObj;
             if (klazz.getSuperClass().getRealClass() != superClass) {
-                throw newNameError(str(this, ids(this, id), " is already defined"), id);
+                throw newNameError(str(this, ids(this, id), " is already defined"), newSymbol(id));
             }
             // If we define a class in Ruby, but later want to allow it to be defined in Java,
             // the allocator needs to be updated
@@ -1982,6 +1980,14 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getGenerator() {
         return generatorClass;
+    }
+
+    public RubyClass getChain() {
+        return chainClass;
+    }
+
+    public RubyClass getArithmeticSequence() {
+        return aseqClass;
     }
 
     public RubyClass getFiber() {
@@ -2979,7 +2985,7 @@ public final class Ruby implements Constantizable {
 
     public static class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
-        private ThreadContext thread; // if non-null only call traceFunc if it is from this thread.
+        private final ThreadContext thread; // if non-null only call traceFunc if it is from this thread.
 
         public CallTraceFuncHook(ThreadContext context) {
             this.thread = context;
@@ -3173,6 +3179,18 @@ public final class Ruby implements Constantizable {
     }
 
     /**
+     * Add a post-termination exit function that should be run to shut down JRuby internal services.
+     *
+     * This will be run toward the end of teardown, after all user code has finished executing (e.g. at_exit
+     * hooks and user-defined finalizers). The exit functions registered here are run in FILO order.
+     *
+     * @param postExit the {@link ExitFunction} to run after user exit hooks have completed
+     */
+    public void pushPostExitFunction(ExitFunction postExit) {
+        postExitBlocks.add(0, postExit);
+    }
+
+    /**
      * It is possible for looping or repeated execution to encounter the same END
      * block multiple times.  Rather than store extra runtime state we will just
      * make sure it is not already registered.  at_exit by contrast can push the
@@ -3243,55 +3261,34 @@ public final class Ruby implements Constantizable {
     // catch exception. This makes debugging really hard. This is why
     // tearDown(boolean) exists.
     public void tearDown(boolean systemExit) {
-        int status = 0;
-
-        // clear out old style recursion guards so they don't leak
-        mriRecursionGuard = null;
-
         final ThreadContext context = getCurrentContext();
 
-        // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
-        // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
-        // bogus scope back for at_exit block run.  This is buggy if at_exit is capturing vars.
-        if (!context.hasAnyScopes()) {
-            StaticScope topStaticScope = getStaticScopeFactory().newLocalScope(null);
-            context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
+        int status = userTeardown(context);
+
+        systemTeardown(context);
+
+        if (systemExit && status != 0) {
+            throw newSystemExit(status);
         }
 
-        // Run all exit functions from at_exit, END, or Java code
-        while (!exitBlocks.isEmpty()) {
-            ExitFunction fun = exitBlocks.remove(0);
-            int ret = fun.applyAsInt(context);
-            if (ret != 0) {
-                status = ret;
-            }
-        }
-
-        // Fetches (and unsets) the SIGEXIT handler, if one exists.
-        IRubyObject trapResult = RubySignal.__jtrap_osdefault_kernel(this.getNil(), this.newString("EXIT"));
-        if (trapResult instanceof RubyArray) {
-            IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
-            IRubyObject exitHandlerProc = trapResultEntries[0];
-            if (exitHandlerProc instanceof RubyProc) {
-                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
-            }
-        }
-
-        if (finalizers != null) {
-            synchronized (finalizersMutex) {
-                for (Iterator<Finalizable> finalIter = new ArrayList<>(
-                        finalizers.keySet()).iterator(); finalIter.hasNext();) {
-                    Finalizable f = finalIter.next();
-                    if (f != null) {
-                        try {
-                            f.finalize();
-                        } catch (Throwable t) {
-                            // ignore
-                        }
-                    }
-                    finalIter.remove();
+        // This is a rather gross way to ensure nobody else performs the same clearing of globalRuntime followed by
+        // initializing a new runtime, which would cause our clear below to clear the wrong runtime. Synchronizing
+        // against the class is a problem, but the overhead of teardown and creating new containers should outstrip
+        // a global synchronize around a few field accesses. -CON
+        if (this == globalRuntime) {
+            synchronized (Ruby.class) {
+                if (this == globalRuntime) {
+                    globalRuntime = null;
                 }
             }
+        }
+    }
+
+    private void systemTeardown(ThreadContext context) {
+        // Run post-user exit hooks, such as for shutting down internal JRuby services
+        while (!postExitBlocks.isEmpty()) {
+            ExitFunction fun = postExitBlocks.remove(0);
+            fun.applyAsInt(context);
         }
 
         synchronized (internalFinalizersMutex) {
@@ -3327,29 +3324,67 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
-        // swap with a new service to dereference all thread constructs
-        threadService = new ThreadService(this);
+        // clear out old style recursion guards so they don't leak
+        mriRecursionGuard = null;
 
         // shut down executors
         getJITCompiler().shutdown();
         getExecutor().shutdown();
         getFiberExecutor().shutdown();
 
-        if (systemExit && status != 0) {
-            throw newSystemExit(status);
+        // Fetches (and unsets) the SIGEXIT handler, if one exists.
+        IRubyObject trapResult = RubySignal.__jtrap_osdefault_kernel(this.getNil(), this.newString("EXIT"));
+        if (trapResult instanceof RubyArray) {
+            IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
+            IRubyObject exitHandlerProc = trapResultEntries[0];
+            if (exitHandlerProc instanceof RubyProc) {
+                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
+            }
         }
 
-        // This is a rather gross way to ensure nobody else performs the same clearing of globalRuntime followed by
-        // initializing a new runtime, which would cause our clear below to clear the wrong runtime. Synchronizing
-        // against the class is a problem, but the overhead of teardown and creating new containers should outstrip
-        // a global synchronize around a few field accesses. -CON
-        if (this == globalRuntime) {
-            synchronized (Ruby.class) {
-                if (this == globalRuntime) {
-                    globalRuntime = null;
+        // Shut down and replace thread service after all other hooks and finalizers have run
+        threadService.teardown();
+        threadService = new ThreadService(this);
+
+    }
+
+    private int userTeardown(ThreadContext context) {
+        int status = 0;
+
+        // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
+        // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
+        // bogus scope back for at_exit block run.  This is buggy if at_exit is capturing vars.
+        if (!context.hasAnyScopes()) {
+            StaticScope topStaticScope = getStaticScopeFactory().newLocalScope(null);
+            context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
+        }
+
+        // Run all exit functions from user hooks like at_exit
+        while (!exitBlocks.isEmpty()) {
+            ExitFunction fun = exitBlocks.remove(0);
+            int ret = fun.applyAsInt(context);
+            if (ret != 0) {
+                status = ret;
+            }
+        }
+
+        if (finalizers != null) {
+            synchronized (finalizersMutex) {
+                for (Iterator<Finalizable> finalIter = new ArrayList<>(
+                        finalizers.keySet()).iterator(); finalIter.hasNext();) {
+                    Finalizable f = finalIter.next();
+                    if (f != null) {
+                        try {
+                            f.finalize();
+                        } catch (Throwable t) {
+                            // ignore
+                        }
+                    }
+                    finalIter.remove();
                 }
             }
         }
+        return status;
     }
 
     /**
@@ -3848,9 +3883,16 @@ public final class Ruby implements Constantizable {
 
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 
-    public RaiseException newErrnoEADDRFromBindException(BindException be) {
-		return newErrnoEADDRFromBindException(be, null);
-	}
+    public RaiseException newErrnoFromBindException(BindException be, String contextMessage) {
+        Errno errno = Helpers.errnoFromException(be);
+
+        if (errno != null) {
+            return newErrnoFromErrno(errno, contextMessage);
+        }
+
+        // Messages may differ so revert to old behavior (jruby/jruby#6322)
+        return newErrnoEADDRFromBindException(be, contextMessage);
+    }
 
     public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {
         String msg = be.getMessage();
@@ -3995,6 +4037,18 @@ public final class Ruby implements Constantizable {
         return new RubyNameError(this, getNameError(), message, name).toThrowable();
     }
 
+    public RaiseException newNameError(String message, IRubyObject name, Throwable exception, boolean printWhenVerbose) {
+        if (exception != null) {
+            if (printWhenVerbose && isVerbose()) {
+                LOG.error(exception);
+            } else if (isDebug()) {
+                LOG.debug(exception);
+            }
+        }
+
+        return new RubyNameError(this, getNameError(), message, name).toThrowable();
+    }
+
     /**
      * Construct a NameError with a pre-formatted message and name.
      *
@@ -4008,6 +4062,11 @@ public final class Ruby implements Constantizable {
     public RaiseException newNameError(String message, String name) {
         return newNameError(message, name, null);
     }
+
+    public RaiseException newNameError(String message, IRubyObject name) {
+        return newNameError(message, name, (Throwable) null, false);
+    }
+
 
     /**
      * Construct a NameError with an optional originating exception and a pre-formatted message.
@@ -4191,9 +4250,14 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * @param exceptionClass
-     * @param message
-     * @return
+     * Construct a new RaiseException wrapping a new Ruby exception object appropriate to the given exception class.
+     *
+     * There are additional forms of this construction logic in {@link RaiseException#from}.
+     *
+     * @param exceptionClass the exception class from which to construct the exception object
+     * @param message a simple message for the exception
+     * @return a new RaiseException wrapping a new Ruby exception
+     * @see RaiseException#from(Ruby, RubyClass, String)
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
         return RaiseException.from(this, exceptionClass, message);
@@ -4310,7 +4374,7 @@ public final class Ruby implements Constantizable {
 
     public boolean isInspecting(Object obj) {
         Map<Object, Object> val = inspect.get();
-        return val == null ? false : val.containsKey(obj);
+        return val != null && val.containsKey(obj);
     }
 
     public void unregisterInspecting(Object obj) {
@@ -4382,6 +4446,21 @@ public final class Ruby implements Constantizable {
 
     public POSIX getPosix() {
         return posix;
+    }
+
+    /**
+     * Get the native POSIX associated with this runtime.
+     *
+     * If native is not supported, this will return null.
+     *
+     * @return a native POSIX, or null if native is not supported
+     */
+    public POSIX getNativePosix() {
+        POSIX nativePosix = this.nativePosix;
+        if (nativePosix == null && config.isNativeEnabled()) {
+            this.nativePosix = nativePosix = POSIXFactory.getNativePOSIX(new JRubyPOSIXHandler(this));
+        }
+        return nativePosix;
     }
 
     public void setRecordSeparatorVar(GlobalVariable recordSeparatorVar) {
@@ -4979,7 +5058,7 @@ public final class Ruby implements Constantizable {
         synchronized (this) {
             mriRecursionGuard = this.mriRecursionGuard;
             if (mriRecursionGuard != null) return mriRecursionGuard;
-            return mriRecursionGuard = new MRIRecursionGuard(this);
+            return this.mriRecursionGuard = new MRIRecursionGuard(this);
         }
     }
 
@@ -5146,6 +5225,7 @@ public final class Ruby implements Constantizable {
     private ThreadService threadService;
 
     private final POSIX posix;
+    private POSIX nativePosix;
 
     private final ObjectSpace objectSpace = new ObjectSpace();
 
@@ -5204,6 +5284,8 @@ public final class Ruby implements Constantizable {
     private final RubyClass yielderClass;
     private final RubyClass fiberClass;
     private final RubyClass generatorClass;
+    private final RubyClass chainClass;
+    private final RubyClass aseqClass;
     private final RubyClass arrayClass;
     private final RubyClass hashClass;
     private final RubyClass rangeClass;
@@ -5326,7 +5408,7 @@ public final class Ruby implements Constantizable {
     private PrintStream err;
 
     // Java support
-    private JavaSupport javaSupport;
+    private final JavaSupport javaSupport;
     private final JRubyClassLoader jrubyClassLoader;
 
     // Management/monitoring
@@ -5335,7 +5417,7 @@ public final class Ruby implements Constantizable {
     // Parser stats
     private final ParserStats parserStats;
 
-    private InlineStats inlineStats;
+    private final InlineStats inlineStats;
 
     // Compilation
     private final JITCompiler jitCompiler;
@@ -5379,9 +5461,15 @@ public final class Ruby implements Constantizable {
         }
     };
 
-    // Contains a list of all blocks (as Procs) that should be called when
-    // the runtime environment exits.
+    /**
+     * Reserved for userland at_exit logic that runs before internal services start shutting down.
+     */
     private final List<ExitFunction> exitBlocks = Collections.synchronizedList(new LinkedList<>());
+
+    /**
+     * Registry of shutdown operations that should happen after all user code has been run (e.g. at_exit hooks).
+     */
+    private final List<ExitFunction> postExitBlocks = Collections.synchronizedList(new LinkedList<>());
 
     private Profile profile;
 
@@ -5643,6 +5731,11 @@ public final class Ruby implements Constantizable {
                     + "If you need this option please set it manually as a JVM property.\n"
                     + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
         }
+    }
+
+    @Deprecated
+    public RaiseException newErrnoEADDRFromBindException(BindException be) {
+        return newErrnoEADDRFromBindException(be, null);
     }
 
 }

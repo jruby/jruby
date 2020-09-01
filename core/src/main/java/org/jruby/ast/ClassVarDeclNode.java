@@ -45,7 +45,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 @Deprecated
 public class ClassVarDeclNode extends AssignableNode implements INameNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
     public ClassVarDeclNode(ISourcePosition position, RubySymbol name, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());

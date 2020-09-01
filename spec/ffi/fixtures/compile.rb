@@ -50,15 +50,12 @@ module TestLibrary
   def self.compile_library(path, lib)
     dir = File.expand_path(path, File.dirname(__FILE__))
     lib = "#{dir}/#{lib}"
-    unless File.exist?(lib)
-      output = nil
-      FileUtils.cd(dir) do
-        make = ENV['MAKE'] || (system('which gmake >/dev/null') ? 'gmake' : 'make')
-        output = system(*%{#{make} CPU=#{CPU} OS=#{OS}}.tap{|x| puts x.inspect})
-      end
 
-      unless $?.success?
-        puts "ERROR:\n#{output}"
+    FileUtils.cd(dir) do
+      make = ENV['MAKE'] || (system('which gmake >/dev/null') ? 'gmake' : 'make')
+
+      unless system(*%{#{make} CPU=#{CPU} OS=#{OS}}.tap{ |cmd| puts cmd.inspect })
+        puts "ERROR: #{$?}"
         raise "Unable to compile #{lib.inspect}"
       end
     end

@@ -813,6 +813,12 @@ arg             : lhs '=' arg_rhs {
                 | arg tDOT3 arg {
                     $$ = p.dispatch("on_dot3", $1, $3);
                 }
+                | arg tDOT2 {
+                    $$ = p.dispatch("on_dot2", $1);
+                }
+                | arg tDOT3 {
+                    $$ = p.dispatch("on_dot3", $1);
+                }
                 | arg tPLUS arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("+"), $3);
                 }

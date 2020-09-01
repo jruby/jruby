@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFile;
@@ -226,15 +225,21 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            try (InputStream ris = resource.inputStream()) {
+            // Fully buffers file, so does not need to be closed
+            LoadServiceResourceInputStream ris = prepareInputStream(runtime);
 
-                if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
-                    runtime.compileAndLoadFile(scriptName, ris, wrap);
-                } else {
-                    runtime.loadFile(scriptName, new LoadServiceResourceInputStream(ris), wrap);
-                }
-            } catch(IOException e) {
-                throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
+            if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
+                runtime.compileAndLoadFile(scriptName, ris, wrap);
+            } else {
+                runtime.loadFile(scriptName, ris, wrap);
+            }
+        }
+
+        private LoadServiceResourceInputStream prepareInputStream(Ruby runtime) {
+            try {
+                return new LoadServiceResourceInputStream(resource.inputStream());
+            } catch (IOException ioe) {
+                throw runtime.newLoadError("failure to load file: " + ioe.getLocalizedMessage(), searchName);
             }
         }
     }

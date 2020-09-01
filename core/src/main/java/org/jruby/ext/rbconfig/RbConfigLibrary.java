@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jcodings.Config;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -360,6 +361,9 @@ public class RbConfigLibrary implements Library {
 
         setConfig(context, CONFIG, "joda-time.version", Constants.JODA_TIME_VERSION);
         setConfig(context, CONFIG, "tzdata.version",    Constants.TZDATA_VERSION);
+
+        setConfig(context, CONFIG, "UNICODE_VERSION", Config.UNICODE_VERSION_STRING);
+        setConfig(context, CONFIG, "UNICODE_EMOJI_VERSION", Config.UNICODE_EMOJI_VERSION_STRING);
 
         rbConfig.defineConstant("CONFIG", CONFIG);
 

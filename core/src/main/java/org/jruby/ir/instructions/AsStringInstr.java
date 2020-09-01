@@ -1,12 +1,11 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyBasicObject;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -50,7 +49,7 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
     }
 
     private static Operand nonNull(Operand source) {
-        return source == null ? StringLiteral.EMPTY_STRING : source;
+        return source == null ? MutableString.EMPTY_STRING : source;
     }
 
     @Override

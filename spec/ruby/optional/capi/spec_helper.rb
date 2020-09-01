@@ -32,11 +32,9 @@ def compile_extension(name)
   ruby_header = "#{RbConfig::CONFIG['rubyhdrdir']}/ruby.h"
 
   if RbConfig::CONFIG["ENABLE_SHARED"] == "yes"
-    if PlatformGuard.windows?
-      libruby_so = "#{RbConfig::CONFIG['bindir']}/#{RbConfig::CONFIG['LIBRUBY_SO']}"
-    else
-      libruby_so = "#{RbConfig::CONFIG['libdir']}/#{RbConfig::CONFIG['LIBRUBY_SO']}"
-    end
+    libdirname = RbConfig::CONFIG['LIBPATHENV'] == 'PATH' ? 'bindir' :
+                   RbConfig::CONFIG['libdirname'] # defined since 2.1
+    libruby_so = "#{RbConfig::CONFIG[libdirname]}/#{RbConfig::CONFIG['LIBRUBY_SO']}"
   end
 
   begin
@@ -78,6 +76,7 @@ def compile_extension(name)
           $ruby = ENV.values_at('RUBY_EXE', 'RUBY_FLAGS').join(' ')
           # MRI magic to consider building non-bundled extensions
           $extout = nil
+          append_cflags '-Wno-declaration-after-statement'
           create_makefile(#{ext.inspect})
         RUBY
         output = ruby_exe("extconf.rb")
@@ -127,7 +126,9 @@ def setup_make
 end
 
 def load_extension(name)
-  require compile_extension(name)
+  ext_path = compile_extension(name)
+  require ext_path
+  ext_path
 rescue LoadError => e
   if %r{/usr/sbin/execerror ruby "\(ld 3 1 main ([/a-zA-Z0-9_\-.]+_spec\.so)"} =~ e.message
     system('/usr/sbin/execerror', "#{RbConfig::CONFIG["bindir"]}/ruby", "(ld 3 1 main #{$1}")

@@ -14,8 +14,8 @@ describe "String#capitalize" do
 
   ruby_version_is ''...'2.7' do
     it "taints resulting string when self is tainted" do
-      "".taint.capitalize.tainted?.should == true
-      "hello".taint.capitalize.tainted?.should == true
+      "".taint.capitalize.should.tainted?
+      "hello".taint.capitalize.should.tainted?
     end
   end
 
@@ -196,10 +196,10 @@ describe "String#capitalize!" do
     "H".capitalize!.should == nil
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     ["", "Hello", "hello"].each do |a|
       a.freeze
-      -> { a.capitalize! }.should raise_error(frozen_error_class)
+      -> { a.capitalize! }.should raise_error(FrozenError)
     end
   end
 end

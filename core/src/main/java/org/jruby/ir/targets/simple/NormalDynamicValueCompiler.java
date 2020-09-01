@@ -27,7 +27,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalDynamicValueCompiler implements DynamicValueCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalDynamicValueCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;
@@ -78,7 +78,7 @@ public class NormalDynamicValueCompiler implements DynamicValueCompiler {
         final String methodName = "array:" + length;
         final ClassData classData = compiler.getClassData();
 
-        if (!classData.arrayMethodsDefined.contains(length)) {
+        if (!classData.arrayMethodsDefined.containsKey(length)) {
             adapter2 = new SkinnyMethodAdapter(
                     compiler.adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
@@ -95,7 +95,7 @@ public class NormalDynamicValueCompiler implements DynamicValueCompiler {
             adapter2.areturn();
             adapter2.end();
 
-            classData.arrayMethodsDefined.add(length);
+            classData.arrayMethodsDefined.put(length, null);
         }
 
         // now call it
@@ -111,7 +111,7 @@ public class NormalDynamicValueCompiler implements DynamicValueCompiler {
         final String methodName = "hash:" + length;
         final ClassData classData = compiler.getClassData();
 
-        if (!classData.hashMethodsDefined.contains(length)) {
+        if (!classData.hashMethodsDefined.containsKey(length)) {
             adapter2 = new SkinnyMethodAdapter(
                     compiler.adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
@@ -128,7 +128,7 @@ public class NormalDynamicValueCompiler implements DynamicValueCompiler {
             adapter2.areturn();
             adapter2.end();
 
-            classData.hashMethodsDefined.add(length);
+            classData.hashMethodsDefined.put(length, null);
         }
 
         // now call it

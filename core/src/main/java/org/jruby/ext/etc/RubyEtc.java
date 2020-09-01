@@ -3,6 +3,10 @@ package org.jruby.ext.etc;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import jnr.constants.Constant;
+import jnr.constants.ConstantSet;
+import jnr.constants.platform.Errno;
+import jnr.constants.platform.Sysconf;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
@@ -35,6 +39,13 @@ public class RubyEtc {
         runtime.setEtc(etcModule);
         
         etcModule.defineAnnotatedMethods(RubyEtc.class);
+
+        if (!Platform.IS_WINDOWS) {
+            for (Constant c : ConstantSet.getConstantSet("Sysconf")) {
+                String name = c.name().substring(1); // leading "_"
+                etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
+            }
+        }
         
         definePasswdStruct(runtime);
         defineGroupStruct(runtime);
@@ -110,6 +121,24 @@ public class RubyEtc {
             arr[i] = runtime.newString(members[i]);
         }
         return RubyArray.newArrayMayCopy(runtime, arr);
+    }
+    
+    @JRubyMethod(required = 1, module = true)
+    public static synchronized IRubyObject sysconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+        Sysconf name = Sysconf.valueOf(RubyNumeric.num2long(arg));
+        POSIX posix = runtime.getPosix();
+        long ret = posix.sysconf(name);
+        if (ret == -1) {
+            if (posix.errno() == Errno.ENOENT.intValue()) {
+                return runtime.getNil();
+            } else if (posix.errno() == Errno.EOPNOTSUPP.intValue()) {
+                throw runtime.newNotImplementedError("sysconf() function is unimplemented on this machine");
+            } else {
+                throw runtime.newErrnoFromLastPOSIXErrno();
+            }
+        }
+        return RubyFixnum.newFixnum(runtime, ret);
     }
 
 

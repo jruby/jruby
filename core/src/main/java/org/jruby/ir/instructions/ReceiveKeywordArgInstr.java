@@ -13,6 +13,8 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public final RubySymbol key;
     public final int required;
@@ -29,8 +31,8 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.RECEIVES_KEYWORD_ARGS);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        scope.setReceivesKeywordArgs();
         return true;
     }
 

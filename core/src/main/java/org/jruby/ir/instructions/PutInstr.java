@@ -7,7 +7,7 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 
 // Represents target.ref = value or target = value where target is not a stack variable
 public abstract class PutInstr extends TwoOperandInstr implements FixedArityInstr {
-    protected RubySymbol name;
+    protected final RubySymbol name;
 
     public PutInstr(Operation op, Operand target, RubySymbol name, Operand value) {
         super(op, target, value);

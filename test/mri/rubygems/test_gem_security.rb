@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems/security'
-require 'rubygems/fix_openssl_warnings' if RUBY_VERSION < "1.9"
 
-unless defined?(OpenSSL::SSL) then
+unless defined?(OpenSSL::SSL)
   warn 'Skipping Gem::Security tests.  openssl not found.'
 end
 
@@ -309,4 +308,3 @@ class TestGemSecurity < Gem::TestCase
   end
 
 end if defined?(OpenSSL::SSL)
-

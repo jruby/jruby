@@ -19,7 +19,7 @@ import org.jruby.util.ByteList;
  * Used by alias and undef.
  */
 public class LiteralNode extends Node implements InvisibleNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
     public LiteralNode(ISourcePosition position, RubySymbol name) {
         super(position, false);

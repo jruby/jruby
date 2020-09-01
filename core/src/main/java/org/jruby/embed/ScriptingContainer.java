@@ -1936,7 +1936,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     protected void addGemPath(String uri) {
-        runScriptlet( "require 'rubygems/defaults/jruby';Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
+        runScriptlet( "require 'rubygems';Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
     }
 
     @Deprecated

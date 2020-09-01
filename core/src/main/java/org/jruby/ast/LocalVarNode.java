@@ -44,7 +44,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class LocalVarNode extends Node implements INameNode, IScopedNode, SideEffectFree {
     // The name of the variable
-    private RubySymbol name;
+    private final RubySymbol name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.

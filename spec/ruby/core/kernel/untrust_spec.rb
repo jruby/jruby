@@ -11,12 +11,12 @@ describe "Kernel#untrust" do
     it "sets the untrusted bit" do
       o = Object.new
       o.untrust
-      o.untrusted?.should == true
+      o.should.untrusted?
     end
 
-    it "raises #{frozen_error_class} on a trusted, frozen object" do
+    it "raises FrozenError on a trusted, frozen object" do
       o = Object.new.freeze
-      -> { o.untrust }.should raise_error(frozen_error_class)
+      -> { o.untrust }.should raise_error(FrozenError)
     end
 
     it "does not raise an error on an untrusted, frozen object" do

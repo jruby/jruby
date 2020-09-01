@@ -1012,7 +1012,7 @@ public final class StringSupport {
         p = byteList.getBegin();
         end = p + byteList.getRealSize();
 
-        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
+        if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         while (p < end) {
             int c = bytes[p++] & 0xff;
             switch (c) {
@@ -1064,7 +1064,7 @@ public final class StringSupport {
                     }
             }
         }
-        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
+        if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         outBytes.setRealSize(q);
         assert out == outBytes.getUnsafeBytes(); // must not reallocate
 
@@ -1210,7 +1210,10 @@ public final class StringSupport {
         }
 
         final byte[] buf;
-        int p, pend, now, max;
+        int p;
+        final int pend;
+        int now;
+        int max;
         boolean gen;
     }
 
@@ -1439,11 +1442,19 @@ public final class StringSupport {
         if (!alnumSeen) {
             s = end;
             while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
+                byte tmp[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
                 int cl = preciseLength(enc, bytes, s, end);
                 if (cl <= 0) continue;
-                neighbor = succChar(enc, bytes, s, cl);
-                if (neighbor == NeighborChar.FOUND) return valueCopy;
-                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
+                System.arraycopy(bytes, s, tmp, 0, cl);
+                neighbor = succChar(enc, tmp, 0, cl);
+                if (neighbor == NeighborChar.FOUND) {
+                    System.arraycopy(tmp, 0, bytes, s, cl);
+                    return valueCopy;
+                }
+                if (neighbor == NeighborChar.WRAPPED) {
+                    System.arraycopy(tmp, 0, bytes, s, cl);
+                }
+                if (preciseLength(enc, bytes, s, s + cl) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
                 if (!enc.isAsciiCompatible()) {
                     System.arraycopy(bytes, s, carry, 0, cl);
                     carryLen = cl;
@@ -1529,7 +1540,13 @@ public final class StringSupport {
 
     // MRI: enc_succ_alnum_char
     private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
+        NeighborChar ret;
         byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
+
+        /* skip 03A2, invalid char between GREEK CAPITAL LETTERS */
+        int tryCounter;
+        final int maxGaps = 1;
+
         int c = enc.mbcToCode(bytes, p, p + len);
 
         final int cType;
@@ -1542,10 +1559,12 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, save, 0, len);
-        NeighborChar ret = succChar(enc, bytes, p, len);
-        if (ret == NeighborChar.FOUND) {
-            c = enc.mbcToCode(bytes, p, p + len);
-            if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
+        for (tryCounter = 0; tryCounter <= maxGaps; ++tryCounter) {
+            ret = succChar(enc, bytes, p, len);
+            if (ret == NeighborChar.FOUND) {
+                c = enc.mbcToCode(bytes, p, p + len);
+                if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
+            }
         }
 
         System.arraycopy(save, 0, bytes, p, len);

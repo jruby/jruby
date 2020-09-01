@@ -492,8 +492,9 @@ public class StaticScope implements Serializable {
     public RubyArray getLocalVariables(Ruby runtime) {
         return collectVariables(
                 runtime::newArray,
-                (a, s) -> {
-                    if (IdUtil.isLocal(s)) a.append(runtime.newSymbol(s));
+                (array, id) -> {
+                    RubySymbol symbol = runtime.newSymbol(id);
+                    if (symbol.validLocalVariableName()) array.append(symbol);
                 });
     }
 

@@ -14,6 +14,8 @@ class Net::HTTPGenericRequest
     @response_has_body = resbody
 
     if URI === uri_or_path then
+      raise ArgumentError, "not an HTTP URI" unless URI::HTTP === uri_or_path
+      raise ArgumentError, "no host component for URI" unless uri_or_path.hostname
       @uri = uri_or_path.dup
       host = @uri.hostname.dup
       host << ":".freeze << @uri.port.to_s if @uri.port != @uri.default_port
@@ -168,9 +170,8 @@ class Net::HTTPGenericRequest
 
     def write(buf)
       # avoid memcpy() of buf, buf can huge and eat memory bandwidth
-      @sock.write("#{buf.bytesize.to_s(16)}\r\n")
-      rv = @sock.write(buf)
-      @sock.write("\r\n")
+      rv = buf.bytesize
+      @sock.write("#{rv.to_s(16)}\r\n", buf, "\r\n")
       rv
     end
 

@@ -78,7 +78,7 @@ public class RubyStringScanner extends RubyObject {
 
     private static final int MATCHED_STR_SCN_F = 1 << 11;
 
-    private static ObjectAllocator STRINGSCANNER_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator STRINGSCANNER_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyStringScanner(runtime, klass);
@@ -239,8 +239,8 @@ public class RubyStringScanner extends RubyObject {
         return str.makeSharedString(runtime, beg, len);
     }
 
-    ThreadLocal<Matcher> currentMatcher = new ThreadLocal<>();
-    RubyThread.Task<RubyStringScanner, Integer> task = new RubyThread.Task<RubyStringScanner, Integer>() {
+    final ThreadLocal<Matcher> currentMatcher = new ThreadLocal<>();
+    final RubyThread.Task<RubyStringScanner, Integer> task = new RubyThread.Task<RubyStringScanner, Integer>() {
         @Override
         public Integer run(ThreadContext context, RubyStringScanner rubyStringScanner) throws InterruptedException {
             ByteList value = str.getByteList();

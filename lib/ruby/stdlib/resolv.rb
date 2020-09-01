@@ -172,10 +172,11 @@ class Resolv
   # Resolv::Hosts is a hostname resolver that uses the system hosts file.
 
   class Hosts
-    if WINDOWS
+    begin
+      raise LoadError unless WINDOWS
       require 'win32/resolv'
-      DefaultFileName = Win32::Resolv.get_hosts_path
-    else
+      DefaultFileName = Win32::Resolv.get_hosts_path || IO::NULL
+    rescue LoadError
       DefaultFileName = '/etc/hosts'
     end
 
@@ -241,9 +242,7 @@ class Resolv
 
     def each_address(name, &proc)
       lazy_initialize
-      if @name2addr.include?(name)
-        @name2addr[name].each(&proc)
-      end
+      @name2addr[name]&.each(&proc)
     end
 
     ##
@@ -616,16 +615,6 @@ class Resolv
       end
     end
 
-
-    def self.rangerand(range) # :nodoc:
-      base = range.begin
-      len = range.end - range.begin
-      if !range.exclude_end?
-        len += 1
-      end
-      base + random(len)
-    end
-
     RequestID = {} # :nodoc:
     RequestIDMutex = Thread::Mutex.new # :nodoc:
 
@@ -634,7 +623,7 @@ class Resolv
       RequestIDMutex.synchronize {
         h = (RequestID[[host, port]] ||= {})
         begin
-          id = rangerand(0x0000..0xffff)
+          id = random(0x0000..0xffff)
         end while h[id]
         h[id] = true
       }
@@ -655,7 +644,7 @@ class Resolv
 
     def self.bind_random_port(udpsock, bind_host="0.0.0.0") # :nodoc:
       begin
-        port = rangerand(1024..65535)
+        port = random(1024..65535)
         udpsock.bind(bind_host, port)
       rescue Errno::EADDRINUSE, # POSIX
              Errno::EACCES, # SunOS: See PRIV_SYS_NFS in privileges(5)
@@ -2644,7 +2633,7 @@ class Resolv
     def each_address(name)
       name = Resolv::DNS::Name.create(name)
 
-      return unless name.to_a.last.to_s == 'local'
+      return unless name[-1].to_s == 'local'
 
       super(name)
     end

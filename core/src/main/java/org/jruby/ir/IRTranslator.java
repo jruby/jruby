@@ -31,7 +31,7 @@ public abstract class IRTranslator<R, S> {
 
             if (RubyInstanceConfig.IR_WRITING) {
                 try {
-                    IRWriter.persist(new IRWriterStream(IRFileExpert.getIRPersistedFile(scope.getFileName())), scope);
+                    IRWriter.persist(new IRWriterStream(IRFileExpert.getIRPersistedFile(scope.getFile())), scope);
                 } catch (IOException ex) {
                     ex.printStackTrace(); // FIXME: Handle errors better
                     return null;

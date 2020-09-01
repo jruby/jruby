@@ -20,7 +20,7 @@ public class MRIRecursionGuard {
     private final Ruby runtime;
     private final RubySymbol recursiveKey;
     private final ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
-    private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<>();
+    private final ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<>();
 
     @Deprecated
     public MRIRecursionGuard(Ruby runtime) {

@@ -340,23 +340,15 @@ describe :kernel_sprintf, shared: true do
       it "formats a partial substring without including omitted characters" do
         long_string = "aabbccddhelloddccbbaa"
         sub_string = long_string[8, 5]
-        sprintf("%.#{3}s", sub_string).should == "hel"
+        sprintf("%.#{1 * 3}s", sub_string).should == "hel"
       end
     end
 
     describe "%" do
-      ruby_version_is ""..."2.5" do
-        it "alone displays the percent sign" do
-          @method.call("%").should == "%"
-        end
-      end
-
-      ruby_version_is "2.5" do
-        it "alone raises an ArgumentError" do
-          -> {
-            @method.call("%")
-          }.should raise_error(ArgumentError)
-        end
+      it "alone raises an ArgumentError" do
+        -> {
+          @method.call("%")
+        }.should raise_error(ArgumentError)
       end
 
       it "is escaped by %" do
@@ -876,22 +868,20 @@ describe :kernel_sprintf, shared: true do
       }.should raise_error(KeyError)
     end
 
-    ruby_version_is "2.5" do
-      it "sets the Hash as the receiver of KeyError" do
-        -> {
-          @method.call("%<foo>s", @object)
-        }.should raise_error(KeyError) { |err|
-          err.receiver.should equal(@object)
-        }
-      end
+    it "sets the Hash as the receiver of KeyError" do
+      -> {
+        @method.call("%<foo>s", @object)
+      }.should raise_error(KeyError) { |err|
+        err.receiver.should equal(@object)
+      }
+    end
 
-      it "sets the unmatched key as the key of KeyError" do
-        -> {
-          @method.call("%<foo>s", @object)
-        }.should raise_error(KeyError) { |err|
-          err.key.to_s.should == 'foo'
-        }
-      end
+    it "sets the unmatched key as the key of KeyError" do
+      -> {
+        @method.call("%<foo>s", @object)
+      }.should raise_error(KeyError) { |err|
+        err.key.to_s.should == 'foo'
+      }
     end
   end
 end

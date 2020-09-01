@@ -238,7 +238,7 @@ public class RubyRandom extends RubyObject {
         return randomClass;
     }
 
-    private static ObjectAllocator RANDOM_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator RANDOM_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyRandom(runtime, klass);
@@ -682,9 +682,19 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
+    // c: random_s_bytes
+    @JRubyMethod(meta = true)
+    public static IRubyObject bytes(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return bytesCommon(context, getDefaultRand(context), arg);
+    }
+
     // c: rb_random_bytes
     @JRubyMethod(name = "bytes")
     public IRubyObject bytes(ThreadContext context, IRubyObject arg) {
+        return bytesCommon(context, random, arg);
+    }
+
+    private static IRubyObject bytesCommon(ThreadContext context, RandomType random, IRubyObject arg) {
         int n = RubyNumeric.num2int(arg);
         byte[] bytes = new byte[n];
         int idx = 0;

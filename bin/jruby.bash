@@ -177,8 +177,6 @@ for opt in $JAVA_OPTS; do
   case $opt in
     -Xmx*)
       JAVA_MEM="$opt";;
-    -Xms*)
-      JAVA_MEM_MIN="$opt";;
     -Xss*)
       JAVA_STACK="$opt";;
     *)
@@ -203,7 +201,7 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
         JRUBY_CP="$j"
     fi
     if [ "$JRUBY_ALREADY_ADDED" ]; then
-        echo "WARNING: more than one JRuby JAR found in lib directory"
+        echo "WARNING: more than one JRuby JAR found in lib directory" 1>&2
     fi
     JRUBY_ALREADY_ADDED=true
 done
@@ -254,17 +252,15 @@ do
      # Stuff after '-J' in this argument goes to JVM
      -J-Xmx*)
          JAVA_MEM="${1#-J}" ;;
-     -J-Xms*)
-         JAVA_MEM_MIN="${1#-J}" ;;
      -J-Xss*)
          JAVA_STACK="${1#-J}" ;;
      -J)
          "$JAVACMD" -help
-         echo "(Prepend -J in front of these options when using 'jruby' command)"
+         echo "(Prepend -J in front of these options when using 'jruby' command)" 1>&2
          exit ;;
      -J-X)
          "$JAVACMD" -X
-         echo "(Prepend -J in front of these options when using 'jruby' command)"
+         echo "(Prepend -J in front of these options when using 'jruby' command)" 1>&2
          exit ;;
      -J-classpath)
          CP="$CP$CP_DELIMITER$2"
@@ -314,7 +310,7 @@ do
         java_args+=("-sourcepath" "$JDB_SOURCEPATH")
         JRUBY_OPTS+=("-X+C") ;;
      --client|--server|--noclient)
-        echo "Warning: the $1 flag is deprecated and has no effect most JVMs" ;;
+        echo "Warning: the $1 flag is deprecated and has no effect most JVMs" 1>&2 ;;
      --dev)
         process_java_opts "$dev_mode_opts_file"
         # For OpenJ9 use environment variable to enable quickstart and shareclasses
@@ -326,13 +322,13 @@ do
      --no-bootclasspath)
         NO_BOOTCLASSPATH=true ;;
      --ng*)
-       echo "Error: Nailgun is no longer supported"
+       echo "Error: Nailgun is no longer supported" 1>&2
        exit 1 ;;
      --environment)
        print_environment_log=1 ;;
      # warn but ignore
      --1.8|--1.9|--2.0)
-       echo "warning: $1 ignored" ;;
+       echo "warning: $1 ignored" 1>&2 ;;
      # Abort processing on the double dash
      --)
        break ;;
@@ -357,7 +353,7 @@ ruby_args+=("$@")
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args[@]}"
 
-JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
+JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 

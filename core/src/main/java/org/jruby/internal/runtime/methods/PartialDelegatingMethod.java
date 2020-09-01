@@ -49,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class PartialDelegatingMethod extends DynamicMethod {
-    private DynamicMethod method;
+    private final DynamicMethod method;
 
     /**
      * Constructor for PartialDelegatingMethod.

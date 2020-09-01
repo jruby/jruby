@@ -54,6 +54,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -255,7 +256,7 @@ public class RubyInstanceConfig {
             }
 
             in.mark(8192);
-            reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"), 8192);
+            reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.ISO_8859_1), 8192);
             String firstLine = reader.readLine();
 
             boolean usesEnv = false;
@@ -1551,14 +1552,14 @@ public class RubyInstanceConfig {
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
     private Set<String> excludedMethods = new HashSet<String>();
-    private StringBuffer inlineScript = new StringBuffer();
+    private final StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
-    private Collection<String> requiredLibraries = new LinkedHashSet<String>();
+    private final Collection<String> requiredLibraries = new LinkedHashSet<String>();
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = Options.CLI_ASSUME_LOOP.load();
     private boolean assumePrinting = Options.CLI_ASSUME_PRINT.load();
-    private Map<String, String> optionGlobals = new HashMap<String, String>();
+    private final Map<String, String> optionGlobals = new HashMap<String, String>();
     private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
     private boolean split = Options.CLI_AUTOSPLIT.load();
     private Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();
@@ -1587,7 +1588,7 @@ public class RubyInstanceConfig {
     private boolean hasScriptArgv = false;
     private boolean frozenStringLiteral = false;
     private boolean debuggingFrozenStringLiteral = false;
-    private boolean interruptibleRegexps = Options.REGEXP_INTERRUPTIBLE.load();
+    private final boolean interruptibleRegexps = Options.REGEXP_INTERRUPTIBLE.load();
     private String jrubyHome;
 
     /**
@@ -1688,14 +1689,14 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.compile.fastest</tt> system property.
      */
-    public static boolean FASTEST_COMPILE_ENABLED = Options.COMPILE_FASTEST.load();
+    public static final boolean FASTEST_COMPILE_ENABLED = Options.COMPILE_FASTEST.load();
 
     /**
      * Enable fast operator compiler optimizations.
      *
      * Set with the <tt>jruby.compile.fastops</tt> system property.
      */
-    public static boolean FASTOPS_COMPILE_ENABLED
+    public static final boolean FASTOPS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED || Options.COMPILE_FASTOPS.load();
 
     /**
@@ -1857,18 +1858,18 @@ public class RubyInstanceConfig {
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
     public static final boolean STOPITERATION_BACKTRACE = Options.STOPITERATION_BACKTRACE.load();
 
-    public static boolean IR_DEBUG = Options.IR_DEBUG.load();
-    public static String IR_DEBUG_IGV = Options.IR_DEBUG_IGV.load();
-    public static boolean IR_PROFILE = Options.IR_PROFILE.load();
-    public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
-    public static boolean IR_WRITING = Options.IR_WRITING.load();
-    public static boolean IR_READING = Options.IR_READING.load();
-    public static boolean IR_READING_DEBUG = Options.IR_READING_DEBUG.load();
-    public static boolean IR_WRITING_DEBUG = Options.IR_WRITING_DEBUG.load();
-    public static boolean IR_VISUALIZER = Options.IR_VISUALIZER.load();
-    public static boolean IR_UNBOXING = Options.IR_UNBOXING.load();
-    public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
-    public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
+    public static final boolean IR_DEBUG = Options.IR_DEBUG.load();
+    public static final String IR_DEBUG_IGV = Options.IR_DEBUG_IGV.load();
+    public static final boolean IR_PROFILE = Options.IR_PROFILE.load();
+    public static final boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
+    public static final boolean IR_WRITING = Options.IR_WRITING.load();
+    public static final boolean IR_READING = Options.IR_READING.load();
+    public static final boolean IR_READING_DEBUG = Options.IR_READING_DEBUG.load();
+    public static final boolean IR_WRITING_DEBUG = Options.IR_WRITING_DEBUG.load();
+    public static final boolean IR_VISUALIZER = Options.IR_VISUALIZER.load();
+    public static final boolean IR_UNBOXING = Options.IR_UNBOXING.load();
+    public static final String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
+    public static final String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
     public static boolean RECORD_LEXICAL_HIERARCHY = Options.RECORD_LEXICAL_HIERARCHY.load();
 

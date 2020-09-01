@@ -138,6 +138,6 @@ public class ConditionVariable extends RubyObject {
         }
     }
 
-    private ConcurrentLinkedQueue<RubyThread> waiters = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<RubyThread> waiters = new ConcurrentLinkedQueue<>();
     
 }

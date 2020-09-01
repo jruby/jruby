@@ -42,7 +42,7 @@ import org.jruby.runtime.load.LoadService;
 /**
  * This should be filled up with more tests for RubyInstanceConfig later
  */
-public class TestRubyInstanceConfig extends TestRubyBase {
+public class TestRubyInstanceConfig extends Base {
     public TestRubyInstanceConfig(String name) {
         super(name);
     }

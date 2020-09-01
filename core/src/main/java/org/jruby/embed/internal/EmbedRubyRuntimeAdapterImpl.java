@@ -1,4 +1,4 @@
-/**
+/*
  * **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
@@ -84,7 +84,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         }
         boolean unicode_escape = false;
         Object obj = container.getAttribute(AttributeName.UNICODE_ESCAPE);
-        if (obj != null && obj instanceof Boolean) {
+        if (obj instanceof Boolean) {
             unicode_escape = (Boolean)obj;
         }
         if (unicode_escape) {
@@ -127,9 +127,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                     break;
                 case CLASSPATH:
                     URL loc = container.getProvider().getRuntime().getJRubyClassLoader().getResource(filename);
-                    if (loc == null) {
-                        istream = null; // as in ClassLoader.getResourceAsStream
-                    } else {
+                    if (loc != null) {
                         filename = LoadService.classpathFilenameFromURL(filename, loc, true);
                         try {
                             istream = loc.openStream();
@@ -177,7 +175,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             ManyVarsDynamicScope scope  = null;
             boolean sharing_variables = true;
             Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
-            if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
+            if (obj instanceof Boolean && !((Boolean) obj)) {
                 sharing_variables = false;
             }
             if (sharing_variables) {

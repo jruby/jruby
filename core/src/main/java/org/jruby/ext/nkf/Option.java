@@ -31,8 +31,8 @@ package org.jruby.ext.nkf;
 import java.util.regex.Pattern;
 
 public class Option {
-    private String opt;
-    private String longOpt;
+    private final String opt;
+    private final String longOpt;
     private boolean hasArg = false;
     private String value = null;
     private Pattern pattern;

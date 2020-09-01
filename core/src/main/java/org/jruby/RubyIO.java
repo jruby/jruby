@@ -55,8 +55,10 @@ import java.util.Set;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
+import jnr.constants.platform.PosixFadvise;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
+import jnr.posix.Linux;
 import jnr.posix.POSIX;
 
 import org.jcodings.Encoding;
@@ -2795,8 +2797,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             fptr.checkByteReadable(context);
             if (b.isNil()) return context.nil;
-            if (b instanceof RubyFixnum) {
-                byte cc = (byte) RubyNumeric.fix2int(b);
+            if (b instanceof RubyInteger) {
+                byte cc = (byte) ((RubyInteger) b.convertToInteger().op_mod(context, 256)).getIntValue();
                 b = RubyString.newStringNoCopy(context.runtime, new byte[]{cc});
             } else {
                 b = b.convertToString();
@@ -3555,6 +3557,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // MRI: rb_io_advise
     @JRubyMethod(required = 1, optional = 2)
     public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
+        Ruby runtime = context.runtime;
         IRubyObject advice, offset, len;
         advice = offset = len = context.nil;
         OpenFile fptr;
@@ -3567,32 +3570,48 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             case 1:
                 advice = argv[0];
         }
-        adviceArgCheck(context, advice);
+
+        PosixFadvise fadvise = adviceArgCheck(context, advice);
+
+        int off = offset.isNil() ? 0 : offset.convertToInteger().getIntValue();
+        int l = len.isNil() ? 0 : len.convertToInteger().getIntValue();
+
+        POSIX posix = runtime.getNativePosix();
+
+        if (!(posix instanceof Linux)) {
+            return context.nil;
+        }
 
         RubyIO io = GetWriteIO();
+
         fptr = io.getOpenFileChecked();
+
+        int fd = fptr.fd().realFileno;
+
+        if (fd == -1) {
+            // TODO: may be able to manipulate some types of channels
+            return context.nil;
+        }
 
         boolean locked = fptr.lock();
         try {
-            int off = offset.isNil() ? 0 : offset.convertToInteger().getIntValue();
-            int l = len.isNil() ? 0 : len.convertToInteger().getIntValue();
+            int res = ((Linux) posix).posix_fadvise(fd, off, l, fadvise);
 
-            // TODO: implement advise
-            //        #ifdef HAVE_POSIX_FADVISE
-            //        return do_io_advise(fptr, advice, off, l);
-            //        #else
-            //        ((void)off, (void)l);	/* Ignore all hint */
-            return context.nil;
-            //        #endif
+            if (res != 0) {
+                throw runtime.newErrnoFromInt(posix.errno(), "posix_fadvise");
+            }
         } finally {
             if (locked) fptr.unlock();
         }
+
+        return context.nil;
     }
 
     // MRI: advice_arg_check
-    static void adviceArgCheck(ThreadContext context, IRubyObject advice) {
-        if (!(advice instanceof RubySymbol))
+    static PosixFadvise adviceArgCheck(ThreadContext context, IRubyObject advice) {
+        if (!(advice instanceof RubySymbol)) {
             throw context.runtime.newTypeError("advise must be a symbol");
+        }
 
         String adviceStr = advice.asJavaString();
         switch (adviceStr) {
@@ -3605,7 +3624,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             case "willneed":
             case "dontneed":
             case "noreuse":
-                // ok
+                String adviceString = advice.toString();
+                return PosixFadvise.valueOf("POSIX_FADV_" + adviceString.toUpperCase());
         }
     }
 
@@ -4233,11 +4253,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         Channel channel1 = null;
         Channel channel2 = null;
 
-        if (args.length >= 3) {
+        if (args.length >= 3 && !args[2].isNil()) {
             length = args[2].convertToInteger();
-            if (args.length == 4) {
-                offset = args[3].convertToInteger();
-            }
+        }
+
+        if (args.length == 4 && !args[3].isNil()) {
+            offset = args[3].convertToInteger();
         }
 
         IOSites sites = sites(context);
@@ -4450,8 +4471,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (n == -1) break;
 
+            // write buffer fully and then clear
             flipBuffer(buffer);
-            to.write(buffer);
+            long w = 0;
+            while (w < n) {
+                w += to.write(buffer);
+            }
             clearBuffer(buffer);
 
             transferred += n;

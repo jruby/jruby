@@ -154,6 +154,36 @@ describe "Literal (A::X) constant resolution" do
     -> { ConstantSpecs::ParentA::CS_CONSTX }.should raise_error(NameError)
   end
 
+  ruby_version_is "2.8" do
+    it "uses the module or class #name to craft the error message" do
+      mod = Module.new do
+        def self.name
+          "ModuleName"
+        end
+
+        def self.inspect
+          "<unusable info>"
+        end
+      end
+
+      -> { mod::DOES_NOT_EXIST }.should raise_error(NameError, /uninitialized constant ModuleName::DOES_NOT_EXIST/)
+    end
+
+    it "uses the module or class #inspect to craft the error message if they are anonymous" do
+      mod = Module.new do
+        def self.name
+          nil
+        end
+
+        def self.inspect
+          "<unusable info>"
+        end
+      end
+
+      -> { mod::DOES_NOT_EXIST }.should raise_error(NameError, /uninitialized constant <unusable info>::DOES_NOT_EXIST/)
+    end
+  end
+
   it "sends #const_missing to the original class or module scope" do
     ConstantSpecs::ClassA::CS_CONSTX.should == :CS_CONSTX
   end
@@ -425,18 +455,8 @@ end
 
 describe "top-level constant lookup" do
   context "on a class" do
-    ruby_version_is "" ... "2.5" do
-      it "searches Object successfully after searching other scopes" do
-        -> {
-          String::Hash.should == Hash
-        }.should complain(/toplevel constant Hash referenced by/)
-      end
-    end
-
-    ruby_version_is "2.5" do
-      it "does not search Object after searching other scopes" do
-        -> { String::Hash }.should raise_error(NameError)
-      end
+    it "does not search Object after searching other scopes" do
+      -> { String::Hash }.should raise_error(NameError)
     end
   end
 

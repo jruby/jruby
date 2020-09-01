@@ -11,6 +11,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.JIT;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
@@ -64,6 +65,12 @@ public class Bootstrap {
     public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
+    public static final Handle EMPTY_STRING_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(Bootstrap.class),
+            "emptyString",
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class),
+            false);
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
         return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, bytelist(value, encodingName), cr));
@@ -86,6 +93,11 @@ public class Bootstrap {
             Binder
                     .from(RubyString.class, ThreadContext.class, MutableCallSite.class, ByteList.class, int.class, String.class, int.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "frozenString");
+
+    public static CallSite emptyString(Lookup lookup, String name, MethodType type, String encodingName) {
+        RubyString.EmptyByteListHolder holder = RubyString.getEmptyByteList(encodingFromName(encodingName));
+        return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, holder.bytes, holder.cr));
+    }
 
     public static Handle isNilBoot() {
         return new Handle(
@@ -182,13 +194,23 @@ public class Bootstrap {
     }
 
     public static ByteList bytelist(String value, String encodingName) {
+        Encoding encoding = encodingFromName(encodingName);
+
+        if (value.length() == 0) {
+            // special case empty string and don't create a new BL
+            return RubyString.getEmptyByteList(encoding).bytes;
+        }
+
+        return new ByteList(RubyEncoding.encodeISO(value), encoding, false);
+    }
+
+    private static Encoding encodingFromName(String encodingName) {
         Encoding encoding;
         EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
         if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
         if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
         encoding = entry.getEncoding();
-        ByteList byteList = new ByteList(RubyEncoding.encodeISO(value), encoding, false);
-        return byteList;
+        return encoding;
     }
 
     public static final Handle CALLSITE = new Handle(
@@ -1240,6 +1262,10 @@ public class Bootstrap {
         return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
     }
 
+    public static Handle coverLineHandle() {
+        return getBootstrapHandle("coverLineBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class, int.class));
+    }
+
     public static Handle getBootstrapHandle(String name, String sig) {
         return getBootstrapHandle(name, Bootstrap.class, sig);
     }
@@ -1276,6 +1302,23 @@ public class Bootstrap {
         target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
 
         site.setTarget(target);
+    }
+
+    public static CallSite coverLineBootstrap(Lookup lookup, String name, MethodType type, String filename, int line, int oneshot) throws Throwable {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = lookup.findStatic(Bootstrap.class, "coverLineFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class, String.class, int.class, boolean.class));
+
+        handle = handle.bindTo(site);
+        handle = insertArguments(handle, 1, filename, line, oneshot != 0);
+        site.setTarget(handle);
+
+        return site;
+    }
+
+    public static void coverLineFallback(MutableCallSite site, ThreadContext context, String filename, int line, boolean oneshot) throws Throwable {
+        IRRuntimeHelpers.updateCoverage(context, filename, line);
+
+        if (oneshot) site.setTarget(Binder.from(void.class, ThreadContext.class).dropAll().nop());
     }
 
     public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
@@ -1386,6 +1429,9 @@ public class Bootstrap {
             /*
             if (needsBinding) {
                 if (needsFrame) {
+            FullInterpreterContext fic = scope.getExecutionContext();
+            if (fic.needsBinding()) {
+                if (fic.needsFrame()) {
                     binder = binder.fold(FRAME_SCOPE_BINDING);
                 } else {
                     binder = binder.fold(SCOPE_BINDING);

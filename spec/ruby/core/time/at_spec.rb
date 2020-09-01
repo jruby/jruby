@@ -14,7 +14,7 @@ describe "Time.at" do
     end
 
     it "returns a non-UTC Time" do
-      Time.at(1184027924).utc?.should == false
+      Time.at(1184027924).should_not.utc?
     end
 
     it "returns a subclass instance on a Time subclass" do
@@ -54,12 +54,12 @@ describe "Time.at" do
 
     it "returns a UTC time if the argument is UTC" do
       t = Time.now.getgm
-      Time.at(t).utc?.should == true
+      Time.at(t).should.utc?
     end
 
     it "returns a non-UTC time if the argument is non-UTC" do
       t = Time.now
-      Time.at(t).utc?.should == false
+      Time.at(t).should_not.utc?
     end
 
     it "returns a subclass instance" do
@@ -91,6 +91,12 @@ describe "Time.at" do
         o = mock_numeric('rational')
         o.should_receive(:to_r).and_return(Rational(5, 2))
         Time.at(o).should == Time.at(Rational(5, 2))
+      end
+
+      it "needs for the argument to respond to #to_int too" do
+        o = mock('rational-but-no-to_int')
+        o.should_receive(:to_r).and_return(Rational(5, 2))
+        -> { Time.at(o) }.should raise_error(TypeError)
       end
     end
   end
@@ -144,59 +150,57 @@ describe "Time.at" do
     end
   end
 
-  ruby_version_is "2.5" do
-    describe "passed [Time, Numeric, format]" do
-      context ":nanosecond format" do
-        it "treats second argument as nanoseconds" do
-          Time.at(0, 123456789, :nanosecond).nsec.should == 123456789
-        end
+  describe "passed [Time, Numeric, format]" do
+    context ":nanosecond format" do
+      it "treats second argument as nanoseconds" do
+        Time.at(0, 123456789, :nanosecond).nsec.should == 123456789
+      end
+    end
+
+    context ":nsec format" do
+      it "treats second argument as nanoseconds" do
+        Time.at(0, 123456789, :nsec).nsec.should == 123456789
+      end
+    end
+
+    context ":microsecond format" do
+      it "treats second argument as microseconds" do
+        Time.at(0, 123456, :microsecond).nsec.should == 123456000
+      end
+    end
+
+    context ":usec format" do
+      it "treats second argument as microseconds" do
+        Time.at(0, 123456, :usec).nsec.should == 123456000
+      end
+    end
+
+    context ":millisecond format" do
+      it "treats second argument as milliseconds" do
+        Time.at(0, 123, :millisecond).nsec.should == 123000000
+      end
+    end
+
+    context "not supported format" do
+      it "raises ArgumentError" do
+        -> { Time.at(0, 123456, 2) }.should raise_error(ArgumentError)
+        -> { Time.at(0, 123456, nil) }.should raise_error(ArgumentError)
+        -> { Time.at(0, 123456, :invalid) }.should raise_error(ArgumentError)
       end
 
-      context ":nsec format" do
-        it "treats second argument as nanoseconds" do
-          Time.at(0, 123456789, :nsec).nsec.should == 123456789
-        end
+      it "does not try to convert format to Symbol with #to_sym" do
+        format = "usec"
+        format.should_not_receive(:to_sym)
+        -> { Time.at(0, 123456, format) }.should raise_error(ArgumentError)
       end
+    end
 
-      context ":microsecond format" do
-        it "treats second argument as microseconds" do
-          Time.at(0, 123456, :microsecond).nsec.should == 123456000
-        end
-      end
-
-      context ":usec format" do
-        it "treats second argument as microseconds" do
-          Time.at(0, 123456, :usec).nsec.should == 123456000
-        end
-      end
-
-      context ":millisecond format" do
-        it "treats second argument as milliseconds" do
-          Time.at(0, 123, :millisecond).nsec.should == 123000000
-        end
-      end
-
-      context "not supported format" do
-        it "raises ArgumentError" do
-          -> { Time.at(0, 123456, 2) }.should raise_error(ArgumentError)
-          -> { Time.at(0, 123456, nil) }.should raise_error(ArgumentError)
-          -> { Time.at(0, 123456, :invalid) }.should raise_error(ArgumentError)
-        end
-
-        it "does not try to convert format to Symbol with #to_sym" do
-          format = "usec"
-          format.should_not_receive(:to_sym)
-          -> { Time.at(0, 123456, format) }.should raise_error(ArgumentError)
-        end
-      end
-
-      it "supports Float second argument" do
-        Time.at(0, 123456789.500, :nanosecond).nsec.should == 123456789
-        Time.at(0, 123456789.500, :nsec).nsec.should == 123456789
-        Time.at(0, 123456.500, :microsecond).nsec.should == 123456500
-        Time.at(0, 123456.500, :usec).nsec.should == 123456500
-        Time.at(0, 123.500, :millisecond).nsec.should == 123500000
-      end
+    it "supports Float second argument" do
+      Time.at(0, 123456789.500, :nanosecond).nsec.should == 123456789
+      Time.at(0, 123456789.500, :nsec).nsec.should == 123456789
+      Time.at(0, 123456.500, :microsecond).nsec.should == 123456500
+      Time.at(0, 123456.500, :usec).nsec.should == 123456500
+      Time.at(0, 123.500, :millisecond).nsec.should == 123500000
     end
   end
 

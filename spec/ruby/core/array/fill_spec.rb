@@ -43,12 +43,12 @@ describe "Array#fill" do
     [nil, nil, nil, nil].fill { |i| i * 2 }.should == [0, 2, 4, 6]
   end
 
-  it "raises a #{frozen_error_class} on a frozen array" do
-    -> { ArraySpecs.frozen_array.fill('x') }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen array" do
+    -> { ArraySpecs.frozen_array.fill('x') }.should raise_error(FrozenError)
   end
 
-  it "raises a #{frozen_error_class} on an empty frozen array" do
-    -> { ArraySpecs.empty_frozen_array.fill('x') }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on an empty frozen array" do
+    -> { ArraySpecs.empty_frozen_array.fill('x') }.should raise_error(FrozenError)
   end
 
   it "raises an ArgumentError if 4 or more arguments are passed when no block given" do
@@ -207,8 +207,9 @@ describe "Array#fill with (filler, index, length)" do
 
   not_supported_on :opal do
     it "raises an ArgumentError or RangeError for too-large sizes" do
+      error_types = [RangeError, ArgumentError]
       arr = [1, 2, 3]
-      -> { arr.fill(10, 1, fixnum_max) }.should raise_error(ArgumentError)
+      -> { arr.fill(10, 1, fixnum_max) }.should raise_error { |err| error_types.should include(err.class) }
       -> { arr.fill(10, 1, bignum_value) }.should raise_error(RangeError)
     end
   end

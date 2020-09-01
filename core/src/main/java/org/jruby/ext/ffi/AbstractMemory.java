@@ -29,6 +29,7 @@
 package org.jruby.ext.ffi;
 
 import java.nio.ByteOrder;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
@@ -99,7 +100,7 @@ abstract public class AbstractMemory extends MemoryObject {
 
     protected static final RubyArray checkArray(IRubyObject obj) {
         if (!(obj instanceof RubyArray)) {
-            throw obj.getRuntime().newArgumentError("Array expected");
+            throw obj.getRuntime().newTypeError("Array expected");
         }
         return (RubyArray) obj;
     }
@@ -107,7 +108,7 @@ abstract public class AbstractMemory extends MemoryObject {
     private static int checkArrayLength(IRubyObject val) {
         int i = RubyNumeric.num2int(val);
         if (i < 0) {
-            throw val.getRuntime().newArgumentError("negative array length");
+            throw val.getRuntime().newIndexError("negative array length (" + i + ")");
         }
 
         return i;
@@ -1808,9 +1809,18 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "read_string")
     public IRubyObject read_string(ThreadContext context, IRubyObject rbLength) {
         /* When a length is given, read_string acts like get_bytes */
-        return !rbLength.isNil()
-                ? MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, Util.int32Value(rbLength))
-                : MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), 0);
+        if (rbLength.isNil()) {
+            return MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), 0);
+        } else {
+            int len = Util.int32Value(rbLength);
+            if (len == 0) {
+                RubyString rstr = RubyString.newEmptyString(context.runtime);
+                rstr.setEncoding(ASCIIEncoding.INSTANCE);
+                return rstr;
+            } else {
+                return MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, len);
+            }
+        }
     }
 
     @JRubyMethod(name = "get_string")

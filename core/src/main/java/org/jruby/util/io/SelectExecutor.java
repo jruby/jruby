@@ -446,7 +446,7 @@ public class SelectExecutor {
         return result;
     }
 
-    private static RubyThread.Task<SelectExecutor, Integer> SelectTask = new RubyThread.Task<SelectExecutor, Integer>() {
+    private static final RubyThread.Task<SelectExecutor, Integer> SelectTask = new RubyThread.Task<SelectExecutor, Integer>() {
         @Override
         public Integer run(ThreadContext context, SelectExecutor s) throws InterruptedException {
             int ready = 0;

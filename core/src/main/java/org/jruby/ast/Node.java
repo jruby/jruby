@@ -134,6 +134,15 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
         return toString(false, 0);
     }
 
+    /**
+     * Not all interesting info in the AST is from Node data.  This method will print
+     * out anything else of note (e.g. FixnumNode's long value).
+     * @return null for no extra info or something otherwise.
+     */
+    public String toStringExtraInfo() {
+       return null;
+    }
+
     public String toString(boolean indent, int indentation) {
         if (this instanceof InvisibleNode) return "";
 
@@ -149,7 +158,10 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
-        builder.append(" ").append(getPosition().getLine());
+        builder.append(" line: ").append(getPosition().getLine());
+
+        String extraInfo = toStringExtraInfo();
+        if (extraInfo != null) builder.append(", ").append(extraInfo);
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 

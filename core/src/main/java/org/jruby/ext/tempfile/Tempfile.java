@@ -46,13 +46,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
-import org.jruby.runtime.CallBlock19;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Signature;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.File;
@@ -63,7 +57,7 @@ import java.io.IOException;
  */
 @JRubyClass(name="Tempfile", parent="File")
 public class Tempfile extends RubyFile implements Finalizable {
-    private static ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new Tempfile(runtime, klass);
@@ -91,20 +85,15 @@ public class Tempfile extends RubyFile implements Finalizable {
 
     @JRubyMethod(optional = 4, visibility = Visibility.PRIVATE)
     @Override
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unused) {
         if (args.length == 0) {
-            args = new IRubyObject[] {RubyString.newEmptyString(context.runtime)};
+            args = new IRubyObject[] { RubyString.newEmptyString(context.runtime) };
         }
-        return initializeCommon(context, args);
-    }
-    
-    private IRubyObject initializeCommon(ThreadContext context, IRubyObject[] args) {
-        BlockCallback body = new TempfileCallback();
-        
-        // #create and #make_tmpname come from Dir::Tmpname, included into
-        // tempfile in lib/ruby/stdlib/tempfile.rb. We use create here to
-        // match filename algorithm and allow them to be overridden.
-        callMethod(context, "create", args, CallBlock19.newCallClosure(this, getMetaClass(), Signature.OPTIONAL, body, context));
+
+        IRubyObject Tmpname = context.runtime.getDir().getConstant("Tmpname", false);
+        Block block = CallBlock19.newCallClosure(this, getMetaClass(), Signature.OPTIONAL, new TempfileCallback(), context);
+        context.sites.Tempfile.create.call(context, Tmpname, Tmpname, args, block);
+        // ::Dir::Tmpname.create(basename, tmpdir=nil, **options) { |tmpname, n, opts| ... }
 
         // GH#1905: don't use JDK's deleteOnExit because it grows a set without bounds
         context.runtime.addInternalFinalizer(Tempfile.this);
@@ -151,7 +140,7 @@ public class Tempfile extends RubyFile implements Finalizable {
             // Logic from tempfile.rb starts again here
 
             // let RubyFile do its init logic to open the channel
-            Tempfile.super.initialize(context, new IRubyObject[]{tmpname, runtime.newFixnum(mode), opts}, Block.NULL_BLOCK);
+            Tempfile.super.initialize(context, new IRubyObject[] { tmpname, runtime.newFixnum(mode), opts }, Block.NULL_BLOCK);
             Tempfile.this.tmpname = tmpname;
 
             Tempfile.this.mode = runtime.newFixnum(mode & ~(OpenFlags.O_CREAT.intValue() | OpenFlags.O_EXCL.intValue()));
@@ -280,13 +269,4 @@ public class Tempfile extends RubyFile implements Finalizable {
         }
     }
 
-    @Deprecated
-    public IRubyObject initialize19(IRubyObject[] args, Block block) {
-        return initialize(getRuntime().getCurrentContext(), args, block);
-    }
-
-    @Deprecated
-    public IRubyObject size19(ThreadContext context) {
-        return size(context);
-    }
 }

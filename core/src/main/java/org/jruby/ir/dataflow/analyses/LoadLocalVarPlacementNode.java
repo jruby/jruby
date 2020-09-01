@@ -7,6 +7,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 
@@ -46,8 +47,8 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
 
     @Override
     public void applyTransferFunction(Instr i) {
-        IRScope scope = problem.getScope();
-        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+        FullInterpreterContext fic = problem.getFIC();
+        boolean scopeBindingHasEscaped = fic.bindingHasEscaped();
 
         // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
         if (i instanceof ResultInstr) {
@@ -58,7 +59,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         if (i instanceof ClosureAcceptingInstr) {
             Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
             if (o != null && o instanceof WrappedIRClosure) {
-                IRClosure cl = ((WrappedIRClosure) o).getClosure();
+                FullInterpreterContext clfic = ((WrappedIRClosure) o).getClosure().getFullInterpreterContext();
 
                 // Variables defined in the closure do not need to be loaded anymore at
                 // program points before the call, because they will be loaded after the
@@ -67,7 +68,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
                 Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
                 for (LocalVariable v: reqdLoads) {
-                    if (cl.definesLocalVariable(v)) newReqdLoads.remove(v);
+                    if (clfic.definesLocalVariable(v)) newReqdLoads.remove(v);
                 }
                 reqdLoads = newReqdLoads;
             }
@@ -83,7 +84,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 // Allocate a new hash-set and modify it to get around ConcurrentModificationException on reqdLoads
                 Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
                 for (LocalVariable v: reqdLoads) {
-                    if (!scope.definesLocalVariable(v)) newReqdLoads.remove(v);
+                    if (!fic.definesLocalVariable(v)) newReqdLoads.remove(v);
                 }
                 reqdLoads = newReqdLoads;
             }
@@ -130,19 +131,20 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         return "";
     }
 
-    private TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
+    private TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, FullInterpreterContext fic, Map<Operand, Operand> varRenameMap) {
          TemporaryLocalVariable value = (TemporaryLocalVariable)varRenameMap.get(v);
          if (value == null) {
-             value = scope.getNewTemporaryVariableFor(v);
+             value = fic.getNewTemporaryVariableFor(v);
              varRenameMap.put(v, value);
          }
          return value;
     }
 
     public void addLoads(Map<Operand, Operand> varRenameMap) {
-        IRScope scope                  = problem.getScope();
-        boolean isEvalScript           = scope instanceof IREvalScript;
-        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+        FullInterpreterContext fic = problem.getFIC();
+        IRScope scope                  = problem.getFIC().getScope();
+        boolean isEvalScript           = problem.getFIC().getScope() instanceof IREvalScript;
+        boolean scopeBindingHasEscaped = fic.bindingHasEscaped();
 
         List<Instr>         instrs    = basicBlock.getInstrs();
         ListIterator<Instr> it        = instrs.listIterator(instrs.size());
@@ -158,15 +160,15 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             if (i instanceof ClosureAcceptingInstr) {
                 Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                 if (o != null && o instanceof WrappedIRClosure) {
-                    IRClosure cl = ((WrappedIRClosure) o).getClosure();
+                    FullInterpreterContext clfic = ((WrappedIRClosure) o).getClosure().getFullInterpreterContext();
 
                     // Only those variables that are defined in the closure, and are in the required loads set
                     // will need to be loaded from the binding after the call!  Rest can wait ..
                     it.next();
                     for (Iterator<LocalVariable> iter = reqdLoads.iterator(); iter.hasNext();) {
                         LocalVariable v = iter.next();
-                        if (cl.definesLocalVariable(v)) {
-                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                        if (clfic.definesLocalVariable(v)) {
+                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                             it.previous();
                             iter.remove();
                         }
@@ -178,7 +180,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 if (scopeBindingHasEscaped) {
                     it.next();
                     for (LocalVariable v: reqdLoads) {
-                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                         it.previous();
                     }
                     it.previous();
@@ -190,8 +192,8 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     it.next();
                     for (Iterator<LocalVariable> iter = reqdLoads.iterator(); iter.hasNext();) {
                         LocalVariable v = iter.next();
-                        if (!scope.definesLocalVariable(v)) {
-                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                        if (!fic.definesLocalVariable(v)) {
+                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                             it.previous();
                             iter.remove();
                         }
@@ -207,7 +209,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 // 2. Threads can update bindings, so we treat thread poll boundaries the same way.
                 it.next();
                 for (LocalVariable v : reqdLoads) {
-                    it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                    it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                     it.previous();
                 }
                 it.previous();
@@ -220,7 +222,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     reqdLoads.add(lv);
                     // SSS FIXME: Why is this reqd again?  Document with example
                     // Make sure there is a replacement var for all local vars
-                    getLocalVarReplacement(lv, scope, varRenameMap);
+                    getLocalVarReplacement(lv, fic, varRenameMap);
                 }
             } else {
                 // The variables used as arguments will need to be loaded
@@ -233,7 +235,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                         reqdLoads.add(lv);
                         // SSS FIXME: Why is this reqd again?  Document with example
                         // Make sure there is a replacement var for all local vars
-                        getLocalVarReplacement(lv, scope, varRenameMap);
+                        getLocalVarReplacement(lv, fic, varRenameMap);
                     }
                 }
             }
@@ -242,18 +244,18 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         // Add loads on entry of a rescue block.
         if (basicBlock.isRescueEntry()) {
             for (LocalVariable v : reqdLoads) {
-                it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
             }
         }
 
         // Load first use of variables in closures
-        if (scope instanceof IRClosure && basicBlock.isEntryBB()) {
+        if (fic.getScope() instanceof IRClosure && basicBlock.isEntryBB()) {
             // System.out.println("\n[In Entry BB] For CFG " + getCFG() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {
-                if (scope.usesLocalVariable(v) || scope.definesLocalVariable(v)) {
+                if (fic.usesLocalVariable(v) || fic.definesLocalVariable(v)) {
                     if (isEvalScript || !(v instanceof ClosureLocalVariable) || ((ClosureLocalVariable)v).isOuterScopeVar()) {
-                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
+                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
                     }
                 }
             }

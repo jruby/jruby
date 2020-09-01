@@ -26,16 +26,6 @@ public interface InvocationCompiler {
     void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call);
 
     /**
-     * Invoke the to_s method with AsString semantics (tainting, refinements, etc).
-     * <p>
-     * Stack required: context, self, target
-     *
-     * @param file
-     * @param line
-     */
-    void invokeAsString(String file, int line, String scopeFieldName, CallBase call);
-
-    /**
      * Invoke a fixnum-receiving method on an object other than self.
      * <p>
      * Stack required: context, self, receiver (fixnum will be handled separately)
@@ -71,9 +61,10 @@ public interface InvocationCompiler {
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
+     * @param literalClosure whether the block passed is a literal closure
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a class context.
@@ -85,9 +76,10 @@ public interface InvocationCompiler {
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
+     * @param literalClosure whether the block passed is a literal closure
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from an unresolved context.
@@ -99,9 +91,10 @@ public interface InvocationCompiler {
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
+     * @param literalClosure whether the block passed is a literal closure
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a zsuper in a block.

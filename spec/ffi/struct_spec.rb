@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 #
 # This file is part of ruby-ffi.
 # For licensing, see LICENSE.SPECS
@@ -131,6 +132,19 @@ module StructSpecsStructTests
       expect(s[:string]).to be_nil
     end
 
+    it "Struct#clear sets the memory to zero" do
+      klass = Class.new(FFI::Struct) do
+        layout :a, :int, :b, :long
+      end
+
+      s = klass.new
+      s[:a] = 1
+      s[:b] = 2
+      s.clear
+      expect(s[:a]).to eq(0)
+      expect(s[:b]).to eq(0)
+    end
+
     it "Struct#layout works with :name, :type pairs" do
       s = Class.new(FFI::Struct) do
         layout :a, :int, :b, :long_long
@@ -171,21 +185,18 @@ module StructSpecsStructTests
       expect(mp.get_int64(4)).to eq(0xfee1deadbeef)
     end
 
-    rb_maj, rb_min = RUBY_VERSION.split('.')
-    if rb_maj.to_i >= 1 && rb_min.to_i >= 9 || RUBY_PLATFORM =~ /java/
-      it "Struct#layout withs with a hash of :name => type" do
-        class HashLayout < FFI::Struct
-          layout :a => :int, :b => :long_long
-        end
-        ll_off = (FFI::TYPE_UINT64.alignment == 4 ? 4 : 8)
-        expect(HashLayout.size).to eq(ll_off + 8)
-        mp = FFI::MemoryPointer.new(HashLayout.size)
-        s = HashLayout.new mp
-        s[:a] = 0x12345678
-        expect(mp.get_int(0)).to eq(0x12345678)
-        s[:b] = 0xfee1deadbeef
-        expect(mp.get_int64(ll_off)).to eq(0xfee1deadbeef)
+    it "Struct#layout withs with a hash of :name => type" do
+      class HashLayout < FFI::Struct
+        layout :a => :int, :b => :long_long
       end
+      ll_off = (FFI::TYPE_UINT64.alignment == 4 ? 4 : 8)
+      expect(HashLayout.size).to eq(ll_off + 8)
+      mp = FFI::MemoryPointer.new(HashLayout.size)
+      s = HashLayout.new mp
+      s[:a] = 0x12345678
+      expect(mp.get_int(0)).to eq(0x12345678)
+      s[:b] = 0xfee1deadbeef
+      expect(mp.get_int64(ll_off)).to eq(0xfee1deadbeef)
     end
 
     it "subclass overrides initialize without calling super" do
@@ -328,6 +339,17 @@ module StructSpecsStructTests
       expect(s.pointer.send("get_#{type.to_s}", 0)).to eq(v)
       s.pointer.send("put_#{type.to_s}", 0, 0)
       expect(s[:v]).to eq(0)
+
+      # Test coercion
+      obj = double("coerce")
+      expect(obj).to receive(:to_int).and_return(v)
+      s[:v] = obj
+      expect(s.pointer.send("get_#{type.to_s}", 0)).to eq(v)
+
+      zero = double("zero")
+      expect(zero).to receive(:to_int).and_return(0)
+      s.pointer.send("put_#{type.to_s}", 0, zero)
+      expect(s[:v]).to eq(0)
     end
     def self.int_field_test(type, values)
       values.each do |v|
@@ -343,13 +365,17 @@ module StructSpecsStructTests
     int_field_test(:int, [ 0, 0x7fffffff, -0x80000000, -1 ])
     int_field_test(:uint, [ 0, 0x7fffffff, 0x80000000, 0xffffffff ])
     int_field_test(:long_long, [ 0, 0x7fffffffffffffff, -0x8000000000000000, -1 ])
-    int_field_test(:ulong_long, [ 0, 0x7fffffffffffffff, 0x8000000000000000, 0xffffffffffffffff ])
+    if RUBY_ENGINE != 'jruby' # https://github.com/jnr/jffi/issues/87
+      int_field_test(:ulong_long, [ 0, 0x7fffffffffffffff, 0x8000000000000000, 0xffffffffffffffff ])
+    end
     if FFI::Platform::LONG_SIZE == 32
       int_field_test(:long, [ 0, 0x7fffffff, -0x80000000, -1 ])
       int_field_test(:ulong, [ 0, 0x7fffffff, 0x80000000, 0xffffffff ])
     else
       int_field_test(:long, [ 0, 0x7fffffffffffffff, -0x8000000000000000, -1 ])
-      int_field_test(:ulong, [ 0, 0x7fffffffffffffff, 0x8000000000000000, 0xffffffffffffffff ])
+      if RUBY_ENGINE != 'jruby' # https://github.com/jruby/jruby/issues/6376
+        int_field_test(:ulong, [ 0, 0x7fffffffffffffff, 0x8000000000000000, 0xffffffffffffffff ])
+      end
     end
 
     it ":float field r/w" do
@@ -360,6 +386,15 @@ module StructSpecsStructTests
       value = 1.23456
       s[:v] = value
       expect((s.pointer.get_float(0) - value).abs).to be < 0.0001
+
+      # Test coercion
+      obj = double("coerce")
+      expect(obj).to receive(:to_f).and_return(42.0)
+      s[:v] = obj
+      expect((s.pointer.get_float(0) - 42.0).abs).to be < 0.0001
+
+      s.pointer.put_float(0, 1.0)
+      expect(s.pointer.get_float(0)).to eq(1.0)
     end
 
     it ":double field r/w" do
@@ -370,6 +405,15 @@ module StructSpecsStructTests
       value = 1.23456
       s[:v] = value
       expect((s.pointer.get_double(0) - value).abs).to be < 0.0001
+
+      # Test coercion
+      obj = double("coerce")
+      expect(obj).to receive(:to_f).and_return(42.0)
+      s[:v] = obj
+      expect((s.pointer.get_double(0) - 42.0).abs).to be < 0.0001
+
+      s.pointer.put_double(0, 1.0)
+      expect(s.pointer.get_double(0)).to eq(1.0)
     end
     module EnumFields
       extend FFI::Library
@@ -545,6 +589,23 @@ describe FFI::Struct, ".layout" do
       instance[:number] = 0xA1
       expect(FFISpecs::LibTest.ptr_ret_int32_t(instance, 0)).to eq(0xA1)
     end
+
+    it "ignores a module which does not extend FFI::Library or subclass FFI::Struct" do
+      module FFISpecs::UnrelatedFindTypeTest
+        # MakeMakefile from 'mkmf' defines such a method
+        def self.find_type(*args)
+          raise "should not be called"
+        end
+
+        class TestStruct < FFI::Struct
+          layout :number, :int
+        end
+      end
+
+      instance = FFISpecs::UnrelatedFindTypeTest::TestStruct.new
+      instance[:number] = 123
+      expect(FFISpecs::LibTest.ptr_ret_int32_t(instance, 0)).to eq(123)
+    end
   end
 end
 
@@ -649,7 +710,8 @@ describe FFI::Struct, ' with a nested array of structs'  do
   end
 end
 
-describe FFI::Struct, ' by value'  do
+# struct by value not yet supported on TruffleRuby
+describe FFI::Struct, ' by value' do
   module LibTest
     extend FFI::Library
     ffi_lib TestLibrary::PATH
@@ -744,7 +806,7 @@ describe FFI::Struct, ' by value'  do
     expect(s[:len]).to eq(string.length)
     expect(s[:bytes]).to eq(string)
   end
-end
+end if RUBY_ENGINE != "truffleruby"
 
 describe FFI::Struct, ' with an array field'  do
   module LibTest
@@ -785,6 +847,61 @@ describe FFI::Struct, ' with an array field'  do
   it 'should return the pointer to the array' do
     @s = LibTest::StructWithArray.new(LibTest.struct_make_struct_with_array(0, 1, 2, 3, 4))
     expect(@s[:a].to_ptr).to eq(LibTest::struct_field_array(@s.to_ptr))
+  end
+
+  it 'raises when trying to set an array field' do
+    @s = LibTest::StructWithArray.new(LibTest.struct_make_struct_with_array(0, 1, 2, 3, 4))
+    expect { @s[:a] = [7, 8, 9, 10, 11] }.to raise_error(NotImplementedError, 'cannot set array field')
+  end
+end
+
+describe FFI::Struct, ' with a char array field'  do
+  module LibTest
+    class StructWithCharArray < FFI::Struct
+      layout :before, :int32, :str, [:char, 4], :after, :int32
+    end
+  end
+
+  before do
+    @s = LibTest::StructWithCharArray.new
+    @s.pointer.write_bytes([-1, 1, 2, 0, 255, -2].pack("lC4l"))
+  end
+
+  it 'should read values from memory' do
+    expect(@s[:before]).to eq(-1)
+    expect(@s[:str].to_a).to eq([1, 2, 0, -1])
+    expect(@s[:str].to_s).to eq("\x01\x02".b)
+    expect(@s[:after]).to eq(-2)
+  end
+
+  it 'should return the number of elements in the array field' do
+    expect(@s[:str].size).to eq(4)
+  end
+
+  it 'should allow iteration through the array elements' do
+    @s[:str].each_with_index { |elem, i| expect(elem).to eq([1, 2, 0, -1][i]) }
+  end
+
+  it 'should return the pointer to the array' do
+    expect(@s[:str].to_ptr).to eq(@s.to_ptr + 4)
+  end
+
+  it 'allows writing a shorter String to the char array' do
+    @s[:str] = "äc"
+    expect(@s[:before]).to eq(-1)
+    expect(@s[:str].to_s).to eq("äc".b)
+    expect(@s[:after]).to eq(-2)
+  end
+
+  it 'allows writing a String of the same size to the char array' do
+    @s[:str] = "äcd"
+    expect(@s[:before]).to eq(-1)
+    expect(@s[:str].to_s).to eq("äcd".b)
+    expect(@s[:after]).to eq(-2) # The above should not write to the next field
+  end
+
+  it 'raises when writing a longer String to the char array' do
+    expect { @s[:str] = "äcde" }.to raise_error(IndexError)
   end
 end
 

@@ -64,9 +64,10 @@ import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHelper;
+import org.jruby.util.IdUtil;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
+import org.jruby.util.SymbolNameType;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -90,7 +91,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final int id;
     private final ByteList symbolBytes;
     private final int hashCode;
+    private String decodedString;
     private transient Object constant;
+    private SymbolNameType type;
 
     /**
      *
@@ -120,6 +123,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 PerlHash.hash(k0, symbolBytes.getUnsafeBytes(),
                 symbolBytes.getBegin(), symbolBytes.getRealSize());
         this.hashCode = (int) hash;
+        this.type = IdUtil.determineSymbolNameType(runtime, symbolBytes);
         setFrozen(true);
     }
 
@@ -174,7 +178,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     @Override
     public final String toString() {
-        return RubyEncoding.decodeISO(symbolBytes);
+        String decoded = decodedString;
+        if (decoded == null) {
+            decodedString = decoded = RubyEncoding.decodeRaw(symbolBytes);
+        }
+        return decoded;
     }
 
     public final ByteList getBytes() {
@@ -252,50 +260,30 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return other == this;
     }
 
-    // FIXME: Symbol (like MRI) should get flag set for types of identifiers it can represent so we don't recalc this all the time (and others)
     /**
      * Is the string this constant represents a valid constant identifier name.
      */
     public boolean validConstantName() {
-        boolean valid =  ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-            index == 0 && encoding.isUpper(codepoint) ||
-                    index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
-
-        return valid && getBytes().length() >= 1;
+        return type == SymbolNameType.CONST;
     }
 
     /**
      * Is the string this constant represents a valid constant identifier name.
      */
     public boolean validInstanceVariableName() {
-        boolean valid = ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-            index == 0 && codepoint == '@' ||
-                    index == 1 && (!encoding.isDigit(codepoint)) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_') ||
-                    index > 1 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
-
-        return valid && getBytes().length() >= 2; // FIXME: good enough on length check?  Trying to avoid counter.
+        return type == SymbolNameType.INSTANCE;
     }
 
     /**
      * Is the string this constant represents a valid constant identifier name.
      */
     public boolean validClassVariableName() {
-        boolean valid = ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-                index == 0 && codepoint == '@' ||
-                        index == 1 && codepoint == '@' ||
-                        index == 2 && (!encoding.isDigit(codepoint)) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_') ||
-                        index > 2 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
-
-        return valid && getBytes().length() >= 3; // FIXME: good enough on length check?  Trying to avoid counter.
+        return type == SymbolNameType.CLASS;
     }
 
 
     public boolean validLocalVariableName() {
-        boolean valid =  ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-                index == 0 && (!encoding.isDigit(codepoint) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_')) ||
-                        index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
-
-        return valid && getBytes().length() >= 1;
+        return type == SymbolNameType.LOCAL;
     }
 
     @Override
@@ -406,13 +394,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
         if (bytes.length() == 0) {
-            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), "");
+            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), runtime.newSymbol(""));
         }
 
         RubySymbol symbol = runtime.newSymbol(bytes);
 
         if (!symbol.validConstantName()) {
-            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), symbol.idString());
+            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), symbol);
         }
 
         return symbol;
@@ -883,10 +871,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input, UnmarshalStream.MarshalState state) throws java.io.IOException {
         ByteList byteList = input.unmarshalString();
+        byteList.setEncoding(ASCIIEncoding.INSTANCE);
 
-        if (RubyString.scanForCodeRange(byteList) == CR_7BIT) {
-            byteList.setEncoding(USASCIIEncoding.INSTANCE);
-        }
+        // Extra complicated interaction...
+        // We initially set to binary as newSymbol will make it US-ASCII if possible and code below will set explicit
+        // encoding otherwise.  Motivation here is binary is capable of being walked during symbol type calculation
+        // (and at this point the bytelist can be data of any encoding without us knowing what).  The proper type
+        // calculation will happen for non-US-ASCII below when it decodes the encoding.  setEncoding will recalculate
+        // symbol type properly.  This is all to work around registerLinkTarget being an ordered list.  So a symbol
+        // retrieved while decoding the encoding would make this symbol get registered out of order...
 
         // Need symbol to register before encoding, so pass in a lambda for remaining unmarshal logic
         RubySymbol result = newSymbol(input.getRuntime(), byteList,
@@ -902,7 +895,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                             if (enc == null) throw new RuntimeException("BUG: No encoding found in marshal stream");
 
                             // only change encoding if the symbol has been newly-created
-                            if (newSym) sym.getBytes().setEncoding(enc);
+                            if (newSym) sym.setEncoding(enc);
 
                             state.setIvarWaiting(false);
                         } catch (Throwable t) {
@@ -935,6 +928,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public void setEncoding(Encoding e) {
         symbolBytes.setEncoding(e);
+        type = IdUtil.determineSymbolNameType(getRuntime(), symbolBytes);
     }
 
     public static final class SymbolTable {
@@ -1019,7 +1013,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             if (symbol == null) {
                 bytes = bytes.dup();
                 symbol = createSymbol(
-                        RubyEncoding.decodeISO(bytes),
+                        RubyEncoding.decodeRaw(bytes),
                         bytes,
                         hash,
                         hard);
@@ -1442,7 +1436,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-            RubyProc.prepareArgs(context, block.type, this, args);
             return yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), blockArg);
         }
 
@@ -1458,6 +1451,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+            if (args.length == 1) {
+                return yieldSpecific(context, Block.NULL_BLOCK, args[0]);
+            }
             return yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), Block.NULL_BLOCK);
         }
 

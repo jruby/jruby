@@ -21,3 +21,5 @@ fails:Module#autoload the autoload is triggered when the same file is required d
 fails:Module#autoload the autoload is triggered when the same file is required directly in a nested require
 critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks a second thread while a first is doing the autoload
 critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks others threads while doing an autoload
+fails:Module#autoload the autoload is triggered when the same file is required directly does not raise an error if the autoload constant was not defined
+fails:Module#autoload considers an autoload constant as loaded when autoload is called for/from the current file

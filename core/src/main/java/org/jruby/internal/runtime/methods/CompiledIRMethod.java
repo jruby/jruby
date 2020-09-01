@@ -20,8 +20,8 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     private MethodHandle specific;
     private final int specificArity;
-    private String encodedArgumentDescriptors;
-    private boolean needsToFindImplementer;
+    private final String encodedArgumentDescriptors;
+    private final boolean needsToFindImplementer;
 
     public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope, Visibility visibility,
                             RubyModule implementationClass, String encodedArgumentDescriptors, boolean recievesKeywordArgs, boolean needsToFindImplementer) {
@@ -33,7 +33,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
                             String encodedArgumentDescriptors) {
         this(variable, null, -1, method.getId(), method.getLine(), method.getStaticScope(),
                 visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs(),
-                !(method instanceof IRMethod && !method.getFlags().contains(IRFlags.REQUIRES_CLASS)));
+                !(method instanceof IRMethod && !method.getFullInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS)));
     }
 
     // Used by spec:compiler
@@ -41,7 +41,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
                             Visibility visibility, RubyModule implementationClass, String encodedArgumentDescriptors) {
         this(variable, specific, specificArity, method.getId(), method.getLine(), method.getStaticScope(),
                 visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs(),
-                !(method instanceof IRMethod && !method.getFlags().contains(IRFlags.REQUIRES_CLASS)));
+                !(method instanceof IRMethod && !method.getFullInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS)));
     }
 
     // Ruby Class/Module constructor (feels like we should maybe have a subtype here...

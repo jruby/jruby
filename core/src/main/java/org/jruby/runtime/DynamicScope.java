@@ -28,6 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -569,6 +570,24 @@ public abstract class DynamicScope implements Cloneable {
 
     public boolean isLambda() {
         return lambda;
+    }
+
+    /**
+     * A DynamicScope is the target of a non-local return if it is one of the following:
+     *
+     * * A method scope
+     * * A top-level script scope
+     * * A block scope that is either marked as the argument scope (define_method) or a lambda
+     *
+     * @return true if this scope is the nearest return scope, false otherwise
+     */
+    public boolean isReturnTarget() {
+        StaticScope staticScope = this.staticScope;
+        IRScopeType scopeType = staticScope.getScopeType();
+
+        return scopeType.isMethodType() ||                              // Contained within a method
+                scopeType == IRScopeType.SCRIPT_BODY ||
+                scopeType.isBlock() && (staticScope.isArgumentScope() || lambda);  // Contained within define_method closure
     }
 
     @Deprecated

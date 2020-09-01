@@ -46,7 +46,7 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalValueCompiler implements ValueCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalValueCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;
@@ -99,6 +99,11 @@ public class NormalValueCompiler implements ValueCompiler {
             compiler.adapter.ldc(line);
             compiler.invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, ThreadContext.class, String.class, String.class, int.class, String.class, int.class));
         });
+    }
+
+    public void pushEmptyString(Encoding encoding) {
+        pushRuntime();
+        compiler.adapter.invokestatic(p(RubyString.class), "newEmptyString", sig(RubyString.class, Ruby.class));
     }
 
     public void pushByteList(final ByteList bl) {

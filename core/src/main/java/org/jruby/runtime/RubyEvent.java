@@ -31,8 +31,8 @@ public enum RubyEvent {
     // A_RETURN is RETURN + B_RETURN + C_RETURN
     A_RETURN ("a_return");
 
-    public static Set<RubyEvent> ALL_EVENTS = Collections.synchronizedSet(EnumSet.allOf(RubyEvent.class));
-    public static EnumSet ALL_EVENTS_ENUMSET = EnumSet.copyOf(RubyEvent.ALL_EVENTS);
+    public static final Set<RubyEvent> ALL_EVENTS = Collections.synchronizedSet(EnumSet.allOf(RubyEvent.class));
+    public static final EnumSet ALL_EVENTS_ENUMSET = EnumSet.copyOf(RubyEvent.ALL_EVENTS);
 
     private final String event_name;
     private final boolean requiresDebug;

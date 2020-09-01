@@ -454,12 +454,12 @@ public class EncodingUtils {
         int len = sByteList.getRealSize();
 
         Ptr sp = new Ptr(0);
-        int se = 0;
-        int ds = 0;
+        int se;
+        int ds;
         int ss = sByteList.getBegin();
         byte[] dBytes;
         Ptr dp = new Ptr(0);
-        int de = 0;
+        int de;
         EConvResult res;
         int maxOutput;
 
@@ -904,7 +904,7 @@ public class EncodingUtils {
                     if (!ecopts.isNil()) {
                         rep = ((RubyHash)ecopts).op_aref(context, runtime.newSymbol("replace"));
                     }
-                    dest = ((RubyString)str).scrub(context, rep, Block.NULL_BLOCK);
+                    dest = ((RubyString)str).encStrScrub(context, senc_p[0], rep, Block.NULL_BLOCK);
                     if (dest.isNil()) dest = str;
                     self_p[0] = dest;
                     return dencindex;
@@ -2007,7 +2007,7 @@ public class EncodingUtils {
                 throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
             case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
             case 0:
-                throw runtime.newRangeError(Long.toString(i) + " out of char range");
+                throw runtime.newRangeError(i + " out of char range");
         }
 
         ByteList strBytes = new ByteList(n);
@@ -2144,81 +2144,7 @@ public class EncodingUtils {
     }
 
     public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
-        Encoding enc = str.getEncoding();
-        ByteList pByteList = str.getByteList();
-        byte[] pBytes = pByteList.unsafeBytes();
-        int p = pByteList.begin();
-        int pend = p + pByteList.realSize();
-        int prev = p;
-        byte[] buf;
-        RubyString result = RubyString.newEmptyString(runtime);
-        boolean unicode_p = enc.isUnicode();
-        boolean asciicompat = enc.isAsciiCompatible();
-
-        while (p < pend) {
-            long c, cc;
-            int n = StringSupport.preciseLength(enc, pBytes, p, pend);
-            if (!StringSupport.MBCLEN_CHARFOUND_P(n)) {
-                if (p > prev) result.cat(pBytes, prev, p - prev);
-                n = enc.minLength();
-                if (pend < p + n)
-                    n = (int) (pend - p);
-                while ((n--) != 0) {
-                    buf = String.format("x%02X", pBytes[p] & 0377).getBytes();
-                    result.cat(buf, 0, buf.length);
-                    prev = ++p;
-                }
-                continue;
-            }
-            n = StringSupport.MBCLEN_CHARFOUND_LEN(n);
-            c = enc.mbcToCode(pBytes, p, pend);
-            p += n;
-            switch ((int)c) {
-                case '\n':
-                    cc = 'n';
-                    break;
-                case '\r':
-                    cc = 'r';
-                    break;
-                case '\t':
-                    cc = 't';
-                    break;
-                case '\f':
-                    cc = 'f';
-                    break;
-                case '\013':
-                    cc = 'v';
-                    break;
-                case '\010':
-                    cc = 'b';
-                    break;
-                case '\007':
-                    cc = 'a';
-                    break;
-                case 033:
-                    cc = 'e';
-                    break;
-                default:
-                    cc = 0;
-                    break;
-            }
-            if (cc != 0) {
-                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
-                buf = new byte[] {(byte)'\\', (byte)cc};
-                result.cat(buf, 0, 2);
-                prev = p;
-            } else if (asciicompat && Encoding.isAscii((byte)c) && c > 31 /*ISPRINT(c)*/) {
-            } else {
-                if (p - n > prev) result.cat(pBytes, prev, p - n - prev);
-                rbStrBufCatEscapedChar(result, c, unicode_p);
-                prev = p;
-            }
-        }
-        if (p > prev) result.cat(pBytes, prev, p - prev);
-        result.setEncodingAndCodeRange(USASCIIEncoding.INSTANCE, StringSupport.CR_7BIT);
-
-        result.setTaint(str.isTaint());
-        return result;
+        return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
     }
 
     public static int rbStrBufCatEscapedChar(RubyString result, long c, boolean unicode_p) {

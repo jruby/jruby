@@ -20,7 +20,7 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
 
     // normal constructor
     public OneArgOperandAttrAssignInstr(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, boolean isPotentiallyRefined) {
-        super(scope, obj, attr, args, isPotentiallyRefined);
+        super(scope, obj, attr, args, null, isPotentiallyRefined);
     }
 
     @Override

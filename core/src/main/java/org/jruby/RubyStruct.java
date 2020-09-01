@@ -188,7 +188,11 @@ public class RubyStruct extends RubyObject {
         if (args.length > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
             if (!firstArgAsString.isNil()) {
-                name = ((RubyString)firstArgAsString).getByteList().toString();
+                RubySymbol nameSym = ((RubyString)firstArgAsString).intern();
+                if (!nameSym.validConstantName()) {
+                    throw runtime.newNameError(IDENTIFIER_NEEDS_TO_BE_CONSTANT, recv, nameSym.toString());
+                }
+                name = nameSym.idString();
             } else if (args[0].isNil()) {
                 nilName = true;
             }
@@ -227,10 +231,6 @@ public class RubyStruct extends RubyObject {
             newStruct.makeMetaClass(superClass.metaClass);
             newStruct.inherit(superClass);
         } else {
-            if (!IdUtil.isConstant(name)) {
-                throw runtime.newNameError(IDENTIFIER_NEEDS_TO_BE_CONSTANT, recv, name);
-            }
-
             IRubyObject type = superClass.getConstantAt(name);
             if (type != null) {
                 ThreadContext context = runtime.getCurrentContext();
@@ -565,8 +565,6 @@ public class RubyStruct extends RubyObject {
             return context.fals;
         }
 
-        if (other == this) return context.tru;
-
         // recursion guard
         return context.safeRecurse(EqlRecursive.INSTANCE, other, this, "eql?", true);
     }
@@ -626,13 +624,37 @@ public class RubyStruct extends RubyObject {
         return context.runtime.newArray(values);
     }
 
-    @JRubyMethod
+    @Deprecated
     public RubyHash to_h(ThreadContext context) {
+        return to_h(context, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod
+    public RubyHash to_h(ThreadContext context, Block block) {
         RubyHash hash = RubyHash.newHash(context.runtime);
         RubyArray members = __member__();
 
-        for (int i = 0; i < values.length; i++) {
-            hash.op_aset(context, members.eltOk(i), values[i]);
+        if (block.isGiven()) {
+            for (int i = 0; i < values.length; i++) {
+                IRubyObject elt = block.yieldValues(context, new IRubyObject[]{members.eltOk(i), values[i]});
+                IRubyObject key_value_pair = elt.checkArrayType();
+
+                if (key_value_pair == context.nil) {
+                    throw context.runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " at " + i + " (expected array)");
+                }
+
+                RubyArray ary = (RubyArray)key_value_pair;
+
+                if (ary.getLength() != 2) {
+                    throw context.runtime.newArgumentError("element has wrong array length (expected 2, was " + ary.getLength() + ")");
+                }
+
+                hash.op_aset(context, ary.eltInternal(0), ary.eltInternal(1));
+            }
+        } else {
+            for (int i = 0; i < values.length; i++) {
+                hash.op_aset(context, members.eltOk(i), values[i]);
+            }
         }
 
         return hash;

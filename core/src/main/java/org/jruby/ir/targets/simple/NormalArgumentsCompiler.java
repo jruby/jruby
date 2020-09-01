@@ -18,7 +18,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalArgumentsCompiler implements ArgumentsCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalArgumentsCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;
@@ -35,7 +35,7 @@ public class NormalArgumentsCompiler implements ArgumentsCompiler {
         final String methodName = "kwargsHash:" + length;
         final ClassData classData = compiler.getClassData();
 
-        if (!classData.kwargsHashMethodsDefined.contains(length)) {
+        if (!classData.kwargsHashMethodsDefined.containsKey(length)) {
             adapter2 = new SkinnyMethodAdapter(
                     compiler.adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
@@ -52,7 +52,7 @@ public class NormalArgumentsCompiler implements ArgumentsCompiler {
             adapter2.areturn();
             adapter2.end();
 
-            classData.kwargsHashMethodsDefined.add(length);
+            classData.kwargsHashMethodsDefined.put(length, null);
         }
 
         // now call it

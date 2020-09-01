@@ -69,3 +69,15 @@ RSpec::Matchers.define :have_strings_or_symbols do |*strings|
     end.join("\n")
   end
 end
+
+def with_stderr_captured
+  stderr = $stderr; require 'stringio'
+  begin
+    $stderr = StringIO.new
+    yield
+    $stderr.string
+  ensure
+    $stderr = stderr
+  end
+end
+

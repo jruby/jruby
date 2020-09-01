@@ -27,8 +27,9 @@
 
 package org.jruby.util.unsafe;
 
+import org.jruby.javasupport.Java;
+
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 public final class UnsafeHolder {
     
@@ -43,7 +44,7 @@ public final class UnsafeHolder {
         try {
             Class unsafeClass = Class.forName("sun.misc.Unsafe");
             Field f = unsafeClass.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
+            Java.trySetAccessible(f);
             return (sun.misc.Unsafe) f.get(null);
         } catch (Exception e) {
             return null;

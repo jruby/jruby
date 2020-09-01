@@ -54,10 +54,10 @@ describe "String#tr_s" do
       ["h", "hello"].each do |str|
         tainted_str = str.dup.taint
 
-        tainted_str.tr_s("e", "a").tainted?.should == true
+        tainted_str.tr_s("e", "a").should.tainted?
 
-        str.tr_s("e".taint, "a").tainted?.should == false
-        str.tr_s("e", "a".taint).tainted?.should == false
+        str.tr_s("e".taint, "a").should_not.tainted?
+        str.tr_s("e", "a".taint).should_not.tainted?
       end
     end
   end
@@ -127,10 +127,10 @@ describe "String#tr_s!" do
     s.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} if self is frozen" do
+  it "raises a FrozenError if self is frozen" do
     s = "hello".freeze
-    -> { s.tr_s!("el", "ar") }.should raise_error(frozen_error_class)
-    -> { s.tr_s!("l", "r")   }.should raise_error(frozen_error_class)
-    -> { s.tr_s!("", "")     }.should raise_error(frozen_error_class)
+    -> { s.tr_s!("el", "ar") }.should raise_error(FrozenError)
+    -> { s.tr_s!("l", "r")   }.should raise_error(FrozenError)
+    -> { s.tr_s!("", "")     }.should raise_error(FrozenError)
   end
 end

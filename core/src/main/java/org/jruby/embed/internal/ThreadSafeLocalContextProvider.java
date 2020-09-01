@@ -43,7 +43,7 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
     private volatile ConcurrentLinkedQueue<AtomicReference<LocalContext>> contextRefs =
         new ConcurrentLinkedQueue<AtomicReference<LocalContext>>();
 
-    private ThreadLocal<AtomicReference<LocalContext>> contextHolder =
+    private final ThreadLocal<AtomicReference<LocalContext>> contextHolder =
             new ThreadLocal<AtomicReference<LocalContext>>() {
                 @Override
                 public AtomicReference<LocalContext> initialValue() {

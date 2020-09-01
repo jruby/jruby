@@ -3,6 +3,8 @@ package org.jruby.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.security.AccessControlException;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -10,7 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -122,50 +124,62 @@ class JarCache {
         }
     }
 
-    private final Map<String, JarIndex> indexCache = new WeakHashMap<>();
+    private static class SoftJarIndex extends SoftReference<JarIndex> {
+        private final String key;
+
+        public SoftJarIndex(String key, JarIndex index) {
+            super(index);
+            this.key = key;
+        }
+
+        public String getKey() {
+            return key;
+        }
+    }
+
+    private final Map<String, SoftJarIndex> indexCache = new ConcurrentHashMap<>();
+    private final ReferenceQueue<JarIndex> indexQueue = new ReferenceQueue<>();
 
     public JarIndex getIndex(String jarPath) {
         String cacheKey = jarPath;
 
-        synchronized (indexCache) {
-            JarIndex index = indexCache.get(cacheKey);
+        cleanup();
 
-            // If the index is invalid (jar has changed since snapshot was loaded)
-            // we can just treat it as a "new" index and cache the updated results.
-            if (index != null && !index.isValid()) {
-                index.release();
-                index = null;
-            }
+        SoftReference<JarIndex> indexRef = indexCache.get(cacheKey);
+        JarIndex index = indexRef == null ? null : indexRef.get();
 
-            if (index == null) {
-                try {
-                    index = new JarIndex(jarPath);
-                    indexCache.put(cacheKey, index);
-                } catch (IOException ioe) {
-                    return null;
-                } catch (AccessControlException ace) {
-                    // No permissions to index the given path, bail out
-                    return null;
-                }
-            }
-
-            return index;
+        // If the index is invalid (jar has changed since snapshot was loaded)
+        // we can just treat it as a "new" index and cache the updated results.
+        // The old index will be dereferenced once no longer in use and eventually get cleaned up.
+        if (index != null && !index.isValid()) {
+            index = null;
         }
+
+        if (index == null) {
+            try {
+                index = new JarIndex(jarPath);
+                indexCache.put(cacheKey, new SoftJarIndex(cacheKey, index));
+            } catch (IOException ioe) {
+                return null;
+            } catch (AccessControlException ace) {
+                // No permissions to index the given path, bail out
+                return null;
+            }
+        }
+
+        return index;
     }
 
-    public boolean remove(String jarPath){
-        String cacheKey = jarPath;
+    public void remove(String jarPath) {
+        // remove but do not otherwise damage the index associated with this path, since it may still be in use
+        indexCache.remove(jarPath);
+    }
 
-        synchronized (indexCache) {
-            JarIndex index = indexCache.get(cacheKey);
-            if (index == null){
-                return false;
-            }
-            else{
-                index.release();
-                indexCache.remove(cacheKey);
-                return true;
-            }
+    // must be called under locked indexCache
+    private void cleanup() {
+        SoftJarIndex indexRef;
+        while ((indexRef = (SoftJarIndex) indexQueue.poll()) != null) {
+            indexCache.remove(indexRef.getKey());
         }
     }
 }

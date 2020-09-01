@@ -1,1 +1,1 @@
-fails:Enumerator::Yielder#<< doesn't double-wrap Arrays
+fails:Enumerator::Yielder#<< when multiple arguments passed raises an ArgumentError

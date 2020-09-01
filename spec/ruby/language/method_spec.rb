@@ -156,6 +156,26 @@ describe "A method send" do
       -> { m(1, 2, *x) }.should raise_error(TypeError)
     end
   end
+
+  context "with a block argument" do
+    before :all do
+      def m(x)
+        if block_given?
+          [true, yield(x + 'b')]
+        else
+          [false]
+        end
+      end
+    end
+
+    it "that refers to a proc passes the proc as the block" do
+      m('a', &-> y { y + 'c'}).should == [true, 'abc']
+    end
+
+    it "that is nil passes no block" do
+      m('a', &nil).should == [false]
+    end
+  end
 end
 
 describe "An element assignment method send" do
@@ -1763,6 +1783,19 @@ describe "An array-dereference method ([])" do
       self['foo', &pr].should == :ok
       self.[](&pr).should == :ok
       self.[]('foo', &pr).should == :ok
+    end
+  end
+end
+
+ruby_version_is '2.8' do
+  describe "An endless method definition" do
+    evaluate <<-ruby do
+      def m(a) = a
+    ruby
+
+      a = b = m 1
+      a.should == 1
+      b.should == 1
     end
   end
 end

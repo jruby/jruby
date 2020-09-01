@@ -219,17 +219,6 @@ describe "an interface (Java 8+)" do
     expect( output.index('ambiguous') ).to be nil
   end
 
-  def with_stderr_captured
-    stderr = $stderr; require 'stringio'
-    begin
-      $stderr = StringIO.new
-      yield
-      $stderr.string
-    ensure
-      $stderr = stderr
-    end
-  end
-
   def javac_compile(files)
     compiler = javax.tools.ToolProvider.getSystemJavaCompiler
     fmanager = compiler.getStandardFileManager(nil, nil, nil)

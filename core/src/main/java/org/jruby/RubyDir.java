@@ -134,7 +134,7 @@ public class RubyDir extends RubyObject implements Closeable {
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
         Ruby runtime = context.runtime;
 
-        return initializeCommon(context, path, runtime.getDefaultFilesystemEncoding(), runtime);
+        return initializeCommon(context, path, runtime.getDefaultEncoding(), runtime);
     }
 
     /**
@@ -159,7 +159,7 @@ public class RubyDir extends RubyObject implements Closeable {
             }
         }
 
-        if (encoding == null) encoding = runtime.getDefaultFilesystemEncoding();
+        if (encoding == null) encoding = runtime.getDefaultEncoding();
 
         return initializeCommon(context, path, encoding, runtime);
     }
@@ -171,7 +171,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
         this.encoding = encoding;
 
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, newPath.toString(), null);
+        String adjustedPath = RubyFile.getAdjustedPath(context, newPath);
         checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
 
         this.dir = JRubyFile.createResource(context, adjustedPath);
@@ -352,7 +352,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
 
-        return entriesCommon(context, path.asJavaString(), runtime.getDefaultEncoding(), false);
+        return entriesCommon(context, path, runtime.getDefaultEncoding(), false);
     }
 
     @JRubyMethod(name = "entries", meta = true)
@@ -370,15 +370,16 @@ public class RubyDir extends RubyObject implements Closeable {
         }
         if (encoding == null) encoding = runtime.getDefaultEncoding();
 
-        return entriesCommon(context, path.asJavaString(), encoding, false);
+        return entriesCommon(context, path, encoding, false);
     }
 
-    private static RubyArray entriesCommon(ThreadContext context, String path, Encoding encoding, final boolean childrenOnly) {
+    private static RubyArray entriesCommon(ThreadContext context, IRubyObject path, Encoding encoding, final boolean childrenOnly) {
         Ruby runtime = context.runtime;
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path, null);
+
+        String adjustedPath = RubyFile.getAdjustedPath(context, path);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
-        FileResource directory = JRubyFile.createResource(context, path);
+        FileResource directory = JRubyFile.createResource(context, adjustedPath);
         String[] files = getEntries(context, directory, adjustedPath);
 
         RubyArray result = RubyArray.newArray(runtime, files.length);
@@ -460,6 +461,11 @@ public class RubyDir extends RubyObject implements Closeable {
     /**
      * Returns an array containing all of the filenames except for "." and ".." in the given directory.
      */
+    @JRubyMethod(name = "children")
+    public IRubyObject children(ThreadContext context) {
+        return entriesCommon(context, path, encoding, true);
+    }
+    
     @JRubyMethod(name = "children", meta = true)
     public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return children(context, recv, arg, context.nil);
@@ -476,7 +482,7 @@ public class RubyDir extends RubyObject implements Closeable {
         }
         if (encoding == null) encoding = context.runtime.getDefaultEncoding();
 
-        return entriesCommon(context, RubyFile.get_path(context, arg).asJavaString(), encoding, true);
+        return entriesCommon(context, arg, encoding, true);
     }
 
     /**
@@ -790,6 +796,15 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     public IRubyObject each_child(ThreadContext context, Block block) {
         return each_child(context, encoding, block);
+    }
+
+    @JRubyMethod(name = "each_child")
+    public IRubyObject rb_each_child(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            return each_child(context, block);
+        }
+
+        return enumeratorize(context.runtime, children(context), "each");
     }
 
     @Override

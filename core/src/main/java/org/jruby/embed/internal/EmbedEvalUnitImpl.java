@@ -126,8 +126,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             // handle exits as simple script termination
             if ( e.getException() instanceof RubySystemExit ) {
                 return ((RubySystemExit) e.getException()).status();
-            }
-            runtime.printError(e.getException());
+            };
             throw new EvalFailedException(e.getMessage(), e);
         }
         catch (StackOverflowError soe) {

@@ -142,6 +142,9 @@ public class ModeFlags implements Cloneable {
                 case 't' :
                     modes |= TEXT;
                     break;
+                case 'x':
+                    modes |= EXCL;
+                    break;
                 case ':':
                     break ModifierLoop;
                 default:
@@ -411,6 +414,9 @@ public class ModeFlags implements Cloneable {
         }
         if ((flags & TMPFILE) != 0) {
             fmodeFlags |= OpenFile.TMPFILE;
+        }
+        if ((flags & EXCL) != 0) {
+            fmodeFlags |= OpenFile.EXCLUSIVE;
         }
 
         // This is unique to us to keep bridge betweeen mode_flags and oflags

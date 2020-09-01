@@ -63,7 +63,7 @@ public class RubyServerSocket extends RubySocket {
         rb_cSocket.defineAnnotatedMethods(RubyServerSocket.class);
     }
 
-    private static ObjectAllocator SERVER_SOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator SERVER_SOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyServerSocket(runtime, klass);
         }

@@ -11,7 +11,7 @@ import org.jruby.util.JavaNameMangler;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyInstanceVariableCompiler implements InstanceVariableCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public IndyInstanceVariableCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

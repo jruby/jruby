@@ -44,7 +44,6 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.RubyNil;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.TypeConverterSites;
 import org.jruby.runtime.ThreadContext;
@@ -260,9 +259,9 @@ public class TypeConverter {
     }
 
     public static RaiseException newTypeError(Ruby runtime, IRubyObject obj, RubyClass target, String methodName, IRubyObject val) {
-        IRubyObject className =  types(runtime, obj.getMetaClass());
+        IRubyObject className =  types(runtime, obj.getType());
         return runtime.newTypeError(str(runtime, "can't convert ", className, " to ", types(runtime, target), " (",
-                className, '#' + methodName + " gives ", types(runtime, val.getMetaClass()), ")"));
+                className, '#' + methodName + " gives ", types(runtime, val.getType()), ")"));
     }
 
     // rb_check_to_integer
@@ -307,8 +306,16 @@ public class TypeConverter {
 
     // rb_check_hash_type
     public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
+        return checkHashType(runtime, obj, true);
+    }
+
+    public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj, boolean raise) {
         if (obj instanceof RubyHash) return obj;
-        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
+        if (raise) {
+            return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
+        } else {
+            return TypeConverter.convertToType(obj, runtime.getHash(), "to_hash", false);
+        }
     }
 
     // rb_check_hash_type
@@ -396,22 +403,25 @@ public class TypeConverter {
     }
 
     // rb_convert_to_integer
-    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
+    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base, boolean exception) {
         final Ruby runtime = context.runtime;
         IRubyObject tmp;
 
         for (;;) {
             switch (val.getMetaClass().getClassIndex()) {
                 case FLOAT:
-                    if (base != 0) raiseIntegerBaseError(context);
-                    return RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) val).getValue());
+                    if (base != 0) return raiseIntegerBaseError(context, exception);
+                    RubyFloat flote = (RubyFloat) val;
+                    if (!exception && !Double.isFinite(flote.getDoubleValue())) return context.nil;
+                    return RubyNumeric.dbl2ival(context.runtime, flote.getValue());
                 case INTEGER:
-                    if (base != 0) raiseIntegerBaseError(context);
+                    if (base != 0) return raiseIntegerBaseError(context, exception);
                     return val;
                 case STRING:
-                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
+                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true, exception);
                 case NIL:
-                    if (base != 0) raiseIntegerBaseError(context);
+                    if (base != 0) return raiseIntegerBaseError(context, exception);
+                    if (!exception) return context.nil;
                     throw context.runtime.newTypeError("can't convert nil into Integer");
                 default: // MRI checks String sub-classes
                     if (val instanceof RubyString) {
@@ -422,14 +432,38 @@ public class TypeConverter {
             if (base != 0) {
                 tmp = TypeConverter.checkStringType(context.runtime, val);
                 if (tmp != context.nil) continue;
-                raiseIntegerBaseError(context);
+                return raiseIntegerBaseError(context, exception);
             }
 
             break;
         }
 
-        tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
-        return (tmp != context.nil) ? tmp : TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked);
+        try {
+            tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
+            if (tmp instanceof RubyInteger) {
+                return tmp;
+            }
+        } catch (RaiseException re) {
+            if (!exception) return context.nil;
+            throw re;
+        }
+
+        if (!exception) {
+            try {
+                IRubyObject ret = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked, false);
+                if (ret instanceof RubyInteger) return ret;
+            } catch (RaiseException re) {
+                if (exception) throw re;
+            }
+
+            return context.nil;
+        }
+
+        return val.convertToInteger("to_i");
+    }
+
+    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
+        return convertToInteger(context, val, base, true);
     }
 
     // MRI: rb_Array
@@ -451,7 +485,9 @@ public class TypeConverter {
         return (RubyArray) convertToType(context, ary, context.runtime.getArray(), sites(context).to_ary_checked);
     }
 
-    private static void raiseIntegerBaseError(ThreadContext context) {
+    private static IRubyObject raiseIntegerBaseError(ThreadContext context, boolean exception) {
+        if (!exception) return context.nil;
+
         throw context.runtime.newArgumentError("base specified for non string value");
     }
 
@@ -496,7 +532,7 @@ public class TypeConverter {
         // grab it's string representation without calling a method which properly encodes
         // the string.
         if (obj instanceof RubyString) {
-            return RubyEncoding.decodeISO(((RubyString) obj).getByteList()).intern();
+            return RubyEncoding.decodeRaw(((RubyString) obj).getByteList()).intern();
         }
         return obj.asJavaString().intern();
     }

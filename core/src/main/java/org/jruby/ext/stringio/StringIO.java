@@ -80,7 +80,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private static final int STRIO_WRITABLE = ObjectFlags.STRIO_WRITABLE;
     private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
 
-    private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new StringIO(runtime, klass);
         }
@@ -1153,8 +1153,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         checkModifiable();
 
-        if (arg instanceof RubyFixnum) {
-            ungetbyteCommon(RubyNumeric.fix2int(arg));
+        if (arg instanceof RubyInteger) {
+            ungetbyteCommon(((RubyInteger) ((RubyInteger) arg).op_mod(context, 256)).getIntValue());
         } else {
             ungetbyteCommon(arg.convertToString());
         }
@@ -1205,13 +1205,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 ptr.pos = olen;
             }
             if (ptr.pos == olen) {
-                EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
+                    EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                    ptr.string.infectBy(str);
+                } else {
+                    ptr.string.cat19(str);
+                }
             } else {
                 strioExtend(ptr.pos, len);
                 ByteList ptrByteList = ptr.string.getByteList();
                 System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + ptr.pos, len);
+                ptr.string.infectBy(str);
             }
-            ptr.string.infectBy(str);
             ptr.string.infectBy(this);
             ptr.pos += len;
         }

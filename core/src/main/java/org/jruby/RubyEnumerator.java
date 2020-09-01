@@ -569,7 +569,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                         enumeratorizeWithSize(context, this, rubyMethodName, new IRubyObject[]{runtime.newFixnum(index)}, enumSizeFn());
         }
 
-        return RubyEnumerable.callEach(runtime, context, this, new RubyEnumerable.EachWithIndex(block, index));
+        return RubyEnumerable.callEach(context, sites(context).each, this, new RubyEnumerable.EachWithIndex(block, index));
     }
 
     @JRubyMethod
@@ -661,5 +661,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private static JavaSites.FiberSites sites(ThreadContext context) {
         return context.sites.Fiber;
+    }
+
+    @JRubyMethod(name = "+", required = 1)
+    public IRubyObject op_plus(ThreadContext context, IRubyObject obj) {
+        return RubyChain.newChain(context, new IRubyObject[] {this, obj});
     }
 }

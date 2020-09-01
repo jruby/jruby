@@ -250,6 +250,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         if (!packed()) return super.sortInternal(context, block);
 
 
+        IRubyObject car = this.car;
+        IRubyObject cdr = this.cdr;
+
         IRubyObject ret = block.yieldArray(context, newArray(context.runtime, car, cdr), null);
         //TODO: ary_sort_check should be done here
         int compare = RubyComparable.cmpint(context, ret, car, cdr);
@@ -265,15 +268,14 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         // One check per specialized fast-path to make the check invariant.
         JavaSites.Array2Sites sites = sites(context);
-        final boolean fixnumBypass = !honorOverride || sites.op_cmp_fixnum.retrieveCache(runtime.getFixnum()).method.isBuiltin();
-        final boolean stringBypass = !honorOverride || sites.op_cmp_string.retrieveCache(runtime.getString()).method.isBuiltin();
 
         IRubyObject o1 = car;
         IRubyObject o2 = cdr;
+
         int compare;
-        if (fixnumBypass && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+        if (isFixnumBypass(runtime, sites, honorOverride) && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
             compare = compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
-        } else if (stringBypass && o1 instanceof RubyString && o2 instanceof RubyString) {
+        } else if (isStringBypass(runtime, sites, honorOverride) && o1 instanceof RubyString && o2 instanceof RubyString) {
             compare = ((RubyString) o1).op_cmp((RubyString) o2);
         } else {
             compare = compareOthers(context, o1, o2);
@@ -282,6 +284,14 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         if (compare > 0) reverse_bang();
 
         return this;
+    }
+
+    private boolean isStringBypass(Ruby runtime, JavaSites.Array2Sites sites, boolean honorOverride) {
+        return !honorOverride || sites.op_cmp_string.isBuiltin(runtime.getString());
+    }
+
+    private boolean isFixnumBypass(Ruby runtime, JavaSites.Array2Sites sites, boolean honorOverride) {
+        return !honorOverride || sites.op_cmp_fixnum.isBuiltin(runtime.getFixnum());
     }
 
     @Override
@@ -327,6 +337,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     public IRubyObject uniq(ThreadContext context) {
         if (!packed()) return super.uniq(context);
 
+        IRubyObject car = this.car;
+        IRubyObject cdr = this.cdr;
+
         if (invokedynamic(context, car, MethodNames.HASH).equals(invokedynamic(context, cdr, MethodNames.HASH)) &&
                 (car == cdr || invokedynamic(context, car, MethodNames.EQL, cdr).isTrue())) {
             // Use cdr because it would have been inserted into RubyArray#uniq's RubyHash last
@@ -334,6 +347,51 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         } else {
             return new RubyArrayTwoObject(this);
         }
+    }
+
+    @Override
+    public RubyArray collectCommon(ThreadContext context, Block block) {
+        if (!packed()) return super.collectCommon(context, block);
+
+        if (!block.isGiven()) return makeShared();
+
+        Ruby runtime = context.runtime;
+
+        IRubyObject newCar = block.yieldNonArray(context, this.car, null);
+        if (realLength == 2) {
+            // no size change, yield last elt and return
+            return new RubyArrayTwoObject(
+                    runtime,
+                    newCar,
+                    block.yieldNonArray(context, cdr, null));
+        }
+
+        // size has changed, unpack and continue with loop form
+        unpack();
+
+        int currentLength = this.realLength;
+        IRubyObject[] arr = IRubyObject.array(currentLength);
+
+        if (currentLength == 0) return runtime.newEmptyArray();
+
+        arr[0] = newCar;
+
+        int i = 1;
+        for (; i < this.realLength; i++) {
+            // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
+            // See JRUBY-5434
+            safeArraySet(runtime, arr, i, block.yieldNonArray(context, eltOk(i), null)); // arr[i] = ...
+        }
+
+        // use iteration count as new size in case something was deleted along the way
+        return newArrayMayCopy(context.runtime, arr, 0, i);
+    }
+
+    @Override
+    protected RubyArray makeShared() {
+        if (!packed()) return super.makeShared();
+
+        return new RubyArrayTwoObject(this);
     }
 
     private static final JavaSites.Array2Sites sites(ThreadContext context) {

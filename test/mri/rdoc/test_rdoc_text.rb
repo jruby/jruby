@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require 'rdoc/test_case'
+require 'minitest_helper'
+require 'timeout'
 
 class TestRDocText < RDoc::TestCase
 
@@ -258,8 +259,7 @@ paragraph will be cut off some point after the one-hundredth character.
     TEXT
 
     expected = <<-EXPECTED
-<p>This is one-hundred characters or more of text in a single paragraph.  This
-paragraph will be cut off …
+<p>This is one-hundred characters or more of text in a single paragraph.  This paragraph will be cut off …
     EXPECTED
 
     assert_equal expected, snippet(text)
@@ -364,6 +364,32 @@ paragraph will be cut off …
     text = <<-TEXT
 /*
  * Document-method: Zlib::GzipFile#mtime=
+ *
+ * A comment
+ */
+    TEXT
+
+    expected = <<-EXPECTED
+
+   A comment
+    EXPECTED
+
+    assert_equal expected, strip_stars(text)
+  end
+
+  def test_strip_stars_document_method_special
+    text = <<-TEXT
+/*
+ * Document-method: Zlib::GzipFile#mtime=
+ * Document-method: []
+ * Document-method: `
+ * Document-method: |
+ * Document-method: &
+ * Document-method: <=>
+ * Document-method: =~
+ * Document-method: +
+ * Document-method: -
+ * Document-method: +@
  *
  * A comment
  */

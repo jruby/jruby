@@ -37,6 +37,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -57,7 +58,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public static final byte[] NULL_ARRAY = new byte[0];
     public static final ByteList EMPTY_BYTELIST = new ByteList(NULL_ARRAY, false);
 
-    private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
+    private static final Charset ISO_LATIN_1 = StandardCharsets.ISO_8859_1;
 
     // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
     // until there's new releases we shall keep them public and maybe review other exts using BL's API
@@ -443,9 +444,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Append a single int to the ByteList
+     * Append a single byte to the ByteList by truncating the given int
      *
-     * @param b the int to be added
+     * @param b the int to truncated and added
      * @return this instance
      */
     public ByteList append(int b) {

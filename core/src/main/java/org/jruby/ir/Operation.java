@@ -141,6 +141,7 @@ public enum Operation {
     /** debugging ops **/
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
     TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
+    COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
     ARG_SCOPE_DEPTH(0),
@@ -229,7 +230,7 @@ public enum Operation {
     PREPARE_NO_BLOCK_ARGS(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception);
 
     public final OpClass opClass;
-    private int flags;
+    private final int flags;
 
     Operation(int flags) {
         this.flags = flags;

@@ -20,7 +20,7 @@ describe "Literal Regexps" do
 
   ruby_version_is "2.8" do
     it "is frozen" do
-      /Hello/.frozen?.should == true
+      /Hello/.should.frozen?
     end
   end
 
@@ -113,6 +113,12 @@ describe "Literal Regexps" do
 
   it "supports (?<= ) (positive lookbehind)" do
     /foo.(?<=\d)/.match("fooA foo1").to_a.should == ["foo1"]
+  end
+
+  # https://bugs.ruby-lang.org/issues/13671
+  it "raises a RegexpError for lookbehind with specific characters" do
+    r =  Regexp.new("(?<!dss)", Regexp::IGNORECASE)
+    -> { r =~ "✨" }.should raise_error(RegexpError)
   end
 
   it "supports (?<! ) (negative lookbehind)" do

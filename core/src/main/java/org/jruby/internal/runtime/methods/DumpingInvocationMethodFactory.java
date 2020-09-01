@@ -30,6 +30,7 @@ package org.jruby.internal.runtime.methods;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 import org.objectweb.asm.ClassWriter;
 
@@ -42,7 +43,7 @@ import org.objectweb.asm.ClassWriter;
  */
 public class DumpingInvocationMethodFactory extends InvocationMethodFactory {
 
-    private String dumpPath;
+    private final String dumpPath;
     
     public DumpingInvocationMethodFactory(String path, ClassLoader classLoader) {
         super(classLoader);
@@ -56,12 +57,10 @@ public class DumpingInvocationMethodFactory extends InvocationMethodFactory {
         String cname = name.replace('.','/');
         File f = new File(dumpPath,cname+".class");
         f.getParentFile().mkdirs();
-        try {
-            FileOutputStream fos = new FileOutputStream(f);
+        try ( FileOutputStream fos = new FileOutputStream(f)) {
             fos.write(code);
-            fos.close();
-        } catch(Exception e) {
-        }
+        } catch (IOException ex) { }
+
         return classLoader.defineClass(name, code);
     }
 }// DumpingInvocationMethodFactory

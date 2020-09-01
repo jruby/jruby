@@ -33,6 +33,7 @@ import java.util.List;
 
 import org.jruby.ParseResult;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -46,18 +47,18 @@ import org.jruby.runtime.DynamicScope;
  */
 // TODO: Store BEGIN and END information into this node
 public class RootNode extends Node implements ParseResult {
-    private transient DynamicScope scope;
-    private StaticScope staticScope;
-    private Node bodyNode;
-    private String file;
+    private final transient DynamicScope scope;
+    private final StaticScope staticScope;
+    private final Node bodyNode;
+    private final String file;
     private int endPosition;
-    private boolean needsCodeCoverage;
+    private final int coverageMode;
 
     public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode, String file) {
-        this(position, scope, bodyNode, file, -1, false);
+        this(position, scope, bodyNode, file, -1, CoverageData.NONE);
     }
 
-    public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode, String file, int endPosition, boolean needsCodeCoverage) {
+    public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode, String file, int endPosition, int coverageMode) {
         super(position, bodyNode.containsVariableAssignment());
         
         this.scope = scope;
@@ -65,14 +66,14 @@ public class RootNode extends Node implements ParseResult {
         this.bodyNode = bodyNode;
         this.file = file;
         this.endPosition = endPosition;
-        this.needsCodeCoverage = needsCodeCoverage;
+        this.coverageMode = coverageMode;
 
         staticScope.setFile(file);
     }
 
     @Deprecated
     public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode, String file, int endPosition) {
-        this(position, scope, bodyNode, file, endPosition, false);
+        this(position, scope, bodyNode, file, endPosition, CoverageData.NONE);
     }
 
     public NodeType getNodeType() {
@@ -133,8 +134,8 @@ public class RootNode extends Node implements ParseResult {
     }
 
     // Is coverage enabled and is this a valid source file for coverage to apply?
-    public boolean needsCoverage() {
-        return needsCodeCoverage;
+    public int coverageMode() {
+        return coverageMode;
     }
 
     @Override

@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Represents an 'undef' statement.
  */
 public class UndefNode extends Node {
-    private Node name;
+    private final Node name;
 
     // name can be SymbolNode/DSymbolNode/LiteralNdoe
     public UndefNode(ISourcePosition position, Node name) {

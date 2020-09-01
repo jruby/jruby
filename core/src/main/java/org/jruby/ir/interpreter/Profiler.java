@@ -36,8 +36,8 @@ public class Profiler {
     }
 
     private static class CallSiteProfile {
-        IRCallSite cs;
-        HashMap<IRScope, Counter> counters;
+        final IRCallSite cs;
+        final HashMap<IRScope, Counter> counters;
 
         public CallSiteProfile(IRCallSite cs) {
             this.cs = new IRCallSite(cs);
@@ -45,7 +45,7 @@ public class Profiler {
         }
     }
 
-    private static IRCallSite callerSite = new IRCallSite();
+    private static final IRCallSite callerSite = new IRCallSite();
 
     private static int inlineCount = 0;
     private static int globalThreadPollCount = 0;
@@ -53,7 +53,7 @@ public class Profiler {
     private static int numCyclesWithNoModifications = 0;
     private static int versionCount = 1;
 
-    private static HashMap<IRScope, Integer> scopeVersionMap = new HashMap<IRScope, Integer>();
+    private static final HashMap<IRScope, Integer> scopeVersionMap = new HashMap<IRScope, Integer>();
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
     private static HashMap<Long, CallSiteProfile> callProfile = new HashMap<Long, CallSiteProfile>();
     private static HashMap<Operation, Counter> opStats = new HashMap<Operation, Counter>();

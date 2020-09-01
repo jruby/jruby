@@ -33,8 +33,10 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.KeyError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -42,6 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name="KeyError", parent="IndexError")
 public class RubyKeyError extends RubyIndexError {
+    private static final String[] VALID_KEYS = {"receiver", "key"};
     private IRubyObject receiver;
     private IRubyObject key;
 
@@ -65,6 +68,49 @@ public class RubyKeyError extends RubyIndexError {
     @Override
     protected RaiseException constructThrowable(String message) {
         return new KeyError(message, this);
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject messageOrKwargs) {
+        IRubyObject[] receiverKey = ArgsUtil.extractKeywordArgs(context, messageOrKwargs, VALID_KEYS);
+
+        if (receiverKey == null) return initialize(context, messageOrKwargs, null);
+
+        return initializeCommon(context, context.nil, receiverKey);
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject message, IRubyObject kwargs) {
+        IRubyObject[] receiverKey = ArgsUtil.extractKeywordArgs(context, kwargs, VALID_KEYS);
+
+        return initializeCommon(context, message, receiverKey);
+    }
+
+    private IRubyObject initializeCommon(ThreadContext context, IRubyObject message, IRubyObject[] receiverKey) {
+        IRubyObject receiver;
+        IRubyObject key;
+        if (receiverKey == null) {
+            receiver = context.nil;
+            key = context.nil;
+        } else {
+            receiver = receiverKey[0];
+            key = receiverKey[1];
+        }
+
+        setMessage(message);
+        this.receiver = receiver;
+        this.key = key;
+
+        return context.nil;
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject message, IRubyObject receiver, IRubyObject key) {
+        setMessage(message);
+        this.receiver = receiver;
+        this.key = key;
+
+        return context.nil;
     }
 
     @JRubyMethod

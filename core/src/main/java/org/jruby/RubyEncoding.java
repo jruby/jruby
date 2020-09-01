@@ -292,6 +292,17 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return bytes;
     }
 
+    /**
+     * Decode the range of bytes specified as UTF-8 content.
+     *
+     * This will attempt to use a zero-allocation decoder if the content length is shorter than {@link #CHAR_THRESHOLD}
+     * bytes, and otherwise will used cached decoders to avoid reallocating Charset-related objects.
+     *
+     * @param bytes the byte array
+     * @param start start of content
+     * @param length length of content
+     * @return a decoded String based on UTF-8 bytes
+     */
     public static String decodeUTF8(byte[] bytes, int start, int length) {
         if (length > CHAR_THRESHOLD) {
             return UTF8.decode(ByteBuffer.wrap(bytes, start, length)).toString();
@@ -299,18 +310,37 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return getUTF8Coder().decode(bytes, start, length).toString();
     }
 
-    public static String decodeISO(byte[] bytes, int start, int length) {
+    /**
+     * Decode the range of bytes specified as "raw" binary content, as in ISO-8859-1 or ASCII-8BIT encodings.
+     *
+     * This will attempt to use a zero-allocation decoder if the content length is shorter than {@link #CHAR_THRESHOLD}
+     * bytes, and otherwise will used cached decoders to avoid reallocating Charset-related objects.
+     *
+     * @param bytes the byte array
+     * @param start start of content
+     * @param length length of content
+     * @return a decoded String based on raw bytes
+     */
+    public static String decodeRaw(byte[] bytes, int start, int length) {
         if (length > CHAR_THRESHOLD) {
-            return new String(decodeISOLoop(bytes, start, length));
+            return new String(decodeRawLoop(bytes, start, length));
         }
-        return getISOCoder().decode(bytes, start, length);
+        return getRawCoder().decode(bytes, start, length);
     }
 
-    public static String decodeISO(ByteList byteList) {
-        return decodeISO(byteList.unsafeBytes(), byteList.begin(), byteList.realSize());
+    /**
+     * Decode the specified bytelist as "raw" binary content.
+     *
+     * This is the same as calling {@link #decodeRaw(byte[], int, int)} with the contents of byteList.
+     *
+     * @param byteList
+     * @return a decoded string based on raw bytes
+     */
+    public static String decodeRaw(ByteList byteList) {
+        return decodeRaw(byteList.unsafeBytes(), byteList.begin(), byteList.realSize());
     }
 
-    private static char[] decodeISOLoop(byte[] s, int start, int length) {
+    private static char[] decodeRawLoop(byte[] s, int start, int length) {
         char[] chars = new char[length];
         for (int i = 0; i < length; i++) {
             chars[i] = (char) (s[i + start] & 0xFF);
@@ -333,6 +363,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     /** The maximum number of characters we can encode/decode in our cached buffers */
     private static final int CHAR_THRESHOLD = 1024;
 
+    /**
+     * A cached decoder for UTF-8 bytes.
+     */
     private static class UTF8Coder {
         private final CharsetEncoder encoder = UTF8.newEncoder();
         private final CharsetDecoder decoder = UTF8.newDecoder();
@@ -390,7 +423,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     }
 
-    private static class ISOCoder {
+    /**
+     * A cached decoder object to decode bytes as raw binary (ISO-8859-1 or ASCII-8BIT) content.
+     */
+    private static class RawCoder {
         private final char[] charBuffer = new char[CHAR_THRESHOLD];
 
         public final String decode(byte[] bytes, int start, int length) {
@@ -404,11 +440,16 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     /**
-     * UTF8Coder wrapped in a SoftReference to avoid possible ClassLoader leak.
+     * Thread-local UTF8Coder wrapped in a SoftReference to avoid possible ClassLoader leak.
      * See JRUBY-6522
      */
     private static final ThreadLocal<SoftReference<UTF8Coder>> UTF8_CODER = new ThreadLocal<>();
-    private static final ThreadLocal<SoftReference<ISOCoder>> ISO_CODER = new ThreadLocal<>();
+
+    /**
+     * Thread-local RawCoder wrapped in a SoftReference to avoid possible ClassLoader leak.
+     * See JRUBY-6522
+     */
+    private static final ThreadLocal<SoftReference<RawCoder>> RAW_CODER = new ThreadLocal<>();
 
     private static UTF8Coder getUTF8Coder() {
         UTF8Coder coder;
@@ -421,12 +462,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return coder;
     }
 
-    private static ISOCoder getISOCoder() {
-        ISOCoder coder;
-        SoftReference<ISOCoder> ref = ISO_CODER.get();
+    private static RawCoder getRawCoder() {
+        RawCoder coder;
+        SoftReference<RawCoder> ref = RAW_CODER.get();
         if (ref == null || (coder = ref.get()) == null) {
-            coder = new ISOCoder();
-            ISO_CODER.set(new SoftReference<>(coder));
+            coder = new RawCoder();
+            RAW_CODER.set(new SoftReference<>(coder));
         }
 
         return coder;
@@ -620,5 +661,21 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_internal");
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);
         return encoding;
+    }
+
+    /**
+     * @deprecated use {@link #decodeRaw(byte[], int, int)}
+     */
+    @Deprecated
+    public static String decodeISO(byte[] bytes, int start, int length) {
+        return decodeRaw(bytes, start, length);
+    }
+
+    /**
+     * @deprecated use {@link #decodeRaw(ByteList)}
+     */
+    @Deprecated
+    public static String decodeISO(ByteList byteList) {
+        return decodeRaw(byteList);
     }
 }

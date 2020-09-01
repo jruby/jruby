@@ -74,10 +74,10 @@ describe "IO#ungetc" do
     touch(@empty)
 
     File.open(@empty) { |empty|
-      empty.eof?.should == true
+      empty.should.eof?
       empty.getc.should == nil
       empty.ungetc(100)
-      empty.eof?.should == false
+      empty.should_not.eof?
     }
   end
 
@@ -134,6 +134,10 @@ describe "IO#ungetc" do
 
   it "returns nil when invoked on stream that was not yet read" do
     @io.ungetc(100).should be_nil
+  end
+
+  it "raises IOError on stream not opened for reading" do
+    -> { STDOUT.ungetc(100) }.should raise_error(IOError, "not opened for reading")
   end
 
   it "raises IOError on closed stream" do

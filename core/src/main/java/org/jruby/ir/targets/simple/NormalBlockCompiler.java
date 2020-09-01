@@ -20,7 +20,7 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalBlockCompiler implements BlockCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalBlockCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

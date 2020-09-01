@@ -18,11 +18,11 @@ describe "String#[]= with Fixnum index" do
     it "taints self if other_str is tainted" do
       a = "hello"
       a[0] = "".taint
-      a.tainted?.should == true
+      a.should.tainted?
 
       a = "hello"
       a[0] = "x".taint
-      a.tainted?.should == true
+      a.should.tainted?
     end
   end
 
@@ -52,11 +52,11 @@ describe "String#[]= with Fixnum index" do
     str.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "hello"
     a.freeze
 
-    -> { a[0] = "bam" }.should raise_error(frozen_error_class)
+    -> { a[0] = "bam" }.should raise_error(FrozenError)
   end
 
   it "calls to_int on index" do
@@ -491,11 +491,11 @@ describe "String#[]= with Fixnum index, count" do
     it "taints self if other_str is tainted" do
       a = "hello"
       a[0, 0] = "".taint
-      a.tainted?.should == true
+      a.should.tainted?
 
       a = "hello"
       a[1, 4] = "x".taint
-      a.tainted?.should == true
+      a.should.tainted?
     end
   end
 

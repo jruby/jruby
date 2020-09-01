@@ -1,9 +1,8 @@
 #ifndef RUBYSPEC_H
 #define RUBYSPEC_H
 
-/* Define convenience macros similar to the mspec guards to assist
- * with version incompatibilities.
- */
+/* Define convenience macros similar to the mspec
+ * guards to assist with version incompatibilities. */
 
 #include <ruby.h>
 #ifdef HAVE_RUBY_VERSION_H
@@ -29,6 +28,10 @@
 
 #if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 6)
 #define RUBY_VERSION_IS_2_6
+#endif
+
+#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 5)
+#define RUBY_VERSION_IS_2_5
 #endif
 
 #if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 4)

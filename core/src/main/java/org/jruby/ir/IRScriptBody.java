@@ -38,7 +38,7 @@ public class IRScriptBody extends IRScope {
 
     @Override
     public String toString() {
-        return "Script: file: " + getFileName() + super.toString();
+        return "Script: file: " + getFile() + super.toString();
     }
 
     @Override

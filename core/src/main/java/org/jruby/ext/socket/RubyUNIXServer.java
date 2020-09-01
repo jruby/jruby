@@ -49,7 +49,7 @@ import java.nio.channels.SelectionKey;
 
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
-    private static ObjectAllocator UNIXSERVER_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator UNIXSERVER_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyUNIXServer(runtime, klass);
         }

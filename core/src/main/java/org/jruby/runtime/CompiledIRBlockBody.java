@@ -15,7 +15,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected MethodHandle normalYieldHandle;
     protected MethodHandle normalYieldSpecificHandle;
     protected MethodHandle normalYieldUnwrapHandle;
-    private String encodedArgumentDescriptors;
+    private final String encodedArgumentDescriptors;
 
     public CompiledIRBlockBody(MethodHandle handle, StaticScope scope, String file, int line, String encodedArgumentDescriptors, long encodedSignature) {
         super(scope, file, line, Signature.decode(encodedSignature));

@@ -76,7 +76,7 @@ public class JavaSupportImpl extends JavaSupport {
     private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
     private static final class UnfinishedProxy extends ReentrantLock {
-        volatile RubyModule proxy;
+        final RubyModule proxy;
         UnfinishedProxy(RubyModule proxy) {
             this.proxy = proxy;
         }

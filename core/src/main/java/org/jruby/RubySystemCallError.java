@@ -133,7 +133,7 @@ public class RubySystemCallError extends RubyStandardError {
         return new SystemCallError(message, this);
     }
 
-    private static ObjectAllocator SYSTEM_CALL_ERROR_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator SYSTEM_CALL_ERROR_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyException instance = new RubySystemCallError(runtime, klass);

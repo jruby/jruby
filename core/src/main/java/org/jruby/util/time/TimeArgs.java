@@ -10,10 +10,13 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
+import org.jruby.RubyStruct;
 import org.jruby.RubyTime;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.function.Function;
 
 public class TimeArgs {
     private final int year;

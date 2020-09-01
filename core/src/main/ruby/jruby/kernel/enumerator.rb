@@ -90,7 +90,7 @@ class Enumerator
     end
 
     def next
-      reset unless @fiber
+      reset unless @fiber&.__alive__
 
       val = @fiber.resume
 
@@ -229,6 +229,13 @@ class Enumerator
         values = values.first unless values.size > 1
         yielder.yield values if yield values
       end.__set_inspect :find_all
+    end
+    def filter
+      _block_error(:filter) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        values = values.first unless values.size > 1
+        yielder.yield values if yield values
+      end.__set_inspect :filter
     end
 
     def reject

@@ -9,7 +9,7 @@ import org.objectweb.asm.Label;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyBranchCompiler implements BranchCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
     private final BranchCompiler normalCompiler;
 
     public IndyBranchCompiler(IRBytecodeAdapter compiler) {

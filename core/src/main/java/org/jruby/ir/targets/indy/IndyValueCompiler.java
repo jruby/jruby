@@ -63,31 +63,36 @@ public class IndyValueCompiler implements ValueCompiler {
 
     public void pushString(ByteList bl, int cr) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString(), cr);
+        compiler.adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr);
     }
 
     public void pushFrozenString(ByteList bl, int cr, String file, int line) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString(), cr, file, line);
+        compiler.adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr, file, line);
+    }
+
+    public void pushEmptyString(Encoding encoding) {
+        compiler.loadContext();
+        compiler.adapter.invokedynamic("emptyString", sig(RubyString.class, ThreadContext.class), Bootstrap.EMPTY_STRING_BOOTSTRAP, encoding.toString());
     }
 
     public void pushByteList(ByteList bl) {
-        compiler.adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString());
+        compiler.adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeRaw(bl), bl.getEncoding().toString());
     }
 
     public void pushRegexp(ByteList source, int options) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class), RegexpObjectSite.BOOTSTRAP, RubyEncoding.decodeISO(source), source.getEncoding().toString(), options);
+        compiler.adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class), RegexpObjectSite.BOOTSTRAP, RubyEncoding.decodeRaw(source), source.getEncoding().toString(), options);
     }
 
     public void pushSymbol(final ByteList bytes) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), SymbolObjectSite.BOOTSTRAP, RubyEncoding.decodeISO(bytes), bytes.getEncoding().toString());
+        compiler.adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), SymbolObjectSite.BOOTSTRAP, RubyEncoding.decodeRaw(bytes), bytes.getEncoding().toString());
     }
 
     public void pushSymbolProc(final ByteList bytes) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("symbolProc", sig(JVM.OBJECT, ThreadContext.class), SymbolProcObjectSite.BOOTSTRAP, RubyEncoding.decodeISO(bytes), bytes.getEncoding().toString());
+        compiler.adapter.invokedynamic("symbolProc", sig(JVM.OBJECT, ThreadContext.class), SymbolProcObjectSite.BOOTSTRAP, RubyEncoding.decodeRaw(bytes), bytes.getEncoding().toString());
     }
 
     public void pushEncoding(Encoding encoding) {

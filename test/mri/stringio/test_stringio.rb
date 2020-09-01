@@ -452,6 +452,10 @@ class TestStringIO < Test::Unit::TestCase
     t.ungetbyte("\u{30eb 30d3 30fc}")
     assert_equal(0, t.pos)
     assert_equal("\u{30eb 30d3 30fc}\u7d05\u7389bar\n", s)
+
+    assert_nothing_raised {t.ungetbyte(-1)}
+    assert_nothing_raised {t.ungetbyte(256)}
+    assert_nothing_raised {t.ungetbyte(1<<64)}
   end
 
   def test_ungetc
@@ -722,9 +726,10 @@ class TestStringIO < Test::Unit::TestCase
     s = StringIO.new
     s.freeze
     bug = '[ruby-core:33648]'
-    assert_raise(FrozenError, bug) {s.puts("foo")}
-    assert_raise(FrozenError, bug) {s.string = "foo"}
-    assert_raise(FrozenError, bug) {s.reopen("")}
+    exception_class = defined?(FrozenError) ? FrozenError : RuntimeError
+    assert_raise(exception_class, bug) {s.puts("foo")}
+    assert_raise(exception_class, bug) {s.string = "foo"}
+    assert_raise(exception_class, bug) {s.reopen("")}
   end
 
   def test_frozen_string

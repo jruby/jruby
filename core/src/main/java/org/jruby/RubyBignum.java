@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -505,14 +506,13 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return op_mul(context, ((RubyFixnum) other).value);
-        }
-        if (other instanceof RubyBignum) {
-            return bignorm(context.runtime, value.multiply(((RubyBignum) other).value));
-        }
-        if (other instanceof RubyFloat) {
+        } else if (other instanceof RubyBignum) {
+        } else if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(context.runtime, big2dbl(this) * ((RubyFloat) other).value);
+        } else {
+            return coerceBin(context, sites(context).op_times, other);
         }
-        return coerceBin(context, sites(context).op_times, other);
+        return bignorm(context.runtime, value.multiply(((RubyBignum) other).value));
     }
 
     @Deprecated
@@ -1043,12 +1043,17 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public RubyFixnum hash() {
-        return metaClass.runtime.newFixnum(value.hashCode());
+        Ruby runtime = metaClass.runtime;
+        return RubyFixnum.newFixnum(runtime, bigHash(runtime, value));
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return (int) bigHash(getRuntime(), value);
+    }
+
+    private static long bigHash(Ruby runtime, BigInteger value) {
+        return Helpers.multAndMix(runtime.getHashSeedK0(), value.hashCode());
     }
 
     /** rb_big_to_f
@@ -1202,7 +1207,7 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject isNegative(ThreadContext context) {
         CachingCallSite op_lt_site = sites(context).basic_op_lt;
-        if (op_lt_site.retrieveCache(metaClass).method.isBuiltin()) {
+        if (op_lt_site.isBuiltin(metaClass)) {
             return RubyBoolean.newBoolean(context, value.signum() < 0);
         }
         return op_lt_site.call(context, this, this, RubyFixnum.zero(context.runtime));
@@ -1211,7 +1216,7 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject isPositive(ThreadContext context) {
         CachingCallSite op_gt_site = sites(context).basic_op_gt;
-        if (op_gt_site.retrieveCache(metaClass).method.isBuiltin()) {
+        if (op_gt_site.isBuiltin(metaClass)) {
             return RubyBoolean.newBoolean(context, value.signum() > 0);
         }
         return op_gt_site.call(context, this, this, RubyFixnum.zero(context.runtime));

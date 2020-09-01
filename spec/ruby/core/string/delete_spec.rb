@@ -70,10 +70,10 @@ describe "String#delete" do
 
   ruby_version_is ''...'2.7' do
     it "taints result when self is tainted" do
-      "hello".taint.delete("e").tainted?.should == true
-      "hello".taint.delete("a-z").tainted?.should == true
+      "hello".taint.delete("e").should.tainted?
+      "hello".taint.delete("a-z").should.tainted?
 
-      "hello".delete("e".taint).tainted?.should == false
+      "hello".delete("e".taint).should_not.tainted?
     end
   end
 
@@ -111,11 +111,11 @@ describe "String#delete!" do
     a.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "hello"
     a.freeze
 
-    -> { a.delete!("")            }.should raise_error(frozen_error_class)
-    -> { a.delete!("aeiou", "^e") }.should raise_error(frozen_error_class)
+    -> { a.delete!("")            }.should raise_error(FrozenError)
+    -> { a.delete!("aeiou", "^e") }.should raise_error(FrozenError)
   end
 end

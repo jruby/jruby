@@ -9,7 +9,7 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalBranchCompiler implements BranchCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public NormalBranchCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

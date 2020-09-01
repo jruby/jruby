@@ -762,7 +762,7 @@ public class LoadService {
     @Deprecated
     public class ScriptClassSearcher implements LoadSearcher {
         public class ScriptClassLibrary implements Library {
-            private Script script;
+            private final Script script;
 
             public ScriptClassLibrary(Script script) {
                 this.script = script;

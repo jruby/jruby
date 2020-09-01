@@ -46,8 +46,8 @@ public class IterNode extends Node implements DefNode {
     private final Node bodyNode;
     
     // What static scoping relationship exists when it comes into being.
-    private StaticScope scope;
-    private int endLine;
+    private final StaticScope scope;
+    private final int endLine;
 
     /**
      *  Used by ForNode only.

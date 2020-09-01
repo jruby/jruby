@@ -28,7 +28,7 @@ describe "File.open" do
   describe "with a block" do
     it "does not raise error when file is closed inside the block" do
       @fh = File.open(@file) { |fh| fh.close; fh }
-      @fh.closed?.should == true
+      @fh.should.closed?
     end
 
     it "invokes close on an opened file when exiting the block" do
@@ -485,7 +485,7 @@ describe "File.open" do
     File.size(@file).should > 0
     File.open(@file, "w+") do |f|
       f.pos.should == 0
-      f.eof?.should == true
+      f.should.eof?
     end
     File.size(@file).should == 0
   end
@@ -495,7 +495,7 @@ describe "File.open" do
     File.size(@file).should > 0
     File.open(@file, "rb+") do |f|
       f.pos.should == 0
-      f.eof?.should == false
+      f.should_not.eof?
     end
   end
 
@@ -504,7 +504,7 @@ describe "File.open" do
     File.size(@file).should > 0
     File.open(@file, "wb+") do |f|
       f.pos.should == 0
-      f.eof?.should == true
+      f.should.eof?
     end
     File.size(@file).should == 0
   end
@@ -623,12 +623,10 @@ describe "File.open" do
     end
   end
 
-  ruby_version_is "2.5" do
-    it "raises ArgumentError if mixing :newline and binary mode" do
-      -> {
-        File.open(@file, "rb", newline: :universal) {}
-      }.should raise_error(ArgumentError, "newline decorator with binary mode")
-    end
+  it "raises ArgumentError if mixing :newline and binary mode" do
+    -> {
+      File.open(@file, "rb", newline: :universal) {}
+    }.should raise_error(ArgumentError, "newline decorator with binary mode")
   end
 
   ruby_version_is "2.6" do

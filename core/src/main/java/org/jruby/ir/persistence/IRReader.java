@@ -7,14 +7,15 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.*;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Signature;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 import org.jruby.util.ByteList;
 
@@ -40,28 +41,39 @@ public class IRReader implements IRPersistenceValues {
 
         IRScope firstScope = null;
         for (int i = 0; i < scopesToRead; i++) {
-            IRScope scope = decodeScopeHeader(manager, file);
+            IRScopeType type = file.decodeIRScopeType();
+            int line = file.decodeInt();
+            int tempVarsCount = file.decodeInt();
+            int nextLabelInt = file.decodeInt();
+            IRScope scope = decodeScopeHeader(manager, file, type, line);
+            scope.setNextLabelIndex(nextLabelInt);
+            EnumSet<IRFlags> flags = file.decodeIRFlags();
+            if (file.decodeBoolean()) scope.setHasBreakInstructions();
+            if (file.decodeBoolean()) scope.setHasLoops();
+            if (file.decodeBoolean()) scope.setHasNonLocalReturns();
+            if (file.decodeBoolean()) scope.setReceivesClosureArg();
+            if (file.decodeBoolean()) scope.setReceivesKeywordArgs();
+            if (file.decodeBoolean()) scope.setAccessesParentsLocalVariables();
+            if (file.decodeBoolean()) scope.setIsMaybeUsingRefinements();
+            if (file.decodeBoolean()) scope.setCanCaptureCallersBinding();
+            if (file.decodeBoolean()) scope.setCanReceiveBreaks();
+            if (file.decodeBoolean()) scope.setCanReceiveNonlocalReturns();
+            if (file.decodeBoolean()) scope.setUsesZSuper();
+            if (file.decodeBoolean()) scope.setUsesEval();
+            scope.setCoverageMode(file.decodeInt());
+
             if (firstScope == null) firstScope = scope;
             int instructionsOffset = file.decodeInt();
             int poolOffset = file.decodeInt();
 
-            scope.allocateInterpreterContext(() -> file.decodeInstructionsAt(scope, poolOffset, instructionsOffset));
+            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset), tempVarsCount, flags);
         }
 
         return firstScope; // topmost scope;
     }
 
-    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader");
-
-        IRScopeType type = decoder.decodeIRScopeType();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: type       = " + type);
-        int line = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: line       = " + line);
-        int tempVarsCount = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: temp count = " + tempVarsCount);
-        int nextLabelInt = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: next label = " + tempVarsCount);
+    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder, IRScopeType type, int line) {
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
 
         boolean isEND = false;
         if (type == IRScopeType.CLOSURE) {
@@ -88,7 +100,7 @@ public class IRReader implements IRPersistenceValues {
         } else {
             name = decoder.decodeByteList();
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: name = " + name);
-            parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
+            parent = decoder.decodeScope();
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: parent = " + parent);
         }
 
@@ -101,9 +113,6 @@ public class IRReader implements IRPersistenceValues {
         if (scope instanceof IRClosure && isEND) {
             ((IRClosure) scope).setIsEND();
         }
-
-        scope.setTemporaryVariableCount(tempVarsCount);
-        scope.setNextLabelIndex(nextLabelInt);
 
         decoder.addScope(scope);
 
@@ -129,8 +138,6 @@ public class IRReader implements IRPersistenceValues {
 
     public static IRScope createScope(IRManager manager, IRScopeType type, ByteList byteName, String file, int line,
                                       IRScope lexicalParent, Signature signature, StaticScope staticScope) {
-        Ruby runtime = manager.getRuntime();
-
         switch (type) {
         case CLASS_BODY:
             // FIXME: add saving on noe-time usage to writeer/reader
@@ -138,9 +145,9 @@ public class IRReader implements IRPersistenceValues {
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName().getBytes(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, null, byteName, true, line, staticScope, false);
+            return new IRMethod(manager, lexicalParent, null, byteName, true, line, staticScope, CoverageData.NONE);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, null, byteName, false, line, staticScope, false);
+            return new IRMethod(manager, lexicalParent, null, byteName, false, line, staticScope, CoverageData.NONE);
         case MODULE_BODY:
             // FIXME: add saving on noe-time usage to writeer/reader
             return new IRModuleBody(manager, lexicalParent, byteName, line, staticScope, false);
@@ -152,7 +159,7 @@ public class IRReader implements IRPersistenceValues {
             return new IRClosure(manager, lexicalParent, line, staticScope, signature);
         case EVAL_SCRIPT:
             // SSS FIXME: This is broken right now -- the isModuleEval arg has to be persisted and then read back.
-            return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope, EvalType.NONE);
+            return new IREvalScript(manager, lexicalParent, lexicalParent.getFile(), line, staticScope, EvalType.NONE);
         }
 
         throw new RuntimeException("No such scope type: " + type);

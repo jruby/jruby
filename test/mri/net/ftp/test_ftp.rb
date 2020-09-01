@@ -335,7 +335,7 @@ class FTPTest < Test::Unit::TestCase
       sleep(0.1)
       sock.print("331 Please specify the password.\r\n")
       commands.push(sock.gets)
-      sleep(0.3)
+      sleep(2.0) # Net::ReadTimeout
       sock.print("230 Login successful.\r\n")
       commands.push(sock.gets)
       sleep(0.1)
@@ -344,7 +344,7 @@ class FTPTest < Test::Unit::TestCase
     begin
       begin
         ftp = Net::FTP.new
-        ftp.read_timeout = 0.2
+        ftp.read_timeout = 0.4
         ftp.connect(SERVER_ADDR, server.port)
         assert_raise(Net::ReadTimeout) do
           ftp.login
@@ -377,7 +377,7 @@ class FTPTest < Test::Unit::TestCase
     begin
       begin
         ftp = Net::FTP.new
-        ftp.read_timeout = 0.2
+        ftp.read_timeout = 1.0
         ftp.connect(SERVER_ADDR, server.port)
         ftp.login
         assert_match(/\AUSER /, commands.shift)
@@ -386,7 +386,7 @@ class FTPTest < Test::Unit::TestCase
         assert_equal(nil, commands.shift)
       ensure
         ftp.close
-        assert_equal(0.2, ftp.read_timeout)
+        assert_equal(1.0, ftp.read_timeout)
       end
     ensure
       server.close
@@ -662,7 +662,7 @@ class FTPTest < Test::Unit::TestCase
       sock.print("150 Opening BINARY mode data connection for foo (#{binary_data.size} bytes)\r\n")
       conn = TCPSocket.new(host, port)
       binary_data.scan(/.{1,1024}/nm) do |s|
-        sleep(0.1)
+        sleep(0.2)
         conn.print(s)
       end
       conn.shutdown(Socket::SHUT_WR)
@@ -673,7 +673,7 @@ class FTPTest < Test::Unit::TestCase
     begin
       begin
         ftp = Net::FTP.new
-        ftp.read_timeout = 0.2
+        ftp.read_timeout = 1.0
         ftp.connect(SERVER_ADDR, server.port)
         ftp.login
         assert_match(/\AUSER /, commands.shift)
@@ -2171,7 +2171,7 @@ EOF
           begin
             ftp = Net::FTP.new
             ftp.resume = resume
-            ftp.read_timeout = 0.2
+            ftp.read_timeout = RubyVM::MJIT.enabled? ? 5 : 0.2 # use large timeout for --jit-wait
             ftp.connect(SERVER_ADDR, server.port)
             ftp.login
             assert_match(/\AUSER /, commands.shift)

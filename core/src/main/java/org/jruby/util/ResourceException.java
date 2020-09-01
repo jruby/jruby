@@ -12,8 +12,14 @@ import java.io.IOException;
 // marked private and replaced by RaiseException usage.
 public abstract class ResourceException extends IOException {
     public ResourceException() {}
+    public ResourceException(String message) {
+        super(message);
+    }
     public ResourceException(Throwable t) {
         super(t);
+    }
+    public ResourceException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     abstract static class ErrnoException extends ResourceException {
@@ -21,6 +27,7 @@ public abstract class ResourceException extends IOException {
         private final String errnoClass;
 
         protected ErrnoException(String errnoClass, String path) {
+            super(errnoClass + ": " + path);
             this.errnoClass = errnoClass;
             this.path = path;
         }
@@ -31,6 +38,10 @@ public abstract class ResourceException extends IOException {
         @Override
         public RaiseException newRaiseException(Ruby runtime) {
             return runtime.newRaiseException(runtime.getErrno().getClass(errnoClass), path);
+        }
+
+        public String getPath() {
+            return path;
         }
     }
 

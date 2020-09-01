@@ -191,6 +191,10 @@ static VALUE kernel_spec_rb_protect_yield(VALUE self, VALUE obj, VALUE ary) {
   return res;
 }
 
+static VALUE kernel_spec_rb_protect_null_status(VALUE self, VALUE obj) {
+  return rb_protect(rb_yield, obj, NULL);
+}
+
 static VALUE kernel_spec_rb_eval_string_protect(VALUE self, VALUE str, VALUE ary) {
   int status = 0;
   VALUE res = rb_eval_string_protect(RSTRING_PTR(str), &status);
@@ -281,7 +285,7 @@ static VALUE kernel_spec_rb_exec_recursive(VALUE self, VALUE obj) {
 }
 
 static void write_io(VALUE io) {
-  rb_funcall(io, rb_intern("write"), 1, rb_str_new2("e"));
+  rb_funcall(io, rb_intern("write"), 1, rb_str_new2("in write_io"));
 }
 
 static VALUE kernel_spec_rb_set_end_proc(VALUE self, VALUE io) {
@@ -336,6 +340,7 @@ void Init_kernel_spec(void) {
   rb_define_method(cls, "rb_rescue", kernel_spec_rb_rescue, 4);
   rb_define_method(cls, "rb_rescue2", kernel_spec_rb_rescue2, -1);
   rb_define_method(cls, "rb_protect_yield", kernel_spec_rb_protect_yield, 2);
+  rb_define_method(cls, "rb_protect_null_status", kernel_spec_rb_protect_null_status, 1);
   rb_define_method(cls, "rb_eval_string_protect", kernel_spec_rb_eval_string_protect, 2);
   rb_define_method(cls, "rb_catch", kernel_spec_rb_catch, 2);
   rb_define_method(cls, "rb_catch_obj", kernel_spec_rb_catch_obj, 2);

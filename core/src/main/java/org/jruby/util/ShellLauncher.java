@@ -64,6 +64,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import jnr.posix.util.Platform;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
@@ -116,7 +117,7 @@ public class ShellLauncher {
         private RubyInstanceConfig config;
         private Thread processThread;
         private int result;
-        private Ruby parentRuntime;
+        private final Ruby parentRuntime;
 
         public ScriptThreadProcess(Ruby parentRuntime, final String[] argArray, final String[] env, final File dir) {
             this(parentRuntime, argArray, env, dir, true);
@@ -661,7 +662,7 @@ public class ShellLauncher {
         try {
             up = Class.forName("java.lang.UNIXProcess");
             pid = up.getDeclaredField("pid");
-            pid.setAccessible(true);
+            Java.trySetAccessible(pid);
         } catch (Exception e) {
             // ignore and try windows version
         }
@@ -673,7 +674,7 @@ public class ShellLauncher {
         try {
             pi = Class.forName("java.lang.ProcessImpl");
             handle = pi.getDeclaredField("handle");
-            handle.setAccessible(true);
+            Java.trySetAccessible(handle);
         } catch (Exception e) {
             // ignore and use hashcode
         }
@@ -1297,11 +1298,11 @@ public class ShellLauncher {
             return verifyPathExecutable;
         }
 
-        private Ruby runtime;
-        private boolean doExecutableSearch;
-        private IRubyObject[] rawArgs;
-        private String shell;
-        private String[] args;
+        private final Ruby runtime;
+        private final boolean doExecutableSearch;
+        private final IRubyObject[] rawArgs;
+        private final String shell;
+        private final String[] args;
         private String[] execArgs;
         private boolean cmdBuiltin = false;
 

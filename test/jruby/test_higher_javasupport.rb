@@ -917,7 +917,27 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(0, a.size)
   end
 
+  def test_open_reflected_field
+    java_fields = Java::JavaClass.for_name('java_integration.fixtures.JavaFields')
+    begin
+      java_fields.field('privateIntField')
+      fail('value field is not public!')
+    rescue NameError => e
+      assert e
+    end
+    value_field = java_fields.declared_field('privateIntField')
+    assert_equal false, value_field.static?
+    assert_equal false, value_field.public?
+    assert_equal true, value_field.final?
+    assert_equal false, value_field.accessible?
+    value_field.accessible = true
+    assert_equal 1, value_field.value( java_fields.constructor.new_instance )
+    assert_equal 'int', value_field.value_type
+  end
+
   def test_reflected_field
+    skip if JAVA_9
+
     j_integer = Java::JavaClass.for_name('java.lang.Integer')
     begin
       j_integer.field('value')
@@ -1924,6 +1944,22 @@ CLASSDEF
     #assert ! output.index('ambiguous'), output
     pend('[ji] did not select (float,float,float) ctor') if color.getRed != 255
     assert_equal 255, color.getRed # assert we called (float,float,float)
+  end
+
+  class Runner
+    def run; end
+  end
+
+  def test_concurrent_interface_proxy_generation
+    100.times do |_|
+      runner = Runner.new
+
+      assert_nothing_raised do
+        3.times.map do
+          Thread.start { assert runner.to_java(java.lang.Runnable) }
+        end.each(&:join)
+      end
+    end
   end
 
   # original report: https://jira.codehaus.org/browse/JRUBY-5582

@@ -82,6 +82,8 @@ import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 @JRubyClass(name="UDPSocket", parent="IPSocket")
 public class RubyUDPSocket extends RubyIPSocket {
 
+    public static final double RECV_BUFFER_COPY_SCALE = 1.5;
+
     static void createUDPSocket(Ruby runtime) {
         RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.getClass("IPSocket"), UDPSOCKET_ALLOCATOR);
 
@@ -92,7 +94,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         runtime.getObject().setConstant("UDPsocket", rb_cUDPSocket);
     }
 
-    private static ObjectAllocator UDPSOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator UDPSOCKET_ALLOCATOR = new ObjectAllocator() {
 
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyUDPSocket(runtime, klass);
@@ -163,7 +165,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
             else if (host instanceof RubyFixnum) {
                 // passing in something like INADDR_ANY
-                int intAddr = 0;
+                int intAddr;
                 if (host instanceof RubyInteger) {
                     intAddr = RubyNumeric.fix2int(host);
                 } else if (host instanceof RubyString) {
@@ -203,17 +205,17 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
         }
         catch (BindException e) {
-            throw runtime.newErrnoEADDRFromBindException(e);
+            throw runtime.newErrnoFromBindException(e, bindContextMessage(host, port));
         }
         catch (AlreadyBoundException e) {
-            throw runtime.newErrnoEINVALError("bind(2) for " + host.inspect() + " port " + port);
+            throw runtime.newErrnoEINVALError(bindContextMessage(host, port));
         }
         catch (SocketException e) {
             final String message = e.getMessage();
             if ( message != null ) {
                 switch ( message ) {
                     case "Permission denied" :
-                        throw runtime.newErrnoEACCESError("bind(2) for " + host.inspect() + " port " + port);
+                        throw runtime.newErrnoEACCESError(bindContextMessage(host, port));
                 }
             }
             throw sockerr(runtime, "bind: name or service not known", e);
@@ -602,7 +604,9 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
         }
 
-        RubyString result = runtime.newString(new ByteList(buf.array(), 0, buf.position(), false));
+        // return a string from the buffer, copying if the buffer size is > 1.5 * data size
+        ByteList bl = new ByteList(buf.array(), 0, buf.position(), buf.limit() > buf.position() * RECV_BUFFER_COPY_SCALE);
+        RubyString result = runtime.newString(bl);
 
         if (tuple != null) {
             tuple.result = result;

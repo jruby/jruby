@@ -56,11 +56,11 @@ describe "String#squeeze" do
 
   ruby_version_is ''...'2.7' do
     it "taints the result when self is tainted" do
-      "hello".taint.squeeze("e").tainted?.should == true
-      "hello".taint.squeeze("a-z").tainted?.should == true
+      "hello".taint.squeeze("e").should.tainted?
+      "hello".taint.squeeze("a-z").should.tainted?
 
-      "hello".squeeze("e".taint).tainted?.should == false
-      "hello".squeeze("l".taint).tainted?.should == false
+      "hello".squeeze("e".taint).should_not.tainted?
+      "hello".squeeze("l".taint).should_not.tainted?
     end
   end
 
@@ -105,11 +105,11 @@ describe "String#squeeze!" do
     -> { s.squeeze!("^e-b") }.should raise_error(ArgumentError)
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "yellow moon"
     a.freeze
 
-    -> { a.squeeze!("") }.should raise_error(frozen_error_class)
-    -> { a.squeeze!     }.should raise_error(frozen_error_class)
+    -> { a.squeeze!("") }.should raise_error(FrozenError)
+    -> { a.squeeze!     }.should raise_error(FrozenError)
   end
 end

@@ -84,7 +84,7 @@ public class RubyMatchData extends RubyObject {
         return matchDataClass;
     }
 
-    private static ObjectAllocator MATCH_DATA_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator MATCH_DATA_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyMatchData(runtime, klass);
@@ -99,8 +99,7 @@ public class RubyMatchData extends RubyObject {
         super(runtime, metaClass);
     }
 
-    final void initMatchData(final ThreadContext context,
-        RubyString str, Matcher matcher, Regex pattern) {
+    final void initMatchData(RubyString str, Matcher matcher, Regex pattern) {
 
         // FIXME: This is pretty gross; we should have a cleaner initialization
         // that doesn't depend on package-visible fields and ideally is atomic,
@@ -123,8 +122,7 @@ public class RubyMatchData extends RubyObject {
         this.infectBy(str);
     }
 
-    final void initMatchData(final ThreadContext context,
-        RubyString str, int beg, RubyString pattern) {
+    final void initMatchData(RubyString str, int beg, RubyString pattern) {
 
         this.regs = null;
         this.begin = beg;

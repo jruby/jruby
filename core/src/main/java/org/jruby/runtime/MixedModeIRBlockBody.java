@@ -7,6 +7,7 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
@@ -19,13 +20,13 @@ import org.jruby.util.log.LoggerFactory;
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
 
-    protected boolean pushScope;
-    protected boolean reuseParentScope;
+    protected final boolean pushScope;
+    protected final boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private InterpreterContext interpreterContext;
     private int callCount = 0;
     private volatile CompiledIRBlockBody jittedBody;
-    private IRClosure closure;
+    private final IRClosure closure;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
@@ -156,9 +157,11 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
                     ensureInstrsReady();
                     closure.getNearestTopLocalVariableScope().prepareForCompilation();
 
-                    if (!closure.hasExplicitCallProtocol()) {
+                    FullInterpreterContext fic = closure.getFullInterpreterContext();
+
+                    if (fic == null || !fic.hasExplicitCallProtocol()) {
                         if (Options.JIT_LOGGING.load()) {
-                            LOG.info("JIT failed; no protocol found in block: " + closure);
+                            LOG.info("JIT failed; no full IR or no call protocol found in block: " + closure);
                         }
                         return; // do not JIT if we don't have an explicit protocol
                     }

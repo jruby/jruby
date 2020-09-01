@@ -46,7 +46,7 @@ public final class Join {
     private final Reaction[][] reactionsPerChannel;
 
     public static class Spec {
-        private ArrayList<ArrayList<Reaction>> reactionsPerChannel = new ArrayList<ArrayList<Reaction>>();
+        private final ArrayList<ArrayList<Reaction>> reactionsPerChannel = new ArrayList<ArrayList<Reaction>>();
         private long asyncMask = 0;
         private long mask = 0;
         private volatile Reaction[][] cachedReactionsPerChannel = null;
