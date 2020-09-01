@@ -2568,7 +2568,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!block.isGiven()) return makeShared();
 
         final Ruby runtime = context.runtime;
-        final int realLength = this.realLength;
 
         IRubyObject[] arr = IRubyObject.array(realLength);
 
@@ -5595,7 +5594,7 @@ float_loop:
         return safeArraySet(metaClass.runtime, values, i, value);
     }
 
-    private static IRubyObject safeArraySet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
+    protected static IRubyObject safeArraySet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
         try {
             return values[i] = value;
         } catch (ArrayIndexOutOfBoundsException ex) {

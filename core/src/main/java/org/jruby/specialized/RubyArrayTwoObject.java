@@ -355,10 +355,36 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         if (!block.isGiven()) return makeShared();
 
-        return new RubyArrayTwoObject(
-                context.runtime,
-                block.yieldNonArray(context, car, null),
-                block.yieldNonArray(context, cdr, null));
+        Ruby runtime = context.runtime;
+
+        IRubyObject newCar = block.yieldNonArray(context, this.car, null);
+        if (realLength == 2) {
+            // no size change, yield last elt and return
+            return new RubyArrayTwoObject(
+                    runtime,
+                    newCar,
+                    block.yieldNonArray(context, cdr, null));
+        }
+
+        // size has changed, unpack and continue with loop form
+        unpack();
+
+        int currentLength = this.realLength;
+        IRubyObject[] arr = IRubyObject.array(currentLength);
+
+        if (currentLength == 0) return runtime.newEmptyArray();
+
+        arr[0] = newCar;
+
+        int i = 1;
+        for (; i < this.realLength; i++) {
+            // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
+            // See JRUBY-5434
+            safeArraySet(runtime, arr, i, block.yieldNonArray(context, eltOk(i), null)); // arr[i] = ...
+        }
+
+        // use iteration count as new size in case something was deleted along the way
+        return newArrayMayCopy(context.runtime, arr, 0, i);
     }
 
     @Override
