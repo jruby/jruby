@@ -2,4 +2,3 @@ exclude :test_nonascii_method_name, "lexer is not pulling mbc characters off the
 exclude :test_setbyte_range, "unfinished in initial 2.6 work, #6161"
 exclude :test_str_dump, "unfinished in initial 2.6 work, #6161"
 exclude :test_symbol, "management of differently-encoded symbols is not right"
-exclude :test_utf_without_bom_valid, "needs investigation"
