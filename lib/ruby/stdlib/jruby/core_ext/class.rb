@@ -170,7 +170,7 @@ class Class
   end
 
   def java_annotation(anno)
-    STDERR.puts "java_annotation is deprecated. Use java_signature '@#{anno} ...' instead. Called from: #{caller.first}"
+    warn "java_annotation is deprecated. Use java_signature '@#{anno} ...' instead. Called from: #{caller.first}"
   end
   
 
