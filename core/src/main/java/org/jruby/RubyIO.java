@@ -895,7 +895,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
 
             if (fd == null) {
-                if (Platform.IS_WINDOWS) {
+                if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+                    fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
+                } else {
                     // Native channels don't work quite right on Windows yet. Override standard io for better nonblocking support. See jruby/jruby#3625
                     switch (fileno) {
                         case 0:
@@ -911,8 +913,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                             fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
                             break;
                     }
-                } else {
-                    fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
                 }
             }
         } else {
