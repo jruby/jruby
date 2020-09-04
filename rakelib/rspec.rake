@@ -32,6 +32,8 @@ namespace :spec do
     t.rspec_opts ||= []
     t.rspec_opts << "--options spec/java_integration/spec.quiet.opts"
     t.pattern = 'spec/java_integration/**/*_spec.rb'
+    classpath = %w[test/target/annotation-api.jar].join(File::PATH_SEPARATOR)
+    t.ruby_opts << "-J-cp #{classpath}"
   end
 
   permute_specs "compiler", compile_flags do |t|
