@@ -4171,8 +4171,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod
     public IRubyObject setbyte(ThreadContext context, IRubyObject index, IRubyObject val) {
         int i = RubyNumeric.num2int(index);
-        int b = RubyNumeric.num2int(val);
         int normalizedIndex = checkIndexForRef(i, value.getRealSize());
+        RubyInteger v = val.convertToInteger();
+        IRubyObject w = v.modulo(context, (long)256);
+        int b = RubyNumeric.num2int(w) & 0xff;
 
         modify19();
         value.getUnsafeBytes()[normalizedIndex] = (byte)b;
