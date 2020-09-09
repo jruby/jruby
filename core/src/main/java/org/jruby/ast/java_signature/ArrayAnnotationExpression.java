@@ -16,6 +16,19 @@ public class ArrayAnnotationExpression implements AnnotationExpression {
     public ArrayAnnotationExpression(List<AnnotationExpression> expressions) {
         this.expressions = expressions;
     }
+
+    public List<AnnotationExpression> getExpressions() {
+		return expressions;
+	}
+
+    /**
+     * Accept for the visitor pattern.
+     * @param visitor the visitor
+     **/
+    @Override
+    public <T> T accept(AnnotationVisitor<T> visitor) {
+    	return visitor.annotation_array(this);
+    }
     
     @Override
     public String toString() {

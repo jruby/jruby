@@ -1,5 +1,4 @@
-/*
- **** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -12,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2010 Thomas E Enebo <tom.enebo@gmail.com>
- *
+ * Copyright (C) 2001-2020 JRuby Contributors
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,49 +28,16 @@
 
 package org.jruby.ast.java_signature;
 
-/**
- * Base class for all typed nodes
- */
-public class TypeNode implements AnnotationExpression {
-    protected final String name;
-
-    public TypeNode(String name) {
-        this.name = name;
+public class BoolLiteral implements Literal {
+    private boolean value;
+    
+    public BoolLiteral(boolean val) {
+    	value = val;
     }
-
-    public String getName() {
-        return name;
-    }
-
-    public boolean isPrimitive() {
-        return false;
-    }
-
-    public boolean isVoid() {
-        return false;
-    }
-
-    /**
-     * Get the boxed or wrapper class name of the type.  Note: this
-     * will only return something different for primitive types.
-     */
-    public String getWrapperName() {
-        return name;
-    }
-
-    /**
-     * Get the name of the class with all of its potential generic glory.
-     */
-    public String getFullyTypedName() {
-        return name;
-    }
-
-    public boolean isTyped() {
-        return false;
-    }
-
-    public boolean isArray() {
-        return false;
+    
+    @Override
+    public Object getLiteral(){
+    	return value;
     }
 
     /**
@@ -80,27 +46,11 @@ public class TypeNode implements AnnotationExpression {
      **/
     @Override
     public <T> T accept(AnnotationVisitor<T> visitor) {
-    	return visitor.type(this);
+    	return visitor.literal(this);
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof TypeNode)) return false;
-
-
-        return (name == null && ((TypeNode) other).name == null) ||
-                name.equals(((TypeNode) other).name);
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 97 * hash + (this.name != null ? this.name.hashCode() : 0);
-        return hash;
-    }
-
+    
     @Override
     public String toString() {
-        return getFullyTypedName();
+        return Boolean.toString(value);
     }
 }

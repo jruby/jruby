@@ -28,6 +28,15 @@ public class Annotation implements AnnotationExpression {
     public List<AnnotationParameter> getParameters() {
         return parameters;
     }
+
+    /**
+     * Accept for the visitor pattern.
+     * @param visitor the visitor
+     **/
+    @Override
+    public <T> T accept(AnnotationVisitor<T> visitor) {
+    	return visitor.annotation(this);
+    }
     
     @Override
     public String toString() {
