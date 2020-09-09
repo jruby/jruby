@@ -110,6 +110,10 @@ public class RubySocket extends RubyBasicSocket {
         // it is 128 on OS X. We use 128 for now until we can get it added to
         // jnr-constants.
         rb_mConstants.setConstant("SOMAXCONN", RubyFixnum.newFixnum(runtime, 128));
+        
+        // for all platforms
+        rb_mConstants.setConstant("IPPORT_RESERVED", RubyFixnum.newFixnum(runtime, 1024));
+        rb_mConstants.setConstant("IPPORT_USERRESERVED", RubyFixnum.newFixnum(runtime, 5000));
 
         rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
         rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(2));
