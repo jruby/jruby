@@ -40,12 +40,12 @@ project 'JRuby Core' do
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
-  jar 'com.github.jnr:jnr-netdb:1.2.0-SNAPSHOT', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.32.0-SNAPSHOT', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.38.0-SNAPSHOT', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.1.0-SNAPSHOT', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.10.0-SNAPSHOT', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.2.0-SNAPSHOT'
+  jar 'com.github.jnr:jnr-netdb:1.2.0', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.32.0', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.38.0', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.1.0', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.10.0', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.2.0'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
