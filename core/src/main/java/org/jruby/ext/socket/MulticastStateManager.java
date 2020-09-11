@@ -28,6 +28,8 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.IP;
+
 import java.io.IOException;
 import java.net.MulticastSocket;
 import java.net.InetAddress;
@@ -41,7 +43,7 @@ import java.util.ArrayList;
 public class MulticastStateManager {
     private MulticastSocket multicastSocket;
     private final ArrayList membershipGroups;
-    public static final int IP_ADD_MEMBERSHIP = 12;
+    public static final int IP_ADD_MEMBERSHIP = IP.IP_ADD_MEMBERSHIP.intValue();
 
     public MulticastStateManager() {
         membershipGroups = new ArrayList();
