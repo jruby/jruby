@@ -393,10 +393,6 @@ public class RubyBasicSocket extends RubyIO {
             switch(level) {
 
             case SOL_SOCKET:
-            case SOL_IP:
-            case SOL_TCP:
-            case SOL_UDP:
-
                 if (opt == SocketOption.__UNKNOWN_CONSTANT__) {
                     throw runtime.newErrnoENOPROTOOPTError();
                 }
@@ -450,11 +446,7 @@ public class RubyBasicSocket extends RubyIO {
 
             switch(level) {
 
-            case SOL_IP:
             case SOL_SOCKET:
-            case SOL_TCP:
-            case SOL_UDP:
-
                 if (opt == SocketOption.SO_LINGER) {
                     if (val instanceof RubyString) {
                         int[] linger = Option.unpackLinger(val.convertToString().getByteList());
