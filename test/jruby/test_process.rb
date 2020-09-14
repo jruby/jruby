@@ -72,46 +72,47 @@ class TestProcess < Test::Unit::TestCase
     end
   end
 
-  if (WINDOWS)
-    def test_gid_windows
-      assert_equal 0, Process.gid
-      assert_equal 0, Process.egid
-    end
+  def test_gid_windows
+    assert_equal 0, Process.gid
+    assert_equal 0, Process.egid
+  end if WINDOWS
 
-    # JRUBY-2352
-    def test_not_implemented_methods_on_windows
-      # The goal here is to make sure that those "weird"
-      # POSIX methods don't break JRuby, since there were
-      # numerous regressions in this area.
-      assert_raise(NotImplementedError) { Process.uid = 5 }
-      assert_raise(NotImplementedError) { Process.gid = 5 }
+  # JRUBY-2352
+  def test_not_implemented_methods_on_windows
+    # The goal here is to make sure that those "weird"
+    # POSIX methods don't break JRuby, since there were
+    # numerous regressions in this area.
+    assert_raise(NotImplementedError) { Process.uid = 5 }
+    assert_raise(NotImplementedError) { Process.gid = 5 }
 
-      # TODO: JRUBY-2705, doesn't work on x64 JVM
-      assert_equal 0, Process.euid unless WINDOWS_JVM_64
+    # TODO: JRUBY-2705, doesn't work on x64 JVM
+    assert_equal 0, Process.euid unless WINDOWS_JVM_64
 
-      assert_raise(NotImplementedError) { Process.euid = 5 }
-      assert_raise(NotImplementedError) { Process.egid = 5 }
-      assert_raise(NotImplementedError) { Process.getpgid(100) }
-      assert_raise(NotImplementedError) { Process.setpgid(100, 555) }
-      assert_raise(NotImplementedError) { Process.setpriority(100, 100, 100) }
-      assert_raise(NotImplementedError) { Process.getpriority(100, 100) }
-      assert_raise(NotImplementedError) { Process.setrlimit(100, 100) }
-      assert_raise(NotImplementedError) { Process.getrlimit(100) }
-      assert_raise(NotImplementedError) { Process.groups }
-      assert_raise(NotImplementedError) { Process.groups = [] }
-      assert_raise(NotImplementedError) { Process.maxgroups }
-      assert_raise(NotImplementedError) { Process.maxgroups = 100 }
-      assert_raise(NotImplementedError) { Process.initgroups(100, 100) }
+    assert_raise(NotImplementedError) { Process.euid = 5 }
+    assert_raise(NotImplementedError) { Process.egid = 5 }
+    assert_raise(NotImplementedError) { Process.getpgid(100) }
+    assert_raise(NotImplementedError) { Process.setpgid(100, 555) }
+    assert_raise(NotImplementedError) { Process.setpriority(100, 100, 100) }
+    assert_raise(NotImplementedError) { Process.getpriority(100, 100) }
+    assert_raise(NotImplementedError) { Process.setrlimit(100, 100) }
+    # NOTE: prints a warning but does not raise
+    # warning: Process#getrlimit not supported on this platform
+    #assert_raise(NotImplementedError) { Process.getrlimit(100) }
+    assert_raise(NotImplementedError) { Process.groups }
+    assert_raise(NotImplementedError) { Process.groups = [] }
+    assert_raise(NotImplementedError) { Process.maxgroups }
+    assert_raise(NotImplementedError) { Process.maxgroups = 100 }
+    assert_raise(NotImplementedError) { Process.initgroups(100, 100) }
 
-      # TODO: JRUBY-2639, doesn't work on x64 JVM
-      assert_equal 0, Process.ppid unless WINDOWS_JVM_64
+    # TODO: JRUBY-2639, doesn't work on x64 JVM
+    assert_equal 0, Process.ppid unless WINDOWS_JVM_64
 
-      # TODO: temporal (JRUBY-2354)
-      assert_raise(NotImplementedError) { Process.wait }
-      assert_raise(NotImplementedError) { Process.wait2 }
-      assert_raise(NotImplementedError) { Process.waitpid }
-      assert_raise(NotImplementedError) { Process.waitpid2 }
-      assert_raise(NotImplementedError) { Process.waitall }
-    end
-  end
+    # TODO: temporal (JRUBY-2354)
+    assert_raise(NotImplementedError) { Process.wait }
+    assert_raise(NotImplementedError) { Process.wait2 }
+    assert_raise(NotImplementedError) { Process.waitpid }
+    assert_raise(NotImplementedError) { Process.waitpid2 }
+    assert_raise(NotImplementedError) { Process.waitall }
+  end if WINDOWS
+
 end
