@@ -35,3 +35,5 @@ jobs:
         run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
           JRUBY_OPTS: ''
+      - name: mvn -P test
+        run: ./mvnw package -B -Ptest
