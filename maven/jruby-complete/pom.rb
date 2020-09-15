@@ -30,6 +30,7 @@ project 'JRuby Complete' do
       ['asm', 'asm-commons', 'asm-tree', 'asm-analysis', 'asm-util' ].each do |e|
         exclusion "org.ow2.asm:#{e}"
       end
+      exclusion "org.jruby:jruby-base"
     end
     jar 'org.jruby:jruby-stdlib:${project.version}'
   end
@@ -52,7 +53,7 @@ project 'JRuby Complete' do
             'Bundle-Description' => 'JRuby ${project.version} OSGi bundle',
             'Bundle-SymbolicName' => 'org.jruby.jruby',
             # the artifactId exclusion needs to match the jruby-core from above
-            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true;artifactId=!jnr-ffi|me.qmx.jitescript:jitescript',
+            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true;artifactId=!jnr-ffi|jitescript|javax.annotation-api',
             'Embed-Transitive' => true
           } ) do
     # TODO fix DSL

@@ -10,7 +10,7 @@ project 'JRuby Main Maven Artifact' do
   # keep it a jar even without sources - easier to add to a project
   packaging 'jar'
 
-  jar 'org.jruby:jruby-core:${project.version}'
+  jar 'org.jruby:jruby-base:${project.version}'
   jar 'org.jruby:jruby-stdlib:${project.version}'
 
   # we have no sources and attach an empty jar later in the build to
