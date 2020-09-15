@@ -27,7 +27,11 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/jruby/jruby/tree/master/maven/jruby-jars'
   s.description = File.read('README.txt', encoding: 'UTF-8').split(/\n{2,}/)[3]
   s.licenses = %w(EPL-1.0 GPL-2.0 LGPL-2.1)
-  s.files = Dir['[A-Z]*'] + Dir['lib/**/*.rb'] + Dir[ "lib/jruby-*-#{version}*.jar" ] + Dir[ 'test/**/*'] + [ 'jruby-jars.gemspec' ]
+  s.files = Dir['[A-Z]*'] +
+      Dir['lib/**/*.rb'] +
+      Dir[ 'test/**/*'] +
+      [ "lib/jruby-core-#{version}-complete.jar", "lib/jruby-stdlib-#{version}.jar" ] +
+      [ 'jruby-jars.gemspec' ]
 end
 
 # vim: syntax=Ruby
