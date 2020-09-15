@@ -1873,6 +1873,9 @@ public class RubyLexer extends LexingCommon {
 
         if (!isASCII(c)) {
             if (!tokadd_mbchar(c)) return EOF;
+            yaccValue = new StrNode(ruby_sourceline, createTokenByteList(1));
+            setState(EXPR_END);
+            return RubyParser.tCHAR;
         } else if (isIdentifierChar(c) && !peek('\n') && isNext_identchar()) {
             newtok(true);
             pushback(c);

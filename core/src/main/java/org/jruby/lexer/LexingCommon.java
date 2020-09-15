@@ -165,7 +165,7 @@ public abstract class LexingCommon {
     }
 
     public ByteList createTokenByteList(int start) {
-        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp, getEncoding(), false);
+        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp - start, getEncoding(), false);
     }
 
     public String createTokenString(int start) {
