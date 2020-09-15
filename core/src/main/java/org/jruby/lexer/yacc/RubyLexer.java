@@ -2430,11 +2430,11 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int tokHex(int count, String errorMessage) {
-        int codepoint = scanHex(2, false, errorMessage);
+        int codepoint = scanHex(count, false, errorMessage);
 
         // Means no digits read.
         if (codepoint == -1) {
-            nextc(); // because we pushed back bad char in scanHex.  Restore so error caret is in proper colunn.
+            start = lex_p;
             compile_error(PID.INVALID_ESCAPE_SYNTAX, errorMessage);
         }
 
