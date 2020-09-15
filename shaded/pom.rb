@@ -42,7 +42,13 @@ project 'JRuby Core' do
                        id: 'shade dependencies into jar',
                        phase: 'package',
                        artifactSet: {
-                         excludes: 'javax.annotation:javax.annotation-api'
+                           # IMPORTANT these needs to match exclusions in
+                           # maven/jruby-complete/pom.rb
+                           includes: [ 'com.github.jnr:jnr-ffi',
+                                       'me.qmx.jitescript:jitescript',
+                                       'org.ow2.asm:*'
+                           ],
+                           excludes: 'javax.annotation:javax.annotation-api'
                        },
                        relocations: [
                            {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
