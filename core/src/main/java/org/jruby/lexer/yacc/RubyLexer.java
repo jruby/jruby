@@ -2313,6 +2313,7 @@ public class RubyLexer extends LexingCommon {
 
             c = nextc();
             if (c != '}') {
+                start = lex_p - 1;
                 compile_error(PID.INVALID_ESCAPE_SYNTAX, "unterminated Unicode escape");
             }
         } else { // handle \\uxxxx
