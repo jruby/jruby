@@ -1640,7 +1640,9 @@ public class RubyLexer extends LexingCommon {
 
         if (isBEG()) {
             result = RubyParser.tLPAREN;
-        } else if (isSpaceArg('(', spaceSeen)) {
+        } else if (!spaceSeen) {
+            result = RubyParser.tLPAREN2;
+        } else if (isARG() || isLexStateAll(lex_state, EXPR_END|EXPR_LABEL)) {
             result = RubyParser.tLPAREN_ARG;
         } else {
             result = RubyParser.tLPAREN2;
