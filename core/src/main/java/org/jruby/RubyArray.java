@@ -2823,12 +2823,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         modify();
 
         final Ruby runtime = context.runtime;
-        final int len = realLength; final int beg = begin;
+        final int beg = begin;
 
         int len0 = 0, len1 = 0;
         try {
             int i1, i2;
-            for (i1 = i2 = 0; i1 < len; len0 = ++i1) {
+            for (i1 = i2 = 0; i1 < realLength; len0 = ++i1) {
                 final IRubyObject[] values = this.values;
                 // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
                 // See JRUBY-5434
@@ -2843,7 +2843,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return (i1 == i2) ? context.nil : this;
         }
         finally {
-            selectBangEnsure(runtime, len, beg, len0, len1);
+            selectBangEnsure(runtime, realLength, beg, len0, len1);
         }
     }
 
