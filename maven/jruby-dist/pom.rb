@@ -41,9 +41,6 @@ project 'JRuby Dist' do
             :tarLongFileMode =>  'gnu' ) do
       execute_goals( :single, :id => 'bin.tar.gz and bin.zip',
                      :descriptors => [ 'src/main/assembly/bin.xml' ] )
-      execute_goals( :single, :id => 'bin200.tar.gz',
-                     :attach => false,
-                     :descriptors => [ 'src/main/assembly/bin200.xml' ] )
     end
   end
 
