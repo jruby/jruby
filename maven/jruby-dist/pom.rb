@@ -24,23 +24,6 @@ project 'JRuby Dist' do
                                             'outputDirectory' =>  '${project.build.directory}' } ] )
     end
 
-    execute :pack200 do |ctx|
-      jruby_home = Dir[ File.join( ctx.project.build.directory.to_pathname,
-                                   'META-INF/jruby.home/**/*.jar' ) ]
-      gem_home = Dir[ File.join( ctx.project.build.directory.to_pathname,
-                                  'rubygems-provided/**/*.jar' ) ]
-      lib_dir = Dir[ File.join( ctx.basedir.to_pathname,
-                                '../../lib/*.jar' ) ]
-
-      (jruby_home + gem_home + lib_dir).each do |f|
-        file = f.sub /.jar$/, ''
-        unless File.exists?( file + '.pack.gz' )
-          puts "pack200 #{f.sub(/.*jruby.home./, '').sub(/.*rubygems-provided./, '')}"
-          system('pack200', "#{file}.pack.gz", "#{file}.jar")
-        end
-      end
-    end
-
     execute :fix_executable_bits do |ctx|
       Dir[ File.join( ctx.project.build.directory.to_pathname,
                       'META-INF/jruby.home/bin/*' ) ].each do |f|
@@ -58,9 +41,6 @@ project 'JRuby Dist' do
             :tarLongFileMode =>  'gnu' ) do
       execute_goals( :single, :id => 'bin.tar.gz and bin.zip',
                      :descriptors => [ 'src/main/assembly/bin.xml' ] )
-      execute_goals( :single, :id => 'bin200.tar.gz',
-                     :attach => false,
-                     :descriptors => [ 'src/main/assembly/bin200.xml' ] )
     end
   end
 
