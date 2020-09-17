@@ -280,7 +280,7 @@ public class ModeFlags implements Cloneable {
         // extended
         if (isShareDelete()) {
             // do nothing, NIO defaults to share delete
-        } else {
+        } else if (Platform.IS_WINDOWS) {
             size++;
         }
 
