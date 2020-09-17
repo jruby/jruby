@@ -35,6 +35,7 @@ public class IRMethod extends IRScope {
         this.defNode = defn;
         this.isInstanceMethod = isInstanceMethod;
 
+
         if (staticScope != null) {
             staticScope.setIRScope(this);
         }
@@ -62,7 +63,7 @@ public class IRMethod extends IRScope {
                         ivarNames.add(((InstAsgnNode) node).getName().idString());
                     }
 
-                    node.childNodes().forEach((child) -> defaultVisit(child));
+                    node.childNodes().forEach(this::defaultVisit);
 
                     return null;
                 }

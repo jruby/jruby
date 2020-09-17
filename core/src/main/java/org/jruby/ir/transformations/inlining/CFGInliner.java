@@ -68,7 +68,7 @@ public class CFGInliner {
 
     // Use receivers variable if it is one.  Otherwise make a new temp for one.
     private Variable getReceiverVariable(Operand receiver) {
-        return receiver instanceof Variable ? (Variable) receiver : hostScope.createTemporaryVariable();
+        return receiver instanceof Variable ? (Variable) receiver : hostScope.getFullInterpreterContext().createTemporaryVariable();
     }
 
     public BasicBlock findCallsiteBB(CallBase call) {
@@ -92,8 +92,8 @@ public class CFGInliner {
         LOG.info("---------------------------------- PROLOGUE (start) --------");
         LOG.info("Looking for: " + call.getCallSiteId() + ":\n    > " + call + "\n");
         printInlineCFG(cfg, "host of inline");
-        LOG.info("method to inline cfg:\n" + scopeToInline.getCFG().toStringGraph());
-        LOG.info("method to inline instrs:\n" + scopeToInline.getCFG().toStringInstrs());
+        LOG.info("method to inline cfg:\n" + scopeToInline.getFullInterpreterContext().getCFG().toStringGraph());
+        LOG.info("method to inline instrs:\n" + scopeToInline.getFullInterpreterContext().getCFG().toStringInstrs());
         LOG.info("---------------------------------- PROLOGUE (end) -----------");
     }
 
@@ -166,7 +166,7 @@ public class CFGInliner {
         InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, scopeToInline);
 
         // Inlinee method data init
-        CFG methodToInline = scopeToInline.getCFG();
+        CFG methodToInline = scopeToInline.getFullInterpreterContext().getCFG();
         List<BasicBlock> methodBBs = new ArrayList<>(methodToInline.getBasicBlocks());
 
         if (isRecursiveInline(scopeToInline)) {
@@ -378,7 +378,7 @@ public class CFGInliner {
         ii.setupYieldArgsAndYieldResult(yield, beforeInlineBB, cl.getBlockBody().getSignature().arityValue());
 
         // 2. Merge closure cfg into the current cfg
-        CFG closureCFG = cl.getCFG();
+        CFG closureCFG = cl.getFullInterpreterContext().getCFG();
 
         BasicBlock closureGEB = closureCFG.getGlobalEnsureBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {

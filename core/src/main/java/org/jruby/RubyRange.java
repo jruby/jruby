@@ -1001,7 +1001,7 @@ public class RubyRange extends RubyObject {
         // TODO (CON): this could be packed if we know there are at least num elements in range
         final RubyArray result = runtime.newArray(num);
         try {
-            RubyEnumerable.callEach(context, this, Signature.ONE_ARGUMENT, new BlockCallback() {
+            RubyEnumerable.callEach(context, sites(context).each, this, Signature.ONE_ARGUMENT, new BlockCallback() {
                 int n = num;
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {

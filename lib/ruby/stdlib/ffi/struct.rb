@@ -190,7 +190,7 @@ module FFI
       #             :field2, :pointer, 6,  # set offset to 6 for this field
       #             :field3, :string
       #    end
-      #  @example Creating a layout from a hash +spec+ (Ruby 1.9 only)
+      #  @example Creating a layout from a hash +spec+
       #    class MyStructFromHash < Struct
       #      layout :field1 => :int,
       #             :field2 => :pointer,
@@ -202,7 +202,6 @@ module FFI
       #             :function2, callback([:pointer], :void),
       #             :field3, :string
       #    end
-      #  @note Creating a layout from a hash +spec+ is supported only for Ruby 1.9.
       def layout(*spec)
         warn "[DEPRECATION] Struct layout is already defined for class #{self.inspect}. Redefinition as in #{caller[0]} will be disallowed in ffi-2.0." if defined?(@layout)
         return @layout if spec.size == 0
@@ -229,7 +228,11 @@ module FFI
 
       def callback(params, ret)
         mod = enclosing_module
-        FFI::CallbackInfo.new(find_type(ret, mod), params.map { |e| find_type(e, mod) })
+        ret_type = find_type(ret, mod)
+        if ret_type == Type::STRING
+          raise TypeError, ":string is not allowed as return type of callbacks"
+        end
+        FFI::CallbackInfo.new(ret_type, params.map { |e| find_type(e, mod) })
       end
 
       def packed(packed = 1)
@@ -245,7 +248,9 @@ module FFI
       def enclosing_module
         begin
           mod = self.name.split("::")[0..-2].inject(Object) { |obj, c| obj.const_get(c) }
-          (mod < FFI::Library || mod < FFI::Struct || mod.respond_to?(:find_type)) ? mod : nil
+          if mod.respond_to?(:find_type) && (mod.is_a?(FFI::Library) || mod < FFI::Struct)
+            mod
+          end
         rescue Exception
           nil
         end

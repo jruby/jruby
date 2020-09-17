@@ -54,4 +54,11 @@ describe JavaSignatureParser do
     signature('@Cook(food={"apple", "orange"}) void foo()').should have_signature(['@Cook(food={"apple", "orange"})'], VOID, 'foo', [])
     signature('@Cook(food={\'a\', \'b\'}) void foo()').should have_signature(['@Cook(food={\'a\', \'b\'})'], VOID, 'foo', [])
   end
+
+  it "parses all int formats" do
+    signature('@Cook(food={@Porridge(-12)}) void foo()').should have_signature(['@Cook(food={@Porridge(-12)})'], VOID, 'foo', [])
+    signature('@Cook(uint=12,sint=-12,ufloat=1.205,sfloat=-1.205) void foo()').should have_signature(['@Cook(uint=12, sint=-12, ufloat=1.205, sfloat=-1.205)'], VOID, 'foo', [])
+    signature('@Cook(ubyte=0xff,fun=0xdead_beef,hex=0x0123456789_abcdefABCDEF) void foo()').should have_signature(['@Cook(ubyte=0xff, fun=0xdeadbeef, hex=0x0123456789abcdefABCDEF)'], VOID, 'foo', [])
+    signature('@Cook(ulong=18446744_07_370_955_1615,slong=-922337_2036_85_47_75808) void foo()').should have_signature(['@Cook(ulong=18446744073709551615, slong=-9223372036854775808)'], VOID, 'foo', [])
+  end
 end

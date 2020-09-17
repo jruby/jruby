@@ -1,7 +1,6 @@
 package org.jruby.ir.dataflow.analyses;
 
 import org.jruby.dirgra.Edge;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
@@ -60,7 +59,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
 
             // If this scope's binding has escaped, all variables
             // should be considered live on exit from the scope.
-            if (problem.getScope().bindingHasEscaped()) {
+            if (problem.getFIC().bindingHasEscaped()) {
                 for (Variable x: problem.getNonSelfLocalVars()) {
                     in.set(problem.getDFVar(x));
                 }
@@ -97,7 +96,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
 
     @Override
     public void applyTransferFunction(Instr i) {
-        boolean scopeBindingHasEscaped = problem.getScope().bindingHasEscaped();
+        boolean scopeBindingHasEscaped = problem.getFIC().bindingHasEscaped();
 
         // v is defined => It is no longer live before 'i'
         if (i instanceof ResultInstr) {
@@ -192,8 +191,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
 /* ---------- Protected / package fields, methods --------- */
     void markDeadInstructions() {
         // System.out.println("-- Identifying dead instructions for " + basicBlock.getID() + " -- ");
-        IRScope scope = problem.getScope();
-        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+        boolean scopeBindingHasEscaped = problem.getFIC().bindingHasEscaped();
 
         if (in == null) {
             // 'in' cannot be null for reachable bbs

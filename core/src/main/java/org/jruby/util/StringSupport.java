@@ -1547,7 +1547,13 @@ public final class StringSupport {
 
     // MRI: enc_succ_alnum_char
     private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
+        NeighborChar ret;
         byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
+
+        /* skip 03A2, invalid char between GREEK CAPITAL LETTERS */
+        int tryCounter;
+        final int maxGaps = 1;
+
         int c = enc.mbcToCode(bytes, p, p + len);
 
         final int cType;
@@ -1560,10 +1566,12 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, save, 0, len);
-        NeighborChar ret = succChar(enc, bytes, p, len);
-        if (ret == NeighborChar.FOUND) {
-            c = enc.mbcToCode(bytes, p, p + len);
-            if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
+        for (tryCounter = 0; tryCounter <= maxGaps; ++tryCounter) {
+            ret = succChar(enc, bytes, p, len);
+            if (ret == NeighborChar.FOUND) {
+                c = enc.mbcToCode(bytes, p, p + len);
+                if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
+            }
         }
 
         System.arraycopy(save, 0, bytes, p, len);

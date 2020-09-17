@@ -276,10 +276,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public static int scanForCodeRange(final ByteList bytes) {
         Encoding enc = bytes.getEncoding();
-        if (enc.minLength() > 1 && enc.isDummy()) {
+        if (enc.minLength() > 1 && enc.isDummy() && EncodingUtils.getActualEncoding(enc, bytes).minLength() == 1) {
             return CR_BROKEN;
         }
-        return codeRangeScan(EncodingUtils.getActualEncoding(enc, bytes), bytes);
+        return codeRangeScan(enc, bytes);
     }
 
     final boolean singleByteOptimizable() {
@@ -4215,8 +4215,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod
     public IRubyObject setbyte(ThreadContext context, IRubyObject index, IRubyObject val) {
         int i = RubyNumeric.num2int(index);
-        int b = RubyNumeric.num2int(val);
         int normalizedIndex = checkIndexForRef(i, value.getRealSize());
+        RubyInteger v = val.convertToInteger();
+        IRubyObject w = v.modulo(context, (long)256);
+        int b = RubyNumeric.num2int(w) & 0xff;
 
         modify19();
         value.getUnsafeBytes()[normalizedIndex] = (byte)b;

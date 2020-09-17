@@ -31,17 +31,24 @@
 #
 
 require 'ffi/platform'
+
+# NOTE: all method definitions in this file are conditional on
+# whether they are not already defined. This is needed because
+# some Ruby implementations (e.g., TruffleRuby) might already
+# provide these methods due to using FFI internally, and we
+# should not override them to avoid warnings.
+
 module FFI
   class Pointer
 
     # Pointer size
-    SIZE = Platform::ADDRESS_SIZE / 8
+    SIZE = Platform::ADDRESS_SIZE / 8 unless const_defined?(:SIZE)
 
     # Return the size of a pointer on the current platform, in bytes
     # @return [Numeric]
     def self.size
       SIZE
-    end
+    end unless respond_to?(:size)
 
     # @param [nil,Numeric] len length of string to return
     # @return [String]
@@ -54,7 +61,7 @@ module FFI
       else
         get_string(0)
       end
-    end
+    end unless method_defined?(:read_string)
 
     # @param [Numeric] len length of string to return
     # @return [String]
@@ -64,7 +71,7 @@ module FFI
     #  ptr.read_string(len)  # with len not nil
     def read_string_length(len)
       get_bytes(0, len)
-    end
+    end unless method_defined?(:read_string_length)
 
     # @return [String]
     # Read pointer's contents as a string.
@@ -73,7 +80,7 @@ module FFI
     #  ptr.read_string  # with no len
     def read_string_to_null
       get_string(0)
-    end
+    end unless method_defined?(:read_string_to_null)
 
     # @param [String] str string to write
     # @param [Numeric] len length of string to return
@@ -84,7 +91,7 @@ module FFI
     #  ptr.write_string(str, len)   # with len not nil
     def write_string_length(str, len)
       put_bytes(0, str, 0, len)
-    end
+    end unless method_defined?(:write_string_length)
 
     # @param [String] str string to write
     # @param [Numeric] len length of string to return
@@ -95,7 +102,7 @@ module FFI
       len = str.bytesize unless len
       # Write the string data without NUL termination
       put_bytes(0, str, 0, len)
-    end
+    end unless method_defined?(:write_string)
 
     # @param [Type] type type of data to read from pointer's contents
     # @param [Symbol] reader method to send to +self+ to read +type+
@@ -113,7 +120,7 @@ module FFI
         tmp += size unless j == length-1 # avoid OOB
       }
       ary
-    end
+    end unless method_defined?(:read_array_of_type)
 
     # @param [Type] type type of data to write to pointer's contents
     # @param [Symbol] writer method to send to +self+ to write +type+
@@ -129,12 +136,12 @@ module FFI
         self.send(writer, i * size, val)
       }
       self
-    end
+    end unless method_defined?(:write_array_of_type)
 
     # @return [self]
     def to_ptr
       self
-    end
+    end unless method_defined?(:to_ptr)
 
     # @param [Symbol,Type] type of data to read
     # @return [Object]
@@ -144,7 +151,7 @@ module FFI
     #  ptr.get(type, 0)
     def read(type)
       get(type, 0)
-    end
+    end unless method_defined?(:read)
 
     # @param [Symbol,Type] type of data to read
     # @param [Object] value to write
@@ -155,6 +162,6 @@ module FFI
     #  ptr.put(type, 0)
     def write(type, value)
       put(type, 0, value)
-    end
+    end unless method_defined?(:write)
   end
 end

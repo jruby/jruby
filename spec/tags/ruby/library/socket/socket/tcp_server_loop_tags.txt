@@ -1,0 +1,1 @@
+travis(jdk11 and jdk14 fail sporadically, #6381):Socket.tcp_server_loop when a connection is available yields a Socket and an Addrinfo

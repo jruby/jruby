@@ -610,7 +610,7 @@ JAVA
     end
 
     def annotations_string
-      annotations.map { |anno| "@#{anno}" }.join("\n")
+      (annotations.map { |anno| "@#{anno}" } + java_signature.modifiers.select(&:annotation?).map(&:to_s)).join("\n    ")
     end
 
     def conversion_string(var_names)
@@ -644,9 +644,7 @@ JAVA
         visibility_str = visibility || 'public'
       end
 
-      annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(' ')
-
-      "#{annotations}#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
+      "#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
     end
 
     def typed_args
