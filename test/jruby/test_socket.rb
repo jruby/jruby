@@ -71,6 +71,12 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_not_available_constant
+      assert !Socket.const_defined?(:TCP_KEEPALIVE)
+    end
+  end
+
   #JRUBY-3827
   def test_nil_hostname_and_passive_returns_inaddr_any
     assert_nothing_raised do
