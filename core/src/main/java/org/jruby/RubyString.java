@@ -60,6 +60,7 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.EncodingError;
 import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -111,6 +112,7 @@ import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
 import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.util.StringSupport.searchNonAscii;
 
 /**
  * Implementation of Ruby String class
@@ -486,6 +488,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return new RubyString(runtime, runtime.getString(), str, encoding);
     }
 
+    public static RubyString newBinaryString(Ruby runtime, String str) {
+        return new RubyString(runtime, runtime.getString(), new ByteList(ByteList.plain(str), ASCIIEncoding.INSTANCE, false));
+    }
+
     public static RubyString newUSASCIIString(Ruby runtime, String str) {
         return new RubyString(runtime, runtime.getString(), str, USASCIIEncoding.INSTANCE);
     }
@@ -576,6 +582,44 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return RubyString.newString(runtime, new ByteList(str.getBytes(), javaExtEncoding));
         }
         return RubyString.newString(runtime,  new ByteList(RubyEncoding.encode(str, rubyInt), internal));
+    }
+
+    // MRI: rb_external_str_with_enc
+    public static RubyString newExternalStringWithEncoding(Ruby runtime, String ptr, Encoding eenc) {
+        Encoding ienc;
+        RubyString str;
+
+        if (ptr == null || ptr.isEmpty()) {
+            return newEmptyString(runtime, eenc);
+        }
+
+        /* ASCII-8BIT case, no conversion */
+        if ((eenc == ASCIIEncoding.INSTANCE) ||
+                (eenc == USASCIIEncoding.INSTANCE && searchNonAscii(ptr) != -1)) {
+            return newBinaryString(runtime, ptr);
+        }
+        /* no default_internal or same encoding, no conversion */
+        ienc = runtime.getDefaultInternalEncoding();
+        if (ienc == null || eenc == ienc) {
+            return newString(runtime, ptr, eenc);
+        }
+        /* ASCII compatible, and ASCII only string, no conversion in
+         * default_internal */
+        if ((eenc == ASCIIEncoding.INSTANCE) ||
+                (eenc == USASCIIEncoding.INSTANCE) ||
+                (eenc.isAsciiCompatible() && searchNonAscii(ptr) == -1)) {
+            return newString(runtime, ptr, ienc);
+        }
+        /* convert from the given encoding to default_internal */
+        str = newEmptyString(runtime, ienc);
+        /* when the conversion failed for some reason, just ignore the
+         * default_internal and result in the given encoding as-is. */
+        try {
+            str.cat19(encodeBytelist(str, eenc), CR_UNKNOWN);
+        } catch (EncodingError.CompatibilityError ce) {
+            return newString(runtime, ptr, eenc);
+        }
+        return str;
     }
 
     // String construction routines by NOT byte[] buffer and making the target String shared
@@ -4171,8 +4215,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod
     public IRubyObject setbyte(ThreadContext context, IRubyObject index, IRubyObject val) {
         int i = RubyNumeric.num2int(index);
-        int b = RubyNumeric.num2int(val);
         int normalizedIndex = checkIndexForRef(i, value.getRealSize());
+        RubyInteger v = val.convertToInteger();
+        IRubyObject w = v.modulo(context, (long)256);
+        int b = RubyNumeric.num2int(w) & 0xff;
 
         modify19();
         value.getUnsafeBytes()[normalizedIndex] = (byte)b;

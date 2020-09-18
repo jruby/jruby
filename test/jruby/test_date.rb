@@ -938,6 +938,24 @@ class TestDate < Test::Unit::TestCase
     #assert_equal(0.4, dt.sec_fraction.to_f.round(1))
   end
 
+  def test_exception_cause_cmp
+    begin
+      Date.new(2000, 1, 1) == nil
+      raise TypeError
+    rescue TypeError => e
+      assert_equal(nil, e.cause)
+    end
+  end
+
+  def test_exception_cause_eqq
+    begin
+      Date.new(2000, 1, 1) <=> nil
+      raise TypeError
+    rescue TypeError => e
+      assert_equal(nil, e.cause)
+    end
+  end
+
   module ActiveSupport
 
     module_function
