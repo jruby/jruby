@@ -41,6 +41,23 @@ class SocketTest < Test::Unit::TestCase
   end
 
   if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_tcp_info
+      assert_nothing_raised do
+        server = TCPServer.new(nil, 7789)
+        t = Thread.new do
+          s = server.accept
+          s.close
+        end
+        client = TCPSocket.new(nil, 7789)
+        t.join
+        tcp_info = client.getsockopt(Socket::IPPROTO_TCP, Socket::TCP_INFO)
+        state = tcp_info.unpack("C")[0]
+        assert_equal(8, state) # CLOSE_WAIT
+      end
+    end
+  end
+
+  if RbConfig::CONFIG['target_os'] == 'linux'
     def test_not_available_constant
       assert !Socket.const_defined?(:TCP_KEEPALIVE)
     end
