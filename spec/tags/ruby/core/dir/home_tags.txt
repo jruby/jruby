@@ -1,1 +1,0 @@
-windows:Dir.home raises an ArgumentError if the named user doesn't exist

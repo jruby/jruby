@@ -1,2 +1,0 @@
-windows:IO#sysseek moves the read position relative to the start with SEEK_SET
-windows:IO#sysseek moves the read position relative to the end with SEEK_END

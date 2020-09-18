@@ -53,6 +53,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
+import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PosixShim;
 
@@ -168,8 +169,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             /* disable line code conversion */
             constants.setConstant("BINARY", runtime.newFixnum(OpenFlags.O_BINARY.intValue()));
         }
-        // FIXME: Need Windows value for this
-        constants.setConstant("SHARE_DELETE", runtime.newFixnum(0));
+        if (Platform.IS_WINDOWS) {
+            constants.setConstant("SHARE_DELETE", runtime.newFixnum(ModeFlags.SHARE_DELETE));
+        }
         if (OpenFlags.O_SYNC.defined()) {
             /* any write operation perform synchronously */
             constants.setConstant("SYNC", runtime.newFixnum(OpenFlags.O_SYNC.intValue()));
