@@ -75,6 +75,7 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
+import static jnr.constants.platform.TCP.TCP_CORK;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
@@ -473,7 +474,7 @@ public class RubyBasicSocket extends RubyIO {
                     case IPPROTO_TCP:
                         if (TCP_NODELAY.intValue() == intOpt) {
                             socketType.setTcpNoDelay(channel, asBoolean(context, val));
-                        } else if (Platform.IS_LINUX && TCP_CORK == intOpt &&
+                        } else if (Platform.IS_LINUX && TCP_CORK.intValue() == intOpt &&
                                 fd.realFileno > 0 && SETSOCKOPT != null) {
                             int ret = SETSOCKOPT.setsockoptInt(fd.realFileno, intLevel, intOpt, val.convertToInteger().getIntValue());
 
@@ -503,8 +504,6 @@ public class RubyBasicSocket extends RubyIO {
             return null; // not reached
         }
     }
-
-    private static final int TCP_CORK = 3;
 
     // FIXME: copied from jnr-unixsocket
     static final String[] libnames = jnr.ffi.Platform.getNativePlatform().getOS() == jnr.ffi.Platform.OS.SOLARIS
