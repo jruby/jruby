@@ -1,3 +1,0 @@
-windows:ARGF.seek sets the absolute position relative to beginning of file
-windows:ARGF.seek sets the position relative to current position in file
-windows:ARGF.seek sets the absolute position relative to end of file

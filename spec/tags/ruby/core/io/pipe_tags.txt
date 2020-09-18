@@ -1,2 +1,0 @@
-windows:IO.pipe sets the external encoding of the read end to the default when passed no arguments
-windows:IO.pipe accepts 'bom|' prefix for external encoding

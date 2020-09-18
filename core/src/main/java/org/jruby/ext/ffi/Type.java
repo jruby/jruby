@@ -296,6 +296,7 @@ public abstract class Type extends RubyObject {
             case UINT:
             case LONG_LONG:
             case ULONG_LONG:
+//            case LONGDOUBLE:
             case LONG:
             case ULONG:
             case FLOAT:

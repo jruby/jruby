@@ -330,12 +330,10 @@ DEPS
       require 'test/jruby/symlink.jar'
     }
   ensure
-    Dir.chdir('test/jruby') do
-      [ 'jarwithoutextension', 'symlink.jar' ].each do |file|
-        File.delete(file)
-      end
+    [ 'jarwithoutextension', 'symlink.jar' ].each do |file|
+      File.delete("test/jruby/#{file}") rescue nil
     end
-  end
+  end unless WINDOWS # symlink not supported
 
   def test_load_wrapped
     load(File.expand_path('hello_dummy.rb', File.dirname(__FILE__)), true)

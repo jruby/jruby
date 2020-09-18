@@ -1,3 +1,0 @@
-windows:ARGF.bytes yields each byte of all streams to the passed block
-windows:ARGF.bytes returns an Enumerator when passed no block
-windows:ARGF.bytes when no block is given returns an Enumerator

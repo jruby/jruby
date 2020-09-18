@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'test/jruby/test_helper'
 
 class TestLoadingBuiltinLibraries < Test::Unit::TestCase
   def test_late_bound_libraries
@@ -26,7 +27,7 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
   # JRUBY-4962
   def test_require_pty
     assert_nothing_raised { require 'pty' }
-  end
+  end unless TestHelper::WINDOWS
 
   def test_jruby_libraries
     assert_nothing_raised {
@@ -37,6 +38,8 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
   end if defined? JRUBY_VERSION
 
   def test_does_not_load_ji_on_boot
+    pend "TODO: JRuby (still) self-reflects on Windows" if TestHelper::WINDOWS
+
     code  = "all = []; ObjectSpace.each_object(Module) { |mod| all << mod }; "
     code += "p all.count { |m| m.is_a?(Java::JavaPackage) }; " # <= 3
     # org.jruby.java.util (SystemPropertiesMap) and dependencies :

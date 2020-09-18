@@ -504,7 +504,7 @@ public final class Ruby implements Constantizable {
         // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
         IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
-        top.allocateInterpreterContext(Collections.EMPTY_LIST);
+        top.allocateInterpreterContext(Collections.EMPTY_LIST, 0, IRScope.allocateInitialFlags(top));
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
@@ -3886,7 +3886,12 @@ public final class Ruby implements Constantizable {
     public RaiseException newErrnoFromBindException(BindException be, String contextMessage) {
         Errno errno = Helpers.errnoFromException(be);
 
-        return newErrnoFromErrno(errno, contextMessage);
+        if (errno != null) {
+            return newErrnoFromErrno(errno, contextMessage);
+        }
+
+        // Messages may differ so revert to old behavior (jruby/jruby#6322)
+        return newErrnoEADDRFromBindException(be, contextMessage);
     }
 
     public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {

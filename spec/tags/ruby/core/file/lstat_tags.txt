@@ -1,2 +1,0 @@
-windows:File.lstat returns a File::Stat object if the given file exists
-windows:File.lstat returns a File::Stat object when called on an instance of File

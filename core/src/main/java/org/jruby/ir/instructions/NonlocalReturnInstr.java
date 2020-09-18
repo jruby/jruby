@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubySymbol;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -9,6 +8,8 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+
+import java.util.EnumSet;
 
 public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     public final String methodId; // Primarily a debugging aid
@@ -23,8 +24,9 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
         return new String[] { "name: " + methodId };
     }
 
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.HAS_NONLOCAL_RETURNS);
+    @Override
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        scope.setHasNonLocalReturns();
         return true;
     }
 

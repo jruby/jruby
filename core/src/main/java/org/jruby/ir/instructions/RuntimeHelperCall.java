@@ -1,8 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
-import org.jruby.ir.runtime.IRReturnJump;
-import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -17,6 +16,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.EnumSet;
 
 import static org.jruby.ir.IRFlags.REQUIRES_CLASS;
 
@@ -50,17 +51,17 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
     /**
      * Does this instruction do anything the scope is interested in?
      *
-     * @param scope to be updated
+     * @param flags to be updated
      * @return true if it modified the scope.
      */
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         boolean modifiedScope = false;
 
         // FIXME: Impl of this helper uses frame class.  Determine if we can do this another way.
         if (helperMethod == Methods.IS_DEFINED_SUPER) {
             modifiedScope = true;
-            scope.getFlags().add(REQUIRES_CLASS);
+            flags.add(REQUIRES_CLASS);
         }
 
         return modifiedScope;

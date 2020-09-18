@@ -115,7 +115,9 @@ public class DynamicScopeGenerator {
 
             public Class<?> defineClass(String name, byte[] bytes) {
                 definedClasses.put(name, bytes);
-                return super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
+                Class<?> cls = super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
+                resolveClass(cls);
+                return cls;
             }
         };
 

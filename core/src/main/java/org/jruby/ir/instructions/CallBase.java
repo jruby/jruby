@@ -228,10 +228,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        boolean modifiedScope = super.computeScopeFlags(scope);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        boolean modifiedScope = super.computeScopeFlags(scope, flags);
 
-        EnumSet<IRFlags> flags = scope.getFlags();
         if (targetRequiresCallersBinding()) {
             modifiedScope = true;
             flags.add(BINDING_HAS_ESCAPED);
@@ -253,17 +252,15 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
         if (canBeEval()) {
             modifiedScope = true;
-            flags.add(USES_EVAL);
+            scope.setUsesEval();
 
             // If eval contains a return then a nonlocal may pass through (e.g. def foo; eval "return 1"; end).
-            flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
+            scope.setCanReceiveNonlocalReturns();
 
             // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
             // it could be using the closure as a binding -- which means it could be using pretty much any
             // variable from the caller's binding!
-            if (flags.contains(RECEIVES_CLOSURE_ARG) && argsCount > 1) {
-                flags.add(CAN_CAPTURE_CALLERS_BINDING);
-            }
+            if (scope.receivesClosureArg() && argsCount > 1) scope.setCanCaptureCallersBinding();
         }
 
         if (potentiallySend(getId(), argsCount)) { // ok to look at raw string since we know we are looking for 7bit names.

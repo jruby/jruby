@@ -3,9 +3,11 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Signature;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
@@ -16,6 +18,7 @@ import org.objectweb.asm.Type;
 import java.util.ArrayDeque;
 
 import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
 import static org.objectweb.asm.Opcodes.*;
 
 // This class represents JVM as the target of compilation and outputs bytecode
@@ -46,6 +49,24 @@ public class JVM {
 
         cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, clsName, null, p(Object.class), null);
         cls().visitSource(filename, null);
+
+        // ensure all classes used in jitted method signatures are forced to load (jruby/jruby#6280)
+        SkinnyMethodAdapter adapter = new SkinnyMethodAdapter(cls(), ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null);
+        adapter.start();
+        adapter.ldc(Type.getObjectType(p(String.class)));
+        adapter.ldc(Type.getObjectType(p(RubyModule.class)));
+        adapter.pop2();
+        adapter.ldc(Type.getObjectType(p(Block.class)));
+        adapter.ldc(Type.getObjectType(p(IRubyObject.class)));
+        adapter.pop2();
+        adapter.ldc(Type.getObjectType(p(StaticScope.class)));
+        adapter.ldc(Type.getObjectType(p(ThreadContext.class)));
+        adapter.pop2();
+        adapter.ldc(Type.getObjectType(p(IRubyObject[].class)));
+        adapter.ldc(Type.getObjectType(p(DynamicScope.class)));
+        adapter.pop2();
+        adapter.voidreturn();
+        adapter.end();
     }
 
     public void popclass() {

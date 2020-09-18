@@ -267,31 +267,32 @@ class RegularFileResource implements FileResource {
 
     private Channel createChannel(ModeFlags flags) throws IOException {
         SeekableByteChannel fileChannel;
+        boolean addAppendChannel = false;
 
-        try{
-            if (flags.isWritable() && !flags.isReadable()) {
-                FileOutputStream fos = new FileOutputStream(file, flags.isAppendable());
-                fileChannel = fos.getChannel();
-            } else {
-                RandomAccessFile raf = new RandomAccessFile(file, flags.toJavaModeString());
-                fileChannel = raf.getChannel();
+        try {
+            try {
+                if (flags.isReadWrite() && flags.isAppendable()) {
+                    // NIO rejects read/write with append so we must do it manually below
+                    addAppendChannel = true;
+                }
 
-                // O_APPEND specifies that all writes will always be at the end of the open file
-                // (even if we happened to have seek'd away from the end of the file o_O). RAF
-                // does not have these semantics so we wrap it to support this unusual case.
-                if (flags.isAppendable()) fileChannel = new AppendModeChannel((FileChannel) fileChannel);
+                fileChannel = Files.newByteChannel(file.toPath(), flags.toOpenOptions(!addAppendChannel, true));
+            } catch (IOException ioe) {
+                // try without truncate if it is a pipe or fifo that can't be truncated (we only care about illegal seek).
+                if (flags.isTruncate() && "Illegal seek".equals(ioe.getMessage())) {
+                    fileChannel = Files.newByteChannel(file.toPath(), flags.toOpenOptions(!addAppendChannel, false));
+                } else {
+                    throw ioe;
+                }
             }
         }
         catch (FileNotFoundException ex) {
             throw mapFileNotFoundOnGetChannel(this, ex);
         }
 
-        try {
-            if (flags.isTruncate()) fileChannel.truncate(0);
-        }
-        catch (IOException ioe) {
-            // ignore; it's a pipe or fifo that can't be truncated (we only care about illegal seek).
-            if (!"Illegal seek".equals(ioe.getMessage())) throw ioe;
+        // add append channel if we couldn't make NIO do it for us
+        if (addAppendChannel) {
+            fileChannel = new AppendModeChannel((FileChannel) fileChannel);
         }
 
         return fileChannel;

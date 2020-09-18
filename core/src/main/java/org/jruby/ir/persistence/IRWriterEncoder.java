@@ -2,6 +2,7 @@ package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -12,6 +13,8 @@ import org.jruby.parser.StaticScope.Type;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
+
+import java.util.EnumSet;
 
 /**
  * Names are tough to find.  Encodes values destined to be written to a persisted space.
@@ -48,6 +51,7 @@ public interface IRWriterEncoder {
     public void encode(long value);
     public void encode(double value);
     public void encode(float value);
+    void encode(EnumSet<IRFlags> value);
 
     // Demarcate sections in encoded file methods
 

@@ -328,6 +328,13 @@ public final class StringSupport {
         return searchNonAscii(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
+    public static int searchNonAscii(String string) {
+        for (int p = 0; p < string.length(); p++) {
+            if (!Encoding.isAscii(string.charAt(p))) return p;
+        }
+        return -1;
+    }
+
     public static int codeRangeScan(Encoding enc, byte[]bytes, int p, int len) {
         if (enc == ASCIIEncoding.INSTANCE) {
             return searchNonAscii(bytes, p, p + len) != -1 ? CR_VALID : CR_7BIT;

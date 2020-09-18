@@ -2,18 +2,16 @@ require 'rbconfig'
 require 'jruby' if defined?(JRUBY_VERSION)
 
 module TestHelper
-  # TODO: Consider how this should work if we have --windows or similiar
-  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = Gem.win_platform?
   SEPARATOR = WINDOWS ? '\\' : '/'
-  # using the classloader setup to determine whether it runs inside
-  # ScriptingContainer or via commandline
+  # using the classloader setup to determine whether it runs inside ScriptingContainer or via commandline
   if defined?(JRUBY_VERSION)
     IS_COMMAND_LINE_EXECUTION = JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader
   else
     IS_COMMAND_LINE_EXECUTION = true
   end
 
-  IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
+  IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match(/!\//) || (!WINDOWS && RbConfig::CONFIG['bindir'].match(/:\//))
   RUBY = if IS_JAR_EXECUTION
            exe = 'java'
            exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
@@ -24,7 +22,7 @@ module TestHelper
            exe
          else
            exe = '"' + File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['RUBY_INSTALL_NAME'])
-           exe += RbConfig::CONFIG['EXEEXT']  if RbConfig::CONFIG['EXEEXT']
+           exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
            exe += '"'
            exe
          end
