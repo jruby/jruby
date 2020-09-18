@@ -14,10 +14,15 @@
 # FIXME: Make Rubyspecs FAILED message appear?
 
 namespace :spec do
+  begin
+    gem 'rspec'
+    require 'rspec/core/rake_task'
+  rescue LoadError => e
+    warn "rspec tasks won't work, `bin/jruby -S bundle install` first: #{e.inspect}"
+  end
+
   # Put Rake on the load path for JI specs without requiring rubygems
   rake_location = File.join(Gem.loaded_specs['rake'].full_gem_path, "lib")
-  gem 'rspec'
-  require 'rspec/core/rake_task'
 
   compile_flags = {
     :default => :int,

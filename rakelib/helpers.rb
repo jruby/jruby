@@ -6,8 +6,8 @@ ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-ea"
 def load_build_properties_into_constants
   constant_names = []
   IO.readlines("default.build.properties").each do |line|
-    # skip comments
-    next if line =~ /(^\W*#|^$)/
+    # skip comments or empty lines (including "\r\n" on windows)
+    next if line =~ /(^\W*#|^\r?$)/
 
     # build const name
     name, value = line.split("=", 2)
@@ -41,7 +41,7 @@ class HashTask < Struct.new(:hash, :file)
     hash.hexdigest
   end
 
-  def self.hash_for(filename, method=Digest::MD5)
+  def self.hash_for(filename, method)
     File.open(filename + "."+ method.name.split('::').last.downcase, 'w') do |f|
       f.puts HashTask.new(method.new, filename).calculate_hash
     end
@@ -50,7 +50,7 @@ end
 
 # Calculate a md5 checksum and save the file as same name + ".md5"
 def md5_checksum(filename)
-  HashTask.hash_for(filename)
+  HashTask.hash_for(filename, Digest::MD5)
 end
 
 # Calculate a sha1 checksum and save the file as same name + ".sha1"
