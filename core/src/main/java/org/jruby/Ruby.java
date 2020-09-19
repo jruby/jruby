@@ -4359,9 +4359,11 @@ public final class Ruby implements Constantizable {
 
     public <E extends Enum<E>> void loadConstantSet(RubyModule module, Class<E> enumClass) {
         for (E e : EnumSet.allOf(enumClass)) {
-            Constant c = (Constant) e;
-            if (c.defined() && Character.isUpperCase(c.name().charAt(0))) {
-                module.setConstant(c.name(), newFixnum(c.intValue()));
+            if (e instanceof Constant) {
+                Constant c = (Constant) e;
+                if (c.defined() && Character.isUpperCase(c.name().charAt(0))) {
+                    module.setConstant(c.name(), newFixnum(c.intValue()));
+                }
             }
         }
     }
