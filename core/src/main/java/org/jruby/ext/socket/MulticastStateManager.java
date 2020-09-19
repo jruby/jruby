@@ -31,6 +31,7 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.IP;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.InetAddress;
 
@@ -86,7 +87,7 @@ public class MulticastStateManager {
         for (int i = 0; i < membershipGroups.size(); i++) {
             String ipString = (String) membershipGroups.get(i);
             InetAddress group = InetAddress.getByName(ipString);
-            multicastSocket.joinGroup(group);
+            multicastSocket.joinGroup(new InetSocketAddress(group, 0), null);
         }
     }
 
