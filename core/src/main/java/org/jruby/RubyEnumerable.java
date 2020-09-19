@@ -130,7 +130,7 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             each(context, each, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", block.getSignature()) {
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                    return yield(context1, packEnumValues(context1, args));
+                    return this.yield(context1, packEnumValues(context1, args));
                 }
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject value) {
@@ -163,7 +163,7 @@ public class RubyEnumerable {
 
         each(context, eachSite(context), self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Signature.ONE_REQUIRED) {
             public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                return yield(context1, packEnumValues(context1, args));
+                return this.yield(context1, packEnumValues(context1, args));
             }
             @Override
             public IRubyObject yield(ThreadContext context1, IRubyObject value) {
@@ -275,7 +275,7 @@ public class RubyEnumerable {
                 long i = len; // Atomic ?
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                    return yield(context1, packEnumValues(context1, args));
+                    return this.yield(context1, packEnumValues(context1, args));
                 }
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject value) {
@@ -332,7 +332,7 @@ public class RubyEnumerable {
                 long i = len; // Atomic ?
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                    return yield(context1, packEnumValues(context1, args));
+                    return this.yield(context1, packEnumValues(context1, args));
                 }
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject value) {
@@ -365,7 +365,7 @@ public class RubyEnumerable {
                 boolean memo = false;
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                    return yield(context1, packEnumValues(context1, args));
+                    return this.yield(context1, packEnumValues(context1, args));
                 }
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject value) {
@@ -387,7 +387,7 @@ public class RubyEnumerable {
             each(context, eachSite(context), self, new JavaInternalBlockBody(context.runtime, context, "Enumerable#first", Signature.OPTIONAL) {
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                    return yield(context1, packEnumValues(context1, args));
+                    return this.yield(context1, packEnumValues(context1, args));
                 }
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject value) {
@@ -414,7 +414,7 @@ public class RubyEnumerable {
                 private long iter = firstCount;
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                    return yield(context1, packEnumValues(context1, args));
+                    return this.yield(context1, packEnumValues(context1, args));
                 }
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject value) {

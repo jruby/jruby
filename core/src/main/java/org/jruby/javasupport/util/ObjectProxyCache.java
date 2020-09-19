@@ -124,7 +124,7 @@ public abstract class ObjectProxyCache<T,A> {
                                 } finally {
                                     seg.unlock();
                                 }
-                                yield();
+                                Thread.yield();
                             }
                             if (dump) {
                                 LOG.debug("***Vulture {} sleeping, stats:", id);

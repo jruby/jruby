@@ -96,7 +96,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
                 return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
             } else {
-                return yield(context, block, arg0);
+                return this.yield(context, block, arg0);
             }
         }
     }
