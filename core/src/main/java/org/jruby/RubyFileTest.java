@@ -165,8 +165,7 @@ public class RubyFileTest {
             try {
                 Path canon1 = new File(file1.absolutePath()).getCanonicalFile().toPath();
                 Path canon2 = new File(file2.absolutePath()).getCanonicalFile().toPath();
-                Files.isSameFile(canon1, canon2);
-                return runtime.newBoolean(canon1.equals(canon2));
+                return runtime.newBoolean(Files.isSameFile(canon1, canon2));
             } catch (IOException canonicalizationError) {
                 // fall through to native logic
             }
