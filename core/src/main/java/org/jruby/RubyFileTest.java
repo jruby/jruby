@@ -37,6 +37,8 @@ import static org.jruby.RubyFile.fileResource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import jnr.posix.FileStat;
 import org.jruby.anno.JRubyMethod;
@@ -158,21 +160,20 @@ public class RubyFileTest {
         FileResource file1 = fileResource(filename1);
         FileResource file2 = fileResource(filename2);
 
-        if (Platform.IS_WINDOWS || !runtime.getPosix().isNative()) {
-            // posix stat uses inodes to determine indentity, and windows has no inodes
-            // (they are always zero), so we use canonical paths instead. (JRUBY-5726)
-            // If we can't load a native POSIX, use this same logic. (JRUBY-6982)
-            if (file1.exists() && file2.exists()) {
-                try {
-                    String canon1 = new File(file1.absolutePath()).getCanonicalPath();
-                    String canon2 = new File(file2.absolutePath()).getCanonicalPath();
-                    return runtime.newBoolean(canon1.equals(canon2));
-                } catch (IOException canonicalizationError) {
-                    return runtime.getFalse();
-                }
-            } else {
-                return runtime.getFalse();
+        // try NIO2 first to support more platforms
+        if (file1.exists() && file2.exists()) {
+            try {
+                Path canon1 = new File(file1.absolutePath()).getCanonicalFile().toPath();
+                Path canon2 = new File(file2.absolutePath()).getCanonicalFile().toPath();
+                return runtime.newBoolean(Files.isSameFile(canon1, canon2));
+            } catch (IOException canonicalizationError) {
+                // fall through to native logic
             }
+        }
+
+        // if we can't use NIO2 and we're on Windows or don't have native posix, just return false?
+        if (Platform.IS_WINDOWS || !runtime.getPosix().isNative()) {
+            return runtime.getFalse();
         }
 
         FileStat stat1 = file1.stat();
