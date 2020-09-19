@@ -295,7 +295,7 @@ public class Profiler {
         Integer scopeVersion = scopeVersionMap.get(scope);
         if (scopeVersion == null) {
             scopeVersionMap.put(scope, versionCount);
-            scopeVersion = new Integer(versionCount);
+            scopeVersion = Integer.valueOf(versionCount);
         }
 
         if (callerSite.call != null) {
