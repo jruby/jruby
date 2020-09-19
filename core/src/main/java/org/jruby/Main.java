@@ -276,18 +276,6 @@ public class Main {
         final Ruby runtime = _runtime;
         final AtomicBoolean didTeardown = new AtomicBoolean();
 
-        if (runtime != null && config.isHardExit()) {
-            // we're the command-line JRuby, and should set a shutdown hook for
-            // teardown.
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    if (didTeardown.compareAndSet(false, true)) {
-                        runtime.tearDown();
-                    }
-                }
-            });
-        }
-
         try {
             if (runtime != null) {
                 doSetContextClassLoader(runtime);
@@ -304,7 +292,7 @@ public class Main {
                 return doRunFromMain(runtime, in, filename);
             }
         } finally {
-            if (runtime != null && didTeardown.compareAndSet(false, true)) {
+            if (runtime != null) {
                 runtime.tearDown();
             }
         }
