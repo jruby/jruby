@@ -149,12 +149,12 @@ public class RubyClass extends RubyModule {
         this.allocator = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                 try {
-                    RubyBasicObject object = (RubyBasicObject)cls.newInstance();
+                    RubyBasicObject object = (RubyBasicObject)cls.getConstructor().newInstance();
                     object.setMetaClass(klazz);
                     return object;
-                } catch (InstantiationException ie) {
+                } catch (InstantiationException | InvocationTargetException ie) {
                     throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
-                } catch (IllegalAccessException iae) {
+                } catch (IllegalAccessException | NoSuchMethodException iae) {
                     throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor:\n" + iae);
                 }
             }

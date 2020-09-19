@@ -115,22 +115,19 @@ public class JavaProxyClassFactory {
         if ( factoryClassName != null ) {
             try {
                 Class clazz = Class.forName(factoryClassName);
-                Object instance = clazz.newInstance();
+                Object instance = clazz.getConstructor().newInstance();
                 if ( instance instanceof JavaProxyClassFactory ) {
                     factory = (JavaProxyClassFactory) instance;
                     LOG.info("Created proxy class factory: {}", factory);
                 } else {
                     LOG.error("Invalid proxy class factory: {}", instance);
                 }
-            }
-            catch (ClassNotFoundException e) {
-                LOG.error("ClassNotFoundException creating proxy class factory: ", e);
-            }
-            catch (InstantiationException e) {
-                LOG.error("InstantiationException creating proxy class factory: ", e);
-            }
-            catch (IllegalAccessException e) {
-                LOG.error("IllegalAccessException creating proxy class factory: ", e);
+            } catch (ClassNotFoundException |
+                    InstantiationException |
+                    InvocationTargetException |
+                    IllegalAccessException |
+                    NoSuchMethodException e) {
+                LOG.error(e.getClass().getSimpleName() + " creating proxy class factory: ", e);
             }
         }
 

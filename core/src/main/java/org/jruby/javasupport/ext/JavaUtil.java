@@ -615,13 +615,13 @@ public abstract class JavaUtil {
 
         final java.util.Collection clone;
         try {
-            clone = klass.newInstance();
+            clone = klass.getConstructor().newInstance();
         }
-        catch (IllegalAccessException e) {
+        catch (IllegalAccessException | NoSuchMethodException e) {
             // can not clone - most of Collections. returned types (e.g. EMPTY_LIST)
             return coll;
         }
-        catch (InstantiationException e) {
+        catch (InstantiationException | InvocationTargetException e) {
             Helpers.throwException(e); return null;
         }
 
