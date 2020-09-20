@@ -34,6 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
@@ -46,6 +47,7 @@ import jnr.constants.platform.SocketOption;
 
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.annotations.In;
+import jnr.ffi.annotations.Out;
 import jnr.posix.Timeval;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
@@ -75,6 +77,7 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
+import static jnr.constants.platform.TCP.TCP_INFO;
 import static jnr.constants.platform.TCP.TCP_CORK;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
@@ -419,7 +422,35 @@ public class RubyBasicSocket extends RubyIO {
                 return new Option(runtime, ProtocolFamily.PF_INET, level, opt, packedValue);
 
             default:
-                throw runtime.newErrnoENOPROTOOPTError();
+                int intLevel = _level.convertToInteger().getIntValue();
+                int intOpt = _opt.convertToInteger().getIntValue();
+                ChannelFD fd = getOpenFile().fd();
+                IPProto proto = IPProto.valueOf(intLevel);
+ 
+                switch (proto) {
+                    case IPPROTO_TCP:
+                        if (Platform.IS_LINUX && TCP_INFO.intValue() == intOpt &&
+                                fd.realFileno > 0 && SOCKOPT != null) {
+                            ByteBuffer buf = ByteBuffer.allocate(256);
+                            IntBuffer len = IntBuffer.allocate(256);
+                            
+                            int ret = SOCKOPT.getsockoptInt(fd.realFileno, intLevel, intOpt, buf, len);
+
+                            if (ret != 0) {
+                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                            }
+                            buf.flip();
+                            ByteList bytes = new ByteList(buf.array(), 0, len.get());
+                            
+                            return new Option(runtime, ProtocolFamily.PF_INET, level, opt, bytes);
+                        }
+
+                        break;
+                    default:
+                        throw runtime.newErrnoENOPROTOOPTError();
+                }
+
+                return RubyFixnum.zero(runtime);
             }
         } catch (Exception e) {
             throwErrorFromException(context.runtime, e);
@@ -475,11 +506,11 @@ public class RubyBasicSocket extends RubyIO {
                         if (TCP_NODELAY.intValue() == intOpt) {
                             socketType.setTcpNoDelay(channel, asBoolean(context, val));
                         } else if (Platform.IS_LINUX && TCP_CORK.intValue() == intOpt &&
-                                fd.realFileno > 0 && SETSOCKOPT != null) {
-                            int ret = SETSOCKOPT.setsockoptInt(fd.realFileno, intLevel, intOpt, val.convertToInteger().getIntValue());
+                                fd.realFileno > 0 && SOCKOPT != null) {
+                            int ret = SOCKOPT.setsockoptInt(fd.realFileno, intLevel, intOpt, val.convertToInteger().getIntValue());
 
                             if (ret != 0) {
-                                throw runtime.newErrnoEINVALError(SETSOCKOPT.strerror(ret));
+                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
                             }
                         }
 
@@ -515,25 +546,29 @@ public class RubyBasicSocket extends RubyIO {
         int F_SETFL = jnr.constants.platform.Fcntl.F_SETFL.intValue();
         int O_NONBLOCK = jnr.constants.platform.OpenFlags.O_NONBLOCK.intValue();
 
+        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntBuffer optlen);
         int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
         int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
         default int setsockoptInt(int s, int level, int optname, int value) {
             ByteBuffer buf = ByteBuffer.allocate(4);
             buf.order(ByteOrder.nativeOrder());
             buf.putInt(value).flip();
-            return SETSOCKOPT.setsockopt(s, level, optname, buf, buf.remaining());
+            return SOCKOPT.setsockopt(s, level, optname, buf, buf.remaining());
+        }
+        default int getsockoptInt(int s, int level, int optname, ByteBuffer buf, IntBuffer len) {
+            return SOCKOPT.getsockopt(s, level, optname, buf, len);
         }
         String strerror(int error);
     }
 
-    static final LibC SETSOCKOPT;
+    static final LibC SOCKOPT;
 
     static {
         LibraryLoader<LibC> loader = LibraryLoader.create(LibC.class);
         for (String libraryName : libnames) {
             loader.library(libraryName);
         }
-        SETSOCKOPT = loader.load();
+        SOCKOPT = loader.load();
     }
 
     @JRubyMethod(name = "getsockname")
