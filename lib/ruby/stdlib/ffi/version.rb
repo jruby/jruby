@@ -1,3 +1,3 @@
 module FFI
-  VERSION = '1.11.3'
+  VERSION = '1.13.1'
 end

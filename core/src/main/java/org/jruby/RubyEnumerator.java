@@ -569,7 +569,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                         enumeratorizeWithSize(context, this, rubyMethodName, new IRubyObject[]{runtime.newFixnum(index)}, enumSizeFn());
         }
 
-        return RubyEnumerable.callEach(runtime, context, this, new RubyEnumerable.EachWithIndex(block, index));
+        return RubyEnumerable.callEach(context, sites(context).each, this, new RubyEnumerable.EachWithIndex(block, index));
     }
 
     @JRubyMethod

@@ -25,6 +25,7 @@ project 'JRuby Integration Tests' do
 
   scope :test do
     jar 'junit:junit:4.11'
+    jar 'javax.annotation:javax.annotation-api:1.3.2'
     jar 'commons-logging:commons-logging:1.1.3'
     jar 'org.livetribe:livetribe-jsr223:2.0.7'
     jar 'org.jruby:jruby-core', '${project.version}'
@@ -36,7 +37,6 @@ project 'JRuby Integration Tests' do
   jar( 'org.jruby:requireTest:1.0',
        :scope => 'system',
        :systemPath => '${project.basedir}/jruby/requireTest-1.0.jar' )
-  gem 'rspec', '${rspec.version}'
 
   overrides do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -85,6 +85,13 @@ project 'JRuby Integration Tests' do
                                           'overWrite' =>  'false',
                                           'outputDirectory' =>  'target',
                                           'destFileName' =>  'junit.jar' },
+                                        { 'groupId' =>  'javax.annotation',
+                                          'artifactId' =>  'javax.annotation-api',
+                                          'version' =>  '1.3.2',
+                                          'type' =>  'jar',
+                                          'overWrite' =>  'false',
+                                          'outputDirectory' =>  'target',
+                                          'destFileName' =>  'annotation-api.jar' },
                                         { 'groupId' =>  'com.googlecode.jarjar',
                                           'artifactId' =>  'jarjar',
                                           'version' =>  '1.1',

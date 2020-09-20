@@ -27,6 +27,17 @@ import static org.junit.Assert.*;
  * @author kares
  */
 public class LoggerFactoryTest {
+    private static final Field MODIFIERS_FIELD;
+
+    static {
+        Field modifiers = null;
+        try {
+            modifiers = Field.class.getDeclaredField("modifiers");
+        } catch (Exception e) {
+            // no modifiers field available on this JDK
+        }
+        MODIFIERS_FIELD = modifiers;
+    }
 
     @Test
     public void hasCorrectBackupLoggerClassName() {
@@ -52,6 +63,8 @@ public class LoggerFactoryTest {
     @Test
     @SuppressWarnings("deprecation")
     public void usingJULLogger() throws Exception {
+        if (MODIFIERS_FIELD == null) return; // no modifiers field, can't force new logger impl
+
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         java.util.logging.Logger julLogger = java.util.logging.Logger.getLogger("JULLogger");
         java.util.logging.SimpleFormatter fmt = new java.util.logging.SimpleFormatter() {
@@ -129,6 +142,8 @@ public class LoggerFactoryTest {
 
     @Test
     public void usingSLF4JLogger() throws Exception {
+        if (MODIFIERS_FIELD == null) return; // no modifiers field, can't force new logger impl
+
         final PrintStream defaultErr = System.err;
         try {
             System.setProperty("org.slf4j.simpleLogger.logFile", "System.err");

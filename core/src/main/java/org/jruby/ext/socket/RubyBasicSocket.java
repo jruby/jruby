@@ -33,15 +33,22 @@ import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 
 import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.IPProto;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.annotations.In;
+import jnr.ffi.annotations.Out;
+import jnr.posix.Timeval;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -70,8 +77,8 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
-import static jnr.constants.platform.IPProto.IPPROTO_TCP;
-import static jnr.constants.platform.IPProto.IPPROTO_IP;
+import static jnr.constants.platform.TCP.TCP_INFO;
+import static jnr.constants.platform.TCP.TCP_CORK;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
@@ -393,10 +400,6 @@ public class RubyBasicSocket extends RubyIO {
             switch(level) {
 
             case SOL_SOCKET:
-            case SOL_IP:
-            case SOL_TCP:
-            case SOL_UDP:
-
                 if (opt == SocketOption.__UNKNOWN_CONSTANT__) {
                     throw runtime.newErrnoENOPROTOOPTError();
                 }
@@ -419,7 +422,35 @@ public class RubyBasicSocket extends RubyIO {
                 return new Option(runtime, ProtocolFamily.PF_INET, level, opt, packedValue);
 
             default:
-                throw runtime.newErrnoENOPROTOOPTError();
+                int intLevel = _level.convertToInteger().getIntValue();
+                int intOpt = _opt.convertToInteger().getIntValue();
+                ChannelFD fd = getOpenFile().fd();
+                IPProto proto = IPProto.valueOf(intLevel);
+ 
+                switch (proto) {
+                    case IPPROTO_TCP:
+                        if (Platform.IS_LINUX && TCP_INFO.intValue() == intOpt &&
+                                fd.realFileno > 0 && SOCKOPT != null) {
+                            ByteBuffer buf = ByteBuffer.allocate(256);
+                            IntBuffer len = IntBuffer.allocate(256);
+                            
+                            int ret = SOCKOPT.getsockoptInt(fd.realFileno, intLevel, intOpt, buf, len);
+
+                            if (ret != 0) {
+                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                            }
+                            buf.flip();
+                            ByteList bytes = new ByteList(buf.array(), 0, len.get());
+                            
+                            return new Option(runtime, ProtocolFamily.PF_INET, level, opt, bytes);
+                        }
+
+                        break;
+                    default:
+                        throw runtime.newErrnoENOPROTOOPTError();
+                }
+
+                return RubyFixnum.zero(runtime);
             }
         } catch (Exception e) {
             throwErrorFromException(context.runtime, e);
@@ -450,11 +481,7 @@ public class RubyBasicSocket extends RubyIO {
 
             switch(level) {
 
-            case SOL_IP:
             case SOL_SOCKET:
-            case SOL_TCP:
-            case SOL_UDP:
-
                 if (opt == SocketOption.SO_LINGER) {
                     if (val instanceof RubyString) {
                         int[] linger = Option.unpackLinger(val.convertToString().getByteList());
@@ -466,28 +493,82 @@ public class RubyBasicSocket extends RubyIO {
                     socketType.setSocketOption(channel, opt, asNumber(context, val));
                 }
 
-                break;
+                return RubyFixnum.zero(runtime);
 
             default:
-                int intLevel = (int)_level.convertToInteger().getLongValue();
-                int intOpt = (int)_opt.convertToInteger().getLongValue();
-                if (IPPROTO_TCP.intValue() == intLevel && TCP_NODELAY.intValue() == intOpt) {
-                    socketType.setTcpNoDelay(channel, asBoolean(context, val));
+                int intLevel = _level.convertToInteger().getIntValue();
+                int intOpt = _opt.convertToInteger().getIntValue();
+                ChannelFD fd = getOpenFile().fd();
+                IPProto proto = IPProto.valueOf(intLevel);
 
-                } else if (IPPROTO_IP.intValue() == intLevel) {
-                    if (MulticastStateManager.IP_ADD_MEMBERSHIP == intOpt) {
-                        joinMulticastGroup(val);
-                    }
+                switch (proto) {
+                    case IPPROTO_TCP:
+                        if (TCP_NODELAY.intValue() == intOpt) {
+                            socketType.setTcpNoDelay(channel, asBoolean(context, val));
+                        } else if (Platform.IS_LINUX && TCP_CORK.intValue() == intOpt &&
+                                fd.realFileno > 0 && SOCKOPT != null) {
+                            int ret = SOCKOPT.setsockoptInt(fd.realFileno, intLevel, intOpt, val.convertToInteger().getIntValue());
 
-                } else {
-                    throw runtime.newErrnoENOPROTOOPTError();
+                            if (ret != 0) {
+                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                            }
+                        }
+
+                        break;
+
+                    case IPPROTO_IP:
+                    case IPPROTO_HOPOPTS: // these both have value 0 on several platforms
+                        if (MulticastStateManager.IP_ADD_MEMBERSHIP == intOpt) {
+                            joinMulticastGroup(val);
+                        }
+
+                        break;
+
+                    default:
+                        throw runtime.newErrnoENOPROTOOPTError();
                 }
+
+                return RubyFixnum.zero(runtime);
             }
         } catch (Exception e) {
             throwErrorFromException(context.runtime, e);
             return null; // not reached
         }
-        return runtime.newFixnum(0);
+    }
+
+    // FIXME: copied from jnr-unixsocket
+    static final String[] libnames = jnr.ffi.Platform.getNativePlatform().getOS() == jnr.ffi.Platform.OS.SOLARIS
+            ? new String[] { "socket", "nsl", jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName() }
+            : new String[] { jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName() };
+
+    public interface LibC {
+        int F_GETFL = jnr.constants.platform.Fcntl.F_GETFL.intValue();
+        int F_SETFL = jnr.constants.platform.Fcntl.F_SETFL.intValue();
+        int O_NONBLOCK = jnr.constants.platform.OpenFlags.O_NONBLOCK.intValue();
+
+        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntBuffer optlen);
+        int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
+        int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
+        default int setsockoptInt(int s, int level, int optname, int value) {
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            buf.order(ByteOrder.nativeOrder());
+            buf.putInt(value).flip();
+            return SOCKOPT.setsockopt(s, level, optname, buf, buf.remaining());
+        }
+        default int getsockoptInt(int s, int level, int optname, ByteBuffer buf, IntBuffer len) {
+            return SOCKOPT.getsockopt(s, level, optname, buf, len);
+        }
+        String strerror(int error);
+    }
+
+    static final LibC SOCKOPT;
+
+    static {
+        LibraryLoader<LibC> loader = LibraryLoader.create(LibC.class);
+        for (String libraryName : libnames) {
+            loader.library(libraryName);
+        }
+        SOCKOPT = loader.load();
     }
 
     @JRubyMethod(name = "getsockname")

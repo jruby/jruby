@@ -8,6 +8,8 @@ import java.lang.reflect.Array;
 import java.net.BindException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NonReadableChannelException;
+import java.nio.channels.NonWritableChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
@@ -269,6 +271,11 @@ public class Helpers {
             return errnoFromMessage(be);
         } catch (NotYetConnectedException nyce) {
             return Errno.ENOTCONN;
+        } catch (NonReadableChannelException | NonWritableChannelException nrce) {
+            // raised by NIO for invalid combinations of file options (read + truncate, for example)
+            return Errno.EINVAL;
+        } catch (IllegalArgumentException nrce) {
+            return Errno.EINVAL;
         } catch (Throwable t2) {
             // fall through
         }
@@ -380,6 +387,17 @@ public class Helpers {
     }
 
     /**
+     * Simplified form of Ruby#newErrorFromException with no default function.
+     *
+     * @param runtime the current runtime
+     * @param t the exception to translate into a Ruby error
+     * @return a RaiseException subtype instance appropriate for the given exception
+     */
+    public static Throwable newErrorFromException(Ruby runtime, Throwable t) {
+        return newErrorFromException(runtime, t, t0 -> t0);
+    }
+
+    /**
      * Throw an appropriate Ruby-friendly error or exception for a given Java exception.
      *
      * This method will first attempt to translate the exception into a Ruby error using {@link #newErrorFromException(Ruby, Throwable, Function)}.
@@ -390,7 +408,7 @@ public class Helpers {
      * @param t the exception to raise as an error, if appropriate, or as itself otherwise
      */
     public static void throwErrorFromException(Ruby runtime, Throwable t) {
-        throwException(newErrorFromException(runtime, t, (t0) -> t0));
+        throwException(newErrorFromException(runtime, t));
     }
 
     public static RubyModule getNthScopeModule(StaticScope scope, int depth) {

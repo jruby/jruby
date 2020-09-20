@@ -3854,7 +3854,7 @@ states[349] = new ParserState() {
 };
 states[350] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new Integer((support.isInClass() ? 2 : 0) & (support.isInDef() ? 1 : 0));
+                    yyVal = Integer.valueOf((support.isInClass() ? 2 : 0) & (support.isInDef() ? 1 : 0));
                     support.setInDef(false);
                     support.setIsInClass(false);
                     support.pushLocalScope();

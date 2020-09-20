@@ -104,7 +104,7 @@ class ServiceFinder<T> {
             try {
                 @SuppressWarnings("unchecked")
                 Class<T> clazz = (Class<T>) Class.forName(name, true, loader);
-                instances.add( clazz.newInstance() );
+                instances.add( clazz.getConstructor().newInstance() );
             }
             catch (ClassNotFoundException e) {
                 System.err.println(name + " was not found");

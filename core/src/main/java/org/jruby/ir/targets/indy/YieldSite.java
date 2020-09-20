@@ -26,6 +26,7 @@ import static org.jruby.util.CodegenUtils.sig;
  * Created by headius on 1/8/16.
  */
 public class YieldSite extends MutableCallSite {
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final boolean unwrap;
     private int bindCount;
 
@@ -97,7 +98,7 @@ public class YieldSite extends MutableCallSite {
 
                     target = Binder.from(type())
                             .append(unwrap)
-                            .invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "yield");
+                            .invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "yield");
                 }
 
                 MethodHandle fallback = getTarget();
@@ -139,7 +140,7 @@ public class YieldSite extends MutableCallSite {
 
                     target = Binder.from(type())
                             .permute(1, 0)
-                            .invokeVirtualQuiet(MethodHandles.lookup(), "yieldSpecific");
+                            .invokeVirtualQuiet(LOOKUP, "yieldSpecific");
                 }
 
                 MethodHandle fallback = getTarget();
@@ -162,6 +163,13 @@ public class YieldSite extends MutableCallSite {
                 LOG.info("yield \tbound indirectly as yieldValues:" + Bootstrap.logBlock(block));
             }
         }
+
+        MethodHandle target = Binder.from(type())
+                .collect(2, IRubyObject[].class)
+                .permute(1, 0, 2)
+                .invokeVirtualQuiet(LOOKUP, "yieldValues");
+
+        setTarget(target);
 
         return block.yieldValues(context, args);
     }

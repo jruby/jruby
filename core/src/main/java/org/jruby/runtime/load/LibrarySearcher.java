@@ -236,8 +236,8 @@ class LibrarySearcher {
         }
 
         private LoadServiceResourceInputStream prepareInputStream(Ruby runtime) {
-            try {
-                return new LoadServiceResourceInputStream(resource.inputStream());
+            try (InputStream is = resource.inputStream()){
+                return new LoadServiceResourceInputStream(is);
             } catch (IOException ioe) {
                 throw runtime.newLoadError("failure to load file: " + ioe.getLocalizedMessage(), searchName);
             }

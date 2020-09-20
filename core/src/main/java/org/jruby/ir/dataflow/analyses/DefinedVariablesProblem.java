@@ -1,7 +1,7 @@
 package org.jruby.ir.dataflow.analyses;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 
@@ -10,9 +10,9 @@ import java.util.*;
 public class DefinedVariablesProblem extends DataFlowProblem<DefinedVariablesProblem, DefinedVariableNode> {
     public static final String NAME = "Defined Variables Analysis";
 
-    public DefinedVariablesProblem(IRScope scope) {
+    public DefinedVariablesProblem(FullInterpreterContext fic) {
         super(DataFlowProblem.DF_Direction.FORWARD);
-        setup(scope);
+        setup(fic);
     }
 
     public Integer getDFVar(Variable v) {

@@ -296,13 +296,9 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndGet(self, selfType, methodName).method.isBuiltin(); // false for method.isUndefined()
     }
 
-    @Deprecated
+    // For use directly by classes (e.g. RubyClass) where the metaclass is the caller.
     public final boolean isBuiltin(RubyClass selfType) {
-        CacheEntry cache = this.cache;
-        if (cache.typeOk(selfType)) {
-            return cache.method.isBuiltin();
-        }
-        return cacheAndGet(selfType, methodName).method.isBuiltin();
+        return retrieveCache(selfType).method.isBuiltin();
     }
 
     @Deprecated

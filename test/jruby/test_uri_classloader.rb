@@ -80,8 +80,8 @@ class TestURIClassloader < Test::Unit::TestCase
     cwd = Dir.pwd
     ensure_cwd do
       Dir.chdir( 'uri:classloader:/' )
-      assert_true system("pwd > /dev/null")
-      assert_equal cwd, `pwd`.chomp
+      assert_true system(WINDOWS ? 'cd > $nul' : "pwd > /dev/null")
+      assert_equal cwd, (WINDOWS ? `cd` : `pwd`).chomp.tr('\\', '/') # due Windows
     end
   end
 

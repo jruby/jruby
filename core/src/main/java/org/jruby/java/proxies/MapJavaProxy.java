@@ -47,6 +47,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -795,13 +796,13 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     private MapJavaProxy dupImpl(final String method) {
         final Map map = getMapObject();
         try {
-            Map newMap = map.getClass().newInstance();
+            Map newMap = map.getClass().getConstructor().newInstance();
             newMap.putAll(map);
             MapJavaProxy proxy = new MapJavaProxy(getRuntime(), metaClass);
             proxy.setObject(newMap);
             return proxy;
         }
-        catch (InstantiationException|IllegalAccessException ex) {
+        catch (InstantiationException|IllegalAccessException|NoSuchMethodException| InvocationTargetException ex) {
             final RaiseException e = getRuntime().newNotImplementedError("can't "+ method +" Map of type " + getObject().getClass().getName());
             e.initCause(ex); throw e;
         }

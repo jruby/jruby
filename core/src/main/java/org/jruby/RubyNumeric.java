@@ -1355,7 +1355,10 @@ public class RubyNumeric extends RubyObject {
      */
     protected final IRubyObject op_num_equal(ThreadContext context, IRubyObject other) {
         // it won't hurt fixnums
-        if (this == other)  return context.tru;
+        if (this == other) return context.tru;
+
+        // nil is not equal to any number
+        if (this.isNil()) return context.fals;
 
         return numFuncall(context, other, sites(context).op_equals, this);
     }

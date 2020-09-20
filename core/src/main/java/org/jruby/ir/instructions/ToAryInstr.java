@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -29,7 +30,7 @@ public class ToAryInstr extends OneOperandResultBaseInstr implements FixedArityI
     }
 
     @Override
-    public boolean canBeDeletedFromScope(IRScope s) {
+    public boolean canBeDeletedFromScope(FullInterpreterContext fic) {
         // This is an instruction that can be safely deleted
         // since it is inserted by JRuby to facilitate other operations
         // and has no real side effects. Currently, this has been marked

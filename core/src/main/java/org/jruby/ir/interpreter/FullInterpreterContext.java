@@ -1,6 +1,7 @@
 package org.jruby.ir.interpreter;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -10,19 +11,31 @@ import java.util.Set;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.Site;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.TemporaryBooleanVariable;
+import org.jruby.ir.operands.TemporaryClosureVariable;
+import org.jruby.ir.operands.TemporaryFixnumVariable;
+import org.jruby.ir.operands.TemporaryFloatVariable;
+import org.jruby.ir.operands.TemporaryLocalReplacementVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
+import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+
+import static org.jruby.ir.IRFlags.BINDING_HAS_ESCAPED;
 
 /**
  * Created by enebo on 2/27/15.
@@ -53,29 +66,18 @@ public class FullInterpreterContext extends InterpreterContext {
     public int booleanVariableIndex = -1;
 
     // For duplicate()
-    public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList) {
-        super(scope, (List<Instr>) null);
+    public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList, int temporaryVariableCount, EnumSet<IRFlags> flags) {
+        super(scope, (List<Instr>) null, temporaryVariableCount, flags);
 
         this.cfg = cfg;
         this.linearizedBBList = linearizedBBList;
     }
 
     // FIXME: Perhaps abstract IC into interface of base class so we do not have a null instructions field here
-    public FullInterpreterContext(IRScope scope, Instr[] instructions) {
-        super(scope, (List<Instr>)null);
+    public FullInterpreterContext(IRScope scope, Instr[] instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
+        super(scope, (List<Instr>)null, temporaryVariableCount, flags);
 
         cfg = buildCFG(instructions);
-    }
-
-    /**
-     * have this interpretercontext fully built?  This is slightly more complicated than this simple check, but it
-     * should work.  In -X-C full builds we linearize at the beginning of our generateInstructionsForInterpretation
-     * method.  Last thing we do essentially is set instructions to be something.  For JIT builds last thing we
-     * need to check is whether we have linearized the BB list.
-     */
-    @Override
-    public boolean buildComplete() {
-        return linearizedBBList != null;
     }
 
     public BasicBlock[] linearizeBasicBlocks() {
@@ -93,22 +95,11 @@ public class FullInterpreterContext extends InterpreterContext {
 
     @Override
     public boolean hasExplicitCallProtocol() {
-        return getScope().getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
+        return hasExplicitCallProtocol;
     }
 
-    @Override
-    public boolean pushNewDynScope() {
-        return !getScope().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope();
-    }
-
-    @Override
-    public boolean popDynScope() {
-        return pushNewDynScope() || reuseParentDynScope();
-    }
-
-    @Override
-    public boolean reuseParentDynScope() {
-        return getScope().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+    public boolean needsBinding() {
+        return reuseParentDynScope() || !isDynamicScopeEliminated();
     }
 
     /** We plan on running this in full interpreted mode.  This will fixup ipc, rpc, and generate instr list */
@@ -164,7 +155,6 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         instructions = linearizedInstrArray;
-        temporaryVariableCount = getScope().getTemporaryVariablesCount();
 
         // System.out.println("SCOPE: " + getScope().getId());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
@@ -179,7 +169,7 @@ public class FullInterpreterContext extends InterpreterContext {
     public void computeScopeFlagsFromInstructions() {
         for (BasicBlock b: cfg.getBasicBlocks()) {
             for (Instr i: b.getInstrs()) {
-                i.computeScopeFlags(getScope());
+                i.computeScopeFlags(getScope(), getFlags());
             }
         }
     }
@@ -222,7 +212,7 @@ public class FullInterpreterContext extends InterpreterContext {
                 newLinearizedBBList[i] = newCFG.getBBForLabel(linearizedBBList[i].getLabel());
             }
 
-            return new FullInterpreterContext(getScope(), newCFG, newLinearizedBBList);
+            return new FullInterpreterContext(getScope(), newCFG, newLinearizedBBList, temporaryVariableCount, getFlags());
         } catch (Throwable t) {
             t.printStackTrace();
             return null;
@@ -304,5 +294,109 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         return false;
+    }
+
+    protected void initialize() {
+        // no initialize, avoid parent
+    }
+
+    public TemporaryVariable createTemporaryVariable() {
+        temporaryVariableCount++;
+
+        if (getScope().getScopeType() == IRScopeType.CLOSURE) {
+            return new TemporaryClosureVariable(((IRClosure) getScope()).closureId, temporaryVariableCount - 1);
+        } else {
+            return getScope().getManager().newTemporaryLocalVariable(temporaryVariableCount - 1);
+        }
+    }
+
+    public TemporaryLocalVariable getNewTemporaryVariableFor(LocalVariable var) {
+        temporaryVariableCount++;
+        return new TemporaryLocalReplacementVariable(var.getId(), temporaryVariableCount - 1);
+    }
+
+    public TemporaryLocalVariable getNewUnboxedVariable(Class type) {
+        TemporaryVariableType varType;
+        if (type == Float.class) {
+            varType = TemporaryVariableType.FLOAT;
+        } else if (type == Fixnum.class) {
+            varType = TemporaryVariableType.FIXNUM;
+        } else if (type == java.lang.Boolean.class) {
+            varType = TemporaryVariableType.BOOLEAN;
+        } else {
+            varType = TemporaryVariableType.LOCAL;
+        }
+        return getNewTemporaryVariable(varType);
+    }
+
+    // BUILD + FULL
+    public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
+        switch (type) {
+            case FLOAT: {
+                floatVariableIndex++;
+                return new TemporaryFloatVariable(floatVariableIndex);
+            }
+            case FIXNUM: {
+                fixnumVariableIndex++;
+                return new TemporaryFixnumVariable(fixnumVariableIndex);
+            }
+            case BOOLEAN: {
+                booleanVariableIndex++;
+                return new TemporaryBooleanVariable(booleanVariableIndex);
+            }
+            case LOCAL: {
+                return getScope().getManager().newTemporaryLocalVariable(temporaryVariableCount - 1);
+            }
+        }
+
+        throw new RuntimeException("Invalid temporary variable being alloced in this scope: " + type);
+    }
+
+    public boolean needsFrame() {
+        boolean bindingHasEscaped = bindingHasEscaped();
+        boolean requireFrame = bindingHasEscaped || getScope().usesEval() || getScope().usesZSuper() || getScope().canCaptureCallersBinding();
+
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_BACKREF:
+                case REQUIRES_VISIBILITY:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
+                    requireFrame = true;
+            }
+        }
+
+        return requireFrame;
+    }
+
+    public boolean bindingHasEscaped() {
+        return getFlags().contains(BINDING_HAS_ESCAPED);
+    }
+
+    public boolean needsOnlyBackref() {
+        if (getScope().usesEval() || getScope().usesZSuper() || getScope().canCaptureCallersBinding()) return false;
+
+        boolean backrefSeen = false;
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_VISIBILITY:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
+                    return false;
+                case REQUIRES_BACKREF:
+                    backrefSeen = true;
+                    break;
+            }
+        }
+
+        return backrefSeen;
     }
 }

@@ -47,7 +47,7 @@ public class RubySignal {
 
     private final static SignalFacade initSignalFacade() {
         try {
-            return org.jruby.util.SunSignalFacade.class.newInstance();
+            return org.jruby.util.SunSignalFacade.class.getConstructor().newInstance();
         } catch (Throwable e) {
             return new NoFunctionalitySignalFacade();
         }

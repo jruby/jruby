@@ -8,6 +8,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -20,17 +21,23 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceSuperInstr extends CallInstr {
+    private final boolean isLiteralBlock;
+
     // clone constructor
     protected InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
                                  Operand closure, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
         super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure,
                 isPotentiallyRefined, callSite, callSiteId);
+
+        isLiteralBlock = closure instanceof WrappedIRClosure;
     }
 
     // normal constructor
     public InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
                               Operand closure, boolean isPotentiallyRefined) {
         super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
+
+        isLiteralBlock = closure instanceof WrappedIRClosure;
     }
 
     public Operand getDefiningModule() {
@@ -81,7 +88,11 @@ public class InstanceSuperInstr extends CallInstr {
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         RubyModule definingModule = ((RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp));
 
-        return IRRuntimeHelpers.instanceSuper(context, self, getId(), definingModule, args, block);
+        if (isLiteralBlock) {
+            return IRRuntimeHelpers.instanceSuperIter(context, self, getId(), definingModule, args, block);
+        } else {
+            return IRRuntimeHelpers.instanceSuper(context, self, getId(), definingModule, args, block);
+        }
     }
 
     @Override

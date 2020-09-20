@@ -1,6 +1,6 @@
 package org.jruby.ir.dataflow;
 
-import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.representations.BasicBlock;
 
 import java.util.*;
@@ -29,13 +29,13 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         return direction;
     }
 
-    public void setup(IRScope scope) {
-        this.scope = scope;
+    public void setup(FullInterpreterContext fic) {
+        this.fic = fic;
         buildFlowGraph();
     }
 
-    public IRScope getScope() {
-        return scope;
+    public FullInterpreterContext getFIC() {
+        return fic;
     }
 
     /* Compute Meet Over All Paths solution for this dataflow problem on the input CFG.
@@ -47,7 +47,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         LinkedList<U> workList = generateWorkList();
 
         // 2. Initialize a bitset with a flag set for all basic blocks
-        int numNodes = scope.getCFG().getMaxNodeID();
+        int numNodes = fic.getCFG().getMaxNodeID();
         BitSet bbSet = new BitSet(1+numNodes);
         bbSet.flip(0, numNodes); // set all bits from default of 0 to 1 (enebo: could we invert this in algo?)
 
@@ -64,7 +64,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
     protected LinkedList<U> generateWorkList() {
         LinkedList<U> wl = new LinkedList<>();
         Iterator<BasicBlock> it = direction == DF_Direction.FORWARD ?
-                scope.getCFG().getReversePostOrderTraverser() : scope.getCFG().getPostOrderTraverser();
+                fic.getCFG().getReversePostOrderTraverser() : fic.getCFG().getPostOrderTraverser();
 
         while (it.hasNext()) {
             wl.add(getFlowGraphNode(it.next()));
@@ -103,11 +103,11 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
     }
 
     public U getEntryNode() {
-        return getFlowGraphNode(scope.getCFG().getEntryBB());
+        return getFlowGraphNode(fic.getCFG().getEntryBB());
     }
 
     public U getExitNode() {
-        return getFlowGraphNode(scope.getCFG().getExitBB());
+        return getFlowGraphNode(fic.getCFG().getExitBB());
     }
 
     public int addDataFlowVar() {
@@ -117,7 +117,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
 
 /* -------------- Protected fields and methods below ---------------- */
     protected List<U> flowGraphNodes;
-    protected IRScope scope;
+    protected FullInterpreterContext fic;
 
 /* -------------- Private fields and methods below ---------------- */
     private int nextVariableId = -1;
@@ -129,7 +129,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         flowGraphNodes = new LinkedList<>();
         basicBlockToFlowGraph = new HashMap<>();
 
-        for (BasicBlock bb: scope.getCFG().getBasicBlocks()) {
+        for (BasicBlock bb: fic.getCFG().getBasicBlocks()) {
             U fgNode = buildFlowGraphNode(bb);
             fgNode.init();
             fgNode.buildDataFlowVars();

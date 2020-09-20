@@ -200,6 +200,10 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     unbox(mv, "f64Value");
                     break;
 
+//                case LONGDOUBLE:
+//                    unbox(mv, "f128Value"); // not implemented
+//                    break;
+
                 default:
                     throw new UnsupportedOperationException("unsupported parameter type " + parameterType);
             }

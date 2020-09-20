@@ -6,13 +6,6 @@
 
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
-module CTest
-  extend FFI::Library
-  ffi_lib FFI::Library::LIBC
-
-  attach_function :strcat, [:pointer, :pointer], :pointer
-end
-
 describe "MemoryPointer" do
   it "makes a pointer from a string" do
     m = FFI::MemoryPointer.from_string("FFI is Awesome")
@@ -130,11 +123,13 @@ describe "MemoryPointer" do
   end
 
   it "raises an error if you try putting a long into a pointer of size 1" do
+    skip "not yet supported on TruffleRuby" if RUBY_ENGINE == "truffleruby"
     m = FFI::MemoryPointer.new(1)
     expect { m.write_long(10) }.to raise_error(IndexError)
   end
 
   it "raises an error if you try putting an int into a pointer of size 1" do
+    skip "not yet supported on TruffleRuby" if RUBY_ENGINE == "truffleruby"
     m = FFI::MemoryPointer.new(1)
     expect { m.write_int(10) }.to raise_error(IndexError)
   end

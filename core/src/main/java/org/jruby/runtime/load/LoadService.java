@@ -592,7 +592,7 @@ public class LoadService {
                 classLoader = runtime.getInstanceConfig().getLoader();
             }
 
-            Object libObject = classLoader.loadClass(className).newInstance();
+            Object libObject = classLoader.loadClass(className).getConstructor().newInstance();
             if (libObject instanceof Library) {
                 Library library = (Library)libObject;
                 library.load(runtime, false);

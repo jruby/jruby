@@ -57,6 +57,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.*;
 
 /**
@@ -266,8 +267,8 @@ public class RubyDateTime extends RubyDate {
             rest[0] = r0.longValueExact();
             rest[1] = r1.longValueExact();
         } catch (ArithmeticException e) {
-            BigDecimal r = new BigDecimal(r0).divide(new BigDecimal(r1), 18, BigDecimal.ROUND_HALF_UP);
-            r = r.setScale(18, BigDecimal.ROUND_HALF_UP);
+            BigDecimal r = new BigDecimal(r0).divide(new BigDecimal(r1), 18, RoundingMode.HALF_UP);
+            r = r.setScale(18, RoundingMode.HALF_UP);
             rest[0] = r.unscaledValue().longValue();
             rest[1] = (long) Math.pow(10, r.scale());
         }

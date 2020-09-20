@@ -47,58 +47,79 @@ matrix:
       name: MRI core int
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:core:int
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: MRI core jit
       script:
         - mvn clean package -Pbootstrap
-        - jruby -S rake test:mri:core:jit
+        - gem install bundler
+        - bundle install
+        - jruby -S rake test:mri:core:fullint
+      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: MRI core jit jdk11
       jdk: openjdk11
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:core:jit
 
     - name: MRI core jit jdk14
       jdk: openjdk14
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:core:jit
 
     - name: MRI extra
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:extra
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: MRI stdlib
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:stdlib
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: spec/ruby fast
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby fast jdk11
       jdk: openjdk11
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby fast jdk14
       jdk: openjdk14
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby slow
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ruby:slow
 
     - env: COMMAND=test/check_versions.sh
@@ -118,12 +139,16 @@ matrix:
     - name: JRuby tests int
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby:int
 
     - name: JRuby tests jit indy jdk11
       jdk: openjdk11
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
@@ -131,50 +156,68 @@ matrix:
       jdk: openjdk14
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: JRuby tests jit indy
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: JRuby tests aot
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby:aot
 
     - name: JRuby slow tests
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:slow_suites
 
     - name: JI specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ji
 
     - name: JI specs jdk11
       jdk: openjdk11
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ji
 
     - name: JI specs jdk14
       jdk: openjdk14
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ji
 
     - name: Compiler specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:compiler
 
     - name: Compiler specs indy
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:compiler
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
@@ -182,6 +225,8 @@ matrix:
       jdk: openjdk11
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:compiler
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
@@ -189,44 +234,60 @@ matrix:
       jdk: openjdk14
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:compiler
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: FFI specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ffi
 
     - name: FFI specs jdk11
       jdk: openjdk11
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ffi
 
     - name: Regression specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:regression
 
     - name: Regression specs jit
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:regression
       env: JRUBY_OPTS=-Xjit.threshold=0
 
     - name: JRuby specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:jruby
 
     - name: jrubyc specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:jrubyc
 
     - name: Profilers specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:profiler
 
     - name: -Pmain openj9 jdk8
