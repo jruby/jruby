@@ -206,7 +206,7 @@ public class JRubyUtilLibrary implements Library {
         // 1. BasicLibraryService interface
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {
             try {
-                return ((BasicLibraryService) clazz.newInstance()).basicLoad(runtime);
+                return ((BasicLibraryService) clazz.getConstructor().newInstance()).basicLoad(runtime);
             } catch (org.jruby.exceptions.Exception e) {
                 // propagate Ruby exceptions as-is
                 throw e;
@@ -221,7 +221,7 @@ public class JRubyUtilLibrary implements Library {
         // 2 org.jruby.runtime.load.Library
         if (Library.class.isAssignableFrom(clazz)) {
             try {
-                ((Library) clazz.newInstance()).load(runtime, false);
+                ((Library) clazz.getConstructor().newInstance()).load(runtime, false);
                 return true;
             } catch (org.jruby.exceptions.Exception e) {
                 // propagate Ruby exceptions as-is

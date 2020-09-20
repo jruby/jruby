@@ -3236,7 +3236,7 @@ states[351] = new RipperParserState() {
 };
 states[352] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new Integer((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
+                    yyVal = Integer.valueOf((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
                     p.setInDef(false);
                     p.setIsInClass(false);
                     p.pushLocalScope();

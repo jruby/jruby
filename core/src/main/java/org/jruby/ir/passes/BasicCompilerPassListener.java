@@ -22,7 +22,7 @@ public class BasicCompilerPassListener implements CompilerPassListener {
 
     @Override
     public void startExecute(CompilerPass pass, FullInterpreterContext fic, boolean childScope) {
-        times.put(pass, new Long(System.currentTimeMillis()));
+        times.put(pass, Long.valueOf(System.currentTimeMillis()));
         LOG.info("Starting " + pass.getLabel() + " on scope " + fic.getScope());
     }
 

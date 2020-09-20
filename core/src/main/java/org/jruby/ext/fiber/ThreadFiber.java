@@ -207,7 +207,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     @JRubyMethod(meta = true)
     public static IRubyObject yield(ThreadContext context, IRubyObject recv) {
-        return yield(context, recv, context.nil);
+        return ThreadFiber.yield(context, recv, context.nil);
     }
     
     @JRubyMethod(meta = true)
@@ -223,8 +223,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     @JRubyMethod(meta = true, rest = true)
     public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject[] value) {
         switch (value.length) {
-            case 0: return yield(context, recv);
-            case 1: return yield(context, recv, value[0]);
+            case 0: return ThreadFiber.yield(context, recv);
+            case 1: return ThreadFiber.yield(context, recv, value[0]);
         }
 
         Ruby runtime = context.runtime;
