@@ -10,6 +10,34 @@ describe "JRuby::Util.synchronized" do
     end
     expect(java.lang.Thread.holds_lock(o)).to eq(false)
   end
+
+  it "uses the proxied Java object, not the proxy" do
+    o = java.lang.Object.new
+    o2 = java.util.Collections.singleton_list(o)[0]
+
+    # same Java object but different wrappers
+    expect(o).to eq(o2)
+    expect(JRuby.reference(o)).to_not equal(JRuby.reference(o2))
+
+    result = []
+    JRuby::Util.synchronized(o) do
+      Thread.new do
+        JRuby::Util.synchronized(o2) do
+          result << :thread
+          JRuby::Util.notify(o)
+          JRuby::Util.wait(o, 100_000)
+          result << :thread
+          JRuby::Util.notify_all(o)
+        end
+      end
+      JRuby::Util.wait(o2)
+      result << :main
+      JRuby::Util.notify_all(o2)
+      JRuby::Util.wait(o2, 100_000)
+      result << :main
+    end
+    expect(result).to eq([:thread, :main, :thread, :main])
+  end
 end
 
 describe "JRuby::Util.wait" do
@@ -21,7 +49,6 @@ describe "JRuby::Util.wait" do
   it "yields the lock when called against a locked object" do
     result = []
     o = Object.new
-    t = nil
     JRuby::Util.synchronized(o) do
       result << :outer_before
       Thread.new do
