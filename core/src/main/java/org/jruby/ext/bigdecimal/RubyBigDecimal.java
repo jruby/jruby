@@ -1853,10 +1853,11 @@ public class RubyBigDecimal extends RubyNumeric {
             }
         } else {
             int ordinal = num2int(arg);
-            if (ordinal < 0 || ordinal >= RoundingMode.values().length) {
+            RoundingMode[] values = RoundingMode.values();
+            if (ordinal < 0 || ordinal >= values.length) {
                 throw context.runtime.newArgumentError("invalid rounding mode");
             }
-            return RoundingMode.values()[ordinal];
+            return values[ordinal];
         }
     }
 
