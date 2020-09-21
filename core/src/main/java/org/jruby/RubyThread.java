@@ -2166,6 +2166,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             @Override
             public Object run(ThreadContext context, Lock reentrantLock) throws InterruptedException {
                 reentrantLock.lockInterruptibly();
+                heldLocks.add(lock);
                 return reentrantLock;
             }
 
@@ -2174,7 +2175,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 thread.getNativeThread().interrupt();
             }
         });
-        heldLocks.add(lock);
     }
 
     /**
