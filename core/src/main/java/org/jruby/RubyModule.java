@@ -1228,7 +1228,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static TypePopulator loadPopulatorFor(Class<?> type) {
-        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load()) {
+        if (Options.DEBUG_FULLTRACE.load()) {
             // we want non-generated invokers or need full traces, use default (slow) populator
             LOG.debug("trace mode, using default populator");
         } else {
