@@ -1228,19 +1228,24 @@ public class RubyModule extends RubyObject {
     }
 
     public static TypePopulator loadPopulatorFor(Class<?> type) {
-        try {
-            String qualifiedName = Constants.GENERATED_PACKAGE + type.getCanonicalName().replace('.', '$');
-            String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
-            String fullPath = fullName.replace('.', '/') + ".class";
-            if (LOG.isDebugEnabled()) LOG.debug("looking for populator " + fullName);
+        if (Options.DEBUG_FULLTRACE.load()) {
+            // we want non-generated invokers or need full traces, use default (slow) populator
+            LOG.debug("trace mode, using default populator");
+        } else {
+            try {
+                String qualifiedName = Constants.GENERATED_PACKAGE + type.getCanonicalName().replace('.', '$');
+                String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
+                String fullPath = fullName.replace('.', '/') + ".class";
+                if (LOG.isDebugEnabled()) LOG.debug("looking for populator " + fullName);
 
-            if (Ruby.getClassLoader().getResource(fullPath) == null) {
-                LOG.debug("could not find it, using default populator");
-            } else {
-                return (TypePopulator) Class.forName(fullName).getConstructor().newInstance();
+                if (Ruby.getClassLoader().getResource(fullPath) == null) {
+                    LOG.debug("could not find it, using default populator");
+                } else {
+                    return (TypePopulator) Class.forName(fullName).getConstructor().newInstance();
+                }
+            } catch (Throwable ex) {
+                if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
             }
-        } catch (Throwable ex) {
-            if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
         }
 
         return new TypePopulator.ReflectiveTypePopulator(type);
