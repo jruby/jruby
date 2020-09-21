@@ -39,7 +39,9 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Formatter;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.jcodings.Encoding;
@@ -1491,8 +1493,10 @@ public class RubyLexer extends LexingCommon {
     
     private int identifier(int c, boolean commandState) throws IOException {
         if (!isIdentifierChar(c)) {
-            String badChar = "\\" + Integer.toOctalString(c & 0xff);
-            compile_error(PID.CHARACTER_BAD, "Invalid char `" + badChar + "' ('" + (char) c + "') in expression");
+            StringBuilder builder = new StringBuilder();
+            Formatter formatter = new Formatter(builder, Locale.US);
+            formatter.format("Invalid char `\\x%02x' in expression", c & 0xff);
+            compile_error(PID.CHARACTER_BAD, builder.toString());
         }
 
         newtok(true);
