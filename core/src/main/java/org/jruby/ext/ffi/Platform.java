@@ -322,6 +322,9 @@ public class Platform {
         module.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
         module.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
         module.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
+        if (OS == OS_TYPE.LINUX) {
+            module.defineConstant("GNU_LIBC", runtime.newString(LIBC));
+        }
         module.defineAnnotatedMethods(Platform.class);
     }
 
