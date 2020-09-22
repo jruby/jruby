@@ -7,6 +7,11 @@ import jnr.constants.Constant;
 import jnr.constants.ConstantSet;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Sysconf;
+import jnr.constants.platform.Confstr;
+
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.annotations.Out;
+import java.nio.ByteBuffer;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
@@ -42,6 +47,10 @@ public class RubyEtc {
 
         if (!Platform.IS_WINDOWS) {
             for (Constant c : ConstantSet.getConstantSet("Sysconf")) {
+                String name = c.name().substring(1); // leading "_"
+                etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
+            }
+            for (Constant c : ConstantSet.getConstantSet("Confstr")) {
                 String name = c.name().substring(1); // leading "_"
                 etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
             }
@@ -140,7 +149,49 @@ public class RubyEtc {
         }
         return RubyFixnum.newFixnum(runtime, ret);
     }
+    
+    // TODO move to jnr-posix?
+    public interface LibC {
+        int confstr(int name, @Out ByteBuffer buf, int len);
+        default int confstrInt(int name, ByteBuffer buf, int len) {
+            return CONFSTRLIB.confstr(name, buf, len);
+        }
+    }
 
+    static final LibC CONFSTRLIB;
+
+    static {
+        LibraryLoader<LibC> loader = LibraryLoader.create(LibC.class);
+        loader.library(jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName());
+        CONFSTRLIB = loader.load();
+    }
+    
+    @JRubyMethod(required = 1, module = true)
+    public static synchronized IRubyObject confstr(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Confstr name = Confstr.valueOf(RubyNumeric.num2long(arg));
+        ByteBuffer buf;
+        int n;
+
+        try {
+            n = CONFSTRLIB.confstrInt(name.intValue(), null, 0);
+            if (n > 0) {
+                buf = ByteBuffer.allocate(n);
+        
+                int ret = CONFSTRLIB.confstrInt(name.intValue(), buf, n);
+                if (ret == 0) {
+                    throw context.runtime.newErrnoEINVALError("confstr");
+                }
+            } else {
+                throw context.runtime.newErrnoEINVALError("confstr");
+            }
+        } catch (java.lang.UnsatisfiedLinkError ule) {
+            throw context.runtime.newNotImplementedError("confstr() function is unimplemented on this machine");
+        }
+        
+        buf.flip();
+        ByteList bytes = new ByteList(buf.array(), 0, n - 1);
+        return RubyString.newString(context.runtime, bytes);
+    }
 
     @JRubyMethod(optional=1, module = true)
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
