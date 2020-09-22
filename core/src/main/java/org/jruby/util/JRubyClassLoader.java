@@ -116,7 +116,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
     private static synchronized File getTempDir() {
         if (tempDir != null) return tempDir;
 
-        tempDir = new File(systemTmpDir(), tempDirName());
+        tempDir = new File(tempDir(), tempDirName());
         if (tempDir.mkdirs()) {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
@@ -154,13 +154,23 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         }
     }
 
-    private static String systemTmpDir() {
+    private static String tempDir() {
+        // try JRuby-specific option first
+        String jrubyTmpdir = Options.JI_NESTED_JAR_TMPDIR.load();
+
+        if (jrubyTmpdir != null) {
+            return jrubyTmpdir;
+        }
+
+        // fall back on Java tmpdir if available
         try {
             return System.getProperty("java.io.tmpdir");
         }
         catch (SecurityException ex) {
             LOG.warn("could not access 'java.io.tmpdir' will use working directory", ex);
         }
+
+        // give up and just use current dir
         return "";
     }
 
