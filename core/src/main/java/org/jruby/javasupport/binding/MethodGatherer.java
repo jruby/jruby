@@ -161,8 +161,6 @@ public class MethodGatherer {
     }
 
     public static void eachAccessibleMethod(final Class<?> javaClass, Predicate<Method[]> classProcessor, Predicate<Method[]> interfaceProcessor) {
-        HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
-
         boolean isPublic = Modifier.isPublic(javaClass.getModifiers());
 
         // we scan all superclasses, but avoid adding superclass methods with
