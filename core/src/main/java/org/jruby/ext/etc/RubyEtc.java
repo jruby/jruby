@@ -150,22 +150,6 @@ public class RubyEtc {
         return RubyFixnum.newFixnum(runtime, ret);
     }
     
-    // TODO move to jnr-posix?
-    public interface LibC {
-        int confstr(int name, @Out ByteBuffer buf, int len);
-        default int confstrInt(int name, ByteBuffer buf, int len) {
-            return CONFSTRLIB.confstr(name, buf, len);
-        }
-    }
-
-    static final LibC CONFSTRLIB;
-
-    static {
-        LibraryLoader<LibC> loader = LibraryLoader.create(LibC.class);
-        loader.library(jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName());
-        CONFSTRLIB = loader.load();
-    }
-    
     @JRubyMethod(required = 1, module = true)
     public static synchronized IRubyObject confstr(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Confstr name = Confstr.valueOf(RubyNumeric.num2long(arg));
@@ -191,6 +175,22 @@ public class RubyEtc {
         buf.flip();
         ByteList bytes = new ByteList(buf.array(), 0, n - 1);
         return RubyString.newString(context.runtime, bytes);
+    }
+
+    // TODO move to jnr-posix?
+    public interface LibC {
+        int confstr(int name, @Out ByteBuffer buf, int len);
+        default int confstrInt(int name, ByteBuffer buf, int len) {
+            return CONFSTRLIB.confstr(name, buf, len);
+        }
+    }
+
+    static final LibC CONFSTRLIB;
+
+    static {
+        LibraryLoader<LibC> loader = LibraryLoader.create(LibC.class);
+        loader.library(jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName());
+        CONFSTRLIB = loader.load();
     }
 
     @JRubyMethod(optional=1, module = true)
