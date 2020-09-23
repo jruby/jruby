@@ -172,7 +172,7 @@ public class RubyEtc {
         ByteBuffer buf;
         int n;
 
-        try {
+        //try {
             n = CONFSTRLIB.confstrInt(name.intValue(), null, 0);
             if (n > 0) {
                 buf = ByteBuffer.allocate(n);
@@ -184,9 +184,9 @@ public class RubyEtc {
             } else {
                 throw context.runtime.newErrnoEINVALError("confstr");
             }
-        } catch (java.lang.UnsatisfiedLinkError ule) {
-            throw context.runtime.newNotImplementedError("confstr() function is unimplemented on this machine");
-        }
+        //} catch (java.lang.UnsatisfiedLinkError ule) {
+        //    throw context.runtime.newNotImplementedError("confstr() function is unimplemented on this machine");
+        //}
         
         buf.flip();
         ByteList bytes = new ByteList(buf.array(), 0, n - 1);
