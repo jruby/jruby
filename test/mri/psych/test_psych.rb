@@ -178,18 +178,34 @@ class TestPsych < Psych::TestCase
 
   def test_domain_types
     got = nil
-    Psych.add_domain_type 'foo.bar,2002', 'foo' do |type, val|
+    Psych.add_domain_type 'foo.bar/2002', 'foo' do |type, val|
       got = val
     end
 
-    Psych.load('--- !foo.bar,2002/foo hello')
+    Psych.load('--- !foo.bar/2002:foo hello')
     assert_equal 'hello', got
 
-    Psych.load("--- !foo.bar,2002/foo\n- hello\n- world")
+    Psych.load("--- !foo.bar/2002:foo\n- hello\n- world")
     assert_equal %w{ hello world }, got
 
-    Psych.load("--- !foo.bar,2002/foo\nhello: world")
+    Psych.load("--- !foo.bar/2002:foo\nhello: world")
     assert_equal({ 'hello' => 'world' }, got)
+  end
+
+  def test_load_freeze
+    data = Psych.load("--- {foo: ['a']}", freeze: true)
+    assert_predicate data, :frozen?
+    assert_predicate data['foo'], :frozen?
+    assert_predicate data['foo'].first, :frozen?
+  end
+
+  def test_load_freeze_deduplication
+    unless String.method_defined?(:-@) && (-("a" * 20)).equal?((-("a" * 20)))
+      skip "This Ruby implementation doesn't support string deduplication"
+    end
+
+    data = Psych.load("--- ['a']", freeze: true)
+    assert_same 'a', data.first
   end
 
   def test_load_default_fallback
@@ -295,16 +311,13 @@ class TestPsych < Psych::TestCase
     types = []
     appender = lambda { |*args| types << args }
 
-    Psych.add_builtin_type('foo', &appender)
-    Psych.add_domain_type('example.com,2002', 'foo', &appender)
+    Psych.add_domain_type('example.com:2002', 'foo', &appender)
     Psych.load <<-eoyml
-- !tag:yaml.org,2002:foo bar
-- !tag:example.com,2002:foo bar
+- !tag:example.com:2002:foo bar
     eoyml
 
     assert_equal [
-      ["tag:yaml.org,2002:foo", "bar"],
-      ["tag:example.com,2002:foo", "bar"]
+      ["tag:example.com:2002:foo", "bar"]
     ], types
   end
 

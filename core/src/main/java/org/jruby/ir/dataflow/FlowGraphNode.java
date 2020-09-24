@@ -22,7 +22,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
         this.basicBlock = basicBlock;
 
         // Cache the rescuer node for easy access
-        rescuer = problem.getScope().getCFG().getRescuerBBFor(basicBlock);
+        rescuer = problem.getFIC().getCFG().getRescuerBBFor(basicBlock);
     }
 
     /**
@@ -77,7 +77,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
      * Get the control flow graph
      */
     public CFG getCFG() {
-        return problem.scope.getCFG();
+        return problem.fic.getCFG();
     }
 
     /** Builds the data-flow variables (or facts) for a particular node.

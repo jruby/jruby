@@ -15,6 +15,7 @@ import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Signature;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 import org.jruby.util.ByteList;
 
@@ -40,28 +41,39 @@ public class IRReader implements IRPersistenceValues {
 
         IRScope firstScope = null;
         for (int i = 0; i < scopesToRead; i++) {
-            IRScope scope = decodeScopeHeader(manager, file);
+            IRScopeType type = file.decodeIRScopeType();
+            int line = file.decodeInt();
+            int tempVarsCount = file.decodeInt();
+            int nextLabelInt = file.decodeInt();
+            IRScope scope = decodeScopeHeader(manager, file, type, line);
+            scope.setNextLabelIndex(nextLabelInt);
+            EnumSet<IRFlags> flags = file.decodeIRFlags();
+            if (file.decodeBoolean()) scope.setHasBreakInstructions();
+            if (file.decodeBoolean()) scope.setHasLoops();
+            if (file.decodeBoolean()) scope.setHasNonLocalReturns();
+            if (file.decodeBoolean()) scope.setReceivesClosureArg();
+            if (file.decodeBoolean()) scope.setReceivesKeywordArgs();
+            if (file.decodeBoolean()) scope.setAccessesParentsLocalVariables();
+            if (file.decodeBoolean()) scope.setIsMaybeUsingRefinements();
+            if (file.decodeBoolean()) scope.setCanCaptureCallersBinding();
+            if (file.decodeBoolean()) scope.setCanReceiveBreaks();
+            if (file.decodeBoolean()) scope.setCanReceiveNonlocalReturns();
+            if (file.decodeBoolean()) scope.setUsesZSuper();
+            if (file.decodeBoolean()) scope.setUsesEval();
+            scope.setCoverageMode(file.decodeInt());
+
             if (firstScope == null) firstScope = scope;
             int instructionsOffset = file.decodeInt();
             int poolOffset = file.decodeInt();
 
-            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset));
+            scope.allocateInterpreterContext(() -> file.dup().decodeInstructionsAt(scope, poolOffset, instructionsOffset), tempVarsCount, flags);
         }
 
         return firstScope; // topmost scope;
     }
 
-    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader");
-
-        IRScopeType type = decoder.decodeIRScopeType();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: type       = " + type);
-        int line = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: line       = " + line);
-        int tempVarsCount = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: temp count = " + tempVarsCount);
-        int nextLabelInt = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: next label = " + tempVarsCount);
+    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder, IRScopeType type, int line) {
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
 
         boolean isEND = false;
         if (type == IRScopeType.CLOSURE) {
@@ -101,9 +113,6 @@ public class IRReader implements IRPersistenceValues {
         if (scope instanceof IRClosure && isEND) {
             ((IRClosure) scope).setIsEND();
         }
-
-        scope.setTemporaryVariableCount(tempVarsCount);
-        scope.setNextLabelIndex(nextLabelInt);
 
         decoder.addScope(scope);
 

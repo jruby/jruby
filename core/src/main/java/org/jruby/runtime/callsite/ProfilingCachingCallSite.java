@@ -17,6 +17,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*
  * Note: I originally had a totalType changes thinking that we did not want to churn through
@@ -30,7 +31,7 @@ import org.jruby.util.log.LoggerFactory;
  */
 public class ProfilingCachingCallSite extends CachingCallSite {
     public static final Logger LOG = LoggerFactory.getLogger(ProfilingCachingCallSite.class);
-    private volatile int totalMonomorphicCalls = 0;
+    private final AtomicInteger totalMonomorphicCalls = new AtomicInteger(0);
     private final IRScope hostScope;
     private final long callSiteId;
 
@@ -99,10 +100,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;  // This must be retrieved *once* to avoid racing with other threads.
 
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, args);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, args, context, self);
         }
     }
@@ -112,10 +113,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache; // This must be retrieved *once* to avoid racing with other threads.
 
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, block, args, context, self);
         }
     }
@@ -126,10 +127,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, context, self);
         }
     }
@@ -139,10 +140,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, block);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, block, context, self);
         }
     }
@@ -153,10 +154,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, context, self, arg1);
         }
     }
@@ -166,10 +167,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, block, context, self, arg1);
         }
     }
@@ -180,10 +181,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, context, self, arg1, arg2);
         }
     }
@@ -193,10 +194,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
         }
     }
@@ -207,10 +208,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
         }
     }
@@ -220,10 +221,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls.incrementAndGet() % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
         } else {
-            totalMonomorphicCalls = 1;
+            totalMonomorphicCalls.set(1);
             return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
         }
     }

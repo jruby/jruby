@@ -1656,4 +1656,17 @@ public class Java implements Library {
         return Modules.trySetAccessible(member, Java.class);
     }
 
+    /**
+     * Check if the given member would be accessible without using the deprecated AccessibleObject.isAccessible.
+     *
+     * This uses backport9 logic to check if the given class is in a package that has been opened up to us, since
+     * under JPMS that is the only way we can do invasive accesses. On Java 8, it continues to use isAccessible.
+     *
+     * The open check is based on this class, Java.java, which will be in whatever core or dist JRuby module you are
+     * using.
+     */
+    public static <T extends AccessibleObject & Member> boolean isAccessible(T member) {
+        return Modules.isAccessible(member, Java.class);
+    }
+
 }

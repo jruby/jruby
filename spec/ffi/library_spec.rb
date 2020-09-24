@@ -64,6 +64,20 @@ describe "Library" do
     end
   end
 
+  if RbConfig::CONFIG['host_os'] =~ /mingw/
+    # See https://github.com/ffi/ffi/issues/788
+    it "libc functions shouldn't call an invalid parameter handler" do
+      mod = Module.new do
+        extend FFI::Library
+        ffi_lib 'c'
+        attach_function(:get_osfhandle, :_get_osfhandle, [:int], :intptr_t)
+      end
+
+      expect( mod.get_osfhandle(42) ).to eq(-1)
+    end
+  end
+
+
   describe "ffi_lib" do
     it "empty name list should raise error" do
       expect {

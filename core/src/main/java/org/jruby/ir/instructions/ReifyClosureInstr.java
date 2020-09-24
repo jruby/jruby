@@ -5,7 +5,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -17,6 +16,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.EnumSet;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReifyClosureInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
@@ -31,8 +32,8 @@ public class ReifyClosureInstr extends OneOperandResultBaseInstr implements Fixe
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.RECEIVES_CLOSURE_ARG);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        scope.setReceivesClosureArg();
         return true;
     }
 

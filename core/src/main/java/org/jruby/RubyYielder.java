@@ -120,7 +120,7 @@ public class RubyYielder extends RubyObject {
 
     @JRubyMethod(name = "<<", rest = true)
     public IRubyObject op_lshift(ThreadContext context, IRubyObject[] args) {
-        yield(context, args);
+        this.yield(context, args);
         return this;
     }
 }

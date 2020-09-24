@@ -242,9 +242,6 @@ public final class Ruby implements Constantizable {
      * The logger used to log relevant bits.
      */
     private static final Logger LOG = LoggerFactory.getLogger(Ruby.class);
-    static { // enable DEBUG output
-        if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.setDebugEnable(true);
-    }
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the
@@ -504,7 +501,7 @@ public final class Ruby implements Constantizable {
         // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
         IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
-        top.allocateInterpreterContext(Collections.EMPTY_LIST);
+        top.allocateInterpreterContext(Collections.EMPTY_LIST, 0, IRScope.allocateInitialFlags(top));
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
@@ -3886,7 +3883,12 @@ public final class Ruby implements Constantizable {
     public RaiseException newErrnoFromBindException(BindException be, String contextMessage) {
         Errno errno = Helpers.errnoFromException(be);
 
-        return newErrnoFromErrno(errno, contextMessage);
+        if (errno != null) {
+            return newErrnoFromErrno(errno, contextMessage);
+        }
+
+        // Messages may differ so revert to old behavior (jruby/jruby#6322)
+        return newErrnoEADDRFromBindException(be, contextMessage);
     }
 
     public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {
@@ -4505,17 +4507,31 @@ public final class Ruby implements Constantizable {
         return checkpointInvalidator;
     }
 
-    public <E extends Enum<E>> void loadConstantSet(RubyModule module, Class<E> enumClass) {
-        for (E e : EnumSet.allOf(enumClass)) {
-            Constant c = (Constant) e;
-            if (Character.isUpperCase(c.name().charAt(0))) {
-                module.setConstant(c.name(), newFixnum(c.intValue()));
-            }
+    /**
+     * Define all constants from the given jnr-constants enum which are defined on the current platform.
+     *
+     * @param module the module in which we want to define the constants
+     * @param enumClass the enum class of the constants to define
+     * @param <C> the enum type, which must implement {@link Constant}.
+     */
+    public <C extends Enum<C> & Constant> void loadConstantSet(RubyModule module, Class<C> enumClass) {
+        for (C constant : EnumSet.allOf(enumClass)) {
+            String name = constant.name();
+            if (constant.defined() && Character.isUpperCase(name.charAt(0))) {
+                    module.setConstant(name, newFixnum(constant.intValue()));
+                }
         }
     }
+
+    /**
+     * Define all constants from the named jnr-constants set which are defined on the current platform.
+     *
+     * @param module the module in which we want to define the constants
+     * @param constantSetName the name of the constant set from which to get the constants
+     */
     public void loadConstantSet(RubyModule module, String constantSetName) {
         for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
-            if (Character.isUpperCase(c.name().charAt(0))) {
+            if (c.defined() && Character.isUpperCase(c.name().charAt(0))) {
                 module.setConstant(c.name(), newFixnum(c.intValue()));
             }
         }

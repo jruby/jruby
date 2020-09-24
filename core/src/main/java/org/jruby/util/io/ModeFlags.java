@@ -33,6 +33,7 @@
 
 package org.jruby.util.io;
 
+import com.sun.nio.file.ExtendedOpenOption;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
@@ -43,6 +44,8 @@ import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 
 /**
  * This file represents the POSIX-like mode flags an open channel (as in a
@@ -79,13 +82,18 @@ public class ModeFlags implements Cloneable {
     /** textmode flag, MRI has no equivalent but we use ModeFlags currently
      * to also capture what are oflags.
      */
-    public static final int TEXT = 0x10000000; 
+    public static final int TEXT = 0x10000000;
+    /** delete shared file flag for windows */
+    public static final int SHARE_DELETE = Platform.IS_WINDOWS ? 0x20000000 : 0;
     /** accmode flag, used to mask the read/write mode */
     public static final int ACCMODE = RDWR | WRONLY | RDONLY;
     
     /** the set of flags for this ModeFlags instance */
     private final int flags;
-    
+
+    /** a cached array of {@link OpenOption} equivalent to these mode flags */
+    private OpenOption[] openOptions;
+
     /**
      * Construct a new ModeFlags object with the default read-only flag.
      */
@@ -240,7 +248,63 @@ public class ModeFlags implements Cloneable {
             return "r";
         }
     }
-    
+
+    /**
+     * Produce an array of {@link OpenOption} equivalent to these mode flags, including TRUNCATE_EXISTING only if
+     * includeTruncate is set to true.
+     *
+     * Set includeTruncate to false if you intend to truncate the file separately.
+     *
+     * The resulting array may be shared and should not be modified.
+     *
+     * @param includeTruncate whether to include truncation in the options
+     * @return an array of {@link OpenOption} that matches these mode flags.
+     */
+    public OpenOption[] toOpenOptions(boolean includeAppend, boolean includeTruncate) {
+        int size = 0;
+
+        // standard
+        boolean writable = false;
+        boolean readable = false;
+
+        // NIO only has READ and WRITE, so we need to untangle the overlapping states here
+        if (isAppendable() || isWritable()) writable = true;
+        if (isReadWrite() || !writable) readable = true;
+
+        if (writable) size++;
+        if (readable) size++;
+        if (includeAppend && isAppendable()) size++;
+        if (isCreate()) size++;
+        if (includeTruncate && isTruncate()) size++;
+
+        // extended
+        if (isShareDelete()) {
+            // do nothing, NIO defaults to share delete
+        } else if (Platform.IS_WINDOWS) {
+            size++;
+        }
+
+        OpenOption[] options = new OpenOption[size];
+
+        int index = 0;
+
+        // standard
+        if (writable) options[index++] = StandardOpenOption.WRITE;
+        if (readable) options[index++] = StandardOpenOption.READ;
+        if (includeAppend && isAppendable()) options[index++] = StandardOpenOption.APPEND;
+        if (isCreate()) options[index++] = StandardOpenOption.CREATE;
+        if (includeTruncate && isTruncate()) options[index++] = StandardOpenOption.TRUNCATE_EXISTING;
+
+        // extended
+        if (isShareDelete()) {
+            // do nothing, NIO defaults to share delete
+        } else if (Platform.IS_WINDOWS) {
+            options[index++] = ExtendedOpenOption.NOSHARE_DELETE;
+        }
+
+        return options;
+    }
+
     /**
      * Whether the flags specify"read only".
      * 
@@ -257,6 +321,24 @@ public class ModeFlags implements Cloneable {
      */
     public boolean isReadable() {
         return ((flags & RDWR) != 0) || isReadOnly();
+    }
+
+    /**
+     * Whether the flags specify "write only".
+     *
+     * @return true if the write only flag is set, false otherwise
+     */
+    public boolean isWriteOnly() {
+        return ((flags & WRONLY) != 0);
+    }
+
+    /**
+     * Whether the flags specify "read/write".
+     *
+     * @return true if read/write flag is set, false otherwise
+     */
+    public boolean isReadWrite() {
+        return ((flags & RDWR) != 0);
     }
 
     /**
@@ -329,6 +411,15 @@ public class ModeFlags implements Cloneable {
      */
     public boolean isTruncate() {
     	return (flags & TRUNC) != 0;
+    }
+
+    /**
+     * Whether the flags specify to allow deleting shared files (Windows FILE_SHARE_DELETE).
+     *
+     * @return true if shared delete is allowed, false otherwise
+     */
+    public boolean isShareDelete() {
+        return (flags & SHARE_DELETE) != 0;
     }
 
     /**

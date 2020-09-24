@@ -451,8 +451,9 @@ public class PosixShim {
             setErrno(Errno.ELOOP);
         } catch (ResourceException ex) {
             throw ex.newRaiseException(runtime);
-        } catch (IOException ex) {
-            throw runtime.newIOErrorFromException(ex);
+        } catch (Exception ex) {
+            Helpers.throwErrorFromException(runtime, ex);
+            // not reached
         }
         return null;
     }

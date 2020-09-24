@@ -1,2 +1,0 @@
-windows(JRUBY-61):`` returns the output of the executed sub-process
-windows(JRUBY-61):%x is the same as ``

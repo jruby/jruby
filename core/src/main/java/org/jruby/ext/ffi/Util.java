@@ -80,7 +80,7 @@ public final class Util {
     public static final long uint64Value(IRubyObject parameter) {
         final long value = parameter instanceof RubyBignum
                 ? ((RubyBignum) parameter).getValue().longValue()
-                :longValue(parameter);
+                :ulongValue(parameter);
         return value;
     }
 
@@ -115,6 +115,10 @@ public final class Util {
         } else {
             return (int) longValue(obj);
         }
+    }
+
+    public static final long ulongValue(IRubyObject parameter) {
+        return RubyNumeric.num2ulong(parameter);
     }
 
     public static final IRubyObject newSigned8(Ruby runtime, byte value) {

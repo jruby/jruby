@@ -539,7 +539,6 @@ public class TraceType {
         }
     }
 
-    @Deprecated
     public static IRubyObject generateMRIBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
         if (trace == null) return runtime.getNil();
 

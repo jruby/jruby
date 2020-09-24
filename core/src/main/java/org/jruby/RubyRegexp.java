@@ -851,9 +851,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             Encoding hasAsciiCompatFixed = null;
             Encoding hasAsciiIncompat = null;
 
+            byte [] verticalVarBytes = new byte[]{'|'};
             for (int i = 0; i < args.length; i++) {
                 IRubyObject e = args[i];
-                if (i > 0) source.cat((byte)'|');
+                if (i > 0) source.catAscii(verticalVarBytes, 0, 1);
                 IRubyObject v = TypeConverter.convertToTypeWithCheck(e, runtime.getRegexp(), "to_regexp");
                 final Encoding enc; final ByteList re;
                 if (v != context.nil) {

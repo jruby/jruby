@@ -1228,7 +1228,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static TypePopulator loadPopulatorFor(Class<?> type) {
-        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load()) {
+        if (Options.DEBUG_FULLTRACE.load()) {
             // we want non-generated invokers or need full traces, use default (slow) populator
             LOG.debug("trace mode, using default populator");
         } else {
@@ -1241,7 +1241,7 @@ public class RubyModule extends RubyObject {
                 if (Ruby.getClassLoader().getResource(fullPath) == null) {
                     LOG.debug("could not find it, using default populator");
                 } else {
-                    return (TypePopulator) Class.forName(fullName).newInstance();
+                    return (TypePopulator) Class.forName(fullName).getConstructor().newInstance();
                 }
             } catch (Throwable ex) {
                 if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');

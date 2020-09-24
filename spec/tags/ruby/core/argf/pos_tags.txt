@@ -1,1 +1,0 @@
-windows:ARGF.pos= sets the correct position in files
