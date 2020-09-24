@@ -53,7 +53,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
-import org.jruby.util.IdUtil;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -504,7 +503,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod
     public IRubyObject select(ThreadContext context, Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "select", enumSizeFn());
+            return enumeratorizeWithSize(context, this, "select", RubyStruct::size);
         }
 
         RubyArray array = RubyArray.newArray(context.runtime);
@@ -518,8 +517,13 @@ public class RubyStruct extends RubyObject {
         return array;
     }
 
-    private SizeFn enumSizeFn() {
-        return (context, args) -> size();
+    /**
+     * A size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject size(ThreadContext context, RubyStruct recv, IRubyObject[] args) {
+        return recv.size();
     }
 
     public IRubyObject set(IRubyObject value, int index) {
@@ -675,7 +679,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each(final ThreadContext context, final Block block) {
-        return block.isGiven() ? eachInternal(context, block) : enumeratorizeWithSize(context, this, "each", enumSizeFn());
+        return block.isGiven() ? eachInternal(context, block) : enumeratorizeWithSize(context, this, "each", RubyStruct::size);
     }
 
     public IRubyObject each_pairInternal(ThreadContext context, Block block) {
@@ -690,7 +694,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairInternal(context, block) : enumeratorizeWithSize(context, this, "each_pair", enumSizeFn());
+        return block.isGiven() ? each_pairInternal(context, block) : enumeratorizeWithSize(context, this, "each_pair", RubyStruct::size);
     }
 
     @JRubyMethod(name = "[]", required = 1)

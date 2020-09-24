@@ -35,6 +35,7 @@
 
 package org.jruby;
 
+import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -58,7 +59,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 
-import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
@@ -1030,7 +1030,7 @@ public class RubyNumeric extends RubyObject {
                 return RubyArithmeticSequence.newArithmeticSequence(context, this, "step", args, this, to, step, context.fals);
             }
 
-            return enumeratorizeWithSize(context, this, "step", args, stepSizeFn(this, args));
+            return enumeratorizeWithSize(context, this, "step", args, RubyNumeric::stepSize);
         }
 
         IRubyObject[] newArgs = new IRubyObject[2];
@@ -1314,13 +1314,17 @@ public class RubyNumeric extends RubyObject {
         return (RubyNumeric) result;
     }
 
-    private SizeFn stepSizeFn(final IRubyObject from, final IRubyObject[] args) {
-        // MRI: num_step_size
-        return (context, args1) -> {
-            IRubyObject[] newArgs = new IRubyObject[2];
-            scanStepArgs(context, args1, newArgs);
-            return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
-        };
+    /**
+     * A step size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * MRI: num_step_size
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject stepSize(ThreadContext context, RubyNumeric from, IRubyObject[] args) {
+        IRubyObject[] newArgs = new IRubyObject[2];
+        from.scanStepArgs(context, args, newArgs);
+        return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
     }
     
     // ruby_float_step

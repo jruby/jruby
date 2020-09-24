@@ -69,9 +69,8 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaInternalBlockBody;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.StringSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
@@ -89,6 +88,7 @@ import java.util.Arrays;
 import java.util.Locale;
 
 import static org.jruby.RubyComparable.invcmp;
+import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
@@ -107,6 +107,7 @@ import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.codeRangeScan;
 import static org.jruby.util.StringSupport.encFastMBCLen;
 import static org.jruby.util.StringSupport.isSingleByteOptimizable;
+import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.util.StringSupport.memchr;
 import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
@@ -2651,8 +2652,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return (RubyString) subStr;
     }
 
-    private SizeFn eachByteSizeFn() {
-        return (context, args) -> this.bytesize();
+    /**
+     * A byte size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject byteSize(ThreadContext context, RubyString recv, IRubyObject[] args) {
+        return recv.bytesize();
     }
 
     /** rb_str_empty
@@ -5986,8 +5992,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return chars(context, block);
     }
 
-    private SizeFn eachCharSizeFn() {
-        return (context, args) -> rubyLength(context.runtime);
+    /**
+     * A character size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject eachCharSize(ThreadContext context, RubyString recv, IRubyObject[] args) {
+        return recv.rubyLength(context.runtime);
     }
 
     /** rb_str_each_codepoint
@@ -6019,7 +6030,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
         else if (!wantarray) {
-            return enumeratorizeWithSize(context, str, name, eachCharSizeFn());
+            return enumeratorizeWithSize(context, str, name, RubyString::eachCharSize);
         }
 
         str = str.newFrozen();
@@ -6074,7 +6085,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
         else if (!wantarray) {
-            return enumeratorizeWithSize(context, str, name, eachCodepointSizeFn());
+            return enumeratorizeWithSize(context, str, name, RubyString::codepointSize);
         }
 
         if (!str.isFrozen()) str.setByteListShared();
@@ -6107,7 +6118,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
         else if (!wantarray) {
-            return enumeratorizeWithSize(context, this, name, eachByteSizeFn());
+            return enumeratorizeWithSize(context, this, name, RubyString::byteSize);
         }
 
         IRubyObject[] ary = wantarray ? new IRubyObject[value.getRealSize()] : null;
@@ -6121,33 +6132,41 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return wantarray ? RubyArray.newArrayNoCopy(runtime, ary) : this;
     }
 
-    private SizeFn eachCodepointSizeFn() {
-        return (context, args) -> rubyLength(context.runtime);
+    /**
+     * A codepoint size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject codepointSize(ThreadContext context, RubyString recv, IRubyObject[] args) {
+        return recv.rubyLength(context.runtime);
     }
 
     private static final ByteList GRAPHEME_CLUSTER_PATTERN = new ByteList(new byte[] {(byte)'\\', (byte)'X'}, false);
 
-    private SizeFn eachGraphemeClusterSizeFn() {
-        return (context, args) -> {
-            Ruby runtime = context.runtime;
-            ByteList value = getByteList();
-            Encoding enc = value.getEncoding();
-            if (!enc.isUnicode()) return rubyLength(runtime);
+    /**
+     * A grapheme cluster size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject eachGraphemeClusterSize(ThreadContext context, RubyString self, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        ByteList value = self.getByteList();
+        Encoding enc = value.getEncoding();
+        if (!enc.isUnicode()) return self.rubyLength(runtime);
 
-            Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
-            int beg = value.getBegin();
-            int end = beg + value.getRealSize();
-            Matcher matcher = reg.matcher(value.getUnsafeBytes(), beg, end);
-            int count = 0;
+        Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
+        int beg = value.getBegin();
+        int end = beg + value.getRealSize();
+        Matcher matcher = reg.matcher(value.getUnsafeBytes(), beg, end);
+        int count = 0;
 
-            while (beg < end) {
-                int len = matcher.match(beg, end, Option.DEFAULT);
-                if (len <= 0) break;
-                count++;
-                beg += len;
-            }
-            return RubyFixnum.newFixnum(runtime, count);
-        };
+        while (beg < end) {
+            int len = matcher.match(beg, end, Option.DEFAULT);
+            if (len <= 0) break;
+            count++;
+            beg += len;
+        }
+        return RubyFixnum.newFixnum(runtime, count);
     }
 
     private IRubyObject enumerateGraphemeClusters(ThreadContext context, String name, Block block, boolean wantarray) {
@@ -6165,7 +6184,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
         else if (!wantarray) {
-            return enumeratorizeWithSize(context, str, name, eachGraphemeClusterSizeFn());
+            return enumeratorizeWithSize(context, str, name, RubyString::eachGraphemeClusterSize);
         }
 
         Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);

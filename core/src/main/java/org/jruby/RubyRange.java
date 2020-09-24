@@ -37,9 +37,10 @@
 
 package org.jruby;
 
+
 import java.io.IOException;
 import java.util.List;
-import org.jcodings.Encoding;
+
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
@@ -71,12 +72,13 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.intervalStepSize;
+import static org.jruby.runtime.Helpers.invokedynamic;
+
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -597,7 +599,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(name = "each")
     public IRubyObject each(final ThreadContext context, final Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "each", enumSizeFn());
+            return enumeratorizeWithSize(context, this, "each", RubyRange::size);
         }
         if (begin instanceof RubyFixnum && isEndless) {
             ((RubyFixnum) begin).step(context, IRubyObject.NULL_ARRAY, block);
@@ -689,10 +691,10 @@ public class RubyRange extends RubyObject {
         }
 
         if (!step.isNil()) {
-            return enumeratorizeWithSize(context, this, method, new IRubyObject[]{step}, stepSizeFn());
+            return enumeratorizeWithSize(context, this, method, new IRubyObject[]{step}, RubyRange::stepSize);
         }
 
-        return enumeratorizeWithSize(context, this, method, stepSizeFn());
+        return enumeratorizeWithSize(context, this, method, RubyRange::stepSize);
     }
 
     @JRubyMethod(name = "%")
@@ -785,38 +787,46 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    private SizeFn enumSizeFn() {
-        return (ctx, args) -> this.size(ctx);
+    /**
+     * A size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject size(ThreadContext ctx, RubyRange recv, IRubyObject[] args) {
+        return recv.size(ctx);
     }
 
-    private SizeFn stepSizeFn() {
-        return (context, args) -> {
-            Ruby runtime = context.runtime;
-            IRubyObject begin = this.begin;
-            IRubyObject end = this.end;
-            IRubyObject step;
+    /**
+     * A step size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject stepSize(ThreadContext context, RubyRange self, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        IRubyObject begin = self.begin;
+        IRubyObject end = self.end;
+        IRubyObject step;
 
-            if (args != null && args.length > 0) {
-                step = args[0];
-                if (!(step instanceof RubyNumeric)) {
-                    step.convertToInteger();
-                }
-            } else {
-                step = RubyFixnum.one(runtime);
+        if (args != null && args.length > 0) {
+            step = args[0];
+            if (!(step instanceof RubyNumeric)) {
+                step.convertToInteger();
             }
+        } else {
+            step = RubyFixnum.one(runtime);
+        }
 
-            if (step.callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue()) {
-                throw runtime.newArgumentError("step can't be negative");
-            } else if (!step.callMethod(context, ">", RubyFixnum.zero(runtime)).isTrue()) {
-                throw runtime.newArgumentError("step can't be 0");
-            }
+        if (step.callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue()) {
+            throw runtime.newArgumentError("step can't be negative");
+        } else if (!step.callMethod(context, ">", RubyFixnum.zero(runtime)).isTrue()) {
+            throw runtime.newArgumentError("step can't be 0");
+        }
 
-            if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
-                return intervalStepSize(context, begin, end, step, this.isExclusive);
-            }
+        if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
+            return intervalStepSize(context, begin, end, step, self.isExclusive);
+        }
 
-            return context.nil;
-        };
+        return context.nil;
     }
 
     @Deprecated
