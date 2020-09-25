@@ -1171,6 +1171,12 @@ public class ParserSupport {
         if (rescueBody == null) rescueBody = NilImplicitNode.NIL; // foo rescue () can make null.
         int line = getPosition(body);
 
+        if (body instanceof OpElementAsgnNode) {
+            OpElementAsgnNode original = (OpElementAsgnNode) body;
+            return new OpElementAsgnNode(line, original.getReceiverNode(), original.getOperatorSymbolName(),
+                    original.getArgsNode(), new RescueModNode(line, original.getValueNode(), new RescueBodyNode(line, null, rescueBody, null)), original.getBlockNode());
+        }
+
         return new RescueModNode(line, body, new RescueBodyNode(line, null, rescueBody, null));
     }
     
