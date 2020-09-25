@@ -352,9 +352,6 @@ class TestDir < Test::Unit::TestCase
     assert File.exist?(source_file), "test is wrong, #{source_file} doesn't even exist"
     assert_equal false, File.directory?(source_file)
     assert_equal false, File.directory?(source_file + "/")
-    if WINDOWS
-      pend 'TODO: SystemCallError - Unknown Error (123) - jar:file:D:/a/jruby/jruby/test/jruby/jar_with_relative_require1.jar!/test/require_relative1.rb/'
-    end
     assert_raise(Errno::ENOENT) do
       File.stat(source_file + "/")
     end
