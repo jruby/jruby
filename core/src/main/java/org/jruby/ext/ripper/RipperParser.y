@@ -914,12 +914,12 @@ relop           : tGT {
                 }
 
 rel_expr        : arg relop arg   %prec tGT {
-                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+                     $$ = p.dispatch("on_binary", $1, $2, $3);
 
                 }
 		| rel_expr relop arg   %prec tGT {
                      p.warning("comparison '" + $2 + "' after comparison");
-                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+                     $$ = p.dispatch("on_binary", $1, $2, $3);
                 }
  
 arg_value       : arg {
