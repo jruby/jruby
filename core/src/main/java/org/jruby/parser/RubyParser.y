@@ -538,7 +538,7 @@ command_asgn    : lhs '=' command_rhs {
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_rhs {
                     int line = $1.getLine();
-                    $$ = support.new_const_op_assign(line, support.new_colon2(line, $1, $2), $4, $5);
+                    $$ = support.new_const_op_assign(line, support.new_colon2(line, $1, $3), $4, $5);
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {

@@ -2014,7 +2014,7 @@ states[42] = new ParserState() {
 states[43] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) {
                     int line = ((Node)yyVals[-4+yyTop].value).getLine();
-                    yyVal = support.new_const_op_assign(line, support.new_colon2(line, ((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value)), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    yyVal = support.new_const_op_assign(line, support.new_colon2(line, ((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-2+yyTop].value)), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
     return yyVal;
   }
 };
