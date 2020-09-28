@@ -12,7 +12,7 @@
 
 ###### Change these to tastes ######
 JAY=jay
-RUBY=ruby
+RUBY=${RUBY:=ruby}
 PARSER_BASE=RipperParser
 YYTABLE_PREFIX=
 DEBUG=true
