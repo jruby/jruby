@@ -52,8 +52,8 @@ import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.RubyLexer;
-import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
@@ -202,8 +202,7 @@ public class ParserSupport {
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
 
-        AssignableNode node = currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
-        return node;
+        return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
 
     private void addOrMarkVariable(RubySymbol name, int slot) {
@@ -220,7 +219,7 @@ public class ParserSupport {
     }
     
     protected void getterIdentifierError(RubySymbol identifier) {
-        lexer.compile_error(PID.BAD_IDENTIFIER, "identifier " + identifier + " is not valid to get");
+        lexer.compile_error("identifier " + identifier + " is not valid to get");
     }
 
     /**
@@ -376,10 +375,10 @@ public class ParserSupport {
     public void backrefAssignError(Node node) {
         if (node instanceof NthRefNode) {
             String varName = "$" + ((NthRefNode) node).getMatchNumber();
-            lexer.compile_error(PID.INVALID_ASSIGNMENT, "Can't set variable " + varName + '.');
+            lexer.compile_error("Can't set variable " + varName + '.');
         } else if (node instanceof BackRefNode) {
             String varName = "$" + ((BackRefNode) node).getType();
-            lexer.compile_error(PID.INVALID_ASSIGNMENT, "Can't set variable " + varName + '.');
+            lexer.compile_error("Can't set variable " + varName + '.');
         }
     }
 
@@ -416,7 +415,7 @@ public class ParserSupport {
     public Node ret_args(Node node, int line) {
         if (node != null) {
             if (node instanceof BlockPassNode) {
-                lexer.compile_error(PID.BLOCK_ARG_UNEXPECTED, "block argument should not be given");
+                lexer.compile_error("block argument should not be given");
             } else if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
                 node = ((ArrayNode)node).get(0);
             } else if (node instanceof SplatNode) {
@@ -447,12 +446,6 @@ public class ParserSupport {
         }
     }
 
-    public void warningUnlessEOption(ID id, Node node, String message) {
-        if (warnings.isVerbose() && !configuration.isInlineSource()) {
-            warnings.warning(id, lexer.getFile(), node.getLine(), message);
-        }
-    }
-
     public boolean value_expr(RubyLexer lexer, Node node) {
         boolean conditional = false;
 
@@ -460,7 +453,7 @@ public class ParserSupport {
             switch (node.getNodeType()) {
                 case RETURNNODE: case BREAKNODE: case NEXTNODE: case REDONODE:
                 case RETRYNODE:
-                    if (!conditional) lexer.compile_error(PID.VOID_VALUE_EXPRESSION, "void value expression");
+                    if (!conditional) lexer.compile_error("void value expression");
 
                     return false;
                 case BLOCKNODE:
@@ -569,7 +562,6 @@ public class ParserSupport {
                 handleUselessWarn(node, "true"); return;
             case DEFINEDNODE:
                 handleUselessWarn(node, "defined?"); return;
-            default: return;
         }
     }
 
@@ -622,11 +614,9 @@ public class ParserSupport {
                 if (!isStaticContent(array.get(i))) return false;
             }
             return true;
-        } else if (node instanceof ILiteralNode || node instanceof NilNode || node instanceof TrueNode || node instanceof FalseNode) {
-            return true;
         }
 
-        return false;
+        return node instanceof ILiteralNode || node instanceof NilNode || node instanceof TrueNode || node instanceof FalseNode;
     }
     
     protected Node makeNullNil(Node node) {
@@ -724,7 +714,7 @@ public class ParserSupport {
 
         if (node instanceof FixnumNode) {
             warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
-            return getOperatorCallNode(node, lexer.EQ_EQ, new GlobalVarNode(node.getLine(), symbolID(lexer.DOLLAR_DOT)));
+            return getOperatorCallNode(node, EQ_EQ, new GlobalVarNode(node.getLine(), symbolID(DOLLAR_DOT)));
         } 
 
         return node;
@@ -854,10 +844,10 @@ public class ParserSupport {
     public Node new_op_assign(AssignableNode receiverNode, ByteList operatorName, Node valueNode) {
         int line = receiverNode.getLine();
 
-        if (operatorName == lexer.OR_OR) {
+        if (operatorName == OR_OR) {
             receiverNode.setValueNode(valueNode);
             return new OpAsgnOrNode(line, gettable2(receiverNode), receiverNode);
-        } else if (operatorName == lexer.AMPERSAND_AMPERSAND) {
+        } else if (operatorName == AMPERSAND_AMPERSAND) {
             receiverNode.setValueNode(valueNode);
             return new OpAsgnAndNode(line, gettable2(receiverNode), receiverNode);
         } else {
@@ -927,7 +917,7 @@ public class ParserSupport {
     }
 
     public boolean isLazy(ByteList callType) {
-        return callType == lexer.AMPERSAND_DOT;
+        return callType == AMPERSAND_DOT;
     }
     
     public Node new_attrassign(int line, Node receiver, ByteList name, Node argsNode, boolean isLazy) {
@@ -940,25 +930,6 @@ public class ParserSupport {
 
         return new AttrAssignNode(line, receiver, symbolID(name), argsNode, blockNode, isLazy);
     }
-    
-    private boolean isNumericOperator(String name) {
-        if (name.length() == 1) {
-            switch (name.charAt(0)) {
-                case '+': case '-': case '*': case '/': case '<': case '>':
-                    return true;
-            }
-        } else if (name.length() == 2) {
-            switch (name.charAt(0)) {
-            case '<': case '>': case '=':
-                switch (name.charAt(1)) {
-                case '=': case '<':
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
 
     public Node new_call(Node receiver, ByteList callType, ByteList name, Node argsNode, Node iter) {
         return new_call(receiver, callType, name, argsNode, iter, position(receiver, argsNode));
@@ -966,7 +937,7 @@ public class ParserSupport {
 
     public Node new_call(Node receiver, ByteList callType, ByteList name, Node argsNode, Node iter, int line) {
         if (argsNode instanceof BlockPassNode) {
-            if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
+            if (iter != null) lexer.compile_error("Both block arg and actual block given.");
 
             BlockPassNode blockPass = (BlockPassNode) argsNode;
             return new CallNode(line, receiver, symbolID(name), blockPass.getArgsNode(), blockPass, isLazy(callType));
@@ -976,7 +947,7 @@ public class ParserSupport {
     }
 
     public Node new_call(Node receiver, ByteList name, Node argsNode, Node iter) {
-        return new_call(receiver, lexer.DOT, name, argsNode, iter);
+        return new_call(receiver, DOT, name, argsNode, iter);
     }
 
     public Colon2Node new_colon2(int line, Node leftNode, ByteList name) {
@@ -991,7 +962,7 @@ public class ParserSupport {
 
     public void frobnicate_fcall_args(FCallNode fcall, Node args, Node iter) {
         if (args instanceof BlockPassNode) {
-            if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
+            if (iter != null) lexer.compile_error("Both block arg and actual block given.");
 
             BlockPassNode blockPass = (BlockPassNode) args;
             args = blockPass.getArgsNode();
@@ -1013,7 +984,7 @@ public class ParserSupport {
     }
 
     public Node new_super(int line, Node args) {
-        if (args != null && args instanceof BlockPassNode) {
+        if (args instanceof BlockPassNode) {
             return new SuperNode(line, ((BlockPassNode) args).getArgsNode(), args);
         }
         return new SuperNode(line, args);
@@ -1045,16 +1016,6 @@ public class ParserSupport {
 
     public void setIsInClass(boolean inClass) {
         this.inClass = inClass;
-    }
-
-    /**
-     * Is the top of this scope a block scope (which happens in evals).
-     * This is supposed to serve same purpose as MRIs: dyna_in_block but
-     * I don't quite get why it is so complicated.  All non-eval parsers
-     * have local scopes except eval but they combine in_main || compile_for_eval?
-     */
-    public boolean isBlockTopLevel() {
-        return getConfiguration().isEvalParse();
     }
 
     /**
@@ -1096,7 +1057,7 @@ public class ParserSupport {
     }
 
     public KeyValuePair<Node, Node> createKeyValue(Node key, Node value) {
-        if (key != null && key instanceof StrNode) ((StrNode) key).setFrozen(true);
+        if (key instanceof StrNode) ((StrNode) key).setFrozen(true);
 
         return new KeyValuePair<>(key, value);
     }
@@ -1187,9 +1148,7 @@ public class ParserSupport {
     }
     
     public Node new_yield(int line, Node node) {
-        if (node != null && node instanceof BlockPassNode) {
-            lexer.compile_error(PID.BLOCK_ARG_UNEXPECTED, "Block argument should not be given.");
-        }
+        if (node instanceof BlockPassNode) lexer.compile_error("Block argument should not be given.");
 
         return new YieldNode(line, node);
     }
@@ -1267,7 +1226,7 @@ public class ParserSupport {
     }
 
     public Node remove_duplicate_keys(HashNode hash) {
-        List<Node> encounteredKeys = new ArrayList();
+        List<Node> encounteredKeys = new ArrayList<>();
 
         for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
             Node key = pair.getKey();
@@ -1296,7 +1255,7 @@ public class ParserSupport {
      * generate parsing error
      */
     public void yyerror(String message) {
-        lexer.compile_error(PID.GRAMMAR_ERROR, message);
+        lexer.compile_error(message);
     }
 
     public void yyerror(String message, ProductionState state) {
@@ -1309,7 +1268,7 @@ public class ParserSupport {
      * @param expected list of acceptable tokens, if available.
      */
     public void yyerror(String message, String[] expected, String found) {
-        lexer.compile_error(PID.GRAMMAR_ERROR, message + ", unexpected " + found + "\n");
+        lexer.compile_error(message + ", unexpected " + found + "\n");
     }
 
     public int getPosition(Node start) {
@@ -1432,14 +1391,13 @@ public class ParserSupport {
         RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
         String[] names = pattern.getNames();
-        int length = names.length;
-        List<Integer> locals = new ArrayList<Integer>();
+        List<Integer> locals = new ArrayList<>();
         StaticScope scope = getCurrentScope();
 
         Ruby runtime = getConfiguration().getRuntime();
-        for (int i = 0; i < length; i++) {
-            if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
-                String id = runtime.newSymbol(names[i]).idString();
+        for (String name : names) {
+            if (RubyLexer.getKeyword(name) == null && !Character.isUpperCase(name.charAt(0))) {
+                String id = runtime.newSymbol(name).idString();
                 int slot = scope.isDefined(id);
                 if (slot >= 0) {
                     locals.add(slot);

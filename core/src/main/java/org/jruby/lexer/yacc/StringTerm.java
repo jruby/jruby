@@ -32,7 +32,6 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
-import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
@@ -153,7 +152,7 @@ public class StringTerm extends StrTerm {
     }
 
     private void mixedEscape(RubyLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
-        lexer.compile_error(PID.MIXED_ENCODING, "" + foundEncoding + " mixed within " + parserEncoding + " source");
+        lexer.compile_error("" + foundEncoding + " mixed within " + parserEncoding + " source");
     }
 
     // mri: parser_tokadd_string
@@ -243,7 +242,7 @@ public class StringTerm extends StrTerm {
                         }
 
                         if (!lexer.tokadd_mbchar(c, buffer)) {
-                            lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + encoding + ")");
+                            lexer.compile_error("invalid multibyte char (" + encoding + ")");
                         }
 
                         continue;
@@ -271,7 +270,7 @@ public class StringTerm extends StrTerm {
                         /* ignore backslashed spaces in %w */
                     } else if (c != end && !(begin != '\0' && c == begin)) {
                         buffer.append('\\');
-                        lexer.pushback(c);;
+                        lexer.pushback(c);
                         continue;
                     }
                 }
@@ -284,7 +283,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
                 }
 
                 if (!lexer.tokadd_mbchar(c, buffer)) {
-                    lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + encoding + ")");
+                    lexer.compile_error("invalid multibyte char (" + encoding + ")");
                 }
 
                 continue;

@@ -118,7 +118,6 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StrTerm;
-import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
@@ -161,7 +160,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 165 "-"
+					// line 164 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -3744,7 +3743,7 @@ states[333] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) {
                     if (((Node)yyVals[-1+yyTop].value) != null && 
                           ((BlockAcceptingNode)yyVals[-1+yyTop].value).getIterNode() instanceof BlockPassNode) {
-                          lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
+                          lexer.compile_error("Both block arg and actual block given.");
                     }
                     yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop].value).setIterNode(((IterNode)yyVals[0+yyTop].value));
                     ((Node)yyVal).setLine(((Node)yyVals[-1+yyTop].value).getLine());
@@ -4018,7 +4017,7 @@ states[367] = new ParserState() {
 states[368] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) {
                     if (support.isInClass() && !support.isInDef() && !support.getCurrentScope().isBlockScope()) {
-                        lexer.compile_error(PID.TOP_LEVEL_RETURN, "Invalid return in class/module body");
+                        lexer.compile_error("Invalid return in class/module body");
                     }
                     yyVal = ((Integer)yyVals[0+yyTop].value);
     return yyVal;
@@ -4375,10 +4374,10 @@ states[433] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) {
                     /* Workaround for JRUBY-2326 (MRI does not enter this production for some reason)*/
                     if (((Node)yyVals[-1+yyTop].value) instanceof YieldNode) {
-                        lexer.compile_error(PID.BLOCK_GIVEN_TO_YIELD, "block given to yield");
+                        lexer.compile_error("block given to yield");
                     }
                     if (((Node)yyVals[-1+yyTop].value) instanceof BlockAcceptingNode && ((BlockAcceptingNode)yyVals[-1+yyTop].value).getIterNode() instanceof BlockPassNode) {
-                        lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
+                        lexer.compile_error("Both block arg and actual block given.");
                     }
                     if (((Node)yyVals[-1+yyTop].value) instanceof NonLocalControlFlowNode) {
                         ((BlockAcceptingNode) ((NonLocalControlFlowNode)yyVals[-1+yyTop].value).getValueNode()).setIterNode(((IterNode)yyVals[0+yyTop].value));
@@ -5752,7 +5751,7 @@ states[654] = new ParserState() {
   }
 };
 }
-					// line 2806 "RubyParser.y"
+					// line 2805 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5767,4 +5766,4 @@ states[654] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10758 "-"
+					// line 10757 "-"

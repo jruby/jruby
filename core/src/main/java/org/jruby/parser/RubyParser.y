@@ -115,7 +115,6 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StrTerm;
-import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
@@ -1547,7 +1546,7 @@ primary         : literal
                 | method_call brace_block {
                     if ($1 != null && 
                           $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                          lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
+                          lexer.compile_error("Both block arg and actual block given.");
                     }
                     $$ = $<BlockAcceptingNode>1.setIterNode($2);
                     $<Node>$.setLine($1.getLine());
@@ -1708,7 +1707,7 @@ k_module        : keyword_module {
 
 k_return        : keyword_return {
                     if (support.isInClass() && !support.isInDef() && !support.getCurrentScope().isBlockScope()) {
-                        lexer.compile_error(PID.TOP_LEVEL_RETURN, "Invalid return in class/module body");
+                        lexer.compile_error("Invalid return in class/module body");
                     }
                     $$ = $1;
                 }
@@ -1930,10 +1929,10 @@ do_block        : keyword_do_block do_body keyword_end {
 block_call      : command do_block {
                     // Workaround for JRUBY-2326 (MRI does not enter this production for some reason)
                     if ($1 instanceof YieldNode) {
-                        lexer.compile_error(PID.BLOCK_GIVEN_TO_YIELD, "block given to yield");
+                        lexer.compile_error("block given to yield");
                     }
                     if ($1 instanceof BlockAcceptingNode && $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
+                        lexer.compile_error("Both block arg and actual block given.");
                     }
                     if ($1 instanceof NonLocalControlFlowNode) {
                         ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);

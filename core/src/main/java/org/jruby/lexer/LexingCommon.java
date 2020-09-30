@@ -410,7 +410,7 @@ public abstract class LexingCommon {
         tokp = lex_p - (unreadOnce ? 1 : 0); // We use tokp of ripper to mark beginning of tokens.
     }
 
-    protected int numberLiteralSuffix(int mask) throws IOException {
+    protected int numberLiteralSuffix(int mask) {
         int c;
         int result = 0;
         int last = lex_p;
