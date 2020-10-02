@@ -196,6 +196,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     private transient JavaProxyConstructor[] constructors;
 
+    // TODO: filter out in Java Jcreate or here?
     public JavaProxyConstructor[] getConstructors() {
         JavaProxyConstructor[] constructors = this.constructors;
         if ( constructors != null ) return constructors;

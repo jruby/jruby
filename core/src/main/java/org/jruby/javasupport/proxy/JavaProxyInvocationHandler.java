@@ -52,4 +52,12 @@ public interface JavaProxyInvocationHandler {
      * @see java.lang.reflect.InvocationHandler#invoke(Object, java.lang.reflect.Method, Object[])
      */
     Object invoke(Object receiver, JavaProxyMethod method, Object[] args) throws Throwable;
+    
+
+    /**
+     * Calls the initialize method
+     * @param args
+     * @throws Throwable
+     */
+    void invoke_ctor(Object[] args) throws Throwable;
 }

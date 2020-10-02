@@ -28,6 +28,12 @@
 
 package org.jruby.javasupport.proxy;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jruby.javasupport.proxy.JavaProxyClassFactory.ClassInvocationHolder;
+
 /**
  * Contains methods that are only called from generated code
  * 
@@ -42,6 +48,21 @@ public class InternalJavaProxyHelper {
     public static JavaProxyMethod initProxyMethod(JavaProxyClass proxyClass,
             String name, String desc, boolean hasSuper) {
         return proxyClass.initMethod(name, desc, hasSuper);
+    }
+    
+    private static Map<Integer, ClassInvocationHolder> defaultJpihs = new ConcurrentHashMap<>();
+    
+    public static int sized()
+    {
+    	return defaultJpihs.size();
+    }
+    
+    public static ClassInvocationHolder getDefaultJPIH(int id) {
+    	return defaultJpihs.remove(id);
+    }
+    
+    public static void addDefaultJIPH(int id, ClassInvocationHolder jiph){
+    	defaultJpihs.put(id, jiph);
     }
 
 }

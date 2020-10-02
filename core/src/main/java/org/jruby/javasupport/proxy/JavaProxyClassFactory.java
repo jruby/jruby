@@ -28,6 +28,7 @@
 
 package org.jruby.javasupport.proxy;
 
+import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -38,12 +39,25 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.JavaUtilities;
+import org.jruby.javasupport.proxy.JavaProxyConstructor.MethodInvocationHandler;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ASM;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
@@ -78,6 +92,7 @@ public class JavaProxyClassFactory {
         .getMethod("java.lang.Class forName(java.lang.String)");
 
     private static final String INVOCATION_HANDLER_FIELD_NAME = "__handler";
+    private static final String INVOCATION_HANDLER_BUILDER_FIELD_NAME = "__handler_builder";
 
     private static final String PROXY_CLASS_FIELD_NAME = "__proxy_class";
 
@@ -86,6 +101,8 @@ public class JavaProxyClassFactory {
     private static final Type PROXY_CLASS_TYPE = Type.getType(JavaProxyClass.class);
 
     private static final Type INVOCATION_HANDLER_TYPE = Type.getType(JavaProxyInvocationHandler.class);
+
+    private static final Type INVOCATION_HANDLER_BUILDER_TYPE = Type.getType(ClassInvocationHolder.class);
 
     // public Object invoke(Object receiver, JavaProxyMethod method, Object[] args)
     private static final org.objectweb.asm.commons.Method invoke = org.objectweb.asm.commons.Method
@@ -101,6 +118,19 @@ public class JavaProxyClassFactory {
     private static final org.objectweb.asm.commons.Method initProxyMethod = org.objectweb.asm.commons.Method
         .getMethod(PROXY_METHOD_TYPE.getClassName() + " initProxyMethod("
                     + JavaProxyClass.class.getName() + ",java.lang.String,java.lang.String,boolean)");
+
+    // public static ClassInvocationHolder getDefaultJPIH(Long)
+    private static final org.objectweb.asm.commons.Method getDefaultJPIH = org.objectweb.asm.commons.Method
+        .getMethod(ClassInvocationHolder.class.getName() + " getDefaultJPIH(int)");
+    
+    // public JavaProxyInvocationHandler init(Object jself, Object[] args) // TODO: wrong types
+    private static final org.objectweb.asm.commons.Method initHandlerClass = org.objectweb.asm.commons.Method
+        .getMethod(JavaProxyInvocationHandler.class.getName() + " init("+JavaProxyClass.class.getName() + ",java.lang.Object,java.lang.Object[])");
+    
+    
+    private static final org.objectweb.asm.commons.Method trampolineInit = org.objectweb.asm.commons.Method
+    		.getMethod(JavaProxyInvocationHandler.class.getName() + "__jruby$trampoline$init(java.lang.Object[])");
+    
 
     private static final Type JAVA_PROXY_TYPE = Type.getType(InternalJavaProxy.class);
 
@@ -158,14 +188,16 @@ public class JavaProxyClassFactory {
 
         Type selfType = Type.getType('L' + toInternalClassName(targetClassName) + ';');
         Map<MethodKey, MethodData> methods = collectMethods(superClass, interfaces, names, extraMethods, clazz.getMethodAnnotations());
+        int id = System.identityHashCode(this);
+        InternalJavaProxyHelper.addDefaultJIPH(id, new ClassInvocationHolder(runtime, clazz));
 
-        return generate(loader, targetClassName, superClass, interfaces, methods, selfType, clazz);
+        return generate(loader, targetClassName, superClass, interfaces, methods, selfType, clazz, id);//TODO: check for id not removed
     }
 
     private JavaProxyClass generate(ClassDefiningClassLoader loader, String targetClassName,
                                     Class superClass, Class[] interfaces,
-                                    Map<MethodKey, MethodData> methods, Type selfType, RubyClass rclass) {
-        ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces, loader);
+                                    Map<MethodKey, MethodData> methods, Type selfType, RubyClass rclass, int id) {
+        ClassWriter cw = beginProxyClass(selfType, targetClassName, superClass, interfaces, loader);
         
         Map<String, Map<Class, Map<String, Object>>> fieldannos;
         Map<String, Class> fields;
@@ -191,7 +223,7 @@ public class JavaProxyClassFactory {
             fv.visitEnd();
         }
 
-        GeneratorAdapter clazzInit = createClassInitializer(selfType, cw);
+        GeneratorAdapter clazzInit = createClassInitializer(selfType, cw, id);//TODO:0
 
         generateConstructors(superClass, selfType, cw);
         generate___getProxyClass(selfType, cw);
@@ -206,6 +238,16 @@ public class JavaProxyClassFactory {
         cw.visitEnd();
 
         Class clazz = loader.defineClass(selfType.getClassName(), cw.toByteArray());
+        try
+		{
+			Files.write(Paths.get("/tmp/dumped", selfType.getClassName() + ".class"), cw.toByteArray());
+		}
+		catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
 
         // trigger class initialization for the class
         try {
@@ -231,7 +273,7 @@ public class JavaProxyClassFactory {
                 .append("$Proxy").append(nextId()).toString();
     }
 
-    private static ClassWriter beginProxyClass(final String className,
+    private static ClassWriter beginProxyClass(Type selfType, final String className,
         final Class superClass, final Class[] interfaces, final ClassDefiningClassLoader loader) {
 
         ClassWriter cw = ASM.newClassWriter(loader.asClassLoader());
@@ -248,11 +290,37 @@ public class JavaProxyClassFactory {
                 INVOCATION_HANDLER_TYPE.getDescriptor(), null, null
         ).visitEnd();
 
+        // public static final ClassInvocationHolder __handler_builder;
+        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                INVOCATION_HANDLER_BUILDER_FIELD_NAME,
+                INVOCATION_HANDLER_BUILDER_TYPE.getDescriptor(), null, null
+        ).visitEnd();
+
         // /* public */ static final JavaProxyClass __proxy_class;
         cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
                 PROXY_CLASS_FIELD_NAME,
                 PROXY_CLASS_TYPE.getDescriptor(), null, null
         ).visitEnd();
+        
+
+        //make trampoline
+        // NOTE: not for 0-arg ctor
+//        GeneratorAdapter ga2 = new GeneratorAdapter(Opcodes.ACC_PUBLIC, trampolineInit, null, null, cw);
+//
+//
+//        ga2.getStatic(selfType, PROXY_CLASS_FIELD_NAME, PROXY_CLASS_TYPE);
+//        ga2.loadThis();
+//        ga2.loadArgArray();
+//        ga2.invokeVirtual(INVOCATION_HANDLER_BUILDER_TYPE, initHandlerClass);
+//
+//        
+//        ga2.loadThis();
+//        ga2.loadArgs();
+        
+         /// ????
+        
+//        ga2.returnValue();
+//        ga2.endMethod();
 
         return cw;
     }
@@ -321,14 +389,21 @@ public class JavaProxyClassFactory {
 
             // otherwise, define everything and let some of them fail at invocation
             generateConstructor(selfType, cons[i], cw);
+            if (cons[i].getParameterCount() == 0) // FIXME: zero only, but does somewhat work for 1+ too 
+            generateRawConstructor(selfType, cons[i], cw);
         }
     }
 
-    private static GeneratorAdapter createClassInitializer(Type selfType, ClassVisitor cw) {
+    private static GeneratorAdapter createClassInitializer(Type selfType, ClassVisitor cw, int id) {
         GeneratorAdapter clazzInit = new GeneratorAdapter(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
                 new org.objectweb.asm.commons.Method("<clinit>", Type.VOID_TYPE, EMPTY_TYPE_ARRAY),
                 null, EMPTY_TYPE_ARRAY, cw);
 
+        clazzInit.visitLdcInsn(id);
+        clazzInit.invokeStatic(INTERNAL_PROXY_HELPER_TYPE, getDefaultJPIH);
+        clazzInit.putStatic(selfType, INVOCATION_HANDLER_BUILDER_FIELD_NAME, INVOCATION_HANDLER_BUILDER_TYPE);
+        // __handler_builder = JavaProxyClassFactory.getDefault(id)
+        
         clazzInit.visitLdcInsn(selfType.getClassName());
         clazzInit.invokeStatic(JAVA_LANG_CLASS_TYPE, forName);
         clazzInit.invokeStatic(INTERNAL_PROXY_HELPER_TYPE, initProxyClass);
@@ -482,20 +557,87 @@ public class JavaProxyClassFactory {
         if ( superConstructorVarArgs ) mv.visitAnnotation(Type.getDescriptor(VarArgs.class), true);
         GeneratorAdapter ga = new GeneratorAdapter(access, m, mv);
 
-        ga.loadThis();
-        ga.loadArgs(0, superConstructorParameterTypes.length);
-        ga.invokeConstructor(toType(constructor.getDeclaringClass()), super_m);
 
         ga.loadThis();
         ga.loadArg(superConstructorParameterTypes.length);
 
         ga.putField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
 
+        ga.loadThis();
+        ga.loadArgs(0, superConstructorParameterTypes.length);
+        ga.invokeConstructor(toType(constructor.getDeclaringClass()), super_m);
+
         // do a void return
         ga.returnValue();
         ga.endMethod();
 
         return newConstructorParameterTypes;
+    }
+	//TODO: dedupe code?
+	private static Class[] generateRawConstructor(Type selfType, Constructor constructor, ClassVisitor cw) {
+        Class[] superConstructorParameterTypes = constructor.getParameterTypes();
+
+        int access = Opcodes.ACC_PUBLIC;
+        String name1 = "<init>";
+        String signature = null;
+        Class[] superConstructorExceptions = constructor.getExceptionTypes();
+        boolean superConstructorVarArgs = constructor.isVarArgs();
+
+        org.objectweb.asm.commons.Method super_m = new org.objectweb.asm.commons.Method(
+                name1, Type.VOID_TYPE, toTypes(superConstructorParameterTypes));
+        org.objectweb.asm.commons.Method m = new org.objectweb.asm.commons.Method(
+                name1, Type.VOID_TYPE, toTypes(superConstructorParameterTypes));
+
+        String[] exceptionNames = toInternalNames( superConstructorExceptions );
+        MethodVisitor mv = cw.visitMethod(access, m.getName(), m.getDescriptor(), signature, exceptionNames);
+        // marking with @SafeVarargs so that we can correctly detect proxied var-arg constructors :
+        if ( superConstructorVarArgs ) mv.visitAnnotation(Type.getDescriptor(VarArgs.class), true);
+        GeneratorAdapter ga = new GeneratorAdapter(access, m, mv);
+
+
+        ga.loadThis();
+        ga.getStatic(selfType, INVOCATION_HANDLER_BUILDER_FIELD_NAME, INVOCATION_HANDLER_BUILDER_TYPE);
+        ga.getStatic(selfType, PROXY_CLASS_FIELD_NAME, PROXY_CLASS_TYPE);
+        ga.loadThis();
+        ga.loadArgArray();// NOTE: FOR non-zero args 
+        ga.invokeVirtual(INVOCATION_HANDLER_BUILDER_TYPE, initHandlerClass);
+
+        ga.putField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
+        
+
+        ga.loadThis();
+        ga.loadArgs(0, superConstructorParameterTypes.length);
+        ga.invokeConstructor(toType(constructor.getDeclaringClass()), super_m);
+
+        // do a void return
+        ga.returnValue();
+        ga.endMethod();
+
+        return superConstructorParameterTypes;
+    }
+	
+	public static final class ClassInvocationHolder {
+
+        private final Ruby runtime;
+        private final RubyClass clazz;
+
+        ClassInvocationHolder(final Ruby runtime, final RubyClass self) {
+            this.runtime = runtime; this.clazz = self;
+        }
+        
+        public JavaProxyInvocationHandler init(JavaProxyClass jpc, Object jself, Object[] args) throws Throwable {
+        	final IRubyObject self = clazz.allocate();// NOTE: this has to be done somewhere else in the code/I'm missing lots?
+        	IRubyObject cjp = JavaObject.wrap(runtime, jself);
+            JavaUtilities.set_java_object(self, self, cjp);
+            //JavaProxyClass
+            self.getMetaClass().setInstanceVariable("@java_proxy_class", jpc);
+            //if ( ((JavaProxy) proxy).object == null ) 
+        	final JavaProxyInvocationHandler jpih = new MethodInvocationHandler(runtime, self);//FIXME: needs to be constant and sync with Java$JCreate
+        	jpih.invoke_ctor(args);
+        	return jpih;
+        }
+     
+
     }
 
     static boolean isVarArgs(final Constructor<?> ctor) {

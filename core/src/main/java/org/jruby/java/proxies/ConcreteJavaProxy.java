@@ -37,6 +37,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         return ConcreteJavaProxy;
     }
 
+    ///jcreates site
     private static final class InitializeMethod extends org.jruby.internal.runtime.methods.JavaMethod {
 
         private final CallSite jcreateSite = MethodIndex.getFunctionalCallSite("__jcreate!");
