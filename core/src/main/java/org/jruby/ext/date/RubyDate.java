@@ -1395,7 +1395,7 @@ public class RubyDate extends RubyObject {
         final Ruby runtime = context.runtime;
         return context.runtime.newArrayNoCopy(new IRubyObject[] {
                 ajd(context),
-                RubyFixnum.newFixnum(runtime, off),
+                RubyRational.newRationalCanonicalize(context, off, DAY_IN_SECONDS),
                 RubyFixnum.newFixnum(runtime, start)
         });
     }
