@@ -215,6 +215,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>ostruct</artifactId>
+      <version>0.3.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>prime</artifactId>
       <version>0.1.0</version>
       <type>gem</type>
@@ -535,6 +548,9 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/mutex_m*0.1.0.gem</include>
           <include>gems/mutex_m*0.1.0/**</include>
           <include>specifications/mutex_m*0.1.0.gemspec</include>
+          <include>cache/ostruct*0.3.0.gem</include>
+          <include>gems/ostruct*0.3.0/**</include>
+          <include>specifications/ostruct*0.3.0.gemspec</include>
           <include>cache/prime*0.1.0.gem</include>
           <include>gems/prime*0.1.0/**</include>
           <include>specifications/prime*0.1.0.gemspec</include>
