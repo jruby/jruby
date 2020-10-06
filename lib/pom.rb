@@ -29,7 +29,7 @@ default_gems = [
     ['logger', '1.3.0'],
     ['matrix', '0.3.0'],
     ['mutex_m', '0.1.0'],
-    #['ostruct', '#####'], # waiting on https://github.com/ruby/ostruct/issues/11
+    ['ostruct', '0.3.0'],
     ['prime', '0.1.0'],
     ['psych', '3.2.0'],
     ['racc', '1.5.0'],
