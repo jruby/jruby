@@ -300,11 +300,18 @@ public class RubyDir extends RubyObject implements Closeable {
         String base = globOptions(context, args, flags);
         List<ByteList> dirs;
 
-        if (base != null && !base.isEmpty() && !(JRubyFile.createResource(context, base).exists())){
+        if (base == null || base.isEmpty()) {
+            base = runtime.getCurrentDirectory();
+        }
+
+        // createResource will normalize URLs (see GH-6421)
+        FileResource resource = JRubyFile.createResource(context, base);
+
+        if (!(resource.exists())){
             dirs = new ArrayList<ByteList>();
         } else {
             IRubyObject tmp = args[0].checkArrayType();
-            String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;
+            String dir = resource.absolutePath();
 
             if (tmp.isNil()) {
                 dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), flags[0]);
