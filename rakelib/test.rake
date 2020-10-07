@@ -8,10 +8,10 @@ task :test => "test:short"
 
 if ENV['CI']
   # MRI tests have a different flag for color
-  ADDITIONAL_TEST_OPTIONS = "-v --color=never --tty=no"
+  ADDITIONAL_TEST_OPTIONS = "--color=never --tty=no"
 
   # for normal test/unit tests
-  ENV['TESTOPT'] = "-v --no-use-color"
+  ENV['TESTOPT'] = "--no-use-color"
 
   # extend timeouts in MRI tests
   ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '20'
@@ -25,7 +25,7 @@ namespace :test do
   desc "Compile test code"
   task :compile do
     mkdir_p "test/target/test-classes"
-    classpath = %w[lib/jruby.jar test/target/junit.jar].join(File::PATH_SEPARATOR)
+    classpath = %w[lib/jruby.jar test/target/junit.jar test/target/annotation-api.jar].join(File::PATH_SEPARATOR)
     # try detecting javac - so we use the same Java versions as we're running (JAVA_HOME) with :
     java_home = [ ENV_JAVA['java.home'], File.join(ENV_JAVA['java.home'], '..') ] # in case of jdk/jre
     javac = java_home.map { |home| File.expand_path('bin/javac', home) }.find { |javac| File.exist?(javac) } || 'javac'
@@ -61,7 +61,8 @@ namespace :test do
 
   compile_flags = {
     :default => :int,
-    :int => ["-X-C"],
+    # interpreter is set to threshold=1 to encourage full builds to run for code called twice
+    :int => ["-X-C", "-Xjit.threshold=1", "-Xjit.background=false"],
     # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
     :fullint => ["-X-C", "-Xjit.threshold=0", "-Xjit.background=false"],
     :jit => ["-Xjit.threshold=0", "-Xjit.background=false", get_meta_size.call()],
@@ -80,7 +81,8 @@ namespace :test do
 
   namespace :mri do
     jruby_opts = {
-        int: "--dev",
+        # interpreter is set to threshold=1 to encourage full builds to run for code called twice
+        int: "--dev -Xjit.threshold=1 -Xjit.background=false",
         fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
         jit: "-Xjit.threshold=0 -Xjit.background=false",
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
@@ -120,7 +122,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.ruby_opts << '-Xaot.loadClasses=true' # disabled by default now
     t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
@@ -139,7 +140,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.test_files = files_in_file 'test/slow.index'
     t.ruby_opts << '-J-ea' << '-I.'
     t.ruby_opts << '-J-cp target/test-classes'
@@ -155,7 +155,6 @@ namespace :test do
       end
     end
     t.test_files = files
-    t.verbose = true
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-X+O'
   end
@@ -168,25 +167,5 @@ namespace :test do
     
     puts cmd
     system cmd
-  end
-  
-  namespace :junit do
-    test_class_path = [
-      "target/junit.jar",
-      "target/livetribe-jsr223.jar",
-      "target/bsf.jar",
-      "target/commons-logging.jar",
-      "lib/jruby.jar",
-      "target/test-classes",
-      "test/jruby/requireTest.jar",
-      "test"
-    ]
-    
-    desc "Run the main JUnit test suite"
-    task :main => 'test:compile' do
-      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite", :maxmemory => '500M' do
-        jvmarg :line => '-ea'
-      end
-    end
   end
 end

@@ -242,6 +242,15 @@ describe :kernel_require, shared: true do
       @object.require("load_fixture").should be_true
       ScratchPad.recorded.should == [:loaded]
     end
+
+    ruby_bug "#16926", "2.7"..."3.0" do
+      it "does not load a feature twice when $LOAD_PATH has been modified" do
+        $LOAD_PATH.replace [CODE_LOADING_DIR]
+        @object.require("load_fixture").should be_true
+        $LOAD_PATH.replace [File.expand_path("b", CODE_LOADING_DIR), CODE_LOADING_DIR]
+        @object.require("load_fixture").should be_false
+      end
+    end
   end
 
   describe "(file extensions)" do
@@ -334,6 +343,21 @@ describe :kernel_require, shared: true do
           @object.require(symlink_path).should be_true
           loaded_feature = $LOADED_FEATURES.last
           ScratchPad.recorded.should == [loaded_feature]
+        end
+
+        it "requires only once when a new matching file added to path" do
+          @object.require('load_fixture').should be_true
+          ScratchPad.recorded.should == [:loaded]
+
+          symlink_to_code_dir_two = tmp("codesymlinktwo")
+          File.symlink("#{CODE_LOADING_DIR}/b", symlink_to_code_dir_two)
+          begin
+            $LOAD_PATH.unshift(symlink_to_code_dir_two)
+
+            @object.require('load_fixture').should be_false
+          ensure
+            rm_r symlink_to_code_dir_two
+          end
         end
       end
 

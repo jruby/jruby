@@ -45,7 +45,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  */
 public class VCallNode extends Node implements INameNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
     public VCallNode(ISourcePosition position, RubySymbol name) {
         super(position, false);

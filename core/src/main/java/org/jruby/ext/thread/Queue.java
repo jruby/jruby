@@ -378,7 +378,7 @@ public class Queue extends RubyObject implements DataType {
         if (e == null) throw new NullPointerException();
         // Note: convention in all put/takeInternal/etc is to preset local var
         // holding count negative to indicate failure unless set.
-        int c = -1;
+        int c;
         Node node = new Node(e);
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;

@@ -436,8 +436,8 @@ public class RubyNKF {
 
     static abstract class Converter {
 
-        protected ThreadContext context;
-        protected Map<String, NKFCharset> options;
+        protected final ThreadContext context;
+        protected final Map<String, NKFCharset> options;
 
         public Converter(ThreadContext ctx, Map<String, NKFCharset> opt) {
             context = ctx;

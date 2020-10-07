@@ -17,7 +17,7 @@ describe "Kernel#warn" do
     Kernel.should have_private_instance_method(:warn)
   end
 
-  it "requires multiple arguments" do
+  it "accepts multiple arguments" do
     Kernel.method(:warn).arity.should < 0
   end
 
@@ -99,6 +99,51 @@ describe "Kernel#warn" do
       -> { w.f4("foo", 1) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f1_call_lineno}: warning: foo|)
       -> { w.f4("foo", 2) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f2_call_lineno}: warning: foo|)
       -> { w.f4("foo", 3) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f3_call_lineno}: warning: foo|)
+    end
+
+    # Test both explicitly without and with RubyGems as RubyGems overrides Kernel#warn
+    it "shows the caller of #require and not #require itself without RubyGems" do
+      file = fixture(__FILE__ , "warn_require_caller.rb")
+      ruby_exe(file, options: "--disable-gems", args: "2>&1").should == "#{file}:2: warning: warn-require-warning\n"
+    end
+
+    ruby_version_is "2.6" do
+      it "shows the caller of #require and not #require itself with RubyGems loaded" do
+        file = fixture(__FILE__ , "warn_require_caller.rb")
+        ruby_exe(file, options: "-rrubygems", args: "2>&1").should == "#{file}:2: warning: warn-require-warning\n"
+      end
+    end
+
+    ruby_version_is "3.0" do
+      it "accepts :category keyword with a symbol" do
+        -> {
+          $VERBOSE = true
+          warn("message", category: :deprecated)
+        }.should output(nil, "message\n")
+      end
+
+      it "accepts :category keyword with nil" do
+        -> {
+          $VERBOSE = true
+          warn("message", category: nil)
+        }.should output(nil, "message\n")
+      end
+
+      it "accepts :category keyword with object convertible to symbol" do
+        o = Object.new
+        def o.to_sym; :deprecated; end
+        -> {
+          $VERBOSE = true
+          warn("message", category: o)
+        }.should output(nil, "message\n")
+      end
+
+      it "raises if :category keyword is not nil and not convertible to symbol" do
+        -> {
+          $VERBOSE = true
+          warn("message", category: Object.new)
+        }.should raise_error(TypeError)
+      end
     end
 
     it "converts first arg using to_s" do

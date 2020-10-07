@@ -15,7 +15,7 @@ public abstract class NamedInstaller {
     final String name;
     final int type;
 
-    Visibility visibility = Visibility.PUBLIC;
+    final Visibility visibility = Visibility.PUBLIC;
 
     public NamedInstaller(String name, int type) {
         this.name = name;

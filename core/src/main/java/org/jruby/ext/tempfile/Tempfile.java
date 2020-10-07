@@ -57,7 +57,7 @@ import java.io.IOException;
  */
 @JRubyClass(name="Tempfile", parent="File")
 public class Tempfile extends RubyFile implements Finalizable {
-    private static ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new Tempfile(runtime, klass);

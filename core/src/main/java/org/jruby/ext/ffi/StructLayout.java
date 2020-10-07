@@ -1385,9 +1385,16 @@ public final class StructLayout extends Type {
             
             if (isCharArray() && value instanceof RubyString) {
                 ByteList bl = value.convertToString().getByteList();
-                ptr.getMemoryIO().putZeroTerminatedByteArray(m.offset, bl.getUnsafeBytes(), bl.begin(),
-                    Math.min(bl.length(), arrayType.length() - 1));
-
+                int arrayLen = arrayType.length();
+                int valueLen = bl.length();
+                if(valueLen < arrayLen) {
+                    ptr.getMemoryIO().putZeroTerminatedByteArray(m.offset, bl.getUnsafeBytes(), bl.begin(), bl.length());
+                } else if (valueLen == arrayLen) {
+                    ptr.getMemoryIO().put(m.offset, bl.getUnsafeBytes(), bl.begin(), valueLen);
+                } else {
+                    throw context.runtime.newIndexError("String is longer (" + valueLen +
+                            " bytes) than the char array (" + arrayLen + " bytes)");
+                }
             } else if (false) {
                 RubyArray ary = value.convertToArray();
                 int count = ary.size();

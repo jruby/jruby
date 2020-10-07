@@ -1,7 +1,7 @@
 package org.jruby.ir.runtime;
 
 import com.headius.invokebinder.Signature;
-import java.io.ByteArrayInputStream;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -33,13 +33,13 @@ import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
-import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
@@ -128,17 +128,11 @@ public class IRRuntimeHelpers {
         if (inLambda(block.type)) return; // break/return in lambda is unconditionally a return.
 
         DynamicScope returnToScope = getContainingReturnToScope(currentScope);
-        if (returnToScope != null) { // we found a valid return scope...but is it higher up the stack?
-            StaticScope staticScope = returnToScope.getStaticScope();
-            boolean inDefineMethod = staticScope.isArgumentScope() && staticScope.getScopeType().isBlock();
-            boolean topLevel = staticScope.getScopeType() == IRScopeType.SCRIPT_BODY;
 
-            if ((definedWithinMethod || inDefineMethod || topLevel) && context.scopeExistsOnCallStack(returnToScope)) {
-                return;
-            }
+        if (returnToScope == null || !context.scopeExistsOnCallStack(returnToScope)) {
+            throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
 
-        throw IRException.RETURN_LocalJumpError.getException(context.runtime);
     }
 
     /*
@@ -174,15 +168,7 @@ public class IRRuntimeHelpers {
     // Finds static scope of where we want to *return* to.
     private static DynamicScope getContainingReturnToScope(DynamicScope returnLocationScope) {
         for (DynamicScope current = returnLocationScope; current != null; current = current.getParentScope()) {
-            StaticScope staticScope = current.getStaticScope();
-            IRScopeType scopeType = staticScope.getScopeType();
-
-            // We hit a method boundary (actual method or a define_method closure) or we exit out of a script/file.
-            if (scopeType.isMethodType() ||                              // Contained within a method
-                    scopeType.isBlock() && staticScope.isArgumentScope() ||  // Contained within define_method closure
-                    scopeType == IRScopeType.SCRIPT_BODY) {              // (2.5+) Contained within a script
-                return current;
-            }
+            if (current.isReturnTarget()) return current;
         }
 
         return null;
@@ -658,6 +644,21 @@ public class IRRuntimeHelpers {
         boolean printAll = Options.IR_PRINT_ALL.load();
 
         return (!booting && print) || (booting && printAll);
+    }
+
+    /**
+     * Update coverage data for the given file and zero-based line number.
+     *
+     * @param context
+     * @param filename
+     * @param line
+     */
+    public static void updateCoverage(ThreadContext context, String filename, int line) {
+        CoverageData data = context.runtime.getCoverageData();
+
+        if (data.isCoverageEnabled()) {
+            data.coverLine(filename, line);
+        }
     }
 
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
@@ -1163,10 +1164,14 @@ public class IRRuntimeHelpers {
         return instanceSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
     }
 
+    @JIT // for JVM6
+    public static IRubyObject instanceSuperIterSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return instanceSuperIter(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
+    }
+
     @Interp
     public static IRubyObject instanceSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
-        RubyClass superClass = definingModule.getMethodLocation().getSuperClass();
-        CacheEntry entry = superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
+        CacheEntry entry = getSuperMethodEntry(id, definingModule);
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -1176,26 +1181,62 @@ public class IRRuntimeHelpers {
         return method.call(context, self, entry.sourceModule, id, args, block);
     }
 
+    @Interp
+    public static IRubyObject instanceSuperIter(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        try {
+            return instanceSuper(context, self, id, definingModule, args, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    private static CacheEntry getSuperMethodEntry(String id, RubyModule definingModule) {
+        RubyClass superClass = definingModule.getMethodLocation().getSuperClass();
+        return superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
+    }
+
     @JIT // for JVM6
     public static IRubyObject classSuperSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
         return classSuper(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
     }
 
-    @Interp
-    public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
-        RubyClass superClass = definingModule.getMetaClass().getMethodLocation().getSuperClass();
-        CacheEntry entry = superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
-        DynamicMethod method = entry.method;
-        IRubyObject rVal = method.isUndefined() ?
-            Helpers.callMethodMissing(context, self, method.getVisibility(), id, CallType.SUPER, args, block)
-                : method.call(context, self, entry.sourceModule, id, args, block);
-        return rVal;
+    @JIT // for JVM6
+    public static IRubyObject classSuperIterSplatArgs(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return classSuperIter(context, self, methodName, definingModule, splatArguments(args, splatMap), block);
     }
 
+    @Interp
+    public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        CacheEntry entry = getSuperMethodEntry(id, definingModule.getMetaClass());
+        DynamicMethod method = entry.method;
+
+        if (method.isUndefined()) {
+            return Helpers.callMethodMissing(context, self, method.getVisibility(), id, CallType.SUPER, args, block);
+        }
+
+        return method.call(context, self, entry.sourceModule, id, args, block);
+    }
+
+    @Interp
+    public static IRubyObject classSuperIter(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        try {
+            return classSuper(context, self, id, definingModule, args, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    @JIT
     public static IRubyObject unresolvedSuperSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
         return unresolvedSuper(context, self, splatArguments(args, splatMap), block);
     }
 
+    @JIT
+    public static IRubyObject unresolvedSuperIterSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return unresolvedSuperIter(context, self, splatArguments(args, splatMap), block);
+    }
+
+    @Interp
     public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         // We have to rely on the frame stack to find the implementation class
         RubyModule klazz = context.getFrameKlazz();
@@ -1214,6 +1255,15 @@ public class IRRuntimeHelpers {
         }
 
         return rVal;
+    }
+
+    @Interp
+    public static IRubyObject unresolvedSuperIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        try {
+            return unresolvedSuper(context, self, args, block);
+        } finally {
+            block.escape();
+        }
     }
 
     // MRI: vm_search_normal_superclass
@@ -2158,7 +2208,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject callOptimizedAref(ThreadContext context, IRubyObject caller, IRubyObject target, RubyString keyStr, CallSite site) {
-        if (target instanceof RubyHash && ((CachingCallSite) site).isBuiltin(target.getMetaClass())) {
+        if (target instanceof RubyHash && ((CachingCallSite) site).isBuiltin(target)) {
             // call directly with cached frozen string
             return ((RubyHash) target).op_aref(context, keyStr);
         }

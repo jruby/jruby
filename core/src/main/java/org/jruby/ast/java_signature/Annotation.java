@@ -6,8 +6,8 @@ import java.util.List;
  *
  */
 public class Annotation implements AnnotationExpression {
-    private String name;
-    private List<AnnotationParameter> parameters;
+    private final String name;
+    private final List<AnnotationParameter> parameters;
     
     public Annotation(String name, List<AnnotationParameter> parameters) {
         this.name = name;
@@ -27,6 +27,15 @@ public class Annotation implements AnnotationExpression {
     
     public List<AnnotationParameter> getParameters() {
         return parameters;
+    }
+
+    /**
+     * Accept for the visitor pattern.
+     * @param visitor the visitor
+     **/
+    @Override
+    public <T> T accept(AnnotationVisitor<T> visitor) {
+    	return visitor.annotation(this);
     }
     
     @Override

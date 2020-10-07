@@ -14,8 +14,6 @@ STDLIB_FILES = %w[
   erb.rb
   find.rb
   getoptlong.rb
-  matrix
-  matrix.rb
   monitor.rb
   net
   observer.rb

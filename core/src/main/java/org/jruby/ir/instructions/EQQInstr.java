@@ -22,7 +22,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class EQQInstr extends CallInstr implements FixedArityInstr {
     // This is a splatted value and eqq should compare each element in the array vs
     // treating the array as a single value.
-    private boolean splattedValue;
+    private final boolean splattedValue;
 
     // clone constructor
     protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined, CallSite callSite,

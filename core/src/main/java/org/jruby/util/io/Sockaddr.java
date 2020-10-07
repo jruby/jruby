@@ -189,7 +189,7 @@ public class Sockaddr {
 
             String host = sock.getAddress().getHostAddress();
 
-            if(host != null && "".equals(host)) {
+            if ("".equals(host)) {
                 ds.writeInt(0);
 
             } else {

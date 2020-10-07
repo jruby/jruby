@@ -1,2 +1,0 @@
-windows:ARGF.set_encoding sets the external encoding when passed an encoding name
-windows:ARGF.set_encoding sets the external, internal encoding when passed 'ext:int' String

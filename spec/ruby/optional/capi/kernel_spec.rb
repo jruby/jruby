@@ -9,7 +9,7 @@ describe "C-API Kernel function" do
 
   describe "rb_block_given_p" do
     it "returns false if no block is passed" do
-      @s.rb_block_given_p.should == false
+      @s.should_not.rb_block_given_p
     end
 
     it "returns true if a block is passed" do
@@ -235,6 +235,18 @@ describe "C-API Kernel function" do
 
     it "raises LocalJumpError when no block is given" do
       -> { @s.rb_yield_splat([1, 2]) }.should raise_error(LocalJumpError)
+    end
+  end
+
+  describe "rb_yield_values2" do
+    it "yields passed arguments" do
+      ret = nil
+      @s.rb_yield_values2([1, 2]) { |x, y| ret = x + y }
+      ret.should == 3
+    end
+
+    it "returns the result from block evaluation" do
+      @s.rb_yield_values2([1, 2]) { |x, y| x + y }.should == 3
     end
   end
 
@@ -483,7 +495,7 @@ describe "C-API Kernel function" do
       proc = @s.rb_block_proc { 1+1 }
       proc.should be_kind_of(Proc)
       proc.call.should == 2
-      proc.lambda?.should == false
+      proc.should_not.lambda?
     end
 
     it "passes through an existing lambda and does not convert to a proc" do
@@ -491,7 +503,7 @@ describe "C-API Kernel function" do
       proc = @s.rb_block_proc(&b)
       proc.should equal(b)
       proc.call.should == 2
-      proc.lambda?.should == true
+      proc.should.lambda?
     end
   end
 
@@ -500,7 +512,7 @@ describe "C-API Kernel function" do
       proc = @s.rb_block_lambda { 1+1 }
       proc.should be_kind_of(Proc)
       proc.call.should == 2
-      proc.lambda?.should == true
+      proc.should.lambda?
     end
 
     it "passes through an existing Proc and does not convert to a lambda" do
@@ -508,7 +520,7 @@ describe "C-API Kernel function" do
       proc = @s.rb_block_lambda(&b)
       proc.should equal(b)
       proc.call.should == 2
-      proc.lambda?.should == false
+      proc.should_not.lambda?
     end
   end
 

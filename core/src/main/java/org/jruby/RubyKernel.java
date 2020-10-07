@@ -88,19 +88,24 @@ import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
+import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.RubyIO.checkUnsupportedOptions;
 import static org.jruby.RubyIO.checkValidSpawnOptions;
 import static org.jruby.RubyIO.UNSUPPORTED_SPAWN_OPTIONS;
 import static org.jruby.anno.FrameField.BLOCK;
+import static org.jruby.anno.FrameField.CLASS;
 import static org.jruby.anno.FrameField.FILENAME;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.anno.FrameField.LINE;
 import static org.jruby.anno.FrameField.METHODNAME;
+import static org.jruby.anno.FrameField.SCOPE;
+import static org.jruby.anno.FrameField.SELF;
+import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
-import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.anno.FrameField.*;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -1024,7 +1029,7 @@ public class RubyKernel {
 
         String file = context.getCurrentStaticScope().getFile();
 
-        if (file == null || file.matches("\\A\\((.*)\\)")) {
+        if (file == null || file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")) {
             throw runtime.newLoadError("cannot infer basepath");
         }
 
@@ -1373,9 +1378,18 @@ public class RubyKernel {
         if (block.isGiven()) {
             return block.yield(context, recv);
         } else {
-            SizeFn enumSizeFn = RubyArray.newArray(context.runtime, context.nil).enumLengthFn();
-            return RubyEnumerator.enumeratorizeWithSize(context, recv, "yield_self", enumSizeFn);
+            return RubyEnumerator.enumeratorizeWithSize(context, recv, "yield_self", RubyKernel::objectSize);
         }
+    }
+
+    /**
+     * An exactly-one size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject objectSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        // always 1
+        return RubyFixnum.one(context.runtime);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -1481,7 +1495,7 @@ public class RubyKernel {
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
         if ( ! block.isGiven() ) {
-            return RubyEnumerator.enumeratorizeWithSize(context, recv, "loop", loopSizeFn());
+            return enumeratorizeWithSize(context, recv, "loop", RubyKernel::loopSize);
         }
         final Ruby runtime = context.runtime;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
@@ -1504,8 +1518,13 @@ public class RubyKernel {
         }
     }
 
-    private static SizeFn loopSizeFn() {
-        return (context, args) -> RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
+    /**
+     * A loop size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject loopSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
     }
 
     @JRubyMethod(required = 2, optional = 1, module = true, visibility = PRIVATE)
@@ -1942,7 +1961,7 @@ public class RubyKernel {
         }
 
         if (block.isGiven()) {
-            sizeFn = (ctx, args1) -> block.call(ctx, args1);
+            sizeFn = (ctx, recv, args1) -> block.call(ctx, args1);
         }
 
         return enumeratorizeWithSize(context, self, method, args, sizeFn);

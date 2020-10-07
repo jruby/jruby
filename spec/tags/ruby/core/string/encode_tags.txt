@@ -1,1 +1,0 @@
-fails:String#encode when passed options replaces invalid encoding

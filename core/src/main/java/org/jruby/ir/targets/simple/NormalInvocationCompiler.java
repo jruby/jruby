@@ -40,7 +40,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class NormalInvocationCompiler implements InvocationCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public static final String SUPER_SPLAT_UNRESOLVED = CodegenUtils.sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
     public static final String SUPER_NOSPLAT_UNRESOLVED = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class));
@@ -67,24 +67,6 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             compiler.adapter.aloadMany(0, 1, 2, 3);
             compiler.getValueCompiler().pushCallSite(clsName, methodName, scopeFieldName, call);
             compiler.adapter.invokestatic(p(IRRuntimeHelpers.class), "callOptimizedAref", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyString.class, CallSite.class));
-            compiler.adapter.areturn();
-        });
-
-        // now call it
-        compiler.adapter.invokestatic(clsName, methodName, incomingSig);
-    }
-
-    @Override
-    public void invokeAsString(String file, int line, String scopeFieldName, CallBase call) {
-        MethodType type = MethodType.methodType(RubyString.class, ThreadContext.class, JVM.OBJECT, JVM.OBJECT);
-        String incomingSig = sig(type);
-        String methodName = compiler.getUniqueSiteName(call.getId());
-
-        String clsName = compiler.getClassData().clsName;
-        compiler.outline(methodName, type, () -> {
-            compiler.adapter.aloadMany(0, 1, 2);
-            compiler.getValueCompiler().pushCallSite(clsName, methodName, scopeFieldName, call);
-            compiler.adapter.invokestatic(p(IRRuntimeHelpers.class), "asString", sig(RubyString.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class));
             compiler.adapter.areturn();
         });
 
@@ -303,25 +285,34 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         invoke(file, line, scopeFieldName, call, arity);
     }
 
-    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to instance super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "instanceSuper", "instanceSuperSplatArgs", false);
+        String noSplatMethod = literalClosure ? "instanceSuperIter" : "instanceSuper";
+        String splatMethod = literalClosure ? "instanceSuperIterSplatArgs" : "instanceSuperSplatArgs";
+
+        performSuper(file, line, name, arity, hasClosure, splatmap, noSplatMethod, splatMethod, false);
     }
 
-    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to class super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "classSuper", "classSuperSplatArgs", false);
+        String noSplatMethod = literalClosure ? "classSuperIter" : "classSuper";
+        String splatMethod = literalClosure ? "classSuperIterSplatArgs" : "classSuperSplatArgs";
+
+        performSuper(file, line, name, arity, hasClosure, splatmap, noSplatMethod, splatMethod, false);
     }
 
-    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to unresolved super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "unresolvedSuper", "unresolvedSuperSplatArgs", true);
+        String noSplatMethod = literalClosure ? "unresolvedSuperIter" : "unresolvedSuper";
+        String splatMethod = literalClosure ? "unresolvedSuperIterSplatArgs" : "unresolvedSuperSplatArgs";
+
+        performSuper(file, line, name, arity, hasClosure, splatmap, noSplatMethod, splatMethod, true);
     }
 
     public void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {

@@ -773,14 +773,13 @@ public class Java implements Library {
 
         final RubyModule parentModule; final String className;
 
-        if ( fullName.indexOf('$') != -1 ) { // inner classes must be nested
-            Class<?> declaringClass = clazz.getDeclaringClass();
-            if ( declaringClass == null ) {
-                // no containing class for a $ class; treat it as internal and don't define a constant
-                return;
-            }
-            parentModule = getProxyClass(runtime, JavaClass.get(runtime, declaringClass));
-            className = clazz.getSimpleName();
+        if ( fullName.indexOf('$') != -1 ) {
+            /*
+             We don't want to define an inner class constant here, because it may conflict with static fields.
+             Instead, we defer that constant definition to the declaring class's proxy initialization, which will deal
+             with naming conflicts appropriately. See GH-6196.
+             */
+            return;
         }
         else {
             final int endPackage = fullName.lastIndexOf('.');
@@ -1655,6 +1654,19 @@ public class Java implements Library {
      */
     public static <T extends AccessibleObject & Member> boolean trySetAccessible(T member) {
         return Modules.trySetAccessible(member, Java.class);
+    }
+
+    /**
+     * Check if the given member would be accessible without using the deprecated AccessibleObject.isAccessible.
+     *
+     * This uses backport9 logic to check if the given class is in a package that has been opened up to us, since
+     * under JPMS that is the only way we can do invasive accesses. On Java 8, it continues to use isAccessible.
+     *
+     * The open check is based on this class, Java.java, which will be in whatever core or dist JRuby module you are
+     * using.
+     */
+    public static <T extends AccessibleObject & Member> boolean isAccessible(T member) {
+        return Modules.isAccessible(member, Java.class);
     }
 
 }

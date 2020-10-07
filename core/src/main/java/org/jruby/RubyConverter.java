@@ -127,7 +127,7 @@ public class RubyConverter extends RubyObject {
         return converterc;
     }
 
-    private static ObjectAllocator CONVERTER_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator CONVERTER_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyConverter(runtime, klass);
@@ -542,7 +542,7 @@ public class RubyConverter extends RubyObject {
         EncodingUtils.econvArgs(context, argv, encNames, encs, ecflags_p, ecopts_p);
 
         TranscoderDB.searchPath(encNames[0], encNames[1], new TranscoderDB.SearchPathCallback() {
-            EncodingService es = runtime.getEncodingService();
+            final EncodingService es = runtime.getEncodingService();
 
             public void call(byte[] source, byte[] destination, int depth) {
                 IRubyObject v;

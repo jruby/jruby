@@ -15,8 +15,6 @@ fails:Process.spawn redirects STDERR to the given file if err: String
 fails:Process.spawn when passed close_others: false does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false
 critical(hangs):Process.spawn when passed close_others: true closes file descriptors >= 3 in the child process even if fds are set close_on_exec=false
 windows:Process.spawn executes the given command
-windows:Process.spawn returns the process ID of the new process as a Fixnum
-windows:Process.spawn returns immediately
 windows:Process.spawn sets environment variables in the child environment
 windows:Process.spawn unsets environment variables whose value is nil
 windows:Process.spawn calls #to_hash to convert the environment
@@ -80,3 +78,4 @@ fails:Process.spawn raises an Errno::EACCES or Errno::EISDIR when passed a direc
 fails:Process.spawn defaults :close_others to true
 fails(linux):Process.spawn inside Dir.chdir kills extra chdir processes
 fails:Process.spawn unsets environment variables whose value is nil
+fails:Process.spawn closes STDERR in the child if :err => :close

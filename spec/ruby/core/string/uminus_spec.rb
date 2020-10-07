@@ -6,14 +6,14 @@ describe 'String#-@' do
     output = -input
 
     output.should equal(input)
-    output.frozen?.should == true
+    output.should.frozen?
   end
 
   it 'returns a frozen copy if the String is not frozen' do
     input  = 'foo'
     output = -input
 
-    output.frozen?.should == true
+    output.should.frozen?
     output.should_not equal(input)
     output.should == 'foo'
   end
@@ -67,6 +67,13 @@ describe 'String#-@' do
 
       (-dynamic).should equal("this string is frozen".freeze)
       (-dynamic).should equal(-"this string is frozen".freeze)
+    end
+  end
+
+  ruby_version_is "3.0" do
+    it "interns the provided string if it is frozen" do
+      dynamic = "this string is unique and frozen #{rand}".freeze
+      (-dynamic).should equal(dynamic)
     end
   end
 end

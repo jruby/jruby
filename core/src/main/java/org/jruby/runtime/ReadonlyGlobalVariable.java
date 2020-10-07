@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -41,6 +42,6 @@ public class ReadonlyGlobalVariable extends GlobalVariable {
 
     @Override
     public IRubyObject set(IRubyObject value) {
-        throw runtime.newNameError(name() + " is a read-only variable", name());
+        throw runtime.newNameError(name() + " is a read-only variable", runtime.newSymbol(name()));
     }
 }

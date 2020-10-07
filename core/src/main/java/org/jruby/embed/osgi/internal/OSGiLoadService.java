@@ -50,7 +50,7 @@ public class OSGiLoadService extends LoadService {
 
     public static final String OSGI_BUNDLE_CLASSPATH_SCHEME = "osgibundle:/";
 
-    public static LoadServiceCreator OSGI_DEFAULT = runtime -> new OSGiLoadService(runtime);
+    public static final LoadServiceCreator OSGI_DEFAULT = runtime -> new OSGiLoadService(runtime);
 
     /**
      * Default constructor

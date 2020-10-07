@@ -16,6 +16,7 @@ import org.objectweb.asm.tree.LabelNode;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -34,7 +35,7 @@ import static org.jruby.util.CodegenUtils.sig;
  */
 public class DynamicScopeGenerator {
     private static final NonBlockingHashMapLong<MethodHandle> specializedFactories = new NonBlockingHashMapLong<>();
-    private static ClassDefiningClassLoader CDCL = new OneShotClassLoader(Ruby.getClassLoader());
+    private static final ClassDefiningClassLoader CDCL = new OneShotClassLoader(Ruby.getClassLoader());
 
     public static final String SCOPES_PACKAGE = "org.jruby.runtime.scopes";
     public static final String SCOPES_PATH = SCOPES_PACKAGE.replaceAll("\\.", "/");
@@ -114,7 +115,9 @@ public class DynamicScopeGenerator {
 
             public Class<?> defineClass(String name, byte[] bytes) {
                 definedClasses.put(name, bytes);
-                return super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
+                Class<?> cls = super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
+                resolveClass(cls);
+                return cls;
             }
         };
 
@@ -126,11 +129,10 @@ public class DynamicScopeGenerator {
         new File(targetPath + "/" + SCOPES_PATH).mkdirs();
 
         definedClasses.forEach((key, value) -> {
-            try {
-                FileOutputStream fos = new FileOutputStream(targetPath + "/" + key.replaceAll("\\.", "/") + ".class");
+            try (FileOutputStream fos = new FileOutputStream(targetPath + "/" + key.replaceAll("\\.", "/") + ".class")) {
                 fos.write(value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
         });
     }

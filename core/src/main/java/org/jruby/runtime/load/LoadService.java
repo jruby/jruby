@@ -577,7 +577,7 @@ public class LoadService {
                 classLoader = runtime.getInstanceConfig().getLoader();
             }
 
-            Object libObject = classLoader.loadClass(className).newInstance();
+            Object libObject = classLoader.loadClass(className).getConstructor().newInstance();
             if (libObject instanceof Library) {
                 Library library = (Library)libObject;
                 library.load(runtime, false);
@@ -1163,7 +1163,7 @@ public class LoadService {
     @Deprecated
     public class ScriptClassSearcher implements LoadSearcher {
         public class ScriptClassLibrary implements Library {
-            private Script script;
+            private final Script script;
 
             public ScriptClassLibrary(Script script) {
                 this.script = script;

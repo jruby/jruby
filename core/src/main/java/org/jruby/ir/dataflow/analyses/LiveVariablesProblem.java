@@ -1,8 +1,7 @@
 package org.jruby.ir.dataflow.analyses;
 
-import org.jruby.ir.IREvalScript;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -12,10 +11,10 @@ import java.util.*;
 public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, LiveVariableNode> {
     public static final String NAME = "Live Variables Analysis";
 
-    public LiveVariablesProblem(IRScope scope) {
+    public LiveVariablesProblem(FullInterpreterContext fic) {
         super(DataFlowProblem.DF_Direction.BACKWARD);
         varsLiveOnScopeExit = new ArrayList<LocalVariable>();
-        setup(scope);
+        setup(fic);
     }
 
     public Integer getDFVar(Variable v) {
@@ -56,7 +55,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
      */
     public Collection<LocalVariable> getLocalVarsLiveOnScopeEntry() {
         List<LocalVariable> liveVars = new ArrayList<LocalVariable>();
-        BitSet liveIn = getFlowGraphNode(getScope().getCFG().getEntryBB()).getLiveOutBitSet();
+        BitSet liveIn = getFlowGraphNode(getFIC().getCFG().getEntryBB()).getLiveOutBitSet();
 
         for (int i = 0; i < liveIn.size(); i++) {
             if (!liveIn.get(i)) continue;
@@ -109,8 +108,8 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     }
 
     /* ----------- Private Interface ------------ */
-    private HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
-    private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
-    private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
-    private Collection<LocalVariable> varsLiveOnScopeExit;
+    private final HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
+    private final HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
+    private final HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
+    private final Collection<LocalVariable> varsLiveOnScopeExit;
 }

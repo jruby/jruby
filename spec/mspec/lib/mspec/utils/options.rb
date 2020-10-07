@@ -399,7 +399,7 @@ class MSpecOptions
       end
       def obj.load
         file = MSpec.file
-        STDERR.print "\n#{file.ljust(@width)}"
+        STDERR.print "\n#{file.ljust(@width)}\n"
       end
       MSpec.register :start, obj
       MSpec.register :load, obj
@@ -470,8 +470,6 @@ class MSpecOptions
   end
 
   def all
-    # Generated with:
-    # puts File.read(__FILE__).scan(/def (\w+).*\n\s*on\(/)
     configure {}
     targets
     formatters
@@ -484,6 +482,7 @@ class MSpecOptions
     repeat
     verbose
     interrupt
+    timeout
     verify
     action_filters
     actions

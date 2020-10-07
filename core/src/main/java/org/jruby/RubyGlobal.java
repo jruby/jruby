@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -58,7 +59,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
-import org.jruby.util.Numeric;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
@@ -127,8 +127,8 @@ public class RubyGlobal {
         globals.define("$0", d, GLOBAL);
 
         // Version information:
-        IRubyObject version = null;
-        IRubyObject patchlevel = null;
+        IRubyObject version;
+        IRubyObject patchlevel;
         IRubyObject release = runtime.newString(Constants.COMPILE_DATE);
         release.setFrozen(true);
         IRubyObject platform = runtime.newString(Constants.PLATFORM);
@@ -334,7 +334,7 @@ public class RubyGlobal {
 
             // try typical stdio stream and channel types
             int fileno = -1;
-            Channel channel = null;
+            Channel channel;
 
             if (stream instanceof Channel) {
                 channel = (Channel) stream;
@@ -450,7 +450,7 @@ public class RubyGlobal {
 
         @JRubyMethod
         public RubyHash to_h(ThreadContext context, Block block){
-            RubyHash h = to_hash();
+            RubyHash h = to_hash(context);
             return block.isGiven() ? h.to_h_block(context, block) : h;
         }
 
@@ -691,12 +691,12 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return Helpers.getBackref(runtime, runtime.getCurrentContext());
+            return Helpers.getBackref(runtime.getCurrentContext());
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            Helpers.setBackref(runtime, runtime.getCurrentContext(), value);
+            Helpers.setBackref(runtime.getCurrentContext(), value);
             return value;
         }
     }

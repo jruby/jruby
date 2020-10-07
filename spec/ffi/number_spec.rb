@@ -142,6 +142,7 @@ describe "Function with primitive integer arguments" do
     end
   end
 end
+# range checks are not yet supported on TruffleRuby
 describe "Integer parameter range checking" do
   [ 128, -129 ].each do |i|
     it ":char call(:char (#{i}))" do
@@ -173,7 +174,7 @@ describe "Integer parameter range checking" do
       expect { expect(LibTest.ret_u32(i)).to eq(i) }.to raise_error(Exception) { |error| expect([RSpec::Expectations::ExpectationNotMetError, RangeError]).to be_include(error.class) }
     end
   end
-end
+end if RUBY_ENGINE != "truffleruby"
 describe "Three different size Integer arguments" do
   TYPE_MAP = {
     's8' => :char, 'u8' => :uchar, 's16' => :short, 'u16' => :ushort,

@@ -35,16 +35,16 @@ ruby_version_is "2.6" do
         g = proc { |x| x + x }
 
         (f << g).is_a?(Proc).should == true
-        (f << g).lambda?.should == false
+        (f << g).should_not.lambda?
       end
 
-      ruby_version_is(''...'2.8') do
+      ruby_version_is(''...'3.0') do
         it "is a Proc when other is lambda" do
           f = proc { |x| x * x }
           g = -> x { x + x }
 
           (f << g).is_a?(Proc).should == true
-          (f << g).lambda?.should == false
+          (f << g).should_not.lambda?
         end
 
         it "is a lambda when self is lambda" do
@@ -52,19 +52,19 @@ ruby_version_is "2.6" do
           g = proc { |x| x + x }
 
           (f << g).is_a?(Proc).should == true
-          (f << g).lambda?.should == true
+          (f << g).should.lambda?
         end
       end
 
-      ruby_version_is('2.8') do
+      ruby_version_is('3.0') do
         it "is a lambda when parameter is lambda" do
           f = -> x { x * x }
           g = proc { |x| x + x }
           lambda_proc = -> x { x }
 
           (f << g).is_a?(Proc).should == true
-          (f << g).lambda?.should == false
-          (f << lambda_proc).lambda?.should == true
+          (f << g).should_not.lambda?
+          (f << lambda_proc).should.lambda?
         end
       end
 
@@ -118,7 +118,7 @@ ruby_version_is "2.6" do
         g = proc { |x| x + x }
 
         (f >> g).is_a?(Proc).should == true
-        (f >> g).lambda?.should == false
+        (f >> g).should_not.lambda?
       end
 
       it "is a Proc when other is lambda" do
@@ -126,7 +126,7 @@ ruby_version_is "2.6" do
         g = -> x { x + x }
 
         (f >> g).is_a?(Proc).should == true
-        (f >> g).lambda?.should == false
+        (f >> g).should_not.lambda?
       end
 
       it "is a lambda when self is lambda" do
@@ -134,7 +134,7 @@ ruby_version_is "2.6" do
         g = proc { |x| x + x }
 
         (f >> g).is_a?(Proc).should == true
-        (f >> g).lambda?.should == true
+        (f >> g).should.lambda?
       end
 
       it "may accept multiple arguments" do

@@ -9,18 +9,19 @@ import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyObject;
 import org.jruby.RubyRuntimeAdapter;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.test.TestRubyBase;
+import org.jruby.test.Base;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-public class TestRaiseException extends TestRubyBase {
+public class TestRaiseException extends Base {
 
     public void testBacktrace() {
         IRubyObject ex = runtime.evalScriptlet("ex = nil; " +
@@ -361,6 +362,57 @@ public class TestRaiseException extends TestRubyBase {
         public IRubyObject raise_from_nil(ThreadContext context) {
             throw RaiseException.from(context.runtime, context.runtime.getZeroDivisionError(), "raise_from_nil", context.nil);
         }
+    }
 
+    public void testNewRaiseExceptioin() {
+        Ruby ruby = Ruby.newInstance();
+
+        try {
+            throw ruby.newRaiseException(ruby.getException(), "blah");
+        } catch (Exception e) {
+            assertEquals("(Exception) blah", e.getMessage());
+        }
+
+        try {
+            throw ruby.newRaiseException(ruby.getException(), "blah");
+        } catch (Exception e) {
+            assertEquals("(Exception) blah", e.getMessage());
+        }
+
+        RubyArray backtrace = ruby.newEmptyArray();
+        try {
+            throw RaiseException.from(ruby, ruby.getException(), "blah", backtrace);
+        } catch (Exception e) {
+            assertEquals("(Exception) blah", e.getMessage());
+            assertEquals(backtrace, e.getException().backtrace());
+        }
+
+        RubyString message = ruby.newString("blah");
+        try {
+            throw RaiseException.from(ruby, ruby.getException(), message);
+        } catch (Exception e) {
+            assertEquals("(Exception) blah", e.getMessage());
+            assertEquals(message, e.getException().message(ruby.getCurrentContext()));
+        }
+
+        try {
+            throw RaiseException.from(ruby, "Exception", "blah");
+        } catch (Exception e) {
+            assertEquals("(Exception) blah", e.getMessage());
+        }
+
+        try {
+            throw RaiseException.from(ruby, "Exception", "blah", backtrace);
+        } catch (Exception e) {
+            assertEquals("(Exception) blah", e.getMessage());
+            assertEquals(backtrace, e.getException().backtrace());
+        }
+
+        try {
+            throw RaiseException.from(ruby, "Exception", message);
+        } catch (Exception e) {
+            assertEquals("(Exception) blah", e.getMessage());
+            assertEquals(message, e.getException().message(ruby.getCurrentContext()));
+        }
     }
 }

@@ -35,6 +35,7 @@
 
 package org.jruby;
 
+import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -58,7 +59,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 
-import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
@@ -238,6 +238,55 @@ public class RubyNumeric extends RubyObject {
     }
 
     /**
+     * Convert the given value into an unsigned long, encoded as a signed long.
+     *
+     * Because we can't represent an unsigned long directly in Java, callers of this code must deal with the signed
+     * long bits accordingly.
+     *
+     * @param arg the argument to convert
+     * @return an unsigned long encoded as a signed long, or raise an error if out of range
+     */
+    public static long num2ulong(IRubyObject arg) {
+        // loop until we have a Numeric
+        while (true) {
+            if (arg instanceof RubyFixnum) {
+                return ((RubyFixnum) arg).value;
+            } else if (arg instanceof RubyBignum) {
+                return RubyBignum.big2ulong((RubyBignum) arg);
+            } else if (arg instanceof RubyFloat) {
+                return float2ulong((RubyFloat) arg);
+            } else {
+                if (arg.isNil()) {
+                    throw arg.getRuntime().newTypeError("no implicit conversion from nil to integer");
+                }
+                arg = arg.convertToInteger();
+                // loop again
+            }
+        }
+    }
+
+    /**
+     * Convert the given RubyFloat into an unsigned long, encoded as a signed long.
+     *
+     * Because we can't represent an unsigned long directly in Java, callers of this code must deal with the signed
+     * long bits accordingly.
+     *
+     * @param flt the argument to convert
+     * @return an unsigned long encoded as a signed long, or raise an error if out of range
+     */
+    public static long float2ulong(RubyFloat flt) {
+        final double aFloat = flt.value;
+
+        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) 0) {
+            BigDecimal bd = BigDecimal.valueOf(aFloat);
+            BigInteger bi = bd.toBigInteger();
+            return bi.longValue();
+        }
+        // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
+        throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
+    }
+
+    /**
      * MRI: macro DBL2NUM
      */
     public static IRubyObject dbl2num(Ruby runtime, double val) {
@@ -278,13 +327,13 @@ public class RubyNumeric extends RubyObject {
             case FLOAT:
                 return ((RubyFloat) arg).value;
             case FIXNUM:
-                if (context.sites.Fixnum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyFixnum) arg).value;
+                if (context.sites.Fixnum.to_f.isBuiltin(arg)) return ((RubyFixnum) arg).value;
                 break;
             case BIGNUM:
-                if (context.sites.Bignum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyBignum) arg).getDoubleValue();
+                if (context.sites.Bignum.to_f.isBuiltin(arg)) return ((RubyBignum) arg).getDoubleValue();
                 break;
             case RATIONAL:
-                if (context.sites.Rational.to_f.isBuiltin(getMetaClass(arg))) return ((RubyRational) arg).getDoubleValue();
+                if (context.sites.Rational.to_f.isBuiltin(arg)) return ((RubyRational) arg).getDoubleValue();
                 break;
             case STRING:
             case NIL:
@@ -570,7 +619,7 @@ public class RubyNumeric extends RubyObject {
             @Override
             public IRubyObject call(ThreadContext context, JavaSites.CheckedSites site, IRubyObject obj, boolean recur) {
                 if (recur) {
-                    throw context.runtime.newNameError(str(context.runtime, "recursive call to ", ids(context.runtime, site.methodName)), site.methodName);
+                    throw context.runtime.newNameError(str(context.runtime, "recursive call to ", ids(context.runtime, site.methodName)), context.runtime.newSymbol(site.methodName));
                 }
                 return getMetaClass(x).finvokeChecked(context, x, site, obj);
             }
@@ -981,7 +1030,7 @@ public class RubyNumeric extends RubyObject {
                 return RubyArithmeticSequence.newArithmeticSequence(context, this, "step", args, this, to, step, context.fals);
             }
 
-            return enumeratorizeWithSize(context, this, "step", args, stepSizeFn(this, args));
+            return enumeratorizeWithSize(context, this, "step", args, RubyNumeric::stepSize);
         }
 
         IRubyObject[] newArgs = new IRubyObject[2];
@@ -1071,10 +1120,8 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: num_step_negative_p
     private static boolean numStepNegative(ThreadContext context, Ruby runtime, IRubyObject num) {
-        if (num instanceof RubyInteger) {
-            if (context.sites.Integer.op_lt.isBuiltin(runtime.getInteger())) {
-                return ((RubyInteger) num).isNegative();
-            }
+        if (num instanceof RubyInteger && context.sites.Integer.op_lt.isBuiltin(num)) {
+            return ((RubyInteger) num).isNegative();
         }
 
         RubyFixnum zero = RubyFixnum.zero(runtime);
@@ -1267,13 +1314,17 @@ public class RubyNumeric extends RubyObject {
         return (RubyNumeric) result;
     }
 
-    private SizeFn stepSizeFn(final IRubyObject from, final IRubyObject[] args) {
-        // MRI: num_step_size
-        return (context, args1) -> {
-            IRubyObject[] newArgs = new IRubyObject[2];
-            scanStepArgs(context, args1, newArgs);
-            return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
-        };
+    /**
+     * A step size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * MRI: num_step_size
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject stepSize(ThreadContext context, RubyNumeric from, IRubyObject[] args) {
+        IRubyObject[] newArgs = new IRubyObject[2];
+        from.scanStepArgs(context, args, newArgs);
+        return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
     }
     
     // ruby_float_step
@@ -1357,7 +1408,10 @@ public class RubyNumeric extends RubyObject {
      */
     protected final IRubyObject op_num_equal(ThreadContext context, IRubyObject other) {
         // it won't hurt fixnums
-        if (this == other)  return context.tru;
+        if (this == other) return context.tru;
+
+        // nil is not equal to any number
+        if (this.isNil()) return context.fals;
 
         return numFuncall(context, other, sites(context).op_equals, this);
     }

@@ -18,7 +18,7 @@ public class IGVDumper {
     static final int PORT = 4444;
     Socket socket;
     PrintStream writer;
-    String baseLabel;
+    final String baseLabel;
 
     public IGVDumper(String baseLabel) {
         this.baseLabel = baseLabel;

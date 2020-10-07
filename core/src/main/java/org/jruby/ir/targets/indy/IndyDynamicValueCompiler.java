@@ -14,7 +14,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyDynamicValueCompiler implements DynamicValueCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
     private final DynamicValueCompiler normalCompiler;
 
     public IndyDynamicValueCompiler(IRBytecodeAdapter compiler) {

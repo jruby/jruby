@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
 
@@ -114,9 +115,9 @@ public class PosixShim {
             }
 
             return written;
-        } catch (IOException ioe) {
-            setErrno(Helpers.errnoFromException(ioe));
-            error = ioe;
+        }  catch (Exception e) {
+            setErrno(Helpers.errnoFromException(e));
+            error = e;
             return -1;
         }
     }
@@ -351,7 +352,7 @@ public class PosixShim {
         private int __W_EXITCODE(int ret, int sig) { return (ret << 8) | sig; }
         private int __W_STOPCODE(int sig) { return (sig << 8) | 0x7f; }
         private static int __W_CONTINUED = 0xffff;
-        private static int __WCOREFLAG = 0x80;
+        private static final int __WCOREFLAG = 0x80;
 
         /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
         private int __WEXITSTATUS(long status) { return (int)((status & 0xff00) >> 8); }
@@ -450,8 +451,9 @@ public class PosixShim {
             setErrno(Errno.ELOOP);
         } catch (ResourceException ex) {
             throw ex.newRaiseException(runtime);
-        } catch (IOException ex) {
-            throw runtime.newIOErrorFromException(ex);
+        } catch (Exception ex) {
+            Helpers.throwErrorFromException(runtime, ex);
+            // not reached
         }
         return null;
     }
@@ -654,7 +656,7 @@ public class PosixShim {
      */
     public Throwable error;
 
-    private ThreadLocal<Errno> errno = new ThreadLocal<>();
+    private final ThreadLocal<Errno> errno = new ThreadLocal<>();
 
     /**
      * The recommended error message, if any.

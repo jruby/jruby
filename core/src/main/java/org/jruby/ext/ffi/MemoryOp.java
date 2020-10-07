@@ -23,6 +23,7 @@ abstract class MemoryOp {
     public static final MemoryOp UINT64 = new Unsigned64();
     public static final MemoryOp FLOAT32 = new Float32();
     public static final MemoryOp FLOAT64 = new Float64();
+    public static final MemoryOp FLOAT128 = new Float128();
     public static final MemoryOp INT16SWAP = new Signed16Swapped();
     public static final MemoryOp UINT16SWAP = new Unsigned16Swapped();
     public static final MemoryOp INT32SWAP = new Signed32Swapped();
@@ -59,6 +60,8 @@ abstract class MemoryOp {
                 return FLOAT32;
             case DOUBLE:
                 return FLOAT64;
+//            case LONGDOUBLE:
+//                return FLOAT128;
             case LONG:
                 return Platform.getPlatform().longSize() == 32
                         ? getMemoryOp(NativeType.INT, order) : getMemoryOp(NativeType.LONG_LONG, order);
@@ -280,6 +283,16 @@ abstract class MemoryOp {
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
             return runtime.newFloat(io.getDouble(offset));
+        }
+    }
+
+    static final class Float128 extends PrimitiveOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            return; // not implemented
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return runtime.newFloat(0); // not implemented
         }
     }
 

@@ -280,11 +280,11 @@ public class JavaEmbedUtils {
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, double value) {
-        return javaToRuby(runtime, new Double(value));
+        return javaToRuby(runtime, Double.valueOf(value));
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, float value) {
-        return javaToRuby(runtime, new Float(value));
+        return javaToRuby(runtime, Float.valueOf(value));
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, int value) {

@@ -311,3 +311,12 @@ describe "IO.copy_stream" do
 
   end
 end
+
+describe "IO.copy_stream" do
+  it "does not use buffering when writing to STDOUT" do
+    IO.popen([*ruby_exe, fixture(__FILE__ , "copy_in_out.rb")], "r+") do |io|
+      io.write("bar")
+      io.read(3).should == "bar"
+    end
+  end
+end

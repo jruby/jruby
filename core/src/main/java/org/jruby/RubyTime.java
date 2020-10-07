@@ -67,6 +67,7 @@ import org.jruby.util.time.TimeArgs;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.time.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -250,7 +251,6 @@ public class RubyTime extends RubyObject {
                         return null;
                     }
                     n *= 3600;
-                    dtz = getTimeZoneWithOffset(runtime, "", n * 1000);
                     break;
                 case 3:
                     if (tmpBytes.toByteString().equals("UTC")) {
@@ -1425,7 +1425,7 @@ public class RubyTime extends RubyObject {
                 BigInteger numerator = rational.getNumerator().getBigIntegerValue();
                 BigInteger denominator = rational.getDenominator().getBigIntegerValue();
 
-                BigDecimal nanosBD = new BigDecimal(numerator).divide(new BigDecimal(denominator), 50, BigDecimal.ROUND_HALF_UP).multiply(ONE_BILLION_BD);
+                BigDecimal nanosBD = new BigDecimal(numerator).divide(new BigDecimal(denominator), 50, RoundingMode.HALF_UP).multiply(ONE_BILLION_BD);
                 BigInteger millis = nanosBD.divide(ONE_MILLION_BD).toBigInteger();
                 BigInteger nanos = nanosBD.remainder(ONE_MILLION_BD).toBigInteger();
 
@@ -2022,8 +2022,8 @@ public class RubyTime extends RubyObject {
         if (zoneLocalTime(context, zone, time)) return time;
 
         if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
-            if ((zone = time.findTimezone(context, zone)).isNil()) invalidUTCOffset(context.runtime);
-            if (!zoneLocalTime(context, zone, time)) invalidUTCOffset(context.runtime);
+            if ((zone = time.findTimezone(context, zone)).isNil()) throw invalidUTCOffset(context.runtime);
+            if (!zoneLocalTime(context, zone, time)) throw invalidUTCOffset(context.runtime);
             return time;
         } else if (dtz == DateTimeZone.UTC) {
             return time.gmtime();

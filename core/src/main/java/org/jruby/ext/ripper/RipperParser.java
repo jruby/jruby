@@ -2780,7 +2780,7 @@ states[266] = new RipperParserState() {
 };
 states[267] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern(">"), ((IRubyObject)yyVals[0+yyTop]));
+                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
     return yyVal;
   }
@@ -2788,7 +2788,7 @@ states[267] = new RipperParserState() {
 states[268] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                      p.warning("comparison '" + ((IRubyObject)yyVals[-1+yyTop]) + "' after comparison");
-                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern(">"), ((IRubyObject)yyVals[0+yyTop]));
+                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3236,7 +3236,7 @@ states[351] = new RipperParserState() {
 };
 states[352] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new Integer((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
+                    yyVal = Integer.valueOf((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
                     p.setInDef(false);
                     p.setIsInClass(false);
                     p.pushLocalScope();

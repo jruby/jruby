@@ -18,7 +18,7 @@ IMPLS = {
 MSPEC = ARGV.delete('--mspec')
 
 CHECK_LAST_MERGE = ENV['CHECK_LAST_MERGE'] != 'false'
-TEST_TRUNK = ENV['TEST_TRUNK'] != 'false'
+TEST_MASTER = ENV['TEST_MASTER'] != 'false'
 
 MSPEC_REPO = File.expand_path("../../..", __FILE__)
 raise MSPEC_REPO if !Dir.exist?(MSPEC_REPO) or !Dir.exist?("#{MSPEC_REPO}/.git")
@@ -34,6 +34,9 @@ NOW = Time.now
 BRIGHT_RED = "\e[31;1m"
 BRIGHT_YELLOW = "\e[33;1m"
 RESET = "\e[0m"
+
+# git filter-branch --subdirectory-filter works fine for our use case
+ENV['FILTER_BRANCH_SQUELCH_WARNING'] = '1'
 
 class RubyImplementation
   attr_reader :name
@@ -154,6 +157,13 @@ def rebase_commits(impl)
   end
 end
 
+def new_commits?(impl)
+  Dir.chdir(SOURCE_REPO) do
+    diff = `git diff master #{impl.rebased_branch}`
+    !diff.empty?
+  end
+end
+
 def test_new_specs
   require "yaml"
   Dir.chdir(SOURCE_REPO) do
@@ -172,7 +182,7 @@ def test_new_specs
 
     run_test[min_version]
     run_test[max_version]
-    run_test["trunk"] if TEST_TRUNK
+    run_test["ruby-master"] if TEST_MASTER
   end
 end
 
@@ -189,8 +199,8 @@ end
 def fast_forward_master(impl)
   Dir.chdir(SOURCE_REPO) do
     sh "git", "checkout", "master"
-    sh "git", "merge", "--ff-only", "#{impl.name}-rebased"
-    sh "git", "branch", "--delete", "#{impl.name}-rebased"
+    sh "git", "merge", "--ff-only", impl.rebased_branch
+    sh "git", "branch", "--delete", impl.rebased_branch
   end
 end
 
@@ -209,10 +219,15 @@ def main(impls)
     update_repo(impl)
     filter_commits(impl)
     rebase_commits(impl)
-    test_new_specs
-    verify_commits(impl)
-    fast_forward_master(impl)
-    check_ci
+    if new_commits?(impl)
+      test_new_specs
+      verify_commits(impl)
+      fast_forward_master(impl)
+      check_ci
+    else
+      STDERR.puts "#{BRIGHT_YELLOW}No new commits#{RESET}"
+      fast_forward_master(impl)
+    end
   end
 end
 

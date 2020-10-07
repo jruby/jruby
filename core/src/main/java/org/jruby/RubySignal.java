@@ -47,7 +47,7 @@ public class RubySignal {
 
     private final static SignalFacade initSignalFacade() {
         try {
-            return org.jruby.util.SunSignalFacade.class.newInstance();
+            return org.jruby.util.SunSignalFacade.class.getConstructor().newInstance();
         } catch (Throwable e) {
             return new NoFunctionalitySignalFacade();
         }
@@ -79,7 +79,8 @@ public class RubySignal {
         HashMap<String, Integer> signals = new HashMap<>();
         HashMap<Integer, String> signums = new HashMap<>();
 
-        for (Signal s : Signal.values()) {
+        Signal[] values = Signal.values();
+        for (Signal s : values) {
             // Skip signals not defined on this platform
             if (!s.defined()) continue;
 
@@ -91,8 +92,10 @@ public class RubySignal {
 
             // replace CLD with CHLD value
             int signo = s.intValue();
-            if (s == Signal.SIGCLD)
-                signo = Signal.SIGCHLD.intValue();
+            if (s == Signal.SIGCHLD || s == Signal.SIGCLD) {
+                // skip these because Ruby does them weirdly
+                continue;
+            }
 
             // omit unsupported signals
             if (signo >= 20000) continue;
@@ -104,6 +107,22 @@ public class RubySignal {
         // We always define KILL as 9 on Windows
         if (Platform.IS_WINDOWS) {
             signals.put("KILL", 9);
+        }
+
+        // map SIGCLD and SIGCHLD like Ruby
+        int CHLD;
+        if (Signal.SIGCLD.defined()) {
+            CHLD = Signal.SIGCLD.intValue();
+        } else if (Signal.SIGCHLD.defined()) {
+            CHLD = Signal.SIGCHLD.intValue();
+        } else {
+            CHLD = 0;
+        }
+
+        if (CHLD != 0) {
+            signals.put("CLD", CHLD);
+            signals.put("CHLD", CHLD);
+            signums.put(CHLD, "CHLD");
         }
 
         SIGNAME_MAP = Collections.unmodifiableMap(signals);

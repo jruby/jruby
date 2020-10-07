@@ -49,8 +49,10 @@ import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.AddressInfo;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.INAddr;
+import jnr.constants.platform.IP;
 import jnr.constants.platform.IPProto;
 import jnr.constants.platform.NameInfo;
 import jnr.constants.platform.ProtocolFamily;
@@ -58,6 +60,7 @@ import jnr.constants.platform.Shutdown;
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
+import jnr.constants.platform.SocketMessage;
 import jnr.constants.platform.TCP;
 import jnr.netdb.Protocol;
 import jnr.unixsocket.UnixSocketAddress;
@@ -103,44 +106,43 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, Shutdown.class);
         runtime.loadConstantSet(rb_mConstants, TCP.class);
         runtime.loadConstantSet(rb_mConstants, NameInfo.class);
+        runtime.loadConstantSet(rb_mConstants, SocketMessage.class);
 
         // this value seems to be hardcoded in MRI to 5 when not defined, but
         // it is 128 on OS X. We use 128 for now until we can get it added to
         // jnr-constants.
         rb_mConstants.setConstant("SOMAXCONN", RubyFixnum.newFixnum(runtime, 128));
+        
+        // for all platforms
+        rb_mConstants.setConstant("IPPORT_RESERVED", RubyFixnum.newFixnum(runtime, 1024));
+        rb_mConstants.setConstant("IPPORT_USERRESERVED", RubyFixnum.newFixnum(runtime, 5000));
 
-        // mandatory constants we haven't implemented
-        rb_mConstants.setConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
-        rb_mConstants.setConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
-        rb_mConstants.setConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
-        rb_mConstants.setConstant("MSG_WAITALL", runtime.newFixnum(MSG_WAITALL));
+        rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(AddressInfo.AI_PASSIVE));
+        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(AddressInfo.AI_CANONNAME));
+        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(AddressInfo.AI_NUMERICHOST));
+        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(AddressInfo.AI_ALL));
+        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(AddressInfo.AI_V4MAPPED_CFG));
+        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(AddressInfo.AI_ADDRCONFIG));
+        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(AddressInfo.AI_V4MAPPED));
+        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(AddressInfo.AI_NUMERICSERV));
 
-        rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
-        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(2));
-        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(4));
-        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(256));
-        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(512));
-        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(1024));
-        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(2048));
-        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(4096));
-
-        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(1536));
-        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(5127));
+        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(AddressInfo.AI_DEFAULT));
+        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(AddressInfo.AI_MASK));
 
         // More constants needed by specs
-        rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
-        rb_mConstants.setConstant("IP_MULTICAST_LOOP", runtime.newFixnum(11));
-        rb_mConstants.setConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(12));
-        rb_mConstants.setConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(20));
-        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(1));
-        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(1));
+        rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(IP.IP_MULTICAST_TTL.value()));
+        rb_mConstants.setConstant("IP_MULTICAST_LOOP", runtime.newFixnum(IP.IP_MULTICAST_LOOP.value()));
+        rb_mConstants.setConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(IP.IP_ADD_MEMBERSHIP.value()));
+        rb_mConstants.setConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(IP.IP_MAX_MEMBERSHIPS.value()));
+        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(IP.IP_DEFAULT_MULTICAST_LOOP));
+        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(IP.IP_DEFAULT_MULTICAST_TTL));
 
         rb_cSocket.includeModule(rb_mConstants);
 
         rb_cSocket.defineAnnotatedMethods(RubySocket.class);
     }
 
-    private static ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubySocket(runtime, klass);
@@ -717,11 +719,6 @@ public class RubySocket extends RubyBasicSocket {
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");
     private static final Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
     //private static final Pattern PERM_DENIED_PATTERN = Pattern.compile("[Pp]ermission.*denied");
-
-    public static final int MSG_OOB = 0x1;
-    public static final int MSG_PEEK = 0x2;
-    public static final int MSG_DONTROUTE = 0x4;
-    public static final int MSG_WAITALL = 0x100;
 
     protected AddressFamily soDomain;
     protected ProtocolFamily soProtocolFamily;

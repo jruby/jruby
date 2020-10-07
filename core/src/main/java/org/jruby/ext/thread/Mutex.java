@@ -49,7 +49,7 @@ import org.jruby.runtime.marshal.DataType;
  */
 @JRubyClass(name = "Mutex")
 public class Mutex extends RubyObject implements DataType {
-    ReentrantLock lock = new ReentrantLock();
+    final ReentrantLock lock = new ReentrantLock();
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {

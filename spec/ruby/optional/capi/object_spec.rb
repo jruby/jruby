@@ -675,9 +675,9 @@ describe "CApiObject" do
     ruby_version_is ''...'2.7' do
       it "marks the object passed as tainted" do
         obj = ""
-        obj.tainted?.should == false
+        obj.should_not.tainted?
         @o.rb_obj_taint(obj)
-        obj.tainted?.should == true
+        obj.should.tainted?
       end
 
       it "raises a FrozenError if the object passed is frozen" do
@@ -820,6 +820,15 @@ describe "CApiObject" do
       end
     end
 
+    describe "rb_ivar_count" do
+      it "returns the number of instance variables" do
+        obj = Object.new
+        @o.rb_ivar_count(obj).should == 0
+        obj.instance_variable_set(:@foo, 42)
+        @o.rb_ivar_count(obj).should == 1
+      end
+    end
+
     describe "rb_ivar_get" do
       it "returns the instance variable on an object" do
         @o.rb_ivar_get(@test, :@foo).should == @test.instance_eval { @foo }
@@ -831,6 +840,7 @@ describe "CApiObject" do
 
       it "returns nil if the instance variable has not been initialized and is not a valid Ruby name" do
         @o.rb_ivar_get(@test, :bar).should == nil
+        @o.rb_ivar_get(@test, :mesg).should == nil
       end
 
       it 'returns the instance variable when it is not a valid Ruby name' do
@@ -866,6 +876,7 @@ describe "CApiObject" do
 
       it "does not throw an error if the instance variable is not a valid Ruby name" do
         @o.rb_ivar_defined(@test, :bar).should == false
+        @o.rb_ivar_defined(@test, :mesg).should == false
       end
     end
 

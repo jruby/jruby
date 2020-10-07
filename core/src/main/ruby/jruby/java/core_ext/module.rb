@@ -17,16 +17,16 @@ class Module
         unless JavaUtilities.valid_java_identifier?(import_class)
           raise ArgumentError.new "not a valid Java identifier: #{import_class}"
         end
-        raise ArgumentError.new "must use jvm-style name: #{import_class}" if import_class.include?('::')
+        raise ArgumentError.new "must use Java style name: #{import_class}" if import_class.include?('::')
         import_class = JavaUtilities.get_proxy_class(import_class)
+      when Java::JavaPackage
+        raise ArgumentError.new "java_import does not work for Java packages (try include_package instead)"
       when Module
-        if import_class.respond_to? "java_class"
-          # ok, it's a proxy
-        else
+        unless import_class.respond_to? :java_class
           raise ArgumentError.new "not a Java class or interface: #{import_class}"
         end
       else
-        raise ArgumentError.new "invalid Java class or interface: #{import_class}"
+        raise ArgumentError.new "invalid Java class or interface: #{import_class} (of type #{import_class.class})"
       end
 
       java_class = import_class.java_class
@@ -38,8 +38,8 @@ class Module
         # package can be nil if it's default or no package was defined by the classloader
         if package
           package_name = package.name
-        elsif java_class.canonical_name =~ /(.*)\.[^.]$/
-          package_name = $1
+        elsif m = java_class.canonical_name.match(/(.*)\.[^.]$/)
+          package_name = m[1]
         else
           package_name = ""
         end
@@ -49,17 +49,19 @@ class Module
         constant = class_name
 
         # Inner classes are separated with $, get last element
-        if constant =~ /\$([^$])$/
-          constant = $1
+        if m = constant.match(/\$([^$])$/)
+          constant = m[1]
         end
       end
 
-      unless constant =~ /^[A-Z].*/
-        raise ArgumentError.new "cannot import class `" + java_class.name + "' as `" + constant + "'"
-      end
-
-      if !const_defined?(constant) || const_get(constant) != import_class
-        const_set(constant, import_class)
+      begin
+        if !const_defined?(constant) || const_get(constant) != import_class
+          const_set(constant, import_class)
+        end
+      rescue NameError => e
+        ex = e.exception("cannot import Java class #{java_class.name.inspect} as `#{constant}' : #{e.message}")
+        ex.set_backtrace e.backtrace
+        raise ex
       end
 
       import_class

@@ -4,8 +4,8 @@ package org.jruby.util;
  * Simple key-value pair object.
  */
 public class KeyValuePair<K,V> {
-    private K key;
-    private V value;
+    private final K key;
+    private final V value;
 
     public KeyValuePair(K key, V value) {
         this.key = key;

@@ -61,14 +61,14 @@ public class HandleFactory {
         Class handleClass;
         try {
             handleClass = classLoader.loadClass(name);
-            return (Handle)handleClass.newInstance();
+            return (Handle)handleClass.getConstructor().newInstance();
         } catch (Exception e) {
         }
 
         handleClass = createHandleClass(classLoader, method, name);
         
         try {
-            return (Handle)handleClass.newInstance();
+            return (Handle)handleClass.getConstructor().newInstance();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -256,14 +256,10 @@ public class HandleFactory {
                 for (Method method : klass.getMethods()) {
                     String name = createHandleName(method);
                     byte[] bytes = createHandleBytes(method, name);
-                    FileOutputStream fos = null;
-                    try {
-                        fos = new FileOutputStream(new File(target, name + ".class"));
+                    try (FileOutputStream fos = new FileOutputStream(new File(target, name + ".class"))) {
                         fos.write(bytes);
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
-                    } finally {
-                        try {fos.close();} catch (IOException ioe) {}
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
                     }
                 }
             } catch (ClassNotFoundException cnfe) {

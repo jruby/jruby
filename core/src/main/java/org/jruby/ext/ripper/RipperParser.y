@@ -920,12 +920,12 @@ relop           : tGT {
                 }
 
 rel_expr        : arg relop arg   %prec tGT {
-                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+                     $$ = p.dispatch("on_binary", $1, $2, $3);
 
                 }
 		| rel_expr relop arg   %prec tGT {
                      p.warning("comparison '" + $2 + "' after comparison");
-                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+                     $$ = p.dispatch("on_binary", $1, $2, $3);
                 }
  
 arg_value       : arg {
@@ -1184,7 +1184,7 @@ primary         : literal
                     p.setIsInClass($<Boolean>4.booleanValue());
                 }
                 | keyword_class tLSHFT expr {
-                    $$ = new Integer((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
+                    $$ = Integer.valueOf((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
                     p.setInDef(false);
                     p.setIsInClass(false);
                     p.pushLocalScope();

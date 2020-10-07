@@ -12,7 +12,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyArgumentsCompiler implements ArgumentsCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
 
     public IndyArgumentsCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;

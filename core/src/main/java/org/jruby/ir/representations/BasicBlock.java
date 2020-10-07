@@ -23,8 +23,8 @@ import java.util.Collection;
 import java.util.List;
 
 public class BasicBlock implements ExplicitVertexID, Comparable {
-    private int         id;             // Basic Block id
-    private CFG         cfg;            // CFG that this basic block belongs to
+    private final int         id;             // Basic Block id
+    private final CFG         cfg;            // CFG that this basic block belongs to
     private Label       label;          // All basic blocks have a starting label
     private List<Instr> instrs;         // List of non-label instructions
     private boolean     isRescueEntry;  // Is this basic block entry of a rescue?
@@ -236,7 +236,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
                     ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
                 } else if (i instanceof NonlocalReturnInstr && clonedInstr instanceof CopyInstr) {
                     // non-local returns assign to method return variable but must jump to proper exit point
-                    clonedBB.addInstr(new JumpInstr(ii.getHostScope().getCFG().getExitBB().getLabel()));
+                    clonedBB.addInstr(new JumpInstr(ii.getHostScope().getFullInterpreterContext().getCFG().getExitBB().getLabel()));
                     // FIXME: enebo...I see no guarantee that this copy will be part of a return?  This behavior is
                     // masked in any case I can see with optimization to not use a copy but convert non-local to local return.
                 }
@@ -267,7 +267,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         Collection<Edge<BasicBlock>> outs = cfg.getOutgoingEdges(this);
         if (!outs.isEmpty()) {
             for (Edge<BasicBlock> edge : outs) {
-                buf.append(" -" + edge.getType() + "->" + edge.getDestination().getID());
+                buf.append(" -").append(edge.getType()).append("->").append(edge.getDestination().getID());
             }
         }
         buf.append('\n');

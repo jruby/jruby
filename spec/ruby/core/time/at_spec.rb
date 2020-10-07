@@ -14,7 +14,7 @@ describe "Time.at" do
     end
 
     it "returns a non-UTC Time" do
-      Time.at(1184027924).utc?.should == false
+      Time.at(1184027924).should_not.utc?
     end
 
     it "returns a subclass instance on a Time subclass" do
@@ -54,12 +54,12 @@ describe "Time.at" do
 
     it "returns a UTC time if the argument is UTC" do
       t = Time.now.getgm
-      Time.at(t).utc?.should == true
+      Time.at(t).should.utc?
     end
 
     it "returns a non-UTC time if the argument is non-UTC" do
       t = Time.now
-      Time.at(t).utc?.should == false
+      Time.at(t).should_not.utc?
     end
 
     it "returns a subclass instance" do
@@ -91,6 +91,12 @@ describe "Time.at" do
         o = mock_numeric('rational')
         o.should_receive(:to_r).and_return(Rational(5, 2))
         Time.at(o).should == Time.at(Rational(5, 2))
+      end
+
+      it "needs for the argument to respond to #to_int too" do
+        o = mock('rational-but-no-to_int')
+        o.should_receive(:to_r).and_return(Rational(5, 2))
+        -> { Time.at(o) }.should raise_error(TypeError)
       end
     end
   end

@@ -108,7 +108,7 @@ public abstract class GenericMap implements Map {
     }
 
     abstract class KeyOrValueIterator implements Iterator {
-        Iterator iter = entryIterator();
+        final Iterator iter = entryIterator();
 
         public boolean hasNext() {
             return iter.hasNext();

@@ -367,7 +367,7 @@ public class VariableTableManager {
         boolean sameTable = otherRealClass == realClass;
 
         if (sameTable && fieldVariables == 0) {
-            int idIndex = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead().getIndex();
+            int idIndex = otherRealClass.getVariableTableManager().getObjectIdAccessorForRead().getIndex();
 
             Object[] otherVars = ((RubyBasicObject) other).varTable;
 

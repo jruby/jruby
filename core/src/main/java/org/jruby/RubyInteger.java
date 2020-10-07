@@ -50,15 +50,17 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
 
-import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.util.Numeric.*;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.util.Numeric.f_gcd;
+import static org.jruby.util.Numeric.f_lcm;
 
 /** Implementation of the Integer class.
  *
@@ -211,7 +213,8 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         }
-        return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, uptoSize(this, to));
+        // "from" is the same as "this", so we take advantage of that to reduce lambda size
+        return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, RubyInteger::uptoSize);
     }
 
     static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
@@ -250,8 +253,13 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static SizeFn uptoSize(final IRubyObject from, final IRubyObject to) {
-        return (context, args) -> intervalStepSize(context, from, to, RubyFixnum.one(context.runtime), false);
+    /**
+     * An upto size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject uptoSize(ThreadContext context, IRubyObject from, IRubyObject[] args) {
+        return intervalStepSize(context, from, args[0], RubyFixnum.one(context.runtime), false);
     }
 
     /** int_downto
@@ -267,7 +275,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         }
-        return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, downToSize(this, to));
+        return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, RubyInteger::downtoSize);
     }
 
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
@@ -305,8 +313,13 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static SizeFn downToSize(final IRubyObject from, final IRubyObject to) {
-        return (context, args) -> intervalStepSize(context, from, to, RubyFixnum.newFixnum(context.runtime, -1), false);
+    /**
+     * A downto size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject downtoSize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return intervalStepSize(context, recv, args[0], RubyFixnum.newFixnum(context.runtime, -1), false);
     }
 
     @JRubyMethod
@@ -324,20 +337,23 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorizeWithSize(context, this, "times", timesSizeFn());
+            return enumeratorizeWithSize(context, this, "times", RubyInteger::timesSize);
         }
     }
 
-    protected SizeFn timesSizeFn() {
-        return (context, args) -> {
-            RubyFixnum zero = RubyFixnum.zero(context.runtime);
-            if ((this instanceof RubyFixnum && getLongValue() < 0)
-                    || sites(context).op_lt.call(context, this, this, zero).isTrue()) {
-                return zero;
-            }
+    /**
+     * A times size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    protected static IRubyObject timesSize(ThreadContext context, RubyInteger recv, IRubyObject[] args) {
+        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+        if ((recv instanceof RubyFixnum && recv.getLongValue() < 0)
+                || sites(context).op_lt.call(context, recv, recv, zero).isTrue()) {
+            return zero;
+        }
 
-            return this;
-        };
+        return recv;
     }
 
     /** int_succ
@@ -512,7 +528,7 @@ public abstract class RubyInteger extends RubyNumeric {
             return RubyFixnum.zero(runtime);
         }
 
-        f = int_pow(context, 10, -ndigits);
+        f = Numeric.int_pow(context, 10, -ndigits);
         if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
             long x = fix2long(this), y = fix2long(f);
             boolean neg = x < 0;

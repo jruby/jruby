@@ -73,7 +73,7 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) throw getRuntime().newTypeError("uninitialized File::Stat");
     }
 
-    private static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyFileStat(runtime, klass);
@@ -138,7 +138,19 @@ public class RubyFileStat extends RubyObject {
         file = JRubyFile.createResource(runtime, filename);
         stat = lstat ? file.lstat() : file.stat();
 
-        if (stat == null) throw runtime.newErrnoFromInt(file.errno(), filename);
+        if (stat == null) {
+            if (Platform.IS_WINDOWS) {
+                switch (file.errno()) {
+                    case 2:   // ERROR_FILE_NOT_FOUND
+                    case 3:   // ERROR_PATH_NOT_FOUND
+                    case 53:  // ERROR_BAD_NETPATH
+                    case 123: // ERROR_INVALID_NAME
+                        throw runtime.newErrnoENOENTError(filename);
+                }
+            }
+
+            throw runtime.newErrnoFromInt(file.errno(), filename);
+        }
     }
 
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {

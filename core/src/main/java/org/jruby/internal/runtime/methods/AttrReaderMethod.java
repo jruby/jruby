@@ -74,7 +74,7 @@ public class AttrReaderMethod extends JavaMethodZero {
     @Override
     public MethodData getMethodData() {
         if (methodData == null){
-            methodData = new MethodData(name, "dummyfile", Arrays.asList(name));
+            methodData = new MethodData(name, "dummyfile", Collections.singletonList(name));
         }
         return methodData;
     }

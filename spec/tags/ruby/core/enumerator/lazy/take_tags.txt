@@ -1,1 +1,0 @@
-fails:Enumerator::Lazy#take sets given count to size if the old size is Infinity

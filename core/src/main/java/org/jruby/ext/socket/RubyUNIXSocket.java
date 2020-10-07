@@ -70,7 +70,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
-    private static ObjectAllocator UNIXSOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator UNIXSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyUNIXSocket(runtime, klass);
         }

@@ -50,7 +50,7 @@ public final class GlobalVariable {
     private IAccessor accessor;
     private ArrayList<IRubyObject> traces = null;
     private boolean tracing;
-    private Invalidator invalidator = OptoFactory.newGlobalInvalidator(Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load());
+    private final Invalidator invalidator = OptoFactory.newGlobalInvalidator(Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load());
     private final Scope scope;
 
     public GlobalVariable(IAccessor accessor, Scope scope) {

@@ -263,35 +263,18 @@ public class Main {
         InputStream in   = config.getScriptSource();
         String filename  = config.displayedFileName();
 
-        Ruby _runtime;
+        final Ruby runtime;
 
         if (DripMain.DRIP_RUNTIME != null) {
             // use drip's runtime, reinitializing config
-            _runtime = DripMain.DRIP_RUNTIME;
-            _runtime.reinitialize(true);
+            runtime = DripMain.DRIP_RUNTIME;
+            runtime.reinitialize(true);
         } else {
-            _runtime = Ruby.newInstance(config);
-        }
-
-        final Ruby runtime = _runtime;
-        final AtomicBoolean didTeardown = new AtomicBoolean();
-
-        if (runtime != null && config.isHardExit()) {
-            // we're the command-line JRuby, and should set a shutdown hook for
-            // teardown.
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    if (didTeardown.compareAndSet(false, true)) {
-                        runtime.tearDown();
-                    }
-                }
-            });
+            runtime = Ruby.newInstance(config);
         }
 
         try {
-            if (runtime != null) {
-                doSetContextClassLoader(runtime);
-            }
+            doSetContextClassLoader(runtime);
 
             if (in == null) {
                 // no script to run, return success
@@ -304,9 +287,7 @@ public class Main {
                 return doRunFromMain(runtime, in, filename);
             }
         } finally {
-            if (runtime != null && didTeardown.compareAndSet(false, true)) {
-                runtime.tearDown();
-            }
+            runtime.tearDown();
         }
     }
 

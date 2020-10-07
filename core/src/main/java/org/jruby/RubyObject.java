@@ -448,21 +448,10 @@ public class RubyObject extends RubyBasicObject {
 
         ObjectSites sites = sites(context);
 
-        if ( obj instanceof RubyArray ) {
-            if (sites.dig_array.isBuiltin(obj.getMetaClass())) {
-                return ((RubyArray) obj).dig(context, args, idx);
-            }
-        }
-        if ( obj instanceof RubyHash ) {
-            if (sites.dig_hash.isBuiltin(obj.getMetaClass())) {
-                return ((RubyHash) obj).dig(context, args, idx);
-            }
-        }
-        if ( obj instanceof RubyStruct ) {
-            if (sites.dig_struct.isBuiltin(obj.getMetaClass())) {
-                return ((RubyStruct) obj).dig(context, args, idx);
-            }
-        }
+        if (obj instanceof RubyArray && sites.dig_array.isBuiltin(obj)) return ((RubyArray) obj).dig(context, args, idx);
+        if (obj instanceof RubyHash && sites.dig_hash.isBuiltin(obj)) return ((RubyHash) obj).dig(context, args, idx);
+        if (obj instanceof RubyStruct && sites.dig_struct.isBuiltin(obj)) return ((RubyStruct) obj).dig(context, args, idx);
+
         if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
             final int len = args.length - idx;
             switch ( len ) {

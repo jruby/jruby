@@ -19,7 +19,7 @@ import java.nio.channels.Channel;
  *  Lexer source for ripper when we have all bytes available to us.
  */
 public class ByteListLexerSource extends LexerSource {
-    private ByteList completeSource; // The entire source of the file
+    private final ByteList completeSource; // The entire source of the file
     private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
 
     /**

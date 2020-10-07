@@ -177,8 +177,6 @@ for opt in $JAVA_OPTS; do
   case $opt in
     -Xmx*)
       JAVA_MEM="$opt";;
-    -Xms*)
-      JAVA_MEM_MIN="$opt";;
     -Xss*)
       JAVA_STACK="$opt";;
     *)
@@ -254,8 +252,6 @@ do
      # Stuff after '-J' in this argument goes to JVM
      -J-Xmx*)
          JAVA_MEM="${1#-J}" ;;
-     -J-Xms*)
-         JAVA_MEM_MIN="${1#-J}" ;;
      -J-Xss*)
          JAVA_STACK="${1#-J}" ;;
      -J)
@@ -357,7 +353,7 @@ ruby_args+=("$@")
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args[@]}"
 
-JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
+JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 

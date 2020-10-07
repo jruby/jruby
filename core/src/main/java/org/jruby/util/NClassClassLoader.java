@@ -1,7 +1,7 @@
 package org.jruby.util;
 
 public class NClassClassLoader extends ClassLoader implements ClassDefiningClassLoader {
-    private int size;
+    private final int size;
     private int i;
 
     public NClassClassLoader(ClassLoader parent, int n) {

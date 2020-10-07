@@ -45,8 +45,7 @@ public class RubyMath {
      */
     public static RubyModule createMathModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("Math");
-        runtime.setMath(result);
-        
+
         result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
         result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
         

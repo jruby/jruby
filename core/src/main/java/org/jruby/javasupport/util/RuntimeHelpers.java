@@ -6,6 +6,9 @@ import org.jruby.embed.util.CoreConstructors;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
+// Deprecated in 2012, but still in use in Nokogiri until Feb 2019
+// See https://github.com/sparklemotion/nokogiri/pull/1874
+// Relates to https://github.com/sparklemotion/nokogiri/pull/2027
 @Deprecated
 public class RuntimeHelpers extends Helpers {
     @Deprecated

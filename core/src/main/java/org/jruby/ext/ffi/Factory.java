@@ -57,7 +57,7 @@ public abstract class Factory {
             providerNames.add(prefix + ".jffi.Factory");
             for (String className : providerNames) {
                 try {
-                    factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).newInstance();
+                    factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).getConstructor().newInstance();
                     break;
                 } catch (Throwable ex) {
                     errors.add(ex);

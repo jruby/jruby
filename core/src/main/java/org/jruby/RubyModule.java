@@ -238,6 +238,10 @@ public class RubyModule extends RubyObject {
     public IRubyObject autoload_p(ThreadContext context, IRubyObject symbol) {
         final String name = TypeConverter.checkID(symbol).idString();
 
+        if (!IdUtil.isValidConstantName(name)) {
+            throw context.runtime.newNameError("autoload must be constant name", symbol);
+        }
+
         for (RubyModule mod = this; mod != null; mod = mod.getSuperClass()) {
             final IRubyObject loadedValue = mod.fetchConstant(name);
 
@@ -313,8 +317,17 @@ public class RubyModule extends RubyObject {
         return constants;
     }
 
-    public synchronized Map<String, ConstantEntry> getConstantMapForWrite() {
-        return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<>(4, 0.9f, 1) : constants;
+    public Map<String, ConstantEntry> getConstantMapForWrite() {
+        Map<String, ConstantEntry> constants = this.constants;
+        if (constants == Collections.EMPTY_MAP) {
+            synchronized (this) {
+                constants = this.constants;
+                if (constants == Collections.EMPTY_MAP) {
+                    constants = this.constants = new ConcurrentHashMap<>(2, 0.9f, 1);
+                }
+            }
+        }
+        return constants;
     }
 
     /**
@@ -326,8 +339,17 @@ public class RubyModule extends RubyObject {
         return autoloads;
     }
 
-    protected synchronized Map<String, Autoload> getAutoloadMapForWrite() {
-        return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<>(4, 0.9f, 1) : autoloads;
+    protected Map<String, Autoload> getAutoloadMapForWrite() {
+        Map<String, Autoload> autoloads = this.autoloads;
+        if (autoloads == Collections.EMPTY_MAP) {
+            synchronized (this) {
+                autoloads = this.autoloads;
+                if (autoloads == Collections.EMPTY_MAP) {
+                    autoloads = this.autoloads = new ConcurrentHashMap<>(2, 0.9f, 1);
+                }
+            }
+        }
+        return autoloads;
     }
 
     @SuppressWarnings("unchecked")
@@ -508,7 +530,7 @@ public class RubyModule extends RubyObject {
         synchronized (this) {
             methods = this.methods;
             return methods == Collections.EMPTY_MAP ?
-                this.methods = new ConcurrentHashMap<>(0, 0.9f, 1) :
+                this.methods = new ConcurrentHashMap<>(2, 0.9f, 1) : // CHM initial-size: 4
                     methods;
         }
     }
@@ -1233,7 +1255,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static TypePopulator loadPopulatorFor(Class<?> type) {
-        if (Options.DEBUG_FULLTRACE.load() || Options.REFLECTED_HANDLES.load()) {
+        if (Options.DEBUG_FULLTRACE.load()) {
             // we want non-generated invokers or need full traces, use default (slow) populator
             LOG.debug("trace mode, using default populator");
         } else {
@@ -1246,7 +1268,7 @@ public class RubyModule extends RubyObject {
                 if (Ruby.getClassLoader().getResource(fullPath) == null) {
                     LOG.debug("could not find it, using default populator");
                 } else {
-                    return (TypePopulator) Class.forName(fullName).newInstance();
+                    return (TypePopulator) Class.forName(fullName).getConstructor().newInstance();
                 }
             } catch (Throwable ex) {
                 if (LOG.isDebugEnabled()) LOG.debug("could not find populator, using default (" + ex + ')');
@@ -1340,6 +1362,7 @@ public class RubyModule extends RubyObject {
                 s0 = " module";
             }
 
+            // FIXME: Since we found no method we probably do not have symbol entry...do not want to pollute symbol table here.
             throw runtime.newNameError("Undefined method " + name + " for" + s0 + " '" + c.getName() + "'", name);
         }
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
@@ -2136,8 +2159,8 @@ public class RubyModule extends RubyObject {
             visibility = PRIVATE;
         }
 
-        if (!(IdUtil.isLocal(internedIdentifier) || identifier.validConstantName())) {
-            throw runtime.newNameError("invalid attribute name", internedIdentifier);
+        if (!identifier.validLocalVariableName() && !identifier.validConstantName()) {
+            throw runtime.newNameError("invalid attribute name", identifier);
         }
 
         final String variableName = identifier.asInstanceVariable().idString();
@@ -2193,8 +2216,9 @@ public class RubyModule extends RubyObject {
         if (orig.method.isUndefined() || orig.method.isRefined()) {
             if (!isModule()
                     || (orig = runtime.getObject().searchWithCache(id)).method.isUndefined()) {
+                // FIXME: Do we potentially leak symbols here if they do not exist?
                 RubySymbol name = runtime.newSymbol(id);
-                throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), id);
+                throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), name);
             }
         }
 
@@ -3691,7 +3715,7 @@ public class RubyModule extends RubyObject {
             RubySymbol sym = (RubySymbol) name;
 
             if (!sym.validConstantName()) {
-                throw runtime.newNameError("wrong constant name", sym.toString());
+                throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, sym)), sym);
             }
 
             String id = sym.idString();
@@ -3792,7 +3816,7 @@ public class RubyModule extends RubyObject {
         int sep = name.indexOf("::");
         // symbol form does not allow ::
         if (symbol instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", name);
+            throw runtime.newNameError("wrong constant name", fullName);
         }
 
         RubyModule mod = this;
@@ -3804,7 +3828,7 @@ public class RubyModule extends RubyObject {
 
         // Bare ::
         if (name.length() == 0) {
-            throw runtime.newNameError("wrong constant name ", fullName.idString());
+            throw runtime.newNameError("wrong constant name ", fullName);
         }
 
         while ( ( sep = name.indexOf("::") ) != -1 ) {
@@ -3841,9 +3865,7 @@ public class RubyModule extends RubyObject {
 
             // autoload entry
             removeAutoload(id);
-            // FIXME: I'm not sure this is right, but the old code returned
-            // the undef, which definitely isn't right...
-            return context.nil;
+            return context.nil; // if we weren't auto-loaded MRI returns nil
         }
 
         if (hasConstantInHierarchy(id)) throw cannotRemoveError(id);
@@ -4934,7 +4956,7 @@ public class RubyModule extends RubyObject {
     protected final String validateConstant(IRubyObject name) {
         return RubySymbol.retrieveIDSymbol(name, (sym, newSym) -> {
             if (!sym.validConstantName()) {
-                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym.idString());
+                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym);
             }
         }).idString();
     }
@@ -4953,7 +4975,7 @@ public class RubyModule extends RubyObject {
 
         return RubySymbol.retrieveIDSymbol(nameString, (sym, newSym) -> {
             if (!sym.validConstantName()) {
-                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym.idString());
+                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", sym), sym);
             }
         }).idString();
     }
@@ -5429,9 +5451,8 @@ public class RubyModule extends RubyObject {
     ));
 
     @Deprecated
-    public boolean fastIsConstantDefined(String internedName) {
-        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
-        return isConstantDefined(internedName, true);
+    public boolean fastIsConstantDefined(String internedName){
+        return isConstantDefined(internedName);
     }
 
     @Deprecated

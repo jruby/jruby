@@ -446,7 +446,7 @@ stmt            : keyword_alias fitem {
                 }
                 | keyword_END tLCURLY compstmt tRCURLY {
                     if (support.isInDef()) {
-                        support.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
+                       support.warn(ID.END_IN_METHOD, $1.getLine(), "END in method; use at_exit");
                     }
                     $$ = new PostExeNode($1, $3, lexer.getRubySourceline());
                 }
@@ -1558,7 +1558,7 @@ primary         : literal
                     support.setIsInClass($<Boolean>4.booleanValue());
                 }
                 | k_class tLSHFT expr {
-                    $$ = new Integer((support.isInClass() ? 2 : 0) & (support.isInDef() ? 1 : 0));
+                    $$ = Integer.valueOf((support.isInClass() ? 2 : 0) & (support.isInDef() ? 1 : 0));
                     support.setInDef(false);
                     support.setIsInClass(false);
                     support.pushLocalScope();

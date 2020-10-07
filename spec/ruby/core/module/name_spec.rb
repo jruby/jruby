@@ -6,10 +6,20 @@ describe "Module#name" do
     Module.new.name.should be_nil
   end
 
-  it "is nil when assigned to a constant in an anonymous module" do
-    m = Module.new
-    m::N = Module.new
-    m::N.name.should be_nil
+  ruby_version_is ""..."3.0" do
+    it "is nil when assigned to a constant in an anonymous module" do
+      m = Module.new
+      m::N = Module.new
+      m::N.name.should be_nil
+    end
+  end
+
+  ruby_version_is "3.0" do
+    it "is not nil when assigned to a constant in an anonymous module" do
+      m = Module.new
+      m::N = Module.new
+      m::N.name.should.end_with? '::N'
+    end
   end
 
   it "is not nil for a nested module created with the module keyword" do
@@ -122,7 +132,7 @@ describe "Module#name" do
 
   ruby_version_is "2.7" do
     it "returns a frozen String" do
-      ModuleSpecs.name.frozen?.should == true
+      ModuleSpecs.name.should.frozen?
     end
 
     it "always returns the same String for a given Module" do

@@ -128,6 +128,48 @@ describe "Rescuing a Java exception using Exception" do
     expect(i).to eq 2
   end
 
+  it "synchronizes causes" do
+    ex = Class.new(StandardError)
+
+    begin
+      e = ex.new
+
+      expect(e.cause).to be_nil
+
+      raise e
+    rescue
+      begin
+        e2 = ex.new
+
+        expect(e2.cause).to be_nil
+
+        t = JRuby.ref(e2)
+
+        expect(t.getCause).to be_nil
+
+        raise e2
+      rescue
+        expect(e2.cause).to equal(e)
+        expect(t.getCause).to equal(e)
+      end
+    end
+
+    begin
+      e = java.lang.NullPointerException.new
+
+      raise e
+    rescue java.lang.NullPointerException
+      begin
+        e2 = ex.new
+
+        raise e2
+      rescue
+        expect(e2.cause).to equal(e)
+        expect(JRuby.ref(e2).toThrowable.getCause).to equal(e)
+      end
+    end
+  end
+
   describe 'Ruby sub-class' do
 
     class RubyThrowable < java.lang.Exception

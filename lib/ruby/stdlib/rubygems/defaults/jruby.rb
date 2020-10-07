@@ -12,6 +12,7 @@ module Gem
       ruby_path
     end
 
+    private
     def jarred_path?(p)
       p =~ /^(file|uri|jar|classpath):/
     end
@@ -43,18 +44,6 @@ module Gem
     ]
   end
 
-  ##
-  # Is this a windows platform?
-  #
-  # JRuby: Look in CONFIG['host_os'] as well.
-  def self.win_platform?
-    if @@win_platform.nil? then
-      @@win_platform = !!WIN_PATTERNS.find { |r| RUBY_PLATFORM =~ r || RbConfig::CONFIG["host_os"] =~ r }
-    end
-
-    @@win_platform
-  end
-
   # Allow specifying jar and classpath type gem path entries
   def self.path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
@@ -76,22 +65,14 @@ class Gem::Specification
       }.compact + spec_directories_from_classpath
     end
 
-    def add_dir dir
-      new_dirs = [ dir ] + (@@dirs||[]).collect { |d| d.sub(/.specifications/, '') }
-      self.reset
-
-      # ugh
-      @@dirs = new_dirs.map { |d| File.join d, "specifications" }
-    end
-
     # Replace existing dirs=
     def dirs= dirs
       self.reset
 
-      # ugh
       @@dirs = Array(dirs).map { |d| File.join d, "specifications" } + spec_directories_from_classpath
     end
 
+    private
     def spec_directories_from_classpath
       stuff = [ 'uri:classloader://specifications' ]
       JRuby::Util.extra_gem_paths.each do |path|
@@ -105,14 +86,6 @@ class Gem::Specification
   end
 end
 ## END JAR FILES
-
-if (Gem::win_platform?)
-  module Process
-    def self.uid
-      0
-    end
-  end
-end
 
 # Check for jruby_native and load it if present. jruby_native
 # indicates the native launcher is installed and will override

@@ -263,14 +263,9 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     // and replace interpreterContext asynchronously.
     private void promoteToFullBuild(ThreadContext context) {
         tryJit(context, this);
-
-        if (IRRuntimeHelpers.shouldPrintIR(context.runtime)) {
-            ByteArrayOutputStream baos = IRDumper.printIR(getIRScope(), true, true);
-
-            LOG.info("Printing full IR for " + getIRScope().getId() + ":\n" + new String(baos.toByteArray()));
-        }
     }
 
+    @Deprecated
     public String getClassName(ThreadContext context) {
         return null;
     }

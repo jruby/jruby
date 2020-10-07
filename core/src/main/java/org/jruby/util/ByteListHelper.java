@@ -1,6 +1,11 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.Ruby;
+
+import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * Helpers for working with bytelists.
@@ -46,6 +51,57 @@ public class ByteListHelper {
         }
 
         return true;
+    }
+
+    /**
+     * If you know you have an ASCII ByteList you should do something else.  This will continue walking the
+     * bytelist 'while' as long as each continues to be true.  When it stops being true it will return the
+     * last byte index processed (on full walk it will be length otherwise the beginning of the codepoint
+     * which did not satisfy each.
+     *
+     * @param bytelist of the mbc-laden bytes
+     * @param offset place in bytes to search past begin
+     * @param each the closure which walks the codepoints
+     * @return length if all codepoints match.  index (ignoring begin) if not.
+     */
+    public static int eachCodePointWhile(Ruby runtime, ByteList bytelist, int offset, CodePoint each) {
+        Encoding encoding = bytelist.getEncoding();
+
+        if (encoding != USASCIIEncoding.INSTANCE) {
+            return eachMBCCodePointWhile(bytelist, offset, each);
+        }
+
+        byte[] bytes = bytelist.unsafeBytes();
+        int len = bytelist.getRealSize();
+        int begin = bytelist.begin();
+        int end = begin + len;
+
+        for (int i = offset; i < end; i++) {
+            byte c = bytes[i];
+            if (!Encoding.isAscii(c)) throw runtime.newEncodingError(str(runtime, "invalid symbol in encoding " + encoding + " :" , inspectIdentifierByteList(runtime, bytelist)));
+            if (!each.call(i, bytes[i] & 0xff, encoding)) return i;
+        }
+
+        return len;
+    }
+
+    // Should also call through eachCodePointWhile since it will fast path US-ASCII.
+    private static int eachMBCCodePointWhile(ByteList bytelist, int offset, CodePoint each) {
+        Encoding encoding = bytelist.getEncoding();
+        byte[] bytes = bytelist.unsafeBytes();
+        int len = bytelist.getRealSize();
+        int begin = bytelist.begin();
+        int end = begin + len;
+        int n;
+
+        for (int i = 0, p = begin + offset; p < end; i++, p += n) {
+            n = StringSupport.length(encoding, bytes, p, end);
+            if (!each.call(i, encoding.mbcToCode(bytes, p, end), encoding)) {
+                return p;
+            }
+        }
+
+        return len;
     }
 
     /**

@@ -68,7 +68,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         runtime.getObject().setConstant("TCPsocket",rb_cTCPSocket);
     }
 
-    private static ObjectAllocator TCPSOCKET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator TCPSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyTCPSocket(runtime, klass);
         }

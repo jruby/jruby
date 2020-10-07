@@ -166,7 +166,7 @@ public class RubyPathname extends RubyObject {
         }
     }
 
-    private static ObjectAllocator PATHNAME_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator PATHNAME_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyPathname(runtime, klass);

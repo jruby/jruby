@@ -8,7 +8,6 @@ import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -97,7 +96,7 @@ public class MethodGatherer {
 
     private Map<String, NamedInstaller> staticInstallers = Collections.EMPTY_MAP;
     private Map<String, NamedInstaller> instanceInstallers = Collections.EMPTY_MAP;
-    final List<ConstantField> constantFields = new ArrayList<>();
+    private Map<String, ConstantField> constantFields = Collections.EMPTY_MAP;
     final Ruby runtime;
 
     MethodGatherer(final Ruby runtime, final Class superClass) {
@@ -162,13 +161,14 @@ public class MethodGatherer {
     }
 
     public static void eachAccessibleMethod(final Class<?> javaClass, Predicate<Method[]> classProcessor, Predicate<Method[]> interfaceProcessor) {
-        HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
+        boolean isPublic = Modifier.isPublic(javaClass.getModifiers());
 
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
-            // only add class's methods if it's public (JIRA issue JRUBY-4799)
-            if (Modifier.isPublic(klass.getModifiers())) {
+            // only add if target class is public or source class is public, and package is exported
+            if (Modules.isExported(klass, Java.class) &&
+                    (isPublic || Modifier.isPublic(klass.getModifiers()))) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
@@ -203,7 +203,7 @@ public class MethodGatherer {
         int childModifiers, parentModifiers;
 
         return parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())
-                && child.getReturnType() == parent.getReturnType()
+                && parent.getReturnType().isAssignableFrom(child.getReturnType())
                 && child.isVarArgs() == parent.isVarArgs()
                 && Modifier.isPublic(childModifiers = child.getModifiers()) == Modifier.isPublic(parentModifiers = parent.getModifiers())
                 && Modifier.isProtected(childModifiers) == Modifier.isProtected(parentModifiers)
@@ -234,7 +234,10 @@ public class MethodGatherer {
                             // and virtual dispatch will call the subclass impl anyway.
                             // Used for instance methods, for which we usually want to use the highest-up
                             // callable implementation.
-                            childMethods.set(i, method);
+                            // GH-6199: Only replace child method if parent class is public.
+                            if (Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
+                                childMethods.set(i, method);
+                            }
                         } else {
                             // just skip the new method, since we don't need it (already found one)
                             // used for interface methods, which we want to add unconditionally
@@ -336,6 +339,16 @@ public class MethodGatherer {
             final String simpleName = JavaClass.getSimpleName(clazz);
             if ( simpleName.length() == 0 ) continue;
 
+            if (constantFields.containsKey(simpleName)) {
+                /*
+                 If we already have a static final field of the same name, don't define the inner class constant.
+                 Typically this is used for singleton patterns where the field is an instance of the inner class, and
+                 in languages like Kotlin the class itself is not what users intend to access. See GH-6196.
+                 */
+                runtime.getWarnings().warning("inner class \"" + javaClass.getName() + "::" + simpleName + "\" conflicts with field of same name");
+                continue;
+            }
+
             final RubyModule innerProxy = Java.getProxyClass(runtime, JavaClass.get(runtime, clazz));
 
             if ( IdUtil.isConstant(simpleName) ) {
@@ -426,7 +439,7 @@ public class MethodGatherer {
     }
 
     protected void installConstants(final RubyModule proxy) {
-        constantFields.forEach(field -> field.install(proxy));
+        constantFields.forEach((name, field) -> field.install(proxy));
     }
 
     protected void installClassMethods(final RubyModule proxy) {
@@ -537,7 +550,7 @@ public class MethodGatherer {
 
             boolean constant = isPublic && isStatic && isFinal && Character.isUpperCase(field.getName().charAt(0));
             if (constant) {
-                constantFields.add(new ConstantField(field));
+                addConstantField(field);
 
                 // If we are adding it as a constant,  do not add an accessor (jruby/jruby#5730)
                 continue;
@@ -549,6 +562,14 @@ public class MethodGatherer {
                 addField(getInstanceInstallersForWrite(), instanceNames, field, isFinal, false);
             }
         }
+    }
+
+    private void addConstantField(Field field) {
+        Map<String, ConstantField> constantFields = this.constantFields;
+        if (constantFields == Collections.EMPTY_MAP) {
+            constantFields = this.constantFields = new HashMap<>();
+        }
+        constantFields.put(field.getName(), new ConstantField(field));
     }
 
     void setupMethods(Class<?> javaClass) {
@@ -669,7 +690,7 @@ public class MethodGatherer {
             if (Modifier.isPrivate(mod)) return false;
 
             // Skip protected methods if we can't set accessible
-            if (!Modifier.isPublic(mod) && !Modules.trySetAccessible(method, Java.class)) return false;
+            if (!Modifier.isPublic(mod) && !Java.trySetAccessible(method)) return false;
 
             // ignore bridge methods because we'd rather directly call methods that this method
             // is bridging (and such methods are by definition always available.)

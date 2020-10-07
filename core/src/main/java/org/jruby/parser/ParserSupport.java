@@ -231,8 +231,12 @@ public class ParserSupport {
             if (topOfAST != null) newTopOfAST.add(topOfAST);
             topOfAST = newTopOfAST;
         }
-        
-        return new RootNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageData != null);
+
+        int coverageMode = coverageData == null ?
+                CoverageData.NONE :
+                coverageData.getMode();
+
+        return new RootNode(position, result.getScope(), topOfAST, lexer.getFile(), endPosition, coverageMode);
     }
     
     /* MRI: block_append */
@@ -863,7 +867,7 @@ public class ParserSupport {
             node = new RescueNode(getPosition(head), head, rescue, rescueElse);
         } else if (rescueElse != null) {
             // FIXME: MRI removed this...
-            warn(ID.ELSE_WITHOUT_RESCUE, lexer.tokline, "else without rescue is useless");
+            warn(ID.ELSE_WITHOUT_RESCUE, lexer.tokline.getLine(), "else without rescue is useless");
             node = appendToBlock(head, rescue);
         }
         if (ensure != null) {
@@ -1261,10 +1265,8 @@ public class ParserSupport {
         return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
     }
 
-    // FIXME: Replace this with file/line version and stop using ISourcePosition
-    @Deprecated
-    public void warn(ID id, ISourcePosition position, String message, Object... data) {
-        warnings.warn(id, lexer.getFile(), position.getLine(), message);
+    public void warn(ID id, int line, String message, Object... data) {
+        warnings.warn(id, lexer.getFile(), line, message);
     }
 
     // FIXME: Replace this with file/line version and stop using ISourcePosition

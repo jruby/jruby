@@ -7,11 +7,11 @@ import org.jruby.Ruby;
 
 public class ParserStats implements ParserStatsMBean {
     private final SoftReference<Ruby> ruby;
-    private AtomicInteger totalParseTime = new AtomicInteger(0);
-    private AtomicLong totalParsedBytes = new AtomicLong(0);
-    private AtomicInteger totalEvalParses = new AtomicInteger(0);
-    private AtomicInteger totalLoadParses = new AtomicInteger(0);
-    private AtomicInteger totalJRubyModuleParses = new AtomicInteger(0);
+    private final AtomicInteger totalParseTime = new AtomicInteger(0);
+    private final AtomicLong totalParsedBytes = new AtomicLong(0);
+    private final AtomicInteger totalEvalParses = new AtomicInteger(0);
+    private final AtomicInteger totalLoadParses = new AtomicInteger(0);
+    private final AtomicInteger totalJRubyModuleParses = new AtomicInteger(0);
     
     public ParserStats(Ruby ruby) {
         this.ruby = new SoftReference<Ruby>(ruby);
