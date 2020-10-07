@@ -1681,7 +1681,8 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string, IRubyObject format) {
-        format = TypeConverter.checkStringType(context.runtime, format);
+        string = string.convertToString();
+        format = format.convertToString();
         return parse(context, string, ((RubyString) format).decodeString());
     }
 
