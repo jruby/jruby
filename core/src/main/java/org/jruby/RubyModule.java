@@ -238,10 +238,6 @@ public class RubyModule extends RubyObject {
     public IRubyObject autoload_p(ThreadContext context, IRubyObject symbol) {
         final String name = TypeConverter.checkID(symbol).idString();
 
-        if (!IdUtil.isValidConstantName(name)) {
-            throw context.runtime.newNameError("autoload must be constant name", symbol);
-        }
-
         for (RubyModule mod = this; mod != null; mod = mod.getSuperClass()) {
             final IRubyObject loadedValue = mod.fetchConstant(name);
 
