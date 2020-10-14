@@ -392,6 +392,23 @@ public class RubyLexer extends LexingCommon {
         throw new SyntaxException(getFile(), ruby_sourceline, src, message, start, end);
     }
 
+    // similar to compile_error where yyloc passes in NULL.
+    public void compile_error_pos(String message) {
+        updateTokenPosition();
+        compile_error(message);
+    }
+
+    private void updateTokenPosition() {
+        int start_line = ruby_sourceline;
+        int start_column = this.tokp - lex_pbeg;
+        int end_line = ruby_sourceline;
+        int end_column = this.lex_p - lex_pbeg;
+
+        this.start = (start_line << 16) | start_column;
+        this.end = (end_line << 16) | end_column;
+    }
+
+
     public void heredoc_restore(HeredocTerm here) {
         ByteList line = here.lastLine;
         lex_lastline = line;
@@ -410,13 +427,7 @@ public class RubyLexer extends LexingCommon {
     public int nextToken() throws IOException {
         token = yylex();
 
-        int start_line = ruby_sourceline;
-        int start_column = this.tokp - lex_pbeg;
-        int end_line = ruby_sourceline;
-        int end_column = this.lex_p - lex_pbeg;
-
-        this.start = (start_line << 16) | start_column;
-        this.end = (end_line << 16) | end_column;
+        updateTokenPosition();
 
         return token == EOF ? 0 : token;
     }
@@ -2095,9 +2106,9 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
 
                     if (numberBuffer.length() == startLen) {
-                        compile_error("Binary number without digits.");
+                        compile_error_pos("numeric literal without digits.");
                     } else if (nondigit != 0) {
-                        compile_error("Trailing '_' in number.");
+                        compile_error_pos("Trailing '_' in number.");
                     }
                     return getIntegerToken(numberBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
@@ -2119,9 +2130,9 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
 
                     if (numberBuffer.length() == startLen) {
-                        compile_error("Binary number without digits.");
+                        compile_error_pos("Binary number without digits.");
                     } else if (nondigit != 0) {
-                        compile_error("Trailing '_' in number.");
+                        compile_error_pos("Trailing '_' in number.");
                     }
                     return getIntegerToken(numberBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
@@ -2144,13 +2155,13 @@ public class RubyLexer extends LexingCommon {
                     if (numberBuffer.length() > startLen) {
                         pushback(c);
 
-                        if (nondigit != 0) compile_error("Trailing '_' in number.");
+                        if (nondigit != 0) compile_error_pos("Trailing '_' in number.");
 
                         return getIntegerToken(numberBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
-                    compile_error("Illegal octal digit.");
+                    compile_error_pos("Illegal octal digit.");
                 case '.' :
                 case 'e' :
                 case 'E' :
@@ -2230,7 +2241,7 @@ public class RubyLexer extends LexingCommon {
                     }
                     break;
                 case '_' : //  '_' in number just ignored
-                    if (nondigit != 0) compile_error("Trailing '_' in number.");
+                    if (nondigit != 0) compile_error_pos("Trailing '_' in number.");
                     nondigit = c;
                     break;
                 default :
@@ -2243,7 +2254,7 @@ public class RubyLexer extends LexingCommon {
     private int getNumberToken(String number, boolean seen_e, boolean seen_point, int nondigit) {
         boolean isFloat = seen_e || seen_point;
         if (nondigit != '\0') {
-            compile_error("Trailing '_' in number.");
+            compile_error_pos("Trailing '_' in number.");
         } else if (isFloat) {
             int suffix = numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL);
             return getFloatToken(number, suffix);
