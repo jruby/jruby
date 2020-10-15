@@ -608,7 +608,7 @@ public class RubyProcess {
         final Ruby runtime = recv.getRuntime();
         long[] groups = runtime.getPosix().getgroups();
         if (groups == null) { // not-implemented for the given platform (e.g. Windows)
-            throw runtime.newNotImplementedError("groups() function is not implemented");
+            throw runtime.newNotImplementedError("groups() function is unimplemented on this machine");
         }
         IRubyObject[] ary = new IRubyObject[groups.length];
         for(int i = 0; i < groups.length; i++) {
