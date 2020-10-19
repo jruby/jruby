@@ -16,6 +16,7 @@ describe "async callback" do
   end
 
   it ":int (0x7fffffff) argument" do
+    skip "not yet supported on TruffleRuby" if RUBY_ENGINE == "truffleruby"
     v = 0xdeadbeef
     called = false
     cb = Proc.new {|i| v = i; called = true }
@@ -25,6 +26,7 @@ describe "async callback" do
   end
   
   it "called a second time" do
+    skip "not yet supported on TruffleRuby" if RUBY_ENGINE == "truffleruby"
     v = 0xdeadbeef
     called = false
     cb = Proc.new {|i| v = i; called = true }

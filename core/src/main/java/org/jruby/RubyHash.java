@@ -47,7 +47,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -56,6 +55,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -353,19 +353,46 @@ public class RubyHash extends RubyObject implements Map {
         private RubyHashEntry next;
         private RubyHashEntry prevAdded;
         private RubyHashEntry nextAdded;
-        private int hash;
+        private final int hash;
 
         RubyHashEntry() {
             key = NEVER;
+            hash = -1;
         }
 
         public RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e, RubyHashEntry head) {
-            key = k; value = v; next = e; hash = h;
+            key = k;
+            value = v;
+            next = e;
+            hash = h;
+
             if (head != null) {
-                prevAdded = head.prevAdded;
-                nextAdded = head;
-                nextAdded.prevAdded = this;
+                RubyHashEntry prevAdded = head.prevAdded;
+                RubyHashEntry nextAdded = head;
+
+                this.prevAdded = prevAdded;
                 prevAdded.nextAdded = this;
+
+                this.nextAdded = nextAdded;
+                nextAdded.prevAdded = this;
+            }
+        }
+
+        public RubyHashEntry(RubyHashEntry oldEntry, int newHash) {
+            this.hash = newHash;
+            this.key = oldEntry.key;
+            this.value = oldEntry.value;
+            this.next = oldEntry.next;
+
+            // prevAdded is never null
+            RubyHashEntry prevAdded = oldEntry.prevAdded;
+            this.prevAdded = prevAdded;
+            prevAdded.nextAdded = this;
+
+            RubyHashEntry nextAdded = oldEntry.nextAdded;
+            if (nextAdded != null) {
+                this.nextAdded = nextAdded;
+                nextAdded.prevAdded = this;
             }
         }
 
@@ -552,11 +579,13 @@ public class RubyHash extends RubyObject implements Map {
 
     protected IRubyObject internalPutNoResize(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         final int hash = hashValue(key);
+        final RubyHashEntry[] table = this.table;
+
         final int i = bucketIndex(hash, table.length);
 
         if (checkForExisting) {
             for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
-                if (internalKeyExist(entry, hash, key)) {
+                if (internalKeyExist(entry.hash, entry.key, hash, key)) {
                     IRubyObject existing = entry.value;
                     entry.value = value;
 
@@ -584,8 +613,10 @@ public class RubyHash extends RubyObject implements Map {
         if (size == 0) return NO_ENTRY;
 
         final int hash = hashValue(key);
+        final RubyHashEntry[] table = this.table;
+
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
-            if (internalKeyExist(entry, hash, key)) {
+            if (internalKeyExist(entry.hash, entry.key, hash, key)) {
                 return entry;
             }
         }
@@ -596,9 +627,9 @@ public class RubyHash extends RubyObject implements Map {
         return internalGetEntry(key);
     }
 
-    private boolean internalKeyExist(RubyHashEntry entry, int hash, IRubyObject key) {
-        return (entry.hash == hash
-            && (entry.key == key || (!isComparedByIdentity() && key.eql(entry.key))));
+    private boolean internalKeyExist(int entryHash, IRubyObject entryKey, int hash, IRubyObject key) {
+        return (entryHash == hash
+                && (entryKey == key || (!isComparedByIdentity() && key.eql(entryKey))));
     }
 
     // delete implementation
@@ -899,8 +930,13 @@ public class RubyHash extends RubyObject implements Map {
         return context.runtime.newFixnum(size);
     }
 
-    private SizeFn enumSizeFn() {
-        return (context, args) -> this.rb_size(context);
+    /**
+     * A size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject size(ThreadContext context, RubyHash recv, IRubyObject[] args) {
+        return recv.rb_size(context);
     }
 
     /** rb_hash_empty_p
@@ -966,17 +1002,26 @@ public class RubyHash extends RubyObject implements Map {
             oldTable[j] = null;
             while (entry != null) {
                 RubyHashEntry next = entry.next;
-                entry.hash = hashValue(entry.key); // update the hash value
-                int i = bucketIndex(entry.hash, newTable.length);
+                int oldHash = entry.hash;
+                IRubyObject key = entry.key;
+                int newHash = hashValue(key);
 
-                if (newTable[i] != null && internalKeyExist(newTable[i], entry.hash, entry.key)) {
+                int i = bucketIndex(newHash, newTable.length);
+
+                RubyHashEntry newEntry = newTable[i];
+                if (newEntry != null && internalKeyExist(newEntry.hash, newEntry.key, newHash, key)) {
                     RubyHashEntry tmpNext = entry.nextAdded;
                     RubyHashEntry tmpPrev = entry.prevAdded;
                     tmpPrev.nextAdded = tmpNext;
                     tmpPrev.prevAdded = tmpPrev;
                     size--;
                 } else {
-                    entry.next = newTable[i];
+                    // replace entry if hash changed
+                    if (oldHash != newHash) {
+                        entry = new RubyHashEntry(entry, newHash);
+                    }
+
+                    entry.next = newEntry;
                     newTable[i] = entry;
                 }
                 entry = next;
@@ -1204,7 +1249,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
-        return ((value = internalGet(key)) == null) ? sites(context).default_.call(context, this, this, key) : value;
+        return ((value = internalGet(key)) == null) ? sites(context).self_default.call(context, this, this, key) : value;
     }
 
     /** hash_le_i
@@ -1449,7 +1494,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = {"each", "each_pair"})
     public IRubyObject each(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairCommon(context, block) : enumeratorizeWithSize(context, this, "each", enumSizeFn());
+        return block.isGiven() ? each_pairCommon(context, block) : enumeratorizeWithSize(context, this, "each", RubyHash::size);
     }
 
     public IRubyObject each19(final ThreadContext context, final Block block) {
@@ -1490,7 +1535,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject each_value(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_valueCommon(context, block) : enumeratorizeWithSize(context, this, "each_value", enumSizeFn());
+        return block.isGiven() ? each_valueCommon(context, block) : enumeratorizeWithSize(context, this, "each_value", RubyHash::size);
     }
 
     /** rb_hash_each_key
@@ -1511,7 +1556,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject each_key(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_keyCommon(context, block) : enumeratorizeWithSize(context, this, "each_key", enumSizeFn());
+        return block.isGiven() ? each_keyCommon(context, block) : enumeratorizeWithSize(context, this, "each_key", RubyHash::size);
     }
 
     @JRubyMethod(name = "transform_keys")
@@ -1522,7 +1567,7 @@ public class RubyHash extends RubyObject implements Map {
             return result;
         }
 
-        return enumeratorizeWithSize(context, this, "transform_keys", enumSizeFn());
+        return enumeratorizeWithSize(context, this, "transform_keys", RubyHash::size);
     }
 
     private static class TransformKeysVisitor extends VisitorWithState<RubyHash> {
@@ -1559,7 +1604,7 @@ public class RubyHash extends RubyObject implements Map {
             return this;
         }
 
-        return enumeratorizeWithSize(context, this, "transform_keys!", enumSizeFn());
+        return enumeratorizeWithSize(context, this, "transform_keys!", RubyHash::size);
     }
 
     @JRubyMethod(name = "transform_values!")
@@ -1571,7 +1616,7 @@ public class RubyHash extends RubyObject implements Map {
             return this;
         }
 
-        return enumeratorizeWithSize(context, this, "transform_values!", enumSizeFn());
+        return enumeratorizeWithSize(context, this, "transform_values!", RubyHash::size);
     }
 
     private static class TransformValuesVisitor extends VisitorWithState<Block> {
@@ -1586,7 +1631,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject select_bang(final ThreadContext context, final Block block) {
         if (block.isGiven()) return keep_ifCommon(context, block) ? this : context.nil;
 
-        return enumeratorizeWithSize(context, this, "select!", enumSizeFn());
+        return enumeratorizeWithSize(context, this, "select!", RubyHash::size);
     }
 
     @JRubyMethod
@@ -1596,7 +1641,7 @@ public class RubyHash extends RubyObject implements Map {
             return this;
         }
 
-        return enumeratorizeWithSize(context, this, "keep_if", enumSizeFn());
+        return enumeratorizeWithSize(context, this, "keep_if", RubyHash::size);
     }
 
     public boolean keep_ifCommon(final ThreadContext context, final Block block) {
@@ -1748,9 +1793,11 @@ public class RubyHash extends RubyObject implements Map {
             return result;
         }
 
-        if (isBuiltin("default")) return default_value_get(context, context.nil);
 
-        return sites(context).default_.call(context, this, this, context.nil);
+        CachingCallSite self_default = sites(context).self_default;
+        if (self_default.isBuiltin(this)) return default_value_get(context, context.nil);
+
+        return self_default.call(context, this, this, context.nil);
     }
 
     public final boolean fastDelete(IRubyObject key) {
@@ -1781,7 +1828,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "select", alias = "filter")
     public IRubyObject select(final ThreadContext context, final Block block) {
         final Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select", enumSizeFn());
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select", RubyHash::size);
 
         final RubyHash result = newHash(runtime);
 
@@ -1848,7 +1895,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject delete_if(final ThreadContext context, final Block block) {
-        return block.isGiven() ? delete_ifInternal(context, block) : enumeratorizeWithSize(context, this, "delete_if", enumSizeFn());
+        return block.isGiven() ? delete_ifInternal(context, block) : enumeratorizeWithSize(context, this, "delete_if", RubyHash::size);
     }
 
     private static final class RejectVisitor extends VisitorWithState<Block> {
@@ -1878,7 +1925,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject reject(final ThreadContext context, final Block block) {
-        return block.isGiven() ? rejectInternal(context, block) : enumeratorizeWithSize(context, this, "reject", enumSizeFn());
+        return block.isGiven() ? rejectInternal(context, block) : enumeratorizeWithSize(context, this, "reject", RubyHash::size);
     }
 
     /** rb_hash_reject_bang
@@ -1893,7 +1940,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "reject!")
     public IRubyObject reject_bang(final ThreadContext context, final Block block) {
-        return block.isGiven() ? reject_bangInternal(context, block) : enumeratorizeWithSize(context, this, "reject!", enumSizeFn());
+        return block.isGiven() ? reject_bangInternal(context, block) : enumeratorizeWithSize(context, this, "reject!", RubyHash::size);
     }
 
     /** rb_hash_clear
@@ -2767,7 +2814,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairCommon(context, block) : enumeratorizeWithSize(context, this, "each_pair", enumSizeFn());
+        return block.isGiven() ? each_pairCommon(context, block) : enumeratorizeWithSize(context, this, "each_pair", RubyHash::size);
     }
 
     @Deprecated

@@ -1,1 +1,0 @@
-windows:IO#initialize raises an Errno::EBADF when given an invalid file descriptor

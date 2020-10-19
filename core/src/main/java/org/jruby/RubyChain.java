@@ -30,7 +30,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.runtime.Block;
-import org.jruby.RubyFixnum;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
@@ -94,7 +93,7 @@ public class RubyChain extends RubyObject {
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
-            return RubyEnumerator.enumeratorizeWithSize(context, this, "each", args, enumSizeFn(context));
+            return RubyEnumerator.enumeratorizeWithSize(context, this, "each", args, RubyChain::size);
         }
 
         for (int i = 0; i < enums.length; i++) {
@@ -105,14 +104,13 @@ public class RubyChain extends RubyObject {
         return this;
     }
 
-    private SizeFn enumSizeFn(final ThreadContext context) {
-        final RubyChain self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(ThreadContext context, IRubyObject[] args) {
-                return self.size(context);
-            }
-        };
+    /**
+     * A size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject size(ThreadContext context, RubyChain self, IRubyObject[] args) {
+        return self.size(context);
     }
 
     // enum_chain_rewind

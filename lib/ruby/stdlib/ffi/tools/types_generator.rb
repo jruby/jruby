@@ -47,6 +47,8 @@ module FFI
       typedefs = nil
       Tempfile.open 'ffi_types_generator' do |io|
         io.puts <<-C
+#include <stdint.h>
+#include <stddef.h>
 #include <sys/types.h>
 #if !(defined(WIN32))
 #include <sys/socket.h>

@@ -1295,7 +1295,8 @@ public class RubyProcess {
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
         if (!runtime.getPosix().isNative() || Platform.IS_WINDOWS) {
             runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
-            return runtime.newFixnum(Long.MAX_VALUE);
+            RubyFixnum max = runtime.newFixnum(Long.MAX_VALUE);
+            return runtime.newArray(max, max);
         }
 
         RLimit rlimit = runtime.getPosix().getrlimit(rlimitResourceType(runtime, arg));

@@ -35,6 +35,7 @@ R(J, long long);
 R(LL, long long);
 R(F, float);
 R(D, double);
+R(LD, long double);
 R(P, const void*);
 
 
@@ -47,6 +48,7 @@ P(J, long long);
 P(LL, long long);
 P(F, float);
 P(D, double);
+P(LD, long double);
 P(P, const void*);
 P(UL, unsigned long);
 
@@ -82,14 +84,22 @@ static void *
 threadVrV(void *arg)
 {
     struct ThreadVrV* t = (struct ThreadVrV *) arg;
-    
+
     int i;
     for (i = 0; i < t->count; i++) {
         (*t->closure)();
     }
-    
+
     return NULL;
 }
+
+#ifdef _WIN32
+static void
+threadVrV_win32(void *arg)
+{
+    threadVrV(arg);
+}
+#endif
 
 void testThreadedClosureVrV(void (*closure)(void), int n)
 {
@@ -99,8 +109,8 @@ void testThreadedClosureVrV(void (*closure)(void), int n)
     pthread_create(&t, NULL, threadVrV, &arg);
     pthread_join(t, NULL);
 #else
-    HANDLE hThread = (HANDLE) _beginthread((void (*)(void *))threadVrV, 0, &arg);
-    WaitForSingleObject(hThread, INFINITE);	
+    HANDLE hThread = (HANDLE) _beginthread(threadVrV_win32, 0, &arg);
+    WaitForSingleObject(hThread, INFINITE);
 #endif
 }
 

@@ -2195,6 +2195,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             @Override
             public Object run(ThreadContext context, Lock reentrantLock) throws InterruptedException {
                 reentrantLock.lockInterruptibly();
+                heldLocks.add(lock);
                 return reentrantLock;
             }
 
@@ -2203,7 +2204,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 thread.getNativeThread().interrupt();
             }
         });
-        heldLocks.add(lock);
     }
 
     /**
@@ -2240,7 +2240,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public void unlockAll() {
         assert Thread.currentThread() == getNativeThread();
         for (Lock lock : heldLocks) {
-            lock.unlock();
+            try {
+                lock.unlock();
+            } catch (IllegalMonitorStateException imse) {
+                // don't allow a bad lock to prevent others from unlocking
+                getRuntime().getWarnings().warn("BUG: attempted to unlock a non-acquired lock " + lock + " in thread " + toString());
+            }
         }
     }
 

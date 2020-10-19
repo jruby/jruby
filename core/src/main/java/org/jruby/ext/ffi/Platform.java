@@ -318,9 +318,13 @@ public class Platform {
         OS_TYPE os = platform.getOS();
         module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
         module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
+        module.defineConstant("LONG_DOUBLE_SIZE", runtime.newFixnum(128));
         module.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
         module.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
         module.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
+        if (OS == OS_TYPE.LINUX) {
+            module.defineConstant("GNU_LIBC", runtime.newString(LIBC));
+        }
         module.defineAnnotatedMethods(Platform.class);
     }
 

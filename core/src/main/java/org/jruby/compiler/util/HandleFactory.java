@@ -61,14 +61,14 @@ public class HandleFactory {
         Class handleClass;
         try {
             handleClass = classLoader.loadClass(name);
-            return (Handle)handleClass.newInstance();
+            return (Handle)handleClass.getConstructor().newInstance();
         } catch (Exception e) {
         }
 
         handleClass = createHandleClass(classLoader, method, name);
         
         try {
-            return (Handle)handleClass.newInstance();
+            return (Handle)handleClass.getConstructor().newInstance();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

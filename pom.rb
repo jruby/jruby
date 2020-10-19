@@ -79,11 +79,11 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
               'rdoc.version' => '6.1.2',
               'rake.version' => '12.3.2',
-              'jar-dependencies.version' => '0.4.0',
+              'jar-dependencies.version' => '0.4.1',
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
               'asm.version' => '7.1',
-              'jffi.version' => '1.2.23',
+              'jffi.version' => '1.3.0',
               'joda.time.version' => '2.10.5' )
 
   plugin_management do
@@ -168,7 +168,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                    :phase => 'site-deploy' )
   end
 
-  modules [ 'core', 'lib' ]
+  modules [ 'shaded', 'core', 'lib' ]
 
   build do
     default_goal 'install'

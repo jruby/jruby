@@ -25,7 +25,7 @@ namespace :test do
   desc "Compile test code"
   task :compile do
     mkdir_p "test/target/test-classes"
-    classpath = %w[lib/jruby.jar test/target/junit.jar].join(File::PATH_SEPARATOR)
+    classpath = %w[lib/jruby.jar test/target/junit.jar test/target/annotation-api.jar].join(File::PATH_SEPARATOR)
     # try detecting javac - so we use the same Java versions as we're running (JAVA_HOME) with :
     java_home = [ ENV_JAVA['java.home'], File.join(ENV_JAVA['java.home'], '..') ] # in case of jdk/jre
     javac = java_home.map { |home| File.expand_path('bin/javac', home) }.find { |javac| File.exist?(javac) } || 'javac'

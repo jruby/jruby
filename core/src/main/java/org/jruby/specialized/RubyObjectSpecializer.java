@@ -119,7 +119,7 @@ public class RubyObjectSpecializer {
                 }
 
                 try {
-                    ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].newInstance();
+                    ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].getConstructor().newInstance();
 
                     cna = new ClassAndAllocator(specialized, allocator);
 

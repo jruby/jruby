@@ -22,6 +22,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import java.util.EnumSet;
+
 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
 
 public class UnresolvedSuperInstr extends CallInstr {
@@ -55,10 +57,10 @@ public class UnresolvedSuperInstr extends CallInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
-        scope.getFlags().add(IRFlags.REQUIRES_CLASS); // for current class and method name
-        scope.getFlags().add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
+        flags.add(IRFlags.REQUIRES_CLASS); // for current class and method name
+        flags.add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
         return true;
     }
 

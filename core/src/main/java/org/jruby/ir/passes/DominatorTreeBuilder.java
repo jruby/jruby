@@ -1,6 +1,6 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.util.log.Logger;
@@ -19,20 +19,20 @@ public class DominatorTreeBuilder extends CompilerPass {
     }
 
     @Override
-    public Object execute(IRScope scope, Object... data) {
+    public Object execute(FullInterpreterContext fic, Object... data) {
         CFG cfg = (CFG) data[0];
 
         try {
             buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
         } catch (Exception e) {
-            LOG.debug("Caught exception building dom tree for {}", scope.getCFG());
+            LOG.debug("Caught exception building dom tree for {}", fic.getCFG());
         }
 
         return null;
     }
 
     @Override
-    public boolean invalidate(IRScope scope) {
+    public boolean invalidate(FullInterpreterContext fic) {
         return false;
     }
 

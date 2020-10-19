@@ -188,4 +188,20 @@ class TestArray < Test::Unit::TestCase
     assert(!(a == a))
   end
 
+  # This is unspecified behavior, and has no tests in the ruby/spec or CRuby
+  # suites. Since we are attempting to match CRuby behavior here, we will test
+  # this in our own suite. See jruby/jruby#6371.
+  def test_delete_if_with_modification
+    rules = [1, 2, 3, 4, 5]
+    iters = []
+    rules.delete_if do |rule|
+      iters << rule
+      rules.insert(1, 2) if rule == 1
+      true
+    end
+
+    assert_equal([1,2,2,3,4,5], iters)
+    assert_equal([], rules)
+  end
+
 end

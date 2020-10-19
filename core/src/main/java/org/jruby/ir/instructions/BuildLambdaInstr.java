@@ -16,6 +16,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.ir.IRFlags;
 
+import java.util.EnumSet;
+
 public class BuildLambdaInstr extends OneOperandResultBaseInstr implements FixedArityInstr, ClosureAcceptingInstr {
     /** The position for the block */
 
@@ -24,8 +26,8 @@ public class BuildLambdaInstr extends OneOperandResultBaseInstr implements Fixed
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.BINDING_HAS_ESCAPED);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        flags.add(IRFlags.BINDING_HAS_ESCAPED);
         return true;
     }
 

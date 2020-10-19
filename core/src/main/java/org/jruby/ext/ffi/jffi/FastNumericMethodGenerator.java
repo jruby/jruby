@@ -93,6 +93,7 @@ final class FastNumericMethodGenerator extends AbstractNumericMethodGenerator {
             case ULONG:
             case LONG_LONG:
             case ULONG_LONG:
+//            case LONGDOUBLE:
             case FLOAT:
             case DOUBLE:
                 return true;

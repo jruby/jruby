@@ -394,7 +394,11 @@ module FFI
       options = Hash.new
       options[:convention] = ffi_convention
       options[:enums] = @ffi_enums if defined?(@ffi_enums)
-      cb = FFI::CallbackInfo.new(find_type(ret), native_params, options)
+      ret_type = find_type(ret)
+      if ret_type == Type::STRING
+        raise TypeError, ":string is not allowed as return type of callbacks"
+      end
+      cb = FFI::CallbackInfo.new(ret_type, native_params, options)
 
       # Add to the symbol -> type map (unless there was no name)
       unless name.nil?

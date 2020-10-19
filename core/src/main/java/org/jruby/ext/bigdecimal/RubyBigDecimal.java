@@ -64,19 +64,19 @@ import org.jruby.util.StringSupport;
 public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyConstant
-    public final static int ROUND_DOWN = BigDecimal.ROUND_DOWN;
+    public final static int ROUND_DOWN = RoundingMode.DOWN.ordinal();
     @JRubyConstant
-    public final static int ROUND_CEILING = BigDecimal.ROUND_CEILING;
+    public final static int ROUND_CEILING = RoundingMode.CEILING.ordinal();
     @JRubyConstant
-    public final static int ROUND_UP = BigDecimal.ROUND_UP;
+    public final static int ROUND_UP = RoundingMode.UP.ordinal();
     @JRubyConstant
-    public final static int ROUND_HALF_DOWN = BigDecimal.ROUND_HALF_DOWN;
+    public final static int ROUND_HALF_DOWN = RoundingMode.HALF_DOWN.ordinal();
     @JRubyConstant
-    public final static int ROUND_HALF_EVEN = BigDecimal.ROUND_HALF_EVEN;
+    public final static int ROUND_HALF_EVEN = RoundingMode.HALF_EVEN.ordinal();
     @JRubyConstant
-    public final static int ROUND_HALF_UP = BigDecimal.ROUND_HALF_UP;
+    public final static int ROUND_HALF_UP = RoundingMode.HALF_UP.ordinal();
     @JRubyConstant
-    public final static int ROUND_FLOOR = BigDecimal.ROUND_FLOOR;
+    public final static int ROUND_FLOOR = RoundingMode.FLOOR.ordinal();
 
     @JRubyConstant
     public final static int SIGN_POSITIVE_INFINITE = 3;
@@ -415,7 +415,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RoundingMode getRoundingMode(Ruby runtime) {
-        return RoundingMode.valueOf((int) bigDecimalVar(runtime, "vpRoundingMode"));
+        return RoundingMode.values()[(int) bigDecimalVar(runtime, "vpRoundingMode")];
     }
 
     private static boolean isNaNExceptionMode(Ruby runtime) {
@@ -882,7 +882,7 @@ public class RubyBigDecimal extends RubyNumeric {
         if (prec == 0) prec = getPrecLimit(getRuntime());
         int exponent;
         if (prec > 0 && this.value.scale() > (prec - (exponent = getExponent()))) {
-            this.value = this.value.setScale(prec - exponent, BigDecimal.ROUND_HALF_UP);
+            this.value = this.value.setScale(prec - exponent, RoundingMode.HALF_UP);
             this.absStripTrailingZeros = null;
         }
         return this;
@@ -1852,11 +1852,12 @@ public class RubyBigDecimal extends RubyNumeric {
                     throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
             }
         } else {
-            try {
-                return RoundingMode.valueOf(num2int(arg));
-            } catch (IllegalArgumentException iae) {
+            int ordinal = num2int(arg);
+            RoundingMode[] values = RoundingMode.values();
+            if (ordinal < 0 || ordinal >= values.length) {
                 throw context.runtime.newArgumentError("invalid rounding mode");
             }
+            return values[ordinal];
         }
     }
 

@@ -13,6 +13,7 @@ def initialize_paths
 
   ant.path(:id => "test.class.path") do
     pathelement :path => File.join(BUILD_LIB_DIR, 'junit.jar')
+    pathelement :path => File.join(BUILD_LIB_DIR, 'annotation-api.jar')
     pathelement :path => File.join(BUILD_LIB_DIR, 'livetribe-jsr223.jar')
     pathelement :path => File.join(BUILD_LIB_DIR, 'bsf.jar')
     pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging.jar')

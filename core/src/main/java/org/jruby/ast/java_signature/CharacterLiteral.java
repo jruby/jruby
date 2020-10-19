@@ -16,6 +16,20 @@ public class CharacterLiteral implements Literal {
     }
     
     @Override
+    public Object getLiteral() {
+    	return string.charAt(0);
+    }
+
+    /**
+     * Accept for the visitor pattern.
+     * @param visitor the visitor
+     **/
+    @Override
+    public <T> T accept(AnnotationVisitor<T> visitor) {
+    	return visitor.char_literal(this);
+    }
+    
+    @Override
     public String toString() {
         return "'" + string + "'";
     }
