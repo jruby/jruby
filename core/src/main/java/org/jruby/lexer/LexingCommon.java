@@ -169,10 +169,10 @@ public abstract class LexingCommon {
     }
 
     public String createTokenString(int start) {
-        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start, getEncoding());
+        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start);
     }
 
-    public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
+    public String createAsEncodedString(byte[] bytes, int start, int length) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
             Charset charset = EncodingUtils.charsetForEncoding(getEncoding());

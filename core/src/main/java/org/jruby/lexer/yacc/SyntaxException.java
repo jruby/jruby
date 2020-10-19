@@ -35,38 +35,11 @@ public class SyntaxException extends RuntimeException {
     private String file;
     private int line;
 
-    public SyntaxException(String file, int line, String lastLine, String message, int start, int end) {
-        super(prepareMessage(message, lastLine, start, end));
+    public SyntaxException(String file, int line, String message) {
+        super(message);
 
         this.file = file;
         this.line = line;
-    }
-
-
-    private static String prepareMessage(String message, String line, int start, int end) {
-        if (line != null && line.length() > 5) {
-            int start_line = start >> 16;
-            int start_column = start & 0xffff;
-            int end_line = end >> 16;
-            int end_column = end & 0xffff;
-            boolean addNewline = message != null && !message.endsWith("\n");
-            message += (addNewline ? "\n" : "") + line;
-            if (start_column >= 0) {
-                addNewline = !line.endsWith("\n");
-                String highlightLine = new String(new char[start_column]);
-                highlightLine = highlightLine.replace("\0", " ") + "^";
-                if (end_column - start_column > 1) {
-                    String underscore = new String(new char[end_column - start_column - 1]);
-                    underscore = underscore.replace("\0", "~");
-                    highlightLine += underscore;
-                }
-
-                message += (addNewline ? "\n" : "") + highlightLine;
-                return message;
-            }
-        }
-        
-        return message;
     }
 
     public String getFile() {

@@ -383,13 +383,115 @@ public class RubyLexer extends LexingCommon {
     }
 
     public void compile_error(String message, int start, int end) {
-        throw new SyntaxException(getFile(), ruby_sourceline, lexb.toString(), message, start, end);
+        throw new SyntaxException(getFile(), ruby_sourceline, prepareMessage(message, lexb, start, end));
     }
 
-    // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(String message) {
-        String src = createAsEncodedString(lex_lastline.unsafeBytes(), lex_lastline.begin(), lex_lastline.length(), getEncoding());
-        throw new SyntaxException(getFile(), ruby_sourceline, src, message, start, end);
+        throw new SyntaxException(getFile(), ruby_sourceline, prepareMessage(message, lex_lastline, start, end));
+    }
+
+    // This is somewhat based off of parser_yyerror in MRI but we seemingly have some weird differences.
+    // I added an extra check on length of ptr_end because some times we end up being off by one and index past
+    // the end of the string.  I thought this was because lex_pend tends to reflect chars and not bytes (this is
+    // really confusing to me as it should be bytes) but I saw off by one in streams with no mbcs.
+    private String prepareMessage(String message, ByteList line, int start, int end) {
+        if (line != null && line.length() > 5) {
+            int max_line_margin = 30;
+            int start_line = start >> 16;
+            int start_column = start & 0xffff;
+            int end_line = end >> 16;
+            int end_column = end & 0xffff;
+
+            if ((start_line != ruby_sourceline && end_line != ruby_sourceline) ||
+                    (start_line == end_line && start_column == end_column)) {
+                return message;
+            }
+
+            int pend = lex_pend;
+            if (pend > lex_pbeg && lexb.get(lex_pend - 1) == '\n') {
+                pend--;
+                if (pend > lex_pbeg && lexb.get(lex_pend - 1) == '\r') {
+                    pend--;
+                }
+            }
+
+            //System.out.println("lex_pbeg: " + lex_pbeg + ", lex_pend: " + lex_pend + ", start_column: " + start_column + ", end_column: " + end_column +
+            //        ", ruby_sourceline: " + ruby_sourceline + ", start_line: " + start_line);
+            int pt = ruby_sourceline == end_line ? lex_pbeg + end_column : lex_pend;
+            int ptr = pt < pend ? pt : pend;
+            int ptr_end = ptr;
+            int lim = ptr - lex_pbeg > max_line_margin ? ptr - max_line_margin : lex_pbeg;
+            while (lim < ptr && lexb.get(ptr - 1) != '\n') {
+                ptr--;
+            }
+
+            lim = pend - ptr_end > max_line_margin ? ptr_end + max_line_margin : pend;
+            while (ptr_end < lim && lexb.get(ptr_end) != '\n') {
+                ptr_end++;
+            }
+
+            String pre = "";
+            String post = "";
+            int len = ptr_end - ptr;
+            if (len > 4) {
+                if (ptr > lex_pbeg) {
+                    // FIXME: back up to begin of char in mbc condition
+                    if (ptr > lex_pbeg) pre = "...";
+                }
+
+                if (ptr_end < pend) {
+                    // FIXME: complete reading char in case of mbc condition
+                    if (ptr_end < pend) post = "...";
+                }
+            }
+
+            int pb = lex_pbeg;
+            if (ruby_sourceline == start_line) {
+                pb += start_column;
+                //System.out.println("PB: " + pb + ", PT: " + pt);
+                // FIXME: Something is off here.
+                /*if (pb > pt) {
+                    pb = pt;
+                }*/
+            }
+            //System.out.println("PB: " + pb + ", PT: " + pt);
+
+            if (pb < ptr) pb = ptr;
+            //System.out.println("PB: " + pb + ", PT: " + pt);
+
+            if (len <= 4 && start_line == end_line) {
+                return message;
+            }
+
+            // ADD tty code here with if check
+
+            //System.out.println("ptr: " + ptr + ", ptr_end: " + ptr_end);
+            //System.out.println("line: " + line);
+            lim = pt < pend ? pt : pend;
+            int i = lim - ptr;
+
+            boolean addNewline = message != null && !message.endsWith("\n");
+
+            if (ptr - 1 < 0) ptr = 1;
+            if (ptr_end - 1 < 0) ptr_end = 1;
+            String shortLine = createAsEncodedString(line.unsafeBytes(), line.begin(), line.length());
+            if (ptr_end > shortLine.length()) ptr_end = shortLine.length() + 1;
+            shortLine = shortLine.substring(ptr - 1, ptr_end - 1);
+
+            message += (addNewline ? "\n" : "") + pre + shortLine + post;
+            addNewline = !line.endsWith(new ByteList(new byte[] {'\n'}));
+            String highlightLine = new String(new char[pb + (pre.length() == 3 ? -4 : 0)]);
+            highlightLine = highlightLine.replace("\0", " ") + "^";
+            if (end_column - start_column > 1) {
+                String underscore = new String(new char[end_column - start_column - 1]);
+                underscore = underscore.replace("\0", "~");
+                highlightLine += underscore;
+            }
+
+            message += (addNewline ? "\n" : "") + highlightLine;
+        }
+
+        return message;
     }
 
     // similar to compile_error where yyloc passes in NULL.
@@ -406,6 +508,10 @@ public class RubyLexer extends LexingCommon {
 
         this.start = (start_line << 16) | start_column;
         this.end = (end_line << 16) | end_column;
+    }
+
+    private void updateStartPosition(int column) {
+        this.start = (ruby_sourceline << 16) | column;
     }
 
 
@@ -2307,8 +2413,8 @@ public class RubyLexer extends LexingCommon {
 
             c = nextc();
             if (c != '}') {
-                start = lex_p - 1;
-                compile_error("unterminated Unicode escape");
+                updateStartPosition(lex_p - 1);
+                compile_error("unterminated Unicode escape1");
             }
         } else { // handle \\uxxxx
             codepoint = scanHex(4, true, "Invalid Unicode escape");
@@ -2358,23 +2464,23 @@ public class RubyLexer extends LexingCommon {
                 pushback(c);
                 return scanOct(3);
             case 'x' : // hex constant
-                return tokHex(2, "Invalid hex escape");
+                return tokHex(2, "invalid hex escape");
             case 'b' : // backspace
                 return '\010';
             case 's' : // space
                 return ' ';
             case 'M' :
                 if ((c = nextc()) != '-') {
-                    compile_error("Invalid escape character syntax");
+                    compile_error_pos("Invalid escape character syntax");
                 } else if ((c = nextc()) == '\\') {
                     return (char) (readEscape() | 0x80);
                 } else if (c == EOF) {
-                    compile_error("Invalid escape character syntax");
+                    compile_error_pos("Invalid escape character syntax");
                 } 
                 return (char) ((c & 0xff) | 0x80);
             case 'C' :
                 if (nextc() != '-') {
-                    compile_error("Invalid escape character syntax");
+                    compile_error_pos("Invalid escape character syntax");
                 }
             case 'c' :
                 if ((c = nextc()) == '\\') {
@@ -2382,7 +2488,7 @@ public class RubyLexer extends LexingCommon {
                 } else if (c == '?') {
                     return '\177';
                 } else if (c == EOF) {
-                    compile_error("Invalid escape character syntax");
+                    compile_error_pos("Invalid escape character syntax");
                 }
                 return (char) (c & 0x9f);
             case EOF :
@@ -2425,15 +2531,7 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int tokHex(int count, String errorMessage) {
-        int codepoint = scanHex(count, false, errorMessage);
-
-        // Means no digits read.
-        if (codepoint == -1) {
-            start = lex_p;
-            compile_error(errorMessage);
-        }
-
-        return codepoint;
+        return scanHex(count, false, errorMessage);
     }
 
     /**
@@ -2466,7 +2564,14 @@ public class RubyLexer extends LexingCommon {
         // No hex value after the 'x'.
         if (strict && count != i) compile_error(errorMessage);
 
-        if (i == 0) return -1; // Nothing read so not so return special value vs unicode value of 0.
+        if (i == 0) { // No hex digits read.
+            if (peek('}')) { // \ u { } empty case
+                return -1;
+            } else { // \ u { {gargbage} case
+                updateStartPosition(lex_p);
+                compile_error(errorMessage);
+            }
+        }
 
         return hexValue;
     }
