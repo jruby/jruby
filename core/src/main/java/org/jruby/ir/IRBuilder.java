@@ -1,10 +1,14 @@
 package org.jruby.ir;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
+import org.jruby.RubyComplex;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyRational;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.parser.StaticScope;
@@ -22,9 +26,9 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
-import org.jruby.util.ConvertBytes;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 
@@ -492,7 +496,7 @@ public class IRBuilder {
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + scope.getFile() + ":" + node.getLine());
             case RESCUENODE: return buildRescue((RescueNode) node);
-            case RETRYNODE: return buildRetry();
+            case RETRYNODE: return buildRetry((RetryNode) node);
             case RETURNNODE: return buildReturn((ReturnNode) node);
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + scope.getFile() + ":" + node.getLine());
@@ -1242,6 +1246,7 @@ public class IRBuilder {
 
         List<Label> labels = new ArrayList<>();
         Map<Label, Node> bodies = new HashMap<>();
+        Set<IRubyObject> seenLiterals = new HashSet<>();
 
         // build each "when"
         for (Node aCase : caseNode.getCases().children()) {
@@ -1250,9 +1255,19 @@ public class IRBuilder {
 
             Variable eqqResult = createTemporaryVariable();
             labels.add(bodyLabel);
-            Operand expression = buildWithOrder(whenNode.getExpressionNodes(), whenNode.containsVariableAssignment());
             Node exprNodes = whenNode.getExpressionNodes();
+            Operand expression = buildWithOrder(exprNodes, whenNode.containsVariableAssignment());
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
+
+            // FIXME: Remove duplicated entries to reduce codesize (like MRI does).
+            IRubyObject literal = getWhenLiteral(exprNodes);
+            if (literal != null) {
+                if (seenLiterals.contains(literal)) {
+                    scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), exprNodes.getLine(), "duplicated when clause is ignored");
+                } else {
+                    seenLiterals.add(literal);
+                }
+            }
 
             addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
@@ -1300,6 +1315,38 @@ public class IRBuilder {
         return result;
     }
 
+    // Note: This is potentially a little wasteful in that we eagerly create these literals for a duplicated warning
+    // check.  In most cases these would be made anyways (e.g. symbols/fixnum) but in others we double allocation
+    // (e.g. strings).
+    private IRubyObject getWhenLiteral(Node node) {
+        Ruby runtime = scope.getManager().getRuntime();
+
+        switch(node.getNodeType()) {
+            case FIXNUMNODE:
+                return runtime.newFixnum(((FixnumNode) node).getValue());
+            case FLOATNODE:
+                return runtime.newFloat((((FloatNode) node).getValue()));
+            case BIGNUMNODE:
+                return new RubyBignum(runtime, ((BignumNode) node).getValue());
+            case COMPLEXNODE:
+                return RubyComplex.newComplexRaw(runtime, getWhenLiteral(((ComplexNode) node).getNumber()));
+            case RATIONALNODE:
+                return RubyRational.newRationalRaw(runtime, getWhenLiteral(((RationalNode)node).getDenominator()), getWhenLiteral(((RationalNode) node).getNumerator()));
+            case NILNODE:
+                return runtime.getNil();
+            case TRUENODE:
+                return runtime.getTrue();
+            case FALSENODE:
+                return runtime.getFalse();
+            case SYMBOLNODE:
+                return ((SymbolNode) node).getName();
+            case STRNODE:
+                return runtime.newString(((StrNode) node).getValue());
+        }
+
+        return null;
+    }
+
     private Operand buildFixnumCase(CaseNode caseNode) {
         Map<Integer, Label> jumpTable = new HashMap<>();
         Map<Node, Label> nodeBodies = new HashMap<>();
@@ -1315,9 +1362,10 @@ public class IRBuilder {
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
+                nodeBodies.put(whenNode, bodyLabel);
+            } else {
+                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine(), "duplicated when clause is ignored");
             }
-
-            nodeBodies.put(whenNode, bodyLabel);
         }
 
         // sort the jump table
@@ -1645,6 +1693,8 @@ public class IRBuilder {
     }
 
     public Operand buildGetDefinition(Node node) {
+        if (node == null) return new FrozenString("expression");
+
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
         case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
@@ -2127,8 +2177,13 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
+        IRMethod method = new IRMethod(manager, scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
                 defNode.getScope(), coverageMode);
+
+        // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
+        if (defNode.containsBreakNext()) method.lazilyAcquireInterpreterContext();
+
+        return method;
     }
 
     public Operand buildDefn(MethodDefNode node) { // Instance method
@@ -3290,9 +3345,15 @@ public class IRBuilder {
     public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
         if (node.isOr()) {
             Variable result = createTemporaryVariable();
+            Label falseCheck = getNewLabel();
             Label done = getNewLabel();
+            Label assign = getNewLabel();
             Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, false);
-            addInstr(BNEInstr.create(done, result, UndefinedValue.UNDEFINED));
+            addInstr(BNEInstr.create(falseCheck, result, UndefinedValue.UNDEFINED));
+            addInstr(new JumpInstr(assign));
+            addInstr(new LabelInstr(falseCheck));
+            addInstr(BNEInstr.create(done, result, manager.getFalse()));
+            addInstr(new LabelInstr(assign));
             Operand rhsValue = build(node.getSecondNode());
             copy(result, rhsValue);
             addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
@@ -3606,6 +3667,17 @@ public class IRBuilder {
         Variable rv = createTemporaryVariable();
         if (rescueNode.getBodyNode() != null) tmp = build(rescueNode.getBodyNode());
 
+        // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
+        // let us discover the edge of the region during linear traversal of instructions during cfg construction.
+        addInstr(new ExceptionRegionEndMarkerInstr());
+        activeRescuers.pop();
+
+        // Else part of the body -- we simply fall through from the main body if there were no exceptions
+        if (rescueNode.getElseNode() != null) {
+            addInstr(new LabelInstr(getNewLabel()));
+            tmp = build(rescueNode.getElseNode());
+        }
+
         // Push rescue block *after* body has been built.
         // If not, this messes up generation of retry in these scenarios like this:
         //
@@ -3624,17 +3696,6 @@ public class IRBuilder {
         // If we push the rescue block before building the body, we will jump to 2.
         RescueBlockInfo rbi = new RescueBlockInfo(rBeginLabel, ensure.savedGlobalException);
         activeRescueBlockStack.push(rbi);
-
-        // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
-        // let us discover the edge of the region during linear traversal of instructions during cfg construction.
-        addInstr(new ExceptionRegionEndMarkerInstr());
-        activeRescuers.pop();
-
-        // Else part of the body -- we simply fall through from the main body if there were no exceptions
-        if (rescueNode.getElseNode() != null) {
-            addInstr(new LabelInstr(getNewLabel()));
-            tmp = build(rescueNode.getElseNode());
-        }
 
         if (tmp != U_NIL) {
             addInstr(new CopyInstr(rv, tmp));
@@ -3721,7 +3782,7 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildRetry() {
+    public Operand buildRetry(RetryNode retryNode) {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
 
@@ -3734,7 +3795,7 @@ public class IRBuilder {
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (activeRescueBlockStack.isEmpty()) {
-            addInstr(new ThrowExceptionInstr(IRException.RETRY_LocalJumpError));
+            throwSyntaxError(retryNode, "Invalid retry");
         } else {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block

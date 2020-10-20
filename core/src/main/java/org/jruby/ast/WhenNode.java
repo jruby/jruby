@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents a when condition
@@ -44,8 +43,8 @@ public class WhenNode extends Node {
     protected final Node bodyNode;
     private final Node nextCase;
 
-    public WhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
-        super(position, expressionNodes != null && expressionNodes.containsVariableAssignment() ||
+    public WhenNode(int line, Node expressionNodes, Node bodyNode, Node nextCase) {
+        super(line, expressionNodes != null && expressionNodes.containsVariableAssignment() ||
                 bodyNode != null && bodyNode.containsVariableAssignment() ||
                 nextCase != null && nextCase.containsVariableAssignment());
 

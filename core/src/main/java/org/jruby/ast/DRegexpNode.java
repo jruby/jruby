@@ -36,7 +36,6 @@ package org.jruby.ast;
 import org.jcodings.Encoding;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.RegexpOptions;
 
 /**
@@ -47,8 +46,8 @@ public class DRegexpNode extends DNode implements ILiteralNode {
     private final RegexpOptions options;
 
     // 1.9 constructor
-    public DRegexpNode(ISourcePosition position, RegexpOptions options, Encoding encoding) {
-        super(position, encoding);
+    public DRegexpNode(int line, RegexpOptions options, Encoding encoding) {
+        super(line, encoding);
         this.options = options;
     }
 

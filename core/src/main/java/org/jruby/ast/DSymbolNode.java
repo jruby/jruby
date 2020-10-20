@@ -30,7 +30,6 @@
  package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Node representing symbol in a form like ':"3jane"'.
@@ -41,16 +40,14 @@ public class DSymbolNode extends DNode {
      *
      * @param node to be copied
      */
-    public DSymbolNode(ISourcePosition position, DStrNode node) {
-        super(position, node.getEncoding());
-
-        assert node != null : "node is not null";
+    public DSymbolNode(int line, DStrNode node) {
+        super(line, node.getEncoding());
 
         addAll(node);
     }
 
-    public DSymbolNode(ISourcePosition position) {
-        super(position);
+    public DSymbolNode(int line) {
+        super(line);
     }
 
     @Override

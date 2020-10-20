@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /** 
@@ -47,8 +46,8 @@ public class ModuleNode extends Node implements IScopingNode {
     private final Node bodyNode;
     private final int endLine;
 
-    public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, int endLine) {
-        super(position, cpath.containsVariableAssignment() || bodyNode.containsVariableAssignment());
+    public ModuleNode(int line, Colon3Node cpath, StaticScope scope, Node bodyNode, int endLine) {
+        super(line, cpath.containsVariableAssignment() || bodyNode.containsVariableAssignment());
 
         assert scope != null : "scope is not null";
         assert bodyNode != null : "bodyNode is not null";

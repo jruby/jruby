@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A call to super(...) with arguments to a method.
@@ -43,12 +42,12 @@ public class SuperNode extends Node implements BlockAcceptingNode {
     private final Node argsNode;
     private Node iterNode;
 
-    public SuperNode(ISourcePosition position, Node argsNode) {
-        this(position, argsNode, null);
+    public SuperNode(int line, Node argsNode) {
+        this(line, argsNode, null);
     }
     
-    public SuperNode(ISourcePosition position, Node argsNode, Node iterNode) {
-        super(position, argsNode != null && argsNode.containsVariableAssignment() ||
+    public SuperNode(int line, Node argsNode, Node iterNode) {
+        super(line, argsNode != null && argsNode.containsVariableAssignment() ||
                 iterNode != null && iterNode.containsVariableAssignment());
         this.argsNode = argsNode;
         this.iterNode = iterNode;

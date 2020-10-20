@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a 'next' statement.
@@ -43,11 +42,9 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class NextNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
 
-    public NextNode(ISourcePosition position, Node valueNode) {
-        super(position, valueNode.containsVariableAssignment());
-        
-        assert valueNode != null : "valueNode is not null";
-        
+    public NextNode(int line, Node valueNode) {
+        super(line, valueNode.containsVariableAssignment());
+
         this.valueNode = valueNode;
     }
 

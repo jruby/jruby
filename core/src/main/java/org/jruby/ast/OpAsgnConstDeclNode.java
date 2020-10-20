@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 
@@ -16,8 +15,8 @@ public class OpAsgnConstDeclNode extends Node implements BinaryOperatorNode {
     private final RubySymbol operator;
     private final Node rhs;
 
-    public OpAsgnConstDeclNode(ISourcePosition position, Node lhs, RubySymbol operator, Node rhs) {
-        super(position, lhs.containsVariableAssignment() || rhs.containsVariableAssignment());
+    public OpAsgnConstDeclNode(int line, Node lhs, RubySymbol operator, Node rhs) {
+        super(line, lhs.containsVariableAssignment() || rhs.containsVariableAssignment());
 
         this.lhs = lhs;
         this.operator = operator;
@@ -62,7 +61,7 @@ public class OpAsgnConstDeclNode extends Node implements BinaryOperatorNode {
 
     @Override
     public List<Node> childNodes() {
-        return createList(lhs, new LiteralNode(getPosition(), operator), rhs);
+        return createList(lhs, new LiteralNode(getLine(), operator), rhs);
     }
 
     @Override

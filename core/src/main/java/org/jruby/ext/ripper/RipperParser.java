@@ -748,33 +748,33 @@ public class RipperParser extends RipperParserBase {
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,
-    "keyword_class","keyword_module","keyword_def","keyword_undef",
-    "keyword_begin","keyword_rescue","keyword_ensure","keyword_end",
-    "keyword_if","keyword_unless","keyword_then","keyword_elsif",
-    "keyword_else","keyword_case","keyword_when","keyword_while",
-    "keyword_until","keyword_for","keyword_break","keyword_next",
-    "keyword_redo","keyword_retry","keyword_in","keyword_do",
-    "keyword_do_cond","keyword_do_block","keyword_return","keyword_yield",
-    "keyword_super","keyword_self","keyword_nil","keyword_true",
-    "keyword_false","keyword_and","keyword_or","keyword_not",
-    "modifier_if","modifier_unless","modifier_while","modifier_until",
-    "modifier_rescue","keyword_alias","keyword_defined","keyword_BEGIN",
-    "keyword_END","keyword__LINE__","keyword__FILE__",
-    "keyword__ENCODING__","keyword_do_lambda","tIDENTIFIER","tFID",
+"class","module","def","undef",
+"begin","rescue","ensure","end",
+"if","unless","then","elsif",
+"else","case","when","while",
+"until","for","break","next",
+"redo","retry","in","do",
+"do (for condition)","do (for block)","return","yield",
+"super","self","nil","true",
+"false","and","or","not",
+"if (modifier)","unless (modifier)","while (modifier)","until (modifier)",
+"rescue (modifier)","alias","defined","BEGIN",
+"END","__LINE__","__FILE__",
+"__ENCODING__","do (for lambda)","tIDENTIFIER","tFID",
     "tGVAR","tIVAR","tCONSTANT","tCVAR","tLABEL","tCHAR","unary+",
-"unary-","tUMINUS_NUM","'**'","'<=>'","'=='","'==='","'!='","'>='",
-"'<='","'&&'","'||'","'=~'","'!~'","'.'","'..'","'...'",
-"'[]'","'[]='","'<<'","'>>'","'&.'","'::'","':: at EXPR_BEG'",
-    "tOP_ASGN","'=>'","'('","'( arg'","')'","'['",
-"'{'","'{ arg'","'['","'[ args'","'*'","'*'","'&'",
-"'&'","'~'","'%'","'/'","'+'","'-'","'<'","'>'",
-"'|'","'!'","'^'","'{'","'}'","'`'","':'",
+"unary-","tUMINUS_NUM","**","<=>","==","===","!=",">=",
+"<=","&&","||","=~","!~","'.'","..","...",
+"[]","[]=","<<",">>","&.","::",":: at EXPR_BEG",
+    "tOP_ASGN","=>","'('","'('","')'","( arg",
+"'['","']'","'{'","{ arg","'*'","'*'","'&'",
+"'&'","'`'","'%'","'/'","'+'","'-'","'<'","'>'",
+"'|'","'!'","'^'","'{'","'}'","'`'","tSYMBEG",
     "tSTRING_BEG","tXSTRING_BEG","tREGEXP_BEG","tWORDS_BEG","tQWORDS_BEG",
-    "tSTRING_DBEG","tSTRING_DVAR","tSTRING_END","'->'","tLAMBEG",
+    "tSTRING_DBEG","tSTRING_DVAR","tSTRING_END","->","tLAMBEG",
     "tNTH_REF","tBACK_REF","tSTRING_CONTENT","tINTEGER","tIMAGINARY",
     "tFLOAT","tRATIONAL","tREGEXP_END","tIGNORED_NL","tCOMMENT",
     "tEMBDOC_BEG","tEMBDOC","tEMBDOC_END","tSP","tHEREDOC_BEG",
-    "tHEREDOC_END","tSYMBOLS_BEG","tQSYMBOLS_BEG","'**'","tSTRING_DEND",
+    "tHEREDOC_END","tSYMBOLS_BEG","tQSYMBOLS_BEG","tDSTAR","tSTRING_DEND",
     "tLABEL_END","tLOWEST","k__END__",
     };
 
@@ -3236,7 +3236,8 @@ states[351] = new RipperParserState() {
 };
 states[352] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = Integer.valueOf((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
+                    yyVal = new Integer((p.isInClass() ? 0b10 : 0) |
+                                     (p.isInDef()   ? 0b01 : 0));
                     p.setInDef(false);
                     p.setIsInClass(false);
                     p.pushLocalScope();
@@ -3248,8 +3249,8 @@ states[353] = new RipperParserState() {
                     yyVal = p.dispatch("on_sclass", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
 
                     p.popCurrentScope();
-                    p.setInDef(((((Integer)yyVals[-3+yyTop]).intValue()) & 1) != 0);
-                    p.setIsInClass(((((Integer)yyVals[-3+yyTop]).intValue()) & 2) != 0);
+                    p.setInDef(((((Integer)yyVals[-3+yyTop]).intValue())     & 0b01) != 0);
+                    p.setIsInClass(((((Integer)yyVals[-3+yyTop]).intValue()) & 0b10) != 0);
     return yyVal;
   }
 };
@@ -4862,6 +4863,6 @@ states[650] = new RipperParserState() {
   }
 };
 }
-					// line 2198 "RipperParser.y"
+					// line 2250 "RipperParser.y"
 }
-					// line 9835 "-"
+					// line 9836 "-"
