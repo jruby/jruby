@@ -44,6 +44,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
@@ -64,7 +65,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.lexer.LexingCommon.*;
-import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.*;
 
 /** 
  *
@@ -909,6 +910,12 @@ public class ParserSupport {
     }
 
     public RubySymbol symbolID(ByteList identifierValue) {
+        // FIXME: We walk this during identifier construction so we should calculate CR without having to walk twice.
+        if (RubyString.scanForCodeRange(identifierValue) == StringSupport.CR_BROKEN) {
+            Ruby runtime = getConfiguration().getRuntime();
+            throw runtime.newEncodingError(str(runtime, "invalid symbol in encoding " + lexer.getEncoding() + " :\"", inspectIdentifierByteList(runtime, identifierValue), "\""));
+        }
+
         return RubySymbol.newIDSymbol(getConfiguration().getRuntime(), identifierValue);
     }
 
