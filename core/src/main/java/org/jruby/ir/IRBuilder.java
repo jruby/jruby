@@ -1188,24 +1188,26 @@ public class IRBuilder {
     }
 
     public Operand buildCase(CaseNode caseNode) {
-        // scan all cases to see if we have a homogeneous literal case/when
-        NodeType seenType = null;
-        for (Node aCase : caseNode.getCases().children()) {
-            WhenNode whenNode = (WhenNode)aCase;
-            NodeType exprNodeType = whenNode.getExpressionNodes().getNodeType();
+        if (caseNode.getCaseNode() != null) {
+            // scan all cases to see if we have a homogeneous literal case/when
+            NodeType seenType = null;
+            for (Node aCase : caseNode.getCases().children()) {
+                WhenNode whenNode = (WhenNode) aCase;
+                NodeType exprNodeType = whenNode.getExpressionNodes().getNodeType();
 
-            if (seenType == null) {
-                seenType = exprNodeType;
-            } else if (seenType != exprNodeType) {
-                seenType = null;
-                break;
+                if (seenType == null) {
+                    seenType = exprNodeType;
+                } else if (seenType != exprNodeType) {
+                    seenType = null;
+                    break;
+                }
             }
-        }
 
-        if (seenType != null) {
-            switch (seenType) {
-                case FIXNUMNODE:
-                    return buildFixnumCase(caseNode);
+            if (seenType != null) {
+                switch (seenType) {
+                    case FIXNUMNODE:
+                        return buildFixnumCase(caseNode);
+                }
             }
         }
 
