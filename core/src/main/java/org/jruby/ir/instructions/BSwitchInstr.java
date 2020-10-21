@@ -31,6 +31,9 @@ public class BSwitchInstr extends MultiBranchInstr {
         // We depend on the jump table being sorted, so ensure that's the case here
         assert jumpsAreSorted(jumps);
 
+        // Switch cases must not have an empty "case" value (GH-6440)
+        assert operand != null : "Switch cases must not have an empty \"case\" value";
+
         this.jumps = jumps;
         this.operand = operand;
         this.rubyCase = rubyCase;

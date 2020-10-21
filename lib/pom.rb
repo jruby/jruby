@@ -24,7 +24,7 @@ default_gems = [
     ['irb', '1.0.0'],
     ['jar-dependencies', '${jar-dependencies.version}'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.10.4'],
+    ['jruby-openssl', '0.10.5'],
     ['json', '${json.version}'],
     ['logger', '1.3.0'],
     ['matrix', '0.3.0'],
