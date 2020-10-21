@@ -87,7 +87,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'joda.time.version' => '2.10.5' )
 
   plugin_management do
-    jar( 'junit:junit:4.12',
+    jar( 'junit:junit:4.13.1',
          :scope => 'test' )
 
     plugin( 'org.apache.felix:maven-bundle-plugin:4.2.1',
