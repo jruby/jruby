@@ -16,8 +16,8 @@ class TestJRubyc < Test::Unit::TestCase
 
     @tempfile_stderr = Tempfile.open("test_jrubyc_stderr")
     @old_stderr = $stderr.dup
-#    $stderr.reopen @tempfile_stderr
-#    $stderr.sync = true
+    $stderr.reopen @tempfile_stderr
+    $stderr.sync = true
   end
 
   def teardown
