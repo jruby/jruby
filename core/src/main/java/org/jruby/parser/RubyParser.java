@@ -1598,8 +1598,8 @@ public class RubyParser {
   }
 
   private static void initializeStates(ProductionState[] states, int start, int length) {
-      for (int i = start; i < length; i++) {
-          states[i] = new ProductionState();
+      for (int i = 0; i < length; i++) {
+          states[start + i] = new ProductionState();
       }
   }
 
