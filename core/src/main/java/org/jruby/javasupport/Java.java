@@ -1504,6 +1504,7 @@ public class Java implements Library {
 
     }
 
+    //TODO: what is this doing?
     @SuppressWarnings("unchecked")
     public static Class generateRealClass(final RubyClass clazz) {
         final Ruby runtime = clazz.getRuntime();

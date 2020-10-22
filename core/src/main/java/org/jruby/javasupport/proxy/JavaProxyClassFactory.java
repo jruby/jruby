@@ -48,6 +48,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
@@ -127,9 +128,9 @@ public class JavaProxyClassFactory {
     private static final org.objectweb.asm.commons.Method initHandlerClass = org.objectweb.asm.commons.Method
         .getMethod(JavaProxyInvocationHandler.class.getName() + " init("+JavaProxyClass.class.getName() + ",java.lang.Object,java.lang.Object[])");
     
-    
+    /*
     private static final org.objectweb.asm.commons.Method trampolineInit = org.objectweb.asm.commons.Method
-    		.getMethod(JavaProxyInvocationHandler.class.getName() + "__jruby$trampoline$init(java.lang.Object[])");
+    		.getMethod(JavaProxyInvocationHandler.class.getName() + "__jruby$trampoline$init(java.lang.Object[])");*/
     
 
     private static final Type JAVA_PROXY_TYPE = Type.getType(InternalJavaProxy.class);
@@ -198,6 +199,9 @@ public class JavaProxyClassFactory {
                                     Class superClass, Class[] interfaces,
                                     Map<MethodKey, MethodData> methods, Type selfType, RubyClass rclass, int id) {
         ClassWriter cw = beginProxyClass(selfType, targetClassName, superClass, interfaces, loader);
+        
+        if (1 < 2)
+        throw new RuntimeException("Ack, old code being hit!");
         
         Map<String, Map<Class, Map<String, Object>>> fieldannos;
         Map<String, Class> fields;
@@ -637,6 +641,22 @@ public class JavaProxyClassFactory {
         	return jpih;
         }
      
+
+        public static IRubyObject sinit(Ruby ruby, RubyClass clazz, Object jself, Object[] args) throws Throwable {
+        	final IRubyObject self = new ConcreteJavaProxy(ruby, clazz, jself);
+        			//clazz.allocate();// NOTE: this has to be done somewhere else in the code/I'm missing lots?
+        	/*
+        	IRubyObject cjp = JavaObject.wrap(runtime, jself);
+            JavaUtilities.set_java_object(self, self, cjp);*/
+            //JavaProxyClass
+           // self.getMetaClass().setInstanceVariable("@java_proxy_class", jpc);
+            //if ( ((JavaProxy) proxy).object == null ) 
+        	//final JavaProxyInvocationHandler jpih = new MethodInvocationHandler(runtime, self);//FIXME: needs to be constant and sync with Java$JCreate
+        //	jpih.invoke_ctor(args);
+        	//return jpih;
+        	//TODO: initialize?
+        	return self;
+        }
 
     }
 
