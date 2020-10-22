@@ -406,7 +406,7 @@ class Date
       return jd
     end
 
-    if cwyear = elem[:cwyear] and cweek = elem[:cweek] and cwday = (elem[:cwday] || elem[:wday].nonzero? || 7) and
+    if cwyear = elem[:cwyear] and cweek = elem[:cweek] and cwday = (elem[:cwday] || 1 ) and
         jd = _valid_commercial?(cwyear, cweek, cwday, sg)
       return jd
     end
