@@ -67,7 +67,7 @@ describe "Date#parse" do
 
   it "parses W## as week number and defaults to this year first day of week" do
     d = Date.parse('W09') #9th week of the year assumes first day of the week.
-    d.should == Date.civil(2020, 2, 24) #Mon. 2/24/2020. Week always starts with a Monday.
+    d.should == Date.civil(Date.today.year, 2, 24) #Mon. 2/24/2020. Week always starts with a Monday.
   end
 
   it "parses YYYY-W## as year and week number and defaults to first day of week" do
