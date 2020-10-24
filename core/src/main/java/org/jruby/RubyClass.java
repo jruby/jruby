@@ -110,7 +110,6 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
-import com.test.patrick.AbstractClass;
 
 /**
  *
