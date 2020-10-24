@@ -86,7 +86,7 @@ import org.jruby.RubyTime;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -182,6 +182,10 @@ public class JavaUtil {
      * @return corresponding Ruby type, or a functional Java proxy
      */
     public static IRubyObject convertJavaToUsableRubyObject(Ruby runtime, Object object) {
+    	if (object.getClass().getName().startsWith("rubyobj"))
+    	{
+    		
+    	}
         IRubyObject result = trySimpleConversions(runtime, object);
 
         if (result != null) return result;
@@ -639,9 +643,9 @@ public class JavaUtil {
             return ((RubyObjectHolderProxy) object).__ruby_object();
         }
 
-        if ( object instanceof InternalJavaProxy ) {
-            final InternalJavaProxy internalJavaProxy = (InternalJavaProxy) object;
-            IRubyObject orig = internalJavaProxy.___getInvocationHandler().getOrig();
+        if ( object instanceof ReifiedJavaProxy ) {
+            final ReifiedJavaProxy internalJavaProxy = (ReifiedJavaProxy) object;
+            IRubyObject orig = internalJavaProxy.___jruby$rubyObject();
             if (orig != null) return orig;
         }
 

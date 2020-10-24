@@ -1,10 +1,14 @@
 package org.jruby.java.proxies;
 
+import java.lang.reflect.Field;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
@@ -86,103 +90,111 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
 
     }
-
+//new override
     private static final class NewMethod extends org.jruby.internal.runtime.methods.JavaMethod {
-
-        private transient CallSite jcreateSite;
-        final DynamicMethod newMethod;
+    	final DynamicMethod newMethod;
 
         NewMethod(final RubyClass clazz) {
             super(clazz, Visibility.PUBLIC, "new");
             newMethod = clazz.searchMethod("new");
         }
+// TODO: reload this on method changes?
+        private DynamicMethod reifyAndNewMethod(IRubyObject clazz) { 
 
-        private CallSite jcreateSite() { // most of the time we won't need to instantiate
-            CallSite callSite = jcreateSite;
-            if (callSite == null) {
-                callSite = jcreateSite = MethodIndex.getFunctionalCallSite("__jcreate!");
+        	RubyClass parent = ((RubyClass)clazz);
+        	System.err.println(parent.getName() + " is " + parent.getJavaProxy());
+        	if (parent.getJavaProxy()) return newMethod;
+        	
+        	// overridden class: reify and re-lookup new as reification changes it
+            if (parent.getReifiedClass() == null) {
+            	parent.reifyWithAncestors();
             }
-            return callSite;
+            //System.err.println(parent.getName() + " is " + parent.getJavaProxy());
+            return new NewMethodReified(parent, parent.getReifiedClass());
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", args, block);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, args, block);
-            return proxy;
+            return reifyAndNewMethod(self).call(context, self, clazz, "new_proxy", args, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", block);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, block);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz, "new",block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", arg0, block);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, arg0, block);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz, "new",arg0, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", arg0, arg1, block);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, arg0, arg1, block);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz, "new",arg0, arg1, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", arg0, arg1, arg2, block);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, arg0, arg1, arg2, block);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz, "new",arg0, arg1, arg2, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", args);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, args);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz, "new",args);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy");
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz,"new_proxy");
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", arg0);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, arg0);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz, "new_proxy",arg0);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", arg0, arg1);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, arg0, arg1);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz,"new", arg0, arg1);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy", arg0, arg1, arg2);
-            if ( ((JavaProxy) proxy).object == null ) jcreateSite().call(context, proxy, proxy, arg0, arg1, arg2);
-            return proxy;
+        	return reifyAndNewMethod(self).call(context, self, clazz,"new", arg0, arg1, arg2);
         }
 
     }
+    
+//TODO: cleanup
+    public static final class NewMethodReified extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN {
 
-    protected static void initialize(final RubyClass ConcreteJavaProxy) {
-        ConcreteJavaProxy.addMethod("initialize", new InitializeMethod(ConcreteJavaProxy));
+        private Field rubyObject;
+        private final DynamicMethod initialize;
+
+        //TODO: package?
+        public NewMethodReified(final RubyClass clazz, final Class reified) {
+            super(clazz, Visibility.PUBLIC, "new");
+            initialize = clazz.searchMethod("__jcreate!");
+        }
+
+		@Override
+		public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
+				IRubyObject[] args)
+		{
+			
+			JavaObject jo = (JavaObject)initialize.call(context, self, clazz, "new", args);
+			return ((ReifiedJavaProxy)jo.getValue()).___jruby$rubyObject();
+		}
+
+    }
+
+    protected static void initialize(final RubyClass concreteJavaProxy) {
+        concreteJavaProxy.addMethod("initialize", new InitializeMethod(concreteJavaProxy));
+        System.err.println("adding to " + concreteJavaProxy.getName());
         // We define a custom "new" method to ensure that __jcreate! is getting called,
         // so that if the user doesn't call super in their subclasses, the object will
         // still get set up properly. See JRUBY-4704.
-        RubyClass singleton = ConcreteJavaProxy.getSingletonClass();
+        RubyClass singleton = concreteJavaProxy.getSingletonClass();
         singleton.addMethod("new", new NewMethod(singleton));
     }
 
@@ -213,6 +225,11 @@ public class ConcreteJavaProxy extends JavaProxy {
     @SuppressWarnings("unchecked")
     public <T> T toJava(Class<T> type) {
         final Object object = getObject();
+        if (object == null)
+        {
+        	System.out.println(":-(");
+        	return null;
+        }
         final Class clazz = object.getClass();
 
         if ( type.isPrimitive() ) {

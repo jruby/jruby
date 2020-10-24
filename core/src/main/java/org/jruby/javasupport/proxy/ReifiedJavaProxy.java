@@ -28,25 +28,25 @@
 
 package org.jruby.javasupport.proxy;
 
+import org.jruby.RubyClass;
+import org.jruby.java.codegen.Reified;
+import org.jruby.runtime.builtin.IRubyObject;
+
 /**
  * Interface is implemented by proxies generated from a JavaProxyClass.
  *
- * @see JavaProxyClassFactory
+ * @see RubyClass.ConcreteJavaReifier
  */
-public interface InternalJavaProxy {
+public interface ReifiedJavaProxy extends Reified {
 
     /**
      * @return the corresponding JavaProxyClass
      */
-    JavaProxyClass ___getProxyClass();
+    JavaProxyClass ___jruby$proxyClass();
 
     /**
-     * @return the invocation handler
+     * @return the ruby object associated with this java object
      */
-    JavaProxyInvocationHandler ___getInvocationHandler();
-
-    // NOTE: used in JavaProxyClassFactory indirectly
-    // ... getStatic(JAVA_PROXY_TYPE, "NO_ARGS", ...)
-    static final Object[] NO_ARGS = new Object[0];
+    IRubyObject ___jruby$rubyObject();
 
 }

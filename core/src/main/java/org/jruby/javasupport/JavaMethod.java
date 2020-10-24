@@ -53,7 +53,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -241,11 +241,11 @@ public class JavaMethod extends JavaCallable {
             //
             // this test really means, that this is a ruby-defined subclass of a java class
             //
-            if ( javaInvokee instanceof InternalJavaProxy &&
+            if ( javaInvokee instanceof ReifiedJavaProxy &&
                 // don't bother to check if final method, it won't
                 // be there (not generated, can't be!)
                 ! isFinal ) {
-                JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+                JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
                 JavaProxyMethod jpm = jpc.getMethod( method.getName(), parameterTypes );
                 if ( jpm != null && jpm.hasSuperImplementation() ) {
                     return invokeWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, arguments);
@@ -604,11 +604,11 @@ public class JavaMethod extends JavaCallable {
 
     private boolean mightBeProxy(Object javaInvokee) {
         // this test really means, that this is a ruby-defined subclass of a java class
-        return javaInvokee instanceof InternalJavaProxy && !isFinal;
+        return javaInvokee instanceof ReifiedJavaProxy && !isFinal;
     }
 
     private IRubyObject tryProxyInvocation(ThreadContext context, Object javaInvokee, Object... args) {
-        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
         JavaProxyMethod jpm;
         if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
             return invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, args);
@@ -618,7 +618,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     private IRubyObject tryProxyInvocation(ThreadContext context, Object javaInvokee) {
-        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
         JavaProxyMethod jpm;
         if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
             return invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee);
@@ -628,7 +628,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     private IRubyObject tryProxyInvocation(ThreadContext context, Object javaInvokee, Object arg0) {
-        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
         JavaProxyMethod jpm;
         if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
             return invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, arg0);
@@ -638,7 +638,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     private IRubyObject tryProxyInvocation(ThreadContext context, Object javaInvokee, Object arg0, Object arg1) {
-        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
         JavaProxyMethod jpm;
         if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
             return invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, arg0, arg1);
@@ -648,7 +648,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     private IRubyObject tryProxyInvocation(ThreadContext context, Object javaInvokee, Object arg0, Object arg1, Object arg2) {
-        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
         JavaProxyMethod jpm;
         if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
             return invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, arg0, arg1, arg2);
@@ -658,7 +658,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     private IRubyObject tryProxyInvocation(ThreadContext context, Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
-        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
         JavaProxyMethod jpm;
         if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
             return invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, arg0, arg1, arg2, arg3);

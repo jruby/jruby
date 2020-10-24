@@ -47,6 +47,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -60,6 +62,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.codegen.Reified;
+import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -158,7 +162,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         if ( proxyClass != null ) return proxyClass;
 
         final ClassLoader loader = runtime.getJRubyClassLoader();
-        proxyClass = runtime.getJavaProxyClassFactory().genProxyClass(runtime, (ClassDefiningClassLoader) loader, null, superClass, interfaces, names, field, extraMethods, clazz);
+        RuntimeException re = new RuntimeException("New newProxyClass call");
+        re.printStackTrace();
+        if (4>3)
+        	throw re;
+        proxyClass = null; 
         return JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
     }
 
@@ -166,7 +174,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             Class[] interfaces) throws InvocationTargetException {
         return newProxyClass(runtime, superClass, interfaces, null, null, null, null);
     }
-
+/*
     public static Object newProxyInstance(Ruby runtime, Class superClass, Class[] interfaces,
             Class[] constructorParameters, Object[] constructorArgs,
             JavaProxyInvocationHandler handler) throws IllegalArgumentException,
@@ -178,7 +186,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             constructorParameters == null ? EMPTY_CLASS_ARRAY : constructorParameters
         );
         return constructor.newInstance(constructorArgs, handler);
-    }
+    }*/
 
     public Class getSuperclass() {
         return proxyClass.getSuperclass();
@@ -188,7 +196,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         Class[] ifaces = proxyClass.getInterfaces();
         Class[] result = new Class[ifaces.length - 1];
         for ( int i = 0, j = 0; i < ifaces.length; i++ ) {
-            if ( ifaces[i] == InternalJavaProxy.class ) continue;
+        	//TODO: ???
+            if ( ifaces[i] == ReifiedJavaProxy.class ) continue;
             result[ j++ ] = ifaces[i];
         }
         return result;
@@ -198,16 +207,18 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     // TODO: filter out in Java Jcreate or here?
     public JavaProxyConstructor[] getConstructors() {
-        JavaProxyConstructor[] constructors = this.constructors;
-        if ( constructors != null ) return constructors;
+        JavaProxyConstructor[] constructorsCached = this.constructors;
+        if ( constructorsCached != null ) return constructorsCached;
 
         final Ruby runtime = getRuntime();
         final Constructor[] ctors = proxyClass.getConstructors();
-        constructors = new JavaProxyConstructor[ ctors.length ];
+        List<JavaProxyConstructor> constructors = new ArrayList<>(ctors.length);
         for ( int i = 0; i < ctors.length; i++ ) {
-            constructors[i] = new JavaProxyConstructor(runtime, this, ctors[i]);
+        	JavaProxyConstructor jpc = new JavaProxyConstructor(runtime, this, ctors[i]);
+        	if (!jpc.isExportable())
+        		constructors.add(jpc);
         }
-        return this.constructors = constructors;
+        return this.constructors = constructors.toArray(new JavaProxyConstructor[constructors.size()]);
     }
 
     public JavaProxyConstructor getConstructor(final Class[] args)
@@ -215,7 +226,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         final Class[] realArgs = new Class[args.length + 1];
         System.arraycopy(args, 0, realArgs, 0, args.length);
-        realArgs[ args.length ] = JavaProxyInvocationHandler.class;
+        realArgs[ args.length ] = JavaProxyInvocationHandler.class; //TODO: fix!
 
         @SuppressWarnings("unchecked")
         Constructor<?> constructor = proxyClass.getConstructor(realArgs);
@@ -599,9 +610,76 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         return getProxyClass(runtime, (RubyClass) obj);
     }
+    
+    //Note: called from <clinit> of reified classes
+    public static JavaProxyClass setProxyClassReified(final Ruby runtime, final RubyClass clazz, final Class<? extends Reified> reified, final boolean allocator) {
+    	JavaProxyClass proxyClass = new JavaProxyClass(runtime, reified);
+    	// TODO: don't duplicate this code from above
+        // NOTE: currently we regenerate proxy classes when a Ruby method is added on the type
+        //JavaSupport.ProxyClassKey classKey = JavaSupport.ProxyClassKey.getInstance(superClass, interfaces, names);
+    	//TODO:
+    	//JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
+        clazz.setInstanceVariable("@java_proxy_class", proxyClass);
+        
+
+        RubyClass singleton = clazz.getSingletonClass();
+
+        System.err.println("Setting on " + clazz.toString() + " + single " + singleton.toString());
+        singleton.setInstanceVariable("@java_proxy_class", proxyClass);
+        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
+        if (allocator) singleton.addMethod("new", new NewMethodReified(clazz, reified));
+//        
+//        //TODO: wait, what????
+//        singleton = clazz.getMetaClass();
+//        singleton.setInstanceVariable("@java_proxy_class", proxyClass);
+//        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
+//        if (allocator) singleton.addMethod("new", new NewMethodReified(clazz, reified));
+        return proxyClass;
+    }
+    
+    /**
+     * These objects are to allow static initializers in reified code. See RubyClass.BaseReifier for 
+     * details
+     */
+    private static final AtomicInteger lookupIdNext = new AtomicInteger(0);
+    private static final Map<Integer, Object[]> lookup = new ConcurrentHashMap<>();
+    
+    public static Integer addStaticInitLookup(Ruby runtime, RubyClass clazz)
+    {
+    	int val = lookupIdNext.incrementAndGet();
+    	lookup.put(val, new Object[]{runtime, clazz});
+    	return val;
+    }
+    // used by reified code in RubyClass
+    public static Object[] getStaticInitLookup(int id)
+    {
+    	return lookup.remove(id);
+    }
 
     public static JavaProxyClass getProxyClass(final Ruby runtime, final RubyClass clazz) {
-
+    	
+    	try
+    	{
+    	clazz.reifyWithAncestors();
+    	JavaProxyClass jpc = (JavaProxyClass) clazz.getInstanceVariable("@java_proxy_class");
+    	if (5>4)
+    		return jpc;
+    	}
+    	catch (RaiseException e) {
+            throw e;
+        }
+        catch (Exception e) {
+        	e.printStackTrace();
+            String msg = e.getLocalizedMessage();
+            if ( msg == null ) msg = e.toString();
+            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + clazz.getName() + " : " + msg);
+            ex.initCause(e);
+            throw ex;
+        }
+    	
+    	
+    	// TODO: ensure none of the below code matters, and trim below here
+    	
         // Let's only generate methods for those the user may actually intend to override.
         // That includes any defined in the current class, and any ancestors that are also JavaProxyClasses
         // (but none from any other ancestor classes). Methods defined in mixins will be considered
@@ -694,12 +772,14 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         Class<?>[] interfaces = interfaceList.isEmpty() ? EMPTY_CLASS_ARRAY : interfaceList.toArray(new Class<?>[interfaceList.size()]);
 
         try {
-            return newProxyClass(runtime, javaClass.javaClass(), interfaces, names, clazz.getFieldSignatures(), clazz.getMethodSignatures(), clazz);
+        	throw new RuntimeException("Old Concrete called");
+            //return null;
         }
         catch (RaiseException e) {
             throw e;
         }
         catch (Exception e) {
+        	
             String msg = e.getLocalizedMessage();
             if ( msg == null ) msg = e.toString();
             RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + javaClass + " : " + msg);

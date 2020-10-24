@@ -57,7 +57,9 @@ import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.Loader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 
 import static org.jruby.RubyInstanceConfig.JAVA_VERSION;
 import static org.jruby.util.CodegenUtils.ci;
@@ -843,4 +845,9 @@ public abstract class RealClassGenerator {
         return baseIndex;
     }
 
+    public static GeneratorAdapter makeGenerator(SkinnyMethodAdapter m)
+    {
+    	return new GeneratorAdapter(m.getMethodVisitor(), Opcodes.ACC_PUBLIC, "ignored", m.getSignature());
+    	
+    }
 }

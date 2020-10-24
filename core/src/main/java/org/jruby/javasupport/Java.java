@@ -131,7 +131,6 @@ public class Java implements Library {
 
         RubyClassPathVariable.createClassPathVariable(runtime);
 
-        runtime.setJavaProxyClassFactory(JavaProxyClassFactory.createFactory());
 
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
@@ -633,35 +632,38 @@ public class Java implements Library {
 
             final JavaProxyConstructor matching;
             switch (constructors.length) {
-                case 1:
-                case 2: matching = matchConstructor0ArityOne(context, constructors, arg0); break;
+                case 1: matching = matchConstructor0ArityOne(context, constructors, arg0); break;
                 default: matching = matchConstructorArityOne(context, constructors, arg0);
             }
-
+            if (self instanceof JavaProxy)
+            {
+            	return context.nil; 
+            }
             JavaObject newObject = matching.newInstance(self, arg0);
-            return JavaUtilities.set_java_object(self, self, newObject);
+            return newObject;
         }
 
-        @Override //TODO: ensure both sides are good
+        @Override
         public final IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        	if (((JavaProxy) self).getObject() == null )
-        	{
             final int arity = args.length;
             final JavaProxyConstructor[] constructors = getProxyClass(self).getConstructors();
 
             final JavaProxyConstructor matching;
             switch (constructors.length) {
-                case 1:// IS this logic sound? or should we be more careful
-                case 2: matching = matchConstructor0(context, constructors, arity, args); break;
+                case 1: matching = matchConstructor0(context, constructors, arity, args); break;
                 default: matching = matchConstructor(context, constructors, arity, args);
             }
 
+            if (self instanceof JavaProxy)
+            {
+            	return context.nil; 
+            }
             JavaObject newObject = matching.newInstance(self, args);
-            return JavaUtilities.set_java_object(self, self, newObject);
-        	} else
-        	{
-        		return (IRubyObject) ((JavaProxy)self).dataGetStruct();
-        	}
+            if (self instanceof JavaProxy)
+            {
+            	JavaUtilities.set_java_object(self, self, newObject);
+            }
+            return newObject;
         }
 
         // assumes only 1 *Ruby* constructor exists! (Filters out nonruby)
@@ -730,7 +732,7 @@ public class Java implements Library {
         }
 
         // generic (slowest) path
-        private JavaProxyConstructor matchConstructor(final ThreadContext context,
+        public JavaProxyConstructor matchConstructor(final ThreadContext context,
             final JavaProxyConstructor[] constructors, final int arity, final IRubyObject... args) {
             ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(arity, constructors);
 

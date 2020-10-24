@@ -84,9 +84,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         this.declaringProxyClass = proxyClass;
         this.proxyConstructor = constructor;
         Class<?>[] parameterTypes = constructor.getParameterTypes();
-        this.exportable = parameterTypes.length == 0;// || parameterTypes[parameterTypes.length - 1] != JavaProxyInvocationHandler.class;
+        this.exportable = parameterTypes.length == 0 || parameterTypes[parameterTypes.length - 1] != RubyClass.class;
         // see JavaProxyClassFactory's generateConstructor ...
-        this.actualParameterTypes = ArraySupport.newCopy(parameterTypes, parameterTypes.length - (exportable?0:1));
+        this.actualParameterTypes = ArraySupport.newCopy(parameterTypes, parameterTypes.length - (exportable?0:2));
         this.actualVarArgs = JavaProxyClassFactory.isVarArgs(proxyConstructor);
     }
 
@@ -109,7 +109,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return declaringProxyClass;
     }
 
-    public final Object newInstance(Object[] args, JavaProxyInvocationHandler handler)
+    public final Object newInstance(Object[] args, Ruby runtime, IRubyObject clazz)
         throws IllegalArgumentException, InstantiationException,
                IllegalAccessException, InvocationTargetException {
         final int len = args.length;
@@ -117,9 +117,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
             throw new IllegalArgumentException("wrong number of parameters");
         }
         if (exportable)
-        	return newInstanceImpl(args, null);
+        	return newInstanceImpl(args, null, null);
         else
-        	return newInstanceImpl(ArraySupport.newCopy(args, len + 1), handler); // does args[ len ] = handler;
+        	return newInstanceImpl(ArraySupport.newCopy(args, len + 2), runtime, clazz); // does args[ len ] = handler;
     }
 	/**
 	 * For exportable objects, argsPlus1 is not plus one
@@ -131,10 +131,13 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 	 * @throws IllegalAccessException
 	 * @throws InvocationTargetException
 	 */
-    final Object newInstanceImpl(Object[] argsPlus1, JavaProxyInvocationHandler handler)
+    final Object newInstanceImpl(Object[] argsPlus1, Ruby runtime, IRubyObject clazz)
         throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
     	if (!exportable)
-    		argsPlus1[ argsPlus1.length - 1 ] = handler;
+    	{
+    		argsPlus1[ argsPlus1.length - 2 ] = runtime;
+    		argsPlus1[ argsPlus1.length - 1 ] = (RubyClass)clazz;
+    	}
         return proxyConstructor.newInstance(argsPlus1);
     }
 
@@ -187,9 +190,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         final IRubyObject self = args[0];
         final Object[] convertedArgs = convertArguments((RubyArray) args[1]); // constructor arguments
 
-        JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
+        //JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
         try {
-            return JavaObject.wrap(runtime, newInstance(convertedArgs, handler));
+            return JavaObject.wrap(runtime, newInstance(convertedArgs, runtime, self));
         }
         catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
     }
@@ -197,9 +200,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     public JavaObject newInstance(final IRubyObject self, Object[] args) throws RaiseException {
         final Ruby runtime = getRuntime();
 
-        JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
+        //JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
         try {
-            return JavaObject.wrap(runtime, newInstance(args, handler));
+            return JavaObject.wrap(runtime, newInstance(args, runtime, self));
         }
         catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
     }
@@ -207,10 +210,10 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     public final JavaObject newInstance(final IRubyObject self, IRubyObject[] args) throws RaiseException {
         final Ruby runtime = getRuntime();
 
-        final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, args, (exportable?0:+1));
-        JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
+        final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, args, (exportable?0:+2));
+        //JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
         try {
-            return JavaObject.wrap(runtime, newInstanceImpl(javaArgsPlus1, handler));
+            return JavaObject.wrap(runtime, newInstanceImpl(javaArgsPlus1, runtime, self));
         }
         catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
     }
@@ -218,10 +221,10 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     public final JavaObject newInstance(final IRubyObject self, IRubyObject arg0) throws RaiseException {
         final Ruby runtime = getRuntime();
 
-        final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, arg0, (exportable?0:+1));
-        JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
+        final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, arg0, (exportable?0:+2));
+        //JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
         try {
-            return JavaObject.wrap(runtime, newInstanceImpl(javaArgsPlus1, handler));
+            return JavaObject.wrap(runtime, newInstanceImpl(javaArgsPlus1, runtime, self));
         }
         catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
     }
@@ -236,7 +239,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         ex.initCause(e);
         throw ex;
     }
-
+/*
     static final class MethodInvocationHandler implements JavaProxyInvocationHandler {
 
         private final Ruby runtime;
@@ -288,7 +291,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
             throw runtime.newArgumentError(newArgs.length, arity);
         }
 
-    }
+    }*/
 
     @JRubyMethod(required = 1, optional = 1)
     public RubyObject new_instance(IRubyObject[] args, Block block) {
@@ -306,9 +309,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
         final Object[] convertedArgs = convertArguments((RubyArray) args[0]);
 
-        JavaProxyInvocationHandler handler = new ProcInvocationHandler(runtime, proc);
+        //JavaProxyInvocationHandler handler = new ProcInvocationHandler(runtime, proc);
         try {
-            return JavaObject.wrap(runtime, newInstance(convertedArgs, handler));
+            return JavaObject.wrap(runtime, newInstance(convertedArgs, runtime, proc));
         }
         catch (Exception e) {
             RaiseException ex = runtime.newArgumentError("Constructor invocation failed: " + e.getMessage());
@@ -316,7 +319,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
             throw ex;
         }
     }
-
+/*
     private static final class ProcInvocationHandler implements JavaProxyInvocationHandler {
 
         private final Ruby runtime;
@@ -347,7 +350,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 			throw new UnsupportedOperationException();
 		}
 
-    }
+    }*/
 
     private Object[] convertArguments(final RubyArray arguments) {
         final int argsSize = arguments.size();

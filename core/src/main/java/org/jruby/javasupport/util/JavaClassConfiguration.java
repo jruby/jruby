@@ -8,4 +8,6 @@ public class JavaClassConfiguration
 	
 	// for java proxies
 	public boolean allCtors  = false;
+	public boolean rubyConstructable = true; // 
+	public boolean splitSuper = true;
 }

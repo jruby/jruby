@@ -33,6 +33,8 @@ package org.jruby;
 
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.ext.JavaExtensions;
+import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.util.JavaClassConfiguration;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -50,6 +52,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ACC_VARARGS;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -68,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -104,6 +108,9 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.commons.GeneratorAdapter;
+
+import com.test.patrick.AbstractClass;
 
 /**
  *
@@ -1383,16 +1390,29 @@ public class RubyClass extends RubyModule {
         }
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
+        	//TODO: <? extends Reified>
             Class result = parentCL.defineClass(javaName, classBytes);
             dumpReifiedClass(classDumpDir, javaPath, classBytes);
 
+            //Trigger initilization
             @SuppressWarnings("unchecked")
-            java.lang.reflect.Method clinit = result.getDeclaredMethod("clinit", Ruby.class, RubyClass.class);
-            clinit.invoke(null, runtime, this);
+            java.lang.reflect.Field rt = result.getDeclaredField("ruby");
+            rt.setAccessible(true);
+            if (rt.get(null) == null)
+            	throw new RuntimeException("No ruby field set!");
 
             if (concreteExt)
             {
-            	setRubyStaticAllocator(result);
+            	//TODO: check for rubyctor
+            	if (((ConcreteJavaReifier)reifier).simpleAlloc)
+            	{
+            		setRubyStaticAllocator(result);
+            	}
+            	else
+            	{
+            		/**Allocator "set" via clinit @see JavaProxyClass.setProxyClassReified
+            		 */
+            	}
             	
             	// update java_class
             	this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
@@ -1414,6 +1434,7 @@ public class RubyClass extends RubyModule {
             }
         }
         catch (Exception ex) {
+        	ex.printStackTrace();
             logReifyException(ex, true);
         }
 
@@ -1429,10 +1450,16 @@ public class RubyClass extends RubyModule {
     interface Reificator {
         byte[] reify();
     } // interface  Reificator
+    
+    
 
     private abstract class BaseReificator implements Reificator {
 
-        protected final Class reifiedParent;
+        protected static final String RUBY_INIT_ARGS_FIELD = "$rubyInitArgs";
+		protected static final String RUBY_OBJECT_FIELD = "$rubyObject";
+		protected static final String RUBY_PROXY_CLASS_FIELD = "$rubyProxyClass";
+		
+		protected final Class reifiedParent;
         protected final String javaName;
         protected final String javaPath;
         protected final String rubyName;
@@ -1446,47 +1473,53 @@ public class RubyClass extends RubyModule {
             this.javaPath = javaPath;
             this.rubyName = rubyName;
             this.rubyPath = rubyPath;
-            jcc = new JavaClassConfiguration();
-            jcc.callInitialize = true;
+            jcc = getClassConfig();
+            //jcc.callInitialize = true;
+            //jcc.allCtors = true;
+            //jcc.allMethods = false;
 
             cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
             cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent), interfaces());
             cw.visitSource("Reifier.gen", null);//TODO: name of RB?
-        }
+        } 
 
         @Override
         public byte[] reify() {
 
             // fields to hold Ruby and RubyClass references
-            cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null);
-            cw.visitField(ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null);
-            if (!isRubyObject()) cw.visitField(ACC_PRIVATE, "rubyObject", rubyName, null, null); 
+            cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null);
+            cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null);
+            if (!isRubyObject()) cw.visitField(ACC_PRIVATE, RUBY_OBJECT_FIELD, rubyName, null, null); 
+            if (!isRubyObject()) cw.visitField(ACC_PRIVATE, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class), null, null);
+            if (!isRubyObject()) cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class), null, null); 
 
-            // static initializing method
-            SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "clinit", sig(void.class, Ruby.class, RubyClass.class), null, null);
-            m.start();
-            m.aload(0);
-            m.putstatic(javaPath, "ruby", ci(Ruby.class));
-            m.aload(1);
-            m.putstatic(javaPath, "rubyClass", ci(RubyClass.class));
-            m.voidreturn();
-            m.end();
             
             reifyConstructors();
             customReify();
+            
+
+            // static initializing method, note this is after the constructors to check for alloc-ables (see Concrete Java)
+            SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null);
+            m.start();
+            reifyClinit(m);
+            m.voidreturn();
+            m.end();
 
             cw.visitEnd();
 
             return cw.toByteArray();
         }
+        
+        public abstract void reifyClinit(SkinnyMethodAdapter m); 
 
         public abstract void customReify();
 
         private String[] interfaces() {
+        	//TODO: filter interfaces as per old code?
             final Class[] interfaces = Java.getInterfacesFromRubyClass(RubyClass.this);
             final String[] interfaceNames = new String[interfaces.length + 1];
             // mark this as a Reified class
-            interfaceNames[0] = p(Reified.class);
+            interfaceNames[0] = p(isRubyObject() ? Reified.class : ReifiedJavaProxy.class);
             // add the other user-specified interfaces
             for (int i = 0; i < interfaces.length; i++) {
                 interfaceNames[i + 1] = p(interfaces[i]);
@@ -1510,7 +1543,7 @@ public class RubyClass extends RubyModule {
         	else
         	{
         		m.aload(0); // self
-        		m.getfield(javaPath, "rubyObject", rubyName); // rubyObject
+        		m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName); // rubyObject
         	}
         }
         
@@ -1552,6 +1585,13 @@ public class RubyClass extends RubyModule {
             m.voidreturn();
             m.end();
         }
+		
+		protected Class[] join(Class[] base, Class... extra)
+		{
+			Class[] more = ArraySupport.newCopy(base, base.length + extra.length);
+			ArraySupport.copy(extra, more, base.length, extra.length);
+			return more;
+		}
     }
 
     private class MethodReificator extends BaseReificator {
@@ -1624,6 +1664,7 @@ public class RubyClass extends RubyModule {
 
                 String signature;
                 if (methodSignature == null) {
+                	if (!jcc.allMethods) continue;
                     final Arity arity = methodEntry.getValue().getArity();
                     // non-signature signature with just IRubyObject
                     switch (arity.getValue()) {
@@ -1682,12 +1723,17 @@ public class RubyClass extends RubyModule {
             }
         }
 
+        //TODO: only generate that are overrideable (javaproxyclass)
         private void defineInstanceMethods(Set<String> instanceMethods) {
             SkinnyMethodAdapter m;
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
                 final String id = methodEntry.getKey();
                 if (id.equals("initialize"))
-                	continue;
+                {
+                	DynamicMethod dm = methodEntry.getValue();
+                	System.out.println(dm.getClass().getName());
+                	System.out.println(dm);
+                }
 
                 String javaMethodName = JavaNameMangler.mangleMethodName(id);
                 //MethodData md = methodEntry.getValue().getMethodData();
@@ -1717,6 +1763,7 @@ public class RubyClass extends RubyModule {
 
                 final String signature;
                 if (methodSignature == null) { // non-signature signature with just IRubyObject
+                	if (!jcc.allMethods) continue;
                     final Arity arity = methodEntry.getValue().getArity();
                     switch (arity.getValue()) {
                         case 0:
@@ -1724,7 +1771,7 @@ public class RubyClass extends RubyModule {
                             m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                             m.line(position.getLine());
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                            generateObjectBarrier(m, false, false);
+                            generateObjectBarrier(m);
 
                             loadRubyObject(m); // self/rubyObject
                             m.ldc(id);
@@ -1735,7 +1782,7 @@ public class RubyClass extends RubyModule {
                             m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                             m.line(position.getLine());
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                            generateObjectBarrier(m, false, false);
+                            generateObjectBarrier(m);
 
                             loadRubyObject(m); // self/rubyObject
                             m.ldc(id);
@@ -1755,7 +1802,7 @@ public class RubyClass extends RubyModule {
                                 m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                                 m.line(position.getLine());
                                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                                generateObjectBarrier(m, false, false);
+                                generateObjectBarrier(m);
 
                                 loadRubyObject(m); // self/rubyObject
                                 m.ldc(id);
@@ -1776,7 +1823,7 @@ public class RubyClass extends RubyModule {
                                 m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
                                 m.line(position.getLine());
                                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                                generateObjectBarrier(m, false, false);
+                                generateObjectBarrier(m);
 
                                 loadRubyObject(m); // self/rubyObject
                                 m.ldc(id);
@@ -1800,7 +1847,7 @@ public class RubyClass extends RubyModule {
                     m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
                     m.line(position.getLine());
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                    generateObjectBarrier(m, false, false);
+                    generateObjectBarrier(m);
 
                 	m.getstatic(javaPath, "ruby", ci(Ruby.class)); // runtime
                     m.astore(rubyIndex);
@@ -1820,13 +1867,31 @@ public class RubyClass extends RubyModule {
                 m.end();
             }
         }
+        
+        @Override
+        public void reifyClinit(SkinnyMethodAdapter m)
+        {   ///   i0, o[], i1, o[]
+        	//    [] i0  [], i1
+
+            m.ldc(1); // rubyclass index
+            m.ldc(JavaProxyClass.addStaticInitLookup(runtime, RubyClass.this));
+            m.invokestatic(p(JavaProxyClass.class), "getStaticInitLookup", sig(Object[].class, int.class));
+            m.dup_x1(); // array
+            m.ldc(0); // ruby index
+            m.aaload(); // extract ruby
+            m.checkcast(p(Ruby.class));
+            m.putstatic(javaPath, "ruby", ci(Ruby.class));
+            m.aaload(); // extract rubyclass
+            m.checkcast(p(RubyClass.class));
+            m.putstatic(javaPath, "rubyClass", ci(RubyClass.class));
+        }
 
 		protected Class[] searchInheritedSignatures(String id)
 		{
 			return null;
 		}
 		
-		protected void generateObjectBarrier(SkinnyMethodAdapter m, boolean ctorarg, boolean init)
+		protected void generateObjectBarrier(SkinnyMethodAdapter m)
 		{
 			// For non-concrete things, we ignore, as this is a RubyObject
 		}
@@ -1835,6 +1900,8 @@ public class RubyClass extends RubyModule {
     
     private class ConcreteJavaReifier extends MethodReificator
     {
+    	boolean rubyctor = false;
+    	boolean simpleAlloc = false;
 
 		ConcreteJavaReifier(Class<?> reifiedParent, String javaName, String javaPath)
 		{
@@ -1848,7 +1915,10 @@ public class RubyClass extends RubyModule {
 		{
 			super.customReify();
 			
-			defineAllocator();
+			if (simpleAlloc && rubyctor)
+				defineAllocator();
+			
+			defineInterfaceMethods();
 		}
 		
 		@Override
@@ -1856,11 +1926,24 @@ public class RubyClass extends RubyModule {
 		{
 			return false;
 		}
+		
+		@Override
+		public void reifyClinit(SkinnyMethodAdapter m)
+		{
+			super.reifyClinit(m);
+            m.getstatic(javaPath, "ruby", ci(Ruby.class));
+            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+            m.ldc(org.objectweb.asm.Type.getType("L"+javaPath+";"));
+            if (simpleAlloc) // if simple, don't init, if complex, do init
+            	m.iconst_0();
+        	else
+        		m.iconst_1();
 
-       /* protected void rubycall(SkinnyMethodAdapter m, String signature)
-        {
-        	m.invokeinterface(rubyPath, "callMethod", signature);
-        }*/
+    		//TODO: eww, where should this call go? here? there? I dislike the leaking of the abstraction across a larger part of the code than necessary
+            m.invokestatic(p(JavaProxyClass.class), "setProxyClassReified", sig(JavaProxyClass.class, Ruby.class, RubyClass.class, Class.class, boolean.class));
+            m.putstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
+            // Note: no end, that's in the parent call
+		}
 
 		protected Class[] searchInheritedSignatures(String id)
 		{
@@ -1873,11 +1956,7 @@ public class RubyClass extends RubyModule {
 	            if ( !Modifier.isPublic(mod) && !Modifier.isProtected(mod) ) continue;
 	            
 	            // found! built a signature to return
-	            int params = method.getParameterCount();
-	            Class[] sig = new Class[params + 1];
-	            ArraySupport.copy(method.getParameterTypes(), sig, 1, params);
-	            sig[0] = method.getReturnType();
-	            return sig;
+	            return join(new Class[]{method.getReturnType()}, method.getParameterTypes());
 			}
 			return null;
 		}
@@ -1897,36 +1976,146 @@ public class RubyClass extends RubyModule {
 	            	zeroArg = Optional.of(constructor);
 	            }
 			}
-			// TODO: config multi-arg
-			
 			
 			if (zeroArg.isPresent())
 			{
+	            rubyctor = true;
+	            simpleAlloc = true;
 	            // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
 	        	SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null);
 	            m.aload(0); // uninitialized this
+	            
+	            // set args for init
+	            m.dup();
+	            m.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+	            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+	            
+	            // call super
 	            m.invokespecial(p(reifiedParent), "<init>", sig(void.class));
-
-	            generateObjectBarrier(m, true, false);
+	            
+	            // call init (if not already called)
+	            generateObjectBarrier(m, 0, false);
+	            
+	            // clear args to avoid holding refs to args
+	            m.aload(0);
+	            m.aconst_null();
+	            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
 	            
 	            m.voidreturn();
 	            m.end();
 	            
+	            
 	            if (jcc.javaConstructable)
 	            {
 	            	// no-arg constructor using static references to Ruby and RubyClass. For use by java
-		            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
+		            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class), null, null);
 		            m.aload(0); // uninitialized this
+		            
+		            // set args for init
+		            m.dup();
+		            m.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+		            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+		            
+		            // call super
 		            m.invokespecial(p(reifiedParent), "<init>", sig(void.class));
 		            
-		            generateObjectBarrier(m, false, true);
+		            // call init (if not already called)
+		            generateObjectBarrier(m, -1, true);
+		            
+		            // clear args to avoid holding refs to args
+		            m.aload(0);
+		            m.aconst_null();
+		            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
 
 		            m.voidreturn();
 		            m.end();
 	            }
 			}
+			/*else
+			{
+				//TODO: copy jpcf logic for alloc
+				throw new RuntimeException("Class doesn't have no-arg ctor");
+			}*/
+			
+			if (candidates.size() > 0 && jcc.allCtors) //TODO: doc: implies javaConstructable?
+			{
+				for (Constructor<?> constructor : candidates)
+				{
+					if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
+					
+					if (jcc.rubyConstructable)
+					{
+			            rubyctor = true;
+			            
+			            //TODO: create empty object before super call???
+			            // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
+			        	SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, join(constructor.getParameterTypes(), Ruby.class, RubyClass.class)), null, null);
+			            m.aload(0); // uninitialized this
+			            
+			            // set args for init
+			            m.dup();
+			            RealClassGenerator.coerceArgumentsToRuby(m, constructor.getParameterTypes(), RealClassGenerator.calcBaseIndex(constructor.getParameterTypes(), 1));
+			            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+			            
+			            // call super
+						GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
+						ga.loadArgs(0, constructor.getParameterCount());
+			            m.invokespecial(p(reifiedParent), "<init>", sig(void.class, constructor.getParameterTypes()));
+	
+			            // call init (if not already called)
+			            generateObjectBarrier(m, constructor.getParameterCount(), true);// NOTE: these ones we DO call init from
+			            
+			            // clear args to avoid holding refs to args
+			            m.aload(0);
+			            m.aconst_null();
+			            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+			            
+			            m.voidreturn();
+			            m.end();
+					}
+		            
+		            if (jcc.javaConstructable)
+		            {
+		            	// no-arg constructor using static references to Ruby and RubyClass. For use by java
+						SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, constructor.getParameterTypes()), null, null);
+						m.aload(0);
+
+			            // set args for init
+	                    final int baseIndex = RealClassGenerator.calcBaseIndex(constructor.getParameterTypes(), 1);
+	                    final int rubyIndex = baseIndex;
+						m.getstatic(javaPath, "ruby", ci(Ruby.class));
+						m.astore(rubyIndex); // save ruby in local
+			            m.dup();
+			            RealClassGenerator.coerceArgumentsToRuby(m, constructor.getParameterTypes(), rubyIndex);
+			            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+						
+						// call super
+						GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
+						ga.loadArgs(0, constructor.getParameterCount());
+			            m.invokespecial(p(reifiedParent), "<init>", sig(void.class, constructor.getParameterTypes()));
+			            
+			            // call init (if not already called)
+			            generateObjectBarrier(m, -1, true);
+			            
+			            // clear args to avoid holding refs to args
+			            m.aload(0);
+			            m.aconst_null();
+			            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+	
+			            m.voidreturn();
+			            m.end();
+		            }
+				}
+			}
 		}
-		
+
+		/**
+		 * Generates an init barrier. NOT Thread-safe, but hopefully nobody has threads in their constructor? 
+		 */		
+		protected void generateObjectBarrier(SkinnyMethodAdapter m)
+		{
+			generateObjectBarrier(m, -1, false);
+		}
 
 		/**
 		 * Generates an init barrier. NOT Thread-safe, but hopefully nobody has threads in their constructor?
@@ -1934,20 +2123,20 @@ public class RubyClass extends RubyModule {
 		 * @param m
 		 * @param ctorArgInitialize If this is a ctor, has args not in locals, and if we should thus call initialize() 
 		 */
-		protected void generateObjectBarrier(SkinnyMethodAdapter m, boolean ctorArg, boolean initialize)
+		protected void generateObjectBarrier(SkinnyMethodAdapter m, int ctorArg, boolean initialize)
 		{
 			// For non-concrete things, we check, as this is not a RubyObject
 			Label end = new Label();
 			m.aload(0);
-			m.getfield(javaPath, "rubyObject", rubyName);
+			m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
 			m.ifnonnull(end); //TODO: no nulls for ctors?
 			{
 	            m.newobj(p(ConcreteJavaProxy.class));
 	            m.dup(); // rubyobject
-	            if (ctorArg)
+	            if (ctorArg >= 0)
 	            {
-		            m.aload(1); // ruby
-		            m.aload(2); // rubyclass
+		            m.aload(1+ctorArg); // ruby
+		            m.aload(2+ctorArg); // rubyclass
 	            }
 	            else
 	            {
@@ -1961,11 +2150,13 @@ public class RubyClass extends RubyModule {
 	            m.aload(0); // this
 	            m.swap();
 
-	            m.putfield(javaPath, "rubyObject", rubyName);
-	            if (jcc.callInitialize && initialize)
+	            m.putfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
+	            if (jcc.callInitialize && initialize) //TODO: should init be called when super calls an abstract method we implement?
 	            {
 	            	m.ldc("initialize"); // TODO: consts?
-	                rubycall(m, sig(IRubyObject.class, String.class) );
+	            	m.aload(0); // this
+	            	m.getfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+	                rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class) );
 	                m.pop();
 	            }
 	            else
@@ -1973,7 +2164,7 @@ public class RubyClass extends RubyModule {
 			}
 			m.label(end);
 		}
-		
+
 		private void defineAllocator()
 		{
             SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "__allocate__", sig(IRubyObject.class, Ruby.class, RubyClass.class), null, null);
@@ -1982,7 +2173,22 @@ public class RubyClass extends RubyModule {
             m.aload(0); // ruby
             m.aload(1); // rubyclass
             m.invokespecial(javaPath, "<init>", sig(void.class, Ruby.class, RubyClass.class));
-            m.getfield(javaPath, "rubyObject", rubyName);
+            m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName); // Note: rubyObject has a ref to `this`, so no GC worries
+            m.areturn();
+            m.end();
+		}
+
+		private void defineInterfaceMethods()
+		{
+            SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "___jruby$rubyObject", sig(IRubyObject.class), null, null);
+            m.aload(0); // this
+            m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
+            m.areturn();
+            m.end();
+            
+
+            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "___jruby$proxyClass", sig(JavaProxyClass.class), null, null);
+            m.getstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
             m.areturn();
             m.end();
 		}
@@ -2120,6 +2326,16 @@ public class RubyClass extends RubyModule {
         if (classAnnotations == null) classAnnotations = new LinkedHashMap<>(4);
 
         classAnnotations.put(annotation, fields);
+    }
+
+    public synchronized JavaClassConfiguration getClassConfig() {
+        if (javaClassConfiguration == null) javaClassConfiguration = new JavaClassConfiguration();
+
+        return javaClassConfiguration;
+    }
+
+    public synchronized void setClassConfig(JavaClassConfiguration jcc) {
+    	javaClassConfiguration = jcc;
     }
 
     @Override
@@ -2768,6 +2984,8 @@ public class RubyClass extends RubyModule {
     private Map<String, Class> fieldSignatures;
 
     private Map<Class, Map<String,Object>> classAnnotations;
+    
+    private JavaClassConfiguration javaClassConfiguration;
 
     /** A cached tuple of method, type, and generation for dumping */
     private MarshalTuple cachedDumpMarshal = MarshalTuple.NULL_TUPLE;

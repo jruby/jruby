@@ -2960,14 +2960,6 @@ public final class Ruby implements Constantizable {
         return boundMethods;
     }
 
-    public void setJavaProxyClassFactory(JavaProxyClassFactory factory) {
-        this.javaProxyClassFactory = factory;
-    }
-
-    public JavaProxyClassFactory getJavaProxyClassFactory() {
-        return javaProxyClassFactory;
-    }
-
     private static final EnumSet<RubyEvent> interest =
             EnumSet.of(
                     RubyEvent.C_CALL,

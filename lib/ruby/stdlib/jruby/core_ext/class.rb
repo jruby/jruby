@@ -168,6 +168,24 @@ class Class
     annotations = signature.annotations
     add_field_annotation signature.name, annotations if annotations
   end
+  
+  ##
+  # Valid options:
+  # call_init: true/false
+  # generate: :all/:explicit
+  #    configure_java_class methods: :explicit/:all, call_init: true/false, java_constructable: true/false, ctors: :all/:minimal
+  def configure_java_class(**kwargs)
+    self_r = JRuby.reference0(self)
+    config = self_r.class_config
+    config.allMethods = kwargs[:methods] == :explicit if kwargs.has_key? :methods
+    config.callInitialize = kwargs[:call_init] if kwargs.has_key? :call_init
+    config.javaConstructable = kwargs[:java_constructable] if kwargs.has_key? :java_constructable
+    config.allCtors = kwargs[:ctors] == :all if kwargs.has_key? :ctors
+    config.rubyConstructable = kwargs[:ruby_constructable] if kwargs.has_key? :ruby_constructable
+    config.splitSuper = kwargs[:split_super] if kwargs.has_key? :split_super
+    self_r.class_config = config
+    kwargs
+  end
 
   def java_annotation(anno)
     warn "java_annotation is deprecated. Use java_signature '@#{anno} ...' instead. Called from: #{caller.first}"
