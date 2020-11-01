@@ -32,11 +32,15 @@
 package org.jruby;
 
 import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.ext.JavaExtensions;
 import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.util.JavaClassConfiguration;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.StaticScopeFactory;
+import org.jruby.parser.StaticScope.Type;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -73,11 +77,30 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.DefNode;
+import org.jruby.ast.DefnNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.InstAsgnNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.IterNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.ReturnNode;
+import org.jruby.ast.SuperNode;
+import org.jruby.ast.visitor.AbstractNodeVisitor;
+import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.ir.IRMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -91,7 +114,10 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -1454,14 +1480,15 @@ public class RubyClass extends RubyModule {
 
     private abstract class BaseReificator implements Reificator {
 
-        protected static final String RUBY_INIT_ARGS_FIELD = "$rubyInitArgs";
-		protected static final String RUBY_OBJECT_FIELD = "$rubyObject";
+        public static final String RUBY_INIT_ARGS_FIELD = "$rubyInitArgs";
+		public static final String RUBY_OBJECT_FIELD = "$rubyObject";
 		protected static final String RUBY_PROXY_CLASS_FIELD = "$rubyProxyClass";
+		public static final String RUBY_CTORS_FIELD = "$rubyCtors";
 		
-		protected final Class reifiedParent;
+		public    final Class reifiedParent;
         protected final String javaName;
-        protected final String javaPath;
-        protected final String rubyName;
+        public    final String javaPath;
+        public    final String rubyName;
         protected final String rubyPath;
         protected final JavaClassConfiguration jcc;
         protected final ClassWriter cw;
@@ -1490,7 +1517,8 @@ public class RubyClass extends RubyModule {
             cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null);
             if (!isRubyObject()) cw.visitField(ACC_PRIVATE, RUBY_OBJECT_FIELD, rubyName, null, null); 
             if (!isRubyObject()) cw.visitField(ACC_PRIVATE, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class), null, null);
-            if (!isRubyObject()) cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class), null, null); 
+            if (!isRubyObject()) cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class), null, null);
+            if (!isRubyObject()) cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTORS_FIELD, ci(JavaConstructor[].class), null, null); 
 
             
             reifyConstructors();
@@ -1547,7 +1575,7 @@ public class RubyClass extends RubyModule {
         }
         
         
-        protected void rubycall(SkinnyMethodAdapter m, String signature)
+        public void rubycall(SkinnyMethodAdapter m, String signature)
         {
         	m.invokevirtual(rubyPath, "callMethod", signature);
         }
@@ -1585,7 +1613,7 @@ public class RubyClass extends RubyModule {
             m.end();
         }
 		
-		protected Class[] join(Class[] base, Class... extra)
+		public Class[] join(Class[] base, Class... extra)
 		{
 			Class[] more = ArraySupport.newCopy(base, base.length + extra.length);
 			ArraySupport.copy(extra, more, base.length, extra.length);
@@ -1595,7 +1623,9 @@ public class RubyClass extends RubyModule {
 
     private class MethodReificator extends BaseReificator {
 
-        MethodReificator(Class<?> reifiedParent, String javaName, String javaPath, String rubyName, String rubyPath) {
+        private Integer clinitKey;
+
+		MethodReificator(Class<?> reifiedParent, String javaName, String javaPath, String rubyName, String rubyPath) {
             super(reifiedParent, javaName, javaPath, rubyName, rubyPath);
         }
 
@@ -1872,17 +1902,29 @@ public class RubyClass extends RubyModule {
         {   ///   i0, o[], i1, o[]
         	//    [] i0  [], i1
 
-            m.ldc(1); // rubyclass index
-            m.ldc(JavaProxyClass.addStaticInitLookup(runtime, RubyClass.this));
+            m.pushInt(1); // rubyclass index
+            this.clinitKey = JavaProxyClass.addStaticInitLookup(getExtraClinitInfo());
+            m.ldc(clinitKey);//TODO: add ctors
             m.invokestatic(p(JavaProxyClass.class), "getStaticInitLookup", sig(Object[].class, int.class));
+            extraClinitLookup(m);
             m.dup_x1(); // array
-            m.ldc(0); // ruby index
+            m.pushInt(0); // ruby index
             m.aaload(); // extract ruby
             m.checkcast(p(Ruby.class));
             m.putstatic(javaPath, "ruby", ci(Ruby.class));
             m.aaload(); // extract rubyclass
             m.checkcast(p(RubyClass.class));
             m.putstatic(javaPath, "rubyClass", ci(RubyClass.class));
+        }
+        
+        protected Object[] getExtraClinitInfo()
+		{
+			return new Object[]{runtime, RubyClass.this};
+		}
+
+		protected void extraClinitLookup(SkinnyMethodAdapter m)
+        {
+        	
         }
 
 		protected Class[] searchInheritedSignatures(String id)
@@ -1897,10 +1939,104 @@ public class RubyClass extends RubyModule {
 
     } // class MethodReificator
     
-    private class ConcreteJavaReifier extends MethodReificator
+    //public or private?
+    public class ConcreteJavaReifier extends MethodReificator
     {
-    	boolean rubyctor = false;
+    	private final class FlatExtractor extends AbstractNodeVisitor<Node>
+		{
+			private final DefNode def;
+			boolean found = false;
+			BlockNode bn = null;
+			int level = 0;
+			boolean error = false;
+			boolean foundsuper = false;
+
+			private FlatExtractor(DefNode def)
+			{
+				this.def = def;
+			}
+
+			@Override
+			protected Node defaultVisit(Node node)
+			{
+			    if (node == null) return null;
+
+			    if (error)
+			    	return null;
+			    
+			    level++;
+
+			    node.childNodes().forEach(this::defaultVisit);
+			    level--;
+
+			    return node;
+			}
+
+			@Override
+			public Node visitBlockNode(BlockNode node)
+			{ 
+				if (error)
+			    	return null;
+				if (found)
+					return node;
+				
+				BlockNode replacement = new BlockNode(node.getPosition()); 
+			    
+			    level++;
+			    
+			    boolean seenReturn = false;
+
+			    for (Node child : node.children())
+			    {
+			    	Node newc = child.accept(this);
+			    	if (found)
+			    	{
+			    		if (seenReturn)
+			    		{
+			    			bn.add(newc);
+			    			continue;
+			    		}
+			    		else
+			    		{
+			    			seenReturn = true;
+			    		}
+			    	}
+					replacement.add(newc);
+			    }
+			    level--;
+
+			    return replacement;
+			}
+
+			@Override
+			public Node visitSuperNode(SuperNode node)
+			{
+				foundsuper = true;
+				if (level != 1)
+				{
+					error = true;
+					return null;
+				}
+				ArrayNode ret = new ArrayNode(node.getPosition(), node.getArgsNode());// TODO: block args!
+				ArgsNode an = new ArgsNode(node.getPosition(), null, null, null, null,null);
+				StaticScope scope = StaticScopeFactory.newIRBlockScope(def.getScope());
+				scope.setSignature(Signature.from(an));
+				ret.add(
+					new FCallNode(node.getPosition(), RubySymbol.newSymbol(runtime, "lambda"), null,
+						new IterNode(node.getPosition(), 
+							an, 
+							bn = new BlockNode(node.getPosition()), 
+							scope, 1)));
+				found = true;
+				return  new ReturnNode(node.getPosition(), ret);
+				// TODO Auto-generated method stub
+				//return super.visitSuperNode(node);
+			}
+		}
+
+		boolean rubyctor = false;
     	boolean simpleAlloc = false;
+    	JavaConstructor[] savedCtors = null;
 
 		ConcreteJavaReifier(Class<?> reifiedParent, String javaName, String javaPath)
 		{
@@ -1927,6 +2063,12 @@ public class RubyClass extends RubyModule {
 		}
 		
 		@Override
+		protected Object[] getExtraClinitInfo()
+		{
+			return new Object[]{runtime, RubyClass.this, savedCtors};
+		}
+		
+		@Override
 		public void reifyClinit(SkinnyMethodAdapter m)
 		{
 			super.reifyClinit(m);
@@ -1943,6 +2085,15 @@ public class RubyClass extends RubyModule {
             m.putstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
             // Note: no end, that's in the parent call
 		}
+        
+        protected void extraClinitLookup(SkinnyMethodAdapter m)
+        {
+        	m.dup(); // don't modify the stack below us, use a new copy
+            m.pushInt(2); // ctor fields
+            m.aaload(); // extract ctors
+            m.checkcast(p(JavaConstructor[].class));
+            m.putstatic(javaPath, RUBY_CTORS_FIELD, ci(JavaConstructor[].class));
+        }
 
 		protected Class[] searchInheritedSignatures(String id)
 		{
@@ -1974,6 +2125,36 @@ public class RubyClass extends RubyModule {
 	            {
 	            	zeroArg = Optional.of(constructor);
 	            }
+			}
+			DynamicMethod dm = searchMethod("initialize");
+			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
+			FlatExtractor flat = new FlatExtractor(def); 
+			Node body = def.getBodyNode().accept(flat);
+			if (!flat.foundsuper)
+				System.err.println("NO SUPER");
+			if (flat.error)
+				System.err.println("error");
+			System.err.println(def.toString());
+			DefNode rdnbody = new DefnNode(def.getBodyNode().getPosition(), RubySymbol.newSymbol(runtime, "j_initialize"), def.getArgsNode(), def.getScope(), body, def.getEndLine());
+			System.err.println(rdnbody.toString());
+			
+			
+			IRMethod irm = ((IRMethod)((AbstractIRMethod)dm).getIRScope());
+				irm.builtInterpreterContext();
+
+irm = new IRMethod(irm.getManager(), irm.getLexicalParent(), rdnbody, new ByteList("j_initialize".getBytes(), runtime.getEncodingService().getJavaDefault()), true, irm.getLine(), irm.getStaticScope(), irm.getCoverageMode());
+				dm  = new MixedModeIRMethod(irm, Visibility.PUBLIC, RubyClass.this);
+				
+				RubyClass.this.addMethod("j_initialize", dm);
+			
+			dm = searchMethod("j_initialize");
+			if (dm instanceof AbstractIRMethod)
+			{
+				IRMethod irm2 = ((IRMethod)((AbstractIRMethod)dm).getIRScope());
+
+				System.err.println(irm2.desugar().toString());
+				irm2.builtInterpreterContext();
+				System.err.println("found A SUPER!!!!!");
 			}
 			
 			if (zeroArg.isPresent())
@@ -2038,10 +2219,23 @@ public class RubyClass extends RubyModule {
 			
 			if (candidates.size() > 0 && jcc.allCtors) //TODO: doc: implies javaConstructable?
 			{
+				List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
 				for (Constructor<?> constructor : candidates)
 				{
+					savedCtorsList.add(new JavaConstructor(runtime, constructor));
+				}
+				savedCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
+				for (Constructor<?> constructor : candidates)
+				{
+					//TODO: do matching for zero arg?
 					if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
-					
+
+					if (jcc.rubyConstructable)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, true, true, this, constructor.getParameterTypes(), savedCtors);
+
+					if (jcc.javaConstructable)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, false, true, this, constructor.getParameterTypes(), savedCtors);
+					/*
 					if (jcc.rubyConstructable)
 					{
 			            rubyctor = true;
@@ -2103,7 +2297,8 @@ public class RubyClass extends RubyModule {
 	
 			            m.voidreturn();
 			            m.end();
-		            }
+		            }*/
+					
 				}
 			}
 		}

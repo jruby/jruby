@@ -40,6 +40,11 @@ public class IRMethod extends IRScope {
             staticScope.setIRScope(this);
         }
     }
+    
+    public DefNode desugar()
+    {
+    	return defNode;
+    }
 
     @Override
     public boolean hasBeenBuilt() {

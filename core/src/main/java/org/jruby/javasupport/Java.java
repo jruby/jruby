@@ -642,6 +642,11 @@ public class Java implements Library {
             JavaObject newObject = matching.newInstance(self, arg0);
             return newObject;
         }
+        
+        public static int forTypes(JavaConstructor[] constructors, IRubyObject type)
+        {
+        	return 1; //TODO: implement
+        }
 
         @Override
         public final IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {

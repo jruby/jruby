@@ -644,10 +644,10 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     private static final AtomicInteger lookupIdNext = new AtomicInteger(0);
     private static final Map<Integer, Object[]> lookup = new ConcurrentHashMap<>();
     
-    public static Integer addStaticInitLookup(Ruby runtime, RubyClass clazz)
+    public static Integer addStaticInitLookup(Object... objects)
     {
     	int val = lookupIdNext.incrementAndGet();
-    	lookup.put(val, new Object[]{runtime, clazz});
+    	lookup.put(val, objects);
     	return val;
     }
     // used by reified code in RubyClass
