@@ -237,13 +237,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
         this.provider = getProviderInstance(scope, behavior, lazy);
         this.scope = scope;
-        try {
-            initRubyInstanceConfig();
-        }
-        catch (RaiseException ex) {
-            // TODO this seems useless - except that we get a Java stack trace
-            throw new RuntimeException(ex);
-        }
+        initRubyInstanceConfig();
         basicProperties = getBasicProperties();
     }
 
