@@ -51,16 +51,14 @@ public class JRubyCompiledScript extends CompiledScript {
     private final JRubyEngine engine;
     private final EmbedEvalUnit unit;
 
-    JRubyCompiledScript(ScriptingContainer container,
-            JRubyEngine engine, String script) {
+    JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, String script) {
         this.container = container;
         this.engine = engine;
         Utils.preEval(container, engine.getContext());
         unit = container.parse(script);
     }
 
-    JRubyCompiledScript(ScriptingContainer container,
-            JRubyEngine engine, Reader reader) {
+    JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, Reader reader) {
         this.container = container;
         this.engine = engine;
         String filename = System.getProperty(ScriptEngine.FILENAME);
@@ -84,10 +82,7 @@ public class JRubyCompiledScript extends CompiledScript {
             }
             Utils.preEval(container, context);
             IRubyObject ret = unit.run();
-            if (!(ret instanceof RubyNil)) {
-                return JavaEmbedUtils.rubyToJava(ret);
-            }
-            return null;
+            return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
@@ -99,7 +94,7 @@ public class JRubyCompiledScript extends CompiledScript {
         }
     }
 
-    private ScriptException wrapException(Exception e) throws ScriptException {
+    private static ScriptException wrapException(Exception e) {
         return new ScriptException(e);
     }
 
