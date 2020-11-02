@@ -124,17 +124,15 @@ public class VariableInterceptor {
      * @param map a variable map that has name-value pairs to be injected
      * @param runtime Ruby runtime
      * @param scope scope to inject local variable values
-     * @param depth depth of a frame to inject local variable values
-     * @param receiver a receiver when the script has been evaluated once
      */
-    public static void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
+    public static void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope) {
         // lvar might not be given while parsing but be given when evaluating.
         // to avoid ArrayIndexOutOfBoundsException, checks the length of scope.getValues()
         if (scope != null && scope.getValues().length > 0) {
             IRubyObject[] values4Injection = map.getLocalVarValues();
             if (values4Injection != null && values4Injection.length > 0) {
                 for (int i = 0; i < values4Injection.length; i++) {
-                    scope.setValue(i, values4Injection[i], depth);
+                    scope.setValue(i, values4Injection[i], 0);
                 }
             }
         }

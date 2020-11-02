@@ -380,8 +380,8 @@ public class BiVariableMap implements Map<String, Object> {
         return localVarValues.toArray( new IRubyObject[ localVarValues.size() ] );
     }
 
-    void inject(final ManyVarsDynamicScope scope, final int depth, final IRubyObject receiver) {
-        VariableInterceptor.inject(this, provider.getRuntime(), scope, depth, receiver);
+    void inject(final ManyVarsDynamicScope scope) {
+        VariableInterceptor.inject(this, provider.getRuntime(), scope);
     }
 
     void retrieve(final IRubyObject receiver) {

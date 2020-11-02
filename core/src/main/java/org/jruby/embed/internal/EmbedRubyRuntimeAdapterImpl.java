@@ -65,6 +65,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
+import static org.jruby.embed.internal.EmbedEvalUnitImpl.isSharingVariables;
+
 /**
  *
  * @author Yoko Harada <yokolet@gmail.com>
@@ -173,11 +175,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         }
         try {
             ManyVarsDynamicScope scope  = null;
-            boolean sharing_variables = true;
-            Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
-            if (obj instanceof Boolean && !((Boolean) obj)) {
-                sharing_variables = false;
-            }
+            final boolean sharing_variables = isSharingVariables(container);
             if (sharing_variables) {
                 scope = getManyVarsDynamicScope(container, 0);
             }

@@ -54,6 +54,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
+import static org.jruby.embed.internal.EmbedEvalUnitImpl.isSharingVariables;
+
 /**
  * Implementation of {@link EmbedRubyObjectAdapter}. Users get an instance of this
  * class by newObjectAdapter() method of {@link ScriptingContainer}.
@@ -65,7 +67,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     private final RubyObjectAdapter adapter = JavaEmbedUtils.newObjectAdapter();
     private final ScriptingContainer container;
 
-    public static enum MethodType {
+    public enum MethodType {
         CALLMETHOD_NOARG,
         CALLMETHOD,
         CALLMETHOD_WITHBLOCK,
@@ -289,19 +291,15 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         if (methodName == null || methodName.length()==0) {
             return null;
         }
-        Ruby runtime = container.getProvider().getRuntime();
 
-        boolean sharing_variables = true;
-        Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
-            sharing_variables = false;
-        }
+        final Ruby runtime = container.getProvider().getRuntime();
+        final boolean sharing_variables = isSharingVariables(container);
 
         if (sharing_variables) {
             ManyVarsDynamicScope scope;
             if (unit != null && unit.getScope() != null) scope = unit.getScope();
             else scope = EmbedRubyRuntimeAdapterImpl.getManyVarsDynamicScope(container, 0);
-            container.getVarMap().inject(scope, 0, rubyReceiver);
+            container.getVarMap().inject(scope);
             runtime.getCurrentContext().pushScope(scope);
         }
 

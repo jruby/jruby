@@ -101,13 +101,13 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         }
         final Ruby runtime = container.getProvider().getRuntime();
         final BiVariableMap vars = container.getVarMap();
-        final boolean sharing_variables = isSharingVariables();
+        final boolean sharing_variables = isSharingVariables(container);
 
         // Keep reference to current context to prevent it being collected.
-        final ThreadContext threadContext = runtime.getCurrentContext();
+        final ThreadContext context = runtime.getCurrentContext();
         if (sharing_variables) {
-            vars.inject(scope, 0, null);
-            threadContext.pushScope(scope);
+            vars.inject(scope);
+            context.pushScope(scope);
         }
         try {
             final IRubyObject ret;
@@ -137,7 +137,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         }
         finally {
             if (sharing_variables) {
-                threadContext.popScope();
+                context.popScope();
             }
             vars.terminate();
             /* Below lines doesn't work. Neither does classCache.flush(). How to clear cache?
@@ -147,10 +147,9 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         }
     }
 
-    private boolean isSharingVariables() {
+    static boolean isSharingVariables(ScriptingContainer container) {
         final Object sharing = container.getAttribute(AttributeName.SHARING_VARIABLES);
-        if ( sharing != null && sharing instanceof Boolean &&
-                ((Boolean) sharing).booleanValue() == false ) {
+        if ( sharing instanceof Boolean && ((Boolean) sharing).booleanValue() == false ) {
             return false;
         }
         return true;
