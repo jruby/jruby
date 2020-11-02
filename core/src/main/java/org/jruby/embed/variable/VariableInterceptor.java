@@ -30,9 +30,7 @@
 package org.jruby.embed.variable;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
@@ -47,20 +45,6 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class VariableInterceptor {
-    //private LocalVariableBehavior behavior;
-
-    /**
-     * Constructs an instance with a given local variable behavior.
-     *
-     * @param behavior local variable behavior
-     */
-    //public VariableInterceptor(LocalVariableBehavior behavior) {
-    //    this.behavior = behavior;
-    //}
-
-    //public LocalVariableBehavior getLocalVariableBehavior() {
-    //    return behavior;
-    //}
 
     /**
      * Returns an appropriate type of a variable instance to the specified local
@@ -218,7 +202,7 @@ public class VariableInterceptor {
                 if (BiVariable.Type.LocalGlobalVariable == var.getType()) {
                     String name = var.getName();
                     name = name.startsWith("$") ? name : "$" + name;
-                    runtime.getGlobalVariables().set(name, runtime.getNil());
+                    runtime.getGlobalVariables().clear(name);
                 }
             }
         }
