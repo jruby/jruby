@@ -275,10 +275,6 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     }
 
     private <T> T call(MethodType type, Class<T> returnType, IRubyObject rubyReceiver, String methodName, Block block, EmbedEvalUnit unit, Object... args) {
-        if (methodName == null || methodName.isEmpty()) {
-            throw new IllegalArgumentException("no method name");
-        }
-
         final Ruby runtime = container.getProvider().getRuntime();
         final boolean sharing_variables = isSharingVariables(container);
 
