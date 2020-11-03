@@ -991,7 +991,7 @@ public class ScriptingContainerTest {
         logger1.info("callMethod(receiver, methodName, args, returnType)");
         Object receiver = null;
         String methodName = "";
-        Object[] args = null;
+        Object[] args = new Object[0];
         Class<Object> returnType = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
