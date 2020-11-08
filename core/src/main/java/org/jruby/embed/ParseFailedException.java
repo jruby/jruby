@@ -36,6 +36,7 @@ package org.jruby.embed;
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
+@Deprecated
 public class ParseFailedException extends RuntimeException {
     public ParseFailedException(Throwable cause) {
         super(cause);
