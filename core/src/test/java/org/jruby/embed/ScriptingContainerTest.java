@@ -40,6 +40,7 @@ import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.internal.SingleThreadLocalContextProvider;
 import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
+import org.jruby.exceptions.SyntaxError;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -561,8 +562,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(reader, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -590,9 +590,9 @@ public class ScriptingContainerTest {
 
         try {
             result = instance.parse(type, filename, lines);
-        } catch (Throwable t) {
-            assertTrue(t.getCause() instanceof FileNotFoundException);
-            t.printStackTrace(new PrintStream(outStream));
+        } catch (Exception e) {
+            assertTrue(e instanceof FileNotFoundException);
+            e.printStackTrace(new PrintStream(outStream));
         }
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
@@ -627,8 +627,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(PathType.RELATIVE, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -680,8 +679,7 @@ public class ScriptingContainerTest {
         try {
             instance.parse(istream, filename, 2);
         } catch (Exception e) {
-            logger1.info(sw.toString());
-            assertTrue(sw.toString().contains(filename + ":7:"));
+            assertTrue(e.toString().contains(filename + ":7:"));
         }
 
         instance.getVarMap().clear();
@@ -813,8 +811,8 @@ public class ScriptingContainerTest {
         Object result;
         try {
             result = instance.parse(type, filename);
-        } catch (Throwable e) {
-            assertTrue(e.getCause() instanceof FileNotFoundException);
+        } catch (Exception e) {
+            assertTrue(e instanceof FileNotFoundException);
             e.printStackTrace(new PrintStream(outStream));
         }
 
@@ -2267,7 +2265,8 @@ public class ScriptingContainerTest {
         try {
             instance.runScriptlet("puts \"Hello");
         } catch (RuntimeException e) {
-            assertTrue(sw.toString().contains(filename));
+            assertTrue(e instanceof SyntaxError);
+            assertTrue(e.toString().contains(filename));
         }
 
         instance.terminate();
