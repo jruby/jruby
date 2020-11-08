@@ -231,11 +231,7 @@ public class BiVariableMap implements Map<String, Object> {
     }
 
     private RubyObject getReceiverObject(final Object receiver) {
-        if ( receiver instanceof RubyObject ) return (RubyObject) receiver;
-        //if ( receiver instanceof IRubyObject ) {
-        //    return (RubyObject) ( (IRubyObject) receiver ).getRuntime().getTopSelf();
-        //}
-        return getTopSelf();
+        return receiver instanceof RubyObject ? (RubyObject) receiver : getTopSelf();
     }
 
     private RubyObject getTopSelf() {
