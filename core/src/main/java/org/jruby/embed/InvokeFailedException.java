@@ -35,6 +35,7 @@ package org.jruby.embed;
  * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
+@Deprecated
 public class InvokeFailedException extends RuntimeException {
     public InvokeFailedException(Throwable cause) {
         super(cause);
