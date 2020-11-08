@@ -39,6 +39,7 @@ import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -57,14 +58,14 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
 
     private final ScriptingContainer container;
     private final Node node;
-    private final ManyVarsDynamicScope scope;
+    private final DynamicScope scope;
     private final Script script;
 
-    public EmbedEvalUnitImpl(ScriptingContainer container, Node node, ManyVarsDynamicScope scope) {
+    public EmbedEvalUnitImpl(ScriptingContainer container, Node node, DynamicScope scope) {
         this(container, node, scope, null);
     }
 
-    public EmbedEvalUnitImpl(ScriptingContainer container, Node node, ManyVarsDynamicScope scope, Script script) {
+    public EmbedEvalUnitImpl(ScriptingContainer container, Node node, DynamicScope scope, Script script) {
         this.container = container;
         this.node = node;
         this.scope = scope;
@@ -86,7 +87,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
      *
      * @return a scope to refer local variables
      */
-    public ManyVarsDynamicScope getScope() {
+    public DynamicScope getLocalVarScope() {
         return scope;
     }
 

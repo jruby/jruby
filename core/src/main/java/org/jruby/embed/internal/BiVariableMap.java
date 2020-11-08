@@ -44,6 +44,7 @@ import org.jruby.RubyObject;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.VariableInterceptor;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -353,7 +354,7 @@ public class BiVariableMap implements Map<String, Object> {
     public String[] getLocalVarNames() {
         if ( variables == null ) return EMPTY_STRING_ARRAY;
 
-        List<String> localVarNames = new ArrayList<String>();
+        List<String> localVarNames = new ArrayList<>(variables.size());
         for ( final BiVariable var : variables ) {
             if ( var.getType() == BiVariable.Type.LocalVariable ) {
                 localVarNames.add( var.getName() );
@@ -371,7 +372,7 @@ public class BiVariableMap implements Map<String, Object> {
     public IRubyObject[] getLocalVarValues() {
         if ( variables == null ) return IRubyObject.NULL_ARRAY;
 
-        List<IRubyObject> localVarValues = new ArrayList<IRubyObject>();
+        List<IRubyObject> localVarValues = new ArrayList<>(variables.size());
         for ( final BiVariable var : variables ) {
             if ( var.getType() == BiVariable.Type.LocalVariable ) {
                 localVarValues.add( var.getRubyObject() );
@@ -380,8 +381,8 @@ public class BiVariableMap implements Map<String, Object> {
         return localVarValues.toArray( new IRubyObject[ localVarValues.size() ] );
     }
 
-    void inject(final ManyVarsDynamicScope scope) {
-        VariableInterceptor.inject(this, provider.getRuntime(), scope);
+    void inject(final DynamicScope scope) {
+        VariableInterceptor.inject(this, scope);
     }
 
     void retrieve(final IRubyObject receiver) {
@@ -425,7 +426,7 @@ public class BiVariableMap implements Map<String, Object> {
         checkKey(key);
         final RubyObject robj = getReceiverObject(receiver);
         for ( int i = 0; i < size(); i++ ) {
-            if ( ((String) key).equals( varNames.get(i) ) ) {
+            if ( key.equals( varNames.get(i) ) ) {
                 final BiVariable var = variables.get(i);
                 if ( var.isReceiverIdentical(robj) ) {
                     varNames.remove(i);

@@ -53,6 +53,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import static org.jruby.embed.internal.EmbedEvalUnitImpl.isSharingVariables;
+import static org.jruby.embed.internal.EmbedRubyRuntimeAdapterImpl.createLocalVarScope;
 
 /**
  * Implementation of {@link EmbedRubyObjectAdapter}. Users get an instance of this
@@ -281,7 +282,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         if (sharing_variables) {
             ManyVarsDynamicScope scope;
             if (unit != null && unit.getScope() != null) scope = unit.getScope();
-            else scope = EmbedRubyRuntimeAdapterImpl.getManyVarsDynamicScope(container, 0);
+            else scope = createLocalVarScope(runtime, container.getVarMap().getLocalVarNames());
             container.getVarMap().inject(scope);
             runtime.getCurrentContext().pushScope(scope);
         }

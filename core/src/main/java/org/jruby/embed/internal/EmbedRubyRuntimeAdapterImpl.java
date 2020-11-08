@@ -174,10 +174,9 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             line = lines[0];
         }
         try {
-            ManyVarsDynamicScope scope  = null;
-            final boolean sharing_variables = isSharingVariables(container);
-            if (sharing_variables) {
-                scope = getManyVarsDynamicScope(container, 0);
+            DynamicScope scope = null;
+            if (isSharingVariables(container)) {
+                scope = createLocalVarScope(runtime, container.getVarMap().getLocalVarNames());
             }
             final Node node;
             if (input instanceof String) {
@@ -212,27 +211,6 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         }
     }
 
-    static ManyVarsDynamicScope getManyVarsDynamicScope(ScriptingContainer container, int depth) {
-        ManyVarsDynamicScope scope;
-        StaticScopeFactory scopeFactory = container.getProvider().getRuntime().getStaticScopeFactory();
-
-        // root our parsing scope with a dummy scope
-        StaticScope topStaticScope = scopeFactory.newLocalScope(null);
-        topStaticScope.setModule(container.getProvider().getRuntime().getObject());
-
-        DynamicScope currentScope = new ManyVarsDynamicScope(topStaticScope, null);
-        String[] names4Injection = container.getVarMap().getLocalVarNames();
-        StaticScope evalScope = names4Injection == null || names4Injection.length == 0 ?
-                scopeFactory.newEvalScope(currentScope.getStaticScope()) :
-                scopeFactory.newEvalScope(currentScope.getStaticScope(), names4Injection);
-        scope = new ManyVarsDynamicScope(evalScope, currentScope);
-
-        // JRUBY-5501: ensure we've set up a cref for the scope too
-        scope.getStaticScope().determineModule();
-
-        return scope;
-    }
-
     public IRubyObject eval(Ruby runtime, String script) {
         return adapter.eval(runtime, script);
     }
@@ -244,4 +222,23 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     public EvalUnit parse(Ruby runtime, InputStream istream, String filename, int lineNumber) {
         return adapter.parse(runtime, istream, filename, lineNumber);
     }
+
+    static DynamicScope createLocalVarScope(Ruby runtime, final String[] varNames) {
+        ManyVarsDynamicScope scope;
+        StaticScopeFactory scopeFactory = runtime.getStaticScopeFactory();
+
+        // root our parsing scope with a dummy scope
+        StaticScope topStaticScope = scopeFactory.newLocalScope(null);
+        topStaticScope.setModule(runtime.getObject());
+
+        DynamicScope currentScope = new ManyVarsDynamicScope(topStaticScope, null);
+        StaticScope evalScope = scopeFactory.newEvalScope(currentScope.getStaticScope(), varNames);
+        scope = new ManyVarsDynamicScope(evalScope, currentScope);
+
+        // JRUBY-5501: ensure we've set up a cref for the scope too
+        scope.getStaticScope().determineModule();
+
+        return scope;
+    }
+
 }

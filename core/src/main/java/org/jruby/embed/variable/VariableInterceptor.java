@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.LocalVariableBehavior;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
@@ -109,10 +110,33 @@ public class VariableInterceptor {
      * @param runtime Ruby runtime
      * @param scope scope to inject local variable values
      */
+    @Deprecated
     public static void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope) {
         // lvar might not be given while parsing but be given when evaluating.
         // to avoid ArrayIndexOutOfBoundsException, checks the length of scope.getValues()
         if (scope != null && scope.getValues().length > 0) {
+            IRubyObject[] values4Injection = map.getLocalVarValues();
+            if (values4Injection != null && values4Injection.length > 0) {
+                for (int i = 0; i < values4Injection.length; i++) {
+                    scope.setValue(i, values4Injection[i], 0);
+                }
+            }
+        }
+        Collection<BiVariable> variables = map.getVariables();
+        for ( final BiVariable var : variables ) var.inject();
+    }
+
+    /**
+     * Injects variable values from Java to Ruby just before an evaluation or
+     * method invocation.
+     *
+     * @param map a variable map that has name-value pairs to be injected
+     * @param scope scope to inject local variable values
+     */
+    public static void inject(BiVariableMap map, DynamicScope scope) {
+        // lvar might not be given while parsing but be given when evaluating.
+        // to avoid ArrayIndexOutOfBoundsException, checks the length of scope.getValues()
+        if (scope.getStaticScope().getNumberOfVariables() > 0) {
             IRubyObject[] values4Injection = map.getLocalVarValues();
             if (values4Injection != null && values4Injection.length > 0) {
                 for (int i = 0; i < values4Injection.length; i++) {
