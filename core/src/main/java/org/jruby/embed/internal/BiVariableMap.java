@@ -331,16 +331,15 @@ public class BiVariableMap implements Map<String, Object> {
     public Object put(Object receiver, String key, Object value) {
         checkKey(key);
         final RubyObject robj = getReceiverObject(receiver);
-        final String name = key.intern();
-        BiVariable var = getVariable(robj, name);
+        BiVariable var = getVariable(robj, key);
         Object oldValue = null;
         if ( var != null ) { // updates
             oldValue = var.getJavaObject();
             var.setJavaObject(robj.getRuntime(), value);
         }
         else { // creates new value
-            var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, name, value);
-            if ( var != null ) update(name, var);
+            var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, key, value);
+            if ( var != null ) update(key, var);
         }
         return oldValue;
     }

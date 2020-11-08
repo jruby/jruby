@@ -64,7 +64,7 @@ abstract class AbstractVariable implements BiVariable {
      */
     protected AbstractVariable(IRubyObject receiver, String name, boolean fromRuby) {
         this.receiver = receiver;
-        this.name = name.intern();
+        this.name = name;
         this.fromRuby = fromRuby;
     }
 
@@ -79,7 +79,7 @@ abstract class AbstractVariable implements BiVariable {
      */
     protected AbstractVariable(IRubyObject receiver, String name, boolean fromRuby, IRubyObject rubyObject) {
         this.receiver = receiver;
-        this.name = name.intern();
+        this.name = name;
         this.fromRuby = fromRuby;
         this.rubyObject = rubyObject;
     }
