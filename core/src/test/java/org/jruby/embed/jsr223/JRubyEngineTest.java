@@ -56,6 +56,7 @@ import javax.script.SimpleScriptContext;
 import org.jruby.embed.PositionFunction;
 import org.jruby.embed.RadioActiveDecay;
 import org.jruby.embed.internal.BiVariableMap;
+import org.jruby.exceptions.NoMethodError;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -596,6 +597,18 @@ public class JRubyEngineTest {
         assertTrue(result.startsWith(expResult));
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
+    }
+
+    @Test
+    public void testInvokeMethodNonExistent() throws ScriptException {
+        ScriptEngine instance = newScriptEngine();
+        Object receiver = instance.eval("self");
+        try {
+            ((Invocable)instance).invokeMethod(receiver, "non_existent");
+            fail("Expected NoSuchMethodException");
+        } catch (NoSuchMethodException ex) {
+            assertTrue(ex.getCause() instanceof NoMethodError);
+        }
     }
 
     /**
