@@ -158,9 +158,6 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     }
 
     private EmbedEvalUnit runParser(Object input, String filename, int... lines) {
-        if (input == null) {
-            return null;
-        }
         if (filename == null || filename.length() == 0) {
             filename = container.getScriptFilename();
         }
