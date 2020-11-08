@@ -40,6 +40,8 @@ import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.internal.SingleThreadLocalContextProvider;
 import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
+import org.jruby.exceptions.NoMethodError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SyntaxError;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Constants;
@@ -908,7 +910,6 @@ public class ScriptingContainerTest {
     public void testCallMethod_3args() {
         logger1.info("callMethod(receiver, methodName, returnType)");
         Object receiver = null;
-        String methodName = "";
         Class<Object> returnType = null;
         String[] paths = {basedir + "/lib/ruby/stdlib"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
@@ -918,9 +919,12 @@ public class ScriptingContainerTest {
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
 
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, returnType);
-        assertEquals(expResult, result);
+        try {
+            Object result = instance.callMethod(receiver, "", returnType);
+            fail("expected to raise NoMethodError, but got result: " + result);
+        } catch (NoMethodError ex) {
+            // pass
+        }
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/next_year_1.rb";
         receiver = instance.runScriptlet(PathType.RELATIVE, filename);
@@ -953,28 +957,21 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_4args_1() {
         logger1.info("callMethod(receiver, methodName, singleArg, returnType)");
-        Object receiver = null;
-        String methodName = "";
-        Object singleArg = null;
-        Class<Object> returnType = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, singleArg, returnType);
-        assertEquals(expResult, result);
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/list_printer_1.rb";
-        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
-        methodName = "print_list";
+        Object receiver = instance.runScriptlet(PathType.RELATIVE, filename);
+        String methodName = "print_list";
         String[] hellos = {"你好", "こんにちは", "Hello", "Здравствуйте"};
-        singleArg = Arrays.asList(hellos);
+        Object singleArg = Arrays.asList(hellos);
         StringWriter sw = new StringWriter();
         instance.setWriter(sw);
         instance.callMethod(receiver, methodName, singleArg, null);
-        expResult = "Hello >> Здравствуйте >> こんにちは >> 你好: 4 in total";
+        Object expResult = "Hello >> Здравствуйте >> こんにちは >> 你好: 4 in total";
         assertEquals(expResult, sw.toString().trim());
 
         instance.getVarMap().clear();
@@ -987,23 +984,16 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_4args_2() {
         logger1.info("callMethod(receiver, methodName, args, returnType)");
-        Object receiver = null;
-        String methodName = "";
-        Object[] args = new Object[0];
-        Class<Object> returnType = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, args, returnType);
-        assertEquals(expResult, result);
 
         String filename = "src/test/ruby/org/jruby/embed/ruby/quadratic_formula.rb";
-        receiver = instance.runScriptlet(PathType.RELATIVE, filename);
-        methodName = "solve";
-        args = new Double[]{12.0, -21.0, -6.0};
+        Object receiver = instance.runScriptlet(PathType.RELATIVE, filename);
+        String methodName = "solve";
+        Object[] args = new Double[]{12.0, -21.0, -6.0};
         List<Double> solutions = instance.callMethod(receiver, methodName, args, List.class);
         assertEquals(2, solutions.size());
         assertEquals(new Double(-0.25), solutions.get(0));
@@ -1011,7 +1001,7 @@ public class ScriptingContainerTest {
 
         args = new Double[]{1.0, 1.0, 1.0};
         try {
-            solutions = instance.callMethod(receiver, methodName, args, List.class);
+            instance.callMethod(receiver, methodName, args, List.class);
         } catch (RuntimeException e) {
             Throwable t = e.getCause();
             assertTrue(t.getMessage().contains("RangeError"));
@@ -1058,8 +1048,12 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
 
         // Verify that empty message name returns null
-        Object result = instance.callMethod(null, "", returnType, unit);
-        assertEquals(null, result);
+        try {
+            Object result = instance.callMethod(null, "", returnType, unit);
+            fail("expected to raise NoMethodError, but got result: " + result);
+        } catch (NoMethodError ex) {
+            // pass
+        }
 
         String text =
             "songs:\n"+
@@ -1090,22 +1084,18 @@ public class ScriptingContainerTest {
     @Test
     public void testCallMethod_without_returnType() {
         logger1.info("callMethod no returnType");
-        Object receiver = null;
-        String methodName = "";
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName);
-        assertEquals(expResult, result);
+
         String script =
                 "def say_something\n" +
                   "return \"Oh, well. I'm stucked\"" +
                 "end";
-        receiver = instance.runScriptlet(script);
-        methodName = "say_something";
+        Object receiver = instance.runScriptlet(script);
+        String methodName = "say_something";
         String something = (String)instance.callMethod(receiver, methodName);
         assertEquals("Oh, well. I'm stucked", something);
 
