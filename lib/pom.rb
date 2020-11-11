@@ -42,7 +42,7 @@ default_gems = [
     ['sync', '0.5.0'],
     ['thwait', '0.1.0'],
     ['tracer', '0.1.0'],
-    ['webrick', '1.6.0'],
+    ['webrick', '1.6.1'],
 ]
 
 bundled_gems = [
