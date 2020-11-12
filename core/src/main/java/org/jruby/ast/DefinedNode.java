@@ -36,7 +36,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a defined statement.
@@ -44,10 +43,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class DefinedNode extends Node {
     private final Node expressionNode;
 
-    public DefinedNode(ISourcePosition position, Node expressionNode) {
-        super(position, expressionNode.containsVariableAssignment());
-        
-        assert expressionNode != null : "expressionNode is not null";
+    public DefinedNode(int line, Node expressionNode) {
+        super(line, expressionNode != null && expressionNode.containsVariableAssignment());
         
         this.expressionNode = expressionNode;
     }

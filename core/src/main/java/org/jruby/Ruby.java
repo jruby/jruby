@@ -67,7 +67,6 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.management.Caches;
 import org.jruby.management.InlineStats;
 import org.jruby.parser.StaticScope;
@@ -1116,20 +1115,20 @@ public final class Ruby implements Constantizable {
 
     // Modifies incoming source for -n, -p, and -F
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
-        ISourcePosition pos = oldRoot.getPosition();
-        BlockNode newBody = new BlockNode(pos);
+        int line = oldRoot.getLine();
+        BlockNode newBody = new BlockNode(line);
         RubySymbol dollarSlash = newSymbol(CommonByteLists.DOLLAR_SLASH);
-        newBody.add(new GlobalAsgnNode(pos, dollarSlash, new StrNode(pos, ((RubyString) globalVariables.get("$/")).getByteList())));
+        newBody.add(new GlobalAsgnNode(line, dollarSlash, new StrNode(line, ((RubyString) globalVariables.get("$/")).getByteList())));
 
-        if (processLineEndings) newBody.add(new GlobalAsgnNode(pos, newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(pos, dollarSlash)));
+        if (processLineEndings) newBody.add(new GlobalAsgnNode(line, newSymbol(CommonByteLists.DOLLAR_BACKSLASH), new GlobalVarNode(line, dollarSlash)));
 
-        GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, newSymbol("$_"));
+        GlobalVarNode dollarUnderscore = new GlobalVarNode(line, newSymbol("$_"));
 
-        BlockNode whileBody = new BlockNode(pos);
-        newBody.add(new WhileNode(pos, new VCallNode(pos, newSymbol("gets")), whileBody));
+        BlockNode whileBody = new BlockNode(line);
+        newBody.add(new WhileNode(line, new VCallNode(line, newSymbol("gets")), whileBody));
 
-        if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, newSymbol("chomp!"), null, null, false));
-        if (split) whileBody.add(new GlobalAsgnNode(pos, newSymbol("$F"), new CallNode(pos, dollarUnderscore, newSymbol("split"), null, null, false)));
+        if (processLineEndings) whileBody.add(new CallNode(line, dollarUnderscore, newSymbol("chomp!"), null, null, false));
+        if (split) whileBody.add(new GlobalAsgnNode(line, newSymbol("$F"), new CallNode(line, dollarUnderscore, newSymbol("split"), null, null, false)));
 
         if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts
             whileBody.addAll(((BlockNode) oldRoot.getBodyNode()));
@@ -1137,9 +1136,9 @@ public final class Ruby implements Constantizable {
             whileBody.add(oldRoot.getBodyNode());
         }
 
-        if (printing) whileBody.add(new FCallNode(pos, newSymbol("puts"), new ArrayNode(pos, dollarUnderscore), null));
+        if (printing) whileBody.add(new FCallNode(line, newSymbol("puts"), new ArrayNode(line, dollarUnderscore), null));
 
-        return new RootNode(pos, oldRoot.getScope(), newBody, oldRoot.getFile());
+        return new RootNode(line, oldRoot.getScope(), newBody, oldRoot.getFile());
     }
 
     /**

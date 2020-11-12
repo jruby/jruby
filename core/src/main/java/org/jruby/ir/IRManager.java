@@ -260,7 +260,9 @@ public class IRManager {
     public LineNumberInstr newLineNumber(int line) {
         if (line >= lineNumbers.length-1) growLineNumbersPool(line);
 
-        if (line < 0) line = 0;
+        // We do not cache negative line numbers as they are very rare...
+        if (line < 0) return new LineNumberInstr((line));
+
         LineNumberInstr tempVar = lineNumbers[line];
 
         if (tempVar == null) {

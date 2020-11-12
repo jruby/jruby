@@ -1,7 +1,7 @@
 # JRuby - an implementation of the Ruby language on the JVM
 
-Master: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=master)](https://travis-ci.org/jruby/jruby)
-9.1 branch: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=jruby-9.1)](https://travis-ci.org/jruby/jruby/branches)
+Master: [![Build Status](https://travis-ci.com/jruby/jruby.svg?branch=master)](https://travis-ci.org/jruby/jruby)
+9.2 branch: [![Build Status](https://travis-ci.com/jruby/jruby.svg?branch=jruby-9.2)](https://travis-ci.org/jruby/jruby/branches)
 
 ## About
 
@@ -36,7 +36,7 @@ version is very old.
 An alternative is to use one of the [Ruby version managers](https://www.ruby-lang.org/en/documentation/installation/#managers).
 
 For [`rbenv`](https://github.com/sstephenson/rbenv) you will need the
-[`ruby-build`](https://github.com/sstephenson/ruby-build) plugin. You may find that your system
+[`ruby-build`](https://githubcom/sstephenson/ruby-build) plugin. You may find that your system
 package manager can provide these. To see which versions of JRuby are available you should run:
 
 ```
@@ -46,11 +46,11 @@ $ rbenv install jruby
 Note: if you do not regularly git update rbenv this list of versions may be out of date.
 
 We recommend always selecting the latest version of JRuby from the list. 
-You can install that particular version (9.1.17.0 is just for illustration):
+You can install that particular version (9.2.13.0 is just for illustration):
 
 
 ```
-$ rbenv install jruby-9.1.17.0
+$ rbenv install jruby-9.2.13.0
 ```
 
 For [`rvm`](https://rvm.io) you can simply do:

@@ -36,7 +36,6 @@ import java.util.List;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
@@ -53,8 +52,8 @@ public class BackRefNode extends Node {
      **/
     private final char type;
 
-    public BackRefNode(ISourcePosition position, int type) {
-        super(position, false);
+    public BackRefNode(int line, int type) {
+        super(line, false);
         this.type = (char) type;
         DefinedMessage.byText("$" + (char)type);
     }

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -31,7 +32,6 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
-import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
@@ -76,7 +76,6 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_QWORDS) != 0) {
             flags |= STR_FUNC_TERM;
             lexer.pushback(0);
-            lexer.getPosition();
             return ' ';
         }
 
@@ -86,7 +85,7 @@ public class StringTerm extends StrTerm {
             RegexpOptions options = lexer.parseRegexpFlags();
             ByteList regexpBytelist = ByteList.create("");
             lexer.setState(EXPR_END | EXPR_ENDARG);
-            lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
+            lexer.setValue(new RegexpNode(lexer.getRubySourceline(), regexpBytelist, options));
             return RubyParser.tREGEXP_END;
         }
 
@@ -128,7 +127,6 @@ public class StringTerm extends StrTerm {
 
         if (spaceSeen) {
             lexer.pushback(c);
-            lexer.getPosition();
             return ' ';
         }
         
@@ -154,7 +152,7 @@ public class StringTerm extends StrTerm {
     }
 
     private void mixedEscape(RubyLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
-        lexer.compile_error(PID.MIXED_ENCODING, "" + foundEncoding + " mixed within " + parserEncoding);
+        lexer.compile_error("" + foundEncoding + " mixed within " + parserEncoding + " source");
     }
 
     // mri: parser_tokadd_string
@@ -164,6 +162,7 @@ public class StringTerm extends StrTerm {
         boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
         boolean regexp = (flags & STR_FUNC_REGEXP) != 0;
         boolean symbol = (flags & STR_FUNC_SYMBOL) != 0;
+        boolean indent = (flags & STR_FUNC_INDENT) != 0;
         boolean hasNonAscii = false;
         int c;
 
@@ -194,7 +193,16 @@ public class StringTerm extends StrTerm {
                 switch (c) {
                 case '\n':
                     if (qwords) break;
-                    if (expand) continue;
+                    if (expand) {
+                        if (!(indent || lexer.getHeredocIndent() >= 0)) continue;
+                        if (c == end) {
+                            c = '\\';
+                            // goto terminate
+                            if (encoding != null) buffer.setEncoding(encoding);
+                            return c;
+                        }
+                        continue;
+                    }
                     buffer.append('\\');
                     break;
 
@@ -234,7 +242,7 @@ public class StringTerm extends StrTerm {
                         }
 
                         if (!lexer.tokadd_mbchar(c, buffer)) {
-                            lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + encoding + ")");
+                            lexer.compile_error("invalid multibyte char (" + encoding + ")");
                         }
 
                         continue;
@@ -262,7 +270,7 @@ public class StringTerm extends StrTerm {
                         /* ignore backslashed spaces in %w */
                     } else if (c != end && !(begin != '\0' && c == begin)) {
                         buffer.append('\\');
-                        lexer.pushback(c);;
+                        lexer.pushback(c);
                         continue;
                     }
                 }
@@ -275,7 +283,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
                 }
 
                 if (!lexer.tokadd_mbchar(c, buffer)) {
-                    lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + encoding + ")");
+                    lexer.compile_error("invalid multibyte char (" + encoding + ")");
                 }
 
                 continue;
