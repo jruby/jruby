@@ -1971,7 +1971,7 @@ public class RubyClass extends RubyModule {
 				if (found)
 					return node;
 				
-				BlockNode replacement = new BlockNode(node.getPosition()); 
+				BlockNode replacement = new BlockNode(node.getLine());
 			    
 			    level++;
 			    
@@ -2010,19 +2010,20 @@ public class RubyClass extends RubyModule {
 				}
 				Node sarg = node.getArgsNode();
 				if (sarg == null)
-					sarg = new ArrayNode(node.getPosition());
-				ArrayNode ret = new ArrayNode(node.getPosition(), sarg);// TODO: block args!
-				ArgsNode an = new ArgsNode(node.getPosition(), null, null, null, null,null);
+					sarg = new ArrayNode(node.getLine());
+				ArrayNode ret = new ArrayNode(node.getLine(), sarg);// TODO: block args!
+				ArgsNode an = new ArgsNode(node.getLine(), null, null, null, null,null);
 				StaticScope scope = StaticScopeFactory.newIRBlockScope(def.getScope());
 				scope.setSignature(Signature.from(an));
+				//TODO: capture args?
 				ret.add(
-					new FCallNode(node.getPosition(), RubySymbol.newSymbol(runtime, "lambda"), null,
-						new IterNode(node.getPosition(), 
+					new FCallNode(node.getLine(), RubySymbol.newSymbol(runtime, "lambda"), null,
+						new IterNode(node.getLine(), 
 							an, 
-							bn = new BlockNode(node.getPosition()), 
+							bn = new BlockNode(node.getLine()), 
 							scope, 1)));
 				found = true;
-				return  new ReturnNode(node.getPosition(), ret);
+				return  new ReturnNode(node.getLine(), ret);
 				// TODO Auto-generated method stub
 				//return super.visitSuperNode(node);
 			}
@@ -2036,19 +2037,19 @@ public class RubyClass extends RubyModule {
 					error = true;
 					return null;
 				}
-				Node sarg = new NilNode(node.getPosition());
-				ArrayNode ret = new ArrayNode(node.getPosition(), sarg);// TODO: block args!
-				ArgsNode an = new ArgsNode(node.getPosition(), null, null, null, null,null);
+				Node sarg = new NilNode(node.getLine());
+				ArrayNode ret = new ArrayNode(node.getLine(), sarg);// TODO: block args!
+				ArgsNode an = new ArgsNode(node.getLine(), null, null, null, null,null);
 				StaticScope scope = StaticScopeFactory.newIRBlockScope(def.getScope());
 				scope.setSignature(Signature.from(an));
 				ret.add(
-					new FCallNode(node.getPosition(), RubySymbol.newSymbol(runtime, "lambda"), null,
-						new IterNode(node.getPosition(), 
+					new FCallNode(node.getLine(), RubySymbol.newSymbol(runtime, "lambda"), null,
+						new IterNode(node.getLine(), 
 							an, 
-							bn = new BlockNode(node.getPosition()), 
+							bn = new BlockNode(node.getLine()), 
 							scope, 1)));
 				found = true;
-				return  new ReturnNode(node.getPosition(), ret);
+				return  new ReturnNode(node.getLine(), ret);
 			}
 		}
 
@@ -2178,7 +2179,7 @@ public class RubyClass extends RubyModule {
 			if (flat.error)
 				System.err.println("error");
 			System.err.println(def.toString());
-			DefNode rdnbody = new DefnNode(def.getBodyNode().getPosition(), RubySymbol.newSymbol(runtime, "j_initialize"), def.getArgsNode(), def.getScope(), body, def.getEndLine());
+			DefNode rdnbody = new DefnNode(def.getBodyNode().getLine(), RubySymbol.newSymbol(runtime, "j_initialize"), def.getArgsNode(), def.getScope(), body, def.getEndLine());
 			System.err.println(rdnbody.toString());
 			
 			
