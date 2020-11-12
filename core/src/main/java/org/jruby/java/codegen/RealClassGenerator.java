@@ -52,6 +52,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.Java.JCreateMethod;
+import org.jruby.javasupport.Java.JCtorCache;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
@@ -854,9 +855,19 @@ public abstract class RealClassGenerator {
         }
         return baseIndex;
     }
+    
+    public static enum CtorFlags
+    {
+    	Normal,
+    	NoSuper, // implicit `super` not allowed, no parent ctor with this signature
+    	RubyArgs, // NoSuper + args don't need converting
+    	RubyArgsBlock, // RubyArgs, plus has a block arg
+    	
+    }
+    // TODO: add CJP ctor for alloc sep?
     //:TODO: Add IRubyobject ctor?
     // shouls this be in in this spot?
-    public static void makeConcreteConstructorSwitch(ClassWriter cw, boolean hasRuby, boolean callsInit, ConcreteJavaReifier cjr, Class[] ctorTypes, JavaConstructor[] constructors)
+    public static void makeConcreteConstructorSwitch(ClassWriter cw, boolean hasRuby, boolean callsInit, ConcreteJavaReifier cjr, Class[] ctorTypes, JavaConstructor[] constructors, CtorFlags flag)
     {
     	String sig = hasRuby ? sig(void.class, cjr.join(ctorTypes, Ruby.class, RubyClass.class)) : sig(void.class, ctorTypes);
 		SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig, null, null);
@@ -877,9 +888,10 @@ public abstract class RealClassGenerator {
         }
         // this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
         RealClassGenerator.coerceArgumentsToRuby(m, ctorTypes, rubyIndex);
-        m.dup();
+//        m.dup();
         m.astore(rubyInitArgs);
-        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+        m.pop(); // pop the this. TODO: dont push the this
+//        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
         
         //this.$rubyObject = new ConcreteJavaProxy(ruby, rubyClass);
         {
@@ -897,18 +909,12 @@ public abstract class RealClassGenerator {
 	        m.swap();
 	        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
         }
-        //IRubyObject c =  this$rubyObject..callMethod("j_initialize", this.$rubyInitArgs);
+        //IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
         if (callsInit) //TODO: should init be called when super calls an abstract method we implement?
         {
-        	m.ldc("j_initialize"); // TODO: consts?
-            m.aload(rubyInitArgs);
-            cjr.rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class) ); //pushes rubyobject
-            
-            //RubyArray ra = c.convertToArray();
-            m.invokeinterface(p(IRubyObject.class), "convertToArray", sig(RubyArray.class));
-            m.dup(); // rubyarray (results of j_initialize)
-  //          m.dup(); // rubyarray (results of j_initialize)
-//            m.astore(rubyArrayIndex);
+        	m.aload(rubyInitArgs);
+            m.invokevirtual(cjr.rubyPath, "splitInitialized", sig(RubyArray.class, IRubyObject[].class) ); //pushes rubyarray
+            m.dup(); // rubyarray (results of splitInitialized)
             
             
     		//// c = ra.entry(0);
@@ -923,9 +929,9 @@ public abstract class RealClassGenerator {
             
             //// switch(Java.JCreateMethod.forTypes(constructors, c))
             m.dup();
-            m.getstatic(cjr.javaPath, cjr.RUBY_CTORS_FIELD, ci(JavaConstructor[].class));
-            m.swap(); // ... arglist, ctors, arglist //TODO: reorder args?
-            m.invokestatic(p(JCreateMethod.class), "forTypes", sig(int.class, JavaConstructor[].class, IRubyObject.class));
+            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));// ... arglist, arglist, ctors,
+	        m.aload(rubyIndex); // ruby
+            m.invokestatic(p(JCreateMethod.class), "forTypes", sig(int.class, IRubyObject.class, JCtorCache.class, Ruby.class));
             // ..., arglist, index
             Label defaultLabel = new Label();
             Label[] cases = new Label[constructors.length+1]; //note: offset by one from index
@@ -946,12 +952,24 @@ public abstract class RealClassGenerator {
             	m.athrow();
             	
             	// -1: super(*args), from `super` (no args) in ruby
-            	m.label(cases[0]);
-            	m.aload(0);
-    			ga.loadArgs(0, ctorTypes.length);
-    	        m.invokespecial(p(cjr.reifiedParent), "<init>", sig(void.class, ctorTypes));
-    	        m.pop(); //c
-    	        m.go_to(endofswitch);
+            	if (flag == CtorFlags.Normal)
+            	{
+	            	m.label(cases[0]);
+	            	m.aload(0);
+	    			ga.loadArgs(0, ctorTypes.length);
+	    	        m.invokespecial(p(cjr.reifiedParent), "<init>", sig(void.class, ctorTypes));
+	    	        m.pop(); //c
+	    	        m.go_to(endofswitch);
+            	}
+            	else // no super constructor exists, throw
+            	{
+            		m.label(cases[0]);
+                	m.newobj(p(IllegalStateException.class));
+                	m.dup();
+                	m.ldc("Superclass does not have a constructor with the same signature, please provide arguments: `super()`");
+                	m.invokespecial(p(IllegalStateException.class), "<init>", sig(void.class, String.class));
+                	m.athrow();
+            	}
     	        
     	        // case n:
     	        for (int i = 0; i < constructors.length; i++)
@@ -994,9 +1012,9 @@ public abstract class RealClassGenerator {
         // TODO: is this field still needed?
         // clear args to avoid holding refs to args
         //// this.$rubyInitArgs = null;
-        m.aload(0); // initialized this
-        m.aconst_null();
-        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+//        m.aload(0); // initialized this
+//        m.aconst_null();
+//        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
         
 
         //implied: if (this.$rubyObject.getObject() == null) // only checked on non-ctor paths
@@ -1005,7 +1023,6 @@ public abstract class RealClassGenerator {
         m.aload(0); // initialized this
         m.dup();
         m.getfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);// ..., this, rubyobj
-        m.checkcast(p(ConcreteJavaProxy.class));
         m.swap(); // ..., rubyobject, this
         m.invokevirtual(p(ConcreteJavaProxy.class), "setObject", sig(void.class, Object.class));
         
@@ -1030,7 +1047,7 @@ public abstract class RealClassGenerator {
       Ruby var3 = ruby;
       this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
       this.$rubyObject = new ConcreteJavaProxy(ruby, rubyClass);
-      IRubyObject c =  this$rubyObject..callMethod("j_initialize", this.$rubyInitArgs);
+      IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
 		RubyArray ra = c.convertToArray();
 		c = ra.entry(0);
 		IRubyObject continuation = ra.entry(1);

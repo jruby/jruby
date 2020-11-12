@@ -51,6 +51,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -82,6 +83,7 @@ import org.jruby.java.addons.KernelJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.dispatch.CallableSelector;
+import org.jruby.java.dispatch.CallableSelector.CallableCache;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ArrayJavaProxyCreator;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -602,6 +604,33 @@ public class Java implements Library {
 
         subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
     }
+    
+    public static class JCtorCache  implements CallableSelector.CallableCache<ParameterTypes> {
+
+        private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
+		final JavaConstructor[] constructors;
+		private final List<JavaConstructor> constructorList;
+        
+        public JCtorCache(JavaConstructor[] constructors)
+        {
+        	this.constructors = constructors;
+        	constructorList = Arrays.asList(constructors);
+        	
+        }
+        
+        public int indexOf(JavaConstructor ctor)
+        {
+        	return constructorList.indexOf(ctor);
+        }
+        
+	    public final ParameterTypes getSignature(int signatureCode) {
+	        return cache.get(signatureCode);
+	    }
+	
+	    public final void putSignature(int signatureCode, ParameterTypes callable) {
+	        cache.put(signatureCode, callable);
+	    }
+    }
 
     public static class JCreateMethod extends JavaMethodN implements CallableSelector.CallableCache<JavaProxyConstructor> {
 
@@ -643,9 +672,22 @@ public class Java implements Library {
             return newObject;
         }
         
-        public static int forTypes(JavaConstructor[] constructors, IRubyObject type)
+        public static int forTypes(IRubyObject argarray, JCtorCache cache, Ruby runtime)
         {
-        	return 1; //TODO: implement
+        	if (argarray.isNil()) // super (no args)
+        	{
+            	System.out.println("Will be retuing icx + " + -1);
+        		return -1;
+        	}
+        	RubyArray ra = argarray.convertToArray();
+        	IRubyObject[] args = ra.toJavaArrayMaybeUnsafe(); // TODO: which method unpacking the array?
+        	
+        	
+        	JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache, args.length, args);
+        	int index = cache.indexOf(ctor);
+        	if (index < 0) throw runtime.newArgumentError("index error finding superconstructor");
+        	System.out.println("Will be retuing icx + " + index);
+        	return index;
         }
 
         @Override
@@ -741,7 +783,7 @@ public class Java implements Library {
             final JavaProxyConstructor[] constructors, final int arity, final IRubyObject... args) {
             ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(arity, constructors);
 
-            // remove java-only methods
+            // remove java-only methods: //TODO: ???
             Iterator<JavaProxyConstructor> iter = forArity.iterator();
             while (iter.hasNext()) {
             	if(iter.next().isExportable())
@@ -759,6 +801,28 @@ public class Java implements Library {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
             }
             return matching;
+        }
+
+        // generic (slowest) path
+        public static <T extends ParameterTypes> T matchConstructorIndex(final ThreadContext context,
+            final T[] constructors, final CallableCache<ParameterTypes> cache, final int arity, final IRubyObject... args) {
+            ArrayList<T> forArity = findCallablesForArity(arity, constructors);
+
+            // remove java-only methods: //TODO: ???
+            
+            //new JavaProxyConstructor();
+            
+            if ( forArity.size() == 0 ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+            final ParameterTypes matching = CallableSelector.matchingCallableArityN(
+                context.runtime, cache, forArity.toArray(new ParameterTypes[forArity.size()]), args
+            );
+
+            if ( matching == null ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+            return (T) matching;
         }
 
         public final JavaProxyConstructor getSignature(int signatureCode) {

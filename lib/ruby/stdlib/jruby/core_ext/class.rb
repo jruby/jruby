@@ -186,6 +186,13 @@ class Class
     self_r.class_config = config
     kwargs
   end
+  
+  #Temporary, TODO: nicer api
+  def extra_ctor(*clz)
+    self_r = JRuby.reference0(self)
+    config = self_r.class_config
+    config.extraCtors = [clz.to_java(java.lang.Class)].to_java(java.lang.Class[])
+  end
 
   def java_annotation(anno)
     warn "java_annotation is deprecated. Use java_signature '@#{anno} ...' instead. Called from: #{caller.first}"

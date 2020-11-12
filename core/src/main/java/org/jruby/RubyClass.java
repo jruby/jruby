@@ -90,9 +90,11 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.SuperNode;
+import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -102,9 +104,11 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.java.codegen.RealClassGenerator;
+import org.jruby.java.codegen.RealClassGenerator.CtorFlags;
 import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.Java.JCtorCache;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -1480,16 +1484,12 @@ public class RubyClass extends RubyModule {
 
     private abstract class BaseReificator implements Reificator {
 
-        public static final String RUBY_INIT_ARGS_FIELD = "$rubyInitArgs";
-		public static final String RUBY_OBJECT_FIELD = "$rubyObject";
-		protected static final String RUBY_PROXY_CLASS_FIELD = "$rubyProxyClass";
-		public static final String RUBY_CTORS_FIELD = "$rubyCtors";
 		
 		public    final Class reifiedParent;
         protected final String javaName;
         public    final String javaPath;
         public    final String rubyName;
-        protected final String rubyPath;
+        public    final String rubyPath;
         protected final JavaClassConfiguration jcc;
         protected final ClassWriter cw;
 
@@ -1515,10 +1515,6 @@ public class RubyClass extends RubyModule {
             // fields to hold Ruby and RubyClass references
             cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null);
             cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null);
-            if (!isRubyObject()) cw.visitField(ACC_PRIVATE, RUBY_OBJECT_FIELD, rubyName, null, null); 
-            if (!isRubyObject()) cw.visitField(ACC_PRIVATE, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class), null, null);
-            if (!isRubyObject()) cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class), null, null);
-            if (!isRubyObject()) cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTORS_FIELD, ci(JavaConstructor[].class), null, null); 
 
             
             reifyConstructors();
@@ -1565,13 +1561,7 @@ public class RubyClass extends RubyModule {
          */
         protected void loadRubyObject(SkinnyMethodAdapter m)
         {
-        	if (isRubyObject())
-        		m.aload(0); // self
-        	else
-        	{
-        		m.aload(0); // self
-        		m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName); // rubyObject
-        	}
+    		m.aload(0); // self
         }
         
         
@@ -1906,8 +1896,8 @@ public class RubyClass extends RubyModule {
             this.clinitKey = JavaProxyClass.addStaticInitLookup(getExtraClinitInfo());
             m.ldc(clinitKey);//TODO: add ctors
             m.invokestatic(p(JavaProxyClass.class), "getStaticInitLookup", sig(Object[].class, int.class));
-            extraClinitLookup(m);
             m.dup_x1(); // array
+            m.dup_x2(); // array
             m.pushInt(0); // ruby index
             m.aaload(); // extract ruby
             m.checkcast(p(Ruby.class));
@@ -1915,6 +1905,7 @@ public class RubyClass extends RubyModule {
             m.aaload(); // extract rubyclass
             m.checkcast(p(RubyClass.class));
             m.putstatic(javaPath, "rubyClass", ci(RubyClass.class));
+            extraClinitLookup(m);
         }
         
         protected Object[] getExtraClinitInfo()
@@ -1924,7 +1915,7 @@ public class RubyClass extends RubyModule {
 
 		protected void extraClinitLookup(SkinnyMethodAdapter m)
         {
-        	
+        	m.pop();
         }
 
 		protected Class[] searchInheritedSignatures(String id)
@@ -2017,7 +2008,10 @@ public class RubyClass extends RubyModule {
 					error = true;
 					return null;
 				}
-				ArrayNode ret = new ArrayNode(node.getPosition(), node.getArgsNode());// TODO: block args!
+				Node sarg = node.getArgsNode();
+				if (sarg == null)
+					sarg = new ArrayNode(node.getPosition());
+				ArrayNode ret = new ArrayNode(node.getPosition(), sarg);// TODO: block args!
 				ArgsNode an = new ArgsNode(node.getPosition(), null, null, null, null,null);
 				StaticScope scope = StaticScopeFactory.newIRBlockScope(def.getScope());
 				scope.setSignature(Signature.from(an));
@@ -2032,17 +2026,47 @@ public class RubyClass extends RubyModule {
 				// TODO Auto-generated method stub
 				//return super.visitSuperNode(node);
 			}
+			
+			@Override
+			public Node visitZSuperNode(ZSuperNode node)
+			{
+				foundsuper = true;
+				if (level != 1)
+				{
+					error = true;
+					return null;
+				}
+				Node sarg = new NilNode(node.getPosition());
+				ArrayNode ret = new ArrayNode(node.getPosition(), sarg);// TODO: block args!
+				ArgsNode an = new ArgsNode(node.getPosition(), null, null, null, null,null);
+				StaticScope scope = StaticScopeFactory.newIRBlockScope(def.getScope());
+				scope.setSignature(Signature.from(an));
+				ret.add(
+					new FCallNode(node.getPosition(), RubySymbol.newSymbol(runtime, "lambda"), null,
+						new IterNode(node.getPosition(), 
+							an, 
+							bn = new BlockNode(node.getPosition()), 
+							scope, 1)));
+				found = true;
+				return  new ReturnNode(node.getPosition(), ret);
+			}
 		}
 
+
+        //public static final String RUBY_INIT_ARGS_FIELD = "$rubyInitArgs";
+		public static final String RUBY_OBJECT_FIELD = "$rubyObject";
+		protected static final String RUBY_PROXY_CLASS_FIELD = "$rubyProxyClass";
+		public static final String RUBY_CTOR_CACHE_FIELD = "$rubyCtorCache";
+    	
 		boolean rubyctor = false;
     	boolean simpleAlloc = false;
-    	JavaConstructor[] savedCtors = null;
+    	JavaConstructor[] savedSuperCtors = null;
 
 		ConcreteJavaReifier(Class<?> reifiedParent, String javaName, String javaPath)
 		{
 			// In theory, we should operate on IRubyObject, but everything 
 			// that we need is a RubyBasicObject, and it has a nicer interface to boot
-			super(reifiedParent, javaName, javaPath, ci(RubyBasicObject.class), p(RubyBasicObject.class));
+			super(reifiedParent, javaName, javaPath, ci(ConcreteJavaProxy.class), p(ConcreteJavaProxy.class));
 		}
 		
 		@Override
@@ -2057,6 +2081,23 @@ public class RubyClass extends RubyModule {
 		}
 		
 		@Override
+		protected void loadRubyObject(SkinnyMethodAdapter m)
+		{
+    		m.aload(0); // self
+    		m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName); // rubyObject
+		}
+		
+		@Override
+		public byte[] reify()
+		{
+			cw.visitField(ACC_FINAL | ACC_PRIVATE, RUBY_OBJECT_FIELD, rubyName, null, null); 
+            //cw.visitField(ACC_PRIVATE, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class), null, null);
+            cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class), null, null);
+            cw.visitField(ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class), null, null); 
+			return super.reify();
+		}
+		
+		@Override
 		protected boolean isRubyObject()
 		{
 			return false;
@@ -2065,13 +2106,25 @@ public class RubyClass extends RubyModule {
 		@Override
 		protected Object[] getExtraClinitInfo()
 		{
-			return new Object[]{runtime, RubyClass.this, savedCtors};
+			return new Object[]{runtime, RubyClass.this, savedSuperCtors};
 		}
-		
-		@Override
-		public void reifyClinit(SkinnyMethodAdapter m)
-		{
-			super.reifyClinit(m);
+		// TODO: disable alloc?
+        
+        protected void extraClinitLookup(SkinnyMethodAdapter m)
+        {
+        	// extract cached ctors for lookup ordering
+        	
+        	// note: consume top of stack, lookuparray
+            m.newobj(p(JCtorCache.class));
+            m.dup_x1(); // jccache, lookuparray, jccache
+            m.swap();// jccache, jccache, lookuparray
+            m.pushInt(2); // ctor fields = index 2
+            m.aaload(); // extract ctors, -> jccache, jccache, ctor[]
+            m.checkcast(p(JavaConstructor[].class));
+            m.invokespecial(p(JCtorCache.class), "<init>", sig(void.class, JavaConstructor[].class));
+            m.putstatic(javaPath, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
+            
+            // now create proxy class
             m.getstatic(javaPath, "ruby", ci(Ruby.class));
             m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
             m.ldc(org.objectweb.asm.Type.getType("L"+javaPath+";"));
@@ -2084,20 +2137,10 @@ public class RubyClass extends RubyModule {
             m.invokestatic(p(JavaProxyClass.class), "setProxyClassReified", sig(JavaProxyClass.class, Ruby.class, RubyClass.class, Class.class, boolean.class));
             m.putstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
             // Note: no end, that's in the parent call
-		}
-        
-        protected void extraClinitLookup(SkinnyMethodAdapter m)
-        {
-        	m.dup(); // don't modify the stack below us, use a new copy
-            m.pushInt(2); // ctor fields
-            m.aaload(); // extract ctors
-            m.checkcast(p(JavaConstructor[].class));
-            m.putstatic(javaPath, RUBY_CTORS_FIELD, ci(JavaConstructor[].class));
         }
 
 		protected Class[] searchInheritedSignatures(String id)
 		{
-
 			for (Method method : reifiedParent.getDeclaredMethods())
 			{
 				//TODO: java <-> ruby conversion?
@@ -2156,151 +2199,80 @@ irm = new IRMethod(irm.getManager(), irm.getLexicalParent(), rdnbody, new ByteLi
 				irm2.builtInterpreterContext();
 				System.err.println("found A SUPER!!!!!");
 			}
-			
-			if (zeroArg.isPresent())
-			{
-	            rubyctor = true;
-	            simpleAlloc = true;
-	            // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
-	        	SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null);
-	            m.aload(0); // uninitialized this
-	            
-	            // set args for init
-	            m.dup();
-	            m.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-	            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-	            
-	            // call super
-	            m.invokespecial(p(reifiedParent), "<init>", sig(void.class));
-	            
-	            // call init (if not already called)
-	            generateObjectBarrier(m, 0, false);
-	            
-	            // clear args to avoid holding refs to args
-	            m.aload(0);
-	            m.aconst_null();
-	            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-	            
-	            m.voidreturn();
-	            m.end();
-	            
-	            
-	            if (jcc.javaConstructable)
-	            {
-	            	// no-arg constructor using static references to Ruby and RubyClass. For use by java
-		            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class), null, null);
-		            m.aload(0); // uninitialized this
-		            
-		            // set args for init
-		            m.dup();
-		            m.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-		            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-		            
-		            // call super
-		            m.invokespecial(p(reifiedParent), "<init>", sig(void.class));
-		            
-		            // call init (if not already called)
-		            generateObjectBarrier(m, -1, true);
-		            
-		            // clear args to avoid holding refs to args
-		            m.aload(0);
-		            m.aconst_null();
-		            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
 
-		            m.voidreturn();
-		            m.end();
-	            }
-			}
-			/*else
-			{
-				//TODO: copy jpcf logic for alloc
-				throw new RuntimeException("Class doesn't have no-arg ctor");
-			}*/
 			
-			if (candidates.size() > 0 && jcc.allCtors) //TODO: doc: implies javaConstructable?
+			if (candidates.size() > 0 ) //TODO: doc: implies javaConstructable?
 			{
 				List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
 				for (Constructor<?> constructor : candidates)
 				{
 					savedCtorsList.add(new JavaConstructor(runtime, constructor));
 				}
-				savedCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
+				savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
+			}
+			else
+			{ 
+				//TODO: no ctors = error? 
+				//TODO ????
+				throw new RuntimeException("Class doesn't have any invokeable ctors");
+			}
+			
+			if (zeroArg.isPresent())
+			{
+	            rubyctor = true;
+	            //TODO: simpleAlloc = true;
+	            // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
+if (!jcc.allCtors) //TODO: fix logic
+{
+				//if (jcc.rubyConstructable)
+					RealClassGenerator.makeConcreteConstructorSwitch(cw, true, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+	            
+	            
+	            if (jcc.javaConstructable)
+	            {
+	            	RealClassGenerator.makeConcreteConstructorSwitch(cw, false, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+	            }
+}
+			}
+			/*else
+			{
+				//TODO: copy jpcf logic for alloc
+				throw new RuntimeException("Class doesn't have no-arg ctor");
+			}*/
+			if (jcc.allCtors)
+			{
 				for (Constructor<?> constructor : candidates)
 				{
 					//TODO: do matching for zero arg?
-					if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
+				//	if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
 
 					if (jcc.rubyConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, true, true, this, constructor.getParameterTypes(), savedCtors);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, true, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
 
 					if (jcc.javaConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, false, true, this, constructor.getParameterTypes(), savedCtors);
-					/*
-					if (jcc.rubyConstructable)
-					{
-			            rubyctor = true;
-			            
-			            //TODO: create empty object before super call???
-			            // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
-			        	SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, join(constructor.getParameterTypes(), Ruby.class, RubyClass.class)), null, null);
-			            m.aload(0); // uninitialized this
-			            
-			            // set args for init
-			            m.dup();
-			            RealClassGenerator.coerceArgumentsToRuby(m, constructor.getParameterTypes(), RealClassGenerator.calcBaseIndex(constructor.getParameterTypes(), 1));
-			            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-			            
-			            // call super
-						GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
-						ga.loadArgs(0, constructor.getParameterCount());
-			            m.invokespecial(p(reifiedParent), "<init>", sig(void.class, constructor.getParameterTypes()));
-	
-			            // call init (if not already called)
-			            generateObjectBarrier(m, constructor.getParameterCount(), true);// NOTE: these ones we DO call init from
-			            
-			            // clear args to avoid holding refs to args
-			            m.aload(0);
-			            m.aconst_null();
-			            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-			            
-			            m.voidreturn();
-			            m.end();
-					}
-		            
-		            if (jcc.javaConstructable)
-		            {
-		            	// no-arg constructor using static references to Ruby and RubyClass. For use by java
-						SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, constructor.getParameterTypes()), null, null);
-						m.aload(0);
-
-			            // set args for init
-	                    final int baseIndex = RealClassGenerator.calcBaseIndex(constructor.getParameterTypes(), 1);
-	                    final int rubyIndex = baseIndex;
-						m.getstatic(javaPath, "ruby", ci(Ruby.class));
-						m.astore(rubyIndex); // save ruby in local
-			            m.dup();
-			            RealClassGenerator.coerceArgumentsToRuby(m, constructor.getParameterTypes(), rubyIndex);
-			            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-						
-						// call super
-						GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
-						ga.loadArgs(0, constructor.getParameterCount());
-			            m.invokespecial(p(reifiedParent), "<init>", sig(void.class, constructor.getParameterTypes()));
-			            
-			            // call init (if not already called)
-			            generateObjectBarrier(m, -1, true);
-			            
-			            // clear args to avoid holding refs to args
-			            m.aload(0);
-			            m.aconst_null();
-			            m.putfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-	
-			            m.voidreturn();
-			            m.end();
-		            }*/
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, false, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
 					
 				}
 			}
+			
+			if (jcc.extraCtors != null && jcc.extraCtors.length > 0)
+			{
+				for (Class<?>[] constructor : jcc.extraCtors)
+				{
+					//TODO: do matching for zero arg?
+					if (constructor.length  == 0 && zeroArg.isPresent()) continue;
+					// TODO: ensure not existing already
+					// TODO: support annotations
+
+					if (jcc.rubyConstructable)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, true, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+
+					if (jcc.javaConstructable)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, false, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+					
+				}
+			} 
+			// TODO: rubyargs
 		}
 
 		/**
@@ -2320,43 +2292,10 @@ irm = new IRMethod(irm.getManager(), irm.getLexicalParent(), rdnbody, new ByteLi
 		protected void generateObjectBarrier(SkinnyMethodAdapter m, int ctorArg, boolean initialize)
 		{
 			// For non-concrete things, we check, as this is not a RubyObject
-			Label end = new Label();
 			m.aload(0);
 			m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
-			m.ifnonnull(end); //TODO: no nulls for ctors?
-			{
-	            m.newobj(p(ConcreteJavaProxy.class));
-	            m.dup(); // rubyobject
-	            if (ctorArg >= 0)
-	            {
-		            m.aload(1+ctorArg); // ruby
-		            m.aload(2+ctorArg); // rubyclass
-	            }
-	            else
-	            {
-		            m.getstatic(javaPath, "ruby", ci(Ruby.class));
-		            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-	            }
-	
-	            m.aload(0); // initialized this
-	            m.invokespecial(p(ConcreteJavaProxy.class), "<init>", sig(void.class, Ruby.class, RubyClass.class, Object.class));
-	            m.dup(); // rubyobject 
-	            m.aload(0); // this
-	            m.swap();
-
-	            m.putfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
-	            if (jcc.callInitialize && initialize) //TODO: should init be called when super calls an abstract method we implement?
-	            {
-	            	m.ldc("initialize"); // TODO: consts?
-	            	m.aload(0); // this
-	            	m.getfield(javaPath, RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-	                rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class) );
-	                m.pop();
-	            }
-	            else
-	            	m.pop();
-			}
-			m.label(end);
+			m.aload(0);
+			m.invokevirtual(rubyPath, "ensureThis", sig(void.class, Object.class));
 		}
 
 		private void defineAllocator()

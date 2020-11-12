@@ -3,6 +3,7 @@ package org.jruby.java.proxies;
 import java.lang.reflect.Field;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -186,6 +187,20 @@ public class ConcreteJavaProxy extends JavaProxy {
 			return ((ReifiedJavaProxy)jo.getValue()).___jruby$rubyObject();
 		}
 
+    }
+    
+    // used by reified classes
+    public RubyArray splitInitialized(IRubyObject[] args)
+    {
+    	///  TODO: move gen here
+    	return callMethod("j_initialize", args).convertToArray();
+    }
+    
+    // used by reified classes
+    public void ensureThis(Object self)
+    {
+    	if (getObject() == null)
+    		setObject(self);
     }
 
     protected static void initialize(final RubyClass concreteJavaProxy) {
