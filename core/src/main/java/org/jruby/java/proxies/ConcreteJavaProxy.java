@@ -103,7 +103,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         private DynamicMethod reifyAndNewMethod(IRubyObject clazz) { 
 
         	RubyClass parent = ((RubyClass)clazz);
-        	System.err.println(parent.getName() + " is " + parent.getJavaProxy());
+        	System.err.println(parent.getName() + " is " + parent.getJavaProxy());// TODO: remove
         	if (parent.getJavaProxy()) return newMethod;
         	
         	// overridden class: reify and re-lookup new as reification changes it
@@ -205,7 +205,12 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     protected static void initialize(final RubyClass concreteJavaProxy) {
         concreteJavaProxy.addMethod("initialize", new InitializeMethod(concreteJavaProxy));
-        System.err.println("adding to " + concreteJavaProxy.getName());
+        if (concreteJavaProxy.getName().equals("ConcreteJavaProxy"))
+        {}
+        else if (concreteJavaProxy.getName().equals("MapJavaProxy"))
+        {}
+        else
+        System.err.println("adding to " + concreteJavaProxy.getName()); //TODO: remove
         // We define a custom "new" method to ensure that __jcreate! is getting called,
         // so that if the user doesn't call super in their subclasses, the object will
         // still get set up properly. See JRUBY-4704.
