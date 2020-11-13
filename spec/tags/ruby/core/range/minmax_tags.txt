@@ -1,0 +1,2 @@
+fails:Range#minmax on an inclusive range should try to iterate endlessly on an endless range
+fails:Range#minmax on an exclusive range should try to iterate endlessly on an endless range
