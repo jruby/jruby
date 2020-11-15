@@ -703,6 +703,7 @@ public class Java implements Library {
 
             if (self instanceof JavaProxy)
             {
+            	System.err.println("Failed nil Init for JavaProxy: " + self.asJavaString());
             	return context.nil; 
             }
             JavaObject newObject = matching.newInstance(self, args);
@@ -736,8 +737,7 @@ public class Java implements Library {
         // assumes only 1 constructor exists!
         private JavaProxyConstructor matchConstructor0(final ThreadContext context,
             final JavaProxyConstructor[] constructors, final int arity, final IRubyObject[] args) {
-        	int index = constructors[0].isExportable() ? 1 : 0;
-            JavaProxyConstructor forArity = checkCallableForArity(arity, constructors, index);
+            JavaProxyConstructor forArity = checkCallableForArity(arity, constructors, 0);
 
             if ( forArity == null ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
@@ -757,13 +757,6 @@ public class Java implements Library {
             final JavaProxyConstructor[] constructors, final IRubyObject arg0) {
             ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(1, constructors);
             
-            // remove java-only methods
-            Iterator<JavaProxyConstructor> iter = forArity.iterator();
-            while (iter.hasNext()) {
-            	if(iter.next().isExportable())
-            		iter.remove();
-            }
-
             if ( forArity.size() == 0 ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
             }
@@ -782,13 +775,6 @@ public class Java implements Library {
         public JavaProxyConstructor matchConstructor(final ThreadContext context,
             final JavaProxyConstructor[] constructors, final int arity, final IRubyObject... args) {
             ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(arity, constructors);
-
-            // remove java-only methods: //TODO: ???
-            Iterator<JavaProxyConstructor> iter = forArity.iterator();
-            while (iter.hasNext()) {
-            	if(iter.next().isExportable())
-            		iter.remove();
-            }
             
             if ( forArity.size() == 0 ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
@@ -807,10 +793,6 @@ public class Java implements Library {
         public static <T extends ParameterTypes> T matchConstructorIndex(final ThreadContext context,
             final T[] constructors, final CallableCache<ParameterTypes> cache, final int arity, final IRubyObject... args) {
             ArrayList<T> forArity = findCallablesForArity(arity, constructors);
-
-            // remove java-only methods: //TODO: ???
-            
-            //new JavaProxyConstructor();
             
             if ( forArity.size() == 0 ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
@@ -1601,7 +1583,7 @@ public class Java implements Library {
         catch (ClassNotFoundException ex) {
             // try to use super's reified class; otherwise, RubyObject (for now)
         	//TODO: test java reified?
-            Class<?> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
+            Class<?> superClass = clazz.getSuperClass().getRealClass().getReifiedAnyClass();
             if ( superClass == null ) superClass = RubyObject.class;
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
 

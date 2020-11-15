@@ -10,12 +10,7 @@ import org.jruby.ir.IRMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -104,11 +99,11 @@ public class ConcreteJavaProxy extends JavaProxy {
         private DynamicMethod reifyAndNewMethod(IRubyObject clazz) { 
 
         	RubyClass parent = ((RubyClass)clazz);
-        	System.err.println(parent.getName() + " is " + parent.getJavaProxy());// TODO: remove
+        	System.err.println(parent.getName() + " is, (from NewMethod, original, a proxy) " + parent.getJavaProxy());// TODO: remove
         	if (parent.getJavaProxy()) return newMethod;
         	
         	// overridden class: reify and re-lookup new as reification changes it
-            if (parent.getReifiedClass() == null) {
+            if (parent.getReifiedAnyClass() == null) {
             	parent.reifyWithAncestors(); // TODO: is this good?
             }
             //System.err.println(parent.getName() + " is " + parent.getJavaProxy());
@@ -166,46 +161,101 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
 
     }
-    
-//TODO: cleanup
-    public static final class NewMethodReified extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN {
 
-        private final DynamicMethod initialize;
+  //TODO: cleanup
+      public static final class NewMethodReified extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN {
 
-        //TODO: package?
-        public NewMethodReified(final RubyClass clazz) {
-            super(clazz, Visibility.PUBLIC, "new");
-            initialize = clazz.searchMethod("__jcreate!");
-        }
+          private final DynamicMethod initialize;
 
-		@Override
-		public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
+          //TODO: package?
+          public NewMethodReified(final RubyClass clazz) {
+              super(clazz, Visibility.PUBLIC, "new");
+              initialize = clazz.searchMethod("__jcreate!");
+          }
+
+  		@Override
+  		public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
+  				IRubyObject[] args)
+  		{
+  			
+  			JavaObject jo = (JavaObject)initialize.call(context, self, clazz, "new", args);
+  			return ((ReifiedJavaProxy)jo.getValue()).___jruby$rubyObject();
+  		}
+
+      }
+      
+
+    //TODO: cleanup
+    public static final class SimpleJavaInitializes {
+
+        public static RubyArray freshMethodArray(DynamicMethod initialize, Ruby runtime, IRubyObject self, RubyModule clazz, String name,
 				IRubyObject[] args)
-		{
-			
-			JavaObject jo = (JavaObject)initialize.call(context, self, clazz, "new", args);
-			return ((ReifiedJavaProxy)jo.getValue()).___jruby$rubyObject();
-		}
+        {
+
+			return runtime.newArray(
+					runtime.getNil(), 
+		            runtime.newProc(Block.Type.LAMBDA, new Block(new JavaInternalBlockBody(runtime, Signature.from(initialize.getArity()))
+					{
+						
+						@Override
+						public IRubyObject yield(ThreadContext _context, IRubyObject[] _args)
+						{
+							return initialize.call(_context, self, clazz, name, args);
+						}
+						
+					}))
+		           );
+        }
+        
+        public static RubyArray freshNopArray(Ruby runtime)
+        {
+
+			return runtime.newArray(
+					runtime.getNil(), 
+		            runtime.newProc(Block.Type.LAMBDA, new Block(new JavaInternalBlockBody(runtime, Signature.OPTIONAL)
+					{
+						@Override
+						public IRubyObject yield(ThreadContext _context, IRubyObject[] _args)
+						{
+							return _context.nil; // no body/super is java
+						}
+						
+					}))
+		           );
+        }
 
     }
     
     // used by reified classes
     public RubyArray splitInitialized(IRubyObject[] args)
     {
-    	
+
 		DynamicMethod dm = this.getMetaClass().searchMethod("j_initialize");
-		if (!(dm instanceof AbstractIRMethod))
+		DynamicMethod dma = this.getMetaClass().searchMethod("j_initialize");
+		if (true || !(dm instanceof AbstractIRMethod))
 		{
 			dm = getMetaClass().searchMethod("initialize");
+			DynamicMethod dm1 = getMetaClass().retrieveMethod("initialize"); // only on ourself
+			if (true)//if (dm1 != null && !(dm instanceof InitializeMethod))
+			{
+	            //TODO: if not defined, then ctors = all valid superctors
 			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
 			FlatExtractor flat = new FlatExtractor(this.getRuntime(), def); 
 			Node body = def.getBodyNode().accept(flat);
 			if (!flat.foundsuper)
+			{
 				System.err.println("NO SUPER");
+				body = flat.buildRewrite(def.getBodyNode().getLine(), new NilNode(def.getBodyNode().getLine()), def.getBodyNode());
+			}
 			if (flat.error)
 				System.err.println("error");
 			System.err.println(def.toString());
-			DefNode rdnbody = new DefnNode(def.getBodyNode().getLine(), RubySymbol.newSymbol(this.getRuntime(),"j_initialize"), def.getArgsNode(), def.getScope(), body, def.getEndLine());
+			DefNode rdnbody = new DefnNode(def.getBodyNode().getLine(), 
+					RubySymbol.newSymbol(this.getRuntime(),"j_initialize"), 
+					def.getArgsNode(), 
+					def.getScope(), 
+					body, 
+					def.getEndLine());
 			System.err.println(rdnbody.toString());
 		
 		
@@ -215,10 +265,19 @@ public class ConcreteJavaProxy extends JavaProxy {
 			irm = new IRMethod(irm.getManager(), irm.getLexicalParent(), rdnbody, 
 					new ByteList("j_initialize".getBytes(), getRuntime().getEncodingService().getJavaDefault()), true, 
 					irm.getLine(), irm.getStaticScope(), irm.getCoverageMode());
+			dm1 = dm;
 			dm  = new MixedModeIRMethod(irm, Visibility.PUBLIC, this.getMetaClass());
-			
+
 			this.getMetaClass().addMethod("j_initialize", dm);
-		
+			}
+			else
+			{
+				//TODO: pass ruby into this
+				if (dm instanceof InitializeMethod)
+					return SimpleJavaInitializes.freshNopArray(this.getRuntime());
+				else 
+					return SimpleJavaInitializes.freshMethodArray(dm, this.getRuntime(), this, getMetaClass(), "initialize", args);
+			}
 		
 		}
 		

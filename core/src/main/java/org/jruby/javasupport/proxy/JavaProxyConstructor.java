@@ -229,6 +229,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     private static RaiseException mapInstantiationException(final Ruby runtime, final Throwable e) {
         Throwable cause = e;
+        e.printStackTrace();
         while ( cause.getCause() != null ) cause = cause.getCause();
         final String MSG = "Constructor invocation failed: ";
         String msg = cause.getLocalizedMessage();
@@ -258,6 +259,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
             return JavaObject.wrap(runtime, newInstance(convertedArgs, runtime, proc));
         }
         catch (Exception e) {
+            e.printStackTrace();
             RaiseException ex = runtime.newArgumentError("Constructor invocation failed: " + e.getMessage());
             ex.initCause(e);
             throw ex;

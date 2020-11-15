@@ -29,57 +29,29 @@
 
 package org.jruby.java.codegen;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyClass;
+import static org.jruby.RubyInstanceConfig.JAVA_VERSION;
+import static org.jruby.util.CodegenUtils.*;
+import static org.objectweb.asm.Opcodes.*;
+
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
+
+import org.jruby.*;
 import org.jruby.RubyClass.ConcreteJavaReifier;
-import org.jruby.RubyModule;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.util.BasicObjectStubGenerator;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
-import org.jruby.javasupport.Java;
-import org.jruby.javasupport.Java.JCreateMethod;
-import org.jruby.javasupport.Java.JCtorCache;
-import org.jruby.javasupport.JavaConstructor;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.javasupport.*;
+import org.jruby.javasupport.Java.*;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ASM;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.ClassDefiningJRubyClassLoader;
-import org.jruby.util.Loader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
+import org.jruby.util.*;
+import org.objectweb.asm.*;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
-
-import static org.jruby.RubyInstanceConfig.JAVA_VERSION;
-import static org.jruby.util.CodegenUtils.ci;
-import static org.jruby.util.CodegenUtils.getBoxType;
-import static org.jruby.util.CodegenUtils.p;
-import static org.jruby.util.CodegenUtils.params;
-import static org.jruby.util.CodegenUtils.prettyParams;
-import static org.jruby.util.CodegenUtils.sig;
-import static org.objectweb.asm.Opcodes.ACC_FINAL;
-import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_SUPER;
 
 /**
  * On fly .class generator (used for Ruby interface impls).
@@ -869,12 +841,44 @@ public abstract class RealClassGenerator {
     // shouls this be in in this spot?
     public static void makeConcreteConstructorSwitch(ClassWriter cw, boolean hasRuby, boolean callsInit, ConcreteJavaReifier cjr, Class[] ctorTypes, JavaConstructor[] constructors, CtorFlags flag)
     {
+    	
+    	
+    	/* This generates this code template. Note that lines of  //// show what code is being generated
+    	 * public Demo(int var1, String var2) {
+      Ruby var3 = ruby;
+      this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
+      this.$rubyObject = new ConcreteJavaProxy(ruby, rubyClass);
+      IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
+		RubyArray ra = c.convertToArray();
+		c = ra.entry(0);
+		IRubyObject continuation = ra.entry(1);
+		switch(Java.JCreateMethod.forTypes(constructors, c))
+		{
+			case -1:
+				ra = c.convertToArray();
+				thing(ra.entry(0).toJava(Integer.TYPE).longValue());
+				//return;
+				break;
+			case 0:
+				//ra = c.convertToArray();
+				thing(id);
+				break;
+			default:
+				throw new RuntimeException("NANANANANANA");
+		}
+		
+     (this.$rubyObject.setObject(this))
+      
+		continuation.callMethod(null, "call")
+
+   }*/
+    	
     	String sig = hasRuby ? sig(void.class, cjr.join(ctorTypes, Ruby.class, RubyClass.class)) : sig(void.class, ctorTypes);
 		SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig, null, null);
 		m.aload(0); // uninitialized this
 
         // set args for init
-		// Ruby varRubyIndex = ruby;
+		//// Ruby varRubyIndex = ruby;
         final int baseIndex = RealClassGenerator.calcBaseIndex(ctorTypes, 1);
         final int rubyIndex = baseIndex;
         final int rubyArrayIndex = baseIndex+2;
@@ -886,14 +890,12 @@ public abstract class RealClassGenerator {
 			m.getstatic(cjr.javaPath, "ruby", ci(Ruby.class));
 			m.astore(rubyIndex); // save ruby in local
         }
-        // this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
+        //// this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
         RealClassGenerator.coerceArgumentsToRuby(m, ctorTypes, rubyIndex);
-//        m.dup();
         m.astore(rubyInitArgs);
-        m.pop(); // pop the this. TODO: dont push the this
-//        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
+        m.pop(); // pop the `this`. TODO: dont push the this
         
-        //this.$rubyObject = new ConcreteJavaProxy(ruby, rubyClass);
+        ////this.$rubyObject = new ConcreteJavaProxy(ruby, rubyClass);
         {
 	        //TODO: isInit?
 	        m.newobj(p(ConcreteJavaProxy.class));
@@ -909,7 +911,7 @@ public abstract class RealClassGenerator {
 	        m.swap();
 	        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
         }
-        //IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
+        ////IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
         if (callsInit) //TODO: should init be called when super calls an abstract method we implement?
         {
         	m.aload(rubyInitArgs);
@@ -974,12 +976,9 @@ public abstract class RealClassGenerator {
     	        // case n:
     	        for (int i = 0; i < constructors.length; i++)
                 {
-    	        	//
-    				// 
-    				//thing(ra.entry(0).toJava(Integer.TYPE).longValue());
                 	m.label(cases[i+1]); // skip -1
                 	
-                	//ra = c.convertToArray();
+                	////ra = c.convertToArray();
                 	// Note: can't pull this code up above the switch because of nils
                 	m.invokeinterface(p(IRubyObject.class), "convertToArray", sig(RubyArray.class));
                 	m.astore(rubyArrayIndex); // ....
@@ -990,6 +989,7 @@ public abstract class RealClassGenerator {
                 	Class[] destType = constructors[i].getParameterTypes();
                 	
                 	// coerce args. No error checking as the forTypes() call should have done that for us
+    				////thing(ra.entry(0).toJava(Integer.TYPE).longValue());
                 	for (int argi = 0; argi < destType.length; argi++)
                 	{
                 		m.aload(rubyArrayIndex);
@@ -997,7 +997,7 @@ public abstract class RealClassGenerator {
                         m.invokevirtual(p(RubyArray.class), "entry", sig(IRubyObject.class, int.class));
                         RealClassGenerator.coerceResult(m, destType[argi], false);
                 	}
-                	// super(*args)
+                	//// super(*args)
         	        m.invokespecial(p(cjr.reifiedParent), "<init>", sig(void.class, destType));
         	        m.go_to(endofswitch);
                 }
@@ -1009,16 +1009,9 @@ public abstract class RealClassGenerator {
         else
         	m.pop(); // TODO: ???
         
-        // TODO: is this field still needed?
-        // clear args to avoid holding refs to args
-        //// this.$rubyInitArgs = null;
-//        m.aload(0); // initialized this
-//        m.aconst_null();
-//        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_INIT_ARGS_FIELD, ci(IRubyObject[].class));
-        
 
         //implied: if (this.$rubyObject.getObject() == null) // only checked on non-ctor paths
-        //(this.$rubyObject.setObject(this))
+        ////(this.$rubyObject.setObject(this))
 
         m.aload(0); // initialized this
         m.dup();
@@ -1029,7 +1022,7 @@ public abstract class RealClassGenerator {
         // finish init if started
         if (callsInit)
         {
-	        //continuation.callMethod(ruby.getTheadContext(), "call")
+	        ////continuation.callMethod(ruby.getTheadContext(), "call")
 	        m.aload(rubyContinuation);
 	        m.aload(rubyIndex);
 	        m.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
@@ -1038,44 +1031,9 @@ public abstract class RealClassGenerator {
 	        m.invokeinterface(p(IRubyObject.class), "callMethod", sig(IRubyObject.class, ThreadContext.class, String.class));
 	        m.pop();
         }
-        
 
         m.voidreturn();
         m.end();
-    	/*
-    	 * public Demo(int var1, String var2) {
-      Ruby var3 = ruby;
-      this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
-      this.$rubyObject = new ConcreteJavaProxy(ruby, rubyClass);
-      IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
-		RubyArray ra = c.convertToArray();
-		c = ra.entry(0);
-		IRubyObject continuation = ra.entry(1);
-		switch(Java.JCreateMethod.forTypes(constructors, c))
-		{
-			case -1:
-				ra = c.convertToArray();
-				thing(ra.entry(0).toJava(Integer.TYPE).longValue());
-				//return;
-				break;
-			case 0:
-				//ra = c.convertToArray();
-				thing(id);
-				break;
-			default:
-				throw new RuntimeException("NANANANANANA");
-		}
-		
-      if (this.$rubyObject.getObject() == null) {
-         (this.$rubyObject.setObject(this))
-         //?#? this.$rubyObject.callMethod("initialize", this.$rubyInitArgs);
-      }
-      this.$rubyInitArgs = null;
-      
-		continuation.callMethod(null, "call")
-
-   }*/
-    	
     }
 
     public static GeneratorAdapter makeGenerator(SkinnyMethodAdapter m)
