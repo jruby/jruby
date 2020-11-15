@@ -613,7 +613,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
     
     //Note: called from <clinit> of reified classes
-    public static JavaProxyClass setProxyClassReified(final Ruby runtime, final RubyClass clazz, final Class<? extends Reified> reified, final boolean allocator) {
+    public static JavaProxyClass setProxyClassReified(final Ruby runtime, final RubyClass clazz, final Class<? extends ReifiedJavaProxy> reified, final boolean allocator) {
     	JavaProxyClass proxyClass = new JavaProxyClass(runtime, reified);
     	// TODO: don't duplicate this code from above
         // NOTE: currently we regenerate proxy classes when a Ruby method is added on the type
@@ -628,7 +628,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         System.err.println("Setting on " + clazz.toString() + " + single " + singleton.toString());
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
         singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
-        if (allocator) singleton.addMethod("new", new NewMethodReified(clazz, reified));
+        if (allocator) singleton.addMethod("new", new NewMethodReified(clazz));
         return proxyClass;
     }
     
