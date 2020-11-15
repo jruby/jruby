@@ -261,14 +261,14 @@ public class JavaInterfaceTemplate {
 
     public static void addRealImplClassNew(final RubyClass clazz) {
         clazz.setAllocator(new ObjectAllocator() {
-            private Constructor proxyConstructor;
+            private Constructor<? extends IRubyObject> proxyConstructor;
 
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                 // if we haven't been here before, reify the class
-                Class reifiedClass = klazz.getReifiedClass();
+                Class<? extends IRubyObject> reifiedClass = klazz.getReifiedRubyClass();
                 if (proxyConstructor == null || proxyConstructor.getDeclaringClass() != reifiedClass) {
                     if (reifiedClass == null) {
-                        reifiedClass = Java.generateRealClass(klazz);
+                        reifiedClass = Java.generateRealClass(klazz); //TODO: test concrete
                     }
                     proxyConstructor = Java.getRealClassConstructor(runtime, reifiedClass);
                 }

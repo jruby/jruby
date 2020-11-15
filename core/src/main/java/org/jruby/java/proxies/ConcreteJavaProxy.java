@@ -2,11 +2,11 @@ package org.jruby.java.proxies;
 
 import java.lang.reflect.Field;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.*;
+import org.jruby.ast.*;
+import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.methods.*;
+import org.jruby.ir.IRMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
@@ -17,6 +17,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class ConcreteJavaProxy extends JavaProxy {
 
@@ -108,10 +109,10 @@ public class ConcreteJavaProxy extends JavaProxy {
         	
         	// overridden class: reify and re-lookup new as reification changes it
             if (parent.getReifiedClass() == null) {
-            	parent.reifyWithAncestors();
+            	parent.reifyWithAncestors(); // TODO: is this good?
             }
             //System.err.println(parent.getName() + " is " + parent.getJavaProxy());
-            return new NewMethodReified(parent, parent.getReifiedClass());
+            return new NewMethodReified(parent);
         }
 
         @Override
@@ -169,11 +170,10 @@ public class ConcreteJavaProxy extends JavaProxy {
 //TODO: cleanup
     public static final class NewMethodReified extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN {
 
-        private Field rubyObject;
         private final DynamicMethod initialize;
 
         //TODO: package?
-        public NewMethodReified(final RubyClass clazz, final Class reified) {
+        public NewMethodReified(final RubyClass clazz) {
             super(clazz, Visibility.PUBLIC, "new");
             initialize = clazz.searchMethod("__jcreate!");
         }
@@ -192,6 +192,36 @@ public class ConcreteJavaProxy extends JavaProxy {
     // used by reified classes
     public RubyArray splitInitialized(IRubyObject[] args)
     {
+    	
+		DynamicMethod dm = this.getMetaClass().searchMethod("j_initialize");
+		if (!(dm instanceof AbstractIRMethod))
+		{
+			dm = getMetaClass().searchMethod("initialize");
+			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
+			FlatExtractor flat = new FlatExtractor(this.getRuntime(), def); 
+			Node body = def.getBodyNode().accept(flat);
+			if (!flat.foundsuper)
+				System.err.println("NO SUPER");
+			if (flat.error)
+				System.err.println("error");
+			System.err.println(def.toString());
+			DefNode rdnbody = new DefnNode(def.getBodyNode().getLine(), RubySymbol.newSymbol(this.getRuntime(),"j_initialize"), def.getArgsNode(), def.getScope(), body, def.getEndLine());
+			System.err.println(rdnbody.toString());
+		
+		
+			IRMethod irm = ((IRMethod)((AbstractIRMethod)dm).getIRScope());
+			irm.builtInterpreterContext();
+
+			irm = new IRMethod(irm.getManager(), irm.getLexicalParent(), rdnbody, 
+					new ByteList("j_initialize".getBytes(), getRuntime().getEncodingService().getJavaDefault()), true, 
+					irm.getLine(), irm.getStaticScope(), irm.getCoverageMode());
+			dm  = new MixedModeIRMethod(irm, Visibility.PUBLIC, this.getMetaClass());
+			
+			this.getMetaClass().addMethod("j_initialize", dm);
+		
+		
+		}
+		
     	///  TODO: move gen here
     	return callMethod("j_initialize", args).convertToArray();
     }

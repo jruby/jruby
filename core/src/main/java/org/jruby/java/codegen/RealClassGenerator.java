@@ -146,7 +146,7 @@ public abstract class RealClassGenerator {
     }
 
     // NOTE: only used for interface class generation from ... Java.generateRealClass
-    public static Class createRealImplClass(Class superClass, Class[] interfaces, RubyClass rubyClass, Ruby ruby, String name) {
+    public static Class createRealImplClass(Class superClass, Class<?>[] interfaces, RubyClass rubyClass, Ruby ruby, String name) {
         String[] superTypeNames = new String[interfaces.length];
 
         // interfaces now do have a convention that they only override an interface default method
@@ -156,7 +156,7 @@ public abstract class RealClassGenerator {
         Class newClass = defineRealImplClass(ruby, name, superClass, superTypeNames, simpleToAll);
 
         // Confirm all interfaces got implemented
-        for (Class ifc : interfaces) {
+        for (Class<?> ifc : interfaces) {
             assert ifc.isAssignableFrom(newClass);
         }
 

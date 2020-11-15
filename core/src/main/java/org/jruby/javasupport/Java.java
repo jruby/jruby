@@ -1600,7 +1600,8 @@ public class Java implements Library {
         }
         catch (ClassNotFoundException ex) {
             // try to use super's reified class; otherwise, RubyObject (for now)
-            Class<? extends IRubyObject> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
+        	//TODO: test java reified?
+            Class<?> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
             if ( superClass == null ) superClass = RubyObject.class;
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
 
@@ -1627,7 +1628,7 @@ public class Java implements Library {
 
     }
 
-    public static Constructor getRealClassConstructor(final Ruby runtime, Class<?> proxyImplClass) {
+    public static Constructor<? extends IRubyObject> getRealClassConstructor(final Ruby runtime, Class<? extends IRubyObject> proxyImplClass) {
         try {
             return proxyImplClass.getConstructor(Ruby.class, RubyClass.class);
         }
@@ -1636,9 +1637,9 @@ public class Java implements Library {
         }
     }
 
-    public static IRubyObject constructProxy(Ruby runtime, Constructor proxyConstructor, RubyClass clazz) {
+    public static IRubyObject constructProxy(Ruby runtime, Constructor<? extends IRubyObject> proxyConstructor, RubyClass clazz) {
         try {
-            return (IRubyObject) proxyConstructor.newInstance(runtime, clazz);
+            return proxyConstructor.newInstance(runtime, clazz);
         }
         catch (InvocationTargetException e) {
             throw mapGeneratedProxyException(runtime, e);

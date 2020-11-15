@@ -224,9 +224,10 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     public JavaProxyConstructor getConstructor(final Class[] args)
         throws SecurityException, NoSuchMethodException {
 
-        final Class[] realArgs = new Class[args.length + 1];
+        final Class[] realArgs = new Class[args.length + 2];
         System.arraycopy(args, 0, realArgs, 0, args.length);
-        realArgs[ args.length ] = JavaProxyInvocationHandler.class; //TODO: fix!
+        realArgs[ args.length ] = Ruby.class;
+        realArgs[ args.length + 1 ] = RubyClass.class;
 
         @SuppressWarnings("unchecked")
         Constructor<?> constructor = proxyClass.getConstructor(realArgs);
@@ -628,12 +629,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
         singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
         if (allocator) singleton.addMethod("new", new NewMethodReified(clazz, reified));
-//        
-//        //TODO: wait, what????
-//        singleton = clazz.getMetaClass();
-//        singleton.setInstanceVariable("@java_proxy_class", proxyClass);
-//        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
-//        if (allocator) singleton.addMethod("new", new NewMethodReified(clazz, reified));
         return proxyClass;
     }
     

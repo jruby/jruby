@@ -1391,7 +1391,7 @@ public class RubyClass extends RubyModule {
         final String javaName = "rubyobj." + StringSupport.replaceAll(name, "::", ".");
         final String javaPath = "rubyobj/" + StringSupport.replaceAll(name, "::", "/");
 
-        final Class parentReified = superClass.getRealClass().getReifiedClass();
+        final Class<?> parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
             throw getClassRuntime().newTypeError(getName() + "'s parent class is not yet reified");
         }
@@ -1933,125 +1933,7 @@ public class RubyClass extends RubyModule {
     //public or private?
     public class ConcreteJavaReifier extends MethodReificator
     {
-    	private final class FlatExtractor extends AbstractNodeVisitor<Node>
-		{
-			private final DefNode def;
-			boolean found = false;
-			BlockNode bn = null;
-			int level = 0;
-			boolean error = false;
-			boolean foundsuper = false;
-
-			private FlatExtractor(DefNode def)
-			{
-				this.def = def;
-			}
-
-			@Override
-			protected Node defaultVisit(Node node)
-			{
-			    if (node == null) return null;
-
-			    if (error)
-			    	return null;
-			    
-			    level++;
-
-			    node.childNodes().forEach(this::defaultVisit);
-			    level--;
-
-			    return node;
-			}
-
-			@Override
-			public Node visitBlockNode(BlockNode node)
-			{ 
-				if (error)
-			    	return null;
-				if (found)
-					return node;
-				
-				BlockNode replacement = new BlockNode(node.getLine());
-			    
-			    level++;
-			    
-			    boolean seenReturn = false;
-
-			    for (Node child : node.children())
-			    {
-			    	Node newc = child.accept(this);
-			    	if (found)
-			    	{
-			    		if (seenReturn)
-			    		{
-			    			bn.add(newc);
-			    			continue;
-			    		}
-			    		else
-			    		{
-			    			seenReturn = true;
-			    		}
-			    	}
-					replacement.add(newc);
-			    }
-			    level--;
-
-			    return replacement;
-			}
-
-			@Override
-			public Node visitSuperNode(SuperNode node)
-			{
-				foundsuper = true;
-				if (level != 1)
-				{
-					error = true;
-					return null;
-				}
-				Node sarg = node.getArgsNode();
-				if (sarg == null)
-					sarg = new ArrayNode(node.getLine());
-				ArrayNode ret = new ArrayNode(node.getLine(), sarg);// TODO: block args!
-				ArgsNode an = new ArgsNode(node.getLine(), null, null, null, null,null);
-				StaticScope scope = StaticScopeFactory.newIRBlockScope(def.getScope());
-				scope.setSignature(Signature.from(an));
-				//TODO: capture args?
-				ret.add(
-					new FCallNode(node.getLine(), RubySymbol.newSymbol(runtime, "lambda"), null,
-						new IterNode(node.getLine(), 
-							an, 
-							bn = new BlockNode(node.getLine()), 
-							scope, 1)));
-				found = true;
-				return  new ReturnNode(node.getLine(), ret);
-				// TODO Auto-generated method stub
-				//return super.visitSuperNode(node);
-			}
-			
-			@Override
-			public Node visitZSuperNode(ZSuperNode node)
-			{
-				foundsuper = true;
-				if (level != 1)
-				{
-					error = true;
-					return null;
-				}
-				Node sarg = new NilNode(node.getLine());
-				ArrayNode ret = new ArrayNode(node.getLine(), sarg);// TODO: block args!
-				ArgsNode an = new ArgsNode(node.getLine(), null, null, null, null,null);
-				StaticScope scope = StaticScopeFactory.newIRBlockScope(def.getScope());
-				scope.setSignature(Signature.from(an));
-				ret.add(
-					new FCallNode(node.getLine(), RubySymbol.newSymbol(runtime, "lambda"), null,
-						new IterNode(node.getLine(), 
-							an, 
-							bn = new BlockNode(node.getLine()), 
-							scope, 1)));
-				found = true;
-				return  new ReturnNode(node.getLine(), ret);
-			}
-		}
+    	
 
 
         //public static final String RUBY_INIT_ARGS_FIELD = "$rubyInitArgs";
@@ -2170,36 +2052,7 @@ public class RubyClass extends RubyModule {
 	            	zeroArg = Optional.of(constructor);
 	            }
 			}
-			DynamicMethod dm = searchMethod("initialize");
-			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
-			FlatExtractor flat = new FlatExtractor(def); 
-			Node body = def.getBodyNode().accept(flat);
-			if (!flat.foundsuper)
-				System.err.println("NO SUPER");
-			if (flat.error)
-				System.err.println("error");
-			System.err.println(def.toString());
-			DefNode rdnbody = new DefnNode(def.getBodyNode().getLine(), RubySymbol.newSymbol(runtime, "j_initialize"), def.getArgsNode(), def.getScope(), body, def.getEndLine());
-			System.err.println(rdnbody.toString());
-			
-			
-			IRMethod irm = ((IRMethod)((AbstractIRMethod)dm).getIRScope());
-				irm.builtInterpreterContext();
-
-irm = new IRMethod(irm.getManager(), irm.getLexicalParent(), rdnbody, new ByteList("j_initialize".getBytes(), runtime.getEncodingService().getJavaDefault()), true, irm.getLine(), irm.getStaticScope(), irm.getCoverageMode());
-				dm  = new MixedModeIRMethod(irm, Visibility.PUBLIC, RubyClass.this);
-				
-				RubyClass.this.addMethod("j_initialize", dm);
-			
-			dm = searchMethod("j_initialize");
-			if (dm instanceof AbstractIRMethod)
-			{
-				IRMethod irm2 = ((IRMethod)((AbstractIRMethod)dm).getIRScope());
-
-				System.err.println(irm2.desugar().toString());
-				irm2.builtInterpreterContext();
-				System.err.println("found A SUPER!!!!!");
-			}
+			// TODO: guess from arity?
 
 			
 			if (candidates.size() > 0 ) //TODO: doc: implies javaConstructable?
@@ -2348,14 +2201,30 @@ if (!jcc.allCtors) //TODO: fix logic
     }
 
     //FIXME: no longer IRubyObject anymore
-    public Class<? extends IRubyObject> getReifiedClass() {
+    public Class<?> getReifiedClass() {
         return reifiedClass;
     }
 
-    public static Class<? extends IRubyObject> nearestReifiedClass(final RubyClass klass) {
+    public Class<? extends IRubyObject> getReifiedRubyClass() {
+    	if (reifiedClassJava == Boolean.TRUE)
+    		// TODO: error type
+    		throw runtime.newTypeError("Attempted to get a Ruby class for a Java class");
+    	else
+    		return reifiedClass;
+    }
+    
+    public Class<? extends ReifiedJavaProxy> getReifiedJavaClass() {
+    	if (reifiedClassJava == Boolean.FALSE)
+    		// TODO: error type
+    		throw runtime.newTypeError("Attempted to get a Ruby class for a Java class");
+    	else
+    		return reifiedClass;
+    }
+
+    public static Class<?> nearestReifiedClass(final RubyClass klass) {
         RubyClass current = klass;
         do {
-            Class<? extends IRubyObject> reified = current.getReifiedClass();
+            Class<?> reified = current.getReifiedClass();
             if ( reified != null ) return reified;
             current = current.getSuperClass();
         }
@@ -2481,7 +2350,7 @@ if (!jcc.allCtors) //TODO: fix logic
             IRubyObject javaClass = JavaClass.java_class(context, this);
             if ( ! javaClass.isNil() ) return javaClass.toJava(target);
 
-            Class reifiedClass = nearestReifiedClass(this);
+            Class<?> reifiedClass = nearestReifiedClass(this);
             if ( reifiedClass != null ) return target.cast(reifiedClass);
             // should never fall through, since RubyObject has a reified class
         }
@@ -3106,6 +2975,7 @@ if (!jcc.allCtors) //TODO: fix logic
     private CallSite[] extraCallSites;
 
     private Class reifiedClass;
+    private Boolean reifiedClassJava;
 
     private Map<String, List<Map<Class, Map<String,Object>>>> parameterAnnotations;
 

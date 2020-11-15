@@ -23,7 +23,7 @@ public abstract class ClassJavaAddons {
     // Get the native (or reified) (a la become_java!) class for this Ruby class.
     @JRubyMethod
     public static IRubyObject java_class(ThreadContext context, final IRubyObject self) {
-        Class reifiedClass = RubyClass.nearestReifiedClass((RubyClass) self);
+        Class<?> reifiedClass = RubyClass.nearestReifiedClass((RubyClass) self);
         if ( reifiedClass == null ) return context.nil;
         // TODO: java_class is used for different things with Java proxy modules/classes
         return asJavaClass(context.runtime, reifiedClass);
@@ -67,9 +67,7 @@ public abstract class ClassJavaAddons {
         klass.reifyWithAncestors(dumpDir, useChildLoader);
 
         Class<?> reifiedClass = klass.getReifiedClass();
-        if (reifiedClass == null) { // java proxies can't be reified, but they deserve field accessors too
-            reifiedClass = JavaProxyClass.getProxyClass(context.getRuntime(), klass).getJavaClass();
-        }
+        // TODO: ensure deleted line is no longer necessary
         if (reifiedClass == null) {
             throw context.runtime.newTypeError("requested class " + klass.getName() + " was not reifiable");
         }
