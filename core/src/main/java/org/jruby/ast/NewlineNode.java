@@ -36,7 +36,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Note: This is a dead class but we leave it because people write against Visitor
@@ -54,11 +53,9 @@ public class NewlineNode extends Node {
     private final Node nextNode;
 
     @Deprecated
-    public NewlineNode(ISourcePosition position, Node nextNode) {
-        super(position, nextNode.containsVariableAssignment());
+    public NewlineNode(int line, Node nextNode) {
+        super(line, nextNode.containsVariableAssignment());
 
-        assert nextNode != null : "nextNode is not null";
-        
         this.nextNode = nextNode;
     }
 

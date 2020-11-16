@@ -4453,7 +4453,11 @@ public class RubyModule extends RubyObject {
             boolean notAutoload = oldValue != UNDEF;
             if (notAutoload || !setAutoloadConstant(name, value)) {
                 if (warn && notAutoload) {
-                    getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                    if (this.equals(getRuntime().getObject())) {
+                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                    } else {
+                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
+                    }
                 }
                 // might just call storeConstant(name, value, hidden) but to maintain
                 // backwards compatibility with calling #storeConstant overrides

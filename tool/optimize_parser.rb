@@ -64,11 +64,20 @@ class PostProcessor
 
   def generate_action_body_method(state, code_body)
     @out.puts "states[#{state}] = new ParserState() {"
-    @out.puts "  @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {"
-    code_body.each { |line| @out.puts line }
+    @out.puts "  @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) {"
+    code_body.each { |line| @out.puts frob_yyVals(line) }
     @out.puts "    return yyVal;"
     @out.puts "  }"
     @out.puts "};"
+  end
+
+  # @{num} allows us to get direct access to the production state for that
+  # production or token.  This is used for specialized reporting in syntax
+  # error messaged where we want to highlight a specific region.
+  def frob_yyVals(line)
+    line
+      .gsub(/yyVals\[([^\]]+)\]/, 'yyVals[\1].value')
+      .gsub(/@(\d+)/, 'yyVals[yyTop - count + \1]')
   end
 
   def translate_actions

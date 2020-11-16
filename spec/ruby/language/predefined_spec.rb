@@ -933,6 +933,14 @@ describe "Global variable $-d" do
 end
 
 describe "Global variable $VERBOSE" do
+  before :each do
+    @verbose = $VERBOSE
+  end
+
+  after :each do
+    $VERBOSE = @verbose
+  end
+
   it "converts truthy values to true" do
     [true, 1, 0, [], ""].each do |true_value|
       $VERBOSE = true_value
@@ -1243,6 +1251,28 @@ describe "The predefined global constant" do
       result = ruby_exe(code, args: "a b")
       encoding = Encoding.default_external
       result.chomp.should == %{["#{encoding}", "#{encoding}"]}
+    end
+  end
+end
+
+ruby_version_is "2.7" do
+  describe "$LOAD_PATH.resolve_feature_path" do
+    it "returns what will be loaded without actual loading, .rb file" do
+      extension, path = $LOAD_PATH.resolve_feature_path('set')
+      extension.should == :rb
+      path.should.end_with?('/set.rb')
+    end
+
+    it "returns what will be loaded without actual loading, .so file" do
+      require 'rbconfig'
+
+      extension, path = $LOAD_PATH.resolve_feature_path('etc')
+      extension.should == :so
+      path.should.end_with?("/etc.#{RbConfig::CONFIG['DLEXT']}")
+    end
+
+    it "raises LoadError if feature cannot be found" do
+      -> { $LOAD_PATH.resolve_feature_path('noop') }.should raise_error(LoadError)
     end
   end
 end

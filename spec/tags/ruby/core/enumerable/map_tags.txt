@@ -1,1 +1,0 @@
-fails:Enumerable#map yields 2 arguments for a Hash

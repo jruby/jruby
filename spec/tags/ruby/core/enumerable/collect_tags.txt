@@ -1,1 +1,0 @@
-fails:Enumerable#collect yields 2 arguments for a Hash

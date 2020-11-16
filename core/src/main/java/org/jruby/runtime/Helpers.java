@@ -2440,16 +2440,11 @@ public class Helpers {
     // . Array with multiple values and NO rest should extract args if there are more than one argument
 
     static IRubyObject[] restructureBlockArgs(ThreadContext context,
-        IRubyObject value, Signature signature, Block.Type type, boolean needsSplat) {
+        IRubyObject value, Signature signature, Block.Type type) {
 
         if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
         if (value == null) return IRubyObject.NULL_ARRAY;
-
-        if (needsSplat) {
-            IRubyObject ary = Helpers.aryToAry(context, value);
-            if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArrayMaybeUnsafe();
-        }
 
         return new IRubyObject[] { value };
     }

@@ -912,6 +912,14 @@ class TestDate < Test::Unit::TestCase
     assert_equal(-1199, dt.year)
   end
 
+  def test_marshaling_keeps_offset
+    dt = DateTime.now
+    offset = dt.offset
+    dt2 = Marshal.load(Marshal.dump(dt))
+    assert_equal(offset, dt2.offset)
+    assert_equal(dt, dt2)
+  end
+
   def test_marshaling_with_active_support_like_calculation # GH-5188
     time = ActiveSupport.time_advance(Time.now, days: 1)
     date = time.to_date

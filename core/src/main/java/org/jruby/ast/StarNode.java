@@ -35,7 +35,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents the unassignable star in a multiple assignent (e.g. a,b,* = arr).
@@ -44,8 +43,8 @@ public class StarNode extends Node {
     /**
      * Constructor for StarNode.
      */
-    public StarNode(ISourcePosition position) {
-        super(position, false);
+    public StarNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {
