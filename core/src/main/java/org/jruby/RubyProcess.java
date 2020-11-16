@@ -1443,15 +1443,10 @@ public class RubyProcess {
         final int pid = (int)arg.convertToInteger().getLongValue();
         Ruby runtime = context.runtime;
 
-        BlockCallback callback = new BlockCallback() {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                int[] status = new int[1];
-                Ruby runtime = context.runtime;
-                int result = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, 0));
+        BlockCallback callback = (ctx, args, block) -> {
+            while (waitpid(ctx.runtime, pid, 0) == 0) {}
 
-                return RubyStatus.newProcessStatus(runtime, status[0], pid);
-            }
+            return last_status(ctx, recv);
         };
 
         return RubyThread.startWaiterThread(
