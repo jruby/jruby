@@ -10,11 +10,12 @@ import org.jruby.runtime.Signature;
 class FlatExtractor extends AbstractNodeVisitor<Node>
 {
 	private final DefNode def;
-	boolean found = false;
 	BlockNode bn = null;
 	int level = 0;
 	boolean error = false;
+	private boolean found = false;
 	boolean foundsuper = false;
+	int superline = -1;
 	private Ruby runtime;
 
 	FlatExtractor(Ruby runtime, DefNode def)
@@ -86,6 +87,7 @@ class FlatExtractor extends AbstractNodeVisitor<Node>
 			error = true;
 			return null;
 		}
+		superline = node.getLine();
 		Node sarg = node.getArgsNode();
 		if (sarg == null)
 			sarg = new ArrayNode(node.getLine());
@@ -101,6 +103,7 @@ class FlatExtractor extends AbstractNodeVisitor<Node>
 			error = true;
 			return null;
 		}
+		superline = node.getLine();
 		Node sarg = new NilNode(node.getLine());
 		return buildRewrite(node.getLine(), sarg, bn = new BlockNode(node.getLine()));
 	}

@@ -14,7 +14,7 @@ public interface PositionAware {
     public String getFile();
     
     /**
-     * Get the line number for the method.
+     * Get the line number for the method. 0-based (ie. line 1 returns a 0)
      * 
      * @return the line number for the method
      */

@@ -63,7 +63,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.codegen.Reified;
-import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
+import org.jruby.java.proxies.ConcreteJavaProxy.*;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -621,14 +621,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     	//TODO:
     	//JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
         clazz.setInstanceVariable("@java_proxy_class", proxyClass);
-        
+
+        StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified);
 
         RubyClass singleton = clazz.getSingletonClass();
 
         System.err.println("Setting on " + clazz.toString() + " + single " + singleton.toString());
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
         singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
-        if (allocator) singleton.addMethod("new", new NewMethodReified(clazz));
+
+        if (allocator) singleton.addMethod("new", new NewMethodReified(clazz, reified));
         return proxyClass;
     }
     

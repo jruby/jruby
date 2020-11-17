@@ -1361,10 +1361,17 @@ public class RubyClass extends RubyModule {
             	{
             		setRubyStaticAllocator(result);
             	}
+            	else if (((ConcreteJavaReifier)reifier).jcc.IroCtors)
+            	{
+            		//TODO: ensure CJP allocator is set
+            		//setAllocator(ConcreteJavaProxy.ALLOCATOR);
+            		//setRubyStaticAllocator(result);
+            	}
             	else
             	{
-            		/**Allocator "set" via clinit @see JavaProxyClass.setProxyClassReified
+            		/**Allocator "set" via clinit {@see JavaProxyClass#setProxyClassReified()}
             		 */
+            		//TODO: disable alloc method 
             	}
             	
             	// update java_class
@@ -1409,7 +1416,10 @@ public class RubyClass extends RubyModule {
     public PositionAware getPositionOrDefault(DynamicMethod method)
     {
     	 if (method instanceof PositionAware)
-    		 return (PositionAware) method;
+		 {
+    		 PositionAware pos = (PositionAware) method;
+    		 return new SimpleSourcePosition(pos.getFile(), pos.getLine()+1); // convert from 0-based to 1-based that the JVM requires
+		 }
     	 else
     		 return defaultSimplePosition;
     }
@@ -1519,7 +1529,7 @@ public class RubyClass extends RubyModule {
 	            allocAndInitialize(m, true);
             }
         }
-        
+        // TODO: allow java to pass args?
         protected void allocAndInitialize(SkinnyMethodAdapter m, boolean initIfAllowed)
         {
             m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
@@ -1607,7 +1617,7 @@ public class RubyClass extends RubyModule {
 
                 String javaMethodName = JavaNameMangler.mangleMethodName(id);
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
-                cw.visitSource(position.getFile(), null);//TODO: ctors, etc
+                if (position.getLine() > 1) cw.visitSource(position.getFile(), null);
 
                 Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(id);
                 List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(id);
@@ -1685,7 +1695,7 @@ public class RubyClass extends RubyModule {
 
                 String javaMethodName = JavaNameMangler.mangleMethodName(id);
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
-                cw.visitSource(position.getFile(), null);//TODO: ctors, etc
+                if (position.getLine() > 1) cw.visitSource(position.getFile(), null);
 
                 Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(id);
                 List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(id);
@@ -1985,6 +1995,12 @@ public class RubyClass extends RubyModule {
 	            }
 			}
 			// TODO: guess from arity?
+			
+			// update the source location
+			DynamicMethod methodEntry = searchMethod("initialize");
+			PositionAware position = getPositionOrDefault(methodEntry);
+            cw.visitSource(position.getFile(), null);
+            int superpos = ConcreteJavaProxy.findSuperLine(runtime, methodEntry, position.getLine());
 
 			
 			if (candidates.size() > 0 ) //TODO: doc: implies javaConstructable?
@@ -2011,12 +2027,12 @@ public class RubyClass extends RubyModule {
 if (!jcc.allCtors) //TODO: fix logic
 {
 				//if (jcc.rubyConstructable)
-					RealClassGenerator.makeConcreteConstructorSwitch(cw, true, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+					RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
 	            
 	            
 	            if (jcc.javaConstructable)
 	            {
-	            	RealClassGenerator.makeConcreteConstructorSwitch(cw, false, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+	            	RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
 	            }
 }
 			}
@@ -2033,10 +2049,10 @@ if (!jcc.allCtors) //TODO: fix logic
 				//	if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
 
 					if (jcc.rubyConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, true, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
 
 					if (jcc.javaConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, false, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
 					
 				}
 			}
@@ -2051,14 +2067,17 @@ if (!jcc.allCtors) //TODO: fix logic
 					// TODO: support annotations
 
 					if (jcc.rubyConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, true, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
 
 					if (jcc.javaConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, false, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
 					
 				}
-			} 
-			// TODO: rubyargs
+			}
+			if (jcc.IroCtors)
+			{
+				RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, new Class[] {ConcreteJavaProxy.class, IRubyObject[].class, Block.class}, savedSuperCtors, CtorFlags.RubyArgs);				
+			}
 		}
 
 		/**

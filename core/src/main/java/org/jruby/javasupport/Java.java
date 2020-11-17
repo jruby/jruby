@@ -703,7 +703,7 @@ public class Java implements Library {
 
             if (self instanceof JavaProxy)
             {
-            	System.err.println("Failed nil Init for JavaProxy: " + self.asJavaString());
+            	System.err.println("Failed nil Init for JavaProxy: " + self.anyToString());
             	return context.nil; 
             }
             JavaObject newObject = matching.newInstance(self, args);
@@ -717,8 +717,7 @@ public class Java implements Library {
         // assumes only 1 *Ruby* constructor exists! (Filters out nonruby)
         private JavaProxyConstructor matchConstructor0ArityOne(final ThreadContext context,
             final JavaProxyConstructor[] constructors, final IRubyObject arg0) {
-        	int index = constructors[0].isExportable() ? 1 : 0;
-            JavaProxyConstructor forArity = checkCallableForArity(1, constructors, index);
+            JavaProxyConstructor forArity = checkCallableForArity(1, constructors, 0);
 
             if ( forArity == null ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");

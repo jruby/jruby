@@ -260,9 +260,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
         catch (Exception e) {
             e.printStackTrace();
-            RaiseException ex = runtime.newArgumentError("Constructor invocation failed: " + e.getMessage());
-            ex.initCause(e);
-            throw ex;
+            throw mapInstantiationException(runtime, e);
         }
     }
 
