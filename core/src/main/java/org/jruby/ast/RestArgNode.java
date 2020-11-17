@@ -41,6 +41,7 @@ public class RestArgNode extends ArgumentNode implements INameNode {
         super(line, name, index);
     }
 
+    // TODO: ???
     // 1.9 only - lvar assign logic returns an Argument node
     public RestArgNode(ArgumentNode argNode) {
         this(argNode.getLine(), argNode.getName(), argNode.getIndex());

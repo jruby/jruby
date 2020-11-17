@@ -1380,7 +1380,7 @@ public class RubyClass extends RubyModule {
             else
             	setRubyClassAllocator(result);
             reifiedClass = result;
-
+	
             return; // success
         }
         catch (LinkageError error) { // fall through to failure path
@@ -2041,6 +2041,9 @@ if (!jcc.allCtors) //TODO: fix logic
 				//TODO: copy jpcf logic for alloc
 				throw new RuntimeException("Class doesn't have no-arg ctor");
 			}*/
+			
+			//TODO: remove rubyCtors if IRO is enabled (by default)
+			//TODO: warn if no ruby ctors (arity check?)
 			if (jcc.allCtors)
 			{
 				for (Constructor<?> constructor : candidates)

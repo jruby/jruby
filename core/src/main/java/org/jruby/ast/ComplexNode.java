@@ -16,10 +16,10 @@ import org.jruby.ast.visitor.NodeVisitor;
 public class ComplexNode extends NumericNode implements SideEffectFree {
     private NumericNode y;
 
-    public ComplexNode(int line, NumericNode y) {
+    public ComplexNode(int line, NumericNode number) {
         super(line);
 
-        this.y = y;
+        this.y = number;
     }
 
     @Override

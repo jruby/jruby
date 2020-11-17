@@ -109,6 +109,7 @@ public interface NodeVisitor<T> {
     T visitNextNode(NextNode iVisited);
     T visitNilNode(NilNode iVisited);
     T visitNthRefNode(NthRefNode iVisited);
+	T visitOperatorCallNode(OperatorCallNode iVisited);
     T visitOpElementAsgnNode(OpElementAsgnNode iVisited);
     T visitOpAsgnNode(OpAsgnNode iVisited);
     T visitOpAsgnAndNode(OpAsgnAndNode iVisited);

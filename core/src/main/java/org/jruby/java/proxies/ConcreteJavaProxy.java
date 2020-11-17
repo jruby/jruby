@@ -286,6 +286,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 	  						| InvocationTargetException e)
 	  				{
 	  					//TODO: ???
+	  					e.printStackTrace();
 	  					//TODO: throw if the ctor did this. Copy JPConstructor code here
 	  					throw context.runtime.newStandardError("Implementation did something wrong. Please file a bug. " + e.getMessage());
 	  				}
@@ -364,7 +365,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 			if (dm != null && (dm instanceof StaticJCreateMethod))
 				dm = ((StaticJCreateMethod)dm).getOriginal();
 			DynamicMethod dm1 = getMetaClass().retrieveMethod("initialize"); // only on ourself
-			if (dm1 != null && !(dm instanceof InitializeMethod))
+			if ((dm1 != null && !(dm instanceof InitializeMethod)))
 			{
 	            //TODO: if not defined, then ctors = all valid superctors
 			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
@@ -395,6 +396,10 @@ public class ConcreteJavaProxy extends JavaProxy {
 					irm.getLine(), irm.getStaticScope(), irm.getCoverageMode());
 			dm1 = dm;
 			dm  = new MixedModeIRMethod(irm, Visibility.PUBLIC, this.getMetaClass());
+
+			//irm.builtInterpreterContext();
+//			/System.out.println(irm.getLexicalScopes().get(0).getInterpreterContext());
+//			((IRMethod)((AbstractIRMethod)dma).getIRScope()).builtInterpreterContext();
 
 			this.getMetaClass().addMethod("j_initialize", dm);
 			}

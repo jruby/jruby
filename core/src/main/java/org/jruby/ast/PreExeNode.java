@@ -36,8 +36,8 @@ import org.jruby.parser.StaticScope;
  * A pre-execution construction (BEGIN { ... }).
  */
 public class PreExeNode extends IterNode {
-    public PreExeNode(int line, StaticScope scope, Node body, int endLine) {
-        super(line, new ArgsNode(line, null, null, null, null, null, null, null), body, scope, endLine);
+    public PreExeNode(int line, StaticScope scope, Node bodyNode, int endLine) {
+        super(line, new ArgsNode(line, null, null, null, null, null, null, null), bodyNode, scope, endLine);
     }
 
     @Override

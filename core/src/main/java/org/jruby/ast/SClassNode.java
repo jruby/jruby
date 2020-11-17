@@ -52,12 +52,12 @@ public class SClassNode extends Node {
     private final Node bodyNode;
     private final int endLine;
 
-    public SClassNode(int line, Node recvNode, StaticScope scope, Node bodyNode, int endLine) {
-        super(line, recvNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
+    public SClassNode(int line, Node receiverNode, StaticScope scope, Node bodyNode, int endLine) {
+        super(line, receiverNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert scope != null : "scope is not null";
         
-        this.receiverNode = recvNode;
+        this.receiverNode = receiverNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
         this.endLine = endLine;
