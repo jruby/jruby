@@ -1325,7 +1325,13 @@ public class RubyClass extends RubyModule {
         
         Reificator reifier;
         if (concreteExt)
-        	reifier = new ConcreteJavaReifier(reifiedParent, javaName, javaPath);
+        {
+        	if (parentReified != reifiedParent)
+        	{
+        		System.out.println("parents differ! ");
+        	}
+        	reifier = new ConcreteJavaReifier(parentReified, javaName, javaPath);
+        }
         else
         	reifier = new MethodReificator(reifiedParent, javaName, javaPath, null, javaPath);
 
@@ -1687,129 +1693,149 @@ public class RubyClass extends RubyModule {
         }
 
         //TODO: only generate that are overrideable (javaproxyclass)
-        private void defineInstanceMethods(Set<String> instanceMethods) {
-            SkinnyMethodAdapter m;
+        protected void defineInstanceMethods(Set<String> instanceMethods) {
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
                 final String id = methodEntry.getKey();
                 final Arity arity = methodEntry.getValue().getArity();
 
-                String javaMethodName = JavaNameMangler.mangleMethodName(id);
+                
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
                 if (position.getLine() > 1) cw.visitSource(position.getFile(), null);
 
-                Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(id);
-                List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(id);
                 Class[] methodSignature = getMethodSignatures().get(id);
                 
                 // for concrete extension, see if the method is one we are overriding,
                 // even if we didn't specify it manually
                 if (methodSignature == null)
-                	methodSignature = searchInheritedSignatures(id, arity);
-
-                final String signature;
-                if (methodSignature == null) { // non-signature signature with just IRubyObject
-                    if (!jcc.allMethods) continue;
-                    switch (arity.getValue()) {
-                        case 0:
-                            signature = sig(IRubyObject.class); // return IRubyObject foo()
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                            m.line(position.getLine());
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                            generateObjectBarrier(m);
-
-                            loadRubyObject(m); // self/rubyObject
-                            m.ldc(id);
-                            rubycall(m, sig(IRubyObject.class, String.class));
-                            break;
-                        case 1:
-                            signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                            m.line(position.getLine());
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                            generateObjectBarrier(m);
-
-                            loadRubyObject(m); // self/rubyObject
-                            m.ldc(id);
-                            m.aload(1); // IRubyObject arg1
-                            rubycall(m, sig(IRubyObject.class, String.class, IRubyObject.class));
-                            break;
-                        // currently we only have :
-                        //  callMethod(context, name)
-                        //  callMethod(context, name, arg1)
-                        // so for other arities use generic:
-                        //  callMethod(context, name, args...)
-                        default:
-                            if ( arity.isFixed() ) {
-                                final int paramCount = arity.getValue();
-                                Class[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
-                                signature = sig(IRubyObject.class, params);
-                                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                                m.line(position.getLine());
-                                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                                generateObjectBarrier(m);
-
-                                loadRubyObject(m); // self/rubyObject
-                                m.ldc(id);
-
-                                // generate an IRubyObject[] for the method arguments :
-                                m.pushInt(paramCount);
-                                m.anewarray(p(IRubyObject.class)); // new IRubyObject[size]
-                                for ( int i = 1; i <= paramCount; i++ ) {
-                                    m.dup();
-                                    m.pushInt(i - 1); // array index e.g. iconst_0
-                                    m.aload(i); // IRubyObject arg1, arg2 e.g. aload_1
-                                    m.aastore(); // arr[ i - 1 ] = arg_i
-                                }
-                            }
-                            else { // (generic) variable arity e.g. method(*args)
-                                // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
-                                signature = sig(IRubyObject.class, IRubyObject[].class);
-                                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
-                                m.line(position.getLine());
-                                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                                generateObjectBarrier(m);
-
-                                loadRubyObject(m); // self/rubyObject
-                                m.ldc(id);
-                                m.aload(1); // IRubyObject[] arg1
-                            }
-                            rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
-                    }
-                    m.areturn();
+                {
+                	for (Class[] sig : searchInheritedSignatures(id, arity))
+        			{
+    	                String signature = defineInstanceMethod(id, arity, position, sig);
+    	                if (signature != null)
+    	                	instanceMethods.add(signature);
+        			}
                 }
-                else { // generate a real method signature for the method, with to/from coercions
-
-                    // indices for temp values
-                    Class[] params = new Class[methodSignature.length - 1];
-                    ArraySupport.copy(methodSignature, 1, params, 0, params.length);
-                    final int baseIndex = RealClassGenerator.calcBaseIndex(params, 1);
-                    final int rubyIndex = baseIndex;
-
-                    signature = sig(methodSignature[0], params);
-                    int mod = ACC_PUBLIC;
-                    if ( isVarArgsSignature(id, methodSignature) ) mod |= ACC_VARARGS;
-                    m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
-                    m.line(position.getLine());
-                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                    generateObjectBarrier(m);
-
-                    m.getstatic(javaPath, "ruby", ci(Ruby.class)); // runtime
-                    m.astore(rubyIndex);
-
-                    loadRubyObject(m); // self/rubyObject
-                    m.ldc(id); // method name
-
-                    RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
-                    rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
-                    RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
+                else
+                {
+	                String signature = defineInstanceMethod(id, arity, position, methodSignature);
+	                if (signature != null)
+	                	instanceMethods.add(signature);
                 }
-
-                if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), id, javaName, javaMethodName + signature);
-
-                instanceMethods.add(javaMethodName + signature);
-
-                m.end();
             }
+        }
+        
+        protected String defineInstanceMethod(final String id, final Arity arity,
+				PositionAware position, Class[] methodSignature)
+		{
+        	String javaMethodName = JavaNameMangler.mangleMethodName(id);
+        	
+            Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(id);
+            List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(id);
+            
+			final String signature;
+			SkinnyMethodAdapter m;
+			if (methodSignature == null) { // non-signature signature with just IRubyObject
+			    if (!jcc.allMethods)
+					return null;
+			    switch (arity.getValue()) {
+			        case 0:
+			            signature = sig(IRubyObject.class); // return IRubyObject foo()
+			            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+			            m.line(position.getLine());
+			            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+			            generateObjectBarrier(m);
+
+			            loadRubyObject(m); // self/rubyObject
+			            m.ldc(id);
+			            rubycall(m, sig(IRubyObject.class, String.class));
+			            break;
+			        case 1:
+			            signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
+			            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+			            m.line(position.getLine());
+			            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+			            generateObjectBarrier(m);
+
+			            loadRubyObject(m); // self/rubyObject
+			            m.ldc(id);
+			            m.aload(1); // IRubyObject arg1
+			            rubycall(m, sig(IRubyObject.class, String.class, IRubyObject.class));
+			            break;
+			        // currently we only have :
+			        //  callMethod(context, name)
+			        //  callMethod(context, name, arg1)
+			        // so for other arities use generic:
+			        //  callMethod(context, name, args...)
+			        default:
+			            if ( arity.isFixed() ) {
+			                final int paramCount = arity.getValue();
+			                Class[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
+			                signature = sig(IRubyObject.class, params);
+			                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+			                m.line(position.getLine());
+			                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+			                generateObjectBarrier(m);
+
+			                loadRubyObject(m); // self/rubyObject
+			                m.ldc(id);
+
+			                // generate an IRubyObject[] for the method arguments :
+			                m.pushInt(paramCount);
+			                m.anewarray(p(IRubyObject.class)); // new IRubyObject[size]
+			                for ( int i = 1; i <= paramCount; i++ ) {
+			                    m.dup();
+			                    m.pushInt(i - 1); // array index e.g. iconst_0
+			                    m.aload(i); // IRubyObject arg1, arg2 e.g. aload_1
+			                    m.aastore(); // arr[ i - 1 ] = arg_i
+			                }
+			            }
+			            else { // (generic) variable arity e.g. method(*args)
+			                // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
+			                signature = sig(IRubyObject.class, IRubyObject[].class);
+			                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+			                m.line(position.getLine());
+			                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+			                generateObjectBarrier(m);
+
+			                loadRubyObject(m); // self/rubyObject
+			                m.ldc(id);
+			                m.aload(1); // IRubyObject[] arg1
+			            }
+			            rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
+			    }
+			    m.areturn();
+			}
+			else { // generate a real method signature for the method, with to/from coercions
+
+			    // indices for temp values
+			    Class[] params = new Class[methodSignature.length - 1];
+			    ArraySupport.copy(methodSignature, 1, params, 0, params.length);
+			    final int baseIndex = RealClassGenerator.calcBaseIndex(params, 1);
+			    final int rubyIndex = baseIndex;
+
+			    signature = sig(methodSignature[0], params);
+			    int mod = ACC_PUBLIC;
+			    if ( isVarArgsSignature(id, methodSignature) ) mod |= ACC_VARARGS;
+			    m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
+			    m.line(position.getLine());
+			    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+			    generateObjectBarrier(m);
+
+			    m.getstatic(javaPath, "ruby", ci(Ruby.class)); // runtime
+			    m.astore(rubyIndex);
+
+			    loadRubyObject(m); // self/rubyObject
+			    m.ldc(id); // method name
+
+			    RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
+			    rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
+			    RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
+			}
+			m.end();
+
+			if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), id, javaName, javaMethodName + signature);
+
+			return javaMethodName + signature;
         }
         
         /**
@@ -1852,9 +1878,9 @@ public class RubyClass extends RubyModule {
         	m.pop();
         }
 
-		protected Class[] searchInheritedSignatures(String id, Arity arity)
+		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
 		{
-			return null;
+			return Collections.EMPTY_LIST;
 		}
 		
 		protected void generateObjectBarrier(SkinnyMethodAdapter m)
@@ -1954,29 +1980,43 @@ public class RubyClass extends RubyModule {
             m.putstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
             // Note: no end, that's in the parent call
         }
+		
 
         @Override
-		protected Class[] searchInheritedSignatures(String id, Arity arity)
+		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
 		{
-        	// Note: not stable. May flicker between different arities. TODO: sort?
-			for (Method method : reifiedParent.getDeclaredMethods())
+			return searchClassMethods(reifiedParent, id, new HashMap<>());
+		}
+
+		private Collection<Class[]> searchClassMethods(Class clz, String id, HashMap<String, Class[]> options)
+		{
+			if (clz.getSuperclass() != null)
+				searchClassMethods(clz.getSuperclass(), id, options);
+			for (Class intf : clz.getInterfaces())
+				searchClassMethods(intf, id, options);
+			for (Method method : clz.getDeclaredMethods())
 			{
 				//TODO: java <-> ruby conversion?
 				if (!method.getName().equals(id)) continue;
 	            final int mod = method.getModifiers();
 	            if ( !Modifier.isPublic(mod) && !Modifier.isProtected(mod) ) continue;
 	            
+	            //TODO: no arity checks?
+	            /*
 	            // ensure arity is reasonable (ignores java varargs)
 	            if (arity.isFixed())
 	            {
 	            	if (arity.required() != method.getParameterCount()) continue;
 	            }
 	            else if (arity.required() > method.getParameterCount()) continue;
+	            */
 	            
 	            // found! built a signature to return
-	            return join(new Class[]{method.getReturnType()}, method.getParameterTypes());
+	            Class[] types  = join(new Class[]{method.getReturnType()}, method.getParameterTypes());
+	            options.put(sig(types), types);
 			}
-			return null;
+        	// Note: not stable. May flicker between different arities. TODO: sort?
+			return options.values();
 		}
 		
 		@Override
@@ -2014,9 +2054,9 @@ public class RubyClass extends RubyModule {
 			}
 			else
 			{ 
-				//TODO: no ctors = error? 
-				//TODO ????
-				throw new RuntimeException("Class doesn't have any invokeable ctors");
+				//TODO: copy validateArgs
+				//TODO: no ctors = error?
+				throw runtime.newTypeError("class " +reifiedParent.getName()+ " doesn't have a public or protected constructor");
 			}
 			
 			if (zeroArg.isPresent())

@@ -952,7 +952,11 @@ public abstract class RealClassGenerator {
             m.dup();
             m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));// ... arglist, arglist, ctors,
 	        m.aload(rubyIndex); // ruby
-            m.invokestatic(p(JCreateMethod.class), "forTypes", sig(int.class, IRubyObject.class, JCtorCache.class, Ruby.class));
+	        if (flag == CtorFlags.Normal)
+	        	m.iconst_1();
+	        else
+	        	m.iconst_0();
+            m.invokestatic(p(JCreateMethod.class), "forTypes", sig(int.class, IRubyObject.class, JCtorCache.class, Ruby.class, boolean.class));
             // ..., arglist, index
             Label defaultLabel = new Label();
             Label[] cases = new Label[constructors.length+1]; //note: offset by one from index
@@ -973,7 +977,7 @@ public abstract class RealClassGenerator {
             	m.athrow();
             	
             	// -1: super(*args), from `super` (no args) in ruby
-            	if (flag == CtorFlags.Normal)
+            	if (flag == CtorFlags.Normal)// || ctorTypes.length == 0)
             	{
 	            	m.label(cases[0]);
 	            	m.aload(0);

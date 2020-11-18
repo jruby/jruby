@@ -7,6 +7,7 @@ import org.jruby.ast.visitor.*;
 import org.jruby.ir.IRScopeType;
 import org.jruby.parser.*;
 import org.jruby.runtime.Signature;
+import org.jruby.util.KeyValuePair;
 
 class FlatExtractor extends AbstractNodeVisitor<Node>
 {
@@ -594,5 +595,130 @@ class FlatExtractor extends AbstractNodeVisitor<Node>
 		return new ClassVarDeclNode(node.getLine(), node.getName(), v(node.getValueNode()));
 	}
 	
+	
+	
+	///// manual
+	
+	@Override
+	public Node visitRestArgNode(RestArgNode node)
+	{
+		return new RestArgNode(node.getLine(), node.getName(), node.getIndex());
+	}
+	
+	@Override
+	public Node visitArgsNode(ArgsNode node)
+	{
+		return new ArgsNode(node.getLine(), 
+				(ListNode)v(node.getPre()), 
+				(ListNode)v(node.getOptArgs()), 
+				(RestArgNode)v(node.getRestArgNode()), 
+				(ListNode)v(node.getPost()), 
+				(ListNode)v(node.getKeywords()), 
+				(KeywordRestArgNode)v(node.getKeyRest()), 
+				(BlockArgNode)v(node.getBlock()));
+	}
+	
+	@Override
+	public Node visitArrayNode(ArrayNode node)
+	{
+		ListNode an = new ArrayNode(node.getLine());
+		for (Node child : node.children())
+			an.add(v(child));
+		return an;
+	}
+	@Override
+	public Node visitListNode(ListNode node)
+	{
+		ListNode an = new ListNode(node.getLine());
+		for (Node child : node.children())
+			an.add(v(child));
+		return an;
+	}
+	
+	@Override
+	public Node visitBlockArgNode(BlockArgNode node)
+	{
+		return new BlockArgNode(node.getLine(), node.getCount(), node.getName());
+	}
+	
+	@Override
+	public Node visitDSymbolNode(DSymbolNode node)
+	{
+		ListNode an = new DSymbolNode(node.getLine());
+		for (Node child : node.children())
+			an.add(v(child));
+		return an;
+	}
+	
+	@Override
+	public Node visitDXStrNode(DXStrNode node)
+	{
+		ListNode an = new DXStrNode(node.getLine(), node.getEncoding());
+		for (Node child : node.children())
+			an.add(v(child));
+		return an;
+	}
+	
+	@Override
+	public Node visitFCallNode(FCallNode node)
+	{
+		return new FCallNode(node.getLine(), node.getName(), v(node.getArgsNode()), v(node.getIterNode()));
+	}
+	
+	@Override
+	public Node visitHashNode(HashNode node)
+	{
+		HashNode hn = new HashNode(node.getLine());
+		for (KeyValuePair<Node, Node> kvp : node.getPairs())
+		{
+			hn.add(new KeyValuePair<Node, Node>(v(kvp.getKey()), v(kvp.getValue())));
+		}
+		return hn;
+	}
+	
+	@Override
+	public Node visitIterNode(IterNode node)
+	{
+		return new IterNode(node.getLine(), (ArgsNode)v(node.getArgsNode()), v(node.getBodyNode()), node.getScope(), node.getEndLine());
+	}
+	
+	@Override
+	public Node visitOpAsgnAndNode(OpAsgnAndNode node)
+	{
+		return new OpAsgnAndNode(node.getLine(), v(node.getFirstNode()), v(node.getSecondNode()));
+	}@Override
+	public Node visitOpAsgnConstDeclNode(OpAsgnConstDeclNode node)
+	{
+		return new OpAsgnConstDeclNode(node.getLine(), v(node.getFirstNode()), node.getSymbolOperator(), v(node.getSecondNode()));
+	}@Override
+	public Node visitOpAsgnOrNode(OpAsgnOrNode node)
+	{
+		return new OpAsgnOrNode(node.getLine(), v(node.getFirstNode()), v(node.getSecondNode()));
+	}@Override
+	public Node visitOperatorCallNode(OperatorCallNode node)
+	{
+		return new OperatorCallNode(node.getLine(), v(node.getReceiverNode()), node.getName(), v(node.getArgsNode()), v(node.getIterNode()), node.isLazy());
+	}@Override
+	public Node visitRootNode(RootNode node)
+	{
+		return new RootNode(node.getLine(), node.getScope(), v(node.getBodyNode()), node.getFile(), node.coverageMode());
+	}@Override
+	public Node visitStrNode(StrNode node)
+	{
+		return new StrNode(node.getLine(), node.getValue(), node.getCodeRange());
+	}@Override
+	public Node visitUntilNode(UntilNode node)
+	{
+		return new UntilNode(node.getLine(), v(node.getConditionNode()), v(node.getBodyNode()), node.evaluateAtStart());
+	}@Override
+	public Node visitWhileNode(WhileNode node)
+	{
+		return new WhileNode(node.getLine(), v(node.getConditionNode()), v(node.getBodyNode()), node.evaluateAtStart());
+		
+	}@Override
+	public Node visitXStrNode(XStrNode node)
+	{
+		return new XStrNode(node.getLine(), node.getValue(), node.getCodeRange());
+	}
 
 }

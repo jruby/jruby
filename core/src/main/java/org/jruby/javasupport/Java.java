@@ -672,7 +672,7 @@ public class Java implements Library {
             return newObject;
         }
         
-        public static int forTypes(IRubyObject argarray, JCtorCache cache, Ruby runtime)
+        public static int forTypes(IRubyObject argarray, JCtorCache cache, Ruby runtime, boolean allowNil)
         {
         	if (argarray.isNil()) // super (no args)
         	{
@@ -685,7 +685,13 @@ public class Java implements Library {
         	
         	JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache, args.length, args);
         	int index = cache.indexOf(ctor);
-        	if (index < 0) throw runtime.newArgumentError("index error finding superconstructor");
+        	if (index < 0)
+    		{
+        		if (allowNil)
+        			return -1; // use class error
+        		// use our error otherwise
+        		throw runtime.newArgumentError("index error finding superconstructor");
+    		}
         	System.out.println("Will be retuing icx + " + index);
         	return index;
         }

@@ -285,10 +285,8 @@ public class ConcreteJavaProxy extends JavaProxy {
 	  				catch (InstantiationException | IllegalAccessException | IllegalArgumentException
 	  						| InvocationTargetException e)
 	  				{
-	  					//TODO: ???
 	  					e.printStackTrace();
-	  					//TODO: throw if the ctor did this. Copy JPConstructor code here
-	  					throw context.runtime.newStandardError("Implementation did something wrong. Please file a bug. " + e.getMessage());
+	  					JavaProxyConstructor.mapInstantiationException(context.runtime, e);
 	  				}
 	  				return object;
   				}
@@ -306,7 +304,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         {
 
 			return runtime.newArray(
-					runtime.getNil(), 
+					runtime.newArray(args), //TODO:? 
 		            runtime.newProc(Block.Type.LAMBDA, new Block(new JavaInternalBlockBody(runtime, Signature.from(initialize.getArity()))
 					{
 						
@@ -320,11 +318,11 @@ public class ConcreteJavaProxy extends JavaProxy {
 		           );
         }
         
-        public static RubyArray freshNopArray(Ruby runtime)
+        public static RubyArray freshNopArray(Ruby runtime, IRubyObject[] args)
         {
 
 			return runtime.newArray(
-					runtime.getNil(), 
+					runtime.newArray(args), 
 		            runtime.newProc(Block.Type.LAMBDA, new Block(new JavaInternalBlockBody(runtime, Signature.OPTIONAL)
 					{
 						@Override
@@ -407,7 +405,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 			{
 				//TODO: pass ruby into this
 				if (dm instanceof InitializeMethod)
-					return SimpleJavaInitializes.freshNopArray(this.getRuntime());
+					return SimpleJavaInitializes.freshNopArray(this.getRuntime(), args);
 				else 
 					return SimpleJavaInitializes.freshMethodArray(dm, this.getRuntime(), this, getMetaClass(), "initialize", args);
 			}

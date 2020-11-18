@@ -227,7 +227,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
     }
 
-    private static RaiseException mapInstantiationException(final Ruby runtime, final Throwable e) {
+    public static RaiseException mapInstantiationException(final Ruby runtime, final Throwable e) {
         Throwable cause = e;
         e.printStackTrace();
         while ( cause.getCause() != null ) cause = cause.getCause();
@@ -236,6 +236,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         msg = msg == null ? ( MSG + e.getClass().getName() ) : ( MSG + msg );
         RaiseException ex = runtime.newArgumentError(msg);
         ex.initCause(e);
+        ex.addSuppressed(e);
         throw ex;
     }
 
