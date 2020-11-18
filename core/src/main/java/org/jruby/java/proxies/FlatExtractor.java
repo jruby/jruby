@@ -84,7 +84,7 @@ class FlatExtractor extends AbstractNodeVisitor<Node>
 	public Node visitSuperNode(SuperNode node)
 	{
 		foundsuper = true;
-		if (level != 1)
+		if (level > 1)
 		{
 			error = true;
 			return null;
@@ -93,6 +93,8 @@ class FlatExtractor extends AbstractNodeVisitor<Node>
 		Node sarg = node.getArgsNode();
 		if (sarg == null)
 			sarg = new ArrayNode(node.getLine());
+		if (level == 0)
+			return buildRewrite(node.getLine(), sarg, new NilImplicitNode());
 		return buildRewrite(node.getLine(), sarg, bn = new BlockNode(node.getLine()));
 	}
 
@@ -100,13 +102,15 @@ class FlatExtractor extends AbstractNodeVisitor<Node>
 	public Node visitZSuperNode(ZSuperNode node)
 	{
 		foundsuper = true;
-		if (level != 1)
+		if (level > 1)
 		{
 			error = true;
 			return null;
 		}
 		superline = node.getLine();
 		Node sarg = new NilNode(node.getLine());
+		if (level == 0)
+			return buildRewrite(node.getLine(), sarg, new NilImplicitNode());
 		return buildRewrite(node.getLine(), sarg, bn = new BlockNode(node.getLine()));
 	}
 

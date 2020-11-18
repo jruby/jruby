@@ -1985,15 +1985,25 @@ public class RubyClass extends RubyModule {
         @Override
 		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
 		{
-			return searchClassMethods(reifiedParent, id, new HashMap<>());
+			HashMap<String, Class[]> types = new HashMap<>();
+			Collection<Class[]> best = searchClassMethods(reifiedParent, arity, id, types);
+			for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))
+				searchClassMethods(intf, arity, id, types);
+			if (best.size() == 0)
+			{
+				best = searchClassMethods(reifiedParent, null, id, types);
+				for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))
+					searchClassMethods(intf, null, id, types);
+			}
+			return best;
 		}
 
-		private Collection<Class[]> searchClassMethods(Class clz, String id, HashMap<String, Class[]> options)
+		private Collection<Class[]> searchClassMethods(Class clz, Arity arity, String id, HashMap<String, Class[]> options)
 		{
 			if (clz.getSuperclass() != null)
-				searchClassMethods(clz.getSuperclass(), id, options);
+				searchClassMethods(clz.getSuperclass(),arity, id, options);
 			for (Class intf : clz.getInterfaces())
-				searchClassMethods(intf, id, options);
+				searchClassMethods(intf, arity, id, options);
 			for (Method method : clz.getDeclaredMethods())
 			{
 				//TODO: java <-> ruby conversion?
@@ -2002,14 +2012,15 @@ public class RubyClass extends RubyModule {
 	            if ( !Modifier.isPublic(mod) && !Modifier.isProtected(mod) ) continue;
 	            
 	            //TODO: no arity checks?
-	            /*
+	            if (arity != null)
+	            {
 	            // ensure arity is reasonable (ignores java varargs)
 	            if (arity.isFixed())
 	            {
 	            	if (arity.required() != method.getParameterCount()) continue;
 	            }
 	            else if (arity.required() > method.getParameterCount()) continue;
-	            */
+	            }
 	            
 	            // found! built a signature to return
 	            Class[] types  = join(new Class[]{method.getReturnType()}, method.getParameterTypes());
