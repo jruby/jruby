@@ -1632,7 +1632,7 @@ public class RubyParser {
     int end = 0;
 
     yyLoop: for (int yytop = 0;; yytop++) {
-      if (yytop >= yystates.length) {			// dynamically increase
+      if (yytop + 1 >= yystates.length) {			// dynamically increase
           ProductionState[] newStates = new ProductionState[yystates.length+YYMAX];
           System.arraycopy(yystates, 0, newStates, 0, yystates.length);
           initializeStates(newStates, yystates.length, newStates.length - yystates.length);
