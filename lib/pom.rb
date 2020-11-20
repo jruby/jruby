@@ -31,7 +31,7 @@ default_gems = [
 ]
 
 bundled_gems = [
-    ['did_you_mean', '1.2.0'],
+    ['did_you_mean', '1.2.1'],
     ['minitest', '${minitest.version}'],
     ['net-telnet', '0.1.1'],
     ['power_assert', '${power_assert.version}'],
