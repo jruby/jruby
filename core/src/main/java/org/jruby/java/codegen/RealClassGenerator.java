@@ -933,7 +933,7 @@ public abstract class RealClassGenerator {
         	{
         		m.aload(3); // load block from arg 3
         	}
-    		m.invokevirtual(cjr.rubyPath, "splitInitialized", sig(RubyArray.class, IRubyObject[].class, Block.class) ); //pushes rubyarray
+    		m.invokevirtual(cjr.rubyPath, "splitInitialized", sig(Object[].class, IRubyObject[].class, Block.class) ); //pushes rubyarray
             m.dup(); // rubyarray (results of splitInitialized)
             
             m.line(superpos); // mark this line as the super call, so the stack trace is slightly accurate.
@@ -941,11 +941,8 @@ public abstract class RealClassGenerator {
     		//// c = ra.entry(0);
     		////IRubyObject continuation = ra.entry(1);
             m.iconst_0(); // ..., rubyarray, rubyarray, 0
-            m.swap(); // ..., rubyarray, 0, rubyarray
-            m.iconst_1(); // ..., rubyarray, 0, rubyarray, 1
-            m.invokevirtual(p(RubyArray.class), "entry", sig(IRubyObject.class, int.class));
-            m.astore(rubyContinuation); // ..., rubyarray, 0
-            m.invokevirtual(p(RubyArray.class), "entry", sig(IRubyObject.class, int.class));
+            m.aaload(); // ..., rubyarray, rubyobject(Object)
+            m.checkcast(p(IRubyObject.class));
             // top of stack is now the arg list ruby array
             
             //// switch(Java.JCreateMethod.forTypes(constructors, c))
@@ -1040,20 +1037,25 @@ public abstract class RealClassGenerator {
         m.aload(0); // initialized this
         m.dup();
         m.getfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);// ..., this, rubyobj
-        m.swap(); // ..., rubyobject, this
+        if (callsInit) m.dup_x1(); // rubyobject, this, rubyobject
+        m.swap(); // ..., rubyobject, rubyobject, this
         m.invokevirtual(p(ConcreteJavaProxy.class), "setObject", sig(void.class, Object.class));
         
         // finish init if started
         if (callsInit)
         {
 	        ////continuation.callMethod(ruby.getTheadContext(), "call")
-	        m.aload(rubyContinuation);
-	        m.aload(rubyIndex);
-	        m.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
-	        m.ldc("call");
+	        //m.aload(rubyContinuation);
+
+	        //m.aload(rubyIndex);
+	        //m.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
+	        //m.ldc("call");
 	        // not rubycall as using IRubyObject vs RubyBasicObject
-	        m.invokeinterface(p(IRubyObject.class), "callMethod", sig(IRubyObject.class, ThreadContext.class, String.class));
-	        m.pop();
+	        //m.invokeinterface(p(IRubyObject.class), "callMethod", sig(IRubyObject.class, ThreadContext.class, String.class));
+	        //m.pop();
+        	m.swap();
+        	m.invokevirtual(p(ConcreteJavaProxy.class), "finishInitialize", sig(void.class, Object[].class));
+        	m.pop(); //TODO: track down this extra arg
         }
 
         m.voidreturn();

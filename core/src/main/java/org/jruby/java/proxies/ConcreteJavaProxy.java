@@ -299,11 +299,11 @@ public class ConcreteJavaProxy extends JavaProxy {
     //TODO: cleanup
     public static final class SimpleJavaInitializes {
 
-        public static RubyArray freshMethodArray(DynamicMethod initialize, Ruby runtime, IRubyObject self, RubyModule clazz, String name,
+        public static Object[] freshMethodArray(DynamicMethod initialize, Ruby runtime, IRubyObject self, RubyModule clazz, String name,
 				IRubyObject[] args)
         {
 
-			return runtime.newArray(
+			return new Object[] {
 					runtime.newArray(args), //TODO:? 
 		            runtime.newProc(Block.Type.LAMBDA, new Block(new JavaInternalBlockBody(runtime, Signature.from(initialize.getArity()))
 					{
@@ -315,13 +315,13 @@ public class ConcreteJavaProxy extends JavaProxy {
 						}
 						
 					}))
-		           );
+			};
         }
         
-        public static RubyArray freshNopArray(Ruby runtime, IRubyObject[] args)
+        public static Object[] freshNopArray(Ruby runtime, IRubyObject[] args)
         {
 
-			return runtime.newArray(
+			return new Object[] {
 					runtime.newArray(args), 
 		            runtime.newProc(Block.Type.LAMBDA, new Block(new JavaInternalBlockBody(runtime, Signature.OPTIONAL)
 					{
@@ -332,7 +332,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 						}
 						
 					}))
-		           );
+			};
         }
 
     }
@@ -361,7 +361,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
     
     // used by reified classes
-    public RubyArray splitInitialized(IRubyObject[] args, Block blk)
+    public Object[] splitInitialized(IRubyObject[] args, Block blk)
     {
 
 		DynamicMethod dm = this.getMetaClass().searchMethod("j_initialize");
@@ -421,7 +421,16 @@ public class ConcreteJavaProxy extends JavaProxy {
 		
 		}
     	///  TODO: move gen here
-    	return callMethod(getRuntime().getCurrentContext(),  "j_initialize", args, blk).convertToArray();
+    	RubyArray ra = callMethod(getRuntime().getCurrentContext(),  "j_initialize", args, blk).convertToArray();
+    	
+    	return new Object[] {ra.entry(0), ra.entry(1) };
+    }
+    
+    // called from concrete reified code
+    public void finishInitialize(Object[] returned)
+    {
+    	// returned = splitInitialize return value
+    	((IRubyObject)returned[1]).callMethod(getRuntime().getCurrentContext(), "call");
     }
     
     // used by reified classes
