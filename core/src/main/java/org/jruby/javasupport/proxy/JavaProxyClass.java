@@ -458,8 +458,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     }
 
+    //called from reified java concrete-extended classes
     @SuppressWarnings("unchecked")
-    JavaProxyMethod initMethod(final String name, final String desc, final boolean hasSuper) {
+    public void initMethod(final String name, final String desc, final boolean hasSuper) {
         final Class proxy = this.proxyClass;
         try {
             Class[] paramTypes = parse(proxy.getClassLoader(), desc);
@@ -479,7 +480,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             }
             methodsWithName.add(proxyMethod);
 
-            return proxyMethod;
+            //return proxyMethod;
         }
         catch (ClassNotFoundException e) {
             throw new InternalError(e.getMessage());

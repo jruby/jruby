@@ -63,6 +63,8 @@ import org.jruby.util.*;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.log.*;
 import org.objectweb.asm.*;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
 
 
 /**
@@ -1223,6 +1225,10 @@ public class RubyClass extends RubyModule {
      * @return true if the class can be reified, false otherwise
      */
     public boolean isReifiable(boolean[] java) {
+    	if (this.getBaseName().equals("SimpleFXApplication"))
+    	{
+    		System.out.println("brewk");
+    	}
         // already reified is not reifiable
         if (reifiedClass != null) return false;
 
@@ -1240,7 +1246,8 @@ public class RubyClass extends RubyModule {
                     reifiedSuper == RubyBasicObject.class ||
                     Reified.class.isAssignableFrom(reifiedSuper);
             // TODO: check for nested java classes
-            if (result)
+            //TODO: RJP is Reified. is that reasonable?
+            if (result && !ReifiedJavaProxy.class.isAssignableFrom(reifiedSuper))
             	return true;
             else
             {
@@ -1708,6 +1715,7 @@ public class RubyClass extends RubyModule {
                 // even if we didn't specify it manually
                 if (methodSignature == null)
                 {
+                	//TODO: should inherited search for java mangledName?
                 	for (Class[] sig : searchInheritedSignatures(id, arity))
         			{
     	                String signature = defineInstanceMethod(id, arity, position, sig);
@@ -1830,6 +1838,11 @@ public class RubyClass extends RubyModule {
 			    RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
 			    rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
 			    RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
+			    
+			    // generate any bridge methods needed as we overrode a defined one
+				//TODO: push down to all cases
+				if (!isRubyObject())
+					generateSuperBridges(javaMethodName, methodSignature);
 			}
 			m.end();
 
@@ -1838,7 +1851,12 @@ public class RubyClass extends RubyModule {
 			return javaMethodName + signature;
         }
         
-        /**
+        protected void generateSuperBridges(String javaMethodName, Class[] methodSignature)
+		{
+			// Only for concrete java
+		}
+
+		/**
          * This method generates &lt;clinit> by marshaling the Ruby, RubyClass, etc variables
          * through a static map identified by integer in JavaProxyClass. Integers are serializable
          * through bytecode generation so we can share arbitrary objects with the generated class 
@@ -1902,6 +1920,7 @@ public class RubyClass extends RubyModule {
 		boolean rubyctor = false;
     	boolean simpleAlloc = false;
     	JavaConstructor[] savedSuperCtors = null;
+    	Map<String, List<String>> supers = new HashMap<>();
 
 		ConcreteJavaReifier(Class<?> reifiedParent, String javaName, String javaPath)
 		{
@@ -1977,12 +1996,74 @@ public class RubyClass extends RubyModule {
 
     		//TODO: eww, where should this call go? here? there? I dislike the leaking of the abstraction across a larger part of the code than necessary
             m.invokestatic(p(JavaProxyClass.class), "setProxyClassReified", sig(JavaProxyClass.class, Ruby.class, RubyClass.class, Class.class, boolean.class));
+            m.dup();
             m.putstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
+            
+            supers.forEach((name, sigs) -> {
+            	
+            	for (String sig : sigs)
+            	{
+	            	m.dup();
+	            	m.ldc(name);
+	            	m.ldc(sig);
+	            	m.iconst_1();
+	            	m.invokevirtual(p(JavaProxyClass.class), "initMethod", sig(void.class, String.class, String.class, boolean.class));
+            	}
+            });
+            m.pop();
             // Note: no end, that's in the parent call
         }
 		
+		
+		@Override
+		protected void generateSuperBridges(String javaMethodName, Class[] methodSignature)
+		{
+			//TODO: cache, don't look up this+ sIS repetedly
+			
+			// don't look on interfaces, just the parent
+			Class[] args = new Class[methodSignature.length - 1];
+			ArraySupport.copy(methodSignature, 1, args, 0, methodSignature.length - 1);
+			Method supr = findTarget(reifiedParent, javaMethodName, methodSignature[0], args);
+			if (supr == null) return;
+			
 
-        @Override
+            SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_SYNTHETIC | ACC_BRIDGE | ACC_PUBLIC, "__super$"+javaMethodName, sig(methodSignature), null, null);
+            GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
+            ga.loadThis(); //TODO: which style?
+            //m.aload(0); // this //TODO: which style?
+            ga.loadArgs();
+            m.invokespecial(p(reifiedParent), javaMethodName, sig(methodSignature));
+            ga.returnValue();
+            ga.endMethod();
+            
+            if (!supers.containsKey(javaMethodName))
+            	supers.put(javaMethodName, new ArrayList<>());
+            
+            supers.get(javaMethodName).add(sig(methodSignature));
+		}
+
+        private Method findTarget(Class<?> clz, String javaMethodName, Class<?> returns, Class<?>[] params) //TODO: variable name pass
+		{
+        	for (Method method : clz.getDeclaredMethods())
+			{
+				if (!method.getName().equals(javaMethodName)) continue;
+	            final int mod = method.getModifiers();
+	            if ( !Modifier.isPublic(mod) && !Modifier.isProtected(mod) ) continue;
+	            if (Modifier.isAbstract(mod)) continue;
+	             
+	            //TODO: is args necessary?
+	            if (!method.getReturnType().equals(returns)) continue;
+	            if (!Arrays.equals(method.getParameterTypes(), params)) continue;
+	            
+	            //TODO: final?
+	            return method;
+			}
+			if (clz.getSuperclass() != null)
+				return findTarget(clz.getSuperclass(), javaMethodName, returns, params);
+        	return null;
+		}
+
+		@Override //TODO: check for final?
 		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
 		{
 			HashMap<String, Class[]> types = new HashMap<>();

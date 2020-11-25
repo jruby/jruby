@@ -339,15 +339,24 @@ public class ConcreteJavaProxy extends JavaProxy {
     
     public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start)
     {
+    	try
+    	{
 		if (dm != null && !(dm instanceof InitializeMethod))
 		{
             //TODO: if not defined, then ctors = all valid superctors
 			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
+			System.out.println("def is " + (def == null));
 			FlatExtractor flat = new FlatExtractor(runtime, def); 
+			System.out.println("defb is " + (def.getBodyNode() == null));
 			Node body = def.getBodyNode().accept(flat);
 			if (flat.foundsuper && flat.superline > -1)
 				return flat.superline + 1; // convert from 0-based to 1-based
 		}
+    	}
+		catch(Exception e)
+    	{
+			e.printStackTrace();
+    	}
 		return start;
     }
     
@@ -363,7 +372,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 			if (dm != null && (dm instanceof StaticJCreateMethod))
 				dm = ((StaticJCreateMethod)dm).getOriginal();
 			DynamicMethod dm1 = getMetaClass().retrieveMethod("initialize"); // only on ourself
-			if ((dm1 != null && !(dm instanceof InitializeMethod)))
+			if ((dm1 != null && !(dm instanceof InitializeMethod)&& !(dm instanceof StaticJCreateMethod))) //jcreate is for nested ruby classes from a java class
 			{
 	            //TODO: if not defined, then ctors = all valid superctors
 			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();

@@ -108,7 +108,7 @@ public class IRMethod extends IRScope {
 
         IRBuilder.topIRBuilder(getManager(), this).
                 defineMethodInner(defNode, getLexicalParent(), getCoverageMode()); // sets interpreterContext
-        this.defNode = null;
+        //this.defNode = null;
     }
 
     public BasicBlock[] prepareForCompilation() {

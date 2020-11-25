@@ -81,7 +81,7 @@ describe "JRuby class reification" do
     java_class = TopRightOfTheStack.become_java!
     expect(java_class).not_to be_nil
 
-    java_class = TopRightOfTheStack.to_java.getReifiedClass
+    java_class = TopRightOfTheStack.to_java.getReifiedRubyClass
     expect(java_class).not_to be_nil
   end
 
