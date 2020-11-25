@@ -395,6 +395,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitOperatorCallNode(OperatorCallNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitOpElementAsgnNode(OpElementAsgnNode node) {
         return defaultVisit(node);
     }
