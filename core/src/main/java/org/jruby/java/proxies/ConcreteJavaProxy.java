@@ -337,10 +337,8 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     }
     
-    public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start)
-    {
-		if (dm != null && !(dm instanceof InitializeMethod))
-		{
+    public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start) {
+		if (dm != null && !(dm instanceof InitializeMethod)) {
             //TODO: if not defined, then ctors = all valid superctors
 			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
 			FlatExtractor flat = new FlatExtractor(runtime, def); 
