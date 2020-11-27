@@ -1,5 +1,7 @@
 package org.jruby.javasupport.util;
 
+import java.util.*;
+
 public class JavaClassConfiguration
 {
 	public boolean callInitialize = true;
@@ -12,6 +14,8 @@ public class JavaClassConfiguration
 	public boolean allCtors  = false;
 	public boolean rubyConstructable = true; // 
 	public boolean IroCtors = true;
+	
+	public Map<String, String> renamedMethods = new HashMap<>();
 	
 	//TODO: init method name?
 	//TODO: renames?

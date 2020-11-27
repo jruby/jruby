@@ -1697,44 +1697,56 @@ public class RubyClass extends RubyModule {
 
         //TODO: only generate that are overrideable (javaproxyclass)
         protected void defineInstanceMethods(Set<String> instanceMethods) {
+        	Set<String> defined = new HashSet<>();
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
                 final String id = methodEntry.getKey();
-                final Arity arity = methodEntry.getValue().getArity();
+                final String callid = jcc.renamedMethods.getOrDefault(id, id); // TODO: use set to avoid the map
+                if (defined.contains(id))
+                	continue;
+                defined.add(callid); //TODO: is this true? // id we won't see again, and are only defining java methods named id
+                
+
+                DynamicMethod method = methodEntry.getValue();
+                if (id != callid) // identity is fine as it's the default
+                {
+                	method = searchMethod(callid);
+                }
+                final Arity arity = method.getArity();
 
                 
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
                 if (position.getLine() > 1) cw.visitSource(position.getFile(), null);
 
-                Class[] methodSignature = getMethodSignatures().get(id);
+                Class[] methodSignature = getMethodSignatures().get(callid); // ruby side, use callid
                 
                 // for concrete extension, see if the method is one we are overriding,
                 // even if we didn't specify it manually
                 if (methodSignature == null)
                 {
                 	//TODO: should inherited search for java mangledName?
-                	for (Class[] sig : searchInheritedSignatures(id, arity))
+                	for (Class[] sig : searchInheritedSignatures(id, arity)) // id (vs callid) here as this is searching in java
         			{
-    	                String signature = defineInstanceMethod(id, arity, position, sig);
+    	                String signature = defineInstanceMethod(id, callid, arity, position, sig);
     	                if (signature != null)
     	                	instanceMethods.add(signature);
         			}
                 }
                 else
                 {
-	                String signature = defineInstanceMethod(id, arity, position, methodSignature);
+	                String signature = defineInstanceMethod(id, callid, arity, position, methodSignature);
 	                if (signature != null)
 	                	instanceMethods.add(signature);
                 }
             }
         }
         
-        protected String defineInstanceMethod(final String id, final Arity arity,
+        protected String defineInstanceMethod(final String id, final String callid, final Arity arity,
 				PositionAware position, Class[] methodSignature)
 		{
         	String javaMethodName = JavaNameMangler.mangleMethodName(id);
         	
-            Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(id);
-            List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(id);
+            Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(callid); // ruby side, use callid
+            List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(callid); // ruby side, use callid
             
 			final String signature;
 			SkinnyMethodAdapter m;
@@ -1750,7 +1762,7 @@ public class RubyClass extends RubyModule {
 			            generateObjectBarrier(m);
 
 			            loadRubyObject(m); // self/rubyObject
-			            m.ldc(id);
+			            m.ldc(callid);
 			            rubycall(m, sig(IRubyObject.class, String.class));
 			            break;
 			        case 1:
@@ -1761,7 +1773,7 @@ public class RubyClass extends RubyModule {
 			            generateObjectBarrier(m);
 
 			            loadRubyObject(m); // self/rubyObject
-			            m.ldc(id);
+			            m.ldc(callid);
 			            m.aload(1); // IRubyObject arg1
 			            rubycall(m, sig(IRubyObject.class, String.class, IRubyObject.class));
 			            break;
@@ -1781,7 +1793,7 @@ public class RubyClass extends RubyModule {
 			                generateObjectBarrier(m);
 
 			                loadRubyObject(m); // self/rubyObject
-			                m.ldc(id);
+			                m.ldc(callid);
 
 			                // generate an IRubyObject[] for the method arguments :
 			                m.pushInt(paramCount);
@@ -1802,7 +1814,7 @@ public class RubyClass extends RubyModule {
 			                generateObjectBarrier(m);
 
 			                loadRubyObject(m); // self/rubyObject
-			                m.ldc(id);
+			                m.ldc(callid);
 			                m.aload(1); // IRubyObject[] arg1
 			            }
 			            rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
@@ -1819,7 +1831,7 @@ public class RubyClass extends RubyModule {
 
 			    signature = sig(methodSignature[0], params);
 			    int mod = ACC_PUBLIC;
-			    if ( isVarArgsSignature(id, methodSignature) ) mod |= ACC_VARARGS;
+			    if ( isVarArgsSignature(callid, methodSignature) ) mod |= ACC_VARARGS;
 			    m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
 			    m.line(position.getLine());
 			    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
@@ -1829,7 +1841,7 @@ public class RubyClass extends RubyModule {
 			    m.astore(rubyIndex);
 
 			    loadRubyObject(m); // self/rubyObject
-			    m.ldc(id); // method name
+			    m.ldc(callid); // method name
 
 			    RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
 			    rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
@@ -1842,7 +1854,7 @@ public class RubyClass extends RubyModule {
 			}
 			m.end();
 
-			if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), id, javaName, javaMethodName + signature);
+			if (DEBUG_REIFY) LOG.debug("defining {}#{} (calling #{}) as {}#{}", getName(), id, callid, javaName, javaMethodName + signature);
 
 			return javaMethodName + signature;
         }
