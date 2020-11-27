@@ -961,7 +961,27 @@ public class RubyClass extends RubyModule {
         if (original instanceof MetaClass) throw runtime.newTypeError("can't copy singleton class");
 
         super.initialize_copy(original);
-        allocator = ((RubyClass)original).allocator;
+        RubyClass originalClazz = ((RubyClass)original);
+        allocator = originalClazz.allocator;
+        
+
+        // copy over reify options
+        javaClassConfiguration = originalClazz.javaClassConfiguration;//TODO: Dup
+        classAnnotations = originalClazz.classAnnotations; // TODO: dup
+        fieldSignatures = originalClazz.fieldSignatures; // TODO: dup
+        methodSignatures = originalClazz.methodSignatures; // TODO: dup
+        fieldAnnotations = originalClazz.fieldAnnotations; // TODO: dup
+        methodAnnotations = originalClazz.methodAnnotations; // TODO: dup
+        parameterAnnotations = originalClazz.parameterAnnotations; // TODO: dup
+        
+        // copy over reified class if applicable
+
+        if (originalClazz.getJavaProxy() && originalClazz.reifiedClass != null && !Reified.class.isAssignableFrom(originalClazz.reifiedClass)) // TODO: ensure this line is correct
+        {
+        	reifiedClass = originalClazz.reifiedClass;
+        	reifiedClassJava = originalClazz.reifiedClassJava;
+        }
+        
         return this;
     }
 
@@ -2293,6 +2313,7 @@ if (!jcc.allCtors) //TODO: fix logic
         }
     }
 
+    //TODO: check for java?
     public void setReifiedClass(Class<? extends IRubyObject> reifiedClass) {
         this.reifiedClass = (Class<? extends Reified>) reifiedClass; //Not always true
     }

@@ -2458,6 +2458,8 @@ public class RubyModule extends RubyObject {
         syncConstants(originalModule);
 
         originalModule.cloneMethods(this);
+        
+        this.javaProxy = originalModule.javaProxy; 
 
         return this;
     }
