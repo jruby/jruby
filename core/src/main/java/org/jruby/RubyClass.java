@@ -1983,7 +1983,7 @@ public class RubyClass extends RubyModule {
 		@Override
 		public byte[] reify()
 		{
-			cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_PRIVATE, RUBY_OBJECT_FIELD, rubyName, null, null); 
+			cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_PROTECTED, RUBY_OBJECT_FIELD, rubyName, null, null); 
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class), null, null);
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class), null, null); 
 			return super.reify();
@@ -2131,6 +2131,7 @@ public class RubyClass extends RubyModule {
 	            	zeroArg = Optional.of(constructor);
 	            }
 			}
+			boolean isNestedRuby = ReifiedJavaProxy.class.isAssignableFrom(reifiedParent);
 			// TODO: guess from arity?
 			
 			// update the source location
@@ -2158,18 +2159,19 @@ public class RubyClass extends RubyModule {
 			
 			if (zeroArg.isPresent())
 			{
-	            rubyctor = true;
+	            rubyctor = !isNestedRuby;
 	            //TODO: simpleAlloc = true;
 	            // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
 if (!jcc.allCtors) //TODO: fix logic
 {
 				//if (jcc.rubyConstructable)
-					RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+					if (!isNestedRuby)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, isNestedRuby, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
 	            
 	            
 	            if (jcc.javaConstructable)
 	            {
-	            	RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+	            	RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, isNestedRuby, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
 	            }
 }
 			}
@@ -2181,7 +2183,7 @@ if (!jcc.allCtors) //TODO: fix logic
 			
 			//TODO: remove rubyCtors if IRO is enabled (by default)
 			//TODO: warn if no ruby ctors (arity check?)
-			if (jcc.allCtors)
+			if (jcc.allCtors && !isNestedRuby)
 			{
 				for (Constructor<?> constructor : candidates)
 				{
@@ -2189,15 +2191,15 @@ if (!jcc.allCtors) //TODO: fix logic
 				//	if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
 
 					if (jcc.rubyConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, isNestedRuby, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
 
 					if (jcc.javaConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, isNestedRuby, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
 					
 				}
 			}
 			
-			if (jcc.extraCtors != null && jcc.extraCtors.length > 0)
+			if (jcc.extraCtors != null && jcc.extraCtors.length > 0 && !isNestedRuby)
 			{
 				for (Class<?>[] constructor : jcc.extraCtors)
 				{
@@ -2207,16 +2209,16 @@ if (!jcc.allCtors) //TODO: fix logic
 					// TODO: support annotations
 
 					if (jcc.rubyConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, isNestedRuby, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
 
 					if (jcc.javaConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, isNestedRuby, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
 					
 				}
 			}
-			if (jcc.IroCtors)
+			if (jcc.IroCtors || isNestedRuby) // TODO: ensure parent is iro-enabled
 			{
-				RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, new Class[] {ConcreteJavaProxy.class, IRubyObject[].class, Block.class}, savedSuperCtors, CtorFlags.RubyArgs);				
+				RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, isNestedRuby, this, new Class[] {ConcreteJavaProxy.class, IRubyObject[].class, Block.class}, savedSuperCtors, CtorFlags.RubyArgs);				
 			}
 		}
 

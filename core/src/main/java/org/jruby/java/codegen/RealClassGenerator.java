@@ -838,8 +838,12 @@ public abstract class RealClassGenerator {
     // TODO: add CJP ctor for alloc sep?
     //:TODO: Add IRubyobject ctor?
     // shouls this be in in this spot?
-    public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition, int superpos, boolean hasRuby, boolean callsInit, ConcreteJavaReifier cjr, Class[] ctorTypes, JavaConstructor[] constructors, CtorFlags flag)
+    public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition, int superpos, boolean hasRuby, boolean isNestedRuby, ConcreteJavaReifier cjr, Class[] ctorTypes, JavaConstructor[] constructors, CtorFlags flag)
     {
+    	
+    	final boolean callsInit = true; // TODO: ????
+    	
+    	
     	
     	// TODO: add source position of super call
     	
@@ -882,6 +886,7 @@ public abstract class RealClassGenerator {
 		//// Ruby varRubyIndex = ruby;
         final int baseIndex = RealClassGenerator.calcBaseIndex(ctorTypes, 1);
         final int rubyIndex = baseIndex;
+        final int rubyClassIndex = baseIndex+1;
         final int rubyArrayIndex = baseIndex+2;
         final int rubyContinuation = baseIndex+3;
         final int rubyInitArgs = baseIndex+4;
@@ -891,6 +896,48 @@ public abstract class RealClassGenerator {
 			m.getstatic(cjr.javaPath, "ruby", ci(Ruby.class));
 			m.astore(rubyIndex); // save ruby in local
         }
+
+    	if (isNestedRuby) //TODO: this skips the parent's initialize method
+    	{
+    		// TODO: support more than ruby or ()/no-arg ctors
+    		if (flag == CtorFlags.RubyArgs) //IRO ctor means passthrough
+    		{
+    			//m.aload(0); // uninitialized this
+    			m.aload(1); // cjp
+    			m.aload(2); // args
+    			m.aload(3); // block
+    			m.aload(4); // ruby
+    			m.aload(5); // rubyclass
+    			m.invokespecial(p(cjr.reifiedParent), "<init>", sig);
+
+    		}
+    		else
+    		{
+
+    		//	m.aload(0); // uninitialized this
+    			m.newobj(p(ConcreteJavaProxy.class));
+		        m.dup(); // rubyobject
+		        m.aload(rubyIndex); // ruby
+		        m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class)); // rubyclass
+		        m.invokespecial(p(ConcreteJavaProxy.class), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+		        
+		        m.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class)); // args
+    			m.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+    			m.aload(rubyIndex); // ruby
+    			m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class));
+    			m.invokespecial(p(cjr.reifiedParent), "<init>", sig(void.class, ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class));
+    		}
+    		// this.rubyobj = super.rubyobj
+			m.aload(0); // initialized this
+			m.dup();
+	        m.getfield(p(cjr.reifiedParent), ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
+	        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
+    		
+            m.voidreturn();
+            m.end();
+            return;
+    	}
+    	
         //// this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
         if (flag == CtorFlags.Normal || flag == CtorFlags.NoSuper)
         	RealClassGenerator.coerceArgumentsToRuby(m, ctorTypes, rubyIndex);
@@ -907,7 +954,7 @@ public abstract class RealClassGenerator {
 		        m.dup(); // rubyobject
 		        m.aload(rubyIndex); // ruby
 		        if (hasRuby)
-		            m.aload(rubyIndex+1); // rubyclass
+		            m.aload(rubyClassIndex); // rubyclass
 		        else
 		            m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class)); // rubyclass
 		        m.invokespecial(p(ConcreteJavaProxy.class), "<init>", sig(void.class, Ruby.class, RubyClass.class));
