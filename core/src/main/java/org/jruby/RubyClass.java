@@ -156,7 +156,7 @@ public class RubyClass extends RubyModule {
                 }
             };
 
-            this.reifiedClass = clazz;
+            this.reifiedClass = (Class<? extends Reified>) clazz;
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
@@ -189,7 +189,7 @@ public class RubyClass extends RubyModule {
                 }
             };
 
-            this.reifiedClass = clazz;
+            this.reifiedClass = (Class<? extends Reified>) clazz;
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
@@ -1225,10 +1225,6 @@ public class RubyClass extends RubyModule {
      * @return true if the class can be reified, false otherwise
      */
     public boolean isReifiable(boolean[] java) {
-    	if (this.getBaseName().equals("SimpleFXApplication"))
-    	{
-    		System.out.println("brewk");
-    	}
         // already reified is not reifiable
         if (reifiedClass != null) return false;
 
@@ -1245,7 +1241,7 @@ public class RubyClass extends RubyModule {
             boolean result = reifiedSuper == RubyObject.class ||
                     reifiedSuper == RubyBasicObject.class ||
                     Reified.class.isAssignableFrom(reifiedSuper);
-            // TODO: check for nested java classes
+            // TODO: check & test for nested java classes
             //TODO: RJP is Reified. is that reasonable?
             if (result && !ReifiedJavaProxy.class.isAssignableFrom(reifiedSuper))
             	return true;
@@ -1895,10 +1891,47 @@ public class RubyClass extends RubyModule {
         {
         	m.pop();
         }
-
+//TODO: test interfaces on ruby, and not defining a method on intf, abstract class
 		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
 		{
-			return Collections.EMPTY_LIST;
+			HashMap<String, Class[]> types = new HashMap<>();
+			for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))
+				searchClassMethods(intf, arity, id, types);
+			if (types.size() == 0)
+				types.put("", null);
+			return types.values();
+		}
+
+		protected Collection<Class[]> searchClassMethods(Class clz, Arity arity, String id, HashMap<String, Class[]> options)
+		{
+			if (clz.getSuperclass() != null)
+				searchClassMethods(clz.getSuperclass(),arity, id, options);
+			for (Class intf : clz.getInterfaces())
+				searchClassMethods(intf, arity, id, options);
+			for (Method method : clz.getDeclaredMethods())
+			{
+				//TODO: java <-> ruby conversion?
+				if (!method.getName().equals(id)) continue;
+	            final int mod = method.getModifiers();
+	            if ( !Modifier.isPublic(mod) && !Modifier.isProtected(mod) ) continue;
+	            
+	            //TODO: no arity checks?
+	            if (arity != null)
+	            {
+	            // ensure arity is reasonable (ignores java varargs)
+	            if (arity.isFixed())
+	            {
+	            	if (arity.required() != method.getParameterCount()) continue;
+	            }
+	            else if (arity.required() > method.getParameterCount()) continue;
+	            }
+	            
+	            // found! built a signature to return
+	            Class[] types  = join(new Class[]{method.getReturnType()}, method.getParameterTypes());
+	            options.put(sig(types), types);
+			}
+        	// Note: not stable. May flicker between different arities. TODO: sort?
+			return options.values();
 		}
 		
 		protected void generateObjectBarrier(SkinnyMethodAdapter m)
@@ -2067,48 +2100,20 @@ public class RubyClass extends RubyModule {
 		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
 		{
 			HashMap<String, Class[]> types = new HashMap<>();
-			Collection<Class[]> best = searchClassMethods(reifiedParent, arity, id, types);
-			for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))
+			searchClassMethods(reifiedParent, arity, id, types);
+			for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))// TODO: cleanup duplication in 3 places (super)
 				searchClassMethods(intf, arity, id, types);
-			if (best.size() == 0)
+			if (types.size() == 0)
 			{
-				best = searchClassMethods(reifiedParent, null, id, types);
+				searchClassMethods(reifiedParent, null, id, types);
 				for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))
 					searchClassMethods(intf, null, id, types);
 			}
-			return best;
-		}
-
-		private Collection<Class[]> searchClassMethods(Class clz, Arity arity, String id, HashMap<String, Class[]> options)
-		{
-			if (clz.getSuperclass() != null)
-				searchClassMethods(clz.getSuperclass(),arity, id, options);
-			for (Class intf : clz.getInterfaces())
-				searchClassMethods(intf, arity, id, options);
-			for (Method method : clz.getDeclaredMethods())
+			if (types.size() == 0)
 			{
-				//TODO: java <-> ruby conversion?
-				if (!method.getName().equals(id)) continue;
-	            final int mod = method.getModifiers();
-	            if ( !Modifier.isPublic(mod) && !Modifier.isProtected(mod) ) continue;
-	            
-	            //TODO: no arity checks?
-	            if (arity != null)
-	            {
-	            // ensure arity is reasonable (ignores java varargs)
-	            if (arity.isFixed())
-	            {
-	            	if (arity.required() != method.getParameterCount()) continue;
-	            }
-	            else if (arity.required() > method.getParameterCount()) continue;
-	            }
-	            
-	            // found! built a signature to return
-	            Class[] types  = join(new Class[]{method.getReturnType()}, method.getParameterTypes());
-	            options.put(sig(types), types);
+				types.put("", null);
 			}
-        	// Note: not stable. May flicker between different arities. TODO: sort?
-			return options.values();
+			return types.values();
 		}
 		
 		@Override
@@ -2275,14 +2280,14 @@ if (!jcc.allCtors) //TODO: fix logic
     }
 
     public void setReifiedClass(Class<? extends IRubyObject> reifiedClass) {
-        this.reifiedClass = reifiedClass;
+        this.reifiedClass = (Class<? extends Reified>) reifiedClass; //Not always true
     }
 
     /**
      * Gets a reified Ruby or Java class.
      * To ensure a specific type, see {@link #getReifiedRubyClass()} or  {@link #getReifiedJavaClass()}
      */
-    public Class<?> getReifiedAnyClass() {
+    public Class<? extends Reified> getReifiedAnyClass() {
         return reifiedClass;
     }
 
@@ -2294,7 +2299,7 @@ if (!jcc.allCtors) //TODO: fix logic
     		// TODO: error type
     		throw runtime.newTypeError("Attempted to get a Ruby class for a Java class");
     	else
-    		return reifiedClass;
+    		return (Class<? extends IRubyObject>) reifiedClass;
     }
 
     /**
@@ -2305,7 +2310,7 @@ if (!jcc.allCtors) //TODO: fix logic
     		// TODO: error type
     		throw runtime.newTypeError("Attempted to get a Java class for a Ruby class");
     	else
-    		return reifiedClass;
+    		return (Class<? extends ReifiedJavaProxy>) reifiedClass;
     }
 
     public static Class<?> nearestReifiedClass(final RubyClass klass) {
@@ -3061,7 +3066,7 @@ if (!jcc.allCtors) //TODO: fix logic
 
     private CallSite[] extraCallSites;
 
-    private Class reifiedClass;
+    private Class<? extends Reified> reifiedClass;
     private Boolean reifiedClassJava;
 
     private Map<String, List<Map<Class, Map<String,Object>>>> parameterAnnotations;

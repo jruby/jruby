@@ -271,8 +271,8 @@ public class ConcreteJavaProxy extends JavaProxy {
 
   		  			JavaObject jo = (JavaObject)initialize.call(context, self, clazz, "new", args);
   		  			return ((ReifiedJavaProxy)jo.getValue()).___jruby$rubyObject();
-  				}
-  				catch (ArgumentError ae)
+  				}//TODO: the latter two shouldn't be caught here
+  				catch (ArgumentError | AssertionError | ClassCastException ae)
   				{
   					System.out.println("AE");
   					// assume no easy conversions, use ruby fallback.

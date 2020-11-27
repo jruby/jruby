@@ -4,7 +4,7 @@ public class JavaClassConfiguration
 {
 	public boolean callInitialize = true;
 	public boolean allMethods = true;
-	public boolean allClassMethods = false; // TODO: ensure defaults are sane
+	public boolean allClassMethods = true; // TODO: ensure defaults are sane
 	public boolean javaConstructable = true;
 	public Class<?>[][] extraCtors = null;
 	
