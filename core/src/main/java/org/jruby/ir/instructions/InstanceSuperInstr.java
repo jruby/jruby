@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -19,6 +20,8 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.EnumSet;
 
 public class InstanceSuperInstr extends CallInstr {
     private final boolean isLiteralBlock;
@@ -42,6 +45,13 @@ public class InstanceSuperInstr extends CallInstr {
 
     public Operand getDefiningModule() {
         return getReceiver();
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        scope.setUsesSuper();
+
+        return true;
     }
 
     @Override
