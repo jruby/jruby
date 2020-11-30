@@ -1,10 +1,14 @@
 package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.CheckForLJEInstr;
+import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.boxing.AluInstr;
+import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -12,6 +16,10 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ivars.VariableAccessor;
+
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * InterpreterEngine capable of exiting part way through execution up to a particular instruction.  Continued
@@ -25,24 +33,22 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ExitableInterpreterEngine extends InterpreterEngine {
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext, RubyModule implClass, String name,
-                                 IRubyObject[] args, Block blockArg, ExitableInterpreterEngineContext executionContext) {
+                                 ExitableInterpreterContext interpreterContext, ExitableInterpreterEngineState state,
+                                 RubyModule implClass, String name, IRubyObject[] args, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
-        Object[] temp      = executionContext.getTemporaryVariables(interpreterContext);
-        double[] floats    = executionContext.getTemporaryFloatVariables(interpreterContext);
-        long[] fixnums   = executionContext.getTemporaryFixnumVariables(interpreterContext);
-        boolean[] booleans  = executionContext.getTemporaryBooleanVariables(interpreterContext);
+        Object[] temp = state.getTemporaryVariables();
         int n = instrs.length;
-        int ipc = executionContext.getIPC();
+        int ipc = state.getIPC();
+        int exitIPC = interpreterContext.getExitIPC();
         Object exception = null;
-        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        if (acceptsKeywordArgument) {
-            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
-        }
+        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
+        if (acceptsKeywordArgument) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
+
+        int[] rescuePCs = interpreterContext.getRescueIPCs();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -51,27 +57,29 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
 
         // Enter the looooop!
         while (ipc < n) {
+            // We want to exit at this instr and return its call arguments to consumer of this interpreter.
+            if (ipc == exitIPC) {
+                // FIXME: I assume result of super in this case will be nil which means we should not have to explicitly
+                // set the temp to nil but we shall see...
+                state.setIPC(ipc + 1);  // Mark next instr to execute when we call execute again using this state.
+                // FIXME: We are forcing a boxing to a Ruby array we probably do not need but did it anyways so it matched the
+                // interface of interpreterengine (re-consider this).
+                return context.runtime.newArray(interpreterContext.getArgs(context, self, currScope, currDynScope, temp));
+            }
+
             Instr instr = instrs[ipc];
 
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} " + instr);
+                Interpreter.LOG.info("I: " + ipc + ", R: "  + rescuePCs[ipc] + " - " + instr + ">");
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
                 Interpreter.interpInstrsCount++;
             }
 
-            ipc++;
-
             try {
                 switch (operation.opClass) {
-                    case INT_OP:
-                        interpretIntOp((AluInstr) instr, operation, fixnums, booleans);
-                        break;
-                    case FLOAT_OP:
-                        interpretFloatOp((AluInstr) instr, operation, floats, booleans);
-                        break;
                     case ARG_OP:
                         receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
                         break;
@@ -83,50 +91,41 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                         return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
                     case BRANCH_OP:
                         switch (operation) {
-                            case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
-                            default: ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc); break;
+                            case JUMP:
+                                JumpInstr jump = ((JumpInstr)instr);
+                                ipc = jump.getJumpTarget().getTargetPC();
+                                break;
+                            default:
+                                ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc + 1);
+                                break;
+
                         }
-                        break;
+                        continue;
                     case BOOK_KEEPING_OP:
-                        // IMPORTANT: Preserve these update to currDynScope, self, and args.
-                        // They affect execution of all following instructions in this scope.
                         switch (operation) {
                             case PUSH_METHOD_BINDING:
+                                // IMPORTANT: Preserve this update of currDynScope.
+                                // This affects execution of all instructions in this scope
+                                // which will now use the updated value of currDynScope.
                                 currDynScope = interpreterContext.newDynamicScope(context);
                                 context.pushScope(currDynScope);
-                                break;
-                            case PUSH_BLOCK_BINDING:
-                                currDynScope = IRRuntimeHelpers.pushBlockDynamicScopeIfNeeded(context, block, interpreterContext.pushNewDynScope(), interpreterContext.reuseParentDynScope());
-                                break;
-                            case UPDATE_BLOCK_STATE:
-                                self = IRRuntimeHelpers.updateBlockState(block, self);
-                                break;
-                            case PREPARE_NO_BLOCK_ARGS:
-                                args = IRRuntimeHelpers.prepareNoBlockArgs(context, block, args);
-                                break;
-                            case PREPARE_SINGLE_BLOCK_ARG:
-                                args = IRRuntimeHelpers.prepareSingleBlockArgs(context, block, args);
-                                break;
-                            case PREPARE_FIXED_BLOCK_ARGS:
-                                args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
-                                break;
-                            case PREPARE_BLOCK_ARGS:
-                                args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
+                            case EXC_REGION_START:
+                            case EXC_REGION_END:
                                 break;
                             default:
                                 processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
-                                break;
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self);
                         break;
                 }
+
+                ipc++;
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                // StartupInterpreterEngine never calls this method so we know it is a full build.
-                ipc = ((FullInterpreterContext) interpreterContext).determineRPC(ipc);
+                ipc = rescuePCs == null ? -1 : rescuePCs[ipc];
 
                 if (debug) {
                     Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
@@ -143,5 +142,49 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
 
         // Control should never get here!
         throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
+    }
+
+    protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
+                                         StaticScope currScope, Object[] temp, IRubyObject self) {
+        switch(operation) {
+            case RECV_SELF:
+                break;
+            case COPY: {
+                CopyInstr c = (CopyInstr)instr;
+                setResult(temp, currDynScope, c.getResult(), retrieveOp(c.getSource(), context, self, currDynScope, currScope, temp));
+                break;
+            }
+            case GET_FIELD: {
+                GetFieldInstr gfi = (GetFieldInstr)instr;
+                IRubyObject object = (IRubyObject)gfi.getSource().retrieve(context, self, currScope, currDynScope, temp);
+                VariableAccessor a = gfi.getAccessor(object);
+                Object result = a == null ? null : (IRubyObject)a.get(object);
+                if (result == null) {
+                    if (context.runtime.isVerbose()) {
+                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED,
+                                str(context.runtime, "instance variable ", ids(context.runtime, gfi.getId()), " not initialized"));
+                    }
+                    result = context.nil;
+                }
+                setResult(temp, currDynScope, gfi.getResult(), result);
+                break;
+            }
+            case RUNTIME_HELPER: {
+                RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
+                setResult(temp, currDynScope, rhc.getResult(),
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block));
+                break;
+            }
+            case CHECK_FOR_LJE:
+                ((CheckForLJEInstr) instr).check(context, currDynScope, block);
+                break;
+            case LOAD_FRAME_CLOSURE:
+                setResult(temp, currDynScope, instr, context.getFrameBlock());
+                return;
+            // ---------- All the rest ---------
+            default:
+                setResult(temp, currDynScope, instr, instr.interpret(context, currScope, currDynScope, self, temp));
+                break;
+        }
     }
 }
