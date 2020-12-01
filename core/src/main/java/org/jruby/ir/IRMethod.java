@@ -9,9 +9,12 @@ import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.JumpTargetInstr;
+import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.parser.StaticScope;
@@ -21,7 +24,9 @@ import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -119,8 +124,8 @@ public class IRMethod extends IRScope {
             int ipc = 0;
             int superIPC = -1;
             CallBase superCall = null;
-            boolean badJump = false;
-            boolean badBranch = false;
+            Map<Label, Integer> labels = new HashMap<>();
+            List<Label> earlyJumps = new ArrayList<>();
 
             for(Instr instr: interpreterContext.getInstructions()) {
                 if (instr instanceof CallBase && ((CallBase) instr).getCallType() == CallType.SUPER) {
@@ -129,11 +134,31 @@ public class IRMethod extends IRScope {
                     if (superCall != null) throw getManager().getRuntime().newRuntimeError("Found multiple supers in java ctor");
 
                     superIPC = ipc;
+                } else if (instr instanceof JumpTargetInstr) {
+                    Label label = ((JumpTargetInstr) instr).getJumpTarget();
+                    Integer labelIPC = labels.get(label);
+
+                    if (superIPC != -1) { // after super
+                        if (labelIPC != null && labelIPC < superIPC) { // is label before super
+                            throw getManager().getRuntime().newRuntimeError("backward control flow found around super");
+                        }
+                    } else if (labelIPC == null) { // forward jump since we have not seen label yet.
+                        earlyJumps.add(label);
+                    }
+                } else if (instr instanceof LabelInstr) {
+                    Label label = ((LabelInstr) instr).getLabel();
+                    labels.put(label, ipc);
+
+                    if (superIPC == -1) { // before
+                        // We found forward jump from an pre-super label and it is still before super.
+                        if (earlyJumps.contains(label)) earlyJumps.remove(label);
+                    }
                 }
-                // FIXME: Add jump/branch error condition code.
 
                 ipc++;
             }
+
+            if (!earlyJumps.isEmpty()) getManager().getRuntime().newRuntimeError("forward control flow found around super");
 
             if (superIPC != -1) {
                 return new ExitableInterpreterContext(interpreterContext, superCall, superIPC);
