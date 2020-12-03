@@ -12,6 +12,10 @@ import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.internal.runtime.methods.JavaMethod.*;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.interpreter.ExitableInterpreterContext;
+import org.jruby.ir.interpreter.ExitableInterpreterEngine;
+import org.jruby.ir.interpreter.ExitableInterpreterEngineState;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.dispatch.CallableSelector.CallableCache;
 import org.jruby.javasupport.*;
@@ -364,6 +368,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     public Object[] splitInitialized(IRubyObject[] args, Block blk)
     {
 
+		// TODO: remove this stuff?
 		DynamicMethod dm = this.getMetaClass().searchMethod("j_initialize");
 		DynamicMethod dma = this.getMetaClass().searchMethod("j_initialize");
 		if (!(dm instanceof AbstractIRMethod))
@@ -375,43 +380,22 @@ public class ConcreteJavaProxy extends JavaProxy {
 			if ((dm1 != null && !(dm instanceof InitializeMethod)&& !(dm instanceof StaticJCreateMethod))) //jcreate is for nested ruby classes from a java class
 			{
 	            //TODO: if not defined, then ctors = all valid superctors
-			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
-			FlatExtractor flat = new FlatExtractor(this.getRuntime(), def); 
-			Node body = def.getBodyNode().accept(flat);
-			if (!flat.foundsuper)
-			{
-				System.err.println("NO SUPER");
-				body = flat.buildRewrite(def.getBodyNode().getLine(), new NilNode(def.getBodyNode().getLine()), def.getBodyNode());
-			}
-			if (flat.error)
-				System.err.println("error");
-			System.err.println(def.toString());
-			DefNode rdnbody = new DefnNode(def.getBodyNode().getLine(), 
-					RubySymbol.newSymbol(this.getRuntime(),"j_initialize"), 
-					def.getArgsNode(), 
-					def.getScope(), 
-					body, 
-					def.getEndLine());
-			System.err.println(rdnbody.toString());
-		
-		
-			IRMethod irm = ((IRMethod)((AbstractIRMethod)dm).getIRScope());
-			irm.builtInterpreterContext();
+				
+				IRMethod irme = ((IRMethod)((AbstractIRMethod)dm).getIRScope());
+				InterpreterContext ic = irme.builtInterperterContextForJavaConstructor();
+				if (!(ic instanceof ExitableInterpreterContext))
+					throw new RuntimeException("Not splittable!!!"); //TODO
+				ExitableInterpreterContext eic = (ExitableInterpreterContext) ic;
+				ExitableInterpreterEngineState state = eic.getEngineState();
 
-			irm = new IRMethod(irm.getManager(), irm.getLexicalParent(), rdnbody, 
-					new ByteList("j_initialize".getBytes(), getRuntime().getEncodingService().getJavaDefault()), true, 
-					irm.getLine(), irm.getStaticScope(), irm.getCoverageMode());
-			dm1 = dm;
-			dm  = new MixedModeIRMethod(irm, Visibility.PUBLIC, this.getMetaClass());
-
-			//irm.builtInterpreterContext();
-//			/System.out.println(irm.getLexicalScopes().get(0).getInterpreterContext());
-//			((IRMethod)((AbstractIRMethod)dma).getIRScope()).builtInterpreterContext();
-
-			this.getMetaClass().addMethod("j_initialize", dm);
+				IRubyObject tmp = new ExitableInterpreterEngine().interpret(getRuntime().getCurrentContext(), null, this, eic, state, getMetaClass(), "initialize_part1", args, blk);
+				return new Object[] {
+						tmp, //TODO: nils?
+			           null, eic, state};
 			}
 			else
 			{
+		    	System.out.println("Maybe fix this? (init)");
 				//TODO: pass ruby into this
 				if (dm instanceof InitializeMethod)
 					return SimpleJavaInitializes.freshNopArray(this.getRuntime(), args);
@@ -420,6 +404,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 			}
 		
 		}
+    	System.out.println("OH NO TODO FIX THIS (init)");
     	///  TODO: move gen here
     	RubyArray ra = callMethod(getRuntime().getCurrentContext(),  "j_initialize", args, blk).convertToArray();
     	
@@ -429,6 +414,15 @@ public class ConcreteJavaProxy extends JavaProxy {
     // called from concrete reified code
     public void finishInitialize(Object[] returned)
     {
+    	if (returned.length == 4)
+    	{
+    		// TODO: better initialize_partx names
+    		ExitableInterpreterContext eic = (ExitableInterpreterContext)returned[2];
+    		ExitableInterpreterEngineState state = (ExitableInterpreterEngineState) returned[3];
+    		new ExitableInterpreterEngine().interpret(getRuntime().getCurrentContext(), null, this, eic, state, getMetaClass(), "initialize_part2", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    		return;
+    	}
+    	System.out.println("OH NO TODO FIX THIS (finish)");
     	// returned = splitInitialize return value
     	((IRubyObject)returned[1]).callMethod(getRuntime().getCurrentContext(), "call");
     }
