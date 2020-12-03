@@ -31,83 +31,38 @@
 
 package org.jruby;
 
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.util.CodegenUtils.*;
+import static org.jruby.util.RubyStringBuilder.*;
+import static org.objectweb.asm.Opcodes.*;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.lang.reflect.*;
+import java.util.*;
 
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.*;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.java.codegen.RealClassGenerator;
+import org.jruby.java.codegen.*;
 import org.jruby.java.codegen.RealClassGenerator.CtorFlags;
-import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy;
-import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaConstructor;
-import org.jruby.javasupport.proxy.JavaProxyClass;
-import org.jruby.javasupport.proxy.ReifiedJavaProxy;
+import org.jruby.javasupport.*;
+import org.jruby.javasupport.Java.JCtorCache;
+import org.jruby.javasupport.proxy.*;
 import org.jruby.javasupport.util.JavaClassConfiguration;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ObjectMarshal;
-import org.jruby.runtime.PositionAware;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.callsite.RespondToCallSite;
-import org.jruby.runtime.ivars.VariableAccessor;
-import org.jruby.runtime.ivars.VariableAccessorField;
-import org.jruby.runtime.ivars.VariableTableManager;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.callsite.*;
+import org.jruby.runtime.ivars.*;
+import org.jruby.runtime.marshal.*;
 import org.jruby.runtime.opto.Invalidator;
-import org.jruby.util.ArraySupport;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.CodegenUtils;
-import org.jruby.util.JavaNameMangler;
-import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.StringSupport;
+import org.jruby.util.*;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
-
-import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.Visibility.PUBLIC;
-import static org.jruby.util.CodegenUtils.*;
-import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.RubyStringBuilder.types;
-import static org.objectweb.asm.Opcodes.*;
+import org.jruby.util.log.*;
+import org.objectweb.asm.*;
 
 
 /**
@@ -1285,9 +1240,13 @@ public class RubyClass extends RubyModule {
                     reifiedSuper == RubyBasicObject.class ||
                     Reified.class.isAssignableFrom(reifiedSuper);
             // TODO: check for nested java classes
-            if (!result) java[0] = true;
-
-            return true;
+            if (result)
+            	return true;
+            else
+            {
+            	java[0] = true;
+            	return true;
+        	}
         } else {
             // non-native, non-reified super; recurse
             return realSuper.isReifiable(java);
@@ -1460,13 +1419,15 @@ public class RubyClass extends RubyModule {
     
     private final static PositionAware defaultSimplePosition = new SimpleSourcePosition("<jruby-internal-reified>", 0);
     
-    public PositionAware getPositionOrDefault(DynamicMethod method) {
-    	 if (method instanceof PositionAware) {
+    public PositionAware getPositionOrDefault(DynamicMethod method)
+    {
+    	 if (method instanceof PositionAware)
+		 {
     		 PositionAware pos = (PositionAware) method;
-    		 return new SimpleSourcePosition(pos.getFile(), pos.getLine() + 1); // convert from 0-based to 1-based that the JVM requires
-		 } else {
-             return defaultSimplePosition;
-         }
+    		 return new SimpleSourcePosition(pos.getFile(), pos.getLine()+1); // convert from 0-based to 1-based that the JVM requires
+		 }
+    	 else
+    		 return defaultSimplePosition;
     }
     
 
@@ -1885,7 +1846,8 @@ public class RubyClass extends RubyModule {
          * and {@link JavaProxyClass#getStaticInitLookup(int)}
          */
         @Override
-        public void reifyClinit(SkinnyMethodAdapter m) {
+        public void reifyClinit(SkinnyMethodAdapter m)
+        {
         	// top stack layout: ..., i0, o[], i1, o[]
 
             m.pushInt(1); // rubyclass index
@@ -1905,7 +1867,7 @@ public class RubyClass extends RubyModule {
         
         protected Object[] getExtraClinitInfo()
 		{
-			return new Object[] {runtime, RubyClass.this};
+			return new Object[]{runtime, RubyClass.this};
 		}
 
         /**
@@ -1921,13 +1883,16 @@ public class RubyClass extends RubyModule {
 			return Collections.EMPTY_LIST;
 		}
 		
-		protected void generateObjectBarrier(SkinnyMethodAdapter m) {
+		protected void generateObjectBarrier(SkinnyMethodAdapter m)
+		{
 			// For non-concrete things, we ignore, as this is a RubyObject
 		}
+
     } // class MethodReificator
     
     //public or private?
-    public class ConcreteJavaReifier extends MethodReificator {
+    public class ConcreteJavaReifier extends MethodReificator
+    {
     	// names follow pattern of `this$0` from javac nested classes to hopefully be ignored by 
     	// sane reflection tools. Also similarly marked as synthetic
 		public static final String RUBY_OBJECT_FIELD = "this$rubyObject";
@@ -1938,14 +1903,16 @@ public class RubyClass extends RubyModule {
     	boolean simpleAlloc = false;
     	JavaConstructor[] savedSuperCtors = null;
 
-		ConcreteJavaReifier(Class<?> reifiedParent, String javaName, String javaPath) {
+		ConcreteJavaReifier(Class<?> reifiedParent, String javaName, String javaPath)
+		{
 			// In theory, we should operate on IRubyObject, but everything 
 			// that we need is a ConcreteJavaProxy, and it (via RubyBasicObject) has a nicer interface to boot
 			super(reifiedParent, javaName, javaPath, ci(ConcreteJavaProxy.class), p(ConcreteJavaProxy.class));
 		}
 		
 		@Override
-		public void customReify() {
+		public void customReify()
+		{
 			super.customReify();
 			
 			if (simpleAlloc && rubyctor)
@@ -1955,16 +1922,18 @@ public class RubyClass extends RubyModule {
 		}
 		
 		@Override
-		protected void loadRubyObject(SkinnyMethodAdapter m) {
+		protected void loadRubyObject(SkinnyMethodAdapter m)
+		{
     		m.aload(0); // self
     		m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName); // rubyObject
 		}
 		
 		@Override
-		public byte[] reify() {
+		public byte[] reify()
+		{
 			cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_PRIVATE, RUBY_OBJECT_FIELD, rubyName, null, null); 
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class), null, null);
-            cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTOR_CACHE_FIELD, ci(Java.JCtorCache.class), null, null);
+            cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class), null, null); 
 			return super.reify();
 		}
 		
@@ -1988,14 +1957,14 @@ public class RubyClass extends RubyModule {
         	// extract cached ctors for lookup ordering
         	
         	// note: consume top of stack, lookuparray
-            m.newobj(p(Java.JCtorCache.class));
+            m.newobj(p(JCtorCache.class));
             m.dup_x1(); // jccache, lookuparray, jccache
             m.swap();// jccache, jccache, lookuparray
             m.pushInt(2); // ctor fields = index 2
             m.aaload(); // extract ctors, -> jccache, jccache, ctor[]
             m.checkcast(p(JavaConstructor[].class));
-            m.invokespecial(p(Java.JCtorCache.class), "<init>", sig(void.class, JavaConstructor[].class));
-            m.putstatic(javaPath, RUBY_CTOR_CACHE_FIELD, ci(Java.JCtorCache.class));
+            m.invokespecial(p(JCtorCache.class), "<init>", sig(void.class, JavaConstructor[].class));
+            m.putstatic(javaPath, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
             
             // now create proxy class
             m.getstatic(javaPath, "ruby", ci(Ruby.class));
@@ -2014,22 +1983,23 @@ public class RubyClass extends RubyModule {
 		
 
         @Override
-		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity) {
+		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
+		{
 			return searchClassMethods(reifiedParent, id, new HashMap<>());
 		}
 
-		private Collection<Class[]> searchClassMethods(Class clz, String id, HashMap<String, Class[]> options) {
-			if (clz.getSuperclass() != null) searchClassMethods(clz.getSuperclass(), id, options);
-
-			for (Class intf : clz.getInterfaces()) {
-                searchClassMethods(intf, id, options);
-            }
-
-			for (Method method : clz.getDeclaredMethods()) {
+		private Collection<Class[]> searchClassMethods(Class clz, String id, HashMap<String, Class[]> options)
+		{
+			if (clz.getSuperclass() != null)
+				searchClassMethods(clz.getSuperclass(), id, options);
+			for (Class intf : clz.getInterfaces())
+				searchClassMethods(intf, id, options);
+			for (Method method : clz.getDeclaredMethods())
+			{
 				//TODO: java <-> ruby conversion?
 				if (!method.getName().equals(id)) continue;
 	            final int mod = method.getModifiers();
-	            if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod)) continue;
+	            if ( !Modifier.isPublic(mod) && !Modifier.isProtected(mod) ) continue;
 	            
 	            //TODO: no arity checks?
 	            /*
@@ -2045,23 +2015,24 @@ public class RubyClass extends RubyModule {
 	            Class[] types  = join(new Class[]{method.getReturnType()}, method.getParameterTypes());
 	            options.put(sig(types), types);
 			}
-
         	// Note: not stable. May flicker between different arities. TODO: sort?
 			return options.values();
 		}
 		
 		@Override
-		protected void reifyConstructors() {
+		protected void reifyConstructors()
+		{
 			Optional<Constructor<?>> zeroArg = Optional.empty();
 			List<Constructor<?>> candidates = new ArrayList<>();
-			for (Constructor<?> constructor : reifiedParent.getDeclaredConstructors()) {
+			for (Constructor<?> constructor : reifiedParent.getDeclaredConstructors())
+			{
 	            final int mod = constructor.getModifiers();
-
-	            if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod)) continue;
-
+	            if ( !Modifier.isPublic(mod) && !Modifier.isProtected(mod) ) continue;
 	            candidates.add(constructor);
-                // TODO: varargs?
-	            if (constructor.getParameterCount() == 0) zeroArg = Optional.of(constructor);
+	            if (constructor.getParameterCount() == 0) // TODO: varargs?
+	            {
+	            	zeroArg = Optional.of(constructor);
+	            }
 			}
 			// TODO: guess from arity?
 			
@@ -2071,73 +2042,83 @@ public class RubyClass extends RubyModule {
             cw.visitSource(position.getFile(), null);
             int superpos = ConcreteJavaProxy.findSuperLine(runtime, methodEntry, position.getLine());
 
-            //TODO: doc: implies javaConstructable?
-			if (candidates.size() > 0 ) {
+			
+			if (candidates.size() > 0 ) //TODO: doc: implies javaConstructable?
+			{
 				List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
-
-				for (Constructor<?> constructor : candidates) {
+				for (Constructor<?> constructor : candidates)
+				{
 					savedCtorsList.add(new JavaConstructor(runtime, constructor));
 				}
 				savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
-			} else {
+			}
+			else
+			{ 
 				//TODO: copy validateArgs
 				//TODO: no ctors = error?
-				throw runtime.newTypeError("class " + reifiedParent.getName() + " doesn't have a public or protected constructor");
+				throw runtime.newTypeError("class " +reifiedParent.getName()+ " doesn't have a public or protected constructor");
 			}
 			
-			if (zeroArg.isPresent()) {
+			if (zeroArg.isPresent())
+			{
 	            rubyctor = true;
 	            //TODO: simpleAlloc = true;
 	            // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
-                if (!jcc.allCtors) { //TODO: fix logic
+if (!jcc.allCtors) //TODO: fix logic
+{
 				//if (jcc.rubyConstructable)
 					RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
-
-                    if (jcc.javaConstructable) {
-                        RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
-                    }
-                }
-            }
-			/* else {
+	            
+	            
+	            if (jcc.javaConstructable)
+	            {
+	            	RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+	            }
+}
+			}
+			/*else
+			{
 				//TODO: copy jpcf logic for alloc
 				throw new RuntimeException("Class doesn't have no-arg ctor");
 			}*/
 			
 			//TODO: remove rubyCtors if IRO is enabled (by default)
 			//TODO: warn if no ruby ctors (arity check?)
-			if (jcc.allCtors) {
-				for (Constructor<?> constructor : candidates) {
+			if (jcc.allCtors)
+			{
+				for (Constructor<?> constructor : candidates)
+				{
 					//TODO: do matching for zero arg?
 				//	if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
 
-					if (jcc.rubyConstructable) {
-                        RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
-                    }
+					if (jcc.rubyConstructable)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
 
-					if (jcc.javaConstructable) {
-                        RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
-                    }
+					if (jcc.javaConstructable)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
+					
 				}
 			}
 			
-			if (jcc.extraCtors != null && jcc.extraCtors.length > 0) {
-				for (Class<?>[] constructor : jcc.extraCtors) {
+			if (jcc.extraCtors != null && jcc.extraCtors.length > 0)
+			{
+				for (Class<?>[] constructor : jcc.extraCtors)
+				{
 					//TODO: do matching for zero arg?
 					if (constructor.length  == 0 && zeroArg.isPresent()) continue;
 					// TODO: ensure not existing already
 					// TODO: support annotations
 
-					if (jcc.rubyConstructable) {
-                        RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
-                    }
+					if (jcc.rubyConstructable)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
 
-					if (jcc.javaConstructable) {
-                        RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
-                    }
+					if (jcc.javaConstructable)
+						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, true, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+					
 				}
 			}
-
-			if (jcc.IroCtors) {
+			if (jcc.IroCtors)
+			{
 				RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, true, this, new Class[] {ConcreteJavaProxy.class, IRubyObject[].class, Block.class}, savedSuperCtors, CtorFlags.RubyArgs);				
 			}
 		}
@@ -2148,7 +2129,8 @@ public class RubyClass extends RubyModule {
 		 * method that is re-implemented by ruby
 		 */
 		@Override
-		protected void generateObjectBarrier(SkinnyMethodAdapter m) {
+		protected void generateObjectBarrier(SkinnyMethodAdapter m)
+		{
 			// For non-concrete things, we check, as this is not a RubyObject
 			m.aload(0);
 			m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
@@ -2156,7 +2138,8 @@ public class RubyClass extends RubyModule {
 			m.invokevirtual(rubyPath, "ensureThis", sig(void.class, Object.class));
 		}
 
-		private void defineAllocator() {
+		private void defineAllocator()
+		{
             SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_SYNTHETIC | ACC_PUBLIC | ACC_STATIC, "__allocate__", sig(IRubyObject.class, Ruby.class, RubyClass.class), null, null);
             m.newobj(javaPath);
             m.dup();
@@ -2168,7 +2151,8 @@ public class RubyClass extends RubyModule {
             m.end();
 		}
 
-		private void defineInterfaceMethods() {
+		private void defineInterfaceMethods()
+		{
             SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_SYNTHETIC | ACC_PUBLIC, "___jruby$rubyObject", sig(IRubyObject.class), null, null);
             m.aload(0); // this
             m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
@@ -2181,6 +2165,7 @@ public class RubyClass extends RubyModule {
             m.areturn();
             m.end();
 		}
+    	
     } // class ConcreteJavaReifier
 
     private boolean isVarArgsSignature(final String method, final Class[] methodSignature) {
@@ -2213,20 +2198,22 @@ public class RubyClass extends RubyModule {
      * Gets a reified Ruby class. Throws if this is a Java class
      */
     public Class<? extends IRubyObject> getReifiedRubyClass() {
-        // TODO: error type
-    	if (reifiedClassJava == Boolean.TRUE) throw runtime.newTypeError("Attempted to get a Ruby class for a Java class");
-
-        return reifiedClass;
+    	if (reifiedClassJava == Boolean.TRUE)
+    		// TODO: error type
+    		throw runtime.newTypeError("Attempted to get a Ruby class for a Java class");
+    	else
+    		return reifiedClass;
     }
 
     /**
      * Gets a reified Java class. Throws if this is a Ruby class
      */
     public Class<? extends ReifiedJavaProxy> getReifiedJavaClass() {
-        // TODO: error type
-        if (reifiedClassJava == Boolean.FALSE) throw runtime.newTypeError("Attempted to get a Java class for a Ruby class");
-
-        return reifiedClass;
+    	if (reifiedClassJava == Boolean.FALSE)
+    		// TODO: error type
+    		throw runtime.newTypeError("Attempted to get a Java class for a Ruby class");
+    	else
+    		return reifiedClass;
     }
 
     public static Class<?> nearestReifiedClass(final RubyClass klass) {
