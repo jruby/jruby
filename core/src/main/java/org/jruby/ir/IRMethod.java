@@ -132,7 +132,7 @@ public class IRMethod extends IRScope {
                     // We have already found one super call already.  No analysis yet to figure out if this is
                     // still ok or not so we will error.
                     if (superCall != null) throw getManager().getRuntime().newRuntimeError("Found multiple supers in java ctor");
-
+                    superCall = ((CallBase) instr);
                     superIPC = ipc;
                 } else if (instr instanceof JumpTargetInstr) {
                     Label label = ((JumpTargetInstr) instr).getJumpTarget();
