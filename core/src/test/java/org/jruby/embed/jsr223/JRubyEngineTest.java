@@ -577,7 +577,7 @@ public class JRubyEngineTest {
         Reader reader = new FileReader(filename);
         Object receiver = instance.eval(reader);
         String method = "to_s";
-        Object[] args = null;
+        Object[] args = new Object[0];
         String expResult = "Cherry blossom is a round shaped,";
         String result = (String) ((Invocable)instance).invokeMethod(receiver, method, args);
         assertTrue(result.startsWith(expResult));
@@ -645,8 +645,7 @@ public class JRubyEngineTest {
         bindings.put("@month", 12);
         bindings.put("@day", 3);
         instance.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        Object[] args = null;
-        Object result = ((Invocable)instance).invokeFunction(method, args);
+        Object result = ((Invocable)instance).invokeFunction(method);
         assertTrue(((String)result).startsWith("Happy") || ((String) result).startsWith("You have"));
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
