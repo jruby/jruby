@@ -135,6 +135,7 @@ public class MethodGatherer {
         Map<String, AssignedName> instanceAssignedNames = javaSupport.getInstanceAssignedNames().get(javaClass);
         if (javaClass.isInterface()) {
             instanceAssignedNames.clear();
+            installInstanceMethods(proxy);
         } else {
             assignInstanceAliases();
 
@@ -582,7 +583,7 @@ public class MethodGatherer {
 
                 if (Modifier.isStatic(method.getModifiers())) {
                     prepareStaticMethod(javaClass, method, name);
-                } else if (!isInterface) {
+                } else if (!isInterface || method.isDefault()) {
                     prepareInstanceMethod(javaClass, method, name);
                 }
             }
