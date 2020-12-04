@@ -74,6 +74,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -535,22 +536,17 @@ public class ScriptingContainerTest {
     @Test
     public void testParse_3args_1() throws FileNotFoundException {
         logger1.info("parse(reader, filename, lines)");
-        Reader reader = null;
         String filename = "";
-        int[] lines = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        EmbedEvalUnit expResult = null;
-        EmbedEvalUnit result = instance.parse(reader, filename, lines);
-        assertEquals(expResult, result);
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
-        reader = new FileReader(filename);
+        FileReader reader = new FileReader(filename);
         instance.put("@t", 2);
-        result = instance.parse(reader, filename);
+        EmbedEvalUnit result = instance.parse(reader, filename);
         IRubyObject ret = result.run();
         String expStringResult =
             "Trick or Treat!\nTrick or Treat!\n\nHmmm...I'd like trick.";
@@ -704,10 +700,8 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(script);
         assertEquals(expResult, result);
         script = "";
-        expResult = "";
         result = instance.runScriptlet(script);
-        // Maybe bug. This should return "", but RubyNil.
-        //assertEquals(expResult, result);
+        assertNull(result);
 
         script = "# -*- coding: utf-8 -*-\n" +
                  "def say_something()" +
@@ -737,22 +731,18 @@ public class ScriptingContainerTest {
     @Test
     public void testRunScriptlet_Reader_String() throws FileNotFoundException {
         logger1.info("runScriptlet(reader, filename)");
-        Reader reader = null;
         String filename = "";
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Object expResult = null;
-        Object result = instance.runScriptlet(reader, filename);
-        assertEquals(expResult, result);
 
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/iteration.rb";
-        reader = new FileReader(filename);
+        Reader reader = new FileReader(filename);
         instance.put("@t", 3);
-        result = instance.runScriptlet(reader, filename);
-        expResult =
+        Object result = instance.runScriptlet(reader, filename);
+        Object expResult =
             "Trick or Treat!\nTrick or Treat!\nTrick or Treat!\n\nHmmm...I'd like trick.";
         assertEquals(expResult, result);
 
