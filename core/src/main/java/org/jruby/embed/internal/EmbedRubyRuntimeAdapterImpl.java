@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.Objects;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
@@ -47,10 +48,12 @@ import org.jruby.ast.executable.Script;
 import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyRuntimeAdapter;
+import org.jruby.embed.ParseFailedException;
 import org.jruby.embed.PathType;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.util.SystemPropertyCatcher;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -74,9 +77,15 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
 
     private final RubyRuntimeAdapter adapter = JavaEmbedUtils.newRuntimeAdapter();
     private final ScriptingContainer container;
+    private final boolean wrapExceptions;
 
     public EmbedRubyRuntimeAdapterImpl(ScriptingContainer container) {
+        this(container, false);
+    }
+
+    public EmbedRubyRuntimeAdapterImpl(ScriptingContainer container, boolean wrapExceptions) {
         this.container = container;
+        this.wrapExceptions = wrapExceptions;
     }
 
     public EmbedEvalUnit parse(String script, int... lines) {
@@ -97,21 +106,17 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     }
 
     public EmbedEvalUnit parse(Reader reader, String filename, int... lines) {
-        if (reader != null) {
-            InputStream istream = new ReaderInputStream(reader);
-            return runParser(istream, filename, lines);
-        } else {
-            return null;
-        }
+        Objects.requireNonNull(reader, "reader");
+
+        InputStream istream = new ReaderInputStream(reader);
+        return runParser(istream, filename, lines);
     }
 
     public EmbedEvalUnit parse(PathType type, String filename, int... lines) {
-        if (filename == null) {
-            return null;
-        }
-        if (type == null) {
-            type = PathType.ABSOLUTE;
-        }
+        Objects.requireNonNull(filename, "filename");
+
+        if (type == null) type = PathType.ABSOLUTE;
+
         InputStream istream = null;
         try {
             switch (type) {
@@ -140,11 +145,12 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             return parse(istream, filename, lines);
         } catch (FileNotFoundException e) {
-            Helpers.throwException(e);
-            return null;
+            if (wrapExceptions) throw new ParseFailedException(e);
+            // NOTE: we do not declare throws IOException due source
+            Helpers.throwException(e); return null;
         } finally {
             if (istream != null) {
-                try {istream.close();} catch (IOException ioe) {}
+                try { istream.close(); } catch (IOException ioe) {}
             }
         }
     }
@@ -175,23 +181,31 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         if (isSharingVariables(container)) {
             scope = createLocalVarScope(runtime, container.getVarMap().getLocalVarNames());
         }
-        final Node node;
-        if (input instanceof String) {
-            node = runtime.parseEval((String)input, filename, scope, line);
-        } else {
-            node = runtime.parseFile((InputStream)input, filename, scope, line);
-        }
-        CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
-        if (compileMode == CompileMode.FORCE) {
-            // CON FIXME: We may need to force heap variables here so the compiled script uses our provided scope
-            Script script = runtime.tryCompile(node);
-            if (script != null) {
-                return new EmbedEvalUnitImpl(container, node, scope, script);
+        try {
+            final Node node;
+            if (input instanceof String) {
+                node = runtime.parseEval((String) input, filename, scope, line);
             } else {
-                return new EmbedEvalUnitImpl(container, node, scope);
+                node = runtime.parseFile((InputStream) input, filename, scope, line);
             }
+            CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
+            if (compileMode == CompileMode.FORCE) {
+                // CON FIXME: We may need to force heap variables here so the compiled script uses our provided scope
+                Script script = runtime.tryCompile(node);
+                if (script != null) {
+                    return new EmbedEvalUnitImpl(container, node, scope, script);
+                } else {
+                    return new EmbedEvalUnitImpl(container, node, scope);
+                }
+            }
+            return new EmbedEvalUnitImpl(container, node, scope);
+        } catch (RaiseException e) {
+            if (wrapExceptions) throw new ParseFailedException(e.getMessage(), e);
+            throw e;
+        } catch (RuntimeException e) {
+            if (wrapExceptions) throw new ParseFailedException(e);
+            throw e;
         }
-        return new EmbedEvalUnitImpl(container, node, scope);
     }
 
     public IRubyObject eval(Ruby runtime, String script) {

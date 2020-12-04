@@ -184,9 +184,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     private final Map<String, String[]> basicProperties;
     private final LocalContextScope scope;
     private final LocalContextProvider provider;
-    private final EmbedRubyRuntimeAdapter runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this);
-    private final EmbedRubyObjectAdapter objectAdapter = new EmbedRubyObjectAdapterImpl(this);
-    private final EmbedRubyInterfaceAdapter interfaceAdapter = new EmbedRubyInterfaceAdapterImpl(this);
+    private final EmbedRubyRuntimeAdapter runtimeAdapter;
+    private final EmbedRubyObjectAdapter objectAdapter;
+    private final EmbedRubyInterfaceAdapter interfaceAdapter;
 
     /**
      * Constructs a ScriptingContainer with a default values.
@@ -225,8 +225,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Constructs a ScriptingContainer with a specified local context scope,
-     * local variable behavior and laziness.
+     * Constructs a ScriptingContainer with a specified local context scope, local variable behavior and laziness.
      *
      * @param scope is one of a local context scope defined by {@link LocalContextScope}
      * @param behavior is one of a local variable behavior defined by {@link LocalVariableBehavior}
@@ -235,10 +234,18 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *        get as many variables/constants as possible from Ruby runtime.
      */
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
+        this(scope, behavior, lazy, true); // wrapping exceptions due backwards compatibility
+    }
+
+    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy, boolean wrapExceptions) {
         this.provider = getProviderInstance(scope, behavior, lazy);
         this.scope = scope;
         initRubyInstanceConfig();
         basicProperties = getBasicProperties();
+
+        runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this, wrapExceptions);
+        objectAdapter = new EmbedRubyObjectAdapterImpl(this, wrapExceptions);
+        interfaceAdapter = new EmbedRubyInterfaceAdapterImpl(this);
     }
 
     static LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {

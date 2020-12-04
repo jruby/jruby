@@ -37,9 +37,11 @@ import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyString;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyObjectAdapter;
+import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.InstanceVariable;
+import org.jruby.internal.runtime.methods.InvokeDynamicMethodFactory;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaObject;
@@ -63,6 +65,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     private final RubyObjectAdapter adapter = JavaEmbedUtils.newObjectAdapter();
     private final ScriptingContainer container;
+    private final boolean wrapExceptions;
 
     @Deprecated // not used
     public enum MethodType {
@@ -74,7 +77,12 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     }
 
     public EmbedRubyObjectAdapterImpl(ScriptingContainer container) {
+        this(container, false);
+    }
+
+    public EmbedRubyObjectAdapterImpl(ScriptingContainer container, boolean wrapExceptions) {
         this.container = container;
+        this.wrapExceptions = wrapExceptions;
     }
 
     public boolean isKindOf(IRubyObject value, RubyModule rubyModule) {
@@ -211,6 +219,10 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
                 return returnType.cast(ret);
             }
             return null;
+        } catch (Exception e) {
+            if (e instanceof InvokeFailedException) throw e;
+            if (wrapExceptions) throw new InvokeFailedException(e);
+            Helpers.throwException(e); return null; // never returns
         } finally {
             if (sharing_variables) {
                 afterSharingVariablesCall(context);
@@ -236,6 +248,10 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
                 return returnType.cast(ret);
             }
             return null;
+        } catch (Exception e) {
+            if (e instanceof InvokeFailedException) throw e;
+            if (wrapExceptions) throw new InvokeFailedException(e);
+            Helpers.throwException(e); return null; // never returns
         } finally {
             if (sharing_variables) {
                 afterSharingVariablesCall(context);

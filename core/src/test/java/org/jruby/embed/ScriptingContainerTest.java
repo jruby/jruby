@@ -578,7 +578,7 @@ public class ScriptingContainerTest {
         int[] lines = null;
 
         String[] paths = {basedir + "/lib", basedir + "/lib/ruby/stdlib"};
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -589,7 +589,7 @@ public class ScriptingContainerTest {
         try {
             result = instance.parse(type, filename, lines);
         } catch (Exception e) {
-            assertTrue(e instanceof FileNotFoundException);
+            assertTrue(e.getClass().toString(), e instanceof FileNotFoundException);
             e.printStackTrace(new PrintStream(outStream));
         }
 
@@ -804,7 +804,8 @@ public class ScriptingContainerTest {
         try {
             result = instance.parse(type, filename);
         } catch (Exception e) {
-            assertTrue(e instanceof FileNotFoundException);
+            assertTrue(e.toString(), e instanceof ParseFailedException);
+            assertTrue(Objects.toString(e.getCause()), e.getCause() instanceof FileNotFoundException);
             e.printStackTrace(new PrintStream(outStream));
         }
 
@@ -902,7 +903,7 @@ public class ScriptingContainerTest {
         Object receiver = null;
         Class<Object> returnType = null;
         String[] paths = {basedir + "/lib/ruby/stdlib"};
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -1040,6 +1041,8 @@ public class ScriptingContainerTest {
         try {
             Object result = instance.callMethod(null, "", returnType, unit);
             fail("expected to raise NoMethodError, but got result: " + result);
+        } catch (InvokeFailedException ex) {
+            assertTrue(Objects.toString(ex.getCause()), ex.getCause() instanceof NoMethodError);
         } catch (NoMethodError ex) {
             // pass
         }
@@ -2237,7 +2240,7 @@ public class ScriptingContainerTest {
         instance.terminate();
 
         filename = "["+this.getClass().getCanonicalName()+"]";
-        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT, true, false);
         instance.setScriptFilename(filename);
         StringWriter sw = new StringWriter();
         instance.setErrorWriter(sw);
