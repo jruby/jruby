@@ -289,8 +289,6 @@ public class MethodGatherer {
     private static final ClassValue<Class<?>[]> INTERFACES = new ClassValue<Class<?>[]>() {
         @Override
         public Class<?>[] computeValue(Class cls) {
-            Class<?>[] baseInterfaces = cls.getInterfaces();
-
             // Expand each interface's parent interfaces using a set
             Set<Class<?>> interfaceSet = new HashSet<>();
 
