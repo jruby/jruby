@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import org.jruby.*;
 import org.jruby.ast.*;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.internal.runtime.methods.JavaMethod.*;
@@ -364,6 +365,17 @@ public class ConcreteJavaProxy extends JavaProxy {
 		return start;
     }
     
+    private static class SplitState
+    {
+
+		public ExitableInterpreterContext eic;
+		public ExitableInterpreterEngineState state;
+		public ThreadContext context;
+		public DynamicScope scope;
+		public Block block;
+    	
+    }
+    
     // used by reified classes
     public Object[] splitInitialized(IRubyObject[] args, Block blk)
     {
@@ -385,13 +397,41 @@ public class ConcreteJavaProxy extends JavaProxy {
 				InterpreterContext ic = irme.builtInterperterContextForJavaConstructor();
 				if (!(ic instanceof ExitableInterpreterContext))
 					throw new RuntimeException("Not splittable!!!"); //TODO
-				ExitableInterpreterContext eic = (ExitableInterpreterContext) ic;
-				ExitableInterpreterEngineState state = eic.getEngineState();
+				
+				SplitState hold = new SplitState();
+				hold.eic = (ExitableInterpreterContext) ic;
+				hold.state = hold.eic.getEngineState();
+				hold.context = getRuntime().getCurrentContext(); // TODO: metascope?
+				hold.scope = DynamicScope.newDynamicScope(ic.getStaticScope());
 
-				IRubyObject tmp = new ExitableInterpreterEngine().interpret(getRuntime().getCurrentContext(), null, this, eic, state, getMetaClass(), "initialize_part1", args, blk);
-				return new Object[] {
-						tmp, //TODO: nils?
-			           null, eic, state};
+	            ThreadContext.pushBacktrace(hold.context, "<init:1>", ic.getFileName(), hold.context.getLine());
+	            try
+	            {
+				hold.context.preMethodFrameOnly(getMetaClass(), "<init:1>", this, hold.block = blk);
+				if (ic.pushNewDynScope())
+				{
+					hold.context.pushScope(hold.scope);
+				}
+				try
+				{
+					IRubyObject tmp = new ExitableInterpreterEngine().interpret(hold.context, null, this, hold.eic, hold.state, getMetaClass(), "<init:1>", args, blk);
+					//exception = false;
+					return new Object[] {
+							tmp, //TODO: nils?
+				           null, hold};
+				}
+				finally
+				{
+					hold.context.popFrame();
+			        if (ic.popDynScope()) {
+			        	hold.context.popScope();
+			        }
+				}
+	            }
+	            finally
+	            {
+	                ThreadContext.popBacktrace(hold.context);
+	            }
 			}
 			else
 			{
@@ -410,21 +450,71 @@ public class ConcreteJavaProxy extends JavaProxy {
     	
     	return new Object[] {ra.entry(0), ra.entry(1) };
     }
-    
+
     // called from concrete reified code
     public void finishInitialize(Object[] returned)
     {
-    	if (returned.length == 4)
+    	if (returned.length == 3)
     	{
     		// TODO: better initialize_partx names
-    		ExitableInterpreterContext eic = (ExitableInterpreterContext)returned[2];
-    		ExitableInterpreterEngineState state = (ExitableInterpreterEngineState) returned[3];
-    		new ExitableInterpreterEngine().interpret(getRuntime().getCurrentContext(), null, this, eic, state, getMetaClass(), "initialize_part2", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+
+    		SplitState hold = (SplitState)returned[2];
+
+            ThreadContext.pushBacktrace(hold.context, "<init:2>", hold.eic.getFileName(), hold.context.getLine());
+            try
+            {
+    		hold.context.preMethodFrameOnly(getMetaClass(), "<init:2>", this, hold.block);
+			if (hold.eic.pushNewDynScope())
+			{
+				hold.context.pushScope(hold.scope);
+			}
+    		try
+    		{
+	    		new ExitableInterpreterEngine().interpret(hold.context, null, this, hold.eic, hold.state, getMetaClass(), "<init:2>", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    		}
+    		finally
+    		{
+
+				hold.context.popFrame();
+		        if (hold.eic.popDynScope()) {
+		        	hold.context.popScope();
+		        }
+    		}
+            }
+            finally
+            {
+                ThreadContext.popBacktrace(hold.context);
+            }
     		return;
     	}
     	System.out.println("OH NO TODO FIX THIS (finish)");
     	// returned = splitInitialize return value
     	((IRubyObject)returned[1]).callMethod(getRuntime().getCurrentContext(), "call");
+    }
+
+    // TODO: are the next two possible?
+    // called from concrete reified code
+    public Throwable catchInitialize(Object[] returned, Throwable ex)
+    {
+    	if (returned.length == 3)
+    	{
+    		// TODO:
+    	}
+    	RaiseException te = getRuntime().newTypeError("Error in super constructor");
+    	te.initCause(ex);
+    	return te;
+    }
+    
+    // called from concrete reified code
+    public void ensureInitialize(Object[] returned)
+    {
+    	if (returned.length == 3) // TODO: make not a magic number
+    	{
+    		System.out.println("Popping via caught ensure!");
+    		//TODO
+    		//((ThreadContext) returned[4]).popScope();
+    		return;
+    	}
     }
     
     // used by reified classes
