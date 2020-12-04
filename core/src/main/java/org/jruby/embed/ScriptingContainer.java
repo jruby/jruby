@@ -1569,7 +1569,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @return an instance of requested Java type
      */
     public <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Object... args) {
-        return objectAdapter.runRubyMethod(returnType, receiver, methodName, null, args);
+        return objectAdapter.runRubyMethod(returnType, receiver, methodName, Block.NULL_BLOCK, args);
     }
 
     /**

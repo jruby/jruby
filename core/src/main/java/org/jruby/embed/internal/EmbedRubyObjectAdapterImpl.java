@@ -65,11 +65,14 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     private final ScriptingContainer container;
 
     public enum MethodType {
-        CALLMETHOD_NOARG,
         CALLMETHOD,
-        CALLMETHOD_WITHBLOCK,
         CALLSUPER,
-        CALLSUPER_WITHBLOCK
+        @Deprecated
+        CALLMETHOD_NOARG,
+        @Deprecated
+        CALLMETHOD_WITHBLOCK,
+        @Deprecated
+        CALLSUPER_WITHBLOCK,
     }
 
     public EmbedRubyObjectAdapterImpl(ScriptingContainer container) {
@@ -142,63 +145,56 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     }
 
     public <T> T callMethod(Object receiver, String methodName, Class<T> returnType) {
-        return call(MethodType.CALLMETHOD_NOARG, returnType, getReceiverObject(receiver), methodName, null, null);
+        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, null, null);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object singleArg, Class<T> returnType) {
-        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, null, null, singleArg);
+        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, singleArg);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Class<T> returnType) {
-        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, null, null, args);
+        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, args);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Block block, Class<T> returnType) {
-        return call(MethodType.CALLMETHOD_WITHBLOCK, returnType, getReceiverObject(receiver), methodName, block, null, args);
+        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, block, null, args);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Class<T> returnType, EmbedEvalUnit unit) {
-        return call(MethodType.CALLMETHOD_NOARG, returnType, getReceiverObject(receiver), methodName, null, unit);
+        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, unit);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Class<T> returnType, EmbedEvalUnit unit) {
-        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, null, unit, args);
+        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, unit, args);
     }
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Block block, Class<T> returnType, EmbedEvalUnit unit) {
-        return call(MethodType.CALLMETHOD_WITHBLOCK, returnType, getReceiverObject(receiver), methodName, block, unit, args);
+        return call(MethodType.CALLMETHOD, returnType, getReceiverObject(receiver), methodName, block, unit, args);
     }
 
     public <T> T callSuper(Object receiver, Object[] args, Class<T> returnType) {
-        return call(MethodType.CALLSUPER, returnType, getReceiverObject(receiver), null, null, null, args);
+        return call(MethodType.CALLSUPER, returnType, getReceiverObject(receiver), null, Block.NULL_BLOCK, null, args);
     }
 
     public <T> T callSuper(Object receiver, Object[] args, Block block, Class<T> returnType) {
-        return call(MethodType.CALLSUPER_WITHBLOCK, returnType, getReceiverObject(receiver), null, block, null, args);
+        return call(MethodType.CALLSUPER, returnType, getReceiverObject(receiver), null, block, null, args);
     }
 
     public Object callMethod(Object receiver, String methodName, Object... args) {
-        if (args.length == 0) {
-            return call(MethodType.CALLMETHOD_NOARG, Object.class, getReceiverObject(receiver), methodName, null, null);
-        } else {
-            return call(MethodType.CALLMETHOD, Object.class, getReceiverObject(receiver), methodName, null, null, args);
-        }
+        return call(MethodType.CALLMETHOD, Object.class, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, args);
     }
 
     public Object callMethod(Object receiver, String methodName, Block block, Object... args) {
         if (args.length == 0) {
             throw new IllegalArgumentException("needs at least one argument in a method");
         }
-        return call(MethodType.CALLMETHOD_WITHBLOCK, Object.class, getReceiverObject(receiver), methodName, block, null, args);
+        return call(MethodType.CALLMETHOD, Object.class, getReceiverObject(receiver), methodName, block, null, args);
     }
 
     public <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Block block, Object... args) {
-        RubyObject rubyReceiver = (RubyObject)JavaEmbedUtils.javaToRuby(container.getProvider().getRuntime(), receiver);
-        if (args.length == 0) {
-            return call(MethodType.CALLMETHOD_NOARG, returnType, rubyReceiver, methodName, block, null);
-        } else {
-            return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, block, null, args);
-        }
+        assert block != null;
+        IRubyObject rubyReceiver = JavaEmbedUtils.javaToRuby(container.getProvider().getRuntime(), receiver);
+        return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, block, null, args);
     }
 
     private <T> T call(MethodType type, Class<T> returnType, IRubyObject rubyReceiver, String methodName, Block block, EmbedEvalUnit unit, Object... args) {
@@ -251,14 +247,15 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         }
         ThreadContext context = runtime.getCurrentContext();
         switch (type) {
-            case CALLMETHOD_NOARG:
-                return Helpers.invoke(context, rubyReceiver, methodName);
             case CALLMETHOD:
                 return Helpers.invoke(context, rubyReceiver, methodName, rubyArgs);
-            case CALLMETHOD_WITHBLOCK:
-                return Helpers.invoke(context, rubyReceiver, methodName, rubyArgs, block);
             case CALLSUPER:
                 return Helpers.invokeSuper(context, rubyReceiver, rubyArgs, Block.NULL_BLOCK);
+            // deprecated - unused paths
+            case CALLMETHOD_NOARG:
+                return Helpers.invoke(context, rubyReceiver, methodName);
+            case CALLMETHOD_WITHBLOCK:
+                return Helpers.invoke(context, rubyReceiver, methodName, rubyArgs, block);
             case CALLSUPER_WITHBLOCK:
                 return Helpers.invokeSuper(context, rubyReceiver, rubyArgs, block);
             default:
