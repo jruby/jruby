@@ -18,6 +18,8 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jruby.exceptions.RaiseException;
+import jnr.constants.platform.Errno;
 
 /**
 * Created by headius on 5/24/14.
@@ -171,10 +173,18 @@ public class ChannelFD implements Closeable {
 
         if (chNative != null) {
             // we have an ENXIO channel, but need to know if it's a regular file to skip selection
-            FileStat stat = posix.fstat(chNative.getFD());
-            if (stat.isFile()) {
-                chSelect = null;
-                isNativeFile = true;
+            try {
+                FileStat stat = posix.fstat(chNative.getFD());
+                if (stat.isFile()) {
+                    chSelect = null;
+                    isNativeFile = true;
+                }
+            } catch (RaiseException e) {
+                // skip if we're not allowed to read fstat
+                // todo restore $!
+                if (posix.errno() != Errno.EPERM.intValue()) {
+                    throw e;
+                }
             }
         }
     }

@@ -2962,7 +2962,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                             if (noException) return runtime.newSymbol("wait_readable");
                             throw runtime.newErrnoEAGAINReadableError("read would block");
                         }
-                        return nonblockEOF(runtime, noException);
+                        if (e == null) {
+                            throw runtime.newErrnoEINVALError(); // resource not available yet
+                        } else {
+                            throw runtime.newErrnoFromErrno(e, fptr.getPath());
+                        }
                     }
                     break;
                 }
