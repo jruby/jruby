@@ -33,6 +33,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>bundler</artifactId>
+      <version>1.17.3</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>cmath</artifactId>
       <version>1.0.0</version>
       <type>gem</type>
@@ -506,6 +519,9 @@ DO NOT MODIFIY - GENERATED CODE
         <targetPath>${jruby.complete.gems}</targetPath>
         <directory>${gem.home}</directory>
         <includes>
+          <include>cache/bundler*1.17.3.gem</include>
+          <include>gems/bundler*1.17.3/**</include>
+          <include>specifications/bundler*1.17.3.gemspec</include>
           <include>cache/cmath*1.0.0.gem</include>
           <include>gems/cmath*1.0.0/**</include>
           <include>specifications/cmath*1.0.0.gemspec</include>
