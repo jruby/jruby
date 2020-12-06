@@ -175,14 +175,8 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
      * Calls a split method (java constructor-invoked initialize) and returns the paused state. If
      * this method doesn't have a super call, returns null without execution.
      */
-    public SplitSuperState startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule klazz,
-            String name, IRubyObject[] args, Block block)
-    {
-    	return null;
-    }
+    public abstract SplitSuperState startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule klazz,
+            String name, IRubyObject[] args, Block block);
     
-    public void finishSplitCall(SplitSuperState state)
-    {
-    	throw new IllegalStateException("Cannot resume a state on this method type");
-    }
+    public abstract void finishSplitCall(SplitSuperState state);
 }
