@@ -128,6 +128,20 @@ describe "an interface" do
     expect( Java::Java8Implementor.new.foo(42) ).to eq("42foo Java8Implementor")
   end
 
+  it "binds default method as instance method (Ruby receiver)" do
+    klass = Class.new do
+      include java.util.Iterator
+      def hasNext; false end
+      def next; nil end
+    end
+    expect( java.util.Iterator.instance_methods(false) ).to include :remove
+    begin
+      klass.new.remove
+    rescue java.lang.UnsupportedOperationException
+      # pass
+    end
+  end
+
   it "java_send works on implemented interface (default method)" do
     impl = Java::Java8Implementor.new
     expect(impl.java_send(:bar)).to eq("Java8Implementor")
