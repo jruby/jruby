@@ -4,9 +4,9 @@ import java.io.ByteArrayOutputStream;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
-import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.internal.runtime.*;
+import org.jruby.ir.*;
+import org.jruby.ir.interpreter.*;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -49,6 +49,16 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         context.preMethodFrameOnly(implClass, name, self, block);
         if (ic.pushNewDynScope()) {
             context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
+        }
+    }
+    
+    // TODO: new method or make this pre?
+    protected void preSplit(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block,
+    		RubyModule implClass, DynamicScope scope) {
+        // update call stacks (push: frame, class, scope, etc.)
+        context.preMethodFrameOnly(implClass, name, self, block);
+        if (ic.pushNewDynScope()) {
+            context.pushScope(scope);
         }
     }
 
@@ -233,8 +243,57 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         }
 
     }
+    
+    @Override
+    public SplitSuperState<MethodSplitState> startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
+    		IRubyObject[] args, Block block)
+    {
+    	// TODO: check if IR method, or is it guaranteed?
+		InterpreterContext ic = ((IRMethod) getIRScope()).builtInterperterContextForJavaConstructor();
+		if (!(ic instanceof ExitableInterpreterContext))
+			return null; // no super call/can't split this
+    	
+    	MethodSplitState state = new MethodSplitState(context, (ExitableInterpreterContext) ic, clazz, self, name);
+    	
+        if (IRRuntimeHelpers.isDebug()) doDebug(); //TODO?
 
-    private void doDebug() {
+        // TODO: JIT?
+
+        IRubyObject result = INTERPRET_METHOD(state,  args, block);
+        
+        return new SplitSuperState<>(result, state);
+    }
+
+    private IRubyObject INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block)
+	{
+    	ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.context.getLine());
+    	
+        try {
+            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.context.getLine());
+
+            //TODO: explicit call protocol?
+            try {
+                this.preSplit(state.eic, state.context, state.self, state.name, block, state.implClass, state.scope);
+                return state.eic.getEngine().interpret(state.context, null, state.self, state.eic, state.state, state.implClass, state.name, args, block);
+            } finally {
+                this.post(state.eic, state.context);
+            }
+        } finally {
+            ThreadContext.popBacktrace(state.context);
+        }
+	}
+
+    @Override
+    public void finishSplitCall(SplitSuperState state)
+    {
+        if (IRRuntimeHelpers.isDebug()) doDebug(); //TODO?
+
+        // TODO: JIT?
+
+        INTERPRET_METHOD((MethodSplitState)state.state, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    }
+
+	private void doDebug() {
         // FIXME: This is printing out IRScope CFG but JIT may be active and it might not reflect
         // currently executing.  Move into JIT and into interp since they will be getting CFG from
         // different sources

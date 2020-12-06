@@ -286,7 +286,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
         if ( method.isVarArgs() ) {
             javaArgs = new Object[ 1 + addSpace ];
-            javaArgs[0] = convertVarArgumentsOnly(paramTypes[0], arg0);
+            javaArgs[0] = convertVarArgumentsOnlys0(paramTypes[0], arg0);
         }
         else {
             javaArgs = new Object[ 1 + addSpace ];
@@ -295,7 +295,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return javaArgs;
     }
 
-    private static Object convertVarArgumentsOnly(final Class<?> varArrayType,
+    private static <T> Object convertVarArgumentsOnly(final Class<T> varArrayType,
         final int varStart, final IRubyObject[] args) {
         final int varCount = args.length - varStart;
 
@@ -310,14 +310,24 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
         final Class<?> compType = varArrayType.getComponentType();
         final Object varArgs = Array.newInstance(compType, varCount);
-        for ( int i = 0; i < varCount; i++ ) {
-            Array.set(varArgs, i, args[varStart + i].toJava(compType));
+        if (varArrayType.isPrimitive())
+        {
+	        for ( int i = 0; i < varCount; i++ ) {
+	            Array.set(varArgs, i, args[varStart + i].toJava(compType));
+	        }
+        }
+        else
+        {
+        	T[] base = (T[])varArgs;
+        	for ( int i = 0; i < varCount; i++ ) {
+	            base[i]=(T) (args[varStart + i].toJava(compType));
+	        }
         }
         return varArgs;
     }
 
     // specialized case of above convertVarArgumentsOnly
-    private static Object convertVarArgumentsOnly(final Class<?> varArrayType,
+    private static Object convertVarArgumentsOnlys0(final Class<?> varArrayType,
         /* final int varStart = 0, */ final IRubyObject arg0) {
 
         if ( arg0 instanceof ArrayJavaProxy ) {

@@ -61,7 +61,8 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.methods.*;
 import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy.*;
 import org.jruby.javasupport.*;
@@ -631,7 +632,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
         singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
 
-        if (allocator) singleton.addMethod("new", new NewMethodReified(clazz, reified));
+        if (allocator)
+    	{
+        	DynamicMethod oldNewMethod = singleton.searchMethod("new");
+        	if (!(oldNewMethod instanceof AbstractIRMethod)) singleton.addMethod("new", new NewMethodReified(clazz, reified));
+        	else System.out.println("SKIPPING NEW for class " + singleton.toString());
+    	}
         return proxyClass;
     }
     

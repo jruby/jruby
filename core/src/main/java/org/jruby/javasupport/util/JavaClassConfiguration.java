@@ -16,6 +16,7 @@ public class JavaClassConfiguration
 	public boolean IroCtors = true;
 	
 	public Map<String, String> renamedMethods = new HashMap<>();
+	public String javaCtorMethodName = "initialize";
 	
 	//TODO: init method name?
 	//TODO: renames?

@@ -9,7 +9,7 @@ import org.jruby.*;
 import org.jruby.ast.*;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.*;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.internal.runtime.methods.JavaMethod.*;
 import org.jruby.ir.IRMethod;
@@ -112,7 +112,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         private DynamicMethod reifyAndNewMethod(IRubyObject clazz) { 
 
         	RubyClass parent = ((RubyClass)clazz);
-        	System.err.println(parent.getName() + " is, (from NewMethod, original, a proxy) " + parent.getJavaProxy());// TODO: remove
+        	//System.err.println(parent.getName() + " is, (from NewMethod, original, a proxy) " + parent.getJavaProxy());// TODO: remove
         	if (parent.getJavaProxy()) return newMethod;
         	
         	// overridden class: reify and re-lookup new as reification changes it
@@ -223,6 +223,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 				//TODO: move initialize to real_initialize
 				//TODO: don't lock in this initialize method
 		        clazz.addMethod("initialize", new StaticJCreateMethod(clazz, withBlock, clazz.searchMethod("initialize")));
+		        clazz.addMethod("__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
 			}
 			catch (SecurityException | NoSuchMethodException e)
 			{
@@ -271,15 +272,15 @@ public class ConcreteJavaProxy extends JavaProxy {
   			}
   			else
   			{
-  				try
+  				/*try
   				{
 
   		  			JavaObject jo = (JavaObject)initialize.call(context, self, clazz, "new", args);
   		  			return ((ReifiedJavaProxy)jo.getValue()).___jruby$rubyObject();
   				}//TODO: the latter two shouldn't be caught here
-  				catch (ArgumentError | AssertionError | ClassCastException ae)
+  				catch (ArgumentError | AssertionError | ClassCastException ae)*/
   				{
-  					System.out.println("AE");
+  					//System.out.println("AE");
   					// assume no easy conversions, use ruby fallback.
 	  				ConcreteJavaProxy object = new ConcreteJavaProxy(context.runtime, (RubyClass) self);
 	  				try
@@ -350,9 +351,9 @@ public class ConcreteJavaProxy extends JavaProxy {
 		{
             //TODO: if not defined, then ctors = all valid superctors
 			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
-			System.out.println("def is " + (def == null));
+			//System.out.println("def is " + (def == null));
 			FlatExtractor flat = new FlatExtractor(runtime, def); 
-			System.out.println("defb is " + (def.getBodyNode() == null));
+			//System.out.println("defb is " + (def.getBodyNode() == null));
 			Node body = def.getBodyNode().accept(flat);
 			if (flat.foundsuper && flat.superline > -1)
 				return flat.superline + 1; // convert from 0-based to 1-based
@@ -365,73 +366,31 @@ public class ConcreteJavaProxy extends JavaProxy {
 		return start;
     }
     
-    private static class SplitState
-    {
-
-		public ExitableInterpreterContext eic;
-		public ExitableInterpreterEngineState state;
-		public ThreadContext context;
-		public DynamicScope scope;
-		public Block block;
-    	
-    }
     
     // used by reified classes
     public Object[] splitInitialized(IRubyObject[] args, Block blk)
     {
+    	String name = getMetaClass().getClassConfig().javaCtorMethodName;
 
 		// TODO: remove this stuff?
-		DynamicMethod dm = this.getMetaClass().searchMethod("j_initialize");
-		DynamicMethod dma = this.getMetaClass().searchMethod("j_initialize");
-		if (!(dm instanceof AbstractIRMethod))
+		DynamicMethod dmz = this.getMetaClass().searchMethod("j_initialize");
+		if (!(dmz instanceof AbstractIRMethod))
 		{
-			dm = getMetaClass().searchMethod("initialize");
+			DynamicMethod dm = getMetaClass().searchMethod(name);
 			if (dm != null && (dm instanceof StaticJCreateMethod))
 				dm = ((StaticJCreateMethod)dm).getOriginal();
-			DynamicMethod dm1 = getMetaClass().retrieveMethod("initialize"); // only on ourself
+			DynamicMethod dm1 = getMetaClass().retrieveMethod(name); // only on ourself
 			if ((dm1 != null && !(dm instanceof InitializeMethod)&& !(dm instanceof StaticJCreateMethod))) //jcreate is for nested ruby classes from a java class
 			{
 	            //TODO: if not defined, then ctors = all valid superctors
 				
-				IRMethod irme = ((IRMethod)((AbstractIRMethod)dm).getIRScope());
-				InterpreterContext ic = irme.builtInterperterContextForJavaConstructor();
-				if (!(ic instanceof ExitableInterpreterContext))
-					throw new RuntimeException("Not splittable!!!"); //TODO
+				AbstractIRMethod air = (AbstractIRMethod)dm;
+				SplitSuperState state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(), name, args, blk);
+				if (state == null)
+					throw new RuntimeException("Not splittable!!!"); //TODO: do super now?
 				
-				SplitState hold = new SplitState();
-				hold.eic = (ExitableInterpreterContext) ic;
-				hold.state = hold.eic.getEngineState();
-				hold.context = getRuntime().getCurrentContext(); // TODO: metascope?
-				hold.scope = DynamicScope.newDynamicScope(ic.getStaticScope());
-
-	            ThreadContext.pushBacktrace(hold.context, "<init:1>", ic.getFileName(), hold.context.getLine());
-	            try
-	            {
-				hold.context.preMethodFrameOnly(getMetaClass(), "<init:1>", this, hold.block = blk);
-				if (ic.pushNewDynScope())
-				{
-					hold.context.pushScope(hold.scope);
-				}
-				try
-				{
-					IRubyObject tmp = new ExitableInterpreterEngine().interpret(hold.context, null, this, hold.eic, hold.state, getMetaClass(), "<init:1>", args, blk);
-					//exception = false;
-					return new Object[] {
-							tmp, //TODO: nils?
-				           null, hold};
-				}
-				finally
-				{
-					hold.context.popFrame();
-			        if (ic.popDynScope()) {
-			        	hold.context.popScope();
-			        }
-				}
-	            }
-	            finally
-	            {
-	                ThreadContext.popBacktrace(hold.context);
-	            }
+				return new Object[] { state.callArrayArgs, // TODO: nils?
+						air, state };
 			}
 			else
 			{
@@ -451,40 +410,18 @@ public class ConcreteJavaProxy extends JavaProxy {
     	return new Object[] {ra.entry(0), ra.entry(1) };
     }
 
+	
+
     // called from concrete reified code
     public void finishInitialize(Object[] returned)
     {
     	if (returned.length == 3)
     	{
     		// TODO: better initialize_partx names
+    		AbstractIRMethod air = (AbstractIRMethod)returned[1];
+    		SplitSuperState hold = (SplitSuperState)returned[2];
 
-    		SplitState hold = (SplitState)returned[2];
-
-            ThreadContext.pushBacktrace(hold.context, "<init:2>", hold.eic.getFileName(), hold.context.getLine());
-            try
-            {
-    		hold.context.preMethodFrameOnly(getMetaClass(), "<init:2>", this, hold.block);
-			if (hold.eic.pushNewDynScope())
-			{
-				hold.context.pushScope(hold.scope);
-			}
-    		try
-    		{
-	    		new ExitableInterpreterEngine().interpret(hold.context, null, this, hold.eic, hold.state, getMetaClass(), "<init:2>", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-    		}
-    		finally
-    		{
-
-				hold.context.popFrame();
-		        if (hold.eic.popDynScope()) {
-		        	hold.context.popScope();
-		        }
-    		}
-            }
-            finally
-            {
-                ThreadContext.popBacktrace(hold.context);
-            }
+            air.finishSplitCall(hold);
     		return;
     	}
     	System.out.println("OH NO TODO FIX THIS (finish)");

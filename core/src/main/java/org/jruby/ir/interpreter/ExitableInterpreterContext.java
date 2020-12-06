@@ -10,6 +10,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Arrays;
 
 public class ExitableInterpreterContext extends InterpreterContext {
+
+    private final static ExitableInterpreterEngine EXITABLE_INTERPRETER = new ExitableInterpreterEngine();
+	
     private CallBase superCall;
     private int exitIPC;
 
@@ -27,6 +30,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     public int getExitIPC() {
         return exitIPC;
+    }
+    
+    @Override
+    public ExitableInterpreterEngine getEngine()
+    {
+    	return EXITABLE_INTERPRETER;
     }
 
     /**

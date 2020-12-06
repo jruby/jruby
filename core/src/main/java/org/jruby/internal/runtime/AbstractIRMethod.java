@@ -11,12 +11,8 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.PositionAware;
-import org.jruby.runtime.Signature;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.cli.Options;
 
@@ -174,5 +170,19 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         IRScope irScope = getIRScope();
         // FIXME: This may stop working if we eliminate startup interp
         return !(irScope instanceof IRMethod && !irScope.getInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS));
+    }
+    /**
+     * Calls a split method (java constructor-invoked initialize) and returns the paused state. If
+     * this method doesn't have a super call, returns null without execution.
+     */
+    public SplitSuperState startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule klazz,
+            String name, IRubyObject[] args, Block block)
+    {
+    	return null;
+    }
+    
+    public void finishSplitCall(SplitSuperState state)
+    {
+    	throw new IllegalStateException("Cannot resume a state on this method type");
     }
 }
