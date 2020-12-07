@@ -61,7 +61,8 @@ public abstract class Initializer {
         assert javaClass.isInterface();
 
         proxy = new InterfaceInitializer(runtime, javaClass).initialize(proxy);
-        flagAsJavaProxy(proxy); return proxy;
+        flagAsJavaProxy(proxy);
+        return proxy;
     }
 
     private static void flagAsJavaProxy(final RubyModule proxy) {
