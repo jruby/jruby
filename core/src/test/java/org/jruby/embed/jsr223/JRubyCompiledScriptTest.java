@@ -91,43 +91,33 @@ public class JRubyCompiledScriptTest extends BaseTest {
 
         context.setAttribute("message", "Hello World!!!!!", ScriptContext.ENGINE_SCOPE);
         engine.setContext(context);
-        String script = "puts message";
-        JRubyCompiledScript instance = (JRubyCompiledScript) engine.compile(script);
+        JRubyCompiledScript script = (JRubyCompiledScript) engine.compile("puts message");
         Object expResult = "Hello World!!!!!";
-        instance.eval(context);
-        Object result = writer.toString().trim();
-        assertEquals(expResult, result);
+        script.eval(context);
+        assertEquals(expResult, writer.toString().trim());
         writer.close();
 
         writer = new StringWriter();
         context.setWriter(writer);
         context.setAttribute("@message", "Say Hey.", ScriptContext.ENGINE_SCOPE);
         engine.setContext(context);
-        script = "puts @message";
-        instance = (JRubyCompiledScript) engine.compile(script);
-        expResult = "Say Hey.";
-        instance.eval(context);
-        result = writer.toString().trim();
-        assertEquals(expResult, result);
+        script = (JRubyCompiledScript) engine.compile("puts @message");
+        script.eval(context);
+        assertEquals("Say Hey.", writer.toString().trim());
 
         context.setAttribute("@message", "Yeah!", ScriptContext.ENGINE_SCOPE);
         engine.setContext(context);
-        expResult = "Say Hey.\nYeah!";
-        instance.eval(context);
-        result = writer.toString().trim();
-        assertEquals(expResult, result);
+        script.eval(context);
+        assertEquals("Say Hey.\nYeah!", writer.toString().trim());
         writer.close();
 
         writer = new StringWriter();
         context.setWriter(writer);
         context.setAttribute("$message", "Hiya.", ScriptContext.ENGINE_SCOPE);
         engine.setContext(context);
-        script = "puts $message";
-        instance = (JRubyCompiledScript) engine.compile(script);
-        expResult = "Hiya.";
-        instance.eval(context);
-        result = writer.toString().trim();
-        assertEquals(expResult, result);
+        script = (JRubyCompiledScript) engine.compile("puts $message");
+        script.eval(context);
+        assertEquals("Hiya.", writer.toString().trim());
         writer.close();
         errorWriter.close();
     }
@@ -144,28 +134,21 @@ public class JRubyCompiledScriptTest extends BaseTest {
         Bindings bindings = new SimpleBindings();
         bindings.put("message", "Helloooo Woooorld!");
         engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        String script = "\"I heard, \"#{message}\"\"";
-        JRubyCompiledScript instance = (JRubyCompiledScript) engine.compile(script);
-        Object expResult = "I heard, Helloooo Woooorld!";
-        Object result = instance.eval(bindings);
+        JRubyCompiledScript script = (JRubyCompiledScript) engine.compile("\"I heard, \"#{message}\"\"");
+        Object result = script.eval(bindings);
         // Bug? a local variable isn't shared.
-        //assertEquals(expResult, result);
+        //assertEquals("I heard, Helloooo Woooorld!", result);
 
+        script = (JRubyCompiledScript) engine.compile("'I heard, '.concat @message");
+        bindings = new SimpleBindings();
         bindings.put("@message", "Saaaay Heeeey.");
-        engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        script = "\"I heard, #{@message}\"";
-        instance = (JRubyCompiledScript) engine.compile(script);
-        expResult = "I heard, Saaaay Heeeey.";
-        result = instance.eval(bindings);
-        assertEquals(expResult, result);
+        result = script.eval(bindings);
+        assertEquals("I heard, Saaaay Heeeey.", result);
 
         bindings.put("$message", "Hiya, hiya, hiya");
-        engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        script = "\"I heard, #{$message}\"";
-        instance = (JRubyCompiledScript) engine.compile(script);
-        expResult = "I heard, Hiya, hiya, hiya";
-        result = instance.eval(bindings);
-        assertEquals(expResult, result);
+        script = (JRubyCompiledScript) engine.compile("'I heard, ' + $message");
+        result = script.eval(bindings);
+        assertEquals("I heard, Hiya, hiya, hiya", result);
     }
 
     /**
