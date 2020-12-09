@@ -85,6 +85,27 @@ describe "JRuby class reification" do
     expect(java_class).not_to be_nil
   end
 
+  it "supports fully reifying a deep class hierarchy from java parents" do
+    class BottomOfTheJStack < java.util.ArrayList ; end
+    class MiddleOfTheJStack < BottomOfTheJStack ; end
+    class TopLeftOfTheJStack < MiddleOfTheJStack ; end
+    class TopRightOfTheJStack < MiddleOfTheJStack ; end
+
+    java_class = TopLeftOfTheJStack.become_java!
+    expect(java_class).not_to be_nil
+
+    java_class = TopRightOfTheJStack.become_java!
+    expect(java_class).not_to be_nil
+
+    java_class = TopRightOfTheJStack.to_java.getReifiedJavaClass
+    expect(java_class).not_to be_nil
+    
+    expect(TopRightOfTheJStack.new).not_to be_nil
+    
+    expect(TopLeftOfTheJStack.new.size).to eq 0
+    expect(TopRightOfTheJStack.new([:a, :b]).size).to eq 2
+  end
+
   it "supports reification of annotations and signatures on static methods without parameters" do
 
     cls = Class.new do

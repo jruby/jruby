@@ -126,68 +126,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return runtimeTLS.get();
     }
 
-    @Deprecated // renamed to newProxyClass
-    public static JavaProxyClass getProxyClass(final Ruby runtime, Class superClass,
-        Class[] interfaces, Set<String> names) throws InvocationTargetException {
-        return newProxyClass(runtime, superClass, interfaces, names, null, null, null);
-    }
-
-    @Deprecated // renamed to newProxyClass
-    public static JavaProxyClass getProxyClass(Ruby runtime, Class superClass,
-                                               Class[] interfaces) throws InvocationTargetException {
-        return newProxyClass(runtime, superClass, interfaces, null, null, null, null);
-    }
-
-    /**
-     * Returns a new (generated) proxy class based on arguments.
-     * @param runtime
-     * @param superClass
-     * @param interfaces
-     * @param names
-     * @param field 
-     * @param extraMethods 
-     * @param clazz 
-     * @return proxy class
-     * @throws InvocationTargetException
-     */
-    public static JavaProxyClass newProxyClass(final Ruby runtime, Class superClass,
-        Class[] interfaces, Set<String> names, Map<String, Class> field, Map<String, Class[]> extraMethods, RubyClass clazz) throws InvocationTargetException {
-
-        if (superClass == null) superClass = Object.class;
-        if (interfaces == null) interfaces = EMPTY_CLASS_ARRAY;
-        if (names == null) names = Collections.EMPTY_SET; // so we can assume names != null
-
-        // NOTE: currently we regenerate proxy classes when a Ruby method is added on the type
-        JavaSupport.ProxyClassKey classKey = JavaSupport.ProxyClassKey.getInstance(superClass, interfaces, names);
-        JavaProxyClass proxyClass = JavaSupportImpl.fetchJavaProxyClass(runtime, classKey);
-        if ( proxyClass != null ) return proxyClass;
-
-        final ClassLoader loader = runtime.getJRubyClassLoader();
-        RuntimeException re = new RuntimeException("New newProxyClass call");
-        re.printStackTrace();
-        if (4>3)
-        	throw re;
-        proxyClass = null; 
-        return JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
-    }
-
-    public static JavaProxyClass newProxyClass(Ruby runtime, Class superClass,
-            Class[] interfaces) throws InvocationTargetException {
-        return newProxyClass(runtime, superClass, interfaces, null, null, null, null);
-    }
-/*
-    public static Object newProxyInstance(Ruby runtime, Class superClass, Class[] interfaces,
-            Class[] constructorParameters, Object[] constructorArgs,
-            JavaProxyInvocationHandler handler) throws IllegalArgumentException,
-            InstantiationException, IllegalAccessException, InvocationTargetException,
-            SecurityException, NoSuchMethodException {
-
-        JavaProxyClass proxyClass = newProxyClass(runtime, superClass, interfaces);
-        JavaProxyConstructor constructor = proxyClass.getConstructor(
-            constructorParameters == null ? EMPTY_CLASS_ARRAY : constructorParameters
-        );
-        return constructor.newInstance(constructorArgs, handler);
-    }*/
 
     public Class getSuperclass() {
         return proxyClass.getSuperclass();
@@ -568,19 +506,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     @JRubyMethod(meta = true)
     public static RubyObject get(IRubyObject self, IRubyObject obj) {
         final Ruby runtime = self.getRuntime();
-        if ( ! ( obj instanceof JavaClass ) ) {
-            throw runtime.newTypeError(obj, runtime.getJavaSupport().getJavaClassClass());
-        }
 
-        final JavaClass type = (JavaClass) obj;
-        try {
-            return getProxyClass(runtime, type.javaClass(), EMPTY_CLASS_ARRAY);
-        }
-        catch (InvocationTargetException|Error e) {
-            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + type.getValue());
-            ex.initCause(e);
-            throw ex;
-        }
+        throw runtime.newNotImplementedError("Internal implementation has changed. JavaProxyClass's have been partially replaced with reification.");
     }
 
     private static final HashSet<String> EXCLUDE_MODULES = new HashSet<>(8, 1);
@@ -591,6 +518,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_MODULES.add("Enumerable");
     }
 
+    // TOOD: copy over
     private static boolean isExcludedMethod(final String name) {
         switch (name) {
             case "class" : return true;
@@ -628,7 +556,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         RubyClass singleton = clazz.getSingletonClass();
 
-        System.err.println("Setting on " + clazz.toString() + " + single " + singleton.toString());
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
         singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
 
@@ -673,11 +600,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             throw e;
         }
         catch (Exception e) {
-        	e.printStackTrace();
             String msg = e.getLocalizedMessage();
             if ( msg == null ) msg = e.toString();
             RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + clazz.getName() + " : " + msg);
             ex.initCause(e);
+            ex.printStackTrace();
             throw ex;
         }
     	

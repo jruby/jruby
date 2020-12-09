@@ -38,8 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * Captures END statements (END {...})
  */
 public class PostExeNode extends IterNode {
-    public PostExeNode(int line, Node bodyNode, int endLine) {
-        super(line, new ArgsNode(line, null, null, null, null, null, null, null), bodyNode, null, endLine);
+    public PostExeNode(int line, Node body, int endLine) {
+        super(line, new ArgsNode(line, null, null, null, null, null, null, null), body, null, endLine);
     }
 
     public NodeType getNodeType() {

@@ -676,7 +676,6 @@ public class Java implements Library {
         {
         	if (argarray.isNil()) // super (no args)
         	{
-            	System.out.println("Will be retuing icx + " + -1);
         		return -1;
         	}
         	RubyArray ra = argarray.convertToArray();
@@ -692,7 +691,6 @@ public class Java implements Library {
         		// use our error otherwise
         		throw runtime.newArgumentError("index error finding superconstructor");
     		}
-        	System.out.println("Will be retuing icx + " + index);
         	return index;
         }
 
@@ -710,6 +708,8 @@ public class Java implements Library {
             if (self instanceof JavaProxy)
             {
             	System.err.println("Failed nil Init for JavaProxy: " + self.anyToString());
+            	new RuntimeException("Backtrace").printStackTrace();
+            	context.runtime.newArgumentError("ahck").printStackTrace();
             	return context.nil; 
             }
             JavaObject newObject = matching.newInstance(self, args);

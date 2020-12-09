@@ -182,10 +182,6 @@ public class JavaUtil {
      * @return corresponding Ruby type, or a functional Java proxy
      */
     public static IRubyObject convertJavaToUsableRubyObject(Ruby runtime, Object object) {
-//    	if (object.getClass().getName().startsWith("rubyobj"))
-//    	{
-//    		
-//    	}
         IRubyObject result = trySimpleConversions(runtime, object);
 
         if (result != null) return result;

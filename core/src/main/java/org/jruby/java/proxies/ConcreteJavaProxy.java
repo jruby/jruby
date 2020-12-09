@@ -199,12 +199,12 @@ public class ConcreteJavaProxy extends JavaProxy {
 					| InvocationTargetException e)
 			{
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//e.printStackTrace(); //TODO: print?
+				throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
 			}
             return self;
 		}
         
-		
         public DynamicMethod getOriginal()
         {
         	return oldInit;
@@ -228,7 +228,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 			catch (SecurityException | NoSuchMethodException e)
 			{
 				// TODO log?
-				e.printStackTrace();
+				//e.printStackTrace();
 				// ignore, don't install
 			}
 		}
@@ -287,14 +287,14 @@ public class ConcreteJavaProxy extends JavaProxy {
 	  				{
 	  					ctor.newInstance(object, args, blk, context.runtime, clazz);
 	  					// note: the generated ctor sets self.object = our discarded return of the new object
+	  					return object;
 	  				}
 	  				catch (InstantiationException | IllegalAccessException | IllegalArgumentException
 	  						| InvocationTargetException e)
 	  				{
-	  					e.printStackTrace();
-	  					JavaProxyConstructor.mapInstantiationException(context.runtime, e);
+	  					//e.printStackTrace();
+	  					throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
 	  				}
-	  				return object;
   				}
   			}
   		}
@@ -345,28 +345,12 @@ public class ConcreteJavaProxy extends JavaProxy {
     
     public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start)
     {
-    	try
-    	{
-		if (dm != null && !(dm instanceof InitializeMethod))
-		{
-            //TODO: if not defined, then ctors = all valid superctors
-			DefNode def = ((IRMethod)((AbstractIRMethod)dm).getIRScope()).desugar();
-			//System.out.println("def is " + (def == null));
-			FlatExtractor flat = new FlatExtractor(runtime, def); 
-			//System.out.println("defb is " + (def.getBodyNode() == null));
-			Node body = def.getBodyNode().accept(flat);
-			if (flat.foundsuper && flat.superline > -1)
-				return flat.superline + 1; // convert from 0-based to 1-based
-		}
-    	}
-		catch(Exception e)
-    	{
-			e.printStackTrace();
-    	}
+    	// TODO: ???
 		return start;
     }
     
-    
+
+	//TODO: test thar calls jcrwates new vs initialize
     // used by reified classes
     public Object[] splitInitialized(IRubyObject[] args, Block blk)
     {
@@ -385,27 +369,33 @@ public class ConcreteJavaProxy extends JavaProxy {
 	            //TODO: if not defined, then ctors = all valid superctors
 				
 				AbstractIRMethod air = (AbstractIRMethod)dm;
-				SplitSuperState state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(), name, args, blk);
-				if (state == null)
-					throw new RuntimeException("Not splittable!!!"); //TODO: do super now?
-				
-				return new Object[] { state.callArrayArgs, // TODO: nils?
-						air, state };
+				SplitSuperState<?> state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(), name, args, blk);
+				if (state == null) // no super in method
+				{
+					return new Object[] { getRuntime().newArray(args), air, name, blk };
+				}
+				else
+				{
+					return new Object[] { state.callArrayArgs, // TODO: nils?
+							air, state };
+				}
 			}
 			else
 			{
+				return new Object[] { getRuntime().newArray(args) }; //TODO: super if parent not java?
+				/*
 		    	System.out.println("Maybe fix this? (init)");
 				//TODO: pass ruby into this
 				if (dm instanceof InitializeMethod)
 					return SimpleJavaInitializes.freshNopArray(this.getRuntime(), args);
 				else 
-					return SimpleJavaInitializes.freshMethodArray(dm, this.getRuntime(), this, getMetaClass(), "initialize", args);
+					return SimpleJavaInitializes.freshMethodArray(dm, this.getRuntime(), this, getMetaClass(), "initialize", args);*/
 			}
 		
 		}
-    	System.out.println("OH NO TODO FIX THIS (init)");
+    	System.out.println("OH NO TODO FIX THIS (init) " + dmz.getClass().getName());
     	///  TODO: move gen here
-    	RubyArray ra = callMethod(getRuntime().getCurrentContext(),  "j_initialize", args, blk).convertToArray();
+    	RubyArray<?> ra = callMethod(getRuntime().getCurrentContext(),  "j_initialize", args, blk).convertToArray();
     	
     	return new Object[] {ra.entry(0), ra.entry(1) };
     }
@@ -417,42 +407,20 @@ public class ConcreteJavaProxy extends JavaProxy {
     {
     	if (returned.length == 3)
     	{
-    		// TODO: better initialize_partx names
-    		AbstractIRMethod air = (AbstractIRMethod)returned[1];
-    		SplitSuperState hold = (SplitSuperState)returned[2];
-
-            air.finishSplitCall(hold);
-    		return;
+            ((AbstractIRMethod)returned[1]).finishSplitCall((SplitSuperState<?>)returned[2]);
     	}
-    	System.out.println("OH NO TODO FIX THIS (finish)");
-    	// returned = splitInitialize return value
-    	((IRubyObject)returned[1]).callMethod(getRuntime().getCurrentContext(), "call");
-    }
-
-    // TODO: are the next two possible?
-    // called from concrete reified code
-    public Throwable catchInitialize(Object[] returned, Throwable ex)
-    {
-    	if (returned.length == 3)
+    	else if (returned.length == 4) // no super, direct call
+    	{	
+    		((AbstractIRMethod)returned[1]).call(getRuntime().getCurrentContext(), this, getMetaClass(), (String)returned[2], ((RubyArray)returned[0]).toJavaArrayMaybeUnsafe(), (Block)returned[3]);
+    	}
+    	else if (returned.length == 2)
     	{
-    		// TODO:
-    	}
-    	RaiseException te = getRuntime().newTypeError("Error in super constructor");
-    	te.initCause(ex);
-    	return te;
-    }
-    
-    // called from concrete reified code
-    public void ensureInitialize(Object[] returned)
-    {
-    	if (returned.length == 3) // TODO: make not a magic number
-    	{
-    		System.out.println("Popping via caught ensure!");
-    		//TODO
-    		//((ThreadContext) returned[4]).popScope();
-    		return;
+	    	System.out.println("OH NO TODO FIX THIS (finish)");
+	    	// returned = splitInitialize return value
+	    	((IRubyObject)returned[1]).callMethod(getRuntime().getCurrentContext(), "call");
     	}
     }
+
     
     // used by reified classes
     public void ensureThis(Object self)
