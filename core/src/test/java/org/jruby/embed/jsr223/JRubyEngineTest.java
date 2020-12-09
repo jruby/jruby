@@ -297,6 +297,24 @@ public class JRubyEngineTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testEvalMissingBinding() {
+        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngine instance = manager.getEngineByName("jruby");
+        Bindings bindings = new SimpleBindings();
+        bindings.put("j", 3);
+        bindings.put("k", 4);
+        try {
+            instance.eval("(j + 10) * i", bindings);
+            fail("execution exception expected");
+        } catch (ScriptException e) {
+            assertNotNull(e.getCause());
+            assertTrue(e.getCause().toString(), e.getCause() instanceof org.jruby.exceptions.NameError);
+        }
+
+        instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
+    }
+
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
@@ -319,6 +337,20 @@ public class JRubyEngineTest extends BaseTest {
         bindings.put("PI", 3.1415);
         Double result = (Double) instance.eval(script, bindings);
         assertEquals(expResult, result, 0.01);
+
+        instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
+    }
+
+    @Test
+    public void testEvalWithLocalVarBinding() throws Exception {
+        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngine instance = manager.getEngineByName("jruby");
+        Bindings bindings = new SimpleBindings();
+        bindings.put("i", 2);
+        bindings.put("j", 3);
+        bindings.put("k", 4);
+        Number result = (Number) instance.eval("10 + i * j", bindings);
+        assertEquals(16L, result);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
     }
