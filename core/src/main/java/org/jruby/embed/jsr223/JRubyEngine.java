@@ -31,6 +31,7 @@ package org.jruby.embed.jsr223;
 
 import java.io.Reader;
 import java.util.Objects;
+import java.util.function.Supplier;
 import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
@@ -77,52 +78,39 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         return new JRubyCompiledScript(container, this, reader);
     }
 
-    @Override
-    public Object eval(String script, ScriptContext context) throws ScriptException {
-        Objects.requireNonNull(script, "script");
-        Objects.requireNonNull(context, "context");
-        container.setScriptFilename(Utils.getFilename(context));
+    static Object doEval(ScriptingContainer container, ScriptContext context, Supplier<EmbedEvalUnit> unit) throws ScriptException {
+
+        if (Utils.isClearVariablesOn(context)) {
+            container.clear();
+        }
+        Utils.preEval(container, context);
         try {
-            if (Utils.isClearVariablesOn(context)) {
-                container.clear();
-            }
-            Utils.preEval(container, context);
-            EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(context));
-            IRubyObject ret = unit.run();
+            IRubyObject ret = unit.get().run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
             Utils.postEval(container, context);
-            boolean termination = Utils.isTerminationOn(context);
-            if (termination) {
+            if (Utils.isTerminationOn(context)) {
                 container.terminate();
             }
         }
     }
 
     @Override
+    public Object eval(String script, ScriptContext context) throws ScriptException {
+        Objects.requireNonNull(script, "script");
+        Objects.requireNonNull(context, "context");
+        container.setScriptFilename(Utils.getFilename(context));
+        return doEval(container, context, () -> container.parse(script, Utils.getLineNumber(context)));
+    }
+
+    @Override
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
         Objects.requireNonNull(reader, "reader");
         Objects.requireNonNull(context, "context");
-        if (Utils.isClearVariablesOn(context)) {
-            container.clear();
-        }
         final String filename = Utils.getFilename(context);
-        Utils.preEval(container, context);
-        try {
-            EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(context));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            Utils.postEval(container, context);
-            boolean termination = Utils.isTerminationOn(context);
-            if (termination) {
-                container.terminate();
-            }
-        }
+        return doEval(container, context, () -> container.parse(reader, filename, Utils.getLineNumber(context)));
     }
 
     @Override

@@ -75,28 +75,10 @@ public class JRubyCompiledScript extends CompiledScript {
     }
     
     public Object eval(ScriptContext context) throws ScriptException {
-        try {
-            if (Utils.isClearVariablesOn(context)) {
-                container.clear();
-            }
-            Utils.preEval(container, context);
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            Utils.postEval(container, context);
-            boolean termination = Utils.isTerminationOn(context);
-            if (termination) {
-                container.terminate();
-            }
-        }
+        return JRubyEngine.doEval(container, context, () -> unit);
     }
 
-    private static ScriptException wrapException(Exception e) {
-        return new ScriptException(e);
-    }
-
+    @Override
     public ScriptEngine getEngine() {
         return engine;
     }
