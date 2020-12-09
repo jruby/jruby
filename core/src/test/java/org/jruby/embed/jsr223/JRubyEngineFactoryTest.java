@@ -29,26 +29,13 @@
 
 package org.jruby.embed.jsr223;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import org.jruby.runtime.Constants;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -56,41 +43,18 @@ import static org.junit.Assert.*;
  *
  * @author Yoko Harada
  */
-public class JRubyEngineFactoryTest {
-    String basedir = System.getProperty("user.dir");
-
-    static Logger logger0 = Logger.getLogger(JRubyEngineFactoryTest.class.getName());
-    static Logger logger1 = Logger.getLogger(JRubyEngineFactoryTest.class.getName());
-    static OutputStream outStream = null;
-
-    public JRubyEngineFactoryTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-        outStream.close();
-    }
+public class JRubyEngineFactoryTest extends BaseTest {
 
     @Before
-    public void setUp() throws FileNotFoundException {
-        System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
+    public void setUp() throws Exception {
+        super.setUp();
 
-        outStream = new FileOutputStream(basedir + "/target/run-junit-embed.log", true);
-        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
-        logger0.addHandler(handler);
-        logger0.setUseParentHandlers(false);
-        logger0.setLevel(Level.INFO);
-        logger1.setUseParentHandlers(false);
-        logger1.addHandler(new ConsoleHandler());
-        logger1.setLevel(Level.WARNING);
+        System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        super.tearDown();
     }
 
     /**
@@ -98,13 +62,10 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetEngineName() {
-        logger1.info("getEngineName");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "JSR 223 JRuby Engine";
         String result = instance.getEngineName();
         assertEquals(expResult, result);
-
-        instance = null;
     }
 
     /**
@@ -112,7 +73,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetEngineVersion() {
-        logger1.info("getEngineVersion");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = org.jruby.runtime.Constants.VERSION;
         String result = instance.getEngineVersion();
@@ -124,7 +84,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetExtensions() {
-        logger1.info("getExtensions");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         List result = instance.getExtensions();
         assertEquals(Arrays.asList("rb"), result);
@@ -135,7 +94,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetLanguageName() {
-        logger1.info("getLanguageName");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "ruby";
         String result = instance.getLanguageName();
@@ -147,12 +105,10 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetLanguageVersion() {
-        logger1.info("getLanguageVersion");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "jruby " + Constants.VERSION;
         String result = instance.getLanguageVersion();
         assertTrue(result.startsWith(expResult));
-        logger1.info(result);
     }
 
     /**
@@ -160,7 +116,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetMethodCallSyntax() {
-        logger1.info("getMethodCallSyntax");
         String obj = "receiver";
         String m = "establish_connection";
         String[] args = {"localhost", "1099"};
@@ -175,7 +130,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetMimeTypes() {
-        logger1.info("getMimeTypes");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         List result = instance.getMimeTypes();
         assertEquals(Arrays.asList("application/x-ruby"), result);
@@ -186,7 +140,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetNames() {
-        logger1.info("getNames");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         assertEquals(Arrays.asList("ruby", "jruby"), instance.getNames());
     }
@@ -196,7 +149,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetOutputStatement() {
-        logger1.info("getOutputStatement");
         String toDisplay = "abc";
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "puts abc\nor\nprint abc";
@@ -208,7 +160,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetParameter() {
-        logger1.info("getParameter");
         String key = "";
         JRubyEngineFactory instance = new JRubyEngineFactory();
         Object expResult = null;
@@ -251,10 +202,10 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetProgram() {
-        logger1.info("getProgram");
-        String[] statements =
-            {"1.upto(7) {|i| print i, \" \"}",
-             "hh = {\"p\" => 3.14, \"e\" => 2.22}"};
+        String[] statements = {
+                "1.upto(7) {|i| print i, \" \"}",
+                "hh = {\"p\" => 3.14, \"e\" => 2.22}"
+        };
         System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "1.upto(7) {|i| print i, \" \"}\nhh = {\"p\" => 3.14, \"e\" => 2.22}\n";
@@ -267,7 +218,6 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetScriptEngine() {
-        logger1.info("getScriptEngine");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         ScriptEngine engine = instance.getScriptEngine();
         assertSame(instance, engine.getFactory());
@@ -291,9 +241,7 @@ public class JRubyEngineFactoryTest {
 
         assertTrue( command instanceof org.jruby.RubyMethod );
 
-        engine.eval(
-            "$command.call \"third to pass\n\""
-        );
+        engine.eval("$command.call \"third to pass\n\"");
 
         assertEquals("first\n2\nthird to pass\n", $this.toString());
     }

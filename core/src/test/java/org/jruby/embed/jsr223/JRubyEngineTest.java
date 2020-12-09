@@ -68,42 +68,16 @@ import static org.junit.Assert.*;
  *
  * @author Yoko Harada
  */
-public class JRubyEngineTest {
-
-    private static final String basedir = new File(System.getProperty("user.dir")).getParent();
-
-    static final Logger logger0 = Logger.getLogger(JRubyEngineTest.class.getName());
-    static final Logger logger1 = Logger.getLogger(JRubyEngineTest.class.getName());
-
-    static OutputStream outStream = null;
-
-    FileWriter writer;
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        outStream = new FileOutputStream(basedir + "/core/target/run-junit-embed.log", true);
-        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
-        logger0.addHandler(handler);
-        logger0.setUseParentHandlers(false);
-        logger0.setLevel(Level.INFO);
-        logger1.setUseParentHandlers(false);
-        logger1.addHandler(new ConsoleHandler());
-        logger1.setLevel(Level.WARNING);
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-        outStream.close();
-    }
+public class JRubyEngineTest extends BaseTest {
 
     @Before
-    public void setUp() throws FileNotFoundException, IOException {
-        writer = new FileWriter(basedir + "/core/target/run-junit-embed.txt", true);
+    public void setUp() throws Exception {
+        super.setUp();
     }
 
     @After
-    public void tearDown() throws IOException {
-        writer.close();
+    public void tearDown() throws Exception {
+        super.tearDown();
     }
 
     /**
@@ -111,7 +85,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testCompile_String() throws Exception {
-        logger1.info("[compile string]");
         ScriptEngine instance;
         synchronized (this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -143,7 +116,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testCompile_Reader() throws Exception {
-        logger1.info("[compile reader]");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -174,7 +146,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval_String_ScriptContext() throws Exception {
-        logger1.info("[eval String with ScriptContext]");
         ScriptEngine instance;
         synchronized (this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -220,7 +191,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval_String_ScriptContext2() throws Exception {
-        logger1.info("[eval String with ScriptContext 2]");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -249,7 +219,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval_Reader_ScriptContext() throws Exception {
-        logger1.info("[eval Reader with ScriptContext]");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -277,7 +246,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval_String() throws Exception {
-        logger1.info("eval String");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -285,7 +253,6 @@ public class JRubyEngineTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             instance = manager.getEngineByName("jruby");
         }
-        instance.getContext().setWriter(writer);
         instance.eval("p=9.0");
         instance.eval("q = Math.sqrt p");
         instance.eval("puts \"square root of #{p} is #{q}\"");
@@ -301,7 +268,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval_Reader() throws Exception {
-        logger1.info("eval Reader");
         ScriptEngine instance;
         synchronized (this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -319,7 +285,7 @@ public class JRubyEngineTest {
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
     }
 
-    private int getNextYear() {
+    private static int getNextYear() {
         Calendar calendar = Calendar.getInstance();
         int this_year = calendar.get(Calendar.YEAR);
         return this_year + 1;
@@ -330,7 +296,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval_String_Bindings() throws Exception {
-        logger1.info("eval String with Bindings");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -357,7 +322,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval_Reader_Bindings() throws Exception {
-        logger1.info("eval Reader with Bindings");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -382,7 +346,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testGet() {
-        logger1.info("get");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -417,7 +380,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testPut() {
-        logger1.info("put");
         String key = "";
         Object value = null;
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -437,7 +399,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testGetBindings() throws ScriptException {
-        logger1.info("getBindings");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -474,7 +435,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testSetBindings() throws ScriptException {
-        logger1.info("setBindings");
         ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
@@ -503,7 +463,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testCreateBindings() {
-        logger1.info("createBindings");
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine instance = manager.getEngineByName("jruby");
         Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -518,7 +477,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testGetContext() {
-        logger1.info("getContext");
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine instance = manager.getEngineByName("jruby");
         ScriptContext result = instance.getContext();
@@ -532,7 +490,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testSetContext() {
-        logger1.info("setContext");
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine instance = manager.getEngineByName("jruby");
         ScriptContext ctx = new SimpleScriptContext();
@@ -554,7 +511,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testGetFactory() {
-        logger1.info("getFactory");
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine instance = manager.getEngineByName("jruby");
         ScriptEngineFactory result = instance.getFactory();
@@ -571,7 +527,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testInvokeMethod() throws Exception {
-        logger1.info("invokeMethod");
         ScriptEngine instance = newScriptEngine();
         String filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/tree.rb";
         Reader reader = new FileReader(filename);
@@ -631,7 +586,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testInvokeFunction() throws Exception {
-        logger1.info("invokeFunction");
         ScriptEngine instance = newScriptEngine();
         String filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/count_down.rb";
         Reader reader = new FileReader(filename);
@@ -671,7 +625,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testGetInterface_Class() throws FileNotFoundException, ScriptException {
-        logger1.info("getInterface (no receiver)");
         ScriptEngine instance = newScriptEngine();
         Class returnType = RadioActiveDecay.class;
         String filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/radioactive_decay.rb";
@@ -693,7 +646,6 @@ public class JRubyEngineTest {
      */
     @Test
     public void testGetInterface_Object_Class() throws FileNotFoundException, ScriptException {
-        logger1.info("getInterface (with receiver)");
         ScriptEngine instance = newScriptEngine();
         String filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/position_function.rb";
         Reader reader = new FileReader(filename);
@@ -720,9 +672,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testARGV() throws ScriptException {
-        logger1.info("ScriptEngine.ARGV");
         ScriptEngine instance = newScriptEngine();
-        instance.getContext().setErrorWriter(writer);
         String script = "" +
             "if ARGV.length == 0\n" +
             "  raise 'Error No argv passed'\n" +
@@ -736,9 +686,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testARGV_2() throws ScriptException {
-        logger1.info("ScriptEngine.ARGV before initialization");
         ScriptEngine instance = newScriptEngine();
-        instance.getContext().setErrorWriter(writer);
         Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put(ScriptEngine.ARGV, new String[]{"init params"});
         String script = "" +
@@ -754,7 +702,6 @@ public class JRubyEngineTest {
     // raised at "Object obj1 = engine1.eval("$Value + 2010.to_s");"
     //@Test
     public void testMultipleEngineStates() throws ScriptException {
-        logger1.info("Multiple Engine States");
         ScriptEngine engine1;
         ScriptEngine engine2;
         synchronized (this) {
@@ -781,7 +728,6 @@ public class JRubyEngineTest {
 
     @Test
     public void testTermination() throws ScriptException {
-        logger1.info("Termination Test");
         ScriptEngineManager manager = new ScriptEngineManager();
         JRubyEngine instance = (JRubyEngine) manager.getEngineByName("jruby");
         StringWriter sw = new StringWriter();
@@ -801,7 +747,6 @@ public class JRubyEngineTest {
 
     @Test
     public void testClearVariables() throws ScriptException {
-        logger1.info("Clear Variables Test");
         final ScriptEngine instance = newScriptEngine("singlethread", "global");
 
         instance.put("gvar", ":Gvar");

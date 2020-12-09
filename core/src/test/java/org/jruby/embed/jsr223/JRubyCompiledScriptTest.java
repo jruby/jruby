@@ -29,26 +29,15 @@
 
 package org.jruby.embed.jsr223;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 import org.jruby.embed.AttributeName;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -56,40 +45,18 @@ import static org.junit.Assert.*;
  *
  * @author Yoko Harada
  */
-public class JRubyCompiledScriptTest {
-    String basedir = System.getProperty("user.dir");
-    static Logger logger0 = Logger.getLogger(JRubyCompiledScriptTest.class.getName());
-    static Logger logger1 = Logger.getLogger(JRubyCompiledScriptTest.class.getName());
-    static OutputStream outStream = null;
-
-    public JRubyCompiledScriptTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-        outStream.close();
-    }
+public class JRubyCompiledScriptTest extends BaseTest {
 
     @Before
-    public void setUp() throws FileNotFoundException {
-        System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
+    public void setUp() throws Exception {
+        super.setUp();
 
-        outStream = new FileOutputStream(basedir + "/target/run-junit-embed.log", true);
-        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
-        logger0.addHandler(handler);
-        logger0.setUseParentHandlers(false);
-        logger0.setLevel(Level.INFO);
-        logger1.setUseParentHandlers(false);
-        logger1.addHandler(new ConsoleHandler());
-        logger1.setLevel(Level.WARNING);
+        System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        super.tearDown();
     }
 
     /**
@@ -97,7 +64,6 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testEval() throws Exception {
-        logger1.info("eval");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         String script = "return \"Hello World!!!\"";
@@ -113,8 +79,8 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testEval_context() throws Exception {
-        logger1.info("eval with context");
         System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         ScriptContext context = new SimpleScriptContext();
@@ -171,8 +137,8 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testEval_bindings() throws Exception {
-        logger1.info("eval with bindings");
         System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         Bindings bindings = new SimpleBindings();
@@ -207,7 +173,6 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testGetEngine() throws ScriptException {
-        logger1.info("getEngine");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         String script = "puts \"Hello World!!!\"";
@@ -220,8 +185,7 @@ public class JRubyCompiledScriptTest {
 
     @Test
     public void testTerminate() throws ScriptException {
-        logger1.info("termination");
-        JRubyEngine engine = null;
+        JRubyEngine engine;
         synchronized (this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
             System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
@@ -247,4 +211,5 @@ public class JRubyCompiledScriptTest {
         assertEquals(expResult, writer.toString().trim());
         engine.getContext().setAttribute(AttributeName.TERMINATION.toString(), false, ScriptContext.ENGINE_SCOPE);
     }
+
 }
