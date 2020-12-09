@@ -67,25 +67,20 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 
     @Override
     public CompiledScript compile(String script) throws ScriptException {
-        if (script == null) {
-            throw new NullPointerException("script is null");
-        }
+        Objects.requireNonNull(script, "script");
         return new JRubyCompiledScript(container, this, script);
     }
 
     @Override
     public CompiledScript compile(Reader reader) throws ScriptException {
-        if (reader == null) {
-            throw new NullPointerException("reader is null");
-        }
+        Objects.requireNonNull(reader, "reader");
         return new JRubyCompiledScript(container, this, reader);
     }
 
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException {
-        if (script == null || context == null) {
-            throw new NullPointerException("either script or context is null");
-        }
+        Objects.requireNonNull(script, "script");
+        Objects.requireNonNull(context, "context");
         container.setScriptFilename(Utils.getFilename(context));
         try {
             if (Utils.isClearVariablesOn(context)) {
@@ -110,7 +105,6 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
         Objects.requireNonNull(reader, "reader");
         Objects.requireNonNull(context, "context");
-
         if (Utils.isClearVariablesOn(context)) {
             container.clear();
         }
@@ -133,12 +127,16 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 
     @Override
     public Object eval(String script, Bindings bindings) throws ScriptException {
+        Objects.requireNonNull(script, "script");
+        Objects.requireNonNull(bindings, "bindings");
         ScriptContext context = getScriptContext(bindings);
         return eval(script, context);
     }
 
     @Override
     public Object eval(Reader reader, Bindings bindings) throws ScriptException {
+        Objects.requireNonNull(reader, "reader");
+        Objects.requireNonNull(bindings, "bindings");
         ScriptContext context = getScriptContext(bindings);
         return eval(reader, context);
     }
@@ -154,10 +152,6 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     }
 
     protected ScriptContext getScriptContext(Bindings bindings) {
-        if (bindings == null) {
-            throw new NullPointerException("null bindings in engine scope");
-        }
-
         ScriptContext newContext = new SimpleScriptContext();
         newContext.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
         Bindings global = getBindings(ScriptContext.GLOBAL_SCOPE);

@@ -30,6 +30,7 @@
 package org.jruby.embed.jsr223;
 
 import java.io.Reader;
+import java.util.Objects;
 import javax.script.Bindings;
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;
@@ -68,9 +69,7 @@ public class JRubyCompiledScript extends CompiledScript {
 
     @Override
     public Object eval(Bindings bindings) throws ScriptException {
-        if (bindings == null) {
-            throw new NullPointerException("bindings is null");
-        }
+        Objects.requireNonNull(bindings, "bindings");
         ScriptContext context = engine.getScriptContext(bindings);
         return eval(context);
     }
