@@ -700,7 +700,7 @@ public class JRubyEngineTest extends BaseTest {
     // This code worked successfully on command-line but never as JUnit test
     // <script>:1: undefined method `+' for nil:NilClass (NoMethodError)
     // raised at "Object obj1 = engine1.eval("$Value + 2010.to_s");"
-    //@Test
+    @Test
     public void testMultipleEngineStates() throws ScriptException {
         ScriptEngine engine1;
         ScriptEngine engine2;
