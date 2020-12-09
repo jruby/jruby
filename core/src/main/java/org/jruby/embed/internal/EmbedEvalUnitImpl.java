@@ -40,6 +40,7 @@ import org.jruby.embed.EvalFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -61,15 +62,14 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
     private final DynamicScope scope;
     private final Script script;
 
-    public EmbedEvalUnitImpl(ScriptingContainer container, Node node, DynamicScope scope) {
-        this(container, node, scope, null);
-    }
+    private final boolean wrapExceptions;
 
-    public EmbedEvalUnitImpl(ScriptingContainer container, Node node, DynamicScope scope, Script script) {
+    EmbedEvalUnitImpl(ScriptingContainer container, Node node, DynamicScope scope, Script script, boolean wrapExceptions) {
         this.container = container;
         this.node = node;
         this.scope = scope;
         this.script = script;
+        this.wrapExceptions = wrapExceptions;
     }
 
     /**
@@ -127,14 +127,13 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             // handle exits as simple script termination
             if ( e.getException() instanceof RubySystemExit ) {
                 return ((RubySystemExit) e.getException()).status();
-            };
-            throw new EvalFailedException(e.getMessage(), e);
+            }
+            if (wrapExceptions) throw new EvalFailedException(e.getMessage(), e);
+            throw e;
         }
-        catch (StackOverflowError soe) {
-            throw runtime.newSystemStackError("stack level too deep", soe);
-        }
-        catch (Throwable e) {
-            throw new EvalFailedException(e);
+        catch (Exception e) {
+            if (wrapExceptions) throw new EvalFailedException(e);
+            Helpers.throwException(e); return null; // never returns
         }
         finally {
             if (sharing_variables) {

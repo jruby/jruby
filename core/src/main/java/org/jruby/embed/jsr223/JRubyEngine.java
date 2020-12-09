@@ -69,13 +69,21 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     @Override
     public CompiledScript compile(String script) throws ScriptException {
         Objects.requireNonNull(script, "script");
-        return new JRubyCompiledScript(container, this, script);
+        try {
+            return new JRubyCompiledScript(container, this, script);
+        } catch (RaiseException e) {
+            throw wrapException(e);
+        }
     }
 
     @Override
     public CompiledScript compile(Reader reader) throws ScriptException {
         Objects.requireNonNull(reader, "reader");
-        return new JRubyCompiledScript(container, this, reader);
+        try {
+            return new JRubyCompiledScript(container, this, reader);
+        } catch (RaiseException e) {
+            throw wrapException(e);
+        }
     }
 
     static Object doEval(ScriptingContainer container, ScriptContext context, Supplier<EmbedEvalUnit> unit) throws ScriptException {

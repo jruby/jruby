@@ -38,12 +38,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 import javax.script.Bindings;
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;
@@ -58,9 +52,7 @@ import org.jruby.embed.RadioActiveDecay;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.exceptions.NoMethodError;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -289,6 +281,20 @@ public class JRubyEngineTest extends BaseTest {
         Calendar calendar = Calendar.getInstance();
         int this_year = calendar.get(Calendar.YEAR);
         return this_year + 1;
+    }
+
+    @Test
+    public void testEvalInvalidSyntax() {
+        ScriptEngine instance;
+        ScriptEngineManager manager = new ScriptEngineManager();
+        instance = manager.getEngineByName("jruby");
+        try {
+            instance.eval("begin; p = 1;");
+            fail("parse exception expected");
+        } catch (ScriptException e) {
+            assertNotNull(e.getCause());
+            assertTrue(e.getCause().toString(), e.getCause() instanceof org.jruby.exceptions.SyntaxError);
+        }
     }
 
     /**

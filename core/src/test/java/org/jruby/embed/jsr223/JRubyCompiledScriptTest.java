@@ -31,7 +31,10 @@ package org.jruby.embed.jsr223;
 
 import java.io.StringWriter;
 import javax.script.Bindings;
+import javax.script.Compilable;
 import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
@@ -72,6 +75,20 @@ public class JRubyCompiledScriptTest extends BaseTest {
         Object expResult = "Hello World!!!";
         Object result = instance.eval();
         assertEquals(expResult, result);
+    }
+
+    @Test
+    public void testEvalInvalidSyntax() {
+        ScriptEngine instance;
+        ScriptEngineManager manager = new ScriptEngineManager();
+        instance = manager.getEngineByName("jruby");
+        try {
+            ((Compilable) instance).compile("def foo;");
+            fail("parse exception expected");
+        } catch (ScriptException e) {
+            assertNotNull(e.getCause());
+            assertTrue(e.getCause().toString(), e.getCause() instanceof org.jruby.exceptions.SyntaxError);
+        }
     }
 
     /**

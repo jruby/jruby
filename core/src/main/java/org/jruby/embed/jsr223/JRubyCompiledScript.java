@@ -39,6 +39,7 @@ import javax.script.ScriptException;
 import org.jruby.RubyNil;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -52,14 +53,14 @@ public class JRubyCompiledScript extends CompiledScript {
     private final JRubyEngine engine;
     private final EmbedEvalUnit unit;
 
-    JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, String script) {
+    JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, String script) throws RaiseException {
         this.container = container;
         this.engine = engine;
         Utils.preEval(container, engine.getContext());
         unit = container.parse(script);
     }
 
-    JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, Reader reader) {
+    JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, Reader reader) throws RaiseException {
         this.container = container;
         this.engine = engine;
         String filename = System.getProperty(ScriptEngine.FILENAME);

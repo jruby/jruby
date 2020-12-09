@@ -192,13 +192,9 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             if (compileMode == CompileMode.FORCE) {
                 // CON FIXME: We may need to force heap variables here so the compiled script uses our provided scope
                 Script script = runtime.tryCompile(node);
-                if (script != null) {
-                    return new EmbedEvalUnitImpl(container, node, scope, script);
-                } else {
-                    return new EmbedEvalUnitImpl(container, node, scope);
-                }
+                return new EmbedEvalUnitImpl(container, node, scope, script, wrapExceptions);
             }
-            return new EmbedEvalUnitImpl(container, node, scope);
+            return new EmbedEvalUnitImpl(container, node, scope, null, wrapExceptions);
         } catch (RaiseException e) {
             if (wrapExceptions) throw new ParseFailedException(e.getMessage(), e);
             throw e;
