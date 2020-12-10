@@ -464,8 +464,7 @@ public class RubyNumeric extends RubyObject {
         try {
             double value = ConvertDouble.byteListToDouble19(arg.getByteList(), strict);
             return RubyFloat.newFloat(runtime, value);
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             if (strict) {
                 if (!exception) return runtime.getNil();
                 throw runtime.newArgumentError("invalid value for Float(): "
