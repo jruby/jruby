@@ -33,6 +33,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>bundler</artifactId>
+      <version>1.17.3</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>cmath</artifactId>
       <version>1.0.0</version>
       <type>gem</type>
@@ -255,7 +268,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>racc</artifactId>
-      <version>1.5.0</version>
+      <version>1.5.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -398,7 +411,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>did_you_mean</artifactId>
-      <version>1.2.0</version>
+      <version>1.2.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -506,6 +519,9 @@ DO NOT MODIFIY - GENERATED CODE
         <targetPath>${jruby.complete.gems}</targetPath>
         <directory>${gem.home}</directory>
         <includes>
+          <include>cache/bundler*1.17.3.gem</include>
+          <include>gems/bundler*1.17.3/**</include>
+          <include>specifications/bundler*1.17.3.gemspec</include>
           <include>cache/cmath*1.0.0.gem</include>
           <include>gems/cmath*1.0.0/**</include>
           <include>specifications/cmath*1.0.0.gemspec</include>
@@ -557,9 +573,9 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/psych*3.2.0.gem</include>
           <include>gems/psych*3.2.0/**</include>
           <include>specifications/psych*3.2.0.gemspec</include>
-          <include>cache/racc*1.5.0.gem</include>
-          <include>gems/racc*1.5.0/**</include>
-          <include>specifications/racc*1.5.0.gemspec</include>
+          <include>cache/racc*1.5.1.gem</include>
+          <include>gems/racc*1.5.1/**</include>
+          <include>specifications/racc*1.5.1.gemspec</include>
           <include>cache/rake-ant*1.0.4.gem</include>
           <include>gems/rake-ant*1.0.4/**</include>
           <include>specifications/rake-ant*1.0.4.gemspec</include>
@@ -590,9 +606,9 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/webrick*1.6.1.gem</include>
           <include>gems/webrick*1.6.1/**</include>
           <include>specifications/webrick*1.6.1.gemspec</include>
-          <include>cache/did_you_mean*1.2.0.gem</include>
-          <include>gems/did_you_mean*1.2.0/**</include>
-          <include>specifications/did_you_mean*1.2.0.gemspec</include>
+          <include>cache/did_you_mean*1.2.1.gem</include>
+          <include>gems/did_you_mean*1.2.1/**</include>
+          <include>specifications/did_you_mean*1.2.1.gemspec</include>
           <include>cache/minitest*${minitest.version}.gem</include>
           <include>gems/minitest*${minitest.version}/**</include>
           <include>specifications/minitest*${minitest.version}.gemspec</include>

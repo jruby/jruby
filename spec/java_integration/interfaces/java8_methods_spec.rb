@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-describe "an interface (Java 8+)" do
+describe "an interface" do
 
   before :all do
     require 'tmpdir'; @tmpdir = Dir.mktmpdir
@@ -118,9 +118,28 @@ describe "an interface (Java 8+)" do
     expect(method.name).to eq(:"bar()") # abstract
   end if RUBY_VERSION > '1.9'
 
-  it "(default) java_method is callable" do
+  it "default java_method is callable" do
     method = Java::Java8Interface.java_method(:foo, [ java.lang.Object ])
     expect( method.bind(Java::Java8Implementor.new).call '' ).to eql 'foo Java8Implementor'
+  end
+
+  it "binds default method as instance method" do
+    expect( Java::Java8Interface.instance_methods(false) ).to include :foo
+    expect( Java::Java8Implementor.new.foo(42) ).to eq("42foo Java8Implementor")
+  end
+
+  it "binds default method as instance method (Ruby receiver)" do
+    klass = Class.new do
+      include java.util.Iterator
+      def hasNext; false end
+      def next; nil end
+    end
+    expect( java.util.Iterator.instance_methods(false) ).to include :remove
+    begin
+      klass.new.remove
+    rescue java.lang.UnsupportedOperationException
+      # pass
+    end
   end
 
   it "java_send works on implemented interface (default method)" do
@@ -228,4 +247,4 @@ describe "an interface (Java 8+)" do
     compilation_task.call # returns boolean
   end
 
-end if ENV_JAVA['java.specification.version'] >= '1.8'
+end

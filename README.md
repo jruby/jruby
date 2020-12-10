@@ -92,6 +92,14 @@ Project Contact: Thomas E Enebo <tom.enebo@gmail.com>
 
 ## License
 
-JRuby is licensed to you under three licenses - the EPL 2.0, GPL 2 and LGPL 2.1.
+JRuby is licensed under a tri EPL/GPL/LGPL license. You can use it,
+redistribute it and/or modify it under the terms of the:
+
+  Eclipse Public License version 2.0
+    OR
+  GNU General Public License version 2
+    OR
+  GNU Lesser General Public License version 2.1
+
 Some components have other licenses and copyright. See the [COPYING](COPYING)
 file for more specifics.

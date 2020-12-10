@@ -15,6 +15,7 @@ def log(message=nil)
 end
 
 default_gems = [
+    ['bundler', '1.17.3'],
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],
     ['e2mmap', '0.1.0'],
@@ -32,7 +33,7 @@ default_gems = [
     ['ostruct', '0.3.0'],
     ['prime', '0.1.0'],
     ['psych', '3.2.0'],
-    ['racc', '1.5.0'],
+    ['racc', '1.5.1'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
     ['rexml', '3.1.9'],
@@ -46,7 +47,7 @@ default_gems = [
 ]
 
 bundled_gems = [
-    ['did_you_mean', '1.2.0'],
+    ['did_you_mean', '1.2.1'],
     ['minitest', '${minitest.version}'],
     ['net-telnet', '0.1.1'],
     ['power_assert', '${power_assert.version}'],

@@ -83,7 +83,10 @@ public class ScopedParserState {
 
     public void markUsedVariable(RubySymbol name, int depth) {
         if (depth > 0) {
-            enclosingScope.markUsedVariable(name, depth - 1);
+            // If we walk down past an eval script scope we enter the callers lexical scope.  This will
+            // have no enclosingScope and also is not something lvar add/use warning does anything with.
+            // Only both to traverse deeper is an enclosingScope is present.
+            if (enclosingScope != null) enclosingScope.markUsedVariable(name, depth - 1);
             return;
         }
 

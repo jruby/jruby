@@ -53,7 +53,6 @@ import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
@@ -106,7 +105,7 @@ public class ParserSupport {
     }
     
     public void popCurrentScope() {
-        if (!currentScope.isBlockScope()) {
+        if (!currentScope.isBlockScope()) { // blocks are soft scopes. All others are roots of lvars we are leaving.
             lexer.getCmdArgumentState().reset(scopedParserState.getCommandArgumentStack());
             lexer.getConditionState().reset(scopedParserState.getCondArgumentStack());
         }
