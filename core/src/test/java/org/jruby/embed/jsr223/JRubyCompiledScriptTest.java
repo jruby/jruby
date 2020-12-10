@@ -93,6 +93,21 @@ public class JRubyCompiledScriptTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testRaisingErrorPropagatesError() throws Exception {
+        ScriptEngine instance;
+        ScriptEngineManager manager = new ScriptEngineManager();
+        instance = manager.getEngineByName("jruby");
+        CompiledScript script = ((Compilable) instance).compile("raise NotImplementedError.new()");
+        try {
+            script.eval((Bindings) null); // passing null here is allowed per JSR-223 spec
+            fail("exception raise expected");
+        } catch (ScriptException e) {
+            assertNotNull(e.getCause());
+            assertTrue(e.getCause().toString(), e.getCause() instanceof org.jruby.exceptions.NotImplementedError);
+        }
+    }
+
     /**
      * Test of eval method, of class Jsr223JRubyCompiledScript.
      */

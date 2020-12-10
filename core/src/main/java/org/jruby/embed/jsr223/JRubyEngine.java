@@ -147,7 +147,9 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         return eval(reader, context);
     }
 
-    protected ScriptContext getScriptContext(Bindings bindings) {
+    protected ScriptContext getScriptContext(final Bindings bindings) {
+        if (bindings == null) return context;
+
         ScriptContext newContext = new SimpleScriptContext();
         newContext.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
         Bindings global = getBindings(ScriptContext.GLOBAL_SCOPE);

@@ -70,11 +70,10 @@ public class JRubyCompiledScript extends CompiledScript {
 
     @Override
     public Object eval(Bindings bindings) throws ScriptException {
-        Objects.requireNonNull(bindings, "bindings");
-        ScriptContext context = engine.getScriptContext(bindings);
-        return eval(context);
+        return eval(engine.getScriptContext(bindings));
     }
-    
+
+    @Override
     public Object eval(ScriptContext context) throws ScriptException {
         return JRubyEngine.doEval(container, context, () -> unit);
     }
