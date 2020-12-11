@@ -457,9 +457,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_to_hash
      *
      */
-    @JRubyMethod(name = { "to_hash", "to_h" })
-    public RubyHash to_hash(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).to_hash(context);
+    @JRubyMethod(name = { "to_h" })
+    public RubyHash to_h(ThreadContext context) {
+        return getOrCreateRubyHashMap(context.runtime).to_h(context);
     }
 
     /** rb_hash_aset
