@@ -1787,6 +1787,24 @@ public class RubyModule extends RubyObject {
         }
         return null;
     }
+    
+/**
+ * Searches for a method up until the superclass, but include modules. This is for Concrete java ctor initialization
+ * TODO: caching?
+ */
+    public DynamicMethod searchMethodLateral(String id) {
+       // int token = generation;
+        // This flattens some of the recursion that would be otherwise be necessary.
+        // Used to recurse up the class hierarchy which got messy with prepend.
+        for (RubyModule module = this; module != null && (module == this || (module instanceof IncludedModuleWrapper)); module = module.getSuperClass()) {
+            // Only recurs if module is an IncludedModuleWrapper.
+            // This way only the recursion needs to be handled differently on
+            // IncludedModuleWrapper.
+            DynamicMethod method = module.searchMethodCommon(id);
+            if (method != null) return method.isNull() ? null : method;
+        }
+        return null;
+    }
 
     // MRI: resolve_refined_method
     public CacheEntry resolveRefinedMethod(Map<RubyModule, RubyModule> refinements, CacheEntry entry, String id, boolean cacheUndef) {

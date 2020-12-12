@@ -192,8 +192,17 @@ public class ConcreteJavaProxy extends JavaProxy {
 		{
 			try
 			{
-				withBlock.newInstance((ConcreteJavaProxy)self, args, block, context.runtime, clazz);
-				// note: the generated ctor sets self.object = our discarded return of the new object
+				if (oldInit == null)
+				{
+					System.out.println("ys");
+				}
+				ConcreteJavaProxy cjp = (ConcreteJavaProxy)self;
+				//TODO: Insead of selectively overwriting, silently fail? or only use the other method/this method?
+				if (cjp.getObject() == null)
+				{
+					withBlock.newInstance(cjp, args, block, context.runtime, clazz);
+					// note: the generated ctor sets self.object = our discarded return of the new object
+				}
 			}
 			catch (InstantiationException | IllegalAccessException | IllegalArgumentException
 					| InvocationTargetException e)
@@ -221,7 +230,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         
 
 		public static void tryInstall(Ruby runtime, RubyClass clazz, JavaProxyClass proxyClass,
-				Class<? extends ReifiedJavaProxy> reified)
+				Class<? extends ReifiedJavaProxy> reified, boolean overwriteInitialize)
 		{
 			try
 			{
@@ -230,8 +239,9 @@ public class ConcreteJavaProxy extends JavaProxy {
 										Ruby.class, RubyClass.class});
 				//TODO: move initialize to real_initialize
 				//TODO: don't lock in this initialize method
-		        clazz.addMethod("initialize", new StaticJCreateMethod(clazz, withBlock, clazz.searchMethod("initialize")));
-		        clazz.addMethod("__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
+				if (overwriteInitialize)
+					clazz.addMethod("initialize", new StaticJCreateMethod(clazz, withBlock, clazz.searchMethod("initialize")));
+				clazz.addMethod("__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
 			}
 			catch (SecurityException | NoSuchMethodException e)
 			{
@@ -366,7 +376,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 		DynamicMethod dm = base.searchMethod(name);
 		if (dm != null && (dm instanceof StaticJCreateMethod))
 			dm = ((StaticJCreateMethod)dm).getOriginal();
-		DynamicMethod dm1 = base.retrieveMethod(name); // only on ourself //TODO: missing default
+		DynamicMethod dm1 = base.searchMethodLateral(name); // only on ourself //TODO: missing default
 		if ((dm1 != null && !(dm instanceof InitializeMethod)&& !(dm instanceof StaticJCreateMethod))) //jcreate is for nested ruby classes from a java class
 		{
             //TODO: if not defined, then ctors = all valid superctors

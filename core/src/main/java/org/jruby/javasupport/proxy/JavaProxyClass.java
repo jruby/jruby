@@ -552,8 +552,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     	//JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
         clazz.setInstanceVariable("@java_proxy_class", proxyClass);
 
-        StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified);
-
         RubyClass singleton = clazz.getSingletonClass();
 
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
@@ -562,8 +560,18 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         if (allocator)
     	{
         	DynamicMethod oldNewMethod = singleton.searchMethod("new");
-        	if (!(oldNewMethod instanceof AbstractIRMethod)) singleton.addMethod("new", new NewMethodReified(clazz, reified));
-        	else System.out.println("SKIPPING NEW for class " + singleton.toString());
+        	if (!(oldNewMethod instanceof AbstractIRMethod))
+    		{
+        		singleton.addMethod("new", new NewMethodReified(clazz, reified));
+        		// Install initialize 
+                StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified, true);
+    		}
+        	else
+    		{
+        		System.out.println("SKIPPING NEW for class " + singleton.toString());
+        		// Don't initialize, just jinit 
+                StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified, false);
+    		}
     	}
         return proxyClass;
     }

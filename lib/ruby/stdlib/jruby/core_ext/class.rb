@@ -169,35 +169,61 @@ class Class
     add_field_annotation signature.name, annotations if annotations
   end
   
+  class JavaConfig
+    
+    def initialize(class_config)
+      @config = class_config
+    end
+    
+    def dispatch(args={}, two=nil, **kwargs)
+      unless two.nil?
+        _dispatch(args, two)
+      else
+        kwargs.each { |k, v| _dispatch(k, v) }
+        args.each { |k, v| _dispatch(k, v) } if args.is_a? Hash
+      end
+    end
+    
+    def extra_ctor
+    # TODO
+  
+      config.extraCtors = [clz.to_java(java.lang.Class)].to_java(java.lang.Class[])
+    end
+    
+    private
+    def _dispatch(k, v)
+      @config.renamedMethods.put(k.to_s.to_java, v.to_s.to_java)
+    end
+  end
+  
   ##
   # Valid options:
   # call_init: true/false
   # generate: :all/:explicit
   #    configure_java_class methods: :explicit/:all, call_init: true/false, java_constructable: true/false, ctors: :all/:minimal
-  def configure_java_class(**kwargs)
+  def configure_java_class(**kwargs, &blk)
     self_r = JRuby.reference0(self)
     config = self_r.class_config
-    config.allMethods = kwargs[:methods] == :explicit if kwargs.has_key? :methods
-    config.callInitialize = kwargs[:call_init] if kwargs.has_key? :call_init
-    config.javaConstructable = kwargs[:java_constructable] if kwargs.has_key? :java_constructable
-    config.allCtors = kwargs[:ctors] == :all if kwargs.has_key? :ctors
-    config.rubyConstructable = kwargs[:ruby_constructable] if kwargs.has_key? :ruby_constructable
-    config.javaCtorMethodName = kwargs[:ctor_name].to_s if kwargs.has_key? :ctor_name # TODO: fix all
-    config.renamedMethods = kwargs[:mapped_methods] if kwargs.has_key? :mapped_methods
-    self_r.class_config = config
-    if block_given?
-      # TODO: configure
+    puts "version2"
+    r_config = JavaConfig.new(config)
+    kwargs.each do |k, v|
+      case k
+      when :methods then config.allMethods = v == :explicit
+      when :call_init then config.callInitialize = !!v
+      when :java_constructable then config.javaConstructable = !!v
+      when :ruby_constructable then config.rubyConstructable = !!v
+      when :ctors then config.allCtors = v == :all
+      when :ctor_name then
+          config.javaCtorMethodName = v.to_s
+          puts "set to #{v.to_s}"
+      when :proxy_dispatches then r_config.dispatch()
+      else
+        warn "Java Class configuration option '#{k}' is not supported"
+      end
     end
-    # TODO: errors
+    r_config.instance_exec(r_config, &blk) if block_given?
+    self_r.class_config = config
     kwargs
-  end
-  
-  
-  #Temporary, TODO: nicer api
-  def extra_ctor(*clz)
-    self_r = JRuby.reference0(self)
-    config = self_r.class_config
-    config.extraCtors = [clz.to_java(java.lang.Class)].to_java(java.lang.Class[])
   end
 
   def java_annotation(anno)
