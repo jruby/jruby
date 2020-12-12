@@ -212,6 +212,44 @@ describe "JRuby class reification" do
 	expect(gotten).to eql([:success])
 	expect(gotten.length).to eql(2)
   end
+  
+  
+  it "supports reification of concrete classes with non-standard construction" do
+  
+	clz = Class.new(java.lang.Exception) do
+		def jinit(str, seq)
+			@seq = seq
+			super("foo: #{str}")
+			seq << :jinit
+		end
+		
+		def initialize(str, foo)
+			@seq << :init
+			@seq << str
+			@seq << foo
+		end
+		
+		def self.new(seq, str)
+			obj = allocate
+			seq << :new
+			obj.__jallocate!(str, seq)
+			seq << :ready
+			obj
+		end
+		
+		configure_java_class ctor_name: :jinit
+	end
+	
+	clz.become_java!
+	
+	lst = []
+	obj = clz.new(lst, :bar)
+	expect(obj).not_to be_nil
+	expect(lst).to eq([:new, :jinit, :ready])
+	expect(obj.message).to eq("foo: bar")
+	obj.send :initialize, :x, "y"
+	expect(lst).to eq([:new, :jinit, :ready, :init, :x, "y"])
+  end
 
   it "supports reification of annotations and signatures on static methods without parameters" do
 
@@ -235,7 +273,6 @@ describe "JRuby class reification" do
   end
   
   it "Errors on unimplemented methods in abstract/interfaces" do
-  	
     expect { Class.new do; include java.util.Iterator; end.hasNext }.to raise_error(NoMethodError)
     expect { Class.new(java.lang.Exception) do; include java.util.Iterator; end.hasNext }.to raise_error(NoMethodError)
     expect { Class.new(java.util.AbstractList) do; end.get(0) }.to raise_error(NoMethodError)

@@ -183,11 +183,17 @@ class Class
         args.each { |k, v| _dispatch(k, v) } if args.is_a? Hash
       end
     end
+
+    def include(*args)
+      args.each {|method| @config.include(method) }
+    end
     
-    def extra_ctor
-    # TODO
-  
-      config.extraCtors = [clz.to_java(java.lang.Class)].to_java(java.lang.Class[])
+    def exclude(*args)
+      args.each {|method| @config.exclude(method) }
+    end
+    
+    def extra_ctor(*types)
+      config.extraCtors << types.map(&:to_java).to_java(java.lang.Class)
     end
     
     private
@@ -201,13 +207,15 @@ class Class
   # call_init: true/false
   # generate: :all/:explicit
   #    configure_java_class methods: :explicit/:all, call_init: true/false, java_constructable: true/false, ctors: :all/:minimal
+  # TODO: doc
+  # TODO: test?
   def configure_java_class(**kwargs, &blk)
     self_r = JRuby.reference0(self)
     config = self_r.class_config
     puts "version2"
     r_config = JavaConfig.new(config)
     kwargs.each do |k, v|
-      case k
+      case k.to_sym
       when :methods then config.allMethods = v == :explicit
       when :call_init then config.callInitialize = !!v
       when :java_constructable then config.javaConstructable = !!v
@@ -216,7 +224,9 @@ class Class
       when :ctor_name then
           config.javaCtorMethodName = v.to_s
           puts "set to #{v.to_s}"
-      when :proxy_dispatches then r_config.dispatch()
+      when :proxy_dispatches then r_config.dispatch(v)
+      when :includes then r_config.include(*v)
+      when :excludes then r_config.exclude(*v)
       else
         warn "Java Class configuration option '#{k}' is not supported"
       end

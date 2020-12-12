@@ -2232,7 +2232,7 @@ if (!jcc.allCtors) //TODO: fix logic
 				}
 			}
 			
-			if (jcc.extraCtors != null && jcc.extraCtors.length > 0 && !isNestedRuby)
+			if (jcc.extraCtors != null && jcc.extraCtors.size() > 0 && !isNestedRuby)
 			{
 				for (Class<?>[] constructor : jcc.extraCtors)
 				{

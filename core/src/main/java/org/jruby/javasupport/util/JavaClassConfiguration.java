@@ -16,7 +16,7 @@ public class JavaClassConfiguration
 	public boolean allMethods = true;
 	public boolean allClassMethods = true; // TODO: ensure defaults are sane
 	public boolean javaConstructable = true;
-	public Class<?>[][] extraCtors = null;
+	public List<Class<?>[]> extraCtors = new ArrayList<>();
 	
 	// for java proxies
 	public boolean allCtors  = false;
@@ -31,7 +31,7 @@ public class JavaClassConfiguration
 	//TODO: renames?
 	
 
-	public Set<String> getExcluded()
+	public synchronized Set<String> getExcluded()
 	{
 		if (excluded == null) return DEFAULT_EXCLUDES;
 		
@@ -47,7 +47,7 @@ public class JavaClassConfiguration
 		included.remove(name);
 	}
 	
-	public Set<String> getIncluded()
+	public synchronized Set<String> getIncluded()
 	{
 		if (included == null) return Collections.EMPTY_SET;
 		
