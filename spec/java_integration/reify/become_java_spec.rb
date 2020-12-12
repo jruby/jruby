@@ -89,7 +89,7 @@ describe "JRuby class reification" do
     class BottomOfTheJStack < java.util.ArrayList ; end
     class MiddleOfTheJStack < BottomOfTheJStack ; end
     class TopLeftOfTheJStack < MiddleOfTheJStack ; end
-    class TopRightOfTheJStack < MiddleOfTheJStack ; end
+    class TopRightOfTheJStack < MiddleOfTheJStack ;def size; super + 3; end ; end
 
     java_class = TopLeftOfTheJStack.become_java!
     expect(java_class).not_to be_nil
@@ -103,7 +103,74 @@ describe "JRuby class reification" do
     expect(TopRightOfTheJStack.new).not_to be_nil
     
     expect(TopLeftOfTheJStack.new.size).to eq 0
-    expect(TopRightOfTheJStack.new([:a, :b]).size).to eq 2
+    expect(TopRightOfTheJStack.new([:a, :b]).size).to eq (2+3)
+  end
+  
+  it "constructs in the right order using the right methods" do
+	class BottomOfTheCJStack < java.util.ArrayList
+		def initialize(lst)
+			lst << :bottom_start
+			super()
+			lst << :bottom_end
+		end
+	end
+    class MiddleLofTheCJStack < BottomOfTheCJStack 
+		def initialize(lst)
+			lst << :mid1_start
+			super
+			lst << :mid1_end
+		end
+	end
+    class MiddleMofTheCJStack < MiddleLofTheCJStack 
+		def initialize(lst)
+			lst << :mid2_error
+			super
+			lst << :mid2_end_error
+		end
+		configure_java_class ctor_name: :reconfigured
+		def reconfigured(lst)
+			lst << :mid2_good_start
+			super
+			lst << :mid2_good_end
+		end
+	end
+    class MiddleUofTheCJStack < MiddleMofTheCJStack 
+		#default init
+	end
+	class TopOfTheCJStack < MiddleUofTheCJStack
+		def initialize(lst)
+		lst << :top_start
+		super
+		lst << :top_end
+		end
+	end
+	
+	trace = []
+    expect(TopOfTheCJStack.new(trace)).not_to be_nil
+    expect(trace).to eql([:top_start, :mid2_good_start, :mid1_start, :bottom_start, :bottom_end, :mid1_end, :mid2_good_end, :top_end])
+  end
+  
+  it "supports reification of java classes with interfaces" do
+  
+	clz = Class.new(java.lang.Exception) do
+		include java.util.Iterator
+		def initialize(array)
+			@array = array
+			super(array.inspect)
+			@at=0
+		end
+		def hasNext
+			@at<@array.length
+		end
+		def next()
+			@array[@array.length - 1 - @at].tap{@at+=1}
+		end
+	end
+
+	gotten = []
+	Exit.new([:a, :b, :c]).forEachRemaining { |k| gotten << k }
+	expect(gotten).to eql([:c,:b, :a])
+	expect(Exit.new([:a, :b, :c]).message).to eql("[:a, :b, :c]")
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do

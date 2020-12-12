@@ -828,17 +828,13 @@ public abstract class RealClassGenerator {
         return baseIndex;
     }
     
-    public static enum CtorFlags
-    {
-    	Normal,
-    	NoSuper, // implicit `super` not allowed, no parent ctor with this signature
-    	RubyArgs, // NoSuper + args don't need converting (also includes the CJP and block args)
-    	
-    }
-    // TODO: add CJP ctor for alloc sep?
-    //:TODO: Add IRubyobject ctor?
+    private static final String CONCRETE_CTOR_SIG = sig(void.class, ConcreteJavaProxy.class, boolean.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
+    
     // shouls this be in in this spot?
-    public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition, int superpos, boolean hasRuby, boolean isNestedRuby, ConcreteJavaReifier cjr, Class[] ctorTypes, JavaConstructor[] constructors, CtorFlags flag)
+    /**
+     * Main switch constructor. Required for concrete reification
+     */
+    public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition, int superpos, boolean hasParent, ConcreteJavaReifier cjr, JavaConstructor[] constructors)
     {
     	
     	final boolean callsInit = true; // TODO: ????
@@ -876,141 +872,75 @@ public abstract class RealClassGenerator {
 		continuation.callMethod(null, "call")
 
    }*/
-    	
-    	String sig = hasRuby ? sig(void.class, cjr.join(ctorTypes, Ruby.class, RubyClass.class)) : sig(void.class, ctorTypes);
-		SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig, null, null);
-		m.line(initPosition.getLine());
-		m.aload(0); // uninitialized this
+    	// (rubyobject, isSuperCall, args, block, ruby, class)
+		SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PROTECTED | ACC_SYNTHETIC, "<init>", CONCRETE_CTOR_SIG, null, null);
 
         // set args for init
-		//// Ruby varRubyIndex = ruby;
-        final int baseIndex = RealClassGenerator.calcBaseIndex(ctorTypes, 1);
-        final int rubyIndex = baseIndex;
-        final int rubyClassIndex = baseIndex+1;
-        final int rubyArrayIndex = baseIndex+2;
-        final int rubyContinuation = baseIndex+3;
-        final int rubyInitArgs = baseIndex+4;
-        //m.dup(); // uninitialized this
-        if (!hasRuby) // if java, extract and pretend we got a call with ruby on a local
-        {
-			m.getstatic(cjr.javaPath, "ruby", ci(Ruby.class));
-			m.astore(rubyIndex); // save ruby in local
-        }
+		final int thisIndex			= 0;
+        final int cjpIndex			= 1;
+        final int isSuperCallIndex	= 2;
+        final int rubyArrayIndex	= 3;
+        final int blockIndex		= 4;
+        final int rubyIndex			= 5;
+        final int rubyClassIndex	= 6;
 
-    	if (isNestedRuby) //TODO: this skips the parent's initialize method
-    	{
-    		// TODO: support more than ruby or ()/no-arg ctors
-    		if (flag == CtorFlags.RubyArgs) //IRO ctor means passthrough
-    		{
-    			//m.aload(0); // uninitialized this
-    			m.aload(1); // cjp
-    			m.aload(2); // args
-    			m.aload(3); // block
-    			m.aload(4); // ruby
-    			m.aload(5); // rubyclass
-    			m.invokespecial(p(cjr.reifiedParent), "<init>", sig);
-
-    		}
-    		else
-    		{
-
-    		//	m.aload(0); // uninitialized this
-    			m.newobj(p(ConcreteJavaProxy.class));
-		        m.dup(); // rubyobject
-		        m.aload(rubyIndex); // ruby
-		        m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class)); // rubyclass
-		        m.invokespecial(p(ConcreteJavaProxy.class), "<init>", sig(void.class, Ruby.class, RubyClass.class));
-		        
-		        m.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class)); // args
-    			m.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-    			m.aload(rubyIndex); // ruby
-    			m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class));
-    			m.invokespecial(p(cjr.reifiedParent), "<init>", sig(void.class, ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class));
-    		}
-    		// this.rubyobj = super.rubyobj
-			m.aload(0); // initialized this
-			m.dup();
-	        m.getfield(p(cjr.reifiedParent), ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
-	        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
-    		
-            m.voidreturn();
-            m.end();
-            return;
-    	}
+		m.line(initPosition.getLine());
+		
+		m.aload(cjpIndex); // cjp is at arg 1 (to support alloc+initialize seperation)
     	
-        //// this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
-        if (flag == CtorFlags.Normal || flag == CtorFlags.NoSuper)
-        	RealClassGenerator.coerceArgumentsToRuby(m, ctorTypes, rubyIndex);
-        else
-        	m.aload(2); // RubyArgs is arg 2
-        m.astore(rubyInitArgs);
-        //m.pop(); // pop the `this`. TODO: dont push the this
+        m.dup(); // rubyobject 
+        m.aload(thisIndex); // uninitialized this
+        m.swap();
+        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
         
-        ////this.$rubyObject = new ConcreteJavaProxy(ruby, rubyClass);
-        {
-        	if (flag == CtorFlags.Normal || flag == CtorFlags.NoSuper)
-        	{
-		        m.newobj(p(ConcreteJavaProxy.class));
-		        m.dup(); // rubyobject
-		        m.aload(rubyIndex); // ruby
-		        if (hasRuby)
-		            m.aload(rubyClassIndex); // rubyclass
-		        else
-		            m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class)); // rubyclass
-		        m.invokespecial(p(ConcreteJavaProxy.class), "<init>", sig(void.class, Ruby.class, RubyClass.class));
-        	}
-        	else
-        	{
-        		m.aload(1); // cjp is at arg 1 (to support alloc+initialize seperation)
-        	}
-	        m.dup(); // rubyobject 
-	        m.aload(0); // uninitialized this
-	        m.swap();
-	        m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
-        }
         ////IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
-        if (callsInit) //TODO: should init be called when super calls an abstract method we implement?
+    	m.iload(isSuperCallIndex); //TODO:
+    	
+    	Label normal = new Label();
+    	Label done = new Label();
+    	m.iffalse(normal);//// if (super branch) {
+        m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class)); // use static if this is from the super
+        m.go_to(done);
+        //// else { // normal branch
+        m.label(normal);
+        m.aload(rubyClassIndex); // rubyclass
+        m.label(done);
+
+    	m.aload(rubyArrayIndex);
+
+		m.aload(blockIndex); // load block from arg 3
+		m.invokevirtual(cjr.rubyPath, "splitInitialized", sig(Object[].class, RubyClass.class, IRubyObject[].class, Block.class) ); //pushes rubyarray
+
+        m.dup(); // rubyarray (results of splitInitialized)
+        
+        m.line(superpos); // mark this line as the super call, so the stack trace is slightly accurate.
+        
+		//// c = ra.entry(0);
+		////IRubyObject continuation = ra.entry(1);
+        m.iconst_0(); // ..., rubyarray, rubyarray, 0
+        m.aaload(); // ..., rubyarray, rubyobject(Object)
+        m.checkcast(p(IRubyObject.class));
+        // top of stack is now the arg list ruby array
+            
+        if (!hasParent)
         {
-        	m.aload(rubyInitArgs);
-        	if (flag == CtorFlags.Normal || flag == CtorFlags.NoSuper)
-        	{
-        		m.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-        	}
-        	else
-        	{
-        		m.aload(3); // load block from arg 3
-        	}
-    		m.invokevirtual(cjr.rubyPath, "splitInitialized", sig(Object[].class, IRubyObject[].class, Block.class) ); //pushes rubyarray
-            m.dup(); // rubyarray (results of splitInitialized)
-            
-            m.line(superpos); // mark this line as the super call, so the stack trace is slightly accurate.
-            
-    		//// c = ra.entry(0);
-    		////IRubyObject continuation = ra.entry(1);
-            m.iconst_0(); // ..., rubyarray, rubyarray, 0
-            m.aaload(); // ..., rubyarray, rubyobject(Object)
-            m.checkcast(p(IRubyObject.class));
-            // top of stack is now the arg list ruby array
             
             //// switch(Java.JCreateMethod.forTypes(constructors, c))
             m.dup();
             m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));// ... arglist, arglist, ctors,
 	        m.aload(rubyIndex); // ruby
-	        if (flag == CtorFlags.Normal)
-	        	m.iconst_1();
-	        else
-	        	m.iconst_0();
-            m.invokestatic(p(JCreateMethod.class), "forTypes", sig(int.class, IRubyObject.class, JCtorCache.class, Ruby.class, boolean.class));
+
+            m.invokestatic(p(JCreateMethod.class), "forTypes", sig(int.class, IRubyObject.class, JCtorCache.class, Ruby.class));
             // ..., arglist, index
             Label defaultLabel = new Label();
-            Label[] cases = new Label[constructors.length+1]; //note: offset by one from index
-            for (int i = 0; i <= constructors.length; i++)
+            Label[] cases = new Label[constructors.length]; //note: offset by one from index
+            for (int i = 0; i < constructors.length; i++)
             {
             	cases[i] = new Label();
             }
             Label endofswitch = new Label();
 			GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
-            m.tableswitch(-1, constructors.length-1, defaultLabel, cases);
+            m.tableswitch(0, constructors.length-1, defaultLabel, cases);
             {
             	// default: throw new IllegalStateException("corruption"?) //TODO: type & message
             	m.label(defaultLabel);
@@ -1020,30 +950,11 @@ public abstract class RealClassGenerator {
             	m.invokespecial(p(IllegalStateException.class), "<init>", sig(void.class, String.class));
             	m.athrow();
             	
-            	// -1: super(*args), from `super` (no args) in ruby
-            	if (flag == CtorFlags.Normal)// || ctorTypes.length == 0)
-            	{
-	            	m.label(cases[0]);
-	            	m.aload(0);
-	    			ga.loadArgs(0, ctorTypes.length);
-	    	        m.invokespecial(p(cjr.reifiedParent), "<init>", sig(void.class, ctorTypes));
-	    	        m.pop(); //c
-	    	        m.go_to(endofswitch);
-            	}
-            	else // no super constructor exists, throw
-            	{
-            		m.label(cases[0]);
-                	m.newobj(p(IllegalStateException.class));
-                	m.dup();
-                	m.ldc("Superclass does not have a constructor with the same signature, please provide arguments: `super()`");
-                	m.invokespecial(p(IllegalStateException.class), "<init>", sig(void.class, String.class));
-                	m.athrow();
-            	}
-    	        
     	        // case n:
     	        for (int i = 0; i < constructors.length; i++)
                 {
-                	m.label(cases[i+1]); // skip -1
+                	m.label(cases[i]);
+
                 	
                 	////ra = c.convertToArray();
                 	// Note: can't pull this code up above the switch because of nils
@@ -1051,7 +962,7 @@ public abstract class RealClassGenerator {
                 	m.astore(rubyArrayIndex); // ....
                 	
                 	// setup super call
-                	m.aload(0); //...,  uninitialized this
+                	m.aload(thisIndex); //...,  uninitialized this
                 	
                 	Class[] destType = constructors[i].getParameterTypes();
                 	
@@ -1071,40 +982,119 @@ public abstract class RealClassGenerator {
             }
             
             m.label(endofswitch);
-            
         }
         else
-        	m.pop(); // RubyObject
+        {
+			// set up the stack for the super call. Note, we need to bubble up the 4th arg (on top of the stack now)
+			m.aload(thisIndex); // uninitialized this
+			m.swap();
+			m.aload(cjpIndex); // cjp
+			m.swap();
+			m.iconst_1(); // true, we are super
+			m.swap();
+			
+			//TODO: unsafe, maybeunsafe, normal?
+        	m.invokeinterface(p(IRubyObject.class), "convertToArray", sig(RubyArray.class));
+        	m.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
+        	
+        	m.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class)); // block, TODO: block!
+			m.aload(rubyIndex); // ruby
+			m.aload(rubyClassIndex); // rubyclass
+			m.invokespecial(p(cjr.reifiedParent), "<init>", CONCRETE_CTOR_SIG);
+        }
         
         m.line(initPosition.getLine()); // This is the start of the method, but lets move it away from the super call to be slightly nicer to stack traces
         
         //implied: if (this.$rubyObject.getObject() == null) // only checked on non-ctor paths
         ////(this.$rubyObject.setObject(this))
 
-        m.aload(0); // initialized this
-        m.dup();
-        m.getfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);// ..., this, rubyobj
-        if (callsInit) m.dup_x1(); // rubyobject, this, rubyobject
+        m.aload(thisIndex); // initialized this
+        m.aload(cjpIndex);// ..., this, rubyobj
+        m.dup_x1(); // rubyobject, this, rubyobject
         m.swap(); // ..., rubyobject, rubyobject, this
         m.invokevirtual(p(ConcreteJavaProxy.class), "setObject", sig(void.class, Object.class));
-        
-        // finish init if started
-        if (callsInit)
-        {
-	        ////continuation.callMethod(ruby.getTheadContext(), "call")
-	        //m.aload(rubyContinuation);
 
-	        //m.aload(rubyIndex);
-	        //m.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
-	        //m.ldc("call");
-	        // not rubycall as using IRubyObject vs RubyBasicObject
-	        //m.invokeinterface(p(IRubyObject.class), "callMethod", sig(IRubyObject.class, ThreadContext.class, String.class));
-	        //m.pop();
+	        ////continuation.callMethod(ruby.getTheadContext(), "call")
         	m.swap();
         	m.invokevirtual(p(ConcreteJavaProxy.class), "finishInitialize", sig(void.class, Object[].class));
-        	m.pop(); //TODO: track down this extra arg
-        }
 
+        m.voidreturn();
+        m.end();
+    }
+    
+    /**
+     * Public access for IRubyObject constructor
+     */
+    public static void makeConcreteConstructorIROProxy(ClassWriter cw, PositionAware initPosition, ConcreteJavaReifier cjr)
+    {
+    	
+    	// (rubyobject, isSuperCall, args, block, ruby, class)
+    	String sig = sig(void.class, ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
+		SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_SYNTHETIC, "<init>", sig, null, null);
+
+		m.line(initPosition.getLine());
+
+		m.aload(0);
+		m.aload(1);
+		m.iconst_0(); // false, not called from subclass
+		m.aload(2);
+		m.aload(3);
+		m.aload(4);
+		m.aload(5);
+		m.invokespecial(cjr.javaPath, "<init>", CONCRETE_CTOR_SIG);
+
+        m.voidreturn();
+        m.end();
+    }
+    
+    // shouls this be in in this spot?
+    /**
+     * Defines a constructor that delegates to the main switch constructor
+     * @param cw class builder
+     * @param initPosition source code position of initialize
+     * @param hasRuby If this method accepts ruby & rubyclass on the end (auto-added)
+     * @param ctorTypes signature, minus any ruby arguments
+     */
+    public static void makeConcreteConstructorProxy(ClassWriter cw, PositionAware initPosition, boolean hasRuby, ConcreteJavaReifier cjr, Class[] ctorTypes)
+    {
+    	String sig = hasRuby ? sig(void.class, cjr.join(ctorTypes, Ruby.class, RubyClass.class)) : sig(void.class, ctorTypes);
+		SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig, null, null);
+		m.line(initPosition.getLine());
+
+        // set args for init
+        final int baseIndex = RealClassGenerator.calcBaseIndex(ctorTypes, 1);
+        final int rubyIndex = baseIndex;
+        final int rubyClassIndex = baseIndex+1;
+        
+        // save for argument converter
+        if (!hasRuby)
+        {
+			m.getstatic(cjr.javaPath, "ruby", ci(Ruby.class));
+			m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class));
+            m.astore(rubyClassIndex); // rubyclass
+	        m.astore(rubyIndex); // ruby
+        }
+        
+		m.aload(0); // uninitialized this
+
+        ////new ConcreteJavaProxy(ruby, rubyClass);
+        m.newobj(p(ConcreteJavaProxy.class));
+        m.dup(); // rubyobject
+        m.aload(rubyIndex); // ruby
+        m.aload(rubyClassIndex); // rubyclass
+        m.invokespecial(p(ConcreteJavaProxy.class), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+
+		m.iconst_0(); // false, not called from subclass
+
+        ////new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
+        RealClassGenerator.coerceArgumentsToRuby(m, ctorTypes, rubyIndex);
+       
+        m.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+        m.aload(rubyIndex); // ruby
+        m.aload(rubyClassIndex); // rubyclass
+            
+		m.invokespecial(cjr.javaPath, "<init>", CONCRETE_CTOR_SIG);
+        
         m.voidreturn();
         m.end();
     }

@@ -45,7 +45,6 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.codegen.*;
-import org.jruby.java.codegen.RealClassGenerator.CtorFlags;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.*;
 import org.jruby.javasupport.Java.JCtorCache;
@@ -181,7 +180,6 @@ public class RubyClass extends RubyModule {
                     try {
                         return (IRubyObject) method.invoke(null, runtime, klazz);
                     } catch (InvocationTargetException ite) {
-                    	ite.printStackTrace();
                         throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
                     } catch (IllegalAccessException iae) {
                         throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
@@ -1641,8 +1639,10 @@ public class RubyClass extends RubyModule {
             SkinnyMethodAdapter m;
 
             // define class/static methods
-            for (Map.Entry<String, DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
+            for (Map.Entry<String, DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) { // TODO: included
                 String id = methodEntry.getKey();
+                if (jcc.getExcluded().contains(id))
+                	continue;
 
                 String javaMethodName = JavaNameMangler.mangleMethodName(id);
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
@@ -1718,10 +1718,10 @@ public class RubyClass extends RubyModule {
         //TODO: only generate that are overrideable (javaproxyclass)
         protected void defineInstanceMethods(Set<String> instanceMethods) {
         	Set<String> defined = new HashSet<>();
-            for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
+            for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) { // TODO: includes
                 final String id = methodEntry.getKey();
                 final String callid = jcc.renamedMethods.getOrDefault(id, id); // TODO: use set to avoid the map
-                if (defined.contains(id))
+                if (defined.contains(id) || jcc.getExcluded().contains(id))
                 	continue;
                 defined.add(callid); //TODO: is this true? // id we won't see again, and are only defining java methods named id
                 
@@ -1881,7 +1881,7 @@ public class RubyClass extends RubyModule {
         
         protected void generateSuperBridges(String javaMethodName, Class[] methodSignature)
 		{
-			// Only for concrete java
+        	// Only for concrete java
 		}
 
 		/**
@@ -2015,7 +2015,7 @@ public class RubyClass extends RubyModule {
 		@Override
 		public byte[] reify()
 		{
-			cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_PROTECTED, RUBY_OBJECT_FIELD, rubyName, null, null); 
+			cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_PRIVATE, RUBY_OBJECT_FIELD, rubyName, null, null); 
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class), null, null);
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class), null, null); 
 			return super.reify();
@@ -2090,7 +2090,6 @@ public class RubyClass extends RubyModule {
 			ArraySupport.copy(methodSignature, 1, args, 0, methodSignature.length - 1);
 			Method supr = findTarget(reifiedParent, javaMethodName, methodSignature[0], args);
 			if (supr == null) return;
-			
 
             SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_SYNTHETIC | ACC_BRIDGE | ACC_PUBLIC, "__super$"+javaMethodName, sig(methodSignature), null, null);
             GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
@@ -2198,12 +2197,12 @@ if (!jcc.allCtors) //TODO: fix logic
 {
 				//if (jcc.rubyConstructable)
 					if (!isNestedRuby)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, isNestedRuby, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+						RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this, new Class[0]);
 	            
 	            
 	            if (jcc.javaConstructable)
 	            {
-	            	RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, isNestedRuby, this, new Class[0], savedSuperCtors, CtorFlags.Normal);
+	            	RealClassGenerator.makeConcreteConstructorProxy(cw, position, false, this, new Class[0]);
 	            }
 }
 			}
@@ -2220,13 +2219,13 @@ if (!jcc.allCtors) //TODO: fix logic
 				for (Constructor<?> constructor : candidates)
 				{
 					//TODO: do matching for zero arg?
-				//	if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
+					//if (zeroArg.isPresent() && constructor == zeroArg.get()) continue;
 
 					if (jcc.rubyConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, isNestedRuby, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
+						RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this, constructor.getParameterTypes());
 
 					if (jcc.javaConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, isNestedRuby, this, constructor.getParameterTypes(), savedSuperCtors, CtorFlags.Normal);
+						RealClassGenerator.makeConcreteConstructorProxy(cw, position, false, this, constructor.getParameterTypes());
 					
 				}
 			}
@@ -2241,17 +2240,18 @@ if (!jcc.allCtors) //TODO: fix logic
 					// TODO: support annotations
 
 					if (jcc.rubyConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, isNestedRuby, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+						RealClassGenerator.makeConcreteConstructorProxy(cw, position, true, this, constructor);
 
 					if (jcc.javaConstructable)
-						RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, false, isNestedRuby, this, constructor, savedSuperCtors, CtorFlags.NoSuper);
+						RealClassGenerator.makeConcreteConstructorProxy(cw, position, false, this, constructor);
 					
 				}
 			}
-			if (jcc.IroCtors || isNestedRuby) // TODO: ensure parent is iro-enabled
+			if (jcc.IroCtors) // TODO: ensure parent is iro-enabled
 			{
-				RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, true, isNestedRuby, this, new Class[] {ConcreteJavaProxy.class, IRubyObject[].class, Block.class}, savedSuperCtors, CtorFlags.RubyArgs);				
+				RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);				
 			}
+			RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, isNestedRuby, this, savedSuperCtors);
 		}
 
 		/**

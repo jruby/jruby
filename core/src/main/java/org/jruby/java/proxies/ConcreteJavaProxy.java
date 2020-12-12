@@ -200,6 +200,14 @@ public class ConcreteJavaProxy extends JavaProxy {
 			{
 				// TODO Auto-generated catch block
 				//e.printStackTrace(); //TODO: print?
+				if (e instanceof InvocationTargetException)
+				{
+					InvocationTargetException ite = (InvocationTargetException) e; // TODO: move to mapIE?
+					if (ite.getCause() instanceof RaiseException)
+					{
+						throw (RaiseException)ite.getCause();
+					}
+				}
 				throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
 			}
             return self;
@@ -285,7 +293,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 	  				ConcreteJavaProxy object = new ConcreteJavaProxy(context.runtime, (RubyClass) self);
 	  				try
 	  				{
-	  					ctor.newInstance(object, args, blk, context.runtime, clazz);
+	  					ctor.newInstance(object, args, blk, context.runtime, self);// TODO: clazz?
 	  					// note: the generated ctor sets self.object = our discarded return of the new object
 	  					return object;
 	  				}
@@ -352,52 +360,33 @@ public class ConcreteJavaProxy extends JavaProxy {
 
 	//TODO: test thar calls jcrwates new vs initialize
     // used by reified classes
-    public Object[] splitInitialized(IRubyObject[] args, Block blk)
+    public Object[] splitInitialized(RubyClass base, IRubyObject[] args, Block blk)
     {
-    	String name = getMetaClass().getClassConfig().javaCtorMethodName;
-
-		// TODO: remove this stuff?
-		DynamicMethod dmz = this.getMetaClass().searchMethod("j_initialize");
-		if (!(dmz instanceof AbstractIRMethod))
+    	String name = base.getClassConfig().javaCtorMethodName;
+		DynamicMethod dm = base.searchMethod(name);
+		if (dm != null && (dm instanceof StaticJCreateMethod))
+			dm = ((StaticJCreateMethod)dm).getOriginal();
+		DynamicMethod dm1 = base.retrieveMethod(name); // only on ourself //TODO: missing default
+		if ((dm1 != null && !(dm instanceof InitializeMethod)&& !(dm instanceof StaticJCreateMethod))) //jcreate is for nested ruby classes from a java class
 		{
-			DynamicMethod dm = getMetaClass().searchMethod(name);
-			if (dm != null && (dm instanceof StaticJCreateMethod))
-				dm = ((StaticJCreateMethod)dm).getOriginal();
-			DynamicMethod dm1 = getMetaClass().retrieveMethod(name); // only on ourself
-			if ((dm1 != null && !(dm instanceof InitializeMethod)&& !(dm instanceof StaticJCreateMethod))) //jcreate is for nested ruby classes from a java class
+            //TODO: if not defined, then ctors = all valid superctors
+			
+			AbstractIRMethod air = (AbstractIRMethod)dm; // TODO: getMetaClass() ? or base? (below     v)
+			SplitSuperState<?> state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(), name, args, blk);
+			if (state == null) // no super in method
 			{
-	            //TODO: if not defined, then ctors = all valid superctors
-				
-				AbstractIRMethod air = (AbstractIRMethod)dm;
-				SplitSuperState<?> state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(), name, args, blk);
-				if (state == null) // no super in method
-				{
-					return new Object[] { getRuntime().newArray(args), air, name, blk };
-				}
-				else
-				{
-					return new Object[] { state.callArrayArgs, // TODO: nils?
-							air, state };
-				}
+				return new Object[] { getRuntime().newArray(args), air, name, blk };
 			}
 			else
 			{
-				return new Object[] { getRuntime().newArray(args) }; //TODO: super if parent not java?
-				/*
-		    	System.out.println("Maybe fix this? (init)");
-				//TODO: pass ruby into this
-				if (dm instanceof InitializeMethod)
-					return SimpleJavaInitializes.freshNopArray(this.getRuntime(), args);
-				else 
-					return SimpleJavaInitializes.freshMethodArray(dm, this.getRuntime(), this, getMetaClass(), "initialize", args);*/
+				return new Object[] { state.callArrayArgs, // TODO: nils?
+						air, state };
 			}
-		
 		}
-    	System.out.println("OH NO TODO FIX THIS (init) " + dmz.getClass().getName());
-    	///  TODO: move gen here
-    	RubyArray<?> ra = callMethod(getRuntime().getCurrentContext(),  "j_initialize", args, blk).convertToArray();
-    	
-    	return new Object[] {ra.entry(0), ra.entry(1) };
+		else
+		{
+			return new Object[] { getRuntime().newArray(args) }; //TODO: super if parent not java?
+		}
     }
 
 	
@@ -413,12 +402,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     	{	
     		((AbstractIRMethod)returned[1]).call(getRuntime().getCurrentContext(), this, getMetaClass(), (String)returned[2], ((RubyArray)returned[0]).toJavaArrayMaybeUnsafe(), (Block)returned[3]);
     	}
-    	else if (returned.length == 2)
-    	{
-	    	System.out.println("OH NO TODO FIX THIS (finish)");
-	    	// returned = splitInitialize return value
-	    	((IRubyObject)returned[1]).callMethod(getRuntime().getCurrentContext(), "call");
-    	}
+    	// Ignore other cases
     }
 
     

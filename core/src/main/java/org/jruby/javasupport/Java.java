@@ -672,12 +672,9 @@ public class Java implements Library {
             return newObject;
         }
         
-        public static int forTypes(IRubyObject argarray, JCtorCache cache, Ruby runtime, boolean allowNil)
+        public static int forTypes(IRubyObject argarray, JCtorCache cache, Ruby runtime)
         {
-        	if (argarray.isNil()) // super (no args)
-        	{
-        		return -1;
-        	}
+
         	RubyArray ra = argarray.convertToArray();
         	IRubyObject[] args = ra.toJavaArrayMaybeUnsafe(); // TODO: which method unpacking the array?
         	
@@ -686,8 +683,6 @@ public class Java implements Library {
         	int index = cache.indexOf(ctor);
         	if (index < 0)
     		{
-        		if (allowNil)
-        			return -1; // use class error
         		// use our error otherwise
         		throw runtime.newArgumentError("index error finding superconstructor");
     		}

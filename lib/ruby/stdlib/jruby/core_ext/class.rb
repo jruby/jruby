@@ -182,12 +182,16 @@ class Class
     config.javaConstructable = kwargs[:java_constructable] if kwargs.has_key? :java_constructable
     config.allCtors = kwargs[:ctors] == :all if kwargs.has_key? :ctors
     config.rubyConstructable = kwargs[:ruby_constructable] if kwargs.has_key? :ruby_constructable
-    config.splitSuper = kwargs[:split_super] if kwargs.has_key? :split_super
+    config.javaCtorMethodName = kwargs[:ctor_name].to_s if kwargs.has_key? :ctor_name # TODO: fix all
     config.renamedMethods = kwargs[:mapped_methods] if kwargs.has_key? :mapped_methods
     self_r.class_config = config
+    if block_given?
+      # TODO: configure
+    end
     # TODO: errors
     kwargs
   end
+  
   
   #Temporary, TODO: nicer api
   def extra_ctor(*clz)
