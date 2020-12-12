@@ -400,7 +400,16 @@ public class ConvertDouble {
                     result = Double.POSITIVE_INFINITY;
                 }
             }
+            verifyOnlyNumbers();
             return stopParsing();
+        }
+
+        private void verifyOnlyNumbers() {
+            while (!isEOS()) {
+                byte value = next();
+
+                if (!isDigit(value)) throw new NumberFormatException();
+            }
         }
 
         private void verifyNumberAfterUnderscore() {

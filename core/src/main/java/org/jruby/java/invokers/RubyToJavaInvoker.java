@@ -346,6 +346,16 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return (JavaProxy) self;
     }
 
+    static Object unwrapIfJavaProxy(final IRubyObject object) {
+        if (object instanceof JavaProxy) {
+            return ((JavaProxy) object).getObject();
+        }
+        // special case when target is a plain-old Ruby object
+        // e.g. in case of a `class Ruby; include java.some.Interface end`
+        // Interface's default methods will be set up as InstanceMethodInvokers
+        return object;
+    }
+
     static <T extends AccessibleObject & Member> T setAccessible(T accessible) {
         // TODO: Replace flag that's false on 9 with proper module checks
         if (!Java.isAccessible(accessible) &&

@@ -135,6 +135,7 @@ public class MethodGatherer {
         Map<String, AssignedName> instanceAssignedNames = javaSupport.getInstanceAssignedNames().get(javaClass);
         if (javaClass.isInterface()) {
             instanceAssignedNames.clear();
+            installInstanceMethods(proxy);
         } else {
             assignInstanceAliases();
 
@@ -288,8 +289,6 @@ public class MethodGatherer {
     private static final ClassValue<Class<?>[]> INTERFACES = new ClassValue<Class<?>[]>() {
         @Override
         public Class<?>[] computeValue(Class cls) {
-            Class<?>[] baseInterfaces = cls.getInterfaces();
-
             // Expand each interface's parent interfaces using a set
             Set<Class<?>> interfaceSet = new HashSet<>();
 
@@ -582,7 +581,7 @@ public class MethodGatherer {
 
                 if (Modifier.isStatic(method.getModifiers())) {
                     prepareStaticMethod(javaClass, method, name);
-                } else if (!isInterface) {
+                } else if (!isInterface || method.isDefault()) {
                     prepareInstanceMethod(javaClass, method, name);
                 }
             }
