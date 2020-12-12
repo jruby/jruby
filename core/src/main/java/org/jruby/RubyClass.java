@@ -113,7 +113,8 @@ public class RubyClass extends RubyModule {
      *
      * @param cls The class on which to call the default constructor to allocate
      */
-    public void setClassAllocator(final Class cls) {
+    @SuppressWarnings("unchecked")
+	public void setClassAllocator(final Class<?> cls) {
         this.allocator = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                 try {
@@ -128,7 +129,7 @@ public class RubyClass extends RubyModule {
             }
         };
 
-        this.reifiedClass = cls;
+        this.reifiedClass = (Class<? extends Reified>) cls;
     }
 
     /**
@@ -137,7 +138,8 @@ public class RubyClass extends RubyModule {
      *
      * @param clazz The class from which to grab a standard Ruby constructor
      */
-    public void setRubyClassAllocator(final Class<? extends IRubyObject> clazz) {
+    @SuppressWarnings("unchecked")
+	public void setRubyClassAllocator(final Class<? extends IRubyObject> clazz) {
         try {
             final Constructor<? extends IRubyObject> constructor = clazz.getConstructor(Ruby.class, RubyClass.class);
 
@@ -171,7 +173,7 @@ public class RubyClass extends RubyModule {
      * @note Used with `jrubyc --java` generated (interoperability) class files.
      * @note Used with new concrete extension.
      */
-    public void setRubyStaticAllocator(final Class<?> clazz) {
+    public void setRubyStaticAllocator(final Class<? extends Reified> clazz) {
         try {
             final Method method = clazz.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
 
@@ -187,7 +189,7 @@ public class RubyClass extends RubyModule {
                 }
             };
 
-            this.reifiedClass = (Class<? extends Reified>) clazz;
+            this.reifiedClass = clazz;
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
@@ -1923,7 +1925,7 @@ public class RubyClass extends RubyModule {
         {
         	m.pop();
         }
-//TODO: test interfaces on ruby, and not defining a method on intf, abstract class
+
 		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
 		{
 			HashMap<String, Class[]> types = new HashMap<>();
@@ -2247,7 +2249,7 @@ if (!jcc.allCtors) //TODO: fix logic
 					
 				}
 			}
-			if (jcc.IroCtors) // TODO: ensure parent is iro-enabled
+			if (jcc.IroCtors)
 			{
 				RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);				
 			}

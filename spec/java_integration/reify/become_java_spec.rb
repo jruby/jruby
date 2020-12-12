@@ -168,9 +168,49 @@ describe "JRuby class reification" do
 	end
 
 	gotten = []
-	Exit.new([:a, :b, :c]).forEachRemaining { |k| gotten << k }
+	clz.new([:a, :b, :c]).forEachRemaining { |k| gotten << k }
 	expect(gotten).to eql([:c,:b, :a])
-	expect(Exit.new([:a, :b, :c]).message).to eql("[:a, :b, :c]")
+	expect(clz.new([:a, :b, :c]).message).to eql("[:a, :b, :c]")
+  end
+  
+  it "supports reification of ruby classes with interfaces" do
+  
+	clz = Class.new do
+		include java.util.Iterator
+		def initialize(array)
+			@array = array
+			@at=0
+			@loop = false
+		end
+		def hasNext
+			@at<@array.length
+		end
+		def next()
+			@array[@array.length - 1 - @at].tap{@at+=1}
+		end
+		
+		def remove
+			raise java.lang.StackOverflowError.new if @loop
+			@loop = true
+			begin
+				@array<< :fail1
+				super
+				@array << :fail2
+			rescue java.lang.UnsupportedOperationException => uo
+				@array = [:success]
+			rescue java.lang.StackOverflowError => so
+				@array << :failSO
+			end
+			@loop = false
+		end
+	end
+
+	obj = clz.new(["fail3"])
+	obj.remove
+	gotten = []
+	obj.forEachRemaining { |k| gotten << k }
+	expect(gotten).to eql([:success])
+	expect(gotten.length).to eql(2)
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do
@@ -192,6 +232,13 @@ describe "JRuby class reification" do
 
     anno = method.get_annotation( java.lang.Deprecated.java_class )
     expect(anno).not_to be_nil
+  end
+  
+  it "Errors on unimplemented methods in abstract/interfaces" do
+  	
+    expect { Class.new do; include java.util.Iterator; end.hasNext }.to raise_error(NoMethodError)
+    expect { Class.new(java.lang.Exception) do; include java.util.Iterator; end.hasNext }.to raise_error(NoMethodError)
+    expect { Class.new(java.util.AbstractList) do; end.get(0) }.to raise_error(NoMethodError)
   end
 
   it "supports reification of annotations and signatures on static methods with parameters" do
