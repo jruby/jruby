@@ -41,6 +41,8 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Inspector;
+import org.jruby.util.RubyStringBuilder;
 
 import java.lang.reflect.Modifier;
 
@@ -71,9 +73,8 @@ public abstract class JavaLang {
             byteArray.addMethod("ubyte_get", new UByteGet(byteArray));
             byteArray.addMethod("ubyte_set", new UByteSet(byteArray));
         });
-        JavaExtensions.put(runtime, java.lang.String.class, (proxyClass) -> {
-            proxyClass.defineAlias("to_str", "to_s");
-        });
+        JavaExtensions.put(runtime, java.lang.CharSequence.class, (proxyClass) -> CharSequence.define(runtime, proxyClass));
+        JavaExtensions.put(runtime, java.lang.String.class, (proxyClass) -> String.define(runtime, (RubyClass) proxyClass));
     }
 
     @JRubyModule(name = "Java::JavaLang::Iterable", include = "Enumerable")
@@ -233,7 +234,7 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject message(final ThreadContext context, final IRubyObject self) {
             java.lang.Throwable throwable = unwrapIfJavaObject(self);
-            final String msg = throwable.getLocalizedMessage(); // does getMessage
+            final java.lang.String msg = throwable.getLocalizedMessage(); // does getMessage
             return msg == null ? RubyString.newEmptyString(context.runtime) : RubyString.newString(context.runtime, msg);
         }
 
@@ -396,6 +397,12 @@ public abstract class JavaLang {
             return context.runtime.newArray(type, value);
         }
 
+        @JRubyMethod(name = "inspect")
+        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return context.runtime.newString(val.toString());
+        }
+
     }
 
     @JRubyClass(name = "Java::JavaLang::Character")
@@ -428,6 +435,12 @@ public abstract class JavaLang {
             return context.runtime.newFixnum(c);
         }
 
+        @JRubyMethod(name = "inspect")
+        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
+            java.lang.Character c = (java.lang.Character) self.toJava(java.lang.Character.class);
+            return RubyString.newString(context.runtime, "'" + c.toString() + "'");
+        }
+
     }
 
     @JRubyClass(name = "Java::JavaLang::Class")
@@ -448,14 +461,14 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject resource_as_stream(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            final String resName = name.convertToString().toString();
+            final java.lang.String resName = name.convertToString().toString();
             return convertJavaToUsableRubyObject(context.runtime, klass.getResourceAsStream(resName));
         }
 
         @JRubyMethod
         public static IRubyObject resource_as_string(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            final String resName = name.convertToString().toString();
+            final java.lang.String resName = name.convertToString().toString();
             return new RubyIO(context.runtime, klass.getResourceAsStream(resName)).read(context);
         }
 
@@ -602,22 +615,67 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject resource_as_url(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
             final java.lang.ClassLoader loader = unwrapIfJavaObject(self);
-            final String resName = name.convertToString().toString();
+            final java.lang.String resName = name.convertToString().toString();
             return convertJavaToUsableRubyObject(context.runtime, loader.getResource(resName));
         }
 
         @JRubyMethod
         public static IRubyObject resource_as_stream(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
             final java.lang.ClassLoader loader = unwrapIfJavaObject(self);
-            final String resName = name.convertToString().toString();
+            final java.lang.String resName = name.convertToString().toString();
             return convertJavaToUsableRubyObject(context.runtime, loader.getResourceAsStream(resName));
         }
 
         @JRubyMethod
         public static IRubyObject resource_as_string(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
             final java.lang.ClassLoader loader = unwrapIfJavaObject(self);
-            final String resName = name.convertToString().toString();
+            final java.lang.String resName = name.convertToString().toString();
             return new RubyIO(context.runtime, loader.getResourceAsStream(resName)).read(context);
+        }
+
+    }
+
+    @JRubyClass(name = "Java::JavaLang::CharSequence")
+    public static class CharSequence {
+
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.defineAnnotatedMethods(CharSequence.class);
+            return proxy;
+        }
+
+        @JRubyMethod(name = "inspect")
+        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
+            // NOTE: we re-define java.lang.String#inspect thus these are "others" e.g. StringBuilder
+            java.lang.CharSequence str = (java.lang.CharSequence) self.toJava(java.lang.CharSequence.class);
+
+            RubyString buf = Inspector.inspectStart(context, self.getMetaClass());
+            RubyStringBuilder.cat(context.runtime, buf, Inspector.COLON_SPACE); // :
+            buf.cat19(RubyString.newString(context.runtime, str).inspect());
+            RubyStringBuilder.cat(context.runtime, buf, Inspector.GT); // >
+
+            return buf;
+        }
+
+    }
+
+    @JRubyClass(name = "Java::JavaLang::String")
+    public static class String {
+
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(String.class);
+            return proxy;
+        }
+
+        @JRubyMethod(name = "to_s", alias = "to_str")
+        public static IRubyObject to_s(final ThreadContext context, final IRubyObject self) {
+            java.lang.String str = (java.lang.String) self.toJava(java.lang.String.class);
+            return RubyString.newString(context.runtime, str);
+        }
+
+        @JRubyMethod(name = "inspect")
+        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
+            java.lang.String str = (java.lang.String) self.toJava(java.lang.String.class);
+            return RubyString.newString(context.runtime, str).inspect();
         }
 
     }
@@ -629,7 +687,7 @@ public abstract class JavaLang {
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject idx) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, java.lang.String name, IRubyObject idx) {
             final RubyInteger val = (RubyInteger) self.callMethod(context, "[]", idx);
             int byte_val = val.getIntValue();
             if ( byte_val >= 0 ) return val;
@@ -644,7 +702,7 @@ public abstract class JavaLang {
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject idx, IRubyObject val) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, java.lang.String name, IRubyObject idx, IRubyObject val) {
             int byte_val = ((RubyInteger) val).getIntValue();
             if ( byte_val > 127 ) {
                 val = RubyFixnum.newFixnum(context.runtime, byte_val - 256); // value -= 256 if value > 127

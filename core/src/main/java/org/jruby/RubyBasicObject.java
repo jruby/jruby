@@ -76,6 +76,7 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
+import org.jruby.util.Inspector;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.unsafe.UnsafeHolder;
 
@@ -1146,14 +1147,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject inspect() {
-        if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
+        if (!isImmediate() && !(this instanceof RubyModule) && hasVariables()) {
             return hashyInspect();
         }
         return to_s();
     }
 
-    private static final byte[] INSPECT_POUND_LT = "#<".getBytes();
-    private static final byte[] INSPECT_COLON_ZERO_X = ":0x".getBytes();
     private static final byte[] INSPECT_SPACE_DOT_DOT_DOT_GT = " ...>".getBytes();
     private static final byte[] INSPECT_COMMA = ",".getBytes();
     private static final byte[] INSPECT_SPACE = " ".getBytes();
@@ -1162,12 +1161,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public final IRubyObject hashyInspect() {
         final Ruby runtime = getRuntime();
-        ByteList name = types(runtime, metaClass.getRealClass()).getByteList();
-        RubyString part = RubyString.newStringLight(runtime, 2 + name.length() + 3 + 8 + 1); // #<Object:0x5a1c0542>
-        encStrBufCat(runtime, part, INSPECT_POUND_LT);
-        encStrBufCat(runtime, part, name);
-        encStrBufCat(runtime, part, INSPECT_COLON_ZERO_X);
-        encStrBufCat(runtime, part, ConvertBytes.longToHexBytes(inspectHashCode()));
+
+        RubyString part = Inspector.inspectStart(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
 
         if (runtime.isInspecting(this)) {
             encStrBufCat(runtime, part, INSPECT_SPACE_DOT_DOT_DOT_GT);
