@@ -256,8 +256,13 @@ public class RubyStringBuilder {
         return buf;
     }
 
-    public static RubyString cat(final Ruby runtime, RubyString buf, byte[] b) {
-        EncodingUtils.encStrBufCat(runtime, buf, b);
+    public static RubyString cat(final Ruby runtime, RubyString buf, byte[] bytes) {
+        EncodingUtils.encStrBufCat(runtime, buf, bytes);
+        return buf;
+    }
+
+    public static RubyString cat(final Ruby runtime, RubyString buf, ByteList bytes) {
+        EncodingUtils.encStrBufCat(runtime, buf, bytes);
         return buf;
     }
 

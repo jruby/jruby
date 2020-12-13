@@ -51,6 +51,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+
+import org.jruby.util.Inspector;
+import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.TypeConverter;
 
 /**
@@ -125,7 +128,25 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public IRubyObject inspect(ThreadContext context) {
-            return super.inspect(context);
+            final Ruby runtime = context.runtime;
+
+            RubyString buf = Inspector.inspectStart(context, receiver.getMetaClass());
+            RubyStringBuilder.cat(runtime, buf, Inspector.SPACE);
+
+            if (size() == 0) {
+                RubyStringBuilder.cat(runtime, buf, EMPTY_HASH_BYTES);
+            } else if (runtime.isInspecting(this)) {
+                RubyStringBuilder.cat(runtime, buf, RECURSIVE_HASH_BYTES);
+            } else {
+                try {
+                    runtime.registerInspecting(this);
+                    buf.cat19(inspectHash(context));
+                } finally {
+                    runtime.unregisterInspecting(this);
+                }
+            }
+
+            return RubyStringBuilder.cat(runtime, buf, Inspector.GT);
         }
 
         @Override

@@ -28,7 +28,7 @@ public class Inspector {
         return buf;
     }
 
-    // e.g. #<Java::JavaUtil::Vector
+    // e.g. #<Java::JavaUtil::Vector:
     public static RubyString inspectStart(final ThreadContext context, final RubyModule type) {
         final Ruby runtime = context.runtime;
         RubyString buf = inspectStartType(context, type);

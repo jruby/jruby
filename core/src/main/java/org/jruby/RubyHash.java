@@ -59,7 +59,9 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.Inspector;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
@@ -867,7 +869,7 @@ public class RubyHash extends RubyObject implements Map {
     /** inspect_hash
      *
      */
-    private IRubyObject inspectHash(final ThreadContext context) {
+    protected RubyString inspectHash(final ThreadContext context) {
         final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
 
         str.infectBy(this);
@@ -901,19 +903,24 @@ public class RubyHash extends RubyObject implements Map {
         return inspect(metaClass.runtime.getCurrentContext());
     }
 
+    protected static final ByteList EMPTY_HASH_BYTES = new ByteList(new byte[] { '{','}' }, USASCIIEncoding.INSTANCE);
+    protected static final ByteList RECURSIVE_HASH_BYTES = new ByteList(new byte[] { '{','.','.','.','}' }, USASCIIEncoding.INSTANCE);
+
     /** rb_hash_inspect
      *
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        if (size() == 0) return RubyString.newUSASCIIString(context.runtime, "{}");
-        if (context.runtime.isInspecting(this)) return RubyString.newUSASCIIString(context.runtime, "{...}");
+        final Ruby runtime = context.runtime;
+
+        if (size() == 0) return RubyString.newStringShared(runtime, EMPTY_HASH_BYTES);
+        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_HASH_BYTES);
 
         try {
-            context.runtime.registerInspecting(this);
+            runtime.registerInspecting(this);
             return inspectHash(context);
         } finally {
-            context.runtime.unregisterInspecting(this);
+            runtime.unregisterInspecting(this);
         }
     }
 
