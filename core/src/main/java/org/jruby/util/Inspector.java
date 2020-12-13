@@ -20,6 +20,7 @@ public class Inspector {
     private static final byte[] COLON_ZERO_X = new byte[] { ':', '0', 'x' };
     public static final byte[] COLON = new byte[] { ':' };
     public static final byte[] SPACE = new byte[] { ' ' };
+    public static final byte[] SLASH = new byte[] { '/' };
     public static final byte[] COLON_SPACE = new byte[] { ':', ' ' };
     public static final byte[] GT = new byte[] { '>' };
     public static final byte[] COMMA_SPACE = new byte[] { ',', ' ' };
