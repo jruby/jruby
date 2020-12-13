@@ -11,7 +11,13 @@ import static org.jruby.util.io.EncodingUtils.encStrBufCat;
 public class Inspector {
 
     private static final byte[] COLON_ZERO_X = new byte[] { ':', '0', 'x' };
-    private static final byte[] COLON = new byte[] { ':' };
+    public static final byte[] COLON = new byte[] { ':' };
+    public static final byte[] SPACE = new byte[] { ' ' };
+    public static final byte[] COLON_SPACE = new byte[] { ':', ' ' };
+    public static final byte[] GT = new byte[] { '>' };
+    public static final byte[] COMMA_SPACE = new byte[] { ',', ' ' };
+    public static final byte[] BEG_BRACKET = new byte[] { '[' };
+    public static final byte[] END_BRACKET_GT = new byte[] { ']', '>' };
 
     // e.g.: #<Object:0x5a1c0542
     public static RubyString inspectStart(final ThreadContext context, final RubyModule type, final int hash) {

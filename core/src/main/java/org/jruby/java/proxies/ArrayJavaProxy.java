@@ -492,10 +492,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         return Java.getProxyClass(context.runtime, javaClass);
     }
 
-    private static final byte[] BEG_BRACKET = new byte[] { '[' };
-    private static final byte[] END_BRACKET_GT = new byte[] { ']', '>' };
-    private static final byte[] END_BRACKET_DOT_SPACE = new byte[] { ']', ':', ' ' };
-    private static final byte[] COMMA_SPACE = new byte[] { ',', ' ' };
+    private static final byte[] END_BRACKET_COLON_SPACE = new byte[] { ']', ':', ' ' };
 
     // #<Java::long[3]: [1, 2, 0]>
     // #<Java::int[0]: []>
@@ -513,22 +510,22 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         RubyModule type = Java.getProxyClass(runtime, componentClass);
         RubyString buf = Inspector.inspectStart(context, type);
-        RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+        RubyStringBuilder.cat(runtime, buf, Inspector.BEG_BRACKET); // [
         RubyStringBuilder.cat(runtime, buf, ConvertBytes.intToCharBytes(ary.length));
-        RubyStringBuilder.cat(runtime, buf, END_BRACKET_DOT_SPACE); // ]:
+        RubyStringBuilder.cat(runtime, buf, END_BRACKET_COLON_SPACE); // ]:
 
-        RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+        RubyStringBuilder.cat(runtime, buf, Inspector.BEG_BRACKET); // [
         for (int i = 0; i < ary.length; i++) {
             RubyString s = JavaUtil.inspectObject(context, ary[i]);
             if (i > 0) {
-                RubyStringBuilder.cat(runtime, buf, COMMA_SPACE); // ,
+                RubyStringBuilder.cat(runtime, buf, Inspector.COMMA_SPACE); // ,
             } else {
                 buf.setEncoding(s.getEncoding());
             }
             buf.cat19(s);
         }
 
-        RubyStringBuilder.cat(runtime, buf, END_BRACKET_GT); // ]>
+        RubyStringBuilder.cat(runtime, buf, Inspector.END_BRACKET_GT); // ]>
         return buf;
     }
 

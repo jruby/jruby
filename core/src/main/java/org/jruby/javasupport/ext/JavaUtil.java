@@ -37,12 +37,15 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Inspector;
+import org.jruby.util.RubyStringBuilder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
+import static org.jruby.javasupport.JavaUtil.inspectObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -245,6 +248,31 @@ public abstract class JavaUtil {
         @JRubyMethod
         public static IRubyObject join(final ThreadContext context, final IRubyObject self, final IRubyObject sep) {
             return to_a(context, self).join(context, sep);
+        }
+
+        // #<Java::JavaUtil::ArrayList: [1, 2, 3]>
+        @JRubyMethod
+        public static RubyString inspect(final ThreadContext context, final IRubyObject self) {
+            final Ruby runtime = context.runtime;
+            java.util.Collection coll = unwrapIfJavaObject(self);
+
+            RubyString buf = Inspector.inspectStart(context, self.getMetaClass());
+            RubyStringBuilder.cat(runtime, buf, Inspector.SPACE);
+
+            RubyStringBuilder.cat(runtime, buf, Inspector.BEG_BRACKET); // [
+            int i = 0;
+            for (Object elem : coll) {
+                RubyString s = inspectObject(context, elem);
+                if (i++ > 0) {
+                    RubyStringBuilder.cat(runtime, buf, Inspector.COMMA_SPACE); // ,
+                } else {
+                    buf.setEncoding(s.getEncoding());
+                }
+                buf.cat19(s);
+            }
+
+            RubyStringBuilder.cat(runtime, buf, Inspector.END_BRACKET_GT); // ]>
+            return buf;
         }
 
     }
