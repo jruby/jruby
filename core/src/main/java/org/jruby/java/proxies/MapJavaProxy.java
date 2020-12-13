@@ -52,9 +52,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import org.jruby.util.Inspector;
 import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.TypeConverter;
+
+import static org.jruby.util.Inspector.*;
 
 /**
  * A proxy for wrapping <code>java.util.Map</code> instances.
@@ -129,24 +130,25 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public IRubyObject inspect(ThreadContext context) {
             final Ruby runtime = context.runtime;
+            final Map map = mapDelegate();
 
-            RubyString buf = Inspector.inspectStart(context, receiver.getMetaClass());
-            RubyStringBuilder.cat(runtime, buf, Inspector.SPACE);
+            RubyString buf = inspectStart(context, receiver.getMetaClass());
+            RubyStringBuilder.cat(runtime, buf, SPACE);
 
             if (size() == 0) {
                 RubyStringBuilder.cat(runtime, buf, EMPTY_HASH_BYTES);
-            } else if (runtime.isInspecting(this)) {
+            } else if (runtime.isInspecting(map)) {
                 RubyStringBuilder.cat(runtime, buf, RECURSIVE_HASH_BYTES);
             } else {
                 try {
-                    runtime.registerInspecting(this);
+                    runtime.registerInspecting(map);
                     buf.cat19(inspectHash(context));
                 } finally {
-                    runtime.unregisterInspecting(this);
+                    runtime.unregisterInspecting(map);
                 }
             }
 
-            return RubyStringBuilder.cat(runtime, buf, Inspector.GT);
+            return RubyStringBuilder.cat(runtime, buf, GT);
         }
 
         @Override

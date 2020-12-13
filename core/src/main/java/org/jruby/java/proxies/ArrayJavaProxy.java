@@ -18,8 +18,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ConvertBytes;
-import org.jruby.util.Inspector;
 import org.jruby.util.RubyStringBuilder;
+
+import static org.jruby.util.Inspector.*;
 
 public final class ArrayJavaProxy extends JavaProxy {
 
@@ -509,23 +510,36 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object[] ary = (Object[]) getObject();
 
         RubyModule type = Java.getProxyClass(runtime, componentClass);
-        RubyString buf = Inspector.inspectStart(context, type);
-        RubyStringBuilder.cat(runtime, buf, Inspector.BEG_BRACKET); // [
+        RubyString buf = inspectStartType(context, type);
+        RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
         RubyStringBuilder.cat(runtime, buf, ConvertBytes.intToCharBytes(ary.length));
         RubyStringBuilder.cat(runtime, buf, END_BRACKET_COLON_SPACE); // ]:
 
-        RubyStringBuilder.cat(runtime, buf, Inspector.BEG_BRACKET); // [
-        for (int i = 0; i < ary.length; i++) {
-            RubyString s = JavaUtil.inspectObject(context, ary[i]);
-            if (i > 0) {
-                RubyStringBuilder.cat(runtime, buf, Inspector.COMMA_SPACE); // ,
-            } else {
-                buf.setEncoding(s.getEncoding());
+        if (ary.length == 0) {
+            RubyStringBuilder.cat(runtime, buf, EMPTY_ARRAY_BYTES);
+        } else if (runtime.isInspecting(ary)) {
+            RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BYTES);
+        } else {
+            try {
+                runtime.registerInspecting(ary);
+
+                RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+                for (int i = 0; i < ary.length; i++) {
+                    RubyString s = JavaUtil.inspectObject(context, ary[i]);
+                    if (i > 0) {
+                        RubyStringBuilder.cat(runtime, buf, COMMA_SPACE); // ,
+                    } else {
+                        buf.setEncoding(s.getEncoding());
+                    }
+                    buf.cat19(s);
+                }
+                RubyStringBuilder.cat(runtime, buf, END_BRACKET); // ]
+            } finally {
+                runtime.unregisterInspecting(ary);
             }
-            buf.cat19(s);
         }
 
-        RubyStringBuilder.cat(runtime, buf, Inspector.END_BRACKET_GT); // ]>
+        RubyStringBuilder.cat(runtime, buf, GT); // >
         return buf;
     }
 
@@ -605,6 +619,41 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         return buffer.toString();
     }
+
+//    private static void toString(StringBuilder str, byte[] a) {
+//        int last = a.length - 1;
+//        if (last == -1) {
+//            str.append("[]"); return;
+//        }
+//
+//        int i = 0;
+//        str.append('[');
+//        while (true) {
+//            str.append(a[i++]);
+//            if (i == last) {
+//                str.append(']'); return;
+//            }
+//            str.append(", ");
+//        }
+//    }
+//
+//
+//    private static void toString(StringBuilder str, int[] a) {
+//        int last = a.length - 1;
+//        if (last == -1) {
+//            str.append("[]"); return;
+//        }
+//
+//        int i = 0;
+//        str.append('[');
+//        while (true) {
+//            str.append(a[i++]);
+//            if (i == last) {
+//                str.append(']'); return;
+//            }
+//            str.append(", ");
+//        }
+//    }
 
     @Override
     @JRubyMethod(name = "==")

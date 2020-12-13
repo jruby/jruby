@@ -5,10 +5,17 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.util.io.EncodingUtils.encStrBufCat;
 
 public class Inspector {
+
+    public static final ByteList EMPTY_ARRAY_BYTES = new ByteList(new byte[] { '[',']' }, USASCIIEncoding.INSTANCE, false);
+    public static final ByteList RECURSIVE_ARRAY_BYTES = new ByteList(new byte[] { '[','.','.','.',']' }, USASCIIEncoding.INSTANCE, false);
+
+    public static final ByteList EMPTY_HASH_BYTES = new ByteList(new byte[] { '{','}' }, USASCIIEncoding.INSTANCE, false);
+    public static final ByteList RECURSIVE_HASH_BYTES = new ByteList(new byte[] { '{','.','.','.','}' }, USASCIIEncoding.INSTANCE, false);
 
     private static final byte[] COLON_ZERO_X = new byte[] { ':', '0', 'x' };
     public static final byte[] COLON = new byte[] { ':' };
@@ -17,6 +24,7 @@ public class Inspector {
     public static final byte[] GT = new byte[] { '>' };
     public static final byte[] COMMA_SPACE = new byte[] { ',', ' ' };
     public static final byte[] BEG_BRACKET = new byte[] { '[' };
+    public static final byte[] END_BRACKET = new byte[] { ']' };
     public static final byte[] END_BRACKET_GT = new byte[] { ']', '>' };
 
     // e.g.: #<Object:0x5a1c0542
@@ -36,7 +44,7 @@ public class Inspector {
         return buf;
     }
 
-    private static RubyString inspectStartType(final ThreadContext context, final RubyModule type) {
+    public static RubyString inspectStartType(final ThreadContext context, final RubyModule type) {
         RubyString name = RubyStringBuilder.types(context, type);
         // minimal: "#<Object:0x5a1c0542>"
         RubyString buf = RubyString.newStringLight(context.runtime, 2 + name.length() + 3 + 8 + 1, USASCIIEncoding.INSTANCE);

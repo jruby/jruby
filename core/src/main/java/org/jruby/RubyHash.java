@@ -59,9 +59,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
-import org.jruby.util.Inspector;
 import org.jruby.util.RecursiveComparator;
-import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
@@ -75,8 +73,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.Inspector.*;
 
 // Design overview:
 //
@@ -902,9 +901,6 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject inspect() {
         return inspect(metaClass.runtime.getCurrentContext());
     }
-
-    protected static final ByteList EMPTY_HASH_BYTES = new ByteList(new byte[] { '{','}' }, USASCIIEncoding.INSTANCE);
-    protected static final ByteList RECURSIVE_HASH_BYTES = new ByteList(new byte[] { '{','.','.','.','}' }, USASCIIEncoding.INSTANCE);
 
     /** rb_hash_inspect
      *

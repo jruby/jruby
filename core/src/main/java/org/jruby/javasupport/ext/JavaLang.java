@@ -41,7 +41,6 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Inspector;
 import org.jruby.util.RubyStringBuilder;
 
 import java.lang.reflect.Modifier;
@@ -51,6 +50,7 @@ import static org.jruby.javasupport.JavaUtil.isJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 import static org.jruby.runtime.Visibility.PUBLIC;
+import static org.jruby.util.Inspector.*;
 
 /**
  * Java::JavaLang package extensions.
@@ -646,12 +646,12 @@ public abstract class JavaLang {
         @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
             // NOTE: we re-define java.lang.String#inspect thus these are "others" e.g. StringBuilder
-            java.lang.CharSequence str = (java.lang.CharSequence) self.toJava(java.lang.CharSequence.class);
+            java.lang.CharSequence str = self.toJava(java.lang.CharSequence.class);
 
-            RubyString buf = Inspector.inspectStart(context, self.getMetaClass());
-            RubyStringBuilder.cat(context.runtime, buf, Inspector.COLON_SPACE); // :
+            RubyString buf = inspectStart(context, self.getMetaClass());
+            RubyStringBuilder.cat(context.runtime, buf, SPACE);
             buf.cat19(RubyString.newString(context.runtime, str).inspect());
-            RubyStringBuilder.cat(context.runtime, buf, Inspector.GT); // >
+            RubyStringBuilder.cat(context.runtime, buf, GT); // >
 
             return buf;
         }
@@ -678,6 +678,29 @@ public abstract class JavaLang {
             return RubyString.newString(context.runtime, str).inspect();
         }
 
+    }
+
+    static RubyString inspectJavaValue(final ThreadContext context, final IRubyObject self) {
+        java.lang.Object obj = unwrapIfJavaObject(self);
+
+        RubyString buf = inspectStart(context, self.getMetaClass());
+        RubyStringBuilder.cat(context.runtime, buf, SPACE);
+        RubyStringBuilder.cat(context.runtime, buf, obj.toString());
+        RubyStringBuilder.cat(context.runtime, buf, GT); // >
+
+        return buf;
+    }
+
+    static final class InspectValue extends JavaMethod.JavaMethodZero {
+
+        InspectValue(RubyModule implClass) {
+            super(implClass, PUBLIC, "inspect");
+        }
+
+        @Override
+        public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final java.lang.String name) {
+            return inspectJavaValue(context, self);
+        }
     }
 
     private static final class UByteGet extends JavaMethod.JavaMethodOne {

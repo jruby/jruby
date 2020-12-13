@@ -50,6 +50,7 @@ import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
+import static org.jruby.util.Inspector.*;
 
 /**
  * Java::JavaUtil package extensions.
@@ -63,6 +64,9 @@ public abstract class JavaUtil {
         JavaExtensions.put(runtime, java.util.Iterator.class, (proxyClass) -> Iterator.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.util.Collection.class, (proxyClass) -> Collection.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.util.List.class, (proxyClass) -> List.define(runtime, proxyClass));
+        JavaExtensions.put(runtime, java.util.Date.class, (dateClass) -> {
+            dateClass.addMethod("inspect", new JavaLang.InspectValue(dateClass));
+        });
     }
 
     @JRubyModule(name = "Java::JavaUtil::Enumeration", include = "Enumerable")
@@ -251,28 +255,41 @@ public abstract class JavaUtil {
         }
 
         // #<Java::JavaUtil::ArrayList: [1, 2, 3]>
-        @JRubyMethod
+        @JRubyMethod(name = "inspect")
         public static RubyString inspect(final ThreadContext context, final IRubyObject self) {
             final Ruby runtime = context.runtime;
-            java.util.Collection coll = unwrapIfJavaObject(self);
+            final java.util.Collection coll = unwrapIfJavaObject(self);
 
-            RubyString buf = Inspector.inspectStart(context, self.getMetaClass());
+            RubyString buf = inspectStart(context, self.getMetaClass());
             RubyStringBuilder.cat(runtime, buf, Inspector.SPACE);
 
-            RubyStringBuilder.cat(runtime, buf, Inspector.BEG_BRACKET); // [
+            if (runtime.isInspecting(coll)) {
+                RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BYTES);
+            } else {
+                RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+                try {
+                    runtime.registerInspecting(coll);
+                    inspectElements(context, buf, coll);
+                } finally {
+                    runtime.unregisterInspecting(coll);
+                }
+                RubyStringBuilder.cat(runtime, buf, END_BRACKET); // ]
+            }
+
+            return RubyStringBuilder.cat(runtime, buf, GT); // >
+        }
+
+        static void inspectElements(final ThreadContext context, final RubyString buf, final java.util.Collection coll) {
             int i = 0;
             for (Object elem : coll) {
                 RubyString s = inspectObject(context, elem);
                 if (i++ > 0) {
-                    RubyStringBuilder.cat(runtime, buf, Inspector.COMMA_SPACE); // ,
+                    RubyStringBuilder.cat(context.runtime, buf, Inspector.COMMA_SPACE); // ,
                 } else {
                     buf.setEncoding(s.getEncoding());
                 }
                 buf.cat19(s);
             }
-
-            RubyStringBuilder.cat(runtime, buf, Inspector.END_BRACKET_GT); // ]>
-            return buf;
         }
 
     }
