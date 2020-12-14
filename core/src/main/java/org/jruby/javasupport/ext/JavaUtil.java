@@ -260,7 +260,7 @@ public abstract class JavaUtil {
             final Ruby runtime = context.runtime;
             final java.util.Collection coll = unwrapIfJavaObject(self);
 
-            RubyString buf = inspectStart(context, self.getMetaClass());
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
             RubyStringBuilder.cat(runtime, buf, Inspector.SPACE);
 
             if (runtime.isInspecting(coll)) {

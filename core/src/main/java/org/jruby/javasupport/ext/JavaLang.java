@@ -649,7 +649,7 @@ public abstract class JavaLang {
             // NOTE: we re-define java.lang.String#inspect thus these are "others" e.g. StringBuilder
             java.lang.CharSequence str = self.toJava(java.lang.CharSequence.class);
 
-            RubyString buf = inspectStart(context, self.getMetaClass());
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
             RubyStringBuilder.cat(context.runtime, buf, SPACE);
             buf.cat19(RubyString.newString(context.runtime, str).inspect());
             RubyStringBuilder.cat(context.runtime, buf, GT); // >
@@ -684,7 +684,7 @@ public abstract class JavaLang {
     static RubyString inspectJavaValue(final ThreadContext context, final IRubyObject self) {
         java.lang.Object obj = unwrapIfJavaObject(self);
 
-        RubyString buf = inspectStart(context, self.getMetaClass());
+        RubyString buf = inspectPrefix(context, self.getMetaClass());
         RubyStringBuilder.cat(context.runtime, buf, SPACE);
         RubyStringBuilder.cat(context.runtime, buf, obj.toString());
         RubyStringBuilder.cat(context.runtime, buf, GT); // >

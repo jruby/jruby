@@ -510,7 +510,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object[] ary = (Object[]) getObject();
 
         RubyModule type = Java.getProxyClass(runtime, componentClass);
-        RubyString buf = inspectStartType(context, type);
+        RubyString buf = inspectPrefixTypeOnly(context, type);
         RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
         RubyStringBuilder.cat(runtime, buf, ConvertBytes.intToCharBytes(ary.length));
         RubyStringBuilder.cat(runtime, buf, END_BRACKET_COLON_SPACE); // ]:

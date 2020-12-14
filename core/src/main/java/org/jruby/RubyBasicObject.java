@@ -1158,7 +1158,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public final IRubyObject hashyInspect() {
         final Ruby runtime = getRuntime();
 
-        RubyString part = inspectStart(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
+        RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
 
         if (runtime.isInspecting(this)) {
             encStrBufCat(runtime, part, INSPECT_SPACE_DOT_DOT_DOT_GT);

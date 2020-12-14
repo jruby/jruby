@@ -90,7 +90,7 @@ public abstract class JavaUtilRegex {
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
             final java.util.regex.Pattern regex = unwrapJavaObject(self);
 
-            RubyString buf = inspectStart(context, self.getMetaClass());
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
             RubyStringBuilder.cat(context.runtime, buf, SPACE);
             RubyStringBuilder.cat(context.runtime, buf, SLASH);
             RubyStringBuilder.cat(context.runtime, buf, regex.toString());

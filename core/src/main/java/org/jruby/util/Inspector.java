@@ -5,7 +5,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.util.io.EncodingUtils.encStrBufCat;
 
@@ -30,23 +29,23 @@ public class Inspector {
     public static final byte[] END_BRACKET_GT = new byte[] { ']', '>' };
 
     // e.g.: #<Object:0x5a1c0542
-    public static RubyString inspectStart(final ThreadContext context, final RubyModule type, final int hash) {
+    public static RubyString inspectPrefix(final ThreadContext context, final RubyModule type, final int hash) {
         final Ruby runtime = context.runtime;
-        RubyString buf = inspectStartType(context, type);
+        RubyString buf = inspectPrefixTypeOnly(context, type);
         encStrBufCat(runtime, buf, COLON_ZERO_X); // :0x
         encStrBufCat(runtime, buf, ConvertBytes.longToHexBytes(hash));
         return buf;
     }
 
     // e.g. #<Java::JavaUtil::Vector:
-    public static RubyString inspectStart(final ThreadContext context, final RubyModule type) {
+    public static RubyString inspectPrefix(final ThreadContext context, final RubyModule type) {
         final Ruby runtime = context.runtime;
-        RubyString buf = inspectStartType(context, type);
+        RubyString buf = inspectPrefixTypeOnly(context, type);
         encStrBufCat(runtime, buf, COLON); // :
         return buf;
     }
 
-    public static RubyString inspectStartType(final ThreadContext context, final RubyModule type) {
+    public static RubyString inspectPrefixTypeOnly(final ThreadContext context, final RubyModule type) {
         RubyString name = RubyStringBuilder.types(context, type);
         // minimal: "#<Object:0x5a1c0542>"
         RubyString buf = RubyString.newStringLight(context.runtime, 2 + name.length() + 3 + 8 + 1, USASCIIEncoding.INSTANCE);

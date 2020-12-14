@@ -132,7 +132,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             final Ruby runtime = context.runtime;
             final Map map = mapDelegate();
 
-            RubyString buf = inspectStart(context, receiver.getMetaClass());
+            RubyString buf = inspectPrefix(context, receiver.getMetaClass());
             RubyStringBuilder.cat(runtime, buf, SPACE);
 
             if (size() == 0) {
