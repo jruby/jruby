@@ -23,6 +23,7 @@ public class Inspector {
     public static final byte[] SLASH = new byte[] { '/' };
     public static final byte[] COLON_SPACE = new byte[] { ':', ' ' };
     public static final byte[] GT = new byte[] { '>' };
+    public static final byte[] COMMA = new byte[] { ',' };
     public static final byte[] COMMA_SPACE = new byte[] { ',', ' ' };
     public static final byte[] BEG_BRACKET = new byte[] { '[' };
     public static final byte[] END_BRACKET = new byte[] { ']' };
