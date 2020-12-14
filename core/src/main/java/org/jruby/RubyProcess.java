@@ -105,10 +105,17 @@ public class RubyProcess {
         process_sys.defineAnnotatedMethods(Sys.class);
 
         runtime.loadConstantSet(process, jnr.constants.platform.PRIO.class);
-        runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
-        for (RLIMIT r : RLIMIT.values()) {
-            if (!r.defined()) continue;
-            process.defineConstant(r.name(), runtime.newFixnum(r.intValue()));
+
+        if (Platform.IS_WINDOWS) {
+            // mark rlimit methods as not implemented and skip defining the constants (GH-6491)
+            process.getSingletonClass().retrieveMethod("getrlimit").setNotImplemented(true);
+            process.getSingletonClass().retrieveMethod("setrlimit").setNotImplemented(true);
+        } else {
+            runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
+            for (RLIMIT r : RLIMIT.values()) {
+                if (!r.defined()) continue;
+                process.defineConstant(r.name(), runtime.newFixnum(r.intValue()));
+            }
         }
 
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
@@ -626,6 +633,15 @@ public class RubyProcess {
     @JRubyMethod(name = "setrlimit", module = true, visibility = PRIVATE)
     public static IRubyObject setrlimit(ThreadContext context, IRubyObject recv, IRubyObject resource, IRubyObject rlimCur, IRubyObject rlimMax) {
         Ruby runtime = context.runtime;
+
+        if (Platform.IS_WINDOWS) {
+            throw runtime.newNotImplementedError("Process#setrlimit is not implemented on Windows");
+        }
+
+        if (!runtime.getPosix().isNative()) {
+            runtime.getWarnings().warn("Process#setrlimit not supported on this platform");
+            return context.nil;
+        }
 
         RLimit rlim = runtime.getPosix().getrlimit(0);
 
@@ -1293,7 +1309,11 @@ public class RubyProcess {
         return getrlimit(context.runtime, arg);
     }
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
-        if (!runtime.getPosix().isNative() || Platform.IS_WINDOWS) {
+        if (Platform.IS_WINDOWS) {
+            throw runtime.newNotImplementedError("Process#getrlimit is not implemented on Windows");
+        }
+
+        if (!runtime.getPosix().isNative()) {
             runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
             RubyFixnum max = runtime.newFixnum(Long.MAX_VALUE);
             return runtime.newArray(max, max);
