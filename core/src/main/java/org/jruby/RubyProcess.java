@@ -932,7 +932,7 @@ public class RubyProcess {
 
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
 
-        raiseErrnoIfSet(runtime, ECHILD);
+        checkErrno(runtime, res, ECHILD);
 
         if (res > 0) {
             context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res));
@@ -1039,7 +1039,7 @@ public class RubyProcess {
 
         int pid = pthreadKillable(context, ctx -> posix.wait(status));
 
-        raiseErrnoIfSet(runtime, ECHILD);
+        checkErrno(runtime, pid, ECHILD);
 
         context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
         return runtime.newFixnum(pid);
