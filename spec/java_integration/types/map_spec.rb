@@ -81,7 +81,6 @@ describe "a java.util.Map instance" do
     h = java.util.HashMap.new
     test_ok(h.kind_of? java.util.Map)
     h.put(1, 2); h.put(3, 4); h.put(5, 6)
-    test_equal({1=>2, 3=>4, 5=>6}, eval(h.inspect))
     test_equal(4, h[3])
     test_equal(nil, h[10])
 
@@ -167,18 +166,18 @@ describe "a java.util.Map instance" do
       test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.ruby_merge(h2))
     end
     test_equal({"a"=>100, "b"=>454, "c"=>300}, h1.ruby_merge(h2) { |k, o, n| o+n })
-    test_equal("{\"a\"=>100, \"b\"=>200}", h1.inspect)
+    expect( h1.inspect ).to include "{\"a\"=>100, \"b\"=>200}"
 
     h1.merge!(h2) { |k, o, n| o }
-    test_equal("{\"a\"=>100, \"b\"=>200, \"c\"=>300}", h1.inspect)
+    test_equal('#<Java::JavaUtil::LinkedHashMap: {"a"=>100, "b"=>200, "c"=>300}>', h1.inspect)
     test_equal(Java::JavaUtil::LinkedHashMap, h1.class)
 
     h.clear
     h.put(1, 100); h.put(2, 200); h.put(3, 300)
     test_equal({1=>100, 2=>200}, h.reject { |k, v| k > 2 })
-    test_equal("{1=>100, 2=>200, 3=>300}", h.inspect)
+    expect( h.inspect ).to include "{1=>100, 2=>200, 3=>300}"
     test_equal({1=>100, 2=>200}, h.reject! { |k, v| k > 2 })
-    test_equal("{1=>100, 2=>200}", h.inspect)
+    expect( h.inspect ).to include "{1=>100, 2=>200}"
 
     # Java 8 adds a replace method to Map that takes a key and value
     test_equal({"c"=>300, "d"=>400, "e"=>500}, h.ruby_replace({"c"=>300, "d"=>400, "e"=>500}))
@@ -215,7 +214,7 @@ describe "a java.util.Map instance" do
 
     h2 = {"b"=>254, "c"=>300}
     test_equal({"a"=>100, "b"=>200, "c"=>300}, h.update(h2) { |k, o, n| o })
-    test_equal("{\"a\"=>100, \"b\"=>200, \"c\"=>300}", h.inspect)
+    expect( h.inspect ).to include "{\"a\"=>100, \"b\"=>200, \"c\"=>300}"
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
     test_equal([100, 200], h.values_at("a", "b"))
     test_equal([100, 200, nil], h.values_at("a", "b", "z"))
@@ -366,7 +365,7 @@ describe "a java.util.Map instance" do
     map['_internal_1'] = 1
     map['_internal_2'] = 2
     expect( map.size() ).to eql 2
-    expect( map.inspect ).to eql '{}'
+    expect( map.inspect ).to eql '#<Java::Java_integrationFixtures::InternalMap: {}>'
     yielded = {}
     map.each { |key, val| yielded[key] = val }
     expect(yielded).to be_empty
