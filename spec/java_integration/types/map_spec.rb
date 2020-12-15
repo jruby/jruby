@@ -201,7 +201,8 @@ describe "a java.util.Map instance" do
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
     test_equal(Hash, rh.class)
 
-    test_equal("{\"a\"=>20, \"d\"=>10, \"c\"=>30, \"b\"=>0, \"e\"=>20}", h.to_s)
+    test_equal("{a=20, d=10, c=30, b=0, e=20}", h.to_s)
+    test_equal(h.toString, h.to_s)
 
     test_ok(h.all? { |k, v| k.length == 1 })
     test_ok(!h.all? { |k, v| v > 100 })

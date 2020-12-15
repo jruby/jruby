@@ -461,12 +461,10 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return (RubyProc) newProc;
     }
 
-    /** rb_hash_to_s
-     *
-     */
+    // NOTE: keep Map#to_s -> toString as with other Java types
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).to_s(context);
+        return RubyString.newString(context.runtime, getMapObject().toString());
     }
 
     /** rb_hash_rehash
