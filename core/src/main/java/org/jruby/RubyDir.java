@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import jnr.posix.FileStat;
@@ -1121,6 +1122,17 @@ public class RubyDir extends RubyObject implements Closeable {
     public static RubyString getHomeDirectoryPath(ThreadContext context) {
         final RubyString homeKey = RubyString.newStringShared(context.runtime, HOME);
         return getHomeDirectoryPath(context, context.runtime.getENV().op_aref(context, homeKey));
+    }
+
+    public static Optional<String> getHomeFromEnv(Ruby runtime) {
+        final RubyString homeKey = RubyString.newStringShared(runtime, HOME);
+        final RubyHash env = runtime.getENV();
+
+        if (env.has_key_p(homeKey).isFalse()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(env.op_aref(runtime.getCurrentContext(), homeKey).toString());
+        }
     }
 
     private static final ByteList user_home = new ByteList(new byte[] {'u','s','e','r','.','h','o','m','e'}, false);

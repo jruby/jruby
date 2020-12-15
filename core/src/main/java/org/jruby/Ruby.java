@@ -562,10 +562,10 @@ public final class Ruby implements Constantizable {
         }
 
         // Provide some legacy libraries
-        loadService.provide("enumerator", "enumerator.rb");
-        loadService.provide("rational", "rational.rb");
-        loadService.provide("complex", "complex.rb");
-        loadService.provide("thread", "thread.rb");
+        loadService.provide("enumerator.rb");
+        loadService.provide("rational.rb");
+        loadService.provide("complex.rb");
+        loadService.provide("thread.rb");
 
         // Load preludes
         initRubyPreludes();
@@ -1774,8 +1774,8 @@ public final class Ruby implements Constantizable {
             new Java().load(this, false);
             new JRubyUtilLibrary().load(this, false);
 
-            loadService.provide("java", "java.rb");
-            loadService.provide("jruby/util", "jruby/util.rb");
+            loadService.provide("java.rb");
+            loadService.provide("jruby/util.rb");
         }
     }
 
@@ -3535,6 +3535,10 @@ public final class Ruby implements Constantizable {
 
     public RubyString newString(String string) {
         return RubyString.newString(this, string);
+    }
+
+    public RubyString newDeduplicatedString(String string) {
+        return freezeAndDedupString(RubyString.newString(this, string));
     }
 
     public RubyString newString(ByteList byteList) {

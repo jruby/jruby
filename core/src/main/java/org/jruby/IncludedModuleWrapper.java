@@ -198,6 +198,16 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
+    protected Map<String, Autoload> getAutoloadMap() {
+        return origin.getAutoloadMap();
+    }
+
+    @Override
+    protected Map<String, Autoload> getAutoloadMapForWrite() {
+        return origin.getAutoloadMapForWrite();
+    }
+
+    @Override
     protected DynamicMethod searchMethodCommon(String id) {
         // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
         RubyModule module = origin;

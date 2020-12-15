@@ -512,6 +512,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return (!isShared && begin == 0 && values.length == realLength) ? values : toJavaArray();
     }
 
+    public boolean isSharedJavaArray(RubyArray other) {
+        return values == other.values && begin == other.begin && realLength == other.realLength;
+    }
+
     /** rb_ary_make_shared
     *
     */
