@@ -277,7 +277,10 @@ describe "A Java primitive Array of type" do
 
     it "inspects to show type and contents" do
       arr = [100, 101, 225].to_java :char
-      expect(arr.inspect).to eql '#<Java::char[3]: [d, e, á]>'
+      expect(arr.inspect).to eql "#<Java::char[3]: ['d', 'e', 'á']>"
+
+      arr = Java::char[2].new; arr[1] = 'ō' # null char + multi-byte char
+      expect(arr.inspect).to eql "#<Java::char[2]: ['\u0000', 'ō']>"
     end
 
     it 'handles equality to another array' do
@@ -1040,6 +1043,22 @@ describe "A Java primitive Array of type" do
     arr[0] = java.lang.Boolean::TRUE
     arr[1] = java.lang.Boolean.new(false)
     expect(arr.inspect).to eql '#<Java::JavaLang::Boolean[3]: [true, false, nil]>'
+  end
+
+  it "inspects a Character wrapper Ruby style" do
+    arr = java.lang.Character[3].new
+
+    c = java.lang.Character.new(48)
+    expect( c.to_s ).to eql '0'
+    expect( c.inspect ).to eql "'0'"
+    arr[0] = c
+
+    c = java.lang.Character.new(0)
+    expect( c.to_s ).to eql "\u0000"
+    expect( c.inspect ).to eql "'\u0000'"
+    arr[1] = c
+
+    expect(arr.inspect).to eql "#<Java::JavaLang::Character[3]: ['0', '\u0000', nil]>"
   end
 
   describe "Class ref" do

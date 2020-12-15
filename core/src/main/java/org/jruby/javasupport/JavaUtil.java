@@ -328,7 +328,7 @@ public class JavaUtil {
 
     public static RubyString inspectObject(ThreadContext context, Object obj) {
         if (!(obj instanceof IRubyObject)) {
-            obj = JavaUtil.convertJavaToRuby(context.runtime, obj);
+            obj = Java.getInstance(context.runtime, obj);
         }
         return RubyObject.inspect(context, (IRubyObject) obj);
     }

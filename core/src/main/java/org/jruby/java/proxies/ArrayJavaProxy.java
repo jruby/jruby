@@ -20,6 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
+import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.util.Inspector.*;
 
 public final class ArrayJavaProxy extends JavaProxy {
@@ -558,8 +559,8 @@ public final class ArrayJavaProxy extends JavaProxy {
                 /* if (componentClass == short.class) */ buffer.append(Arrays.toString((short[])getObject()));
                 break;
             case 'c':
-                /* if (componentClass == char.class) */ buffer.append(Arrays.toString((char[])getObject()));
-                break;
+                /* if (componentClass == char.class) */
+                return inspectCharArrayPart(runtime, buffer, (char[])getObject(), len);
             case 'i':
                 /* if (componentClass == int.class) */ buffer.append(Arrays.toString((int[])getObject()));
                 ///* if (componentClass == int.class) */ toString(buffer, (int[])getObject());
@@ -575,6 +576,18 @@ public final class ArrayJavaProxy extends JavaProxy {
                 break;
         }
         return RubyString.newUSASCIIString(runtime, buffer.append('>').toString());
+    }
+
+    // NOTE: special case as we want to inspect like a Character wrapper e.g. ['', 'a']
+    private static RubyString inspectCharArrayPart(final Ruby runtime, final StringBuilder buffer, final char[] ary, final int len) {
+        buffer.append('[');
+        for (int i = 0; ; i++) {
+            inspectCharValue(buffer, ary[i]);
+            if (i == len - 1) break;
+            buffer.append(", ");
+        }
+        buffer.append(']');
+        return RubyString.newString(runtime, buffer.append('>'));
     }
 
     // long[1, 2, 0]

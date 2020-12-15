@@ -439,7 +439,11 @@ public abstract class JavaLang {
         @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
             java.lang.Character c = (java.lang.Character) self.toJava(java.lang.Character.class);
-            return RubyString.newString(context.runtime, "'" + c.toString() + "'");
+            return RubyString.newString(context.runtime, inspectCharValue(new StringBuilder(3), c));
+        }
+
+        public static StringBuilder inspectCharValue(final StringBuilder buf, final char c) {
+            return buf.append('\'').append(c).append('\'');
         }
 
     }
