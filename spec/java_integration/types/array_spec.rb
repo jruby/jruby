@@ -71,7 +71,7 @@ describe "A Java primitive Array of type" do
 
     it "inspects to show type and contents" do
       arr = [false, true, false].to_java :boolean
-      expect(arr.inspect).to match(/^boolean\[false, true, false\]@[0-9a-f]+$/)
+      expect(arr.inspect).to eql '#<Java::boolean[3]: [false, true, false]>'
     end
   end
 
@@ -152,8 +152,8 @@ describe "A Java primitive Array of type" do
     end
 
     it "inspects to show type and contents" do
-      arr = [1, 2, 3].to_java :byte
-      expect(arr.inspect).to match(/^byte\[1, 2, 3\]@[0-9a-f]+$/)
+      arr = [1, 2, -128].to_java :byte
+      expect(arr.inspect).to eql '#<Java::byte[3]: [1, 2, -128]>'
     end
 
     it 'handles equality to another array' do
@@ -276,8 +276,8 @@ describe "A Java primitive Array of type" do
     end
 
     it "inspects to show type and contents" do
-      arr = [100, 101, 102].to_java :char
-      expect(arr.inspect).to match(/^char\[d, e, f\]@[0-9a-f]+$/)
+      arr = [100, 101, 225].to_java :char
+      expect(arr.inspect).to eql '#<Java::char[3]: [d, e, á]>'
     end
 
     it 'handles equality to another array' do
@@ -402,7 +402,7 @@ describe "A Java primitive Array of type" do
 
     it "inspects to show type and contents" do
       arr = [1.0, 1.1, 1.2].to_java :double
-      expect(arr.inspect).to match(/^double\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/)
+      expect(arr.inspect).to eql '#<Java::double[3]: [1.0, 1.1, 1.2]>'
     end
 
     it "detects element using include?" do
@@ -515,7 +515,7 @@ describe "A Java primitive Array of type" do
 
     it "inspects to show type and contents" do
       arr = [1.0, 1.1, 1.2].to_java :float
-      expect(arr.inspect).to match(/^float\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/)
+      expect(arr.inspect).to eql '#<Java::float[3]: [1.0, 1.1, 1.2]>'
     end
 
     it "detects element using include?" do
@@ -624,7 +624,7 @@ describe "A Java primitive Array of type" do
 
     it "inspects to show type and contents" do
       arr = [13, 42, 120].to_java :int
-      expect(arr.inspect).to match(/^int\[13, 42, 120\]@[0-9a-f]+$/)
+      expect(arr.inspect).to eql '#<Java::int[3]: [13, 42, 120]>'
     end
 
     it "detects element using include?" do
@@ -728,8 +728,8 @@ describe "A Java primitive Array of type" do
     end
 
     it "inspects to show type and contents" do
-      arr = [13, 42, 120].to_java :long
-      expect(arr.inspect).to match(/^long\[13, 42, 120\]@[0-9a-f]+$/)
+      arr = [13, 42, 120000000000].to_java :long
+      expect(arr.inspect).to eql '#<Java::long[3]: [13, 42, 120000000000]>'
     end
 
     it "clones" do
@@ -829,7 +829,7 @@ describe "A Java primitive Array of type" do
 
     it "inspects to show type and contents" do
       arr = [13, 42, 120].to_java :short
-      expect(arr.inspect).to match(/^short\[13, 42, 120\]@[0-9a-f]+$/)
+      expect(arr.inspect).to eql '#<Java::short[3]: [13, 42, 120]>'
     end
 
     it "dups" do
@@ -910,8 +910,8 @@ describe "A Java primitive Array of type" do
     end
 
     it "inspects to show type and contents" do
-      arr = ['foo', 'bar', 'baz'].to_java :string
-      expect(arr.inspect).to match(/^java.lang.String\[foo, bar, baz\]@[0-9a-f]+$/)
+      arr = ['foo', 'bar', 'bar'].to_java :string
+      expect(arr.inspect).to eql '#<Java::JavaLang::String[3]: ["foo", "bar", "bar"]>'
     end
 
     it "dups" do
@@ -1029,10 +1029,17 @@ describe "A Java primitive Array of type" do
     end
 
     it "inspects to show type and contents" do
-      jobject = java.lang.Object
-      arr = [jobject.new, jobject.new, jobject.new].to_java :object
-      expect(arr.inspect).to match(/^java.lang.Object\[java\.lang\.Object@[0-9a-f]+, java\.lang\.Object@[0-9a-f]+, java\.lang\.Object@[0-9a-f]+\]@[0-9a-f]+$/)
+      arr = [java.lang.Object.new, Object.new].to_java :object
+      expect(arr.inspect).to start_with '#<Java::JavaLang::Object[2]: '
+      expect(arr.inspect).to match(/\[#<Java::JavaLang::Object:0x[0-9a-f]+>, #<Object:0x[0-9a-f]+>]>$/)
     end
+  end
+
+  it "inspects a Boolean wrapper like a primitive" do
+    arr = java.lang.Boolean[3].new
+    arr[0] = java.lang.Boolean::TRUE
+    arr[1] = java.lang.Boolean.new(false)
+    expect(arr.inspect).to eql '#<Java::JavaLang::Boolean[3]: [true, false, nil]>'
   end
 
   describe "Class ref" do
