@@ -1,1 +1,0 @@
-fails:The next statement in a method is invalid and raises a SyntaxError

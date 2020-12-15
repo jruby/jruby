@@ -1,1 +1,1 @@
-fails(not implemented, jruby/jruby#6149):TracePoint#path returns the path of the file being run
+debug:TracePoint#path returns the path of the file being run
