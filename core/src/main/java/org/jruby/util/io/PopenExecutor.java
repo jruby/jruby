@@ -1013,23 +1013,16 @@ public class PopenExecutor {
             sargp.redirect_fds = context.nil;
         }
 
-//        #ifdef HAVE_SETPGID
         if (eargp.pgroup_given()) {
             if (run_exec_pgroup(runtime, eargp, sargp, errmsg) == -1) /* async-signal-safe */
                 return -1;
         }
-//        #endif
 
-//        #if defined(HAVE_SETRLIMIT) && defined(RLIM2NUM)
         obj = eargp.rlimit_limits;
         if (obj != null) {
             throw runtime.newNotImplementedError("setting rlimit in child is unsupported");
-//            if (run_exec_rlimit(runtime, (RubyArray)obj, sargp, errmsg) == -1) /* hopefully async-signal-safe */
-//                return -1;
         }
-//        #endif
 
-//        #if !defined(HAVE_FORK)
         boolean clearEnv = false;
         if (eargp.unsetenv_others_given() && eargp.unsetenv_others_do()) {
             // we handle this elsewhere by starting from a blank env
@@ -1040,17 +1033,9 @@ public class PopenExecutor {
         if (env != null) {
             eargp.envp_str = ShellLauncher.getModifiedEnv(runtime, env, clearEnv);
         }
-//        #endif
 
         if (eargp.umask_given()) {
             throw runtime.newNotImplementedError("setting umask in child is unsupported");
-//            int mask = eargp.umask_mask;
-//            SpawnAttribute.
-//            int oldmask = runtime.getPosix().umask(mask); /* never fail */ /* async-signal-safe */
-//            if (sargp != null) {
-//                sargp.umask_given_set();
-//                sargp.umask_mask = oldmask;
-//            }
         }
 
         obj = eargp.fd_dup2;
@@ -1061,7 +1046,7 @@ public class PopenExecutor {
 
         obj = eargp.fd_close;
         if (obj != null) {
-            run_exec_close(runtime, (RubyArray)obj, eargp, errmsg);
+            run_exec_close(runtime, (RubyArray)obj, eargp);
         }
 
         obj = eargp.fd_dup2_child;
@@ -1072,53 +1057,20 @@ public class PopenExecutor {
         if (eargp.chdir_given()) {
             // should have been set up in pipe_open, so we just raise here
             throw new RuntimeException("BUG: chdir not supported in posix_spawn; should have been made into chdir");
-            // we can't chdir in the parent
-//            if (sargp != null) {
-//                String cwd = runtime.getCurrentDirectory();
-//                sargp.chdir_given_set();
-//                sargp.chdir_dir = cwd;
-//            }
-//            if (chdir(RSTRING_PTR(eargp.chdir_dir)) == -1) { /* async-signal-safe */
-//                ERRMSG("chdir");
-//                return -1;
-//            }
         }
 
-//        #ifdef HAVE_SETGID
         if (eargp.gid_given()) {
             throw runtime.newNotImplementedError("setgid in the child is not supported");
-            // we can't setgid in the parent
-//            if (setgid(eargp.gid) < 0) {
-//                ERRMSG("setgid");
-//                return -1;
-//            }
         }
-//        #endif
-//        #ifdef HAVE_SETUID
+
         if (eargp.uid_given()) {
             throw runtime.newNotImplementedError("setuid in the child is not supported");
-            // we can't setuid in the parent
-//            if (setuid(eargp.uid) < 0) {
-//                ERRMSG("setuid");
-//                return -1;
-//            }
         }
-//        #endif
-
-//        if (sargp != null) {
-//            IRubyObject ary = sargp.fd_dup2;
-//            if (ary != null) {
-//                int len = runExecDup2TmpbufSize(((RubyArray)ary).size());
-//                run_exec_dup2_fd_pair[] tmpbuf = new run_exec_dup2_fd_pair[len];
-//                for (int i = 0; i < tmpbuf.length; i++) tmpbuf[i] = new run_exec_dup2_fd_pair();
-//                sargp.dup2_tmpbuf = tmpbuf;
-//            }
-//        }
 
         return 0;
     }
 
-    static void run_exec_close(Ruby runtime, RubyArray ary, ExecArg eargp, String[] errmsg) {
+    static void run_exec_close(Ruby runtime, RubyArray ary, ExecArg eargp) {
         for (int i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int fd = RubyNumeric.fix2int(elt.eltOk(0));
