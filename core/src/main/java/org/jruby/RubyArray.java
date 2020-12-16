@@ -4294,26 +4294,40 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "sample", optional = 2)
     public IRubyObject sample(ThreadContext context, IRubyObject[] args) {
-        unpack();
-        try {
-            IRubyObject randgen = context.runtime.getRandomClass();
+        final Ruby runtime = context.runtime;
 
-            if (args.length > 0) {
-                IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
+        unpack();
+
+        try {
+            IRubyObject randgen = runtime.getRandomClass();
+
+            int argc = args.length;
+
+            // peel off kwargs if present
+            if (argc > 0) {
+                IRubyObject hash = TypeConverter.checkHashType(runtime, args[argc - 1]);
                 if (!hash.isNil()) {
+                    argc--;
+
                     IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+
                     if (ret != null) randgen = ret;
-                    args = ArraySupport.newCopy(args, args.length - 1);
                 }
             }
 
-            if (args.length == 0) {
+            if (argc == 0) {
                 if (realLength == 0) return context.nil;
                 return eltOk(realLength == 1 ? 0 : RubyRandom.randomLongLimited(context, randgen, realLength - 1));
             }
 
-            final Ruby runtime = context.runtime;
+            // peel off sample count
             int n = RubyNumeric.num2int(args[0]);
+            argc--;
+
+            // if all args not processed, arity error
+            if (argc > 0) {
+                throw runtime.newArgumentError(argc, 0, 1);
+            }
 
             if (n < 0) throw runtime.newArgumentError("negative sample number");
             if (n > realLength) n = realLength;
