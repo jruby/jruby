@@ -465,7 +465,7 @@ public class RubyGlobal {
         @JRubyMethod(name = "index")
         public IRubyObject index(ThreadContext context, IRubyObject expected) {
             context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "ENV#index is deprecated; use ENV#key");
-            
+
             return key(context, expected);
         }
 
@@ -550,20 +550,14 @@ public class RubyGlobal {
         }
 
         private IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, final IRubyObject value) {
-            if (!isStringLike(key)) {
-                throw context.runtime.newTypeError("can't convert " + key.getMetaClass() + " into String");
-            }
-            RubyString keyAsStr = key.convertToString();
+            RubyString keyAsStr = verifyStringLike(context, key).convertToString();
             if (!isCaseSensitive()) key = keyAsStr = getCorrectKey(keyAsStr);
 
             if (value == context.nil) {
                 return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
             }
-            if (!isStringLike(value)) {
-                throw context.runtime.newTypeError("can't convert " + value.getMetaClass() + " into String");
-            }
 
-            RubyString valueAsStr = normalizeEnvString(context, keyAsStr, value.convertToString());
+            RubyString valueAsStr = normalizeEnvString(context, keyAsStr, verifyStringLike(context, value).convertToString());
 
             if (updateRealENV) {
                 final POSIX posix = context.runtime.getPosix();
