@@ -462,6 +462,13 @@ public class RubyGlobal {
             return super.has_value_p(context, expected.convertToString());
         }
 
+        @JRubyMethod(name = "index")
+        public IRubyObject index(ThreadContext context, IRubyObject expected) {
+            context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "ENV#index is deprecated; use ENV#key");
+            
+            return key(context, expected);
+        }
+
         @JRubyMethod
         public IRubyObject key(ThreadContext context, IRubyObject expected) {
             return super.key(context, verifyStringLike(context, expected));
