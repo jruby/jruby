@@ -438,10 +438,15 @@ public class RubyGlobal {
             return super.assoc(context, verifyStringLike(context, obj).convertToString());
         }
 
+        @JRubyMethod
+        public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
+            return super.delete(context, verifyStringLike(context, key), block);
+        }
+
         @JRubyMethod(name = "rassoc")
         public IRubyObject rassoc(final ThreadContext context, IRubyObject obj) {
             if (!isStringLike(obj)) return context.nil;
-            
+
             return super.rassoc(context, obj.convertToString());
         }
 
