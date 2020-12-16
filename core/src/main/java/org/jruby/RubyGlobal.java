@@ -433,6 +433,28 @@ public class RubyGlobal {
 
         private static final ByteList ENV = new ByteList(new byte[] {'E','N','V'}, USASCIIEncoding.INSTANCE, false);
 
+        @JRubyMethod(name = "assoc")
+        public IRubyObject assoc(final ThreadContext context, IRubyObject obj) {
+            return super.assoc(context, verifyStringLike(context, obj).convertToString());
+        }
+
+        @JRubyMethod(name = "rassoc")
+        public IRubyObject rassoc(final ThreadContext context, IRubyObject obj) {
+            if (!isStringLike(obj)) return context.nil;
+            
+            return super.rassoc(context, obj.convertToString());
+        }
+
+        @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
+        public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+            return internalGetEntry(verifyStringLike(context, key)) == NO_ENTRY ? context.fals : context.tru;
+        }
+
+        @JRubyMethod
+        public IRubyObject key(ThreadContext context, IRubyObject expected) {
+            return super.key(context, verifyStringLike(context, expected));
+        }
+
         @JRubyMethod(name = "to_s")
         public RubyString to_s(ThreadContext context) {
             return RubyString.newStringShared(context.runtime, ENV);
@@ -539,11 +561,19 @@ public class RubyGlobal {
             return super.op_aset(context, keyAsStr, valueAsStr);
         }
 
-        private static boolean isStringLike(final IRubyObject obj) {
+        protected static IRubyObject verifyStringLike(ThreadContext context, IRubyObject test) {
+            if (!isStringLike(test)) {
+                throw context.runtime.newTypeError("no implicit conversion of " + test.getMetaClass() + " into String");
+            }
+
+            return test;
+        }
+
+        protected static boolean isStringLike(final IRubyObject obj) {
             return obj instanceof RubyString || obj.respondsTo("to_str");
         }
 
-        private RubyString getCorrectKey(final RubyString key) {
+        protected RubyString getCorrectKey(final RubyString key) {
             RubyString actualKey = key;
             if (Platform.IS_WINDOWS) {
                 // this is a rather ugly hack, but similar to MRI. See hash.c:ruby_setenv and similar in MRI
