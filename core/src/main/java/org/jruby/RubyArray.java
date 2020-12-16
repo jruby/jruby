@@ -4232,7 +4232,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return shuffleBang(context, context.runtime.getRandomClass());
     }
 
-    @JRubyMethod(name = "shuffle!", optional = 1)
+    @JRubyMethod(name = "shuffle!")
     public IRubyObject shuffle_bang(ThreadContext context, IRubyObject opts) {
         Ruby runtime = context.runtime;
 
@@ -4292,43 +4292,59 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private static final int SORTED_THRESHOLD = 10;
 
-    @JRubyMethod(name = "sample", optional = 2)
-    public IRubyObject sample(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "sample")
+    public IRubyObject sample(ThreadContext context) {
+        return sampleCommon(context, context.runtime.getRandomClass());
+    }
+
+    @JRubyMethod(name = "sample")
+    public IRubyObject sample(ThreadContext context, IRubyObject sampleOrOpts) {
         final Ruby runtime = context.runtime;
 
-        unpack();
+        IRubyObject hash = TypeConverter.checkHashType(runtime, sampleOrOpts);
+
+        if (hash.isNil()) {
+            return sampleCommon(context, sampleOrOpts, runtime.getRandomClass());
+        }
+
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+
+        return sampleCommon(context, ret != null ? ret : runtime.getRandomClass());
+    }
+
+    @JRubyMethod(name = "sample")
+    public IRubyObject sample(ThreadContext context, IRubyObject sample, IRubyObject opts) {
+        final Ruby runtime = context.runtime;
+
+        IRubyObject hash = TypeConverter.checkHashType(runtime, opts);
+
+        if (hash.isNil()) {
+            throw runtime.newArgumentError(2, 0, 1);
+        }
+
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+
+        return sampleCommon(context, sample, ret != null ? ret : runtime.getRandomClass());
+    }
+
+    /**
+     * Common sample logic when no sample size was specified.
+     */
+    private IRubyObject sampleCommon(ThreadContext context, IRubyObject randgen) {
+        if (realLength == 0) return context.nil;
+
+        return eltOk(realLength == 1 ? 0 : RubyRandom.randomLongLimited(context, randgen, realLength - 1));
+    }
+
+    /**
+     * Common sample logic when a sample size was specified.
+     */
+    private IRubyObject sampleCommon(ThreadContext context, IRubyObject sample, IRubyObject randgen) {
+        Ruby runtime = context.runtime;
+
+        int n = RubyNumeric.num2int(sample);
 
         try {
-            IRubyObject randgen = runtime.getRandomClass();
-
-            int argc = args.length;
-
-            // peel off kwargs if present
-            if (argc > 0) {
-                IRubyObject hash = TypeConverter.checkHashType(runtime, args[argc - 1]);
-                if (!hash.isNil()) {
-                    argc--;
-
-                    IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
-
-                    if (ret != null) randgen = ret;
-                }
-            }
-
-            if (argc == 0) {
-                if (realLength == 0) return context.nil;
-                return eltOk(realLength == 1 ? 0 : RubyRandom.randomLongLimited(context, randgen, realLength - 1));
-            }
-
-            // peel off sample count
-            int n = RubyNumeric.num2int(args[0]);
-            argc--;
-
-            // if all args not processed, arity error
-            if (argc > 0) {
-                throw runtime.newArgumentError(argc, 0, 1);
-            }
-
             if (n < 0) throw runtime.newArgumentError("negative sample number");
             if (n > realLength) n = realLength;
 
@@ -5509,6 +5525,20 @@ float_loop:
                 return shuffle_bang(context, args[0]);
             default:
                 throw context.runtime.newArgumentError(args.length, 0, 0);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject sample(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return sample(context);
+            case 1:
+                return sample(context, args[0]);
+            case 2:
+                return sample(context, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
         }
     }
 }
