@@ -455,6 +455,13 @@ public class RubyGlobal {
             return internalGetEntry(verifyStringLike(context, key)) == NO_ENTRY ? context.fals : context.tru;
         }
 
+        @JRubyMethod(name = {"has_value?", "value?"}, required = 1)
+        public IRubyObject has_value_pp(ThreadContext context, IRubyObject expected) {
+            if (!isStringLike(expected)) return context.nil;
+
+            return super.has_value_p(context, expected.convertToString());
+        }
+
         @JRubyMethod
         public IRubyObject key(ThreadContext context, IRubyObject expected) {
             return super.key(context, verifyStringLike(context, expected));
