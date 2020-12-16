@@ -381,21 +381,26 @@ public class PopenExecutor {
             IRubyObject val = entry.getValue();
             String k;
 
-            k = StringSupport.checkEmbeddedNulls(runtime, key).toString();
+            RubyString keyString = StringSupport.checkEmbeddedNulls(runtime, key).export(context);
+
+            k = keyString.toString();
+
             if (k.indexOf('=') != -1)
                 throw runtime.newArgumentError("environment name contains a equal : " + k);
 
-            if (!val.isNil())
+            if (!val.isNil()) {
                 val = StringSupport.checkEmbeddedNulls(runtime, val);
+            }
 
-            key = key.convertToString().export(context);
-            if (!val.isNil()) val = val.convertToString().export(context);
+            if (!val.isNil()) {
+                val = ((RubyString) val).export(context);
+            }
 
-            if (key.convertToString().toString().equalsIgnoreCase("PATH")) {
+            if (k.equalsIgnoreCase("PATH")) {
                 pathArg.path_env = val;
             }
 
-            env.push(runtime.newArray(key, val));
+            env.push(runtime.newArray(keyString, val));
         }
 
         return env;
@@ -1036,12 +1041,8 @@ public class PopenExecutor {
 //        #if !defined(HAVE_FORK)
         boolean clearEnv = false;
         if (eargp.unsetenv_others_given() && eargp.unsetenv_others_do()) {
-            // only way to do this is manually build a list of env assignments that clear all parent values
-            throw runtime.newNotImplementedError("clearing env in child is not supported");
-//            saveEnv(context, runtime, sargp);
-
-            // we can't clear env in parent process
-//            runtime.getENV().clear();
+            // we handle this elsewhere by starting from a blank env
+            clearEnv = true;
         }
 
         RubyArray env = eargp.env_modification;
@@ -1501,7 +1502,7 @@ public class PopenExecutor {
                         throw runtime.newArgumentError("unsetenv_others option specified twice");
                     }
                     eargp.unsetenv_others_given_set();
-                    if (!val.isNil()) {
+                    if (val.isTrue()) {
                         eargp.unsetenv_others_do_set();
                     } else {
                         eargp.unsetenv_others_do_clear();
@@ -1852,18 +1853,18 @@ public class PopenExecutor {
         prog = null;
         tmp = TypeConverter.checkArrayType(runtime, argv[0]);
         if (!tmp.isNil()) {
-            if (((RubyArray)tmp).size() != 2) {
+            RubyArray arrayArg = (RubyArray) tmp;
+            if (arrayArg.size() != 2) {
                 throw runtime.newArgumentError("wrong first argument");
             }
-            prog = ((RubyArray)tmp).eltOk(0).convertToString();
-            argv[0] = ((RubyArray)tmp).eltOk(1);
+            prog = arrayArg.eltOk(0).convertToString();
+            argv[0] = arrayArg.eltOk(1);
             StringSupport.checkEmbeddedNulls(runtime, prog);
             prog = prog.strDup(runtime);
             prog.setFrozen(true);
         }
         for (i = 0; i < argv.length; i++) {
-            argv[i] = argv[i].convertToString();
-            argv[i] = ((RubyString)argv[i]).newFrozen();
+            argv[i] = argv[i].convertToString().newFrozen();
             StringSupport.checkEmbeddedNulls(runtime, argv[i]);
         }
         //        security(name ? name : RSTRING_PTR(argv[0]));
