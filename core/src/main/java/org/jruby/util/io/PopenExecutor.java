@@ -166,10 +166,11 @@ public class PopenExecutor {
         }
 
         if (prog != null && !eargp.use_shell) {
-            String[] argv = eargp.argv_str.argv;
-            if (argv.length > 0) {
-                argv[0] = prog.toString();
-            }
+            // we handle argv[0] juggling in the spawn logic below
+//            String[] argv = eargp.argv_str.argv;
+//            if (argv.length > 0) {
+//                argv[0] = prog.toString();
+//            }
         }
         if (eargp.use_shell) {
             pid = procSpawnSh(runtime, prog.toString(), eargp);
