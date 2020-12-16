@@ -1780,20 +1780,28 @@ public class PopenExecutor {
     // rb_execarg_new
     public static ExecArg execargNew(ThreadContext context, IRubyObject[] argv, boolean accept_shell, boolean allow_exc_opt) {
         ExecArg eargp = new ExecArg();
-        execargInit(context, argv, accept_shell, eargp);
-        if (!allow_exc_opt && eargp.exception_given) {
-            throw context.runtime.newArgumentError("exception option is not allowed");
-        }
+        execargInit(context, argv, accept_shell, eargp, allow_exc_opt);
         return eargp;
     }
 
     // rb_execarg_init
-    private static RubyString execargInit(ThreadContext context, IRubyObject[] argv, boolean accept_shell, ExecArg eargp) {
+    private static RubyString execargInit(ThreadContext context, IRubyObject[] argv, boolean accept_shell, ExecArg eargp, boolean allow_exc_opt) {
         RubyString prog, ret;
         IRubyObject[] env_opt = {context.nil, context.nil};
         IRubyObject[][] argv_p = {argv};
+        IRubyObject exception = context.nil;
         prog = execGetargs(context, argv_p, accept_shell, env_opt);
+        IRubyObject opt = env_opt[1];
+        RubyHash optHash;
+        RubySymbol exceptionSym = context.runtime.newSymbol("exception");
+        if (allow_exc_opt && !opt.isNil() && (optHash = ((RubyHash) opt)).has_key_p(context, exceptionSym).isTrue()) {
+            optHash = optHash.dupFast(context);
+            exception = optHash.delete(context, exceptionSym);
+        }
         execFillarg(context, prog, argv_p[0], env_opt[0], env_opt[1], eargp);
+        if (exception.isTrue()) {
+            eargp.exception = true;
+        }
         ret = eargp.use_shell ? eargp.command_name : eargp.command_name;
         return ret;
     }
