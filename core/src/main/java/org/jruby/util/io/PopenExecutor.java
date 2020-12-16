@@ -932,11 +932,7 @@ public class PopenExecutor {
             }
         }
         if (extra_fd != -1) {
-            ret = redirectClose(runtime, eargp, extra_fd, sargp != null); /* async-signal-safe */
-            if (ret == -1) {
-                if (errmsg != null) errmsg[0] = "close";
-                return -1;
-            }
+            redirectClose(runtime, eargp, extra_fd);
         }
 
         return 0;
@@ -967,14 +963,8 @@ public class PopenExecutor {
         eargp.fileActions.add(SpawnFileAction.dup(oldfd, newfd));
     }
 
-    static int redirectClose(Ruby runtime, ExecArg eargp, int fd, boolean forChild)
-    {
-        if (forChild) {
-            eargp.fileActions.add(SpawnFileAction.close(fd));
-            return 0;
-        } else {
-            return runtime.getPosix().close(fd);
-        }
+    static void redirectClose(Ruby runtime, ExecArg eargp, int fd) {
+        eargp.fileActions.add(SpawnFileAction.close(fd));
     }
 
     static void redirectOpen(ExecArg eargp, int fd, String pathname, int flags, int perm)
@@ -1071,12 +1061,7 @@ public class PopenExecutor {
 
         obj = eargp.fd_close;
         if (obj != null) {
-            if (sargp != null)
-                runtime.getWarnings().warn("cannot close fd before spawn");
-            else {
-                if (run_exec_close(runtime, (RubyArray)obj, eargp, errmsg) == -1) /* async-signal-safe */
-                    return -1;
-            }
+            run_exec_close(runtime, (RubyArray)obj, eargp, errmsg);
         }
 
         obj = eargp.fd_dup2_child;
