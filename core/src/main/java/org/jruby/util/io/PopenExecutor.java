@@ -1066,8 +1066,7 @@ public class PopenExecutor {
 
         obj = eargp.fd_dup2_child;
         if (obj != null) {
-            if (run_exec_dup2_child(runtime, (RubyArray)obj, eargp, sargp, errmsg) == -1) /* async-signal-safe */
-                return -1;
+            run_exec_dup2_child(runtime, (RubyArray)obj, eargp);
         }
 
         if (eargp.chdir_given()) {
@@ -1119,42 +1118,25 @@ public class PopenExecutor {
         return 0;
     }
 
-    /* This function should be async-signal-safe.  Actually it is. */
-    static int run_exec_close(Ruby runtime, RubyArray ary, ExecArg eargp, String[] errmsg) {
-        long i;
-        int ret;
-
-        for (i = 0; i < ary.size(); i++) {
+    static void run_exec_close(Ruby runtime, RubyArray ary, ExecArg eargp, String[] errmsg) {
+        for (int i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int fd = RubyNumeric.fix2int(elt.eltOk(0));
-            ret = redirectClose(runtime, eargp, fd, true); /* async-signal-safe */
-            if (ret == -1) {
-                if (errmsg != null) errmsg[0] = "close";
-                return -1;
-            }
+            redirectClose(runtime, eargp, fd);
         }
-        return 0;
     }
 
-    /* This function should be async-signal-safe when sargp is NULL.  Actually it is. */
-    static int run_exec_dup2_child(Ruby runtime, RubyArray ary, ExecArg eargp, ExecArg sargp, String[] errmsg) {
-        long i;
-        int ret;
-
-        for (i = 0; i < ary.size(); i++) {
+    /**
+     * Add spawn configuration for duplicating descriptors in the child
+     */
+    static void run_exec_dup2_child(Ruby runtime, RubyArray ary, ExecArg eargp) {
+        for (int i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int newfd = RubyNumeric.fix2int(elt.eltOk(0));
             int oldfd = RubyNumeric.fix2int(elt.eltOk(1));
 
-            // Don't have to save in parent, since we let posix_spawn dup2
-//            if (saveRedirectFd(runtime, newfd, sargp, errmsg) < 0) /* async-signal-safe */
-//                return -1;
-
-            // This always succeeds
-            redirectDup2(eargp, oldfd, newfd); /* async-signal-safe */
-//            rb_update_max_fd(newfd);
+            redirectDup2(eargp, oldfd, newfd);
         }
-        return 0;
     }
 
     private static class run_exec_dup2_fd_pair {
