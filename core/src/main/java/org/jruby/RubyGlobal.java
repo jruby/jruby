@@ -45,6 +45,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.SystemCallError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
@@ -58,6 +59,7 @@ import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.ByteListHelper;
 import org.jruby.util.KCode;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
@@ -70,6 +72,7 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
+import static org.jruby.util.RubyStringBuilder.str;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -550,7 +553,8 @@ public class RubyGlobal {
         }
 
         private IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, final IRubyObject value) {
-            RubyString keyAsStr = verifyStringLike(context, key).convertToString();
+            RubyString keyAsStr = verifyValidKey(context, verifyStringLike(context, key).convertToString(), value);
+
             if (!isCaseSensitive()) key = keyAsStr = getCorrectKey(keyAsStr);
 
             if (value == context.nil) {
@@ -580,6 +584,18 @@ public class RubyGlobal {
             }
 
             return test;
+        }
+
+        private static RubyString verifyValidKey(ThreadContext context, RubyString key, IRubyObject value) {
+            if (value.isNil()) return key;
+
+            ByteList bytes = key.getByteList();
+            int e = ByteListHelper.eachCodePointWhile(context.runtime, bytes, 0, (index, codepoint, enc) -> codepoint != '=');
+            int length = bytes.length();
+
+            if (e != length || length == 0) throw context.runtime.newErrnoEINVALError(str(context.runtime, "setenv(", key, ")"));
+
+            return key;
         }
 
         protected static boolean isStringLike(final IRubyObject obj) {
