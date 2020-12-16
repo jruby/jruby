@@ -4227,48 +4227,66 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return eltOk((int) (context.runtime.getDefaultRand().genrandReal() * realLength));
     }
 
+    @JRubyMethod(name = "shuffle!")
     public IRubyObject shuffle_bang(ThreadContext context) {
-        return shuffle_bang(context, IRubyObject.NULL_ARRAY);
+        return shuffleBang(context, context.runtime.getRandomClass());
     }
 
     @JRubyMethod(name = "shuffle!", optional = 1)
-    public IRubyObject shuffle_bang(ThreadContext context, IRubyObject[] args) {
-        modify();
-        IRubyObject randgen = context.runtime.getRandomClass();
-        if (args.length > 0) {
-            IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
-            if (!hash.isNil()) {
-                IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
-                if (ret != null) randgen = ret;
-            }
+    public IRubyObject shuffle_bang(ThreadContext context, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject hash = TypeConverter.checkHashType(runtime, opts);
+
+        if (hash.isNil()) {
+            throw runtime.newArgumentError(1, 0, 0);
         }
+
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+
+        if (ret == null) {
+            return shuffle(context);
+        }
+
+        return shuffleBang(context, ret);
+    }
+
+    private IRubyObject shuffleBang(ThreadContext context, IRubyObject randgen) {
+        Ruby runtime = context.runtime;
+
+        modify();
+
         int i = realLength;
         int len = i;
         try {
             while (i > 0) {
                 int r = (int) RubyRandom.randomLongLimited(context, randgen, i - 1);
                 if (len != realLength) { // || ptr != RARRAY_CONST_PTR(ary)
-                    throw context.runtime.newRuntimeError("modified during shuffle");
+                    throw runtime.newRuntimeError("modified during shuffle");
                 }
                 T tmp = eltOk(--i);
                 eltSetOk(i, eltOk(r));
                 eltSetOk(r, tmp);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            throw concurrentModification(context.runtime, ex);
+            throw concurrentModification(runtime, ex);
         }
 
         return this;
     }
 
+
+    @JRubyMethod(name = "shuffle")
     public IRubyObject shuffle(ThreadContext context) {
-        return shuffle(context, IRubyObject.NULL_ARRAY);
+        RubyArray ary = aryDup();
+        ary.shuffle_bang(context);
+        return ary;
     }
 
-    @JRubyMethod(name = "shuffle", optional = 1)
-    public IRubyObject shuffle(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "shuffle")
+    public IRubyObject shuffle(ThreadContext context, IRubyObject opts) {
         RubyArray ary = aryDup();
-        ary.shuffle_bang(context, args);
+        ary.shuffle_bang(context, opts);
         return ary;
     }
 
@@ -5454,5 +5472,29 @@ float_loop:
             return dupImpl(runtime, arrayClass);
         }
         return this;
+    }
+
+    @Deprecated
+    public IRubyObject shuffle(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return shuffle(context);
+            case 1:
+                return shuffle(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 0);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject shuffle_bang(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return shuffle_bang(context, context.nil);
+            case 1:
+                return shuffle_bang(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 0);
+        }
     }
 }
