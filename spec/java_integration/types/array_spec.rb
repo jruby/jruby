@@ -1137,7 +1137,7 @@ describe "A Java primitive Array of type" do
       h3 = java.lang.ref.SoftReference.java_class
 
       arr = [h1, h2, h3].to_java java.lang.Class
-      expect(arr.inspect).to match(/^java\.lang\.Class\[interface java\.util\.Set, class java\.util\.HashMap, class java\.lang\.ref\.SoftReference\]@[0-9a-f]+$/)
+      expect(arr.inspect).to match(/^\#<Java::JavaLang::Class\[3\]: \[interface java\.util\.Set, class java\.util\.HashMap, class java\.lang\.ref\.SoftReference\]>$/)
     end
   end
 end
