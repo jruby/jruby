@@ -76,6 +76,7 @@ public abstract class JavaLang {
         JavaExtensions.put(runtime, java.lang.CharSequence.class, (proxyClass) -> CharSequence.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.lang.String.class, (proxyClass) -> String.define(runtime, (RubyClass) proxyClass));
         JavaExtensions.put(runtime, java.lang.Enum.class, (proxyClass) -> proxyClass.defineAlias("inspect", "to_s"));
+        JavaExtensions.put(runtime, java.lang.Boolean.class, (proxyClass) -> proxyClass.defineAlias("inspect", "to_s"));
     }
 
     @JRubyModule(name = "Java::JavaLang::Iterable", include = "Enumerable")
