@@ -30,3 +30,19 @@ describe "java.lang.StringBuilder" do
     expect(str.inspect).to eq '#<Java::JavaLang::StringBuilder: "bar">'
   end
 end
+
+describe "java.nio.CharSequence" do # implements CharSequence
+  it "inspects as other Buffer impls" do
+    buf = java.nio.CharBuffer.allocate(12)
+    buf.append('a'); buf.put('b')
+    expect(buf.inspect).to match /#<Java::JavaNio::HeapCharBuffer:.*? position=2, limit=12, capacity=12, readOnly=false>/
+  end
+end
+
+describe "java.nio.ByteBuffer" do
+  it "inspects as other Buffer impls" do
+    buf = java.nio.ByteBuffer.allocateDirect(8)
+    buf.put(1)
+    expect(buf.inspect).to match /#<Java::JavaNio::DirectByteBuffer:.*? position=1, limit=8, capacity=8, readOnly=false>/
+  end
+end
