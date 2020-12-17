@@ -1132,12 +1132,11 @@ describe "A Java primitive Array of type" do
     end
 
     it "inspects to show type and contents" do
-      h1 = java.util.Set.java_class
-      h2 = java.util.HashMap.java_class
-      h3 = java.lang.ref.SoftReference.java_class
+      h1 = java.util.Map::Entry.java_class
+      h2 = Java::jnr::posix::Times.java_class
 
-      arr = [h1, h2, h3].to_java java.lang.Class
-      expect(arr.inspect).to match(/^\#<Java::JavaLang::Class\[3\]: \[interface java\.util\.Set, class java\.util\.HashMap, class java\.lang\.ref\.SoftReference\]>$/)
+      arr = [h1, h2].to_java java.lang.Class
+      expect(arr.inspect).to match(/^\#<Java::JavaLang::Class\[2\]: \[#<Java::JavaLang::Class: java.util.Map.Entry>, #<Java::JavaLang::Class: jnr.posix.Times>]>$/)
     end
   end
 end

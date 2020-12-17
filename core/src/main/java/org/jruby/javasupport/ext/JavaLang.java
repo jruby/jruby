@@ -493,8 +493,13 @@ public abstract class JavaLang {
 
         @JRubyMethod
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
+            // with 'type' - to be able to tell Java::JavaLang::Class apart
             final java.lang.Class klass = unwrapJavaObject(self);
-            return RubyString.newString(context.runtime, klass.toString());
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
+            RubyStringBuilder.cat(context.runtime, buf, SPACE);
+            buf.catString(klass.getCanonicalName());
+            RubyStringBuilder.cat(context.runtime, buf, GT); // >
+            return buf;
         }
 
         @JRubyMethod(name = "annotations?")
