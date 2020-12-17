@@ -16,3 +16,17 @@ describe "java.lang.Class" do
     expect(klass.inspect).to eq '#<Java::JavaLang::Class: short[]>'
   end
 end
+
+describe "java.lang.String" do
+  it "inspects like a Ruby string" do
+    str = java.lang.String.new 'foo'
+    expect(str.inspect).to eq '"foo"'
+  end
+end
+
+describe "java.lang.StringBuilder" do
+  it "inspects with Ruby type" do
+    str = java.lang.StringBuilder.new 'bar'
+    expect(str.inspect).to eq '#<Java::JavaLang::StringBuilder: "bar">'
+  end
+end

@@ -663,8 +663,8 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            // NOTE: we re-define java.lang.String#inspect thus these are "others" e.g. StringBuilder
-            java.lang.CharSequence str = self.toJava(java.lang.CharSequence.class);
+            // we re-define java.lang.String#inspect thus this is for StringBuilder etc.
+            java.lang.CharSequence str = unwrapIfJavaObject(self);
 
             RubyString buf = inspectPrefix(context, self.getMetaClass());
             RubyStringBuilder.cat(context.runtime, buf, SPACE);
