@@ -255,10 +255,17 @@ public abstract class JavaLang {
             return message(context, self);
         }
 
-        @JRubyMethod
+        @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
             java.lang.Throwable throwable = unwrapIfJavaObject(self);
-            return RubyString.newString(context.runtime, throwable.toString());
+
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
+            RubyStringBuilder.cat(context.runtime, buf, SPACE);
+            final java.lang.String message = throwable.getMessage();
+            buf.catString(message == null ? "" : message);
+            RubyStringBuilder.cat(context.runtime, buf, GT); // >
+
+            return buf;
         }
 
         @JRubyMethod(name = "===", meta = true)
@@ -440,10 +447,10 @@ public abstract class JavaLang {
         @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
             java.lang.Character c = (java.lang.Character) self.toJava(java.lang.Character.class);
-            return RubyString.newString(context.runtime, inspectCharValue(new StringBuilder(3), c));
+            return RubyString.newString(context.runtime, inspectCharValue(new java.lang.StringBuilder(3), c));
         }
 
-        public static StringBuilder inspectCharValue(final StringBuilder buf, final char c) {
+        public static java.lang.StringBuilder inspectCharValue(final java.lang.StringBuilder buf, final char c) {
             return buf.append('\'').append(c).append('\'');
         }
 
