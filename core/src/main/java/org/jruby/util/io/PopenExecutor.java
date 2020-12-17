@@ -630,7 +630,6 @@ public class PopenExecutor {
                 if (writePair[1] != -1) runtime.getPosix().close(writePair[1]);
                 if (pair[0] != -1) runtime.getPosix().close(pair[0]);
                 if (pair[1] != -1) runtime.getPosix().close(pair[1]);
-                execargParentEnd(runtime, eargp);
                 throw re;
             }
             execargRunOptions(context, runtime, eargp, sargp, null);
@@ -647,7 +646,6 @@ public class PopenExecutor {
             }
             if (eargp != null)
                 execargRunOptions(context, runtime, sargp, null, null);
-            execargParentEnd(runtime, eargp);
         }
         else {
             throw runtime.newNotImplementedError("spawn without exec args (probably a bug)");
@@ -967,8 +965,7 @@ public class PopenExecutor {
         eargp.fileActions.add(SpawnFileAction.close(fd));
     }
 
-    static void redirectOpen(ExecArg eargp, int fd, String pathname, int flags, int perm)
-    {
+    static void redirectOpen(ExecArg eargp, int fd, String pathname, int flags, int perm) {
         eargp.fileActions.add(SpawnFileAction.open(pathname, fd, flags, perm));
     }
 
@@ -1078,6 +1075,25 @@ public class PopenExecutor {
         }
     }
 
+    static void run_exec_open(ThreadContext context, Ruby runtime, RubyArray<RubyArray> ary, ExecArg eargp) {
+        for (int i = 0; i < ary.size(); i++) {
+            RubyArray<RubyArray> elt = ary.eltOk(i);
+            int fd = RubyNumeric.fix2int(elt.eltOk(0));
+            RubyArray param = elt.eltOk(1);
+            IRubyObject vpath = param.eltOk(0);
+            int flags = RubyNumeric.num2int(param.eltOk(1));
+            int perm = RubyNumeric.num2int(param.eltOk(2));
+            IRubyObject fd2v = param.entry(3);
+
+            if (fd2v.isNil()) {
+                redirectOpen(eargp, fd, vpath.toString(), flags, perm);
+                param.store(3, elt.eltOk(0));
+            } else {
+                redirectDup2(eargp, RubyNumeric.num2int(fd2v), fd);
+            }
+        }
+    }
+
     /**
      * Add spawn configuration for duplicating descriptors in the child
      */
@@ -1110,7 +1126,6 @@ public class PopenExecutor {
         try {
             execargParentStart1(context, runtime, eargp);
         } catch (RaiseException re) {
-            execargParentEnd(runtime, eargp);
             throw re;
         }
     }
@@ -1124,49 +1139,7 @@ public class PopenExecutor {
 
         ary = eargp.fd_open;
         if (ary != null) {
-            long i;
-            for (i = 0; i < ary.size(); i++) {
-                RubyArray<RubyArray> elt = ary.eltOk(i);
-                int fd = RubyNumeric.fix2int(elt.eltOk(0));
-                RubyArray param = elt.eltOk(1);
-                IRubyObject vpath = param.eltOk(0);
-                int flags = RubyNumeric.num2int(param.eltOk(1));
-                int perm = RubyNumeric.num2int(param.eltOk(2));
-                IRubyObject fd2v = param.entry(3);
-                int fd2;
-                if (fd2v.isNil()) {
-                    RubyIO.Sysopen open_data = new RubyIO.Sysopen();
-                    vpath = RubyFile.get_path(context, vpath);
-                    // TODO
-//                    vpath = rb_str_encode_ospath(vpath);
-                    while (true) {
-                        open_data.fname = vpath.toString();
-                        open_data.oflags = flags;
-                        open_data.perm = perm;
-                        ChannelFD ret;
-                        open_data.errno = Errno.EINTR;
-                        ret = open_func(runtime, open_data);
-//                    rb_thread_call_without_gvl2(open_func, (void *)&open_data, RUBY_UBF_IO, 0);
-                        if (ret == null) {
-                            if (open_data.errno == Errno.EINTR) {
-                                context.pollThreadEvents();
-                                continue;
-                            }
-                            throw runtime.newErrnoFromInt(open_data.errno.intValue(), vpath.toString());
-                        }
-                        // We're in the fully-native process logic, so this should be a native stream
-                        fd2 = ((ChannelFD) ret).realFileno;
-//                        rb_update_max_fd(fd2);
-                        param.store(3, runtime.newFixnum(fd2));
-                        context.pollThreadEvents();
-                        break;
-                    }
-                }
-                else {
-                    fd2 = RubyNumeric.num2int(fd2v);
-                }
-                execargAddopt(context, runtime, eargp, runtime.newFixnum(fd), runtime.newFixnum(fd2));
-            }
+            run_exec_open(context, runtime, ary, eargp);
         }
 
         ary = eargp.fd_dup2;
@@ -1212,30 +1185,6 @@ public class PopenExecutor {
         }
         buildEnvp(runtime, eargp, envtbl);
 //        RB_GC_GUARD(execarg_obj);
-    }
-
-    static void execargParentEnd(Ruby runtime, ExecArg eargp) {
-        int err = runtime.getPosix().errno();
-        RubyArray<RubyArray> ary;
-
-        ary = eargp.fd_open;
-        if (ary != null) {
-            long i;
-            for (i = 0; i < ary.size(); i++) {
-                RubyArray<RubyArray> elt = ary.eltOk(i);
-                RubyArray param = elt.eltOk(1);
-                IRubyObject fd2v;
-                int fd2;
-                fd2v = param.entry(3);
-                if (!fd2v.isNil()) {
-                    fd2 = RubyNumeric.fix2int(fd2v);
-                    parentRedirectClose(runtime, fd2);
-                    param.store(3, runtime.getNil());
-                }
-            }
-        }
-
-        runtime.getPosix().errno(err);
     }
 
     static ChannelFD open_func(Ruby runtime, RubyIO.Sysopen data) {
@@ -1604,12 +1553,31 @@ public class PopenExecutor {
             case STRING:
                 path = val;
                 path = RubyFile.get_path(context, path);
-                if (key instanceof RubyIO)
+                if (key instanceof RubyIO) {
                     key = checkExecRedirectFd(runtime, key, true);
-                if (key instanceof RubyFixnum && (((RubyFixnum)key).getIntValue() == 1 || ((RubyFixnum)key).getIntValue() == 2))
+                }
+                if (key instanceof RubyFixnum && (((RubyFixnum)key).getIntValue() == 1 || ((RubyFixnum)key).getIntValue() == 2)) {
                     flags = runtime.newFixnum(OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
-                else
+                } else if (key instanceof RubyArray) {
+                    RubyArray keyAry = (RubyArray) key;
+                    int i;
+                    boolean allOut = true;
+                    for (i = 0; i < keyAry.size(); i++) {
+                        IRubyObject v = keyAry.eltOk(i);
+                        IRubyObject fd = checkExecRedirectFd(runtime, v, true);
+                        if (RubyNumeric.fix2int(fd) != 1 && RubyNumeric.fix2int(fd) != 2) {
+                            allOut = false;
+                            break;
+                        }
+                    }
+                    if (allOut) {
+                        flags = runtime.newFixnum(OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
+                    } else {
+                        flags = runtime.newFixnum(OpenFlags.O_RDONLY.intValue());
+                    }
+                } else {
                     flags = runtime.newFixnum(OpenFlags.O_RDONLY.intValue());
+                }
                 perm = runtime.newFixnum(0644);
                 param = RubyArray.newArray(runtime,
                         ((RubyString)path).strDup(runtime).export(context),
