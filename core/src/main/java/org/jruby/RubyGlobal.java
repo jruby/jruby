@@ -48,6 +48,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.SystemCallError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
+import org.jruby.ir.Tuple;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.platform.Platform;
@@ -84,8 +85,10 @@ import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** This class initializes global variables and constants.
  *
@@ -476,6 +479,38 @@ public class RubyGlobal {
         public IRubyObject key(ThreadContext context, IRubyObject expected) {
             return super.key(context, verifyStringLike(context, expected));
         }
+
+        @JRubyMethod(name = "replace", required = 1)
+        public RubyHash replace(final ThreadContext context, IRubyObject other) {
+            modify();
+
+            final RubyHash otherHash = other.convertToHash();
+            if (this == otherHash) return this;
+
+
+            Set keys = new HashSet(directKeySet());
+            Tuple<Set, RubyHash> tuple = new Tuple<>(keys, this);
+
+            if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
+                setComparedByIdentity(true);
+            }
+
+            otherHash.visitAll(context, ReplaceVisitor, tuple);
+
+            for (Object key: keys) {
+                internalDelete((IRubyObject) key);
+            }
+
+            return this;
+        }
+
+        private static final VisitorWithState<Tuple<Set, RubyHash>> ReplaceVisitor = new VisitorWithState<Tuple<Set, RubyHash>>() {
+            @Override
+            public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Tuple<Set, RubyHash> tuple) {
+                tuple.a.remove(key);  // Remove from remove list since it is a valid key
+                tuple.b.op_aset(context, key, value);
+            }
+        };
 
         @JRubyMethod(name = "to_s")
         public RubyString to_s(ThreadContext context) {
