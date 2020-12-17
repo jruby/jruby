@@ -1,1 +1,0 @@
-fails:ENV.[]= returns the value

@@ -610,7 +610,9 @@ public class RubyGlobal {
                 }
             }
 
-            return super.op_aset(context, keyAsStr, valueAsStr);
+            super.op_aset(context, keyAsStr, valueAsStr);
+
+            return value;
         }
 
         protected static IRubyObject verifyStringLike(ThreadContext context, IRubyObject test) {
