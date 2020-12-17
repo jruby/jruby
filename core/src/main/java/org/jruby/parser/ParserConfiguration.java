@@ -53,7 +53,7 @@ public class ParserConfiguration {
     // We parse evals more often in source so assume an eval parse.
     private boolean isEvalParse = true;
     // Should we display extra debug information while parsing?
-    private boolean isDebug = false;
+    private boolean isDebug = true;
     // whether we should save the end-of-file data as DATA
     private boolean saveData = false;
 

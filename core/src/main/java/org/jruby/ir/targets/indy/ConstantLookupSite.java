@@ -2,6 +2,7 @@ package org.jruby.ir.targets.indy;
 
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.operands.UndefinedValue;

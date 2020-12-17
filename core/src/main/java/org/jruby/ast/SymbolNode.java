@@ -35,13 +35,10 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jcodings.Encoding;
-
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents a symbol (:symbol_name).
@@ -49,8 +46,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
     private final RubySymbol name;
 
-    public SymbolNode(ISourcePosition position, RubySymbol value) {
-        super(position, false);
+    public SymbolNode(int line, RubySymbol value) {
+        super(line, false);
 
         this.name = value;
     }

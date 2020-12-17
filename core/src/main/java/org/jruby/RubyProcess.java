@@ -105,10 +105,17 @@ public class RubyProcess {
         process_sys.defineAnnotatedMethods(Sys.class);
 
         runtime.loadConstantSet(process, jnr.constants.platform.PRIO.class);
-        runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
-        for (RLIMIT r : RLIMIT.values()) {
-            if (!r.defined()) continue;
-            process.defineConstant(r.name(), runtime.newFixnum(r.intValue()));
+
+        if (Platform.IS_WINDOWS) {
+            // mark rlimit methods as not implemented and skip defining the constants (GH-6491)
+            process.getSingletonClass().retrieveMethod("getrlimit").setNotImplemented(true);
+            process.getSingletonClass().retrieveMethod("setrlimit").setNotImplemented(true);
+        } else {
+            runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
+            for (RLIMIT r : RLIMIT.values()) {
+                if (!r.defined()) continue;
+                process.defineConstant(r.name(), runtime.newFixnum(r.intValue()));
+            }
         }
 
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
@@ -627,6 +634,15 @@ public class RubyProcess {
     public static IRubyObject setrlimit(ThreadContext context, IRubyObject recv, IRubyObject resource, IRubyObject rlimCur, IRubyObject rlimMax) {
         Ruby runtime = context.runtime;
 
+        if (Platform.IS_WINDOWS) {
+            throw runtime.newNotImplementedError("Process#setrlimit is not implemented on Windows");
+        }
+
+        if (!runtime.getPosix().isNative()) {
+            runtime.getWarnings().warn("Process#setrlimit not supported on this platform");
+            return context.nil;
+        }
+
         RLimit rlim = runtime.getPosix().getrlimit(0);
 
         if (rlimMax == context.nil)
@@ -916,7 +932,7 @@ public class RubyProcess {
 
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
 
-        raiseErrnoIfSet(runtime, ECHILD);
+        checkErrno(runtime, res, ECHILD);
 
         if (res > 0) {
             context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res));
@@ -1023,7 +1039,7 @@ public class RubyProcess {
 
         int pid = pthreadKillable(context, ctx -> posix.wait(status));
 
-        raiseErrnoIfSet(runtime, ECHILD);
+        checkErrno(runtime, pid, ECHILD);
 
         context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
         return runtime.newFixnum(pid);
@@ -1293,7 +1309,11 @@ public class RubyProcess {
         return getrlimit(context.runtime, arg);
     }
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
-        if (!runtime.getPosix().isNative() || Platform.IS_WINDOWS) {
+        if (Platform.IS_WINDOWS) {
+            throw runtime.newNotImplementedError("Process#getrlimit is not implemented on Windows");
+        }
+
+        if (!runtime.getPosix().isNative()) {
             runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
             RubyFixnum max = runtime.newFixnum(Long.MAX_VALUE);
             return runtime.newArray(max, max);
@@ -1444,15 +1464,10 @@ public class RubyProcess {
         final int pid = (int)arg.convertToInteger().getLongValue();
         Ruby runtime = context.runtime;
 
-        BlockCallback callback = new BlockCallback() {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                int[] status = new int[1];
-                Ruby runtime = context.runtime;
-                int result = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, 0));
+        BlockCallback callback = (ctx, args, block) -> {
+            while (waitpid(ctx.runtime, pid, 0) == 0) {}
 
-                return RubyStatus.newProcessStatus(runtime, status[0], pid);
-            }
+            return last_status(ctx, recv);
         };
 
         return RubyThread.startWaiterThread(

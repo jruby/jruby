@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents the contents of a rescue to be evaluated
@@ -45,8 +44,8 @@ public class RescueBodyNode extends Node {
     private final Node bodyNode;
     private final RescueBodyNode optRescueNode;
 
-    public RescueBodyNode(ISourcePosition position, Node exceptionNodes, Node bodyNode, RescueBodyNode optRescueNode) {
-        super(position, exceptionNodes != null && exceptionNodes.containsVariableAssignment() ||
+    public RescueBodyNode(int line, Node exceptionNodes, Node bodyNode, RescueBodyNode optRescueNode) {
+        super(line, exceptionNodes != null && exceptionNodes.containsVariableAssignment() ||
                 bodyNode.containsVariableAssignment() || optRescueNode != null && optRescueNode.containsVariableAssignment());
         
        assert bodyNode != null : "bodyNode is not null";

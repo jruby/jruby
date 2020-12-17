@@ -80,7 +80,6 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
-import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -170,61 +169,28 @@ public class RubyKernel {
         return context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.PROC, block));
     }
 
-    @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE, reads = {CLASS, SCOPE})
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
-        final Ruby runtime = context.runtime;
-        final RubyModule module = getModuleForAutoload(runtime, recv);
-        final RubyString file = module.getAutoloadFile(symbol.asJavaString());
-        return file == null ? context.nil : file;
+        RubyModule module = context.getFrameKlazz();
+
+        if (module == null) module = context.getCurrentStaticScope().getModule();
+
+        if (module.isNil()) {
+            return context.nil;
+        }
+
+        return module.autoload_p(context, symbol);
     }
 
-    @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 2, module = true, visibility = PRIVATE, reads = {CLASS, SCOPE})
     public static IRubyObject autoload(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        final Ruby runtime = context.runtime;
-        final String nonInternedName = symbol.asJavaString();
+        RubyModule module = context.getFrameKlazz();
 
-        if (!IdUtil.isValidConstantName(nonInternedName)) {
-            throw runtime.newNameError("autoload must be constant name", symbol);
-        }
+        if (module == null) module = context.getCurrentStaticScope().getModule();
 
-        final RubyString fileString =
-            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, file));
+        if (module.isNil()) throw context.runtime.newTypeError("Can not set autoload on singleton class");
 
-        if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
-
-        final String baseName = nonInternedName.intern(); // interned, OK for "fast" methods
-        final RubyModule module = getModuleForAutoload(runtime, recv);
-
-        IRubyObject existingValue = module.fetchConstant(baseName);
-        if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
-
-        module.defineAutoload(baseName, new RubyModule.AutoloadMethod() {
-
-            public RubyString getFile() { return fileString; }
-
-            public void load(final Ruby runtime) {
-                final String file = getFile().asJavaString();
-                if (runtime.getLoadService().autoloadRequire(file)) {
-                    // Do not finish autoloading by cyclic autoload
-                    module.finishAutoload(baseName);
-                }
-            }
-        });
-        return context.nil;
-    }
-
-    @Deprecated
-    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
-    }
-
-    static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
-        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getMetaClass().getRealClass();
-        if (module == runtime.getKernel()) {
-            // special behavior if calling Kernel.autoload directly
-            module = runtime.getObject().getSingletonClass();
-        }
-        return module;
+        return module.autoload(context, symbol, file);
     }
 
     public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -444,7 +410,7 @@ public class RubyKernel {
         if (object instanceof RubyFloat) {
             return object;
         }
-        if (object instanceof RubyString){
+        if (object instanceof RubyString) {
             RubyString str = (RubyString) object;
             ByteList bytes = str.getByteList();
             if (bytes.getRealSize() == 0){ // rb_cstr_to_dbl case
@@ -2487,5 +2453,10 @@ public class RubyKernel {
     @Deprecated
     public static RubyFloat new_float19(IRubyObject recv, IRubyObject object) {
         return new_float(recv, object);
+    }
+
+    @Deprecated
+    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
+        return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
     }
 }

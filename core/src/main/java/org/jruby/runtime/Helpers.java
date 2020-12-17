@@ -73,6 +73,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
+import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -2160,7 +2161,7 @@ public class Helpers {
     }
 
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name, false) != null;
+        return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(name);
     }
 
     @JIT @Interp
@@ -2439,16 +2440,11 @@ public class Helpers {
     // . Array with multiple values and NO rest should extract args if there are more than one argument
 
     static IRubyObject[] restructureBlockArgs(ThreadContext context,
-        IRubyObject value, Signature signature, Block.Type type, boolean needsSplat) {
+        IRubyObject value, Signature signature, Block.Type type) {
 
         if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
         if (value == null) return IRubyObject.NULL_ARRAY;
-
-        if (needsSplat) {
-            IRubyObject ary = Helpers.aryToAry(context, value);
-            if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArrayMaybeUnsafe();
-        }
 
         return new IRubyObject[] { value };
     }
@@ -2778,6 +2774,14 @@ public class Helpers {
 
     public static StaticScope getStaticScope(IRScope scope) {
         return scope.getStaticScope();
+    }
+
+    // FIXME: to_path should not be called n times it should only be once and that means a cache which would
+    // also reduce all this casting and/or string creates.
+    // (mkristian) would it make sense to turn $LOAD_PATH into something like RubyClassPathVariable where we could cache
+    // the Strings ?
+    public static String javaStringFromPath(Ruby runtime, IRubyObject loadPathEntry) {
+        return RubyFile.get_path(runtime.getCurrentContext(), loadPathEntry).asJavaString();
     }
 
     /**

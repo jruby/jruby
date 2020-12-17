@@ -3,6 +3,7 @@ require 'stringio'
 require 'tempfile'
 require 'fileutils'
 require 'test/jruby/test_helper'
+require 'pathname'
 
 class TestJRubyc < Test::Unit::TestCase
 
@@ -42,17 +43,17 @@ class TestJRubyc < Test::Unit::TestCase
   end
 
   def test_target
-    pend 'TODO: mangled path issue (SystemCallError) - Unknown Error (20109)' if TestHelper::WINDOWS
 
     tempdir = File.dirname(@tempfile_stdout.path)
-    class_file = File.join(tempdir, __FILE__.sub('.rb', '.class'))
+    relative_path = Pathname.new(File.absolute_path(__FILE__)).relative_path_from(Dir.pwd) 
+    class_file = File.join(tempdir, relative_path.sub('.rb', '.class'))
 
     JRuby::Compiler::compile_argv ["--verbose", "--target", tempdir, __FILE__]
 
     output = File.read(@tempfile_stdout.path)
     assert_equal "Compiling #{__FILE__}\n", output
 
-    assert File.exist?(class_file)
+    assert File.exist?(class_file), "#{class_file} does not exists"
   ensure
     ( class_file && FileUtils.rm_rf(class_file) ) rescue nil
   end
@@ -83,8 +84,6 @@ class TestJRubyc < Test::Unit::TestCase
   end
 
   def test_unicode
-    pend 'TODO: mangled path issue (SystemCallError) - Unknown Error (20109)' if TestHelper::WINDOWS
-
     file = Tempfile.create("test_unicode")
     filename = file.path
     file.write("$encoding = 'jalapeño'.encoding")

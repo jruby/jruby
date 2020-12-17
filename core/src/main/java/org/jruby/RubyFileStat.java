@@ -298,6 +298,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "gid")
     public IRubyObject gid() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return RubyFixnum.zero(getRuntime());
         return getRuntime().newFixnum(stat.gid());
     }
     
@@ -371,6 +372,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "uid")
     public IRubyObject uid() {
         checkInitialized();
+        if (Platform.IS_WINDOWS) return RubyFixnum.zero(getRuntime());
         return getRuntime().newFixnum(stat.uid());
     }
     

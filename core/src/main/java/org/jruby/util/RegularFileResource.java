@@ -64,6 +64,11 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
+    public String path() {
+        return file.getPath();
+    }
+
+    @Override
     public long length() {
         return file.length();
     }

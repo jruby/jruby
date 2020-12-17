@@ -1,6 +1,4 @@
 fails:StringIO#printf formatting integer formats u converts argument as a decimal number
-fails:StringIO#printf formatting float formats g otherwise cuts fraction part to have only 6 digits at all
-fails:StringIO#printf formatting float formats G otherwise cuts fraction part to have only 6 digits at all
 fails:StringIO#printf formatting float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
 fails:StringIO#printf formatting float formats a displays Float::INFINITY as Inf
 fails:StringIO#printf formatting float formats a displays Float::NAN as NaN

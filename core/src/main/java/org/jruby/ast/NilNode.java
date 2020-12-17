@@ -35,15 +35,14 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * represents 'nil'
  */
 public class NilNode extends Node implements SideEffectFree {
 
-    public NilNode(ISourcePosition position) {
-        super(position, false);
+    public NilNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {

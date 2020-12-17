@@ -7,16 +7,10 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.joni.Matcher;
-import org.joni.Option;
-import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.ext.JavaLang;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -84,7 +78,7 @@ public abstract class LexingCommon {
     protected int token;                      // Last token read via yylex().
     private int tokenCR;
     protected boolean tokenSeen = false;
-    public ISourcePosition tokline;
+    public int tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
 
@@ -171,14 +165,14 @@ public abstract class LexingCommon {
     }
 
     public ByteList createTokenByteList(int start) {
-        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp, getEncoding(), false);
+        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp - start, getEncoding(), false);
     }
 
     public String createTokenString(int start) {
-        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start, getEncoding());
+        return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start);
     }
 
-    public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
+    public String createAsEncodedString(byte[] bytes, int start, int length) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
             Charset charset = EncodingUtils.charsetForEncoding(getEncoding());
@@ -263,11 +257,6 @@ public abstract class LexingCommon {
 
     public int getLeftParenBegin() {
         return leftParenBegin;
-    }
-
-    public ISourcePosition getPosition() {
-        if (tokline != null && ruby_sourceline == tokline.getLine()) return tokline;
-        return new SimpleSourcePosition(getFile(), ruby_sourceline);
     }
 
     public int getLineOffset() {
@@ -414,43 +403,53 @@ public abstract class LexingCommon {
     // In most cases this does not matter much but for ripper or a place where
     // we remove actual source characters (like extra '"') then this acts differently.
     public void newtok(boolean unreadOnce) {
-        tokline = getPosition();
+        tokline = ruby_sourceline;
         // We assume all idents are 7BIT until they aren't.
         tokenCR = StringSupport.CR_7BIT;
 
         tokp = lex_p - (unreadOnce ? 1 : 0); // We use tokp of ripper to mark beginning of tokens.
     }
 
-    protected int numberLiteralSuffix(int mask) throws IOException {
-        int c = nextc();
+    protected int numberLiteralSuffix(int mask) {
+        int c;
+        int result = 0;
+        int last = lex_p;
 
-        if (c == 'i') return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
-
-        if (c == 'r') {
-            int result = 0;
-            if ((mask & SUFFIX_R) != 0) result |= (mask & SUFFIX_R);
-
-            if (peek('i') && (mask & SUFFIX_I) != 0) {
-                c = nextc();
+        while((c = nextc()) != EOF) {
+            if ((mask & SUFFIX_I) != 0 && c == 'i') {
                 result |= (mask & SUFFIX_I);
+                mask &= ~SUFFIX_R; // 'r' cannot come after an 'i'.
+                continue;
             }
 
-            return result;
-        }
-        if (c == '.') {
-            int c2 = nextc();
-            if (Character.isDigit(c2)) {
-                compile_error("unexpected fraction part after numeric literal");
-                do { // Ripper does not stop so we follow MRI here and read over next word...
-                    c2 = nextc();
-                } while (isIdentifierChar(c2));
-            } else {
-                pushback(c2);
+            if ((mask & SUFFIX_R) != 0 && c == 'r') {
+                result |= (mask & SUFFIX_R);
+                mask &= ~SUFFIX_R;
+                continue;
             }
-        }
-        pushback(c);
 
-        return 0;
+            if (!isASCII(c) || getEncoding().isAlpha(c) || c == '_') {
+                lex_p = last;
+                return 0;
+            }
+
+            if (c == '.') {
+                int c2 = nextc();
+                if (Character.isDigit(c2)) {
+                    compile_error("unexpected fraction part after numeric literal");
+                    do { // Ripper does not stop so we follow MRI here and read over next word...
+                        c2 = nextc();
+                    } while (isIdentifierChar(c2));
+                } else {
+                    pushback(c2);
+                }
+            }
+            pushback(c);
+
+            break;
+        }
+
+        return result;
     }
 
     public void parser_prepare() {

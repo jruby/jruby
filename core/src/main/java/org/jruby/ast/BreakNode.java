@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents a 'break' statement.
@@ -43,8 +42,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class BreakNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
     
-    public BreakNode(ISourcePosition position, Node valueNode) {
-        super(position, valueNode != null && valueNode.containsVariableAssignment());
+    public BreakNode(int line, Node valueNode) {
+        super(line, valueNode != null && valueNode.containsVariableAssignment());
         
         assert valueNode != null : "valueNode is not null";
         

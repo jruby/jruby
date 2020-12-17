@@ -82,12 +82,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jar-dependencies.version' => '0.4.1',
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
-              'asm.version' => '7.1',
-              'jffi.version' => '1.3.0',
+              'asm.version' => '9.0',
+              'jffi.version' => '1.3.1',
               'joda.time.version' => '2.10.5' )
 
   plugin_management do
-    jar( 'junit:junit:4.12',
+    jar( 'junit:junit:4.13.1',
          :scope => 'test' )
 
     plugin( 'org.apache.felix:maven-bundle-plugin:4.2.1',
