@@ -1,1 +1,0 @@
-fails:Delegator#method returns a method object for protected methods of the delegate object

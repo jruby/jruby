@@ -1,5 +1,3 @@
-fails:Module#private_constant marked constants in a module cannot be reopened as a module
-fails:Module#private_constant marked constants in a module cannot be reopened as a class
 fails:Module#private_constant marked constants in a class cannot be reopened as a module
 fails:Module#private_constant marked constants in a class cannot be reopened as a class
 fails(2.3 feature):Constant resolution within a singleton class (class << obj) uses its own namespace for each object

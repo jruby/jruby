@@ -151,7 +151,7 @@ public class RubyObject extends RubyBasicObject {
      * always holding them in an array.
      */
     public static final ObjectAllocator IVAR_INSPECTING_OBJECT_ALLOCATOR = new ObjectAllocator() {
-        @Override
+            @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             ObjectAllocator allocator = klass.getAllocator();
 

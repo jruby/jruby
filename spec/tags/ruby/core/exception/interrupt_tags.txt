@@ -1,1 +1,0 @@
-critical(terminates):rescuing Interrupt raises an Interrupt when sent a signal SIGINT

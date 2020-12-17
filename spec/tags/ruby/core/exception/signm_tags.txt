@@ -1,1 +1,0 @@
-critical(exits):SignalException#signm returns the signal name

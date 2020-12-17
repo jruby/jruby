@@ -1,4 +1,3 @@
-fails:Magic comment is case-insensitive
 fails:Magic comments in an -e argument do not cause bytes to be mangled by passing them through the wrong encoding
 windows:Magic comments in stdin are optional
 windows:Magic comments in stdin must be at the first line

@@ -1,1 +1,0 @@
-critical(hangs):Digest::SHA256.file raises an Errno::EISDIR when passed a path that is a directory
