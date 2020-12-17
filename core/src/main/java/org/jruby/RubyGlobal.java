@@ -480,6 +480,15 @@ public class RubyGlobal {
             return super.key(context, verifyStringLike(context, expected));
         }
 
+        @JRubyMethod(name = "rehash")
+        public IRubyObject rehash1(ThreadContext context) {
+            super.rehash(context);
+
+            // In MRI they are interacting with the systems env at a C level so rehash does nothing.  We maintain
+            // our hash as an actual Ruby Hash so we still rehash above.
+            return context.nil;
+        }
+
         @JRubyMethod(name = "replace", required = 1)
         public RubyHash replace(final ThreadContext context, IRubyObject other) {
             modify();
