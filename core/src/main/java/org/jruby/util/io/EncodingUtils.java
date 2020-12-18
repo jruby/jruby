@@ -370,7 +370,7 @@ public class EncodingUtils {
 
     // MRI: rb_external_str_new_with_enc
     public static RubyString newExternalStringWithEncoding(Ruby runtime, String string, Encoding encoding) {
-        if (string == null || string.isEmpty()) return newEmptyString(runtime, encoding);
+        if (string == null) return newEmptyString(runtime, encoding);
 
         /* ASCII-8BIT case, no conversion */
         if ((encoding == ASCIIEncoding.INSTANCE) ||
@@ -405,7 +405,7 @@ public class EncodingUtils {
 
     // MRI: rb_external_str_new_with_enc
     public static RubyString newExternalStringWithEncoding(Ruby runtime, ByteList bytelist, Encoding encoding) {
-        if (bytelist == null || bytelist.isEmpty()) return newEmptyString(runtime, encoding);
+        if (bytelist == null) return newEmptyString(runtime, encoding);
 
         /* ASCII-8BIT case, no conversion */
         if ((encoding == ASCIIEncoding.INSTANCE) ||

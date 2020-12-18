@@ -45,7 +45,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.SystemCallError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.ir.Tuple;
@@ -68,7 +67,6 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.ChannelHelper;
-import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
@@ -432,11 +430,17 @@ public class RubyGlobal {
 
         protected final boolean isCaseSensitive() { return false; }
 
-        @Override
-        public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            IRubyObject val = super.op_aref(context, key);
-            val.setTaint(true);
-            return val;
+        @JRubyMethod(name = "[]", required = 1)
+        public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
+            IRubyObject key = arg.convertToString();
+            IRubyObject value = internalGet(key);
+            if (value == null) return context.nil;
+
+            RubyString string = (RubyString) newName(context, key, value);
+
+            string.freeze(context);
+
+            return string;
         }
 
         private static final ByteList ENV = new ByteList(new byte[] {'E','N','V'}, USASCIIEncoding.INSTANCE, false);
@@ -450,6 +454,27 @@ public class RubyGlobal {
         public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
             return super.delete(context, verifyStringLike(context, key), block);
         }
+
+        @JRubyMethod(name = {"each", "each_pair"})
+        public IRubyObject each(final ThreadContext context, final Block block) {
+            if (!block.isGiven()) return super.each(context, block);
+
+            RubyArray ary = new RubyArray(context.runtime, size());
+
+            visitAll(context, EachVisitor, ary);
+
+            ary.eachSlice(context, 2, block);
+
+            return this;
+        }
+
+        private static final VisitorWithState<RubyArray> EachVisitor = new VisitorWithState<RubyArray>() {
+            @Override
+            public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray ary) {
+                ary.append(newString(context, key));
+                ary.append(newName(context, key, value));
+            }
+        };
 
         @JRubyMethod(name = "rassoc")
         public IRubyObject rassoc(final ThreadContext context, IRubyObject obj) {
@@ -532,8 +557,9 @@ public class RubyGlobal {
             // FIXME: If we cared we could reimplement this to not re-process the array elements.
 
             RubyArray pair = (RubyArray) value;
-            pair.eltInternalSet(0, normalizeName(context, pair.eltInternal(0)));
-            pair.eltInternalSet(1, normalizeName(context, pair.eltInternal(1)));
+            IRubyObject key = pair.eltInternal(0);
+            pair.eltInternalSet(0, newString(context, key));
+            pair.eltInternalSet(1, newName(context, key, pair.eltInternal(1)));
 
             return pair;
         }
@@ -622,7 +648,7 @@ public class RubyGlobal {
                 return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
             }
 
-            RubyString valueAsStr = normalizeEnvString(context, keyAsStr, verifyStringLike(context, value).convertToString());
+            IRubyObject valueAsStr = newName(context, keyAsStr, verifyStringLike(context, value).convertToString());
 
             if (updateRealENV) {
                 final POSIX posix = context.runtime.getPosix();
@@ -685,40 +711,33 @@ public class RubyGlobal {
 
         private static final ByteList PATH_BYTES = new ByteList(new byte[] {'P','A','T','H'}, USASCIIEncoding.INSTANCE, false);
 
-        protected static IRubyObject normalizeName(ThreadContext context, IRubyObject arg) {
-            if (arg.isNil()) return arg;
+        // MRI: env_name_new
+        protected static IRubyObject newName(ThreadContext context, IRubyObject key, IRubyObject valueArg) {
+            if (valueArg.isNil()) return context.nil;
 
-            RubyString name = (RubyString) arg;
+            RubyString value = (RubyString) valueArg;
             EncodingService encodingService = context.runtime.getEncodingService();
-            Encoding encoding = isPATH(context, name) ?
+            Encoding encoding = isPATH(context, (RubyString) key) ?  // We stopped caring about taint (difference with MRI)
                     encodingService.getFileSystemEncoding() :
                     encodingService.getLocaleEncoding();
 
-            return newExternalStringWithEncoding(context.runtime, name.getByteList(), encoding);
+            return newExternalStringWithEncoding(context.runtime, value.getByteList(), encodingService.getLocaleEncoding());
+        }
+
+        // MRI: env_str_new
+        protected static IRubyObject newString(ThreadContext context, RubyString value) {
+            return newExternalStringWithEncoding(context.runtime, value.getByteList(), context.runtime.getEncodingService().getLocaleEncoding());
+        }
+
+        // MRI: env_str_new2
+        protected static IRubyObject newString(ThreadContext context, IRubyObject obj) {
+            return obj.isNil() ? context.nil : newString(context, (RubyString) obj);
         }
 
         private static boolean isPATH(ThreadContext context, RubyString name) {
             return Platform.IS_WINDOWS ?
                     equalIgnoreCase(context, name, RubyString.newString(context.runtime, PATH_BYTES)) :
                     name.getByteList().equal(PATH_BYTES);
-        }
-
-        private static RubyString normalizeEnvString(ThreadContext context, RubyString key, RubyString value) {
-            final Ruby runtime = context.runtime;
-
-            RubyString valueStr;
-
-            // Ensure PATH is encoded like filesystem
-            if (isPATH(context, key)) {
-                Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
-                valueStr = EncodingUtils.strConvEnc(context, value, value.getEncoding(), enc);
-                if (value == valueStr) valueStr = (RubyString) value.dup();
-            } else {
-                valueStr = RubyString.newString(runtime, value.toString(), runtime.getEncodingService().getLocaleEncoding());
-            }
-
-            valueStr.setFrozen(true);
-            return valueStr;
         }
 
         private static boolean equalIgnoreCase(ThreadContext context, final RubyString str1, final RubyString str2) {
