@@ -1,1 +1,0 @@
-fails:ENV.shift transcodes from the locale encoding to Encoding.default_internal if set

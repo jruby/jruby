@@ -59,6 +59,7 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHelper;
 import org.jruby.util.KCode;
@@ -74,6 +75,7 @@ import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -521,6 +523,21 @@ public class RubyGlobal {
             }
         };
 
+        @JRubyMethod(name = "shift")
+        public IRubyObject shift(ThreadContext context) {
+            // ENV dooes not support default_proc so we know 2 element Array.
+            IRubyObject value = super.shift(context);
+
+            if (value.isNil()) return value;
+            // FIXME: If we cared we could reimplement this to not re-process the array elements.
+
+            RubyArray pair = (RubyArray) value;
+            pair.eltInternalSet(0, normalizeName(context, pair.eltInternal(0)));
+            pair.eltInternalSet(1, normalizeName(context, pair.eltInternal(1)));
+
+            return pair;
+        }
+
         @JRubyMethod(name = "to_s")
         public RubyString to_s(ThreadContext context) {
             return RubyString.newStringShared(context.runtime, ENV);
@@ -668,15 +685,31 @@ public class RubyGlobal {
 
         private static final ByteList PATH_BYTES = new ByteList(new byte[] {'P','A','T','H'}, USASCIIEncoding.INSTANCE, false);
 
+        protected static IRubyObject normalizeName(ThreadContext context, IRubyObject arg) {
+            if (arg.isNil()) return arg;
+
+            RubyString name = (RubyString) arg;
+            EncodingService encodingService = context.runtime.getEncodingService();
+            Encoding encoding = isPATH(context, name) ?
+                    encodingService.getFileSystemEncoding() :
+                    encodingService.getLocaleEncoding();
+
+            return newExternalStringWithEncoding(context.runtime, name.getByteList(), encoding);
+        }
+
+        private static boolean isPATH(ThreadContext context, RubyString name) {
+            return Platform.IS_WINDOWS ?
+                    equalIgnoreCase(context, name, RubyString.newString(context.runtime, PATH_BYTES)) :
+                    name.getByteList().equal(PATH_BYTES);
+        }
+
         private static RubyString normalizeEnvString(ThreadContext context, RubyString key, RubyString value) {
             final Ruby runtime = context.runtime;
 
             RubyString valueStr;
 
             // Ensure PATH is encoded like filesystem
-            if (Platform.IS_WINDOWS ?
-                    equalIgnoreCase(context, key, RubyString.newString(context.runtime, PATH_BYTES)) :
-                        key.getByteList().equal(PATH_BYTES)) {
+            if (isPATH(context, key)) {
                 Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
                 valueStr = EncodingUtils.strConvEnc(context, value, value.getEncoding(), enc);
                 if (value == valueStr) valueStr = (RubyString) value.dup();
