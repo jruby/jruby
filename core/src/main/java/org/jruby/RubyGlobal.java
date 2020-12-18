@@ -45,6 +45,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.ir.Tuple;
@@ -502,6 +503,26 @@ public class RubyGlobal {
             return key(context, expected);
         }
 
+        @JRubyMethod(name = "keys")
+        public RubyArray keys(final ThreadContext context) {
+            try {
+                RubyArray keys = RubyArray.newBlankArrayInternal(context.runtime, size());
+
+                visitAll(context, StoreKeyVisitor, keys);
+
+                return keys;
+            } catch (NegativeArraySizeException nase) {
+                throw concurrentModification();
+            }
+        }
+
+        private static final VisitorWithState<RubyArray> StoreKeyVisitor = new VisitorWithState<RubyArray>() {
+            @Override
+            public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray keys) {
+                keys.storeInternal(index, newString(context, key));
+            }
+        };
+
         @JRubyMethod
         public IRubyObject key(ThreadContext context, IRubyObject expected) {
             return super.key(context, verifyStringLike(context, expected));
@@ -585,6 +606,10 @@ public class RubyGlobal {
             return block.isGiven() ? h.to_h_block(context, block) : h;
         }
 
+        private final RaiseException concurrentModification() {
+            return metaClass.runtime.newConcurrencyError(
+                    "Detected invalid hash contents due to unsynchronized modifications with concurrent users");
+        }
     }
 
     /**
@@ -721,7 +746,7 @@ public class RubyGlobal {
                     encodingService.getFileSystemEncoding() :
                     encodingService.getLocaleEncoding();
 
-            return newExternalStringWithEncoding(context.runtime, value.getByteList(), encodingService.getLocaleEncoding());
+            return newExternalStringWithEncoding(context.runtime, value.getByteList(), encoding);
         }
 
         // MRI: env_str_new
