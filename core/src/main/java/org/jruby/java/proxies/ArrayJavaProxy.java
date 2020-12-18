@@ -633,41 +633,6 @@ public final class ArrayJavaProxy extends JavaProxy {
         return buffer.toString();
     }
 
-//    private static void toString(StringBuilder str, byte[] a) {
-//        int last = a.length - 1;
-//        if (last == -1) {
-//            str.append("[]"); return;
-//        }
-//
-//        int i = 0;
-//        str.append('[');
-//        while (true) {
-//            str.append(a[i++]);
-//            if (i == last) {
-//                str.append(']'); return;
-//            }
-//            str.append(", ");
-//        }
-//    }
-//
-//
-//    private static void toString(StringBuilder str, int[] a) {
-//        int last = a.length - 1;
-//        if (last == -1) {
-//            str.append("[]"); return;
-//        }
-//
-//        int i = 0;
-//        str.append('[');
-//        while (true) {
-//            str.append(a[i++]);
-//            if (i == last) {
-//                str.append(']'); return;
-//            }
-//            str.append(", ");
-//        }
-//    }
-
     @Override
     @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
