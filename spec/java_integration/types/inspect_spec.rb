@@ -14,6 +14,9 @@ describe "java.lang.Class" do
 
     klass = Java::short[0].new.java_class.to_java
     expect(klass.inspect).to eq '#<Java::JavaLang::Class: short[]>'
+
+    klass = Java::java.lang.Double[1].new.java_class.to_java
+    expect(klass.inspect).to eq '#<Java::JavaLang::Class: java.lang.Double[]>'
   end
 end
 

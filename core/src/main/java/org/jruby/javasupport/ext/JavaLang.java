@@ -485,21 +485,25 @@ public abstract class JavaLang {
             return new RubyIO(context.runtime, klass.getResourceAsStream(resName)).read(context);
         }
 
-        @JRubyMethod // alias to_s name
+        @JRubyMethod // make to_s an improved class.name version
         public static IRubyObject to_s(final ThreadContext context, final IRubyObject self) {
-            final java.lang.Class klass = unwrapJavaObject(self);
-            return RubyString.newString(context.runtime, klass.getName());
+            return RubyString.newString(context.runtime, getClassName(self));
         }
 
         @JRubyMethod
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
             // with 'type' - to be able to tell Java::JavaLang::Class apart
-            final java.lang.Class klass = unwrapJavaObject(self);
             RubyString buf = inspectPrefix(context, self.getMetaClass());
             RubyStringBuilder.cat(context.runtime, buf, SPACE);
-            buf.catString(klass.getCanonicalName());
+            buf.catString(getClassName(self));
             RubyStringBuilder.cat(context.runtime, buf, GT); // >
             return buf;
+        }
+
+        private static java.lang.String getClassName(final IRubyObject self) {
+            final java.lang.Class klass = unwrapJavaObject(self);
+            final java.lang.String name = klass.getCanonicalName();
+            return name == null ? klass.getName() : name;
         }
 
         @JRubyMethod(name = "annotations?")
