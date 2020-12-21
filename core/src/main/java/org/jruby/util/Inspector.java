@@ -10,11 +10,11 @@ import static org.jruby.util.io.EncodingUtils.encStrBufCat;
 
 public class Inspector {
 
-    public static final ByteList EMPTY_ARRAY_BYTES = new ByteList(new byte[] { '[',']' }, USASCIIEncoding.INSTANCE, false);
-    public static final ByteList RECURSIVE_ARRAY_BYTES = new ByteList(new byte[] { '[','.','.','.',']' }, USASCIIEncoding.INSTANCE, false);
+    public static final ByteList EMPTY_ARRAY_BL = new ByteList(new byte[] { '[',']' }, USASCIIEncoding.INSTANCE, false);
+    public static final ByteList RECURSIVE_ARRAY_BL = new ByteList(new byte[] { '[','.','.','.',']' }, USASCIIEncoding.INSTANCE, false);
 
-    public static final ByteList EMPTY_HASH_BYTES = new ByteList(new byte[] { '{','}' }, USASCIIEncoding.INSTANCE, false);
-    public static final ByteList RECURSIVE_HASH_BYTES = new ByteList(new byte[] { '{','.','.','.','}' }, USASCIIEncoding.INSTANCE, false);
+    public static final ByteList EMPTY_HASH_BL = new ByteList(new byte[] { '{','}' }, USASCIIEncoding.INSTANCE, false);
+    public static final ByteList RECURSIVE_HASH_BL = new ByteList(new byte[] { '{','.','.','.','}' }, USASCIIEncoding.INSTANCE, false);
 
     private static final byte[] COLON_ZERO_X = new byte[] { ':', '0', 'x' };
     public static final byte[] COLON = new byte[] { ':' };

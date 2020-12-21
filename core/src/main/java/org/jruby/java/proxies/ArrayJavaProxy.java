@@ -517,9 +517,9 @@ public final class ArrayJavaProxy extends JavaProxy {
         RubyStringBuilder.cat(runtime, buf, END_BRACKET_COLON_SPACE); // ]:
 
         if (ary.length == 0) {
-            RubyStringBuilder.cat(runtime, buf, EMPTY_ARRAY_BYTES);
+            RubyStringBuilder.cat(runtime, buf, EMPTY_ARRAY_BL);
         } else if (runtime.isInspecting(ary)) {
-            RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BYTES);
+            RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BL);
         } else {
             try {
                 runtime.registerInspecting(ary);

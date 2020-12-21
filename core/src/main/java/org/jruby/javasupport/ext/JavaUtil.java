@@ -264,7 +264,7 @@ public abstract class JavaUtil {
             RubyStringBuilder.cat(runtime, buf, Inspector.SPACE);
 
             if (runtime.isInspecting(coll)) {
-                RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BYTES);
+                RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BL);
             } else {
                 RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
                 try {

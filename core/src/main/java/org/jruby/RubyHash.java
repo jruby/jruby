@@ -909,8 +909,8 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
 
-        if (size() == 0) return RubyString.newStringShared(runtime, EMPTY_HASH_BYTES);
-        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_HASH_BYTES);
+        if (size() == 0) return RubyString.newStringShared(runtime, EMPTY_HASH_BL);
+        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_HASH_BL);
 
         try {
             runtime.registerInspecting(this);

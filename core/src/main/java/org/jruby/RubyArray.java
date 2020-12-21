@@ -1699,8 +1699,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
-        if (realLength == 0) return RubyString.newStringShared(runtime, EMPTY_ARRAY_BYTES);
-        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_ARRAY_BYTES);
+        if (realLength == 0) return RubyString.newStringShared(runtime, EMPTY_ARRAY_BL);
+        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_ARRAY_BL);
 
         try {
             runtime.registerInspecting(this);

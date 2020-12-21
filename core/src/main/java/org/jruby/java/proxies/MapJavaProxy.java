@@ -136,9 +136,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             RubyStringBuilder.cat(runtime, buf, SPACE);
 
             if (size() == 0) {
-                RubyStringBuilder.cat(runtime, buf, EMPTY_HASH_BYTES);
+                RubyStringBuilder.cat(runtime, buf, EMPTY_HASH_BL);
             } else if (runtime.isInspecting(map)) {
-                RubyStringBuilder.cat(runtime, buf, RECURSIVE_HASH_BYTES);
+                RubyStringBuilder.cat(runtime, buf, RECURSIVE_HASH_BL);
             } else {
                 try {
                     runtime.registerInspecting(map);
