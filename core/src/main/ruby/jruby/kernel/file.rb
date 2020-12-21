@@ -155,13 +155,27 @@ if JRuby::Util::ON_SOLARIS
 
   if defined?(::FFI)
 
-    require 'ffi/platform/x86_64-solaris/fcntl'
-    require 'ffi/platform/x86_64-solaris/fcntl-flock'
+    module JRuby::Fcntl
+      F_RDLCK = 1
+      F_SETLK = 6
+      F_SETLKW = 7
+      F_UNLCK = 3
+      F_WRLCK = 2
 
-    module Fcntl
       extend FFI::Library
       ffi_lib 'c'
       attach_function :fcntl, [:short, :short, :varargs], :int
+
+      class Flock < FFI::Struct
+        self.size = 44
+        layout :l_type, :short, 0,
+               :l_whence, :short, 2,
+               :l_start, :off_t, 4,
+               :l_len, :off_t, 12,
+               :l_sysid, :int, 20,
+               :l_pid, :int, 24,
+               :l_pad, :int, 28
+      end
     end
 
     class File
@@ -169,21 +183,21 @@ if JRuby::Util::ON_SOLARIS
       def flock(operation)
         type = case (operation & ~LOCK_NB)
                  when LOCK_SH
-                   Fcntl::F_RDLCK
+                   JRuby::Fcntl::F_RDLCK
                  when LOCK_EX
-                   Fcntl::F_WRLCK
+                   JRuby::Fcntl::F_WRLCK
                  when LOCK_UN
-                   Fcntl::F_UNLCK
+                   JRuby::Fcntl::F_UNLCK
                  else
                    raise Errno::EINVAL
                end
 
-        flock = Fcntl::Flock.new
+        flock = JRuby::Fcntl::Flock.new
         flock[:l_type] = type
         flock[:l_whence] = File::SEEK_SET
         flock[:l_start] = flock[:l_len] = 0
 
-        while Fcntl.fcntl(fileno, (operation & LOCK_NB) != 0 ? Fcntl::F_SETLK : Fcntl::F_SETLKW, :pointer, flock) != 0
+        while JRuby::Fcntl.fcntl(fileno, (operation & LOCK_NB) != 0 ? JRuby::Fcntl::F_SETLK : JRuby::Fcntl::F_SETLKW, :pointer, flock) != 0
           errno = FFI.errno
           case errno
           when Errno::EAGAIN::Errno, Errno::EWOULDBLOCK::Errno, Errno::EACCES::Errno
