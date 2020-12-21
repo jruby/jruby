@@ -51,7 +51,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+
+import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.TypeConverter;
+
+import static org.jruby.util.Inspector.*;
 
 /**
  * A proxy for wrapping <code>java.util.Map</code> instances.
@@ -125,7 +129,26 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public IRubyObject inspect(ThreadContext context) {
-            return super.inspect(context);
+            final Ruby runtime = context.runtime;
+            final Map map = mapDelegate();
+
+            RubyString buf = inspectPrefix(context, receiver.getMetaClass());
+            RubyStringBuilder.cat(runtime, buf, SPACE);
+
+            if (size() == 0) {
+                RubyStringBuilder.cat(runtime, buf, EMPTY_HASH_BL);
+            } else if (runtime.isInspecting(map)) {
+                RubyStringBuilder.cat(runtime, buf, RECURSIVE_HASH_BL);
+            } else {
+                try {
+                    runtime.registerInspecting(map);
+                    buf.cat19(inspectHash(context));
+                } finally {
+                    runtime.unregisterInspecting(map);
+                }
+            }
+
+            return RubyStringBuilder.cat(runtime, buf, GT);
         }
 
         @Override
@@ -438,12 +461,10 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return (RubyProc) newProc;
     }
 
-    /** rb_hash_to_s
-     *
-     */
+    // NOTE: keep Map#to_s -> toString as with other Java types
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).to_s(context);
+        return RubyString.newString(context.runtime, getMapObject().toString());
     }
 
     /** rb_hash_rehash

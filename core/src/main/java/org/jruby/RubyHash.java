@@ -73,8 +73,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.Inspector.*;
 
 // Design overview:
 //
@@ -867,7 +868,7 @@ public class RubyHash extends RubyObject implements Map {
     /** inspect_hash
      *
      */
-    private IRubyObject inspectHash(final ThreadContext context) {
+    protected RubyString inspectHash(final ThreadContext context) {
         final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
 
         str.infectBy(this);
@@ -906,14 +907,16 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        if (size() == 0) return RubyString.newUSASCIIString(context.runtime, "{}");
-        if (context.runtime.isInspecting(this)) return RubyString.newUSASCIIString(context.runtime, "{...}");
+        final Ruby runtime = context.runtime;
+
+        if (size() == 0) return RubyString.newStringShared(runtime, EMPTY_HASH_BL);
+        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_HASH_BL);
 
         try {
-            context.runtime.registerInspecting(this);
+            runtime.registerInspecting(this);
             return inspectHash(context);
         } finally {
-            context.runtime.unregisterInspecting(this);
+            runtime.unregisterInspecting(this);
         }
     }
 
