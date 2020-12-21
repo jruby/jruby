@@ -61,6 +61,7 @@ lib/ruby/stdlib/cmath.rb
 lib/ruby/stdlib/csv*
 lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/e2mmap*
+lib/ruby/stdlib/ffi*
 lib/ruby/stdlib/fileutils.rb
 lib/ruby/stdlib/forwardable*
 lib/ruby/stdlib/gauntlet_rdoc.rb
