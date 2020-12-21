@@ -742,16 +742,25 @@ public class RubyGlobal {
 
             RubyString value = (RubyString) valueArg;
             EncodingService encodingService = context.runtime.getEncodingService();
-            Encoding encoding = isPATH(context, (RubyString) key) ?  // We stopped caring about taint (difference with MRI)
+            Encoding encoding = isPATH(context, (RubyString) key) && !value.isTaint() ?
                     encodingService.getFileSystemEncoding() :
                     encodingService.getLocaleEncoding();
 
-            return newExternalStringWithEncoding(context.runtime, value.getByteList(), encoding);
+            return newString(context, value, encoding);
+        }
+
+        protected static IRubyObject newString(ThreadContext context, RubyString value, Encoding encoding) {
+            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.getByteList(), encoding);
+
+            result.setTaint(true);
+            result.setFrozen(true);
+
+            return result;
         }
 
         // MRI: env_str_new
         protected static IRubyObject newString(ThreadContext context, RubyString value) {
-            return newExternalStringWithEncoding(context.runtime, value.getByteList(), context.runtime.getEncodingService().getLocaleEncoding());
+            return newString(context, value, context.runtime.getEncodingService().getLocaleEncoding());
         }
 
         // MRI: env_str_new2
