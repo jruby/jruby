@@ -66,6 +66,7 @@ import org.jruby.ast.util.ArgsUtil;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyString.UTF8;
+import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
 /**
  * The Ruby built-in class Dir.
@@ -394,7 +395,7 @@ public class RubyDir extends RubyObject implements Closeable {
                 if (len == 2 && file.charAt(0) == '.' && file.charAt(1) == '.') continue;
             }
 
-            result.append( RubyString.newExternalStringWithEncoding(runtime, file, encoding) );
+            result.append(newExternalStringWithEncoding(runtime, file, encoding));
         }
         return result;
     }
@@ -1114,7 +1115,7 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static RubyString newFilesystemString(Ruby runtime, String home) {
-        return RubyString.newExternalStringWithEncoding(runtime, home, runtime.getDefaultFilesystemEncoding());
+        return newExternalStringWithEncoding(runtime, home, runtime.getDefaultFilesystemEncoding());
     }
 
     static final ByteList HOME = new ByteList(new byte[] {'H','O','M','E'}, false);

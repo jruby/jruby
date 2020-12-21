@@ -1,4 +1,0 @@
-fails:ENV.update raises TypeError when a name is not coercible to String
-fails:ENV.update raises TypeError when a value is not coercible to String
-fails:ENV.update raises Errno::EINVAL when a name contains the '=' character
-fails:ENV.update raises Errno::EINVAL when a name is an empty string

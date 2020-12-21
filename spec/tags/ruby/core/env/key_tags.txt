@@ -1,3 +1,0 @@
-fails:ENV.key returns the index associated with the passed value
-fails:ENV.key? raises TypeError if the argument is not a String and does not respond to #to_str
-fails:ENV.key raises TypeError if the argument is not a String and does not respond to #to_str

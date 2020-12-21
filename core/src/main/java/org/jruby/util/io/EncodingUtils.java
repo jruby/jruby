@@ -56,6 +56,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.jruby.RubyString.*;
+import static org.jruby.util.StringSupport.CR_UNKNOWN;
+import static org.jruby.util.StringSupport.searchNonAscii;
+
 public class EncodingUtils {
     public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
     public static final int DEFAULT_TEXTMODE = Platform.IS_WINDOWS ? OpenFile.TEXTMODE : 0;
@@ -362,6 +366,76 @@ public class EncodingUtils {
         }
 
         return extracted;
+    }
+
+    // MRI: rb_external_str_new_with_enc
+    public static RubyString newExternalStringWithEncoding(Ruby runtime, String string, Encoding encoding) {
+        if (string == null) return newEmptyString(runtime, encoding);
+
+        /* ASCII-8BIT case, no conversion */
+        if ((encoding == ASCIIEncoding.INSTANCE) ||
+                (encoding == USASCIIEncoding.INSTANCE && searchNonAscii(string) != -1)) {
+            return newBinaryString(runtime, string);
+        }
+
+        /* no default_internal or same encoding, no conversion */
+        Encoding internalEncoding = runtime.getDefaultInternalEncoding();
+        if (internalEncoding == null || encoding == internalEncoding) return newString(runtime, string, encoding);
+
+        /* ASCII compatible, and ASCII only string, no conversion in
+         * default_internal */
+        if ((encoding == ASCIIEncoding.INSTANCE) ||
+                (encoding == USASCIIEncoding.INSTANCE) ||
+                (encoding.isAsciiCompatible() && searchNonAscii(string) == -1)) {
+            return newString(runtime, string, internalEncoding);
+        }
+
+        /* convert from the given encoding to default_internal */
+        RubyString convertedString = newEmptyString(runtime, internalEncoding);
+        /* when the conversion failed for some reason, just ignore the
+         * default_internal and result in the given encoding as-is. */
+        try {
+            convertedString.cat19(encodeBytelist(string, encoding), CR_UNKNOWN);
+        } catch (org.jruby.exceptions.EncodingError.CompatibilityError ce) {
+            return newString(runtime, string, encoding);
+        }
+
+        return convertedString;
+    }
+
+    // MRI: rb_external_str_new_with_enc
+    public static RubyString newExternalStringWithEncoding(Ruby runtime, ByteList bytelist, Encoding encoding) {
+        if (bytelist == null) return newEmptyString(runtime, encoding);
+
+        /* ASCII-8BIT case, no conversion */
+        if ((encoding == ASCIIEncoding.INSTANCE) ||
+                (encoding == USASCIIEncoding.INSTANCE && searchNonAscii(bytelist) != -1)) {
+            return newBinaryString(runtime, bytelist);
+        }
+
+        /* no default_internal or same encoding, no conversion */
+        Encoding internalEncoding = runtime.getDefaultInternalEncoding();
+        if (internalEncoding == null || encoding == internalEncoding) return newString(runtime, bytelist, encoding);
+
+        /* ASCII compatible, and ASCII only string, no conversion in
+         * default_internal */
+        if ((encoding == ASCIIEncoding.INSTANCE) ||
+                (encoding == USASCIIEncoding.INSTANCE) ||
+                (encoding.isAsciiCompatible() && searchNonAscii(bytelist) == -1)) {
+            return newString(runtime, bytelist, internalEncoding);
+        }
+
+        /* convert from the given encoding to default_internal */
+        RubyString convertedString = newEmptyString(runtime, internalEncoding);
+        /* when the conversion failed for some reason, just ignore the
+         * default_internal and result in the given encoding as-is. */
+        try {
+            convertedString.cat19(encodeBytelist(bytelist, encoding), CR_UNKNOWN);
+        } catch (org.jruby.exceptions.EncodingError.CompatibilityError ce) {
+            return newString(runtime, bytelist, encoding);
+        }
+
+        return convertedString;
     }
 
     // mri: rb_io_ext_int_to_encs
@@ -1011,7 +1085,7 @@ public class EncodingUtils {
                                             Encoding toEncoding, int ecflags, IRubyObject ecopts) {
         return strConvEncOpts(
                 context,
-                RubyString.newString(context.runtime, str),
+                newString(context.runtime, str),
                 fromEncoding, toEncoding, ecflags, ecopts).getByteList();
     }
 
@@ -1088,7 +1162,7 @@ public class EncodingUtils {
                 len = dp.p;
                 newStr.setRealSize(len);
                 newStr.setEncoding(toEncoding);
-                return RubyString.newString(context.runtime, newStr);
+                return newString(context.runtime, newStr);
 
             default:
                 // some error, return original
@@ -1442,14 +1516,14 @@ public class EncodingUtils {
             int errBytesP = ec.lastError.getErrorBytesP();
             int errorLen = ec.lastError.getErrorBytesLength();
             ByteList _bytes = new ByteList(errBytes, errBytesP, errorLen - errBytesP);
-            RubyString bytes = RubyString.newString(runtime, _bytes);
+            RubyString bytes = newString(runtime, _bytes);
             RubyString dumped = (RubyString)bytes.dump();
             int readagainLen = ec.lastError.getReadAgainLength();
             IRubyObject bytes2 = runtime.getNil();
             if (result == EConvResult.IncompleteInput) {
                 mesg.append("incomplete ").append(dumped).append(" on ").append(new String(ec.lastError.getSource()));
             } else if (readagainLen != 0) {
-                bytes2 = RubyString.newString(runtime, new ByteList(errBytes, errorLen + errBytesP, ec.lastError.getReadAgainLength()));
+                bytes2 = newString(runtime, new ByteList(errBytes, errorLen + errBytesP, ec.lastError.getReadAgainLength()));
                 IRubyObject dumped2 = ((RubyString) bytes2).dump();
                 mesg.append(dumped).append(" followed by ").append(dumped2).append(" on ").append( new String(ec.lastError.getSource()) );
             } else {
@@ -1472,7 +1546,7 @@ public class EncodingUtils {
                 // prepare dumped form
             }
 
-            RubyString bytes = RubyString.newString(runtime, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
+            RubyString bytes = newString(runtime, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
             RubyString dumped = (RubyString) bytes.dump();
 
             if (Arrays.equals(errSource, ec.source) &&  Arrays.equals(ec.lastError.getDestination(), ec.destination)) {
@@ -1498,8 +1572,8 @@ public class EncodingUtils {
     }
 
     private static RaiseException makeEConvExceptionSetEncs(RaiseException exc, Ruby runtime, EConv ec) {
-        exc.getException().setInternalVariable("source_encoding_name", RubyString.newString(runtime, ec.lastError.getSource()));
-        exc.getException().setInternalVariable("destination_encoding_name", RubyString.newString(runtime, ec.lastError.getDestination()));
+        exc.getException().setInternalVariable("source_encoding_name", newString(runtime, ec.lastError.getSource()));
+        exc.getException().setInternalVariable("destination_encoding_name", newString(runtime, ec.lastError.getDestination()));
 
         EncodingDB.Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(ec.lastError.getSource());
         if (entry != null) {
@@ -1982,7 +2056,7 @@ public class EncodingUtils {
         }
 
         for (i = 0; i < num_decorators; i++)
-            ((RubyArray)convpath).store(n + i, RubyString.newString(runtime, decorators[i]));
+            ((RubyArray)convpath).store(n + i, newString(runtime, decorators[i]));
 
         return 0;
     }
@@ -2022,7 +2096,7 @@ public class EncodingUtils {
             throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
         }
 
-        return RubyString.newString(runtime, strBytes);
+        return newString(runtime, strBytes);
 
     }
 
