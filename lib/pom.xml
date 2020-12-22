@@ -72,6 +72,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>did_you_mean</artifactId>
+      <version>1.2.1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>e2mmap</artifactId>
       <version>0.1.0</version>
       <type>gem</type>
@@ -423,19 +436,6 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>did_you_mean</artifactId>
-      <version>1.2.1</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>jar-dependencies</artifactId>
-          <groupId>rubygems</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
       <version>${minitest.version}</version>
       <type>gem</type>
@@ -541,6 +541,9 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/csv*3.1.2.gem</include>
           <include>gems/csv*3.1.2/**</include>
           <include>specifications/csv*3.1.2.gemspec</include>
+          <include>cache/did_you_mean*1.2.1.gem</include>
+          <include>gems/did_you_mean*1.2.1/**</include>
+          <include>specifications/did_you_mean*1.2.1.gemspec</include>
           <include>cache/e2mmap*0.1.0.gem</include>
           <include>gems/e2mmap*0.1.0/**</include>
           <include>specifications/e2mmap*0.1.0.gemspec</include>
@@ -622,9 +625,6 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/webrick*1.6.1.gem</include>
           <include>gems/webrick*1.6.1/**</include>
           <include>specifications/webrick*1.6.1.gemspec</include>
-          <include>cache/did_you_mean*1.2.1.gem</include>
-          <include>gems/did_you_mean*1.2.1/**</include>
-          <include>specifications/did_you_mean*1.2.1.gemspec</include>
           <include>cache/minitest*${minitest.version}.gem</include>
           <include>gems/minitest*${minitest.version}/**</include>
           <include>specifications/minitest*${minitest.version}.gemspec</include>
