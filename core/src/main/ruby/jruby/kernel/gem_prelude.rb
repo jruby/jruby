@@ -94,16 +94,6 @@ if Object.const_defined?(:Gem)
           path
         end
       end
-
-      def self.get_path(pathlike)
-        if feature.kind_of? String
-          feature
-        elsif feature.respond_to? :to_path
-          feature.to_path
-        else
-          feature.to_str
-        end
-      end
     end
   end
 
@@ -113,9 +103,9 @@ if Object.const_defined?(:Gem)
     alias :gem_original_require :require
 
     def require(feature)
-      feature = JRuby::GemUtil.get_path(feature)
+      feature = JRuby::Util.coerce_to_path(feature)
 
-      lazy_rubygems = true # TODO add way to turn off
+      lazy_rubygems = JRuby::Util.retrieve_option("rubygems.lazy")
       upgraded_default_gem = lazy_rubygems && JRuby::GemUtil.upgraded_default_gem?(feature)
 
       # TODO find file to know if it will load

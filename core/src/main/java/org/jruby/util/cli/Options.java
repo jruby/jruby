@@ -32,7 +32,9 @@ package org.jruby.util.cli;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -155,6 +157,7 @@ public class Options {
     public static final Option<Integer> FIXNUM_CACHE_RANGE = integer(MISCELLANEOUS, "fixnum.cache.size", 256, "Values to retrieve from Fixnum cache, in the range -X..(X-1).");
     public static final Option<Boolean> PACKED_ARRAYS = bool(MISCELLANEOUS, "packed.arrays", true, "Toggle whether to use \"packed\" arrays for small tuples.");
     public static final Option<Boolean> REGEXP_INTERRUPTIBLE = bool(MISCELLANEOUS, "regexp.interruptible", false, "Allow regexp operations to be interuptible from Ruby.");
+    public static final Option<Boolean> RUBYGEMS_LAZY = bool(MISCELLANEOUS, "rubygems.lazy", true, "Load RubyGems lazily to reduce startup time.");
 
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");
@@ -223,6 +226,14 @@ public class Options {
     }
 
     public static final Collection<Option> PROPERTIES = Collections.unmodifiableCollection(_loadedOptions);
+    public static final Map<String, Option> OPTION_MAP;
+    static {
+        Map<String, Option> allOptions = new HashMap<>();
+
+        PROPERTIES.forEach((option) -> allOptions.put(option.shortName(), option));
+
+        OPTION_MAP = Collections.unmodifiableMap(allOptions);
+    }
 
     // Anything after this point does not show up in --properties
 
