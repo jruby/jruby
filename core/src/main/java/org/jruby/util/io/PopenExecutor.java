@@ -1869,61 +1869,9 @@ public class PopenExecutor {
         if (!Platform.IS_WINDOWS) {
             if (eargp.use_shell) {
                 byte[] pBytes;
-                int p;
-                ByteList first = new ByteList(DUMMY_ARRAY, false);
-                boolean has_meta = false;
-                /*
-                 * meta characters:
-                 *
-                 * *    Pathname Expansion
-                 * ?    Pathname Expansion
-                 * {}   Grouping Commands
-                 * []   Pathname Expansion
-                 * <>   Redirection
-                 * ()   Grouping Commands
-                 * ~    Tilde Expansion
-                 * &    AND Lists, Asynchronous Lists
-                 * |    OR Lists, Pipelines
-                 * \    Escape Character
-                 * $    Parameter Expansion
-                 * ;    Sequential Lists
-                 * '    Single-Quotes
-                 * `    Command Substitution
-                 * "    Double-Quotes
-                 * \n   Lists
-                 *
-                 * #    Comment
-                 * =    Assignment preceding command name
-                 * %    (used in Parameter Expansion)
-                 */
-                ByteList progByteList = prog.getByteList();
-                pBytes = progByteList.unsafeBytes();
-                for (p = 0; p < progByteList.length(); p++){
-                    if (progByteList.get(p) == ' ' || progByteList.get(p) == '\t'){
-                        if (first.unsafeBytes() != DUMMY_ARRAY && first.length() == 0) first.setRealSize(p - first.begin());
-                    }
-                    else{
-                        if (first.unsafeBytes() == DUMMY_ARRAY) { first.setUnsafeBytes(pBytes); first.setBegin(p + progByteList.begin()); }
-                    }
-                    if (!has_meta && "*?{}[]<>()~&|\\$;'`\"\n#".indexOf(progByteList.get(p) & 0xFF) != -1)
-                        has_meta = true;
-                    if (first.length() == 0) {
-                        if (progByteList.get(p) == '='){
-                            has_meta = true;
-                        }
-                        else if (progByteList.get(p) == '/'){
-                            first.setRealSize(0x100); /* longer than any posix_sh_cmds */
-                        }
-                    }
-                    if (has_meta)
-                        break;
-                }
-                if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
-                    if (first.length() == 0) first.setRealSize(p - first.getBegin());
-                    if (first.length() > 0 && first.length() <= posix_sh_cmd_length &&
-                        Arrays.binarySearch(posix_sh_cmds, first.toString(), StringComparator.INSTANCE) >= 0)
-                        has_meta = true;
-                }
+
+                boolean has_meta = searchForMetaChars(prog);
+
                 if (!has_meta && !eargp.chdir_given()) {
                     /* avoid shell since no shell meta character found and no chdir needed. */
                     eargp.use_shell = false;
@@ -1931,7 +1879,7 @@ public class PopenExecutor {
                 if (!eargp.use_shell) {
                     List<byte[]> argv_buf = new ArrayList<>();
                     pBytes = prog.getByteList().unsafeBytes();
-                    p = prog.getByteList().begin();
+                    int p = prog.getByteList().begin();
                     int pEnd = prog.getByteList().length() + p;
                     while (p < pEnd){
                         while (p < pEnd && (pBytes[p] == ' ' || pBytes[p] == '\t'))
@@ -1953,6 +1901,7 @@ public class PopenExecutor {
             }
         }
 
+        // if not using shell to launch, validate and get abspath for command
         if (!eargp.use_shell) {
             String abspath;
             abspath = dlnFindExeR(runtime, eargp.command_name.toString(), eargp.path_env);
@@ -1962,6 +1911,7 @@ public class PopenExecutor {
                 eargp.command_abspath = null;
         }
 
+        // if not using shell and we have not prepared arg list, do that now
         if (!eargp.use_shell && eargp.argv_buf == null) {
             int i;
             ArrayList<byte[]> argv_buf = new ArrayList<>(argc);
@@ -1974,6 +1924,7 @@ public class PopenExecutor {
             eargp.argv_buf = argv_buf;
         }
 
+        // if not using shell, reassemble argv arguments as strings
         if (!eargp.use_shell) {
             ArgvStr argv_str = new ArgvStr();
             argv_str.argv = new String[eargp.argv_buf.size()];
@@ -1983,6 +1934,84 @@ public class PopenExecutor {
             }
             eargp.argv_str = argv_str;
         }
+    }
+
+    /**
+     * Search for meta characters in the command, to know whether we should use a shell to launch.
+     *
+     * meta characters:
+     *
+     * *    Pathname Expansion
+     * ?    Pathname Expansion
+     * {}   Grouping Commands
+     * []   Pathname Expansion
+     * <>   Redirection
+     * ()   Grouping Commands
+     * ~    Tilde Expansion
+     * &    AND Lists, Asynchronous Lists
+     * |    OR Lists, Pipelines
+     * \    Escape Character
+     * $    Parameter Expansion
+     * ;    Sequential Lists
+     * '    Single-Quotes
+     * `    Command Substitution
+     * "    Double-Quotes
+     * \n   Lists
+     *
+     * #    Comment
+     * =    Assignment preceding command name
+     * %    (used in Parameter Expansion)
+     */
+    private static boolean searchForMetaChars(RubyString prog) {
+        boolean has_meta = false;
+        ByteList first = new ByteList(DUMMY_ARRAY, false);
+        int p = 0;
+
+        ByteList progByteList = prog.getByteList();
+        byte[] pBytes = progByteList.unsafeBytes();
+
+        for (; p < progByteList.length(); p++){
+            if (progByteList.get(p) == ' ' || progByteList.get(p) == '\t'){
+                if (first.unsafeBytes() != DUMMY_ARRAY && first.length() == 0) {
+                    first.setRealSize(p - first.begin());
+                }
+            } else {
+                if (first.unsafeBytes() == DUMMY_ARRAY) {
+                    first.setUnsafeBytes(pBytes); first.setBegin(p + progByteList.begin());
+                }
+            }
+
+            if (!has_meta && "*?{}[]<>()~&|\\$;'`\"\n#".indexOf(progByteList.get(p) & 0xFF) != -1) {
+                has_meta = true;
+            }
+
+            if (first.length() == 0) {
+                if (progByteList.get(p) == '='){
+                    has_meta = true;
+                } else if (progByteList.get(p) == '/'){
+                    first.setRealSize(0x100); /* longer than any posix_sh_cmds */
+                }
+            }
+
+            if (has_meta) {
+                break;
+            }
+        }
+
+        if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
+            int length = first.length();
+
+            if (length == 0) {
+                first.setRealSize(p - first.getBegin());
+            }
+
+            if (length > 0 && length <= posix_sh_cmd_length &&
+                Arrays.binarySearch(posix_sh_cmds, first.toString(), StringComparator.INSTANCE) >= 0) {
+                has_meta = true;
+            }
+        }
+
+        return has_meta;
     }
 
     private static final class StringComparator implements Comparator<String> {
