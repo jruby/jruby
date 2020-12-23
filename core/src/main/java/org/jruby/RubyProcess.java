@@ -993,7 +993,7 @@ public class RubyProcess {
                 @Override
                 public void wakeup(RubyThread thread, ToIntFunction<ThreadContext> blockingCall) {
                     try {
-                        NATIVE_THREAD_SIGNAL.invokeExact(null, threadID);
+                        NATIVE_THREAD_SIGNAL.invokeExact(threadID);
                     } catch (Throwable t) {
                         throwException(t);
                     }
