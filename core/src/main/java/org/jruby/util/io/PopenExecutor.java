@@ -48,6 +48,9 @@ import static org.jruby.RubyString.newString;
  * Port of MRI's popen+exec logic.
  */
 public class PopenExecutor {
+
+    public static final int SH_CHDIR_ARG_COUNT = 5;
+
     /**
      * Check properties and runtime state to determine whether a native popen is possible.
      *
@@ -1832,16 +1835,17 @@ public class PopenExecutor {
 
         // restructure command as call to sh with arguments
         if (eargp.chdir_given() && argc > 1) {
-            argc = argc + 4;
+            argc = argc + SH_CHDIR_ARG_COUNT;
 
             IRubyObject[] newArgv = new IRubyObject[argc];
 
             newArgv[0] = newString(runtime, "sh");
             newArgv[1] = newString(runtime, "-c");
-            newArgv[2] = newString(runtime, "cd \"$0\"; exec \"$@\"");
-            newArgv[3] = newString(runtime, eargp.chdir_dir);
+            newArgv[2] = newString(runtime, "cd -- \"$1\"; shift; exec \"$@\"");
+            newArgv[3] = newString(runtime, "sh");
+            newArgv[4] = newString(runtime, eargp.chdir_dir);
 
-            System.arraycopy(argv, 0, newArgv, 4, argv.length);
+            System.arraycopy(argv, 0, newArgv, SH_CHDIR_ARG_COUNT, argv.length);
 
             argv = newArgv;
 
