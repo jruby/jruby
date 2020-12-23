@@ -1735,7 +1735,7 @@ public class RubyKernel {
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
-        if (!needChdir && PopenExecutor.nativePopenAvailable(runtime)) {
+        if (PopenExecutor.nativePopenAvailable(runtime)) {
             // MRI: rb_f_system
             long pid;
             int status;
