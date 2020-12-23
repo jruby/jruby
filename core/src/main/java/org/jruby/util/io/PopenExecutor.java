@@ -1424,7 +1424,8 @@ public class PopenExecutor {
                     eargp.newPgroupGiven = true;
                     eargp.newPgroupFlag = val.isTrue();
                 }
-                else if (RLIMIT.RLIMIT_AS.defined() && id.startsWith("rlimit_")) {
+                else if (false &&  // unsupported
+                        RLIMIT.RLIMIT_AS.defined() && id.startsWith("rlimit_")) {
 //                        && (rtype = rlimitTypeByLname(id.substring(7)) != -1)) {
                     IRubyObject ary;
                     IRubyObject tmp, softlim, hardlim;
