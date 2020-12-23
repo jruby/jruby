@@ -3,6 +3,7 @@ package org.jruby.util.io;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
+import jnr.constants.platform.RLIMIT;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
@@ -121,12 +122,12 @@ public class PopenExecutor {
 
         prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
-        if (eargp.chdir_given()) {
+        if (eargp.chdirGiven) {
             // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
             // just need to add chdir to the cmd
             prog = (RubyString)prog.strDup(runtime).prepend(context, newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
             eargp.chdir_dir = null;
-            eargp.chdir_given_clear();
+            eargp.chdirGiven = false;
 
             // create new pgroup to prevent orphaned processes when the parent is killed
             eargp.attributes.add(SpawnAttribute.pgroup(0));
@@ -219,13 +220,13 @@ public class PopenExecutor {
 
         if (argv.length > 0 && argv[0] != null) {
             // TODO: win32
-//            #if defined(_WIN32)
-//            DWORD flags = 0;
-//            if (eargp->new_pgroup_given && eargp->new_pgroup_flag) {
-//                flags = CREATE_NEW_PROCESS_GROUP;
-//            }
-//            pid = rb_w32_uaspawn_flags(P_NOWAIT, prog ? RSTRING_PTR(prog) : 0, argv, flags);
-//            #else
+            if (Platform.IS_WINDOWS) {
+                long flags = 0;
+                if (eargp.newPgroupGiven && eargp.newPgroupFlag) {
+//                    flags = CREATE_NEW_PROCESS_GROUP;
+                }
+//                pid = rb_w32_uaspawn_flags(P_NOWAIT, prog ? RSTRING_PTR(prog) : 0, argv, flags);
+            }
             pid = procSpawnCmdInternal(runtime, argv, prog, eargp);
         }
         return pid;
@@ -544,12 +545,12 @@ public class PopenExecutor {
         if (prog != null)
             cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
 
-        if (eargp.chdir_given()) {
+        if (eargp.chdirGiven) {
             // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
             // just need to add chdir to the cmd
             cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
             eargp.chdir_dir = null;
-            eargp.chdir_given_clear();
+            eargp.chdirGiven = false;
         }
 
         if (eargp != null && !eargp.use_shell) {
@@ -989,8 +990,7 @@ public class PopenExecutor {
             sargp.redirect_fds = context.nil;
         }
 
-//        #ifdef HAVE_SETPGID
-        if (eargp.pgroup_given()) {
+        if (eargp.pgroupGiven) {
             if (run_exec_pgroup(runtime, eargp, sargp, errmsg) == -1) /* async-signal-safe */
                 return -1;
         }
@@ -1007,13 +1007,9 @@ public class PopenExecutor {
 
 //        #if !defined(HAVE_FORK)
         boolean clearEnv = false;
-        if (eargp.unsetenv_others_given() && eargp.unsetenv_others_do()) {
-            // only way to do this is manually build a list of env assignments that clear all parent values
-            throw runtime.newNotImplementedError("clearing env in child is not supported");
-//            saveEnv(context, runtime, sargp);
-
-            // we can't clear env in parent process
-//            runtime.getENV().clear();
+        if (eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo) {
+            // we handle this elsewhere by starting from a blank env
+            clearEnv = true;
         }
 
         RubyArray env = eargp.env_modification;
@@ -1022,7 +1018,7 @@ public class PopenExecutor {
         }
 //        #endif
 
-        if (eargp.umask_given()) {
+        if (eargp.umaskGiven) {
             throw runtime.newNotImplementedError("setting umask in child is unsupported");
 //            int mask = eargp.umask_mask;
 //            SpawnAttribute.
@@ -1055,7 +1051,7 @@ public class PopenExecutor {
                 return -1;
         }
 
-        if (eargp.chdir_given()) {
+        if (eargp.chdirGiven) {
             // should have been set up in pipe_open, so we just raise here
             throw new RuntimeException("BUG: chdir not supported in posix_spawn; should have been made into chdir");
             // we can't chdir in the parent
@@ -1070,8 +1066,7 @@ public class PopenExecutor {
 //            }
         }
 
-//        #ifdef HAVE_SETGID
-        if (eargp.gid_given()) {
+        if (eargp.gidGiven) {
             throw runtime.newNotImplementedError("setgid in the child is not supported");
             // we can't setgid in the parent
 //            if (setgid(eargp.gid) < 0) {
@@ -1079,9 +1074,8 @@ public class PopenExecutor {
 //                return -1;
 //            }
         }
-//        #endif
-//        #ifdef HAVE_SETUID
-        if (eargp.uid_given()) {
+
+        if (eargp.uidGiven) {
             throw runtime.newNotImplementedError("setuid in the child is not supported");
             // we can't setuid in the parent
 //            if (setuid(eargp.uid) < 0) {
@@ -1229,7 +1223,7 @@ public class PopenExecutor {
         }
 
         IRubyObject envtbl;
-        unsetenv_others = eargp.unsetenv_others_given() && eargp.unsetenv_others_do();
+        unsetenv_others = eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo;
         envopts = eargp.env_modification;
         if (unsetenv_others || envopts != null) {
             if (unsetenv_others) {
@@ -1398,11 +1392,7 @@ public class PopenExecutor {
 
     static int execargAddopt(ThreadContext context, Ruby runtime, ExecArg eargp, IRubyObject key, IRubyObject val) {
         String id;
-//        #if defined(HAVE_SETRLIMIT) && defined(NUM2RLIM)
-        int rtype;
-//        #endif
-
-//        rb_secure(2);
+        int rtype = 0;
 
         boolean redirect = false;
         switch (key.getType().getClassIndex()) {
@@ -1411,7 +1401,7 @@ public class PopenExecutor {
 //                #ifdef HAVE_SETPGID
                 if (id.equals("pgroup")) {
                     long pgroup;
-                    if (eargp.pgroup_given()) {
+                    if (eargp.pgroupGiven) {
                         throw runtime.newArgumentError("pgroup option specified twice");
                     }
                     if (val == null || !val.isTrue())
@@ -1424,25 +1414,19 @@ public class PopenExecutor {
                             throw runtime.newArgumentError("negative process group symbol : " + pgroup);
                         }
                     }
-                    eargp.pgroup_given_set();
+                    eargp.pgroupGiven = true;
                     eargp.pgroup_pgid = pgroup;
                 }
-                else
-//                #ifdef _WIN32
-//                if (id.equals("new_pgroup")) {
-//                    if (eargp.new_pgroup_given) {
-//                        throw runtime.newArgumentError("new_pgroup option specified twice");
-//                    }
-//                    eargp.new_pgroup_given = 1;
-//                    eargp.new_pgroup_flag = RTEST(val) ? 1 : 0;
-//                }
-//                else
-//                #endif
-//                #if defined(HAVE_SETRLIMIT) && defined(NUM2RLIM)
-                if (id.startsWith("rlimit_") &&  // TODO
-                        false) {
-//                        (rtype = rlimitTypeByLname(id.substring(7)) != -1)) {
-                    IRubyObject ary = eargp.rlimit_limits;
+                else if (Platform.IS_WINDOWS && id.equals("new_pgroup")) {
+                    if (eargp.newPgroupGiven) {
+                        throw runtime.newArgumentError("new_pgroup option specified twice");
+                    }
+                    eargp.newPgroupGiven = true;
+                    eargp.newPgroupFlag = val.isTrue();
+                }
+                else if (RLIMIT.RLIMIT_AS.defined() && id.startsWith("rlimit_")) {
+//                        && (rtype = rlimitTypeByLname(id.substring(7)) != -1)) {
+                    IRubyObject ary;
                     IRubyObject tmp, softlim, hardlim;
                     if (eargp.rlimit_limits == null)
                         ary = eargp.rlimit_limits = runtime.newArray();
@@ -1466,44 +1450,42 @@ public class PopenExecutor {
                     tmp = RubyArray.newArray(runtime, runtime.newFixnum(rtype), softlim, hardlim);
                     ((RubyArray)ary).push(tmp);
                 }
-                else
-//                #endif
-                if (id.equals("unsetenv_others")) {
-                    if (eargp.unsetenv_others_given()) {
+                else if (id.equals("unsetenv_others")) {
+                    if (eargp.unsetenvOthersGiven) {
                         throw runtime.newArgumentError("unsetenv_others option specified twice");
                     }
-                    eargp.unsetenv_others_given_set();
-                    if (!val.isNil()) {
-                        eargp.unsetenv_others_do_set();
+                    eargp.unsetenvOthersGiven = true;
+                    if (val.isTrue()) {
+                        eargp.unsetenvOthersDo = true;
                     } else {
-                        eargp.unsetenv_others_do_clear();
+                        eargp.unsetenvOthersDo = false;
                     }
                 }
                 else if (id.equals("chdir")) {
-                    if (eargp.chdir_given()) {
+                    if (eargp.chdirGiven) {
                         throw runtime.newArgumentError("chdir option specified twice");
                     }
                     RubyString valTmp = RubyFile.get_path(context, val);
-                    eargp.chdir_given_set();
+                    eargp.chdirGiven = true;
                     eargp.chdir_dir = valTmp.toString();
                 }
                 else if (id.equals("umask")) {
                     int cmask = val.convertToInteger().getIntValue();
-                    if (eargp.umask_given()) {
+                    if (eargp.umaskGiven) {
                         throw runtime.newArgumentError("umask option specified twice");
                     }
-                    eargp.umask_given_set();
+                    eargp.umaskGiven = true;
                     eargp.umask_mask = cmask;
                 }
                 else if (id.equals("close_others")) {
-                    if (eargp.close_others_given()) {
+                    if (eargp.closeOthersGiven) {
                         throw runtime.newArgumentError("close_others option specified twice");
                     }
-                    eargp.close_others_given_set();
+                    eargp.closeOthersGiven = true;
                     if (!val.isNil()) {
-                        eargp.close_others_do_set();
+                        eargp.closeOthersDo = true;
                     } else {
-                        eargp.close_others_do_clear();
+                        eargp.closeOthersDo = false;
                     }
                 }
                 else if (id.equals("in")) {
@@ -1520,14 +1502,14 @@ public class PopenExecutor {
                 }
                 else if (id.equals("uid") && false) { // TODO
 //                    #ifdef HAVE_SETUID
-                    if (eargp.uid_given()) {
+                    if (eargp.uidGiven) {
                         throw runtime.newArgumentError("uid option specified twice");
                     }
 //                    checkUidSwitch();
                     {
 //                        PREPARE_GETPWNAM;
                         eargp.uid = val.convertToInteger().getIntValue();
-                        eargp.uid_given_set();
+                        eargp.uidGiven = true;
                     }
 //                    #else
 //                    rb_raise(rb_eNotImpError,
@@ -1536,14 +1518,14 @@ public class PopenExecutor {
                 }
                 else if (id.equals("gid") && false) { // TODO
 //                    #ifdef HAVE_SETGID
-                    if (eargp.gid_given()) {
+                    if (eargp.gidGiven) {
                         throw runtime.newArgumentError("gid option specified twice");
                     }
 //                    checkGidSwitch();
                     {
 //                        PREPARE_GETGRNAM;
                         eargp.gid = val.convertToInteger().getIntValue();
-                        eargp.gid_given_set();
+                        eargp.gidGiven = true;
                     }
 //                    #else
 //                    rb_raise(rb_eNotImpError,
@@ -1886,15 +1868,15 @@ public class PopenExecutor {
                 prog = newString(runtime, arg);
             } else if (virtualCWD.startsWith("uri:classloader:")) {
                 // can't switch to uri:classloader URL, so just run in cwd
-            } else if (!eargp.chdir_given()) {
+            } else if (!eargp.chdirGiven) {
                 // only if :chdir is not specified
-                eargp.chdir_given_set();
+                eargp.chdirGiven = true;
                 eargp.chdir_dir = virtualCWD;
             }
         }
 
-        // restructure command as call to sh with arguments
-        if (eargp.chdir_given() && argc > 1) {
+        // restructure chdir plus command as call to sh with arguments
+        if (eargp.chdirGiven && argc > 1) {
             argc = argc + SH_CHDIR_ARG_COUNT;
 
             IRubyObject[] newArgv = new IRubyObject[argc];
@@ -1911,7 +1893,7 @@ public class PopenExecutor {
 
             prog = newString(runtime, "/bin/sh");
 
-            eargp.chdir_given_clear();
+            eargp.chdirGiven = false;
         }
 
         if (!env.isNil()) {
@@ -1920,7 +1902,7 @@ public class PopenExecutor {
 
         prog = prog.export(context);
         // need to use shell
-        eargp.use_shell = argc == 0 || eargp.chdir_given();
+        eargp.use_shell = argc == 0 || eargp.chdirGiven;
         if (eargp.use_shell)
             eargp.command_name = prog;
         else
@@ -1932,7 +1914,7 @@ public class PopenExecutor {
 
                 boolean has_meta = searchForMetaChars(prog);
 
-                if (!has_meta && !eargp.chdir_given()) {
+                if (!has_meta && !eargp.chdirGiven) {
                     /* avoid shell since no shell meta character found and no chdir needed. */
                     eargp.use_shell = false;
                 }
@@ -2105,7 +2087,6 @@ public class PopenExecutor {
         String[] envp_str;
         List<String> envp_buf;
         run_exec_dup2_fd_pair[] dup2_tmpbuf;
-        int flags;
         long pgroup_pgid = -1; /* asis(-1), new pgroup(0), specified pgroup (0<V). */
         IRubyObject rlimit_limits; /* null or [[rtype, softlim, hardlim], ...] */
         int umask_mask;
@@ -2122,137 +2103,20 @@ public class PopenExecutor {
         List<SpawnAttribute> attributes = new ArrayList();
         IRubyObject path_env;
 
-        boolean pgroup_given() {
-            return (flags & 0x1) != 0;
-        }
+        boolean exception_given;
+        boolean exception;
+        boolean pgroupGiven;
+        boolean umaskGiven;
+        boolean unsetenvOthersGiven;
+        boolean unsetenvOthersDo;
+        boolean closeOthersGiven;
+        boolean closeOthersDo;
+        boolean chdirGiven;
+        boolean newPgroupGiven;
+        boolean newPgroupFlag;
+        boolean uidGiven;
+        boolean gidGiven;
 
-        boolean umask_given() {
-            return (flags & 0x2) != 0;
-        }
-
-        boolean unsetenv_others_given() {
-            return (flags & 0x4) != 0;
-        }
-
-        boolean unsetenv_others_do() {
-            return (flags & 0x8) != 0;
-        }
-
-        boolean close_others_given() {
-            return (flags & 0x10) != 0;
-        }
-
-        boolean close_others_do() {
-            return (flags & 0x20) != 0;
-        }
-
-        boolean chdir_given() {
-            return (flags & 0x40) != 0;
-        }
-
-        boolean new_pgroup_given() {
-            return (flags & 0x80) != 0;
-        }
-
-        boolean new_pgroup_flag() {
-            return (flags & 0x100) != 0;
-        }
-
-        boolean uid_given() {
-            return (flags & 0x200) != 0;
-        }
-
-        boolean gid_given() {
-            return (flags & 0x400) != 0;
-        }
-
-        void pgroup_given_set() {
-            flags |= 0x1;
-        }
-
-        void umask_given_set() {
-            flags |= 0x2;
-        }
-
-        void unsetenv_others_given_set() {
-            flags |= 0x4;
-        }
-
-        void unsetenv_others_do_set() {
-            flags |= 0x8;
-        }
-
-        void close_others_given_set() {
-            flags |= 0x10;
-        }
-
-        void close_others_do_set() {
-            flags |= 0x20;
-        }
-
-        void chdir_given_set() {
-            flags |= 0x40;
-        }
-
-        void new_pgroup_given_set() {
-            flags |= 0x80;
-        }
-
-        void new_pgroup_flag_set() {
-            flags |= 0x100;
-        }
-
-        void uid_given_set() {
-            flags |= 0x200;
-        }
-
-        void gid_given_set() {
-            flags |= 0x400;
-        }
-
-        void pgroup_given_clear() {
-            flags &= ~0x1;
-        }
-
-        void umask_given_clear() {
-            flags &= ~0x2;
-        }
-
-        void unsetenv_others_given_clear() {
-            flags &= ~0x4;
-        }
-
-        void unsetenv_others_do_clear() {
-            flags &= ~0x8;
-        }
-
-        void close_others_given_clear() {
-            flags &= ~0x10;
-        }
-
-        void close_others_do_clear() {
-            flags &= ~0x20;
-        }
-
-        void chdir_given_clear() {
-            flags &= ~0x40;
-        }
-
-        void new_pgroup_given_clear() {
-            flags &= ~0x80;
-        }
-
-        void new_pgroup_flag_clear() {
-            flags &= ~0x100;
-        }
-
-        void uid_given_clear() {
-            flags &= ~0x200;
-        }
-
-        void gid_given_clear() {
-            flags &= ~0x400;
-        }
     }
 
     private static final Comparator<run_exec_dup2_fd_pair> intcmp = new Comparator<run_exec_dup2_fd_pair>() {
