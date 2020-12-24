@@ -1705,19 +1705,14 @@ public class RubyKernel {
         return RubyRandom.srandCommon(context, recv, arg);
     }
 
-    @Deprecated
-    public static IRubyObject rand18(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return rand(context, recv, arg);
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv) {
+        return RubyRandom.randFloat(context);
     }
 
-    @Deprecated
-    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return rand(context, recv, arg);
-    }
-
-    @JRubyMethod(name = "rand", module = true, optional = 1, visibility = PRIVATE)
-    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return RubyRandom.randKernel(context, args);
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return RubyRandom.randKernel(context, arg);
     }
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
@@ -2458,5 +2453,27 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
         return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
+    }
+
+    @Deprecated
+    public static IRubyObject rand18(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
+        return rand(context, recv, arg);
+    }
+
+    @Deprecated
+    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
+        return rand(context, recv, arg);
+    }
+
+    @Deprecated
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return RubyRandom.randFloat(context);
+            case 1:
+                return RubyRandom.randKernel(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
     }
 }
