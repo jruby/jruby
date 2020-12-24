@@ -1,6 +1,10 @@
 class Binding
   # :nodoc:
   def irb
+    # if lazy RubyGems, force it to load here to work around GH-6506
+    if defined?(::Gem) && JRuby::Util.retrieve_option("rubygems.lazy")
+      require 'rubygems'
+    end
     require 'irb'
     irb
   end
