@@ -9,6 +9,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -51,7 +52,8 @@ public class InterfaceJavaProxy extends JavaProxy {
         public static IRubyObject initialize(ThreadContext context, IRubyObject self, IRubyObject javaClassName, Block block) {
             Ruby runtime = context.runtime;
 
-            self.getInstanceVariables().setInstanceVariable("@java_class", JavaClass.forNameVerbose(runtime, javaClassName.asJavaString()));
+            Class<?> klass = Java.getJavaClass(runtime, javaClassName.asJavaString());
+            self.getInstanceVariables().setInstanceVariable("@java_class", Java.getProxyClass(runtime, klass));
             self.getInstanceVariables().setInstanceVariable("@block", RubyProc.newProc(runtime, block, block.type));
 
             self.getInternalVariables().getInternalVariable("@block");

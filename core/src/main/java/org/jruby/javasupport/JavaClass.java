@@ -135,10 +135,6 @@ public class JavaClass extends JavaObject {
         return RubyArray.newArrayMayCopy(runtime, javaClasses);
     }
 
-    public static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java) {
-        return createJavaClassClass(runtime, Java, Java.getClass("JavaObject"));
-    }
-
     static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java, final RubyClass JavaObject) {
         // TODO: Determine if a real allocator is needed here. Do people want to extend
         // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should you be able to?
@@ -230,12 +226,9 @@ public class JavaClass extends JavaObject {
         return proxyClass == null ? null : get(context.runtime, getJavaClass(context, proxyClass));
     }
 
+    @Deprecated
     public static JavaClass forNameVerbose(Ruby runtime, String className) {
-        Class<?> klass = null; // "boolean".length() == 7
-        if (className.length() < 8 && Character.isLowerCase(className.charAt(0))) {
-            // one word type name that starts lower-case...it may be a primitive type
-            klass = JavaUtil.getPrimitiveClass(className);
-        }
+        Class<?> klass = null;
         synchronized (JavaClass.class) {
             if (klass == null) {
                 klass = runtime.getJavaSupport().loadJavaClassVerbose(className);

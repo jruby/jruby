@@ -292,18 +292,18 @@ public class Java implements Library {
     }
 
     public static RubyModule get_interface_module(final Ruby runtime, IRubyObject javaClassObject) {
-        JavaClass javaClass; String javaName;
+        Class<?> javaClass; String javaName;
         if ( javaClassObject instanceof RubyString ) {
-            javaClass = JavaClass.forNameVerbose(runtime, javaClassObject.asJavaString());
+            javaClass = Java.getJavaClass(runtime, javaClassObject.asJavaString());
         }
         else if ( javaClassObject instanceof JavaClass ) {
-            javaClass = (JavaClass) javaClassObject;
+            javaClass = ((JavaClass) javaClassObject).javaClass();
         }
         else if ( (javaName = unwrapJavaString(javaClassObject)) != null ) {
-            javaClass = JavaClass.forNameVerbose(runtime, javaName);
+            javaClass = Java.getJavaClass(runtime, javaName);
         }
         else {
-            throw runtime.newArgumentError("expected JavaClass, got " + javaClassObject);
+            throw runtime.newArgumentError("expected a Java class, got " + javaClassObject.inspect());
         }
         return getInterfaceModule(runtime, javaClass);
     }
