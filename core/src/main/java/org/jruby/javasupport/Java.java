@@ -189,10 +189,7 @@ public class Java implements Library {
         }
 
         // add all name-to-class mappings
-        addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassMap());
-
-        // add some base Java classes everyone will need
-        runtime.getJavaSupport().setObjectJavaClass( JavaClass.get(runtime, Object.class) );
+        addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassCache());
 
         return Java;
     }
@@ -232,72 +229,72 @@ public class Java implements Library {
      * @param runtime
      * @param nameClassMap
      */
-    private static void addNameClassMappings(final Ruby runtime, final Map<String, JavaClass> nameClassMap) {
-        JavaClass booleanClass = JavaClass.get(runtime, Boolean.class);
-        nameClassMap.put("boolean", JavaClass.get(runtime, Boolean.TYPE));
+    private static void addNameClassMappings(final Ruby runtime, final Map<String, RubyModule> nameClassMap) {
+        RubyModule booleanClass = getProxyClass(runtime, Boolean.class);
+        nameClassMap.put("boolean", getProxyClass(runtime, Boolean.TYPE));
         nameClassMap.put("Boolean", booleanClass);
         nameClassMap.put("java.lang.Boolean", booleanClass);
 
-        JavaClass byteClass = JavaClass.get(runtime, Byte.class);
-        nameClassMap.put("byte", JavaClass.get(runtime, Byte.TYPE));
+        RubyModule byteClass = getProxyClass(runtime, Byte.class);
+        nameClassMap.put("byte", getProxyClass(runtime, Byte.TYPE));
         nameClassMap.put("Byte", byteClass);
         nameClassMap.put("java.lang.Byte", byteClass);
 
-        JavaClass shortClass = JavaClass.get(runtime, Short.class);
-        nameClassMap.put("short", JavaClass.get(runtime, Short.TYPE));
+        RubyModule shortClass = getProxyClass(runtime, Short.class);
+        nameClassMap.put("short", getProxyClass(runtime, Short.TYPE));
         nameClassMap.put("Short", shortClass);
         nameClassMap.put("java.lang.Short", shortClass);
 
-        JavaClass charClass = JavaClass.get(runtime, Character.class);
-        nameClassMap.put("char", JavaClass.get(runtime, Character.TYPE));
+        RubyModule charClass = getProxyClass(runtime, Character.class);
+        nameClassMap.put("char", getProxyClass(runtime, Character.TYPE));
         nameClassMap.put("Character", charClass);
         nameClassMap.put("Char", charClass);
         nameClassMap.put("java.lang.Character", charClass);
 
-        JavaClass intClass = JavaClass.get(runtime, Integer.class);
-        nameClassMap.put("int", JavaClass.get(runtime, Integer.TYPE));
+        RubyModule intClass = getProxyClass(runtime, Integer.class);
+        nameClassMap.put("int", getProxyClass(runtime, Integer.TYPE));
         nameClassMap.put("Integer", intClass);
         nameClassMap.put("Int", intClass);
         nameClassMap.put("java.lang.Integer", intClass);
 
-        JavaClass longClass = JavaClass.get(runtime, Long.class);
-        nameClassMap.put("long", JavaClass.get(runtime, Long.TYPE));
+        RubyModule longClass = getProxyClass(runtime, Long.class);
+        nameClassMap.put("long", getProxyClass(runtime, Long.TYPE));
         nameClassMap.put("Long", longClass);
         nameClassMap.put("java.lang.Long", longClass);
 
-        JavaClass floatClass = JavaClass.get(runtime, Float.class);
-        nameClassMap.put("float", JavaClass.get(runtime, Float.TYPE));
+        RubyModule floatClass = getProxyClass(runtime, Float.class);
+        nameClassMap.put("float", getProxyClass(runtime, Float.TYPE));
         nameClassMap.put("Float", floatClass);
         nameClassMap.put("java.lang.Float", floatClass);
 
-        JavaClass doubleClass = JavaClass.get(runtime, Double.class);
-        nameClassMap.put("double", JavaClass.get(runtime, Double.TYPE));
+        RubyModule doubleClass = getProxyClass(runtime, Double.class);
+        nameClassMap.put("double", getProxyClass(runtime, Double.TYPE));
         nameClassMap.put("Double", doubleClass);
         nameClassMap.put("java.lang.Double", doubleClass);
 
-        JavaClass bigintClass = JavaClass.get(runtime, BigInteger.class);
+        RubyModule bigintClass = getProxyClass(runtime, BigInteger.class);
         nameClassMap.put("big_int", bigintClass);
         nameClassMap.put("big_integer", bigintClass);
         nameClassMap.put("BigInteger", bigintClass);
         nameClassMap.put("java.math.BigInteger", bigintClass);
 
-        JavaClass bigdecimalClass = JavaClass.get(runtime, BigDecimal.class);
+        RubyModule bigdecimalClass = getProxyClass(runtime, BigDecimal.class);
         nameClassMap.put("big_decimal", bigdecimalClass);
         nameClassMap.put("BigDecimal", bigdecimalClass);
         nameClassMap.put("java.math.BigDecimal", bigdecimalClass);
 
-        JavaClass objectClass = JavaClass.get(runtime, Object.class);
+        RubyModule objectClass = getProxyClass(runtime, Object.class);
         nameClassMap.put("object", objectClass);
         nameClassMap.put("Object", objectClass);
         nameClassMap.put("java.lang.Object", objectClass);
 
-        JavaClass stringClass = JavaClass.get(runtime, String.class);
+        RubyModule stringClass = getProxyClass(runtime, String.class);
         nameClassMap.put("string", stringClass);
         nameClassMap.put("String", stringClass);
         nameClassMap.put("java.lang.String", stringClass);
 
-        nameClassMap.put("void", JavaClass.get(runtime, Void.TYPE));
-        nameClassMap.put("Void", JavaClass.get(runtime, Void.class));
+        nameClassMap.put("void", getProxyClass(runtime, Void.TYPE));
+        nameClassMap.put("Void", getProxyClass(runtime, Void.class));
     }
 
     public static IRubyObject create_proxy_class(
@@ -420,6 +417,37 @@ public class Java implements Library {
         return (RubyClass) getProxyClass(runtime, object.getClass());
     }
 
+    public static RubyModule resolveType(final Ruby runtime, final IRubyObject type) {
+        if (type instanceof RubyString || type instanceof RubySymbol) {
+            final String className = type.toString();
+            RubyModule proxyClass = runtime.getJavaSupport().getNameClassCache().get(className);
+            if (proxyClass == null) {
+                proxyClass = getProxyClass(runtime, getJavaClass(runtime, className));
+            }
+            return proxyClass;
+        }
+        return resolveClassType(runtime, type);
+    }
+
+    // this should handle the type returned from Class#java_class
+    static RubyModule resolveClassType(final Ruby runtime, final IRubyObject type) {
+        if (type instanceof JavaProxy) { // due Class#java_class wrapping
+            final Object wrapped = ((JavaProxy) type).getObject();
+            if (wrapped instanceof Class) return getProxyClass(runtime, (Class) wrapped);
+            return null;
+        }
+
+        JavaClass klass; // handle legacy JavaClass
+        if (type instanceof JavaClass) {
+            klass = (JavaClass) type;
+        } else if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
+            klass = JavaClass.getJavaClassIfProxyImpl(runtime.getCurrentContext(), (RubyModule) type);
+            if (klass == null) return null;
+        } else {
+            return null;
+        }
+        return getProxyClass(runtime, klass.javaClass());
+    }
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
         return getProxyClass(runtime, javaClass.javaClass());
     }
@@ -940,17 +968,28 @@ public class Java implements Library {
     private static void checkJavaReservedNames(final Ruby runtime, final String name,
         final boolean allowPrimitives) {
         // TODO: should check against all Java reserved names here, not just primitives
-        if ( ! allowPrimitives && JavaClass.isPrimitiveName(name) ) {
+        if ( ! allowPrimitives && isPrimitiveClassName(name) ) {
             throw runtime.newArgumentError("illegal package name component: " + name);
         }
     }
 
-    private static RubyModule getProxyClassOrNull(final Ruby runtime, final String className) {
-        return getProxyClassOrNull(runtime, className, true);
+    private static boolean isPrimitiveClassName(final String name) {
+        return JavaUtil.getPrimitiveClass(name) != null;
     }
 
-    private static RubyModule getProxyClassOrNull(final Ruby runtime, final String className,
-        final boolean initJavaClass) {
+    public static Class getJavaClass(final Ruby runtime, final String className) throws RaiseException {
+        try {
+            return loadJavaClass(runtime, className);
+        } catch (ClassNotFoundException ex) {
+            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex), ex);
+        }
+    }
+
+    public static Class loadJavaClass(final Ruby runtime, final String className) throws ClassNotFoundException, RaiseException {
+        return loadJavaClass(runtime, className, true);
+    }
+
+    static Class loadJavaClass(final Ruby runtime, final String className, boolean initialize) throws ClassNotFoundException, RaiseException {
         final Class<?> clazz;
         try { // loadJavaClass here to handle things like LinkageError through
             synchronized (Java.class) {
@@ -959,13 +998,11 @@ public class Java implements Library {
                 // another part preventing concurrent proxy initialization dead-locks is :
                 // JavaSupportImpl's proxyClassCache = ClassValue.newInstance( ... )
                 // ... having synchronized RubyModule computeValue(Class<?>)
-                clazz = runtime.getJavaSupport().loadJavaClass(className);
+                return runtime.getJavaSupport().loadJavaClass(className, initialize);
             }
-        }
-        catch (ExceptionInInitializerError ex) {
-            throw runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex, false);
-        }
-        catch (UnsupportedClassVersionError ex) { // LinkageError
+        } catch (ExceptionInInitializerError ex) {
+            throw initCause(runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex, false), ex);
+        } catch (UnsupportedClassVersionError ex) { // LinkageError
             String type = ex.getClass().getName();
             String msg = ex.getLocalizedMessage();
             if ( msg != null ) {
@@ -981,21 +1018,24 @@ public class Java implements Library {
             }
             else msg = '(' + type + ')';
             // cannot link Java class com.sample.FooBar needs Java 8 (java.lang.UnsupportedClassVersionError: com/sample/FooBar : Unsupported major.minor version 52.0)
-            throw runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex, false);
+            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex, false), ex);
+        } catch (LinkageError ex) {
+            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex, false), ex);
+        } catch (SecurityException ex) {
+            throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
-        catch (NoClassDefFoundError | ClassNotFoundException ncdfe) {
-            // let caller try other names
-            return null;
-        }
-        catch (LinkageError ex) {
-            throw runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex, false);
-        }
-        catch (SecurityException ex) {
-            throw runtime.newSecurityError(ex.getLocalizedMessage());
-        }
+    }
 
-        if ( initJavaClass ) {
-            return getProxyClass(runtime, JavaClass.get(runtime, clazz));
+    static RaiseException initCause(final RaiseException ex, final Throwable cause) {
+        ex.initCause(cause); return ex;
+    }
+
+    private static RubyModule getProxyClassOrNull(final Ruby runtime, final String className) {
+        final Class<?> clazz;
+        try {
+            clazz = loadJavaClass(runtime, className);
+        } catch (ClassNotFoundException ex) { // used to catch NoClassDefFoundError for whatever reason
+            return null;
         }
         return getProxyClass(runtime, clazz);
     }
@@ -1183,7 +1223,7 @@ public class Java implements Library {
         final RubyModule enclosingClass, final String name) {
         final Ruby runtime = context.runtime;
 
-        if ( name.length() == 0 ) throw runtime.newArgumentError("empty class name");
+        if (name.length() == 0) throw runtime.newArgumentError("empty class name");
 
         Class<?> enclosing = JavaClass.getJavaClass(context, enclosingClass);
 

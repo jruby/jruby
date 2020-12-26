@@ -60,6 +60,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.collections.ClassValueCalculator;
 
+import static org.jruby.javasupport.Java.initCause;
+
 public class JavaSupportImpl extends JavaSupport {
     private final Ruby runtime;
 
@@ -105,16 +107,12 @@ public class JavaSupportImpl extends JavaSupport {
     private RubyClass javaProxyConstructorClass;
 
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>(64);
+    private final Map<String, RubyModule> nameClassCache = new HashMap<>(64);
 
     public JavaSupportImpl(final Ruby runtime) {
         this.runtime = runtime;
 
-        this.javaClassCache = ClassValue.newInstance(new ClassValueCalculator<JavaClass>() {
-            @Override
-            public JavaClass computeValue(Class<?> klass) {
-                return new JavaClass(runtime, getJavaClassClass(), klass);
-            }
-        });
+        this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
 
         this.proxyClassCache = ClassValue.newInstance(new ClassValueCalculator<RubyModule>() {
             /**
@@ -130,33 +128,29 @@ public class JavaSupportImpl extends JavaSupport {
             }
         });
 
-        this.staticAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
-            @Override
-            public Map<String, AssignedName> computeValue(Class<?> cls) { return new HashMap<>(); }
-        });
-        this.instanceAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
-            @Override
-            public Map<String, AssignedName> computeValue(Class<?> cls) { return new HashMap<>(); }
-        });
+        this.staticAssignedNames = ClassValue.newInstance(klass -> new HashMap<>(8, 1));
+        this.instanceAssignedNames = ClassValue.newInstance(klass -> new HashMap<>(8, 1));
 
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
     }
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
+        return loadJavaClass(className, true);
+    }
+
+    public Class loadJavaClass(String className, boolean initialize) throws ClassNotFoundException {
         Class<?> primitiveClass;
         if ((primitiveClass = JavaUtil.getPrimitiveClass(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
-                for(Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
+                for (Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
                     try {
                         return loader.loadClass(className);
-                    }
-                    catch(ClassNotFoundException ignored) {
-                    }
+                    } catch (ClassNotFoundException ignored) { /* continue */ }
                 }
-                return Class.forName(className, true, runtime.getJRubyClassLoader());
+                return Class.forName(className, initialize, runtime.getJRubyClassLoader());
             }
-            return Class.forName(className);
+            return Class.forName(className, initialize, JavaSupport.class.getClassLoader());
         }
         return primitiveClass;
     }
@@ -188,10 +182,6 @@ public class JavaSupportImpl extends JavaSupport {
         } catch (SecurityException ex) {
             throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
-    }
-
-    private static RaiseException initCause(final RaiseException ex, final Throwable cause) {
-        ex.initCause(cause); return ex;
     }
 
     public JavaClass getJavaClassFromCache(Class clazz) {
@@ -234,6 +224,10 @@ public class JavaSupportImpl extends JavaSupport {
         return nameClassMap;
     }
 
+    public Map<String, RubyModule> getNameClassCache() {
+        return nameClassCache;
+    }
+
     public RubyModule getJavaModule() {
         RubyModule module;
         if ((module = javaModule) != null) return module;
@@ -265,7 +259,9 @@ public class JavaSupportImpl extends JavaSupport {
     }
 
     public JavaClass getObjectJavaClass() {
-        return objectJavaClass;
+        JavaClass clazz;
+        if ((clazz = objectJavaClass) != null) return clazz;
+        return objectJavaClass = JavaClass.get(runtime, Object.class);
     }
 
     public void setObjectJavaClass(JavaClass objectJavaClass) {

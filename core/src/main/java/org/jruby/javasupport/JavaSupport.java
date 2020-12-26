@@ -47,8 +47,12 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class JavaSupport {
-    public abstract Class loadJavaClass(String className) throws ClassNotFoundException;
 
+    public Class loadJavaClass(String className) throws ClassNotFoundException {
+        return loadJavaClass(className, true);
+    }
+
+    public abstract Class loadJavaClass(String className, boolean initialize) throws ClassNotFoundException;
     public abstract Class loadJavaClassVerbose(String className);
 
     public abstract Class loadJavaClassQuiet(String className);
@@ -61,7 +65,10 @@ public abstract class JavaSupport {
 
     public abstract ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache();
 
+    @Deprecated
     public abstract Map<String, JavaClass> getNameClassMap();
+
+    public abstract Map<String, RubyModule> getNameClassCache();
 
     @Deprecated
     public abstract Object getJavaObjectVariable(Object o, int i);

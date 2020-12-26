@@ -185,7 +185,7 @@ public class JavaClass extends JavaObject {
         return javaClass == null ? null : javaClass.javaClass();
     }
 
-    private static JavaClass getJavaClassIfProxyImpl(final ThreadContext context, final RubyModule proxy) {
+    static JavaClass getJavaClassIfProxyImpl(final ThreadContext context, final RubyModule proxy) {
         final IRubyObject java_class = java_class(context, proxy);
         return ( java_class instanceof JavaClass ) ? (JavaClass) java_class : null;
     }
@@ -216,13 +216,6 @@ public class JavaClass extends JavaObject {
         return java_class;
     }
 
-    /*
-    public static Class<?> getJavaClass(final ThreadContext context, final RubyModule type) {
-        IRubyObject java_class = java_class(context, type);
-        if ( java_class == context.nil ) return null;
-        return resolveClassType(context, java_class).javaClass();
-    } */
-
     /**
      * Resolves a Java class from a passed type parameter.
      *
@@ -231,35 +224,10 @@ public class JavaClass extends JavaObject {
      * @param type
      * @return resolved type or null if resolution failed
      */
+    @Deprecated
     public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
-        if (type instanceof RubyString || type instanceof RubySymbol) {
-            final Ruby runtime = context.runtime;
-            final String className = type.toString();
-            JavaClass targetType = runtime.getJavaSupport().getNameClassMap().get(className);
-            if ( targetType == null ) targetType = JavaClass.forNameVerbose(runtime, className);
-            return targetType;
-        }
-        return resolveClassType(context, type);
-    }
-
-    // this should handle the type returned from Class#java_class
-    private static JavaClass resolveClassType(final ThreadContext context, final IRubyObject type) {
-        if (type instanceof JavaProxy) { // due Class#java_class wrapping
-            final Object wrapped = ((JavaProxy) type).getObject();
-            if ( wrapped instanceof Class ) return JavaClass.get(context.runtime, (Class) wrapped);
-            return null;
-        }
-        if (type instanceof JavaClass) {
-            return (JavaClass) type;
-        }
-        if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
-            return getJavaClassIfProxyImpl(context, (RubyModule) type);
-        }
-        return null;
-    }
-
-    static boolean isPrimitiveName(final String name) {
-        return JavaUtil.getPrimitiveClass(name) != null;
+        RubyModule proxyClass = Java.resolveType(context.runtime, type);
+        return proxyClass == null ? null : get(context.runtime, getJavaClass(context, proxyClass));
     }
 
     public static JavaClass forNameVerbose(Ruby runtime, String className) {
@@ -864,15 +832,6 @@ public class JavaClass extends JavaObject {
      */
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, IRubyObject additional) {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional);
-    }
-
-    @Deprecated // no-longer-used
-    public IRubyObject javaArrayFromRubyArray(ThreadContext context, IRubyObject fromArray) {
-        if ( ! ( fromArray instanceof RubyArray ) ) {
-            final Ruby runtime = context.runtime;
-            throw runtime.newTypeError(fromArray, runtime.getArray());
-        }
-        return javaArrayFromRubyArray(context, (RubyArray) fromArray);
     }
 
     public final IRubyObject javaArrayFromRubyArray(ThreadContext context, RubyArray fromArray) {
