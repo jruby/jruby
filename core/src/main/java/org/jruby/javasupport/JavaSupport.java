@@ -68,8 +68,6 @@ public abstract class JavaSupport {
     @Deprecated
     public abstract Map<String, JavaClass> getNameClassMap();
 
-    public abstract Map<String, RubyModule> getNameClassCache();
-
     @Deprecated
     public abstract Object getJavaObjectVariable(Object o, int i);
 

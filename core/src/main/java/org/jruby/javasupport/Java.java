@@ -95,7 +95,6 @@ import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
-import static org.jruby.java.invokers.RubyToJavaInvoker.convertArguments;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyModule(name = "Java")
@@ -188,9 +187,6 @@ public class Java implements Library {
             ((RubyClass) runtime.getObject().getConstant("StringIO")).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
         }
 
-        // add all name-to-class mappings
-        addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassCache());
-
         return Java;
     }
 
@@ -220,81 +216,6 @@ public class Java implements Library {
             JavaInterfaceTemplate.addRealImplClassNew((RubyClass) subclass);
             return context.nil;
         }
-    };
-
-    /**
-     * This populates the master map from short-cut names to JavaClass instances for
-     * a number of core Java types.
-     *
-     * @param runtime
-     * @param nameClassMap
-     */
-    private static void addNameClassMappings(final Ruby runtime, final Map<String, RubyModule> nameClassMap) {
-        RubyModule booleanClass = getProxyClass(runtime, Boolean.class);
-        nameClassMap.put("boolean", getProxyClass(runtime, Boolean.TYPE));
-        nameClassMap.put("Boolean", booleanClass);
-        nameClassMap.put("java.lang.Boolean", booleanClass);
-
-        RubyModule byteClass = getProxyClass(runtime, Byte.class);
-        nameClassMap.put("byte", getProxyClass(runtime, Byte.TYPE));
-        nameClassMap.put("Byte", byteClass);
-        nameClassMap.put("java.lang.Byte", byteClass);
-
-        RubyModule shortClass = getProxyClass(runtime, Short.class);
-        nameClassMap.put("short", getProxyClass(runtime, Short.TYPE));
-        nameClassMap.put("Short", shortClass);
-        nameClassMap.put("java.lang.Short", shortClass);
-
-        RubyModule charClass = getProxyClass(runtime, Character.class);
-        nameClassMap.put("char", getProxyClass(runtime, Character.TYPE));
-        nameClassMap.put("Character", charClass);
-        nameClassMap.put("Char", charClass);
-        nameClassMap.put("java.lang.Character", charClass);
-
-        RubyModule intClass = getProxyClass(runtime, Integer.class);
-        nameClassMap.put("int", getProxyClass(runtime, Integer.TYPE));
-        nameClassMap.put("Integer", intClass);
-        nameClassMap.put("Int", intClass);
-        nameClassMap.put("java.lang.Integer", intClass);
-
-        RubyModule longClass = getProxyClass(runtime, Long.class);
-        nameClassMap.put("long", getProxyClass(runtime, Long.TYPE));
-        nameClassMap.put("Long", longClass);
-        nameClassMap.put("java.lang.Long", longClass);
-
-        RubyModule floatClass = getProxyClass(runtime, Float.class);
-        nameClassMap.put("float", getProxyClass(runtime, Float.TYPE));
-        nameClassMap.put("Float", floatClass);
-        nameClassMap.put("java.lang.Float", floatClass);
-
-        RubyModule doubleClass = getProxyClass(runtime, Double.class);
-        nameClassMap.put("double", getProxyClass(runtime, Double.TYPE));
-        nameClassMap.put("Double", doubleClass);
-        nameClassMap.put("java.lang.Double", doubleClass);
-
-        RubyModule bigintClass = getProxyClass(runtime, BigInteger.class);
-        nameClassMap.put("big_int", bigintClass);
-        nameClassMap.put("big_integer", bigintClass);
-        nameClassMap.put("BigInteger", bigintClass);
-        nameClassMap.put("java.math.BigInteger", bigintClass);
-
-        RubyModule bigdecimalClass = getProxyClass(runtime, BigDecimal.class);
-        nameClassMap.put("big_decimal", bigdecimalClass);
-        nameClassMap.put("BigDecimal", bigdecimalClass);
-        nameClassMap.put("java.math.BigDecimal", bigdecimalClass);
-
-        RubyModule objectClass = getProxyClass(runtime, Object.class);
-        nameClassMap.put("object", objectClass);
-        nameClassMap.put("Object", objectClass);
-        nameClassMap.put("java.lang.Object", objectClass);
-
-        RubyModule stringClass = getProxyClass(runtime, String.class);
-        nameClassMap.put("string", stringClass);
-        nameClassMap.put("String", stringClass);
-        nameClassMap.put("java.lang.String", stringClass);
-
-        nameClassMap.put("void", getProxyClass(runtime, Void.TYPE));
-        nameClassMap.put("Void", getProxyClass(runtime, Void.class));
     }
 
     public static IRubyObject create_proxy_class(
@@ -420,11 +341,9 @@ public class Java implements Library {
     public static RubyModule resolveType(final Ruby runtime, final IRubyObject type) {
         if (type instanceof RubyString || type instanceof RubySymbol) {
             final String className = type.toString();
-            RubyModule proxyClass = runtime.getJavaSupport().getNameClassCache().get(className);
-            if (proxyClass == null) {
-                proxyClass = getProxyClass(runtime, getJavaClass(runtime, className));
-            }
-            return proxyClass;
+            Class<?> klass = resolveShortClassName(className);
+            if (klass == null) klass = getJavaClass(runtime, className);
+            return getProxyClass(runtime, klass);
         }
         return resolveClassType(runtime, type);
     }
@@ -448,6 +367,47 @@ public class Java implements Library {
         }
         return getProxyClass(runtime, klass.javaClass());
     }
+
+    private static Class resolveShortClassName(final String name) {
+        switch (name) {
+            case "boolean" : return Boolean.TYPE;
+            case "Boolean" : case "java.lang.Boolean" : return Boolean.class;
+
+            case "byte" : return Byte.TYPE;
+            case "Byte" : case "java.lang.Byte" : return Byte.class;
+
+            case "short" : return Short.TYPE;
+            case "Short" : case "java.lang.Short" : return Short.class;
+
+            case "int" : return Integer.TYPE;
+            case "Int" : case "Integer" : case "java.lang.Integer" : return Integer.class;
+
+            case "long" : return Long.TYPE;
+            case "Long" : case "java.lang.Long" : return Long.class;
+
+            case "float" : return Float.TYPE;
+            case "Float" : case "java.lang.Float" : return Float.class;
+
+            case "double" : return Double.TYPE;
+            case "Double" : case "java.lang.Double" : return Double.class;
+
+            case "char" : return Character.TYPE;
+            case "Char" : case "Character" : case "java.lang.Character" : return Character.class;
+
+            case "object" : case "Object" : case "java.lang.Object" : return Object.class;
+
+            case "string" : case "String" : case "java.lang.String" : return String.class;
+
+            case "big_int" : case "big_integer" : case "BigInteger" : return BigInteger.class;
+
+            case "big_decimal" : case "BigDecimal" : return BigDecimal.class;
+
+            case "void" : return Void.TYPE;
+            case "Void" : return Void.class;
+        }
+        return null;
+    }
+
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
         return getProxyClass(runtime, javaClass.javaClass());
     }

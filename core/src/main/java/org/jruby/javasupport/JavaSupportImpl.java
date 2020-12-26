@@ -106,9 +106,6 @@ public class JavaSupportImpl extends JavaSupport {
     private RubyClass mapJavaProxy;
     private RubyClass javaProxyConstructorClass;
 
-    private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>(64);
-    private final Map<String, RubyModule> nameClassCache = new HashMap<>(64);
-
     public JavaSupportImpl(final Ruby runtime) {
         this.runtime = runtime;
 
@@ -221,11 +218,7 @@ public class JavaSupportImpl extends JavaSupport {
     // of constants table.)
 
     public Map<String, JavaClass> getNameClassMap() {
-        return nameClassMap;
-    }
-
-    public Map<String, RubyModule> getNameClassCache() {
-        return nameClassCache;
+        return Collections.emptyMap();
     }
 
     public RubyModule getJavaModule() {
