@@ -827,53 +827,6 @@ public class JavaClass extends JavaObject {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional);
     }
 
-    public final IRubyObject javaArrayFromRubyArray(ThreadContext context, RubyArray fromArray) {
-        final Ruby runtime = context.runtime;
-
-        Object newArray = javaArrayFromRubyArrayDirect(context, fromArray);
-
-        return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, newArray), newArray, JavaUtil.getJavaConverter(javaClass()));
-    }
-
-    public final Object javaArrayFromRubyArrayDirect(ThreadContext context, RubyArray fromArray) {
-        final Ruby runtime = context.runtime;
-        final Class<?> type = javaClass();
-
-        final Object newArray = Array.newInstance(type, fromArray.size());
-
-        if ( type.isArray() ) {
-            // if it's an array of arrays, recurse with the component type
-            for ( int i = 0; i < fromArray.size(); i++ ) {
-                final Class<?> nestedType = type.getComponentType();
-                final IRubyObject element = fromArray.eltInternal(i);
-                final Object nestedArray;
-                if ( element instanceof RubyArray ) { // recurse
-                    JavaClass componentType = JavaClass.get(runtime, nestedType);
-                    nestedArray = componentType.javaArrayFromRubyArrayDirect(context, element);
-                }
-                else if ( type.isInstance(element) ) {
-                    nestedArray = element;
-                }
-                else { // still try (nested) toJava conversion :
-                    nestedArray = element.toJava(type);
-                }
-                ArrayUtils.setWithExceptionHandlingDirect(runtime, newArray, i, nestedArray);
-            }
-        } else {
-            ArrayUtils.copyDataToJavaArrayDirect(fromArray, newArray);
-        }
-
-        return newArray;
-    }
-
-    public final Object javaArrayFromRubyArrayDirect(ThreadContext context, IRubyObject fromArray) {
-        if ( ! ( fromArray instanceof RubyArray ) ) {
-            final Ruby runtime = context.runtime;
-            throw runtime.newTypeError(fromArray, runtime.getArray());
-        }
-        return javaArrayFromRubyArrayDirect(context, (RubyArray) fromArray);
-    }
-
     @JRubyMethod
     public RubyArray fields() {
         return buildFieldResults(getRuntime(), javaClass().getFields());
