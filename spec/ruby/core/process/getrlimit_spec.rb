@@ -92,7 +92,7 @@ describe "Process.getrlimit" do
   platform_is :windows do
     it "is not implemented" do
       Process.respond_to?(:getrlimit).should be_false
-      lambda do
+      -> do
         Process.getrlimit(nil)
       end.should raise_error NotImplementedError
     end
