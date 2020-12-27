@@ -46,7 +46,7 @@ describe 'Range#minmax' do
       end
     end
 
-    it 'should return begining of range if beginning and end are equal without iterating the range' do
+    it 'should return beginning of range if beginning and end are equal without iterating the range' do
       @x.should_not_receive(:succ)
 
       (@x..@x).minmax.should == [@x, @x]
@@ -122,7 +122,7 @@ describe 'Range#minmax' do
       end
     end
 
-    ruby_bug "#17014", "2.7.0"..."2.8" do
+    ruby_bug "#17014", "2.7.0"..."3.0" do
       it 'should return nil pair if beginning and end are equal without iterating the range' do
         @x.should_not_receive(:succ)
 
