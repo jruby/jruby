@@ -900,18 +900,17 @@ public class Java implements Library {
                         result = getJavaPackageModule(runtime, fullName);
                         // NOTE result = getPackageModule(runtime, name);
                         if ( result == null ) {
-                            throw runtime.newNameError("missing class (or package) name (`" + fullName + "')", fullName);
+                            throw runtime.newNameError("missing class (or package) name " + fullName, fullName);
                         }
                     }
                     else {
-                        throw runtime.newNameError("missing class name (`" + fullName + "')", fullName);
+                        throw runtime.newNameError("missing class name " + fullName, fullName);
                     }
                 }
             }
             catch (RuntimeException e) {
                 if ( e instanceof RaiseException ) throw e;
-                if (runtime.isDebug()) e.printStackTrace();
-                throw runtime.newNameError("missing class or uppercase package name (`" + fullName + "'), caused by " + e.getMessage(), fullName);
+                throw initCause(runtime.newNameError("missing class or uppercase package name " + fullName + " (" + e + ')', fullName, e), e);
             }
         }
 
@@ -961,29 +960,34 @@ public class Java implements Library {
                 return runtime.getJavaSupport().loadJavaClass(className, initialize);
             }
         } catch (ExceptionInInitializerError ex) {
-            throw initCause(runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex, false), ex);
+            throw initCause(runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
         } catch (UnsupportedClassVersionError ex) { // LinkageError
-            String type = ex.getClass().getName();
-            String msg = ex.getLocalizedMessage();
-            if ( msg != null ) {
-                final String unMajorMinorVersion = "unsupported major.minor version";
-                // e.g. "com/sample/FooBar : Unsupported major.minor version 52.0"
-                int idx = msg.indexOf(unMajorMinorVersion);
-                if (idx > 0) {
-                    idx += unMajorMinorVersion.length();
-                    idx = mapMajorMinorClassVersionToJavaVersion(msg, idx);
-                    if ( idx > 0 ) msg = "needs Java " + idx + " (" + type + ": " + msg + ')';
-                    else msg = '(' + type + ": " + msg + ')';
-                }
-            }
-            else msg = '(' + type + ')';
+            String msg = getJavaVersionErrorMessage(ex);
             // cannot link Java class com.sample.FooBar needs Java 8 (java.lang.UnsupportedClassVersionError: com/sample/FooBar : Unsupported major.minor version 52.0)
-            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex, false), ex);
+            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex), ex);
         } catch (LinkageError ex) {
-            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex, false), ex);
+            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
         } catch (SecurityException ex) {
             throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
+    }
+
+    private static String getJavaVersionErrorMessage(UnsupportedClassVersionError ex) {
+        String type = ex.getClass().getName();
+        String msg = ex.getLocalizedMessage();
+        if ( msg != null ) {
+            final String unMajorMinorVersion = "unsupported major.minor version";
+            // e.g. "com/sample/FooBar : Unsupported major.minor version 52.0"
+            int idx = msg.indexOf(unMajorMinorVersion);
+            if (idx > 0) {
+                idx += unMajorMinorVersion.length();
+                idx = mapMajorMinorClassVersionToJavaVersion(msg, idx);
+                if ( idx > 0 ) msg = "needs Java " + idx + " (" + type + ": " + msg + ')';
+                else msg = '(' + type + ": " + msg + ')';
+            }
+        }
+        else msg = '(' + type + ')';
+        return msg;
     }
 
     static RaiseException initCause(final RaiseException ex, final Throwable cause) {
