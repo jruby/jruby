@@ -104,10 +104,6 @@ public class JavaClass extends JavaObject {
         return (RubyClass) Java.getProxyClass(getRuntime(), javaClass());
     }
 
-    private static Class<?> unwrapClassProxy(final IRubyObject self) {
-        return (Class) ((JavaProxy) self).getObject();
-    }
-
     private static IRubyObject addProxyExtender(final ThreadContext context, final Class<?> klass, final IRubyObject extender) {
         if ( ! extender.respondsTo("extend_proxy") ) {
             throw context.runtime.newTypeError("proxy extender must have an extend_proxy method");
@@ -122,7 +118,7 @@ public class JavaClass extends JavaObject {
             addProxyExtender(context, ((JavaClass) self).javaClass(), extender);
         } else {
             // NOTE: used by java.lang.Class as a JavaClass compatiblity layer
-            addProxyExtender(context, unwrapClassProxy(self), extender);
+            addProxyExtender(context, Java.unwrapClassProxy(self), extender);
         }
         return context.nil;
     }

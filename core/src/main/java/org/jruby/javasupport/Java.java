@@ -334,6 +334,10 @@ public class Java implements Library {
         return null;
     }
 
+    public static Class<?> unwrapClassProxy(final IRubyObject self) {
+        return (Class) ((JavaProxy) self).getObject();
+    }
+
     public static RubyClass getProxyClassForObject(Ruby runtime, Object object) {
         return (RubyClass) getProxyClass(runtime, object.getClass());
     }

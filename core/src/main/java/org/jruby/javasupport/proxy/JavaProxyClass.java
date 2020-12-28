@@ -643,7 +643,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                     RubyArray interfaces = (RubyArray) var;
                     for (int i = interfaces.size(); --i >= 0; ) {
                         IRubyObject iface = interfaces.eltInternal(i);
-                        Class interfaceClass = ((JavaClass) iface).javaClass();
+                        Class<?> interfaceClass = Java.unwrapClassProxy(iface);
                         if (!interfaceClass.isInterface()) {
                             throw runtime.newTypeError("invalid java interface defined for proxy (or ancestor): " +
                                     ancestor + ": " + iface + " (not an interface)");
@@ -705,8 +705,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     @JRubyMethod
-    public RubyObject superclass() {
-        return JavaClass.get(getRuntime(), getSuperclass());
+    public IRubyObject superclass() {
+        return Java.getInstance(getRuntime(), getSuperclass());
     }
 
     @JRubyMethod

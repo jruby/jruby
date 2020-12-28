@@ -126,8 +126,8 @@ public class JavaProxyReflectionObject extends RubyObject {
     }
 
     @JRubyMethod
-    public JavaClass java_class() {
-        return JavaClass.get(getRuntime(), getJavaClass());
+    public IRubyObject java_class() {
+        return Java.getInstance(getRuntime(), getJavaClass());
     }
 
     @JRubyMethod

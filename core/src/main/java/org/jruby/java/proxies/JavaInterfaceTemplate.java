@@ -258,7 +258,7 @@ public class JavaInterfaceTemplate {
             else {
                 javaClass = self.getClass(); // NOTE what is this for?
             }
-            return JavaClass.get(context.runtime, javaClass);
+            return Java.getInstance(context.runtime, javaClass);
         }
 
     }
