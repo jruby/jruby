@@ -29,7 +29,7 @@ public class KernelJavaAddons {
     public static IRubyObject to_java(ThreadContext context, final IRubyObject fromObject, final IRubyObject type) {
         if ( type.isNil() ) return to_java(context, fromObject);
 
-        final Class targetType = resolveTargetType(context, type);
+        final Class targetType = Java.resolveClassType(context, type);
         if ( fromObject instanceof RubyArray ) {
             return toJavaArray(context.runtime, targetType, (RubyArray) fromObject);
         }
@@ -108,12 +108,6 @@ public class KernelJavaAddons {
     public static IRubyObject java_field(IRubyObject recv, IRubyObject[] args) {
         // empty stub for now
         return recv.getRuntime().getNil();
-    }
-
-    private static Class<?> resolveTargetType(ThreadContext context, IRubyObject type) {
-        RubyModule proxyClass = Java.resolveType(context.runtime, type);
-        if ( proxyClass == null ) throw context.runtime.newTypeError("unable to convert to type: " + type);
-        return JavaClass.getJavaClass(context, proxyClass);
     }
 
 }

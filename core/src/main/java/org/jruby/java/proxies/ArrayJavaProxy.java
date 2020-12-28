@@ -52,7 +52,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         return arrayJavaProxy;
     }
 
-    static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
+    public static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
         final Object array;
         try {
             array = Array.newInstance(elementType, dimensions);

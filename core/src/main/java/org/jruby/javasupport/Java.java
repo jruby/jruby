@@ -338,34 +338,40 @@ public class Java implements Library {
         return (RubyClass) getProxyClass(runtime, object.getClass());
     }
 
+    public static Class<?> resolveClassType(final ThreadContext context, final IRubyObject type) {
+        RubyModule proxyClass = Java.resolveType(context.runtime, type);
+        if (proxyClass == null) throw context.runtime.newTypeError("unable to convert to type: " + type);
+        return JavaClass.getJavaClass(context, proxyClass);
+    }
+
     public static RubyModule resolveType(final Ruby runtime, final IRubyObject type) {
+        Class<?> klass;
         if (type instanceof RubyString || type instanceof RubySymbol) {
             final String className = type.toString();
-            Class<?> klass = resolveShortClassName(className);
+            klass = resolveShortClassName(className);
             if (klass == null) klass = getJavaClass(runtime, className);
-            return getProxyClass(runtime, klass);
+        } else {
+            klass = resolveClassTypeInternal(runtime, type);
         }
-        return resolveClassType(runtime, type);
+        return getProxyClass(runtime, klass);
     }
 
     // this should handle the type returned from Class#java_class
-    static RubyModule resolveClassType(final Ruby runtime, final IRubyObject type) {
+    static Class<?> resolveClassTypeInternal(final Ruby runtime, final IRubyObject type) {
         if (type instanceof JavaProxy) { // due Class#java_class wrapping
             final Object wrapped = ((JavaProxy) type).getObject();
-            if (wrapped instanceof Class) return getProxyClass(runtime, (Class) wrapped);
+            if (wrapped instanceof Class) return (Class) wrapped;
             return null;
         }
 
-        Class<?> klass; // handle legacy JavaClass
-        if (type instanceof JavaClass) {
-            klass = ((JavaClass) type).javaClass();
-        } else if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
-            klass = JavaClass.getJavaClassIfProxy(runtime.getCurrentContext(), (RubyModule) type);
-            if (klass == null) return null;
+        if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
+            return JavaClass.getJavaClassIfProxy(runtime.getCurrentContext(), (RubyModule) type);
         } else {
-            return null;
+            if (type instanceof JavaClass) { // handle legacy JavaClass
+                return ((JavaClass) type).javaClass();
+            }
         }
-        return getProxyClass(runtime, klass);
+        return null;
     }
 
     private static Class resolveShortClassName(final String name) {

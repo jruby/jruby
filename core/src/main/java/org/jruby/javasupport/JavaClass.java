@@ -104,17 +104,26 @@ public class JavaClass extends JavaObject {
         return (RubyClass) Java.getProxyClass(getRuntime(), javaClass());
     }
 
-    private IRubyObject addProxyExtender(final ThreadContext context, final IRubyObject extender) {
+    private static Class<?> unwrapClassProxy(final IRubyObject self) {
+        return (Class) ((JavaProxy) self).getObject();
+    }
+
+    private static IRubyObject addProxyExtender(final ThreadContext context, final Class<?> klass, final IRubyObject extender) {
         if ( ! extender.respondsTo("extend_proxy") ) {
             throw context.runtime.newTypeError("proxy extender must have an extend_proxy method");
         }
-        RubyModule proxy = Java.getProxyClass(context.runtime, javaClass());
+        RubyModule proxy = Java.getProxyClass(context.runtime, klass);
         return extender.callMethod(context, "extend_proxy", proxy);
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject extend_proxy(final ThreadContext context, IRubyObject extender) {
-        addProxyExtender(context, extender);
+    public static IRubyObject extend_proxy(final ThreadContext context, IRubyObject self, IRubyObject extender) {
+        if (self instanceof JavaClass) {
+            addProxyExtender(context, ((JavaClass) self).javaClass(), extender);
+        } else {
+            // NOTE: used by java.lang.Class as a JavaClass compatiblity layer
+            addProxyExtender(context, unwrapClassProxy(self), extender);
+        }
         return context.nil;
     }
 
@@ -601,13 +610,13 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaMethod java_method(IRubyObject[] args) {
+    public JavaMethod java_method(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
 
         final String methodName = args[0].asJavaString();
         try {
-            Class<?>[] argumentTypes = getArgumentTypes(runtime, args, 1);
+            Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
             @SuppressWarnings("unchecked")
             final Method method = javaClass().getMethod(methodName, argumentTypes);
             return new JavaMethod(runtime, method);
@@ -618,13 +627,13 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaMethod declared_method(final IRubyObject[] args) {
+    public JavaMethod declared_method(ThreadContext context, final IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
 
         final String methodName = args[0].asJavaString();
         try {
-            Class<?>[] argumentTypes = getArgumentTypes(runtime, args, 1);
+            Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
             @SuppressWarnings("unchecked")
             final Method method = javaClass().getDeclaredMethod(methodName, argumentTypes);
             return new JavaMethod(runtime, method);
@@ -635,13 +644,13 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaCallable declared_method_smart(final IRubyObject[] args) {
+    public JavaCallable declared_method_smart(ThreadContext context, final IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
 
         final String methodName = args[0].asJavaString();
 
-        Class<?>[] argumentTypes = getArgumentTypes(runtime, args, 1);
+        Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
 
         JavaCallable callable = getMatchingCallable(runtime, javaClass(), methodName, argumentTypes);
 
@@ -659,21 +668,13 @@ public class JavaClass extends JavaObject {
         return JavaMethod.getMatchingDeclaredMethod(runtime, javaClass, methodName, argumentTypes);
     }
 
-    private static Class<?>[] getArgumentTypes(final Ruby runtime, final IRubyObject[] args, final int offset) {
+    public static Class<?>[] getArgumentTypes(final ThreadContext context, final IRubyObject[] args, final int offset) {
         final int length = args.length; // offset == 0 || 1
         if ( length == offset ) return EMPTY_CLASS_ARRAY;
         final Class<?>[] argumentTypes = new Class[length - offset];
         for ( int i = offset; i < length; i++ ) {
             final IRubyObject arg = args[i];
-            final JavaClass type;
-            if ( arg instanceof JavaClass ) {
-                type = (JavaClass) arg;
-            } else if ( arg.respondsTo("java_class") ) {
-                type = (JavaClass) arg.callMethod(runtime.getCurrentContext(), "java_class");
-            } else {
-                type = forNameVerbose(runtime, arg.asJavaString());
-            }
-            argumentTypes[ i - offset ] = type.javaClass();
+            argumentTypes[ i - offset ] = Java.resolveClassType(context, args[i]);
         }
         return argumentTypes;
     }
@@ -742,10 +743,10 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(rest = true)
-    public JavaConstructor constructor(IRubyObject[] args) {
+    public JavaConstructor constructor(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         try {
-            Class<?>[] parameterTypes = getArgumentTypes(runtime, args, 0);
+            Class<?>[] parameterTypes = getArgumentTypes(context, args, 0);
             @SuppressWarnings("unchecked")
             Constructor<?> constructor = javaClass().getConstructor(parameterTypes);
             return new JavaConstructor(runtime, constructor);
@@ -756,10 +757,10 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(rest = true)
-    public JavaConstructor declared_constructor(IRubyObject[] args) {
+    public JavaConstructor declared_constructor(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         try {
-            Class<?>[] parameterTypes = getArgumentTypes(runtime, args, 0);
+            Class<?>[] parameterTypes = getArgumentTypes(context, args, 0);
             @SuppressWarnings("unchecked")
             Constructor<?> constructor = javaClass().getDeclaredConstructor(parameterTypes);
             return new JavaConstructor(runtime, constructor);
@@ -807,10 +808,6 @@ public class JavaClass extends JavaObject {
 
     public IRubyObject emptyJavaArray(ThreadContext context) {
         return ArrayUtils.emptyJavaArrayDirect(context, javaClass());
-    }
-
-    public IRubyObject javaArraySubarray(ThreadContext context, JavaArray fromArray, int index, int size) {
-        return ArrayUtils.javaArraySubarrayDirect(context, getValue(), index, size);
     }
 
     /**
