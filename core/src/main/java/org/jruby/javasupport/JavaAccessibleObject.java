@@ -139,6 +139,7 @@ public abstract class JavaAccessibleObject extends RubyObject {
     // for our purposes, Accessibles are also Members, and vice-versa,
     // so we'll include Member methods here.
     @JRubyMethod
+    @SuppressWarnings("deprecation")
     public IRubyObject declaring_class() {
         Class<?> clazz = ((Member) accessibleObject()).getDeclaringClass();
         if ( clazz != null ) return JavaClass.get(getRuntime(), clazz);

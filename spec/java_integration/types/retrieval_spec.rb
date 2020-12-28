@@ -55,7 +55,8 @@ end
 describe "A JavaClass wrapper around a java.lang.Class" do
   it "provides a nice String output for inspect" do
     myclass = java.lang.String.java_class
-    expect(myclass.inspect).to eq("class java.lang.String")
+    expect( myclass ).to be_a java.lang.Class
+    expect(myclass.to_s).to eq("java.lang.String")
   end
 end
 

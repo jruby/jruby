@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -15,8 +16,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import com.headius.backport9.modules.Module;
-import com.headius.backport9.modules.Modules;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -48,6 +47,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
@@ -80,11 +80,43 @@ public class JavaProxy extends RubyObject {
 
         RubyClass JavaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), ALLOCATOR);
 
-        JavaProxy.getSingletonClass().addReadWriteAttribute(context, "java_class");
         JavaProxy.defineAnnotatedMethods(JavaProxy.class);
         JavaProxy.includeModule(runtime.getModule("JavaProxyMethods"));
 
         return JavaProxy;
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject java_class(final IRubyObject self) {
+        return getJavaClass((RubyClass) self);
+    }
+
+    //public static boolean isJavaProxy(final RubyClass target) {
+    //    return target.getRealClass().hasInternalVariable("java_class");
+    //}
+
+    /**
+     * @param target (Java) proxy module/class
+     * @return a java.lang.Class instance proxy (e.g. a java.lang.Integer.class wrapper)
+     */
+    public static IRubyObject getJavaClass(final RubyModule target) {
+        return (JavaProxy) target.getInternalVariable("java_class");
+    }
+
+    public static void setJavaClass(final RubyClass target, final Class<?> javaClass) {
+        setJavaClass(target.getClassRuntime(), target, javaClass);
+    }
+
+    public static void setJavaClass(final IRubyObject target, final Class<?> javaClass) {
+        setJavaClass(target.getRuntime(), target.getInternalVariables(), javaClass);
+    }
+
+    static void setJavaClass(final Ruby runtime, final InternalVariables target, final Class<?> javaClass) {
+        setJavaClass(target, Java.getInstance(runtime, javaClass));
+    }
+
+    private static void setJavaClass(final InternalVariables target, final IRubyObject javaClass) {
+        target.setInternalVariable("java_class", javaClass);
     }
 
     @Override
@@ -120,16 +152,10 @@ public class JavaProxy extends RubyObject {
         return getObject().getClass();
     }
 
-    static JavaClass java_class(final ThreadContext context, final RubyModule module) {
-        return (JavaClass) JavaClass.java_class(context, module);
-    }
-
     @JRubyMethod(meta = true, frame = true) // framed for invokeSuper
     public static IRubyObject inherited(ThreadContext context, IRubyObject recv, IRubyObject subclass) {
-        IRubyObject subJavaClass = JavaClass.java_class(context, (RubyClass) subclass);
-        if (subJavaClass.isNil()) {
-            subJavaClass = JavaClass.java_class(context, (RubyClass) recv);
-            Helpers.invoke(context, subclass, "java_class=", subJavaClass);
+        if (getJavaClass((RubyClass) subclass) == null) {
+            setJavaClass((RubyClass) subclass, getJavaClass((RubyClass) recv));
         }
         return Helpers.invokeSuper(context, recv, subclass, Block.NULL_BLOCK);
     }
@@ -141,17 +167,17 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(name = "[]", meta = true, rest = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final JavaClass javaClass = java_class(context, (RubyModule) self);
+        final Class<?> type = JavaClass.getJavaClass(context, (RubyModule) self);
         if ( args.length > 0 ) { // construct new array proxy (ArrayJavaProxy)
-            return new ArrayJavaProxyCreator(context, javaClass, args); // e.g. Byte[64]
+            return new ArrayJavaProxyCreator(context, type, args); // e.g. Byte[64]
         }
-        return Java.get_proxy_class(javaClass, Helpers.invoke(context, javaClass, "array_class"));
+        final Class<?> arrayType = Array.newInstance(type, 0).getClass();
+        return Java.getProxyClass(context.runtime, arrayType);
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject len) {
-        final JavaClass javaClass = java_class(context, (RubyModule) self);
-        final Class<?> componentType = javaClass.javaClass();
+        final Class<?> componentType = JavaClass.getJavaClass(context, (RubyModule) self);
         final int length = (int) len.convertToInteger().getLongValue();
         return ArrayJavaProxy.newArray(context.runtime, componentType, length);
     }

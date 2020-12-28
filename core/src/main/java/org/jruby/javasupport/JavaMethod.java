@@ -268,6 +268,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     @JRubyMethod
+    @SuppressWarnings("deprecation")
     public IRubyObject return_type() {
         Class<?> klass = method.getReturnType();
 

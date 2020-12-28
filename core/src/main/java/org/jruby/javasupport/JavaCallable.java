@@ -94,11 +94,13 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     @JRubyMethod(name = { "argument_types", "parameter_types" })
+    @SuppressWarnings("deprecation")
     public final RubyArray parameter_types() {
         return toRubyArray(getRuntime(), getParameterTypes());
     }
 
     @JRubyMethod
+    @SuppressWarnings("deprecation")
     public RubyArray exception_types() {
         return toRubyArray(getRuntime(), getExceptionTypes());
     }

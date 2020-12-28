@@ -118,6 +118,7 @@ public class JavaClass extends JavaObject {
         return context.nil;
     }
 
+    @Deprecated
     public static JavaClass get(final Ruby runtime, final Class<?> klass) {
         return runtime.getJavaSupport().getJavaClassFromCache(klass);
     }
@@ -127,6 +128,7 @@ public class JavaClass extends JavaObject {
         return toRubyArray(runtime, classes);
     }
 
+    @Deprecated
     public static RubyArray toRubyArray(final Ruby runtime, final Class<?>[] classes) {
         IRubyObject[] javaClasses = new IRubyObject[classes.length];
         for ( int i = classes.length; --i >= 0; ) {
@@ -164,6 +166,7 @@ public class JavaClass extends JavaObject {
      * @param proxy
      * @return class
      */
+    // NOTE: API still used, need a better place for it after whole class is deprecated
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
         return getJavaClassIfProxy(context, proxy);
     }
@@ -171,27 +174,36 @@ public class JavaClass extends JavaObject {
     /**
      * Retieve a JavaClass if the passed module/class is a Java proxy.
      * @param context
-     * @param proxy
+     * @param type
      * @return class or null if not a Java proxy
      *
      * @note Class objects have a java_class method but they're not considered Java proxies!
      */
-    public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule proxy) {
-        JavaClass javaClass = getJavaClassIfProxyImpl(context, proxy);
-        return javaClass == null ? null : javaClass.javaClass();
-    }
+    // NOTE: API still used, need a better place for it after whole class is deprecated
+    public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule type) {
+        if (type.getJavaProxy()) return (Class) type.dataGetStruct();
 
-    static JavaClass getJavaClassIfProxyImpl(final ThreadContext context, final RubyModule proxy) {
-        final IRubyObject java_class = java_class(context, proxy);
-        return ( java_class instanceof JavaClass ) ? (JavaClass) java_class : null;
+        Object java_class = JavaProxy.getJavaClass(type);
+        if (java_class instanceof JavaProxy) {
+            return (Class<?>) ((JavaProxy) java_class).getObject();
+        }
+
+        if (java_class == null) { // NOTE: old java_class(context, proxy) impl
+            if (type.respondsTo("java_class")) { // NOTE: quite bad since built-in Ruby classes will return
+                // a Ruby Java proxy for java.lang.Class while Java proxies will return a JavaClass instance !
+                java_class = Helpers.invoke(context, type, "java_class");
+            }
+            if (java_class instanceof JavaClass) { // legacy
+                return ((JavaClass) java_class).javaClass();
+            }
+        }
+
+        return null;
     }
 
     // expected to handle Java proxy (Ruby) sub-classes as well
     public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
-        return getJavaClassIfProxyImpl(context, proxy) != null;
-        //IRubyObject java_class = proxy.getInstanceVariable("@java_class");
-        //return (java_class != null && java_class.isTrue()) ||
-        //        proxy.respondsTo("java_class"); // not all proxy types have @java_class set
+        return getJavaClassIfProxy(context, proxy) != null;
     }
 
     /**

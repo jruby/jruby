@@ -108,6 +108,7 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     @JRubyMethod(name = "type")
+    @SuppressWarnings("deprecation")
     public IRubyObject field_type() {
         return JavaClass.get(getRuntime(), field.getType());
     }

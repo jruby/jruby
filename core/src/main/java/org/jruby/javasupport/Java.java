@@ -356,16 +356,16 @@ public class Java implements Library {
             return null;
         }
 
-        JavaClass klass; // handle legacy JavaClass
+        Class<?> klass; // handle legacy JavaClass
         if (type instanceof JavaClass) {
-            klass = (JavaClass) type;
+            klass = ((JavaClass) type).javaClass();
         } else if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
-            klass = JavaClass.getJavaClassIfProxyImpl(runtime.getCurrentContext(), (RubyModule) type);
+            klass = JavaClass.getJavaClassIfProxy(runtime.getCurrentContext(), (RubyModule) type);
             if (klass == null) return null;
         } else {
             return null;
         }
-        return getProxyClass(runtime, klass.javaClass());
+        return getProxyClass(runtime, klass);
     }
 
     private static Class resolveShortClassName(final String name) {

@@ -207,6 +207,7 @@ public class JavaConstructor extends JavaCallable {
     }
 
     @JRubyMethod
+    @SuppressWarnings("deprecation")
     public IRubyObject declaring_class() {
         return JavaClass.get(getRuntime(), getDeclaringClass());
     }
