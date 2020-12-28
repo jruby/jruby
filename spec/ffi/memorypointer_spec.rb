@@ -73,6 +73,6 @@ describe "MemoryPointer return value" do
   it "fopen returns non-nil" do
     fp = Stdio.fopen("/dev/null", "w")
     expect(fp).to_not be_nil
-    expect(Stdio.fclose(fp)).to  eq 0 unless fp.nil? or fp.null? 
+    expect(Stdio.fclose(fp)).to  eq 0 unless fp.nil? or fp.null?
   end
 end

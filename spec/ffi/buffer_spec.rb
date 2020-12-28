@@ -7,8 +7,8 @@ require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
 describe "Buffer#total" do
   [1,2,3].each do |i|
-    { :char => 1, :uchar => 1, :short => 2, :ushort => 2, :int => 4, 
-      :uint => 4, :long => FFI::Type::LONG.size, :ulong => FFI::Type::ULONG.size, 
+    { :char => 1, :uchar => 1, :short => 2, :ushort => 2, :int => 4,
+      :uint => 4, :long => FFI::Type::LONG.size, :ulong => FFI::Type::ULONG.size,
       :long_long => 8, :ulong_long => 8, :float => 4, :double => 8
     }.each_pair do |t, s|
 
@@ -46,7 +46,7 @@ describe "Buffer#put_uchar" do
         expect(FFI::Buffer.alloc_in(bufsize).put_uchar(offset, i).get_uchar(offset)).to eq(i)
       end
     end
-  end 
+  end
 end
 
 describe "Buffer#put_short" do
