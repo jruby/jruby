@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 
 gem 'leafy-complete', '~> 0.6'
-gem 'sinatra', '~> 1.4'
+gem 'sinatra', '~> 2.0', '>= 2.0.2'
 
 group 'puma' do
   gem 'puma', '3.12.6'
