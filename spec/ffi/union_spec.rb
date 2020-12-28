@@ -8,7 +8,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 module LibTest
   Types = {
     's8' => [:char, :c, 1],
-    's16' => [:short, :s, 0xff0], 
+    's16' => [:short, :s, 0xff0],
     's32' => [:int, :i, 0xff00],
     's64' => [:long_long, :j, 0xffff00],
     'long' => [:long, :l, 0xffff],
@@ -16,8 +16,8 @@ module LibTest
     'f64' => [:double, :d, 1.000000001]
   }
   class TestUnion < FFI::Union
-    layout( :a, [:char, 10], 
-            :i, :int, 
+    layout( :a, [:char, 10],
+            :i, :int,
             :f, :float,
             :d, :double,
             :s, :short,
@@ -25,7 +25,7 @@ module LibTest
             :j, :long_long,
             :c, :char )
   end
-  Types.keys.each do |k| 
+  Types.keys.each do |k|
     attach_function "union_align_#{k}", [ :pointer ], Types[k][0]
     attach_function "union_make_union_with_#{k}", [ Types[k][0] ], :pointer
   end
