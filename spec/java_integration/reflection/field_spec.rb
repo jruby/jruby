@@ -15,6 +15,7 @@ describe "A JavaClass" do
   end
 
   it "should provide a look up for a fields using a Ruby formatted name" do
+    skip "worked in JRuby 9.2 but compatibility was broken purposefully"
     expect(PrivateField.java_class.declared_field(:str_field)).not_to eq(nil)
     expect(ProtectedField.java_class.declared_field(:str_field)).not_to eq(nil)
     expect(PublicField.java_class.declared_field(:str_field)).not_to eq(nil)
@@ -125,6 +126,11 @@ describe "A JavaField" do
 
         @field.set_value @obj.java_object, nil
         expect(@field.value(@obj.java_object)).to be_nil
+      end
+
+      it "should set/get value directly" do
+        @field.set_value @obj, "aaa"
+        expect( @field.value(@obj) ).to eq("aaa")
       end
     end
   end
