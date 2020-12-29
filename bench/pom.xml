@@ -51,8 +51,8 @@ DO NOT MODIFIY - GENERATED CODE
     <prawn.stable.version>0.4.1</prawn.stable.version>
     <mspec.tar.file>${build.dir}/mspec.tgz</mspec.tar.file>
     <build.lib.dir>test/target</build.lib.dir>
-    <jmh.version>1.19</jmh.version>
-    <rake.args></rake.args>
+    <jmh.version>1.26</jmh.version>
+    <rake.args/>
     <test.dir>test</test.dir>
     <jflex.bin>jflex</jflex.bin>
     <jruby.win32ole.gem>jruby-win32ole</jruby.win32ole.gem>
