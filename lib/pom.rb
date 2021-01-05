@@ -24,6 +24,7 @@ default_gems = [
     ['jruby-openssl', '0.10.5'],
     ['json', '${json.version}'],
     ['psych', '3.2.0'],
+    ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
     ['scanf', '1.0.0'],
@@ -204,13 +205,14 @@ project 'JRuby Lib Setup' do
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
         # copy bin files if the gem has any
-        bin = File.join( gems, "#{gem_name}", spec.bindir || 'bin' )        
-        if File.exists? bin
-          Dir[ File.join( bin, '*' ) ].each do |f|
-            log "copy to bin: #{File.basename( f )}"
-            target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
-            FileUtils.mkdir_p( File.dirname( target ) )
-            FileUtils.cp_r( f, target )
+        Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir || 'bin' )) do |bin|
+          if File.exists?(bin)
+            Dir[ File.join( bin, '*' ) ].each do |f|
+              log "copy to bin: #{File.basename( f )}"
+              target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
+              FileUtils.mkdir_p( File.dirname( target ) )
+              FileUtils.cp_r( f, target )
+            end
           end
         end
 
