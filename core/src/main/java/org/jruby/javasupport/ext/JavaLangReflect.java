@@ -31,20 +31,20 @@ package org.jruby.javasupport.ext;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.RubyStringBuilder;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 
 import static org.jruby.javasupport.JavaUtil.convertArguments;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
-import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
+import static org.jruby.util.Inspector.GT;
+import static org.jruby.util.Inspector.inspectPrefix;
 
 /**
  * Java::JavaLangReflect package extensions.
@@ -54,9 +54,31 @@ import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 public abstract class JavaLangReflect {
 
     public static void define(final Ruby runtime) {
+        JavaExtensions.put(runtime, java.lang.reflect.AccessibleObject.class, (proxyClass) -> AccessibleObject.define(runtime, (RubyClass) proxyClass));
         JavaExtensions.put(runtime, java.lang.reflect.Constructor.class, (proxyClass) -> Constructor.define(runtime, (RubyClass) proxyClass));
         JavaExtensions.put(runtime, java.lang.reflect.Field.class, (proxyClass) -> Field.define(runtime, (RubyClass) proxyClass));
         JavaExtensions.put(runtime, java.lang.reflect.Method.class, (proxyClass) -> Method.define(runtime, (RubyClass) proxyClass));
+    }
+
+    @JRubyClass(name = "Java::JavaLangReflect::AccessibleObject")
+    public static class AccessibleObject {
+
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(AccessibleObject.class);
+            return proxy;
+        }
+
+        @JRubyMethod
+        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
+            final java.lang.reflect.AccessibleObject obj = JavaUtil.unwrapJavaObject(self);
+
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
+            RubyStringBuilder.cat(context.runtime, buf, ' ');
+            RubyStringBuilder.cat(context.runtime, buf, obj.toString());
+            RubyStringBuilder.cat(context.runtime, buf, GT); // >
+
+            return buf;
+        }
     }
 
     @JRubyClass(name = "Java::JavaLangReflect::Constructor")
@@ -76,14 +98,6 @@ public abstract class JavaLangReflect {
         public static IRubyObject argument_types(final ThreadContext context, final IRubyObject self) {
             final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
             return convertJavaToUsableRubyObject(context.runtime, thiz.getParameterTypes());
-        }
-
-        //
-
-        @JRubyMethod
-        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.AccessibleObject thiz = JavaUtil.unwrapJavaObject(self);
-            return RubyString.newString(context.runtime, thiz.toString());
         }
 
         // JavaUtilities::ModifiedShortcuts :
@@ -174,12 +188,6 @@ public abstract class JavaLangReflect {
         }
 
         //
-
-        @JRubyMethod
-        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.AccessibleObject thiz = JavaUtil.unwrapJavaObject(self);
-            return RubyString.newString(context.runtime, thiz.toString());
-        }
 
         @JRubyMethod(name = "abstract?")
         public static IRubyObject abstract_p(final IRubyObject self) {
@@ -286,14 +294,6 @@ public abstract class JavaLangReflect {
                 Helpers.throwException(e); return null;
             }
             return context.nil;
-        }
-
-        //
-
-        @JRubyMethod
-        public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) { // TODO
-            final java.lang.reflect.AccessibleObject thiz = JavaUtil.unwrapJavaObject(self);
-            return RubyString.newString(context.runtime, thiz.toString());
         }
 
         // JavaUtilities::ModifiedShortcuts :

@@ -52,7 +52,7 @@ class TestBacktraces < Test::Unit::TestCase
 
   def test_native_java_backtrace2
     # TestHelperException extends RuntimeException
-    sample_class = Java::JavaClass.for_name('org.jruby.javasupport.test.name.Sample')
+    sample_class = java.lang.Class.for_name('org.jruby.javasupport.test.name.Sample')
     constructor = sample_class.constructor(Java::int)
     constructor.new_instance 0
     begin
