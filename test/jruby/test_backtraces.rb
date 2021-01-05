@@ -15,19 +15,14 @@ class TestBacktraces < Test::Unit::TestCase
     assert_exception_backtrace(expectation, ex)
   end
 
-  import org.jruby.test.TestHelper
-
   def test_native_java_backtrace
-    # TestHelperException extends RuntimeException
-    TestHelper.throwTestHelperException
+    org.jruby.test.TestHelper.throwTestHelperException
     fail 'did no raise exception'
   rescue NativeException => ex
     assert_equal '#<NativeException: org.jruby.test.TestHelper$TestHelperException: null>', ex.inspect
     assert_equal 'org.jruby.test.TestHelper$TestHelperException: null', ex.message
     assert_not_nil ex.cause
     assert_instance_of org.jruby.test.TestHelper::TestHelperException, ex.cause
-
-    # ex.backtrace.each { |b| puts b.inspect }
 
     # starts with Java stack trace part :
     _throwTestHelperException = /org.jruby.test.TestHelper\.java:\d+:in `throwTestHelperException'/
@@ -51,7 +46,6 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_native_java_backtrace2
-    # TestHelperException extends RuntimeException
     sample_class = java.lang.Class.for_name('org.jruby.javasupport.test.name.Sample')
     constructor = sample_class.constructor(Java::int)
     constructor.new_instance 0
@@ -69,13 +63,11 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   def test_java_backtrace
-    # TestHelperException extends RuntimeException
-    TestHelper.throwTestHelperException
+    org.jruby.test.TestHelper.throwTestHelperException
     fail 'did no raise exception'
   rescue java.lang.Exception => ex
+    # TestHelperException extends RuntimeException
     # assert_nil ex.message
-
-    # ex.backtrace.each { |b| puts b.inspect }
 
     _throwTestHelperException = /org.jruby.test.TestHelper.throwTestHelperException/
     assert_match _throwTestHelperException, ex.backtrace[0]
