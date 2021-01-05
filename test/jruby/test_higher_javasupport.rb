@@ -9,7 +9,7 @@ end
 
 class TestHigherJavasupport < Test::Unit::TestCase
   include TestHelper
-  TestHelper = org.jruby.test.TestHelper
+
   JArray = ArrayList = java.util.ArrayList
   FinalMethodBaseTest = org.jruby.test.FinalMethodBaseTest
   Annotation = java.lang.annotation.Annotation
@@ -49,13 +49,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_passing_a_java_class_auto_reifies
     assert_nil Klass2.to_java.getReifiedClass
     # previously TestHelper.getClassName(Klass2) returned 'org.jruby.RubyObject'
-    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', TestHelper.getClassName(Klass2)
+    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', org.jruby.test.TestHelper.getClassName(Klass2)
     assert_not_nil Klass2.to_java.getReifiedClass
     assert_not_nil Klass1.to_java.getReifiedClass
   end
 
   def test_java_passing_class
-    assert_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))
+    assert_equal("java.util.ArrayList", org.jruby.test.TestHelper.getClassName(ArrayList))
   end
 
   @@include_java_lang = Proc.new {
@@ -110,7 +110,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_dispatching_on_nil
-    sb = TestHelper.getInterfacedInstance()
+    sb = org.jruby.test.TestHelper.getInterfacedInstance()
     assert_equal(nil, sb.dispatchObject(nil))
   end
 
