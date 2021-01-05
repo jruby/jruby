@@ -34,7 +34,7 @@ default_gems = [
     ['ostruct', '0.3.0'],
     ['prime', '0.1.0'],
     ['psych', '3.2.0'],
-    ['racc', '1.5.1'],
+    ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
     ['rexml', '3.1.9'],
