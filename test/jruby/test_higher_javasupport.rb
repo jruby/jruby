@@ -1006,10 +1006,10 @@ class TestHigherJavasupport < Test::Unit::TestCase
   #   Java::JavaProxyConstructor
   # end
 
-#  def test_java_class_equality
-#    long_class = java.lang.Long
-#    assert_equal long_class, Java::DefaultPackageClass.returnLongClass
-#  end
+  def test_java_class_equality
+    long_class = java.lang.Long.java_class
+    assert_equal long_class, Java::DefaultPackageClass.returnLongClass
+  end
 
   Properties = Java::java.util.Properties
 
