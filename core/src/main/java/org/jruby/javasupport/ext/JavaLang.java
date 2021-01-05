@@ -483,7 +483,7 @@ public abstract class JavaLang {
         @JRubyMethod(name = "ruby_class")
         public static IRubyObject proxy_class(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return context.runtime.getJavaSupport().getProxyClassFromCache(klass);
+            return Java.getProxyClass(context.runtime, klass);
         }
 
         @JRubyMethod
