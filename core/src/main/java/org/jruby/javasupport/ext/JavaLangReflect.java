@@ -229,10 +229,10 @@ public abstract class JavaLangReflect {
             return proxy;
         }
 
-        @JRubyMethod // alias value_type name
+        @JRubyMethod
         public static IRubyObject value_type(final ThreadContext context, final IRubyObject self) {
             final java.lang.reflect.Field field = JavaUtil.unwrapJavaObject(self);
-            return convertJavaToUsableRubyObject(context.runtime, field.getName());
+            return convertJavaToUsableRubyObject(context.runtime, field.getType().getName());
         }
 
         @JRubyMethod // alias value get
