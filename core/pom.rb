@@ -172,7 +172,7 @@ project 'JRuby Base' do
   plugin( :compiler,
           'encoding' => 'utf-8',
           'debug' => 'true',
-          'verbose' => 'true',
+          'verbose' => 'false',
           'fork' => 'true',
           'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',

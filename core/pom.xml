@@ -506,7 +506,7 @@ DO NOT MODIFIY - GENERATED CODE
         <configuration>
           <encoding>utf-8</encoding>
           <debug>true</debug>
-          <verbose>true</verbose>
+          <verbose>false</verbose>
           <fork>true</fork>
           <compilerArgs>
             <arg>-J-Xmx1G</arg>
