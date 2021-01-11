@@ -1081,6 +1081,19 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         values = vals;
     }
 
+    private void unshiftRealloc(int valuesLength) {
+        final long newLength = valuesLength << 1;
+        if (newLength >= Integer.MAX_VALUE) {
+            throw getRuntime().newIndexError("index " + newLength + " too big");
+        }
+        final int newBegin = valuesLength - 1;
+        IRubyObject[] reallocated = IRubyObject.array((int) newLength);
+        safeArrayCopy(values, begin, reallocated, valuesLength, valuesLength);
+        Helpers.fillNil(reallocated, 0, newBegin, metaClass.runtime);
+        values = reallocated;
+        begin = newBegin;
+    }
+
     public IRubyObject insert() {
         throw metaClass.runtime.newArgumentError(0, 1);
     }
@@ -1406,16 +1419,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (begin == 0 || isShared) {
             modify();
             final int valuesLength = values.length - begin;
-            if (realLength == valuesLength) {
-                int newLength = valuesLength >> 1;
-                if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
-
-                newLength += valuesLength;
-                IRubyObject[] vals = IRubyObject.array(newLength);
-                safeArrayCopy(values, begin, vals, 1, valuesLength);
-                Helpers.fillNil(vals, valuesLength + 1, newLength, metaClass.runtime);
-                values = vals;
-                begin = 0;
+            if (valuesLength == 0) {
+                alloc(ARRAY_DEFAULT_SIZE);
+                begin = ARRAY_DEFAULT_SIZE - 1;
+            } else if (realLength == valuesLength) {
+                unshiftRealloc(valuesLength);
             } else {
                 safeArrayCopy(values, begin, values, begin + 1, realLength);
             }
