@@ -298,7 +298,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return context.runtime.newString("<Pathname:" + getPath() + ">");
+        return context.runtime.newString("#<Pathname:" + getPath() + ">");
     }
 
     @JRubyMethod(required = 1, optional = 1, reads = BACKREF, writes = BACKREF)
