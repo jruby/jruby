@@ -277,6 +277,12 @@ public class Helpers {
             return Errno.EINVAL;
         } catch (IllegalArgumentException nrce) {
             return Errno.EINVAL;
+        } catch (IOException ioe) {
+            String message = ioe.getMessage();
+            // Raised on Windows for process launch with missing file
+            if (message.endsWith("The system cannot find the file specified")) {
+                return Errno.ENOENT;
+            }
         } catch (Throwable t2) {
             // fall through
         }

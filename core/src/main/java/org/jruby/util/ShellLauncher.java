@@ -818,33 +818,17 @@ public class ShellLauncher {
             }
 
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
-            LaunchConfig lc = new LaunchConfig(runtime, strings, false);
-            boolean useShell = Platform.IS_WINDOWS ? lc.shouldRunInShell() : false;
+            LaunchConfig cfg = new LaunchConfig(runtime, strings, true);
+            boolean useShell = Platform.IS_WINDOWS ? cfg.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
 
-            if (strings.length == 1) {
-                if (useShell) {
-                    // single string command, pass to sh to expand wildcards
-                    String[] argArray = new String[3];
-                    argArray[0] = shell;
-                    argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-                    argArray[2] = strings[0].asJavaString();
-                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
-                } else {
-                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
-                }
+            if (useShell) {
+                cfg.verifyExecutableForShell();
             } else {
-                if (useShell) {
-                    String[] argArray = new String[args.length + 2];
-                    argArray[0] = shell;
-                    argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-                    System.arraycopy(args, 0, argArray, 2, args.length);
-                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
-                } else {
-                    // direct invocation of the command
-                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
-                }
+                cfg.verifyExecutableForDirect();
             }
+
+            childProcess = buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }
