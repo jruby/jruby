@@ -59,6 +59,7 @@ import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.FilenoUtil;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.Channel;
@@ -337,10 +338,12 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             throw runtime.newArgumentError("too long unix socket path (max: " + maxSize + "bytes)");
         }
 
+        Closeable closeable = null;
         try {
             if (server) {
                 UnixServerSocketChannel channel = UnixServerSocketChannel.open();
                 UnixServerSocket socket = channel.socket();
+                closeable = channel;
 
                 // TODO: listen backlog
 
@@ -356,6 +359,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                 }
 
                 UnixSocketChannel channel = UnixSocketChannel.open();
+                closeable = channel;
 
                 channel.connect(new UnixSocketAddress(fpathFile));
 
@@ -363,8 +367,15 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
             }
 
+            // initialized cleanly, clear closeable
+            closeable = null;
+
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
+        } finally {
+            if (closeable != null) {
+                try {closeable.close();} catch (IOException ioe2) {}
+            }
         }
     }
 
