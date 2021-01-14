@@ -62,16 +62,15 @@ public class Mutex extends RubyObject implements DataType {
         super(runtime, type);
     }
 
-    public static void setup(Ruby runtime) {
-        RubyClass cMutex = runtime.getThread().defineClassUnder("Mutex", runtime.getObject(), new ObjectAllocator() {
+    public static RubyClass setup(RubyClass threadClass, RubyClass objectClass) {
+        RubyClass cMutex = threadClass.defineClassUnder("Mutex", objectClass, Mutex::new);
 
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new Mutex(runtime, klass);
-            }
-        });
         cMutex.setReifiedClass(Mutex.class);
         cMutex.defineAnnotatedMethods(Mutex.class);
-        runtime.getObject().setConstant("Mutex", cMutex);
+
+        objectClass.setConstant("Mutex", cMutex);
+
+        return cMutex;
     }
 
     @JRubyMethod(name = "locked?")

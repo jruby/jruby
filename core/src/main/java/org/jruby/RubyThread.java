@@ -2298,7 +2298,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         synchronized (recv) {
             mutex = (Mutex) recv.getConstantNoConstMissing(MUTEX_FOR_THREAD_EXCLUSIVE, false, false);
             if (mutex == null) {
-                mutex = Mutex.newInstance(context, context.runtime.getThread().getClass("Mutex"), NULL_ARRAY, Block.NULL_BLOCK);
+                mutex = Mutex.newInstance(context, context.runtime.getMutex(), NULL_ARRAY, Block.NULL_BLOCK);
                 recv.setConstant(MUTEX_FOR_THREAD_EXCLUSIVE, mutex, true);
             }
             return mutex;
