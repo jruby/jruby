@@ -33,19 +33,6 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>bundler</artifactId>
-      <version>1.17.3</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>jar-dependencies</artifactId>
-          <groupId>rubygems</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>cmath</artifactId>
       <version>1.0.0</version>
       <type>gem</type>
@@ -544,6 +531,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>lib/ruby/stdlib/**</include>
         </includes>
         <excludes>
+          <exclude>bin/ruby</exclude>
           <exclude>bin/jruby</exclude>
           <exclude>bin/jruby*_*</exclude>
           <exclude>bin/jruby*-*</exclude>

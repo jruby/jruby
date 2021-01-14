@@ -15,7 +15,7 @@ def log(message=nil)
 end
 
 default_gems = [
-    ['bundler', '1.17.3'],
+    # Bundler is shipped with RubyGems
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],
     ['e2mmap', '0.1.0'],
