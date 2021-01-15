@@ -171,8 +171,15 @@ public class ChannelFD implements Closeable {
 
         if (chNative != null) {
             // we have an ENXIO channel, but need to know if it's a regular file to skip selection
-            FileStat stat = posix.fstat(chNative.getFD());
-            if (stat.isFile()) {
+            boolean isFile = false;
+            try {
+                isFile = posix.fstat(chNative.getFD()).isFile();
+            } catch (Exception e) {
+                // If fstat doesn't work, it is unlikely to be a normal file.
+                // See GH-6129, inotify fd raises EPERM when calling fstat under WSL
+            }
+
+            if (isFile) {
                 chSelect = null;
                 isNativeFile = true;
             }
