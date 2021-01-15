@@ -56,7 +56,7 @@ project 'JRuby Base' do
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
-  jar 'com.headius:options:1.4'
+  jar 'com.headius:options:1.5'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
