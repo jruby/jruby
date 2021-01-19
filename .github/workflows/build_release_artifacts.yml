@@ -17,5 +17,11 @@ jobs:
       uses: actions/setup-java@v1.4.3
       with:
         java-version: 1.8
+        server-id: sonatype-nexus-snapshots
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_PASSWORD
     - name: Build release artifacts
-      run: mvn clean package -Prelease
+      run: mvn -B clean deploy -Prelease
+      env:
+        MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
