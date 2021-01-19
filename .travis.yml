@@ -247,7 +247,7 @@ matrix:
       name: deploy snapshots
       script:
         - cp .travis-maven-settings.xml $HOME/.m2/settings.xml
-        - ./mvnw clean deploy -Prelease
+        - ./mvnw -B clean deploy -Prelease
       if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.2) # only master and maintenance pushes
 
   allow_failures:
