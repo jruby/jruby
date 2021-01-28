@@ -131,8 +131,8 @@ describe "Kernel.rand" do
       x3 = Random.new(seed).rand(0.0..1)
 
       x3.should be_kind_of(Float)
-      x1.should equal(x3)
-      x2.should equal(x3)
+      x1.should eql(x3)
+      x2.should eql(x3)
 
       (0.0..1.0).should include(x3)
     end
@@ -152,8 +152,8 @@ describe "Kernel.rand" do
       x3 = Random.new(seed).rand(0.0...1)
 
       x3.should be_kind_of(Float)
-      x1.should equal(x3)
-      x2.should equal(x3)
+      x1.should eql(x3)
+      x2.should eql(x3)
 
       (0.0...1.0).should include(x3)
     end
