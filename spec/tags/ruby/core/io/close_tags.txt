@@ -1,2 +1,1 @@
 unstable(JRUBY-4110,linux,intermittent failure):IO#close on an IO.popen stream sets $?
-critical(race in spec, https://github.com/ruby/spec/issues/828):IO#close raises an IOError with a clear message
