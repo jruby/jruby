@@ -155,7 +155,23 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, this == obj || eql(obj));
+        long value = this.value;
+
+        if (fixnumable(value)) {
+            return RubyBoolean.newBoolean(context, this == obj || eql(obj));
+        }
+
+        return super.equal_p(context, obj);
+    }
+
+    /**
+     * Determine whether the given long value is in fixnum range.
+     *
+     * @param value the value in question
+     * @return true if the value is in fixnum range, false otherwise
+     */
+    private static boolean fixnumable(long value) {
+        return value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2;
     }
 
     @Override
@@ -1386,7 +1402,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject id() {
-        if (value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2) {
+        long value = this.value;
+
+        if (fixnumable(value)) {
             return newFixnum(metaClass.runtime, 2 * value + 1);
         }
 
