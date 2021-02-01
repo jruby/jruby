@@ -1461,10 +1461,13 @@ public class RubyProcess {
 
     @JRubyMethod(name = "detach", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject detach(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        final int pid = (int)arg.convertToInteger().getLongValue();
+        final long pid = arg.convertToInteger().getLongValue();
         Ruby runtime = context.runtime;
 
         BlockCallback callback = (ctx, args, block) -> {
+            // push a dummy frame to avoid AIOOB if an exception fires
+            ctx.pushFrame();
+
             while (waitpid(ctx.runtime, pid, 0) == 0) {}
 
             return last_status(ctx, recv);
