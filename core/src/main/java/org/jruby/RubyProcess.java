@@ -916,6 +916,8 @@ public class RubyProcess {
 
         pid = waitpid(runtime, pid, flags);
 
+        checkErrno(runtime, pid, ECHILD);
+
         if (pid == 0) {
             return runtime.getNil();
         }
@@ -923,6 +925,7 @@ public class RubyProcess {
         return runtime.newFixnum(pid);
     }
 
+    // MRI: rb_waitpid
     public static long waitpid(Ruby runtime, long pid, int flags) {
         int[] status = new int[1];
         POSIX posix = runtime.getPosix();
@@ -931,8 +934,6 @@ public class RubyProcess {
         posix.errno(0);
 
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
-
-        checkErrno(runtime, res, ECHILD);
 
         if (res > 0) {
             context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res));
@@ -1694,15 +1695,15 @@ public class RubyProcess {
     };
 
     private static int checkErrno(Ruby runtime, int result) {
-        return checkErrno(runtime, result, IGNORE);
+        return (int) checkErrno(runtime, result, IGNORE);
     }
 
-    private static int checkErrno(Ruby runtime, int result, NonNativeErrno nonNative) {
+    private static long checkErrno(Ruby runtime, long result, NonNativeErrno nonNative) {
         if (result == -1) {
             if (runtime.getPosix().isNative()) {
                 raiseErrnoIfSet(runtime, nonNative);
             } else {
-                nonNative.handle(runtime, result);
+                nonNative.handle(runtime, (int) result);
             }
         }
         return result;
