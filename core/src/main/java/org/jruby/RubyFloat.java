@@ -57,6 +57,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
+import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
 
 import static org.jruby.util.Numeric.f_abs;
@@ -650,6 +651,14 @@ public class RubyFloat extends RubyNumeric {
         return metaClass.runtime.newBoolean( equals(other) );
     }
 
+    /**
+     * short circuit for Float key comparison
+     */
+    @Override
+    public final boolean eql(IRubyObject other) {
+        return equals(other);
+    }
+
     @Override
     public boolean equals(Object other) {
         return (other instanceof RubyFloat) && equals((RubyFloat) other);
@@ -1204,6 +1213,87 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "prev_float")
     public IRubyObject prev_float() {
         return RubyFloat.newFloat(metaClass.runtime, Math.nextAfter(value, Double.NEGATIVE_INFINITY));
+    }
+
+    /**
+     * Produce an object ID for this Float.
+     *
+     * Values within the "flonum" range will produce a special object ID that emulates the CRuby tagged "flonum" pointer
+     * logic. This ID is never registered but can be reversed by ObjectSpace._id2ref using the same bit manipulation as
+     * in CRuby.
+     *
+     * @return the object ID for this Float
+     */
+    @Override
+    public IRubyObject id() {
+        long longBits = Double.doubleToLongBits(value);
+        long flonum;
+
+        // calculate flonum to use for ID, or fall back on default incremental ID
+        if (flonumRange(longBits)) {
+            flonum = (Numeric.rotl(longBits, 3) & ~0x01) | 0x02;
+        } else if (positiveZero(longBits)) {
+            flonum = 0x8000000000000002L;
+        } else {
+            return super.id();
+        }
+
+        return RubyFixnum.newFixnum(metaClass.runtime, flonum);
+    }
+
+    /**
+     * Compare this Float object with the given object and determine whether they are effectively identical.
+     *
+     * This logic for Float considers all values in the "flonum" range to be identical, since in CRuby they would have
+     * the same pointer value (a tagged "flonum" pointer). We do not support flonums, but emulate this behavior for
+     * compatibility.
+     *
+     * @param context the current context
+     * @param obj the object with which to compare
+     * @return true if this Float and the given object are effectively identical, false otherwise
+     */
+    @Override
+    public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
+        // if flonum, simlulate identity
+        if (flonumable(value)) {
+            return RubyBoolean.newBoolean(context, this == obj || eql(obj));
+        } else {
+            return super.equal_p(context, obj);
+        }
+    }
+
+    /**
+     * Determine if the given double value is representable as a "flonum", a bit-manipulated version of itself that
+     * emulates the CRuby "flonum" tagged pointer.
+     *
+     * @param value the double value in question
+     * @return true of the value can be represented as a "flonum", false otherwise
+     */
+    private static boolean flonumable(double value) {
+        long longBits = Double.doubleToLongBits(value);
+        return flonumRange(longBits) || positiveZero(longBits);
+    }
+
+    /**
+     * Determine if the given double bits are in the "flonum" range, excluding positive zero.
+     *
+     * @param longBits the bits of the double in question
+     * @return true if the double is in the non-zero "flonum" range, false otherwise
+     */
+    private static boolean flonumRange(long longBits) {
+        int bits = (int)((longBits >>> 60) & 0x7);
+        return longBits != 0x3000000000000000L /* 1.72723e-77 */
+                && ((bits-3) & ~0x01) == 0;
+    }
+
+    /**
+     * Determine of the given double bits represent positive zero.
+     *
+     * @param longBits the bits of the double in question
+     * @return true of the bits represent positive zero, false otherwise
+     */
+    private static boolean positiveZero(long longBits) {
+        return longBits == 0;
     }
 
     @Deprecated
