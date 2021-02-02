@@ -85,15 +85,7 @@ io/wait/test_io_wait.rb
 io/nonblock/test_flush.rb
 io/console/test_io_console.rb
 
-json/json_addition_test.rb
-json/json_common_interface_test.rb
-json/json_encoding_test.rb
-json/json_ext_parser_test.rb
-json/json_fixtures_test.rb
-json/json_generator_test.rb
-json/json_generic_object_test.rb
-json/json_parser_test.rb
-json/json_string_matching_test.rb
+json
 
 logger/test_logger.rb
 
