@@ -118,7 +118,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby-launcher.version>1.1.6</jruby-launcher.version>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <jruby.plugins.version>1.0.10</jruby.plugins.version>
-    <json.version>2.2.0</json.version>
+    <json.version>2.5.1</json.version>
     <main.basedir>${project.basedir}</main.basedir>
     <minitest.version>5.10.3</minitest.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
