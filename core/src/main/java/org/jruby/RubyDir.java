@@ -533,7 +533,7 @@ public class RubyDir extends RubyObject implements Closeable {
 	        }
         }
 
-        if (encoding == null) encoding = context.runtime.getDefaultFilesystemEncoding();
+        if (encoding == null) encoding = context.runtime.getDefaultEncoding();
 
         return encoding;
     }
