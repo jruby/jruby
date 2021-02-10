@@ -1,10 +1,14 @@
 package org.jruby.util.io;
 
+import jnr.constants.platform.Errno;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
+import org.jruby.RubySystemCallError;
+import org.jruby.exceptions.SystemCallError;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -174,9 +178,15 @@ public class ChannelFD implements Closeable {
             boolean isFile = false;
             try {
                 isFile = posix.fstat(chNative.getFD()).isFile();
-            } catch (Exception e) {
-                // If fstat doesn't work, it is unlikely to be a normal file.
-                // See GH-6129, inotify fd raises EPERM when calling fstat under WSL
+            } catch (SystemCallError e) {
+                // We check for EPERM due to GH-6129, and because it has only been seen on WSL inotify file descriptors
+                // we assume that it means this is not a normal file.
+                IRubyObject errno = ((RubySystemCallError) e.getException()).errno();
+                if (errno.isNil()
+                        || errno.convertToInteger().getIntValue() != Errno.EPERM.intValue()) {
+                    // rethrow anything not EPERM
+                    throw e;
+                }
             }
 
             if (isFile) {
