@@ -916,11 +916,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 }
             }
         } else {
-            ChannelFD descriptor = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
+            fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
 
-            if (descriptor == null) throw runtime.newErrnoEBADFError();
-
-            fd = descriptor;
+            if (fd == null) throw runtime.newErrnoEBADFError();
         }
 
         if (!fd.ch.isOpen()) {
