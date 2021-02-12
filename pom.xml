@@ -128,11 +128,7 @@ DO NOT MODIFIY - GENERATED CODE
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <rake.version>12.3.2</rake.version>
     <rdoc.version>6.1.2</rdoc.version>
-    <rspec-core.version>3.7.0</rspec-core.version>
-    <rspec-expectations.version>3.7.0</rspec-expectations.version>
-    <rspec-mocks.version>3.7.0</rspec-mocks.version>
-    <rspec-support.version>3.7.0</rspec-support.version>
-    <rspec.version>3.7.0</rspec.version>
+    <rspec.version>3.10.0</rspec.version>
     <test-unit.version>3.2.9</test-unit.version>
     <version.jruby>${project.version}</version.jruby>
   </properties>

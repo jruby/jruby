@@ -66,11 +66,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby.plugins.version' => '1.0.10',
 
               'json.version' => '2.5.1',
-              'rspec.version' => '3.7.0',
-              'rspec-core.version' => '3.7.0',
-              'rspec-expectations.version' => '3.7.0',
-              'rspec-mocks.version' => '3.7.0',
-              'rspec-support.version' => '3.7.0',
+              'rspec.version' => '3.10.0',
               'minitest.version' => '5.11.3',
               'test-unit.version' => '3.2.9',
               'power_assert.version' => '1.1.3',
