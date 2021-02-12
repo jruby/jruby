@@ -169,7 +169,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             /* disable line code conversion */
             constants.setConstant("BINARY", runtime.newFixnum(OpenFlags.O_BINARY.intValue()));
         }
-        
+
         constants.setConstant("SHARE_DELETE", runtime.newFixnum(ModeFlags.SHARE_DELETE));
 
         if (OpenFlags.O_SYNC.defined()) {
