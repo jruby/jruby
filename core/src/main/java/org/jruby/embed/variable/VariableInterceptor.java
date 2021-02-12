@@ -236,7 +236,8 @@ public class VariableInterceptor {
     public static void terminateLocalVariables(LocalVariableBehavior behavior, List<String> varNames, List<BiVariable> variables) {
         if (variables == null) return;
         if (LocalVariableBehavior.TRANSIENT == behavior) {
-            for (int i = 0; i < variables.size(); i++) {
+            // count down since we delete as we go
+            for (int i = variables.size() - 1; i >= 0 ; i--) {
                 if (BiVariable.Type.LocalVariable == variables.get(i).getType()) {
                     varNames.remove(i);
                     variables.remove(i);
