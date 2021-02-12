@@ -96,15 +96,26 @@ public abstract class IOChannel implements Channel {
 
     protected int write(CallSite write, ByteBuffer src) throws IOException {
         ByteList buffer;
+        int position = src.position();
 
+        // wrap buffer contents with ByteList
         if (src.hasArray()) {
-            buffer = new ByteList(src.array(), src.position(), src.remaining(), true);
+            buffer = new ByteList(src.array(), src.position(), src.remaining(), false);
         } else {
             buffer = new ByteList(src.remaining());
             buffer.append(src, src.remaining());
         }
+
+        // call write with new String based on this ByteList
         IRubyObject written = write.call(runtime.getCurrentContext(), io, io, RubyString.newStringLight(runtime, buffer));
-        return (int)written.convertToInteger().getLongValue();
+        int wrote = written.convertToInteger().getIntValue();
+
+        // advance source buffer to match bytes written
+        if (wrote > 0) {
+            src.position(position + wrote);
+        }
+
+        return wrote;
     }
 
     protected CallSite initReadSite(String readMethod) {
