@@ -4456,10 +4456,16 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             long w = 0;
             while (w < n) {
                 w += to.write(buffer);
+
+                if (to instanceof IOChannel) {
+                    // if this channel is wrapping an IO, we assume write wrote as much as possible (GH-6555)
+                    break;
+                }
             }
             clearBuffer(buffer);
 
-            transferred += n;
+            // add only written count since it may not match read count for a false IO (GH-6555)
+            transferred += w;
             if (length > 0) {
                 length -= n;
                 if (length <= 0) break;
