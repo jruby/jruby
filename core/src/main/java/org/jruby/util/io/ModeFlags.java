@@ -83,7 +83,7 @@ public class ModeFlags implements Cloneable {
      * to also capture what are oflags.
      */
     public static final int TEXT = 0x10000000;
-    /** delete shared file flag for windows */
+    /** delete shared file flag for windows, otherwise zero */
     public static final int SHARE_DELETE = Platform.IS_WINDOWS ? 0x20000000 : 0;
     /** accmode flag, used to mask the read/write mode */
     public static final int ACCMODE = RDWR | WRONLY | RDONLY;
