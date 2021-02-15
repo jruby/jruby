@@ -4374,7 +4374,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
     }
 
-    final RubyArray split(IRubyObject spat, ThreadContext context, boolean useBackref) {
+    final RubyArray split(ThreadContext context, RubyRegexp spat, boolean useBackref) {
         return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
     }
 
