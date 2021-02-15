@@ -99,7 +99,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     }
     
     public final boolean isExportable() {
-    	return exportable;//TODO: just this way to test
+    	return exportable;
     }
 
     public final boolean isVarArgs() { return actualVarArgs; }

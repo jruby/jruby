@@ -216,11 +216,15 @@ class Class
     r_config = JavaConfig.new(config)
     kwargs.each do |k, v|
       case k.to_sym
-      when :methods then config.allMethods = v == :explicit
+      when :methods then
+        raise ArgumentError, "methods expected :all or :explicit, got #{v.inspect}" unless [:all, :explicit].include? v
+        config.allMethods = v == :all
+      when :ctors then
+        raise ArgumentError, "ctors expected :all or :explicit, got #{v.inspect}" unless [:all, :explicit].include? v
+        config.allCtors = v == :all
       when :call_init then config.callInitialize = !!v
       when :java_constructable then config.javaConstructable = !!v
       when :ruby_constructable then config.rubyConstructable = !!v
-      when :ctors then config.allCtors = v == :all
       when :ctor_name then
           config.javaCtorMethodName = v.to_s
           puts "set to #{v.to_s}"

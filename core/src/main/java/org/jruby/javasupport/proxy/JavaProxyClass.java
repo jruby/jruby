@@ -135,7 +135,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         Class[] ifaces = proxyClass.getInterfaces();
         Class[] result = new Class[ifaces.length - 1];
         for ( int i = 0, j = 0; i < ifaces.length; i++ ) {
-        	//TODO: ???
             if ( ifaces[i] == ReifiedJavaProxy.class ) continue;
             result[ j++ ] = ifaces[i];
         }
@@ -518,19 +517,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_MODULES.add("Enumerable");
     }
 
-    // TOOD: copy over
-    private static boolean isExcludedMethod(final String name) {
-        switch (name) {
-            case "class" : return true;
-            case "finalize" : return true;
-            case "initialize" : return true;
-            case "java_class" : return true;
-            case "java_object" : return true;
-            case "__jcreate!" : return true;
-            default: return false;
-        }
-    }
-
     @JRubyMethod(meta = true)
     public static RubyObject get_with_class(final IRubyObject self, IRubyObject obj) {
         final Ruby runtime = self.getRuntime();
@@ -580,151 +566,29 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
      * These objects are to allow static initializers in reified code. See RubyClass.BaseReifier for 
      * details
      */
-    private static final AtomicInteger lookupIdNext = new AtomicInteger(0);
-    private static final Map<Integer, Object[]> lookup = new ConcurrentHashMap<>();
+    private static final ThreadLocal<Object[]> lookup = new ThreadLocal<>();
     
     public static Integer addStaticInitLookup(Object... objects)
     {
-    	int val = lookupIdNext.incrementAndGet();
-    	lookup.put(val, objects);
+    	int val = objects.hashCode();
+    	// TODO: is this a log or an exception?
+    	if (lookup.get() != null) throw new IllegalStateException("Thread local class wasn't consumed");
+    	lookup.set(objects);
     	return val;
     }
     // used by reified code in RubyClass
     public static Object[] getStaticInitLookup(int id)
     {
-    	return lookup.remove(id);
+    	if (lookup.get() == null) throw new IllegalStateException("Thread local class wasn't set up for reification");
+    	if (lookup.get().hashCode() != id) throw new IllegalStateException("Thread local class wasn't was reification was expecting");
+    	Object[] o = lookup.get();
+    	lookup.set(null);
+    	return o;
     }
 
     public static JavaProxyClass getProxyClass(final Ruby runtime, final RubyClass clazz) {
-    	
-    	try
-    	{
     	clazz.reifyWithAncestors();
-    	JavaProxyClass jpc = (JavaProxyClass) clazz.getInstanceVariable("@java_proxy_class");
-    	if (5>4)
-    		return jpc;
-    	}
-    	catch (RaiseException e) {
-            throw e;
-        }
-        catch (Exception e) {
-            String msg = e.getLocalizedMessage();
-            if ( msg == null ) msg = e.toString();
-            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + clazz.getName() + " : " + msg);
-            ex.initCause(e);
-            ex.printStackTrace();
-            throw ex;
-        }
-    	
-    	
-    	// TODO: ensure none of the below code matters, and trim below here
-    	
-        // Let's only generate methods for those the user may actually intend to override.
-        // That includes any defined in the current class, and any ancestors that are also JavaProxyClasses
-        // (but none from any other ancestor classes). Methods defined in mixins will be considered
-        // intentionally overridden, except those from Kernel, Java, and JavaProxyMethods, as well as Enumerable.
-        // TODO: may want to exclude other common mixins?
-
-        JavaClass javaClass = null;
-        HashSet<String> names = new HashSet<>(); // need names ordered for key generation later
-        Collection<Class<?>> interfaceList = new LinkedHashSet<>(8);
-
-        boolean skipRemainingClasses = false;
-        for ( IRubyObject ancestorObject: clazz.getAncestorList() ) {
-            RubyModule ancestor = (RubyModule) ancestorObject;
-            if (ancestor instanceof RubyClass) {
-                if (skipRemainingClasses) continue;
-                // we only collect methods and interfaces for
-                // user-defined proxy classes.
-                if (!ancestor.getInstanceVariables().hasInstanceVariable("@java_proxy_class")) {
-                    skipRemainingClasses = true;
-                    continue;
-                }
-
-                // get JavaClass if this is the new proxy class; verify it
-                // matches if this is a superclass proxy.
-                IRubyObject var = ancestor.getInstanceVariables().getInstanceVariable("@java_class");
-                if ( ! (var instanceof JavaClass) ) {
-                    if (var == null) {
-                        throw runtime.newTypeError("no java_class defined for proxy (or ancestor): " + ancestor);
-                    }
-                    throw runtime.newTypeError("invalid java_class defined for proxy (or ancestor): " + ancestor + ": " + var);
-                }
-                if (javaClass == null) javaClass = (JavaClass) var;
-                else if (javaClass != var) {
-                    throw runtime.newTypeError("java_class defined for " + clazz + " (" + javaClass +
-                            ") does not match java_class for ancestor " + ancestor + " (" + var + ")");
-                }
-                // get any included interfaces
-                var = ancestor.getInstanceVariables().getInstanceVariable("@java_interfaces");
-                if (var != null && !(var instanceof RubyNil)) {
-                    if (!(var instanceof RubyArray)) {
-                        throw runtime.newTypeError("invalid java_interfaces defined for proxy (or ancestor): " + ancestor + ": " + var);
-                    }
-                    RubyArray interfaces = (RubyArray) var;
-                    for (int i = interfaces.size(); --i >= 0; ) {
-                        IRubyObject iface = interfaces.eltInternal(i);
-                        Class interfaceClass = ((JavaClass) iface).javaClass();
-                        if (!interfaceClass.isInterface()) {
-                            throw runtime.newTypeError("invalid java interface defined for proxy (or ancestor): " +
-                                    ancestor + ": " + iface + " (not an interface)");
-                        }
-                        interfaceList.add(interfaceClass);
-                    }
-                }
-                // set this class's method names in var @__java_ovrd_methods if this
-                // is the new class; otherwise, get method names from there if this is
-                // a proxy superclass.
-
-                // FIXME: shouldn't need @__java_ovrd_methods, just query locally defined methods.
-
-                Collection<String> methodNames = (Collection<String>) ancestor.getInternalVariable("__java_ovrd_methods");
-
-                if (methodNames == null) {
-                    // lock in the overridden methods for the new class, and any as-yet uninstantiated ancestor class.
-                    Map<String, DynamicMethod> methods;
-                    synchronized(methods = ancestor.getMethods()) {
-                        methodNames = new ArrayList<>(methods.size());
-                        for (String id: methods.keySet()) {
-                            if (! isExcludedMethod(id)) {
-                                names.add(id);
-                                methodNames.add(id);
-                            }
-                        }
-                    }
-                    ancestor.setInternalVariable("__java_ovrd_methods", methodNames);
-                } else {
-                    names.addAll(methodNames);
-                }
-            } else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
-                Map<String, DynamicMethod> methods;
-                synchronized(methods = ancestor.getMethods()) {
-                    for (String id: methods.keySet()) {
-                        if (! isExcludedMethod(id)) names.add(id);
-                    }
-                }
-            }
-        }
-
-        if (javaClass == null) throw runtime.newArgumentError("unable to create proxy class: no java_class defined for " + clazz);
-
-        Class<?>[] interfaces = interfaceList.isEmpty() ? EMPTY_CLASS_ARRAY : interfaceList.toArray(new Class<?>[interfaceList.size()]);
-
-        try {
-        	throw new RuntimeException("Old Concrete called");
-            //return null;
-        }
-        catch (RaiseException e) {
-            throw e;
-        }
-        catch (Exception e) {
-        	
-            String msg = e.getLocalizedMessage();
-            if ( msg == null ) msg = e.toString();
-            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + javaClass + " : " + msg);
-            ex.initCause(e);
-            throw ex;
-        }
+    	return (JavaProxyClass) clazz.getInstanceVariable("@java_proxy_class");
     }
 
     @JRubyMethod

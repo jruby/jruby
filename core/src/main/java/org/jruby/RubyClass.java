@@ -39,6 +39,7 @@ import static org.objectweb.asm.Opcodes.*;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.jruby.anno.*;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -173,7 +174,7 @@ public class RubyClass extends RubyModule {
      * @note Used with `jrubyc --java` generated (interoperability) class files.
      * @note Used with new concrete extension.
      */
-    public void setRubyStaticAllocator(final Class<? extends Reified> clazz) {
+    public void setRubyStaticAllocator(final Class<?> clazz) {
         try {
             final Method method = clazz.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
 
@@ -189,7 +190,7 @@ public class RubyClass extends RubyModule {
                 }
             };
 
-            this.reifiedClass = clazz;
+            this.reifiedClass = (Class<? extends Reified>) clazz;
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
@@ -836,18 +837,18 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private void generateMethodAnnotations(Map<Class, Map<String, Object>> methodAnnos, SkinnyMethodAdapter m, List<Map<Class, Map<String, Object>>> parameterAnnos) {
+    private void generateMethodAnnotations(Map<Class<?>, Map<String, Object>> methodAnnos, SkinnyMethodAdapter m, List<Map<Class<?>, Map<String, Object>>> parameterAnnos) {
         if (methodAnnos != null && methodAnnos.size() != 0) {
-            for (Map.Entry<Class, Map<String, Object>> entry : methodAnnos.entrySet()) {
+            for (Map.Entry<Class<?>, Map<String, Object>> entry : methodAnnos.entrySet()) {
                 m.visitAnnotationWithFields(ci(entry.getKey()), true, entry.getValue());
             }
         }
         if (parameterAnnos != null && parameterAnnos.size() != 0) {
             for (int i = 0; i < parameterAnnos.size(); i++) {
-                Map<Class, Map<String, Object>> annos = parameterAnnos.get(i);
+                Map<Class<?>, Map<String, Object>> annos = parameterAnnos.get(i);
                 if (annos != null && annos.size() != 0) {
-                    for (Iterator<Map.Entry<Class, Map<String, Object>>> it = annos.entrySet().iterator(); it.hasNext();) {
-                        Map.Entry<Class, Map<String, Object>> entry = it.next();
+                    for (Iterator<Map.Entry<Class<?>, Map<String, Object>>> it = annos.entrySet().iterator(); it.hasNext();) {
+                        Map.Entry<Class<?>, Map<String, Object>> entry = it.next();
                         m.visitParameterAnnotationWithFields(i, ci(entry.getKey()), true, entry.getValue());
                     }
                 }
@@ -966,13 +967,7 @@ public class RubyClass extends RubyModule {
         
 
         // copy over reify options
-        javaClassConfiguration = originalClazz.javaClassConfiguration;//TODO: Dup
-        classAnnotations = originalClazz.classAnnotations; // TODO: dup
-        fieldSignatures = originalClazz.fieldSignatures; // TODO: dup
-        methodSignatures = originalClazz.methodSignatures; // TODO: dup
-        fieldAnnotations = originalClazz.fieldAnnotations; // TODO: dup
-        methodAnnotations = originalClazz.methodAnnotations; // TODO: dup
-        parameterAnnotations = originalClazz.parameterAnnotations; // TODO: dup
+        javaClassConfiguration = originalClazz.javaClassConfiguration.clone();
         
         // copy over reified class if applicable
 
@@ -1338,7 +1333,7 @@ public class RubyClass extends RubyModule {
         final String javaName = "rubyobj." + StringSupport.replaceAll(name, "::", ".");
         final String javaPath = "rubyobj/" + StringSupport.replaceAll(name, "::", "/");
 
-        final Class<?> parentReified = superClass.getRealClass().getReifiedAnyClass();
+        final Class<?> parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
             throw getClassRuntime().newTypeError(getName() + "'s parent class is not yet reified");
         }
@@ -1378,9 +1373,9 @@ public class RubyClass extends RubyModule {
 
             //Trigger initilization
             @SuppressWarnings("unchecked")
-            java.lang.reflect.Field rt = result.getDeclaredField("ruby");
+            java.lang.reflect.Field rt = result.getDeclaredField(BaseReificator.RUBY_FIELD);
             rt.setAccessible(true);
-            if (rt.get(null) == null)
+            if (rt.get(null) != runtime)
             	throw new RuntimeException("No ruby field set!");
 
             if (concreteExt)
@@ -1465,6 +1460,9 @@ public class RubyClass extends RubyModule {
         protected final JavaClassConfiguration jcc;
         protected final ClassWriter cw;
 
+        public final static String RUBY_FIELD = "ruby";
+        public final static String RUBY_CLASS_FIELD = "rubyClass"; 
+
         BaseReificator(Class<?> reifiedParent, String javaName, String javaPath, String rubyName, String rubyPath) {
             this.reifiedParent = reifiedParent;
             this.javaName = javaName;
@@ -1482,8 +1480,8 @@ public class RubyClass extends RubyModule {
         public byte[] reify() {
 
             // fields to hold Ruby and RubyClass references
-            cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null);
-            cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null);
+            cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_FIELD, ci(Ruby.class), null, null);
+            cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CLASS_FIELD, ci(RubyClass.class), null, null);
 
             
             reifyConstructors();
@@ -1507,7 +1505,6 @@ public class RubyClass extends RubyModule {
         public abstract void customReify();
 
         private String[] interfaces() {
-        	//TODO: filter interfaces as per old code?
             final Class[] interfaces = Java.getInterfacesFromRubyClass(RubyClass.this);
             final String[] interfaceNames = new String[interfaces.length + 1];
             // mark this as a Reified class
@@ -1553,8 +1550,8 @@ public class RubyClass extends RubyModule {
             	// no-arg constructor using static references to Ruby and RubyClass. For use by java
 	            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
 	            m.aload(0); // uninitialized this
-	            m.getstatic(javaPath, "ruby", ci(Ruby.class));
-	            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+	            m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
+	            m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
 	            allocAndInitialize(m, true);
             }
         }
@@ -1565,7 +1562,7 @@ public class RubyClass extends RubyModule {
             if (jcc.callInitialize && initIfAllowed) // if we want to initialize
             {
             	m.aload(0); // initialized this
-            	m.ldc("initialize"); // TODO: consts?
+            	m.ldc(jcc.javaCtorMethodName);
                 rubycall(m, sig(IRubyObject.class, String.class) );
             }
             m.voidreturn();
@@ -1605,9 +1602,9 @@ public class RubyClass extends RubyModule {
         }
 
         private void addClassAnnotations() {
-            if (classAnnotations != null && !classAnnotations.isEmpty()) {
-                for (Map.Entry<Class,Map<String,Object>> entry : classAnnotations.entrySet()) {
-                    Class annoType = entry.getKey();
+            if (jcc.classAnnotations != null && !jcc.classAnnotations.isEmpty()) {
+                for (Map.Entry<Class<?>,Map<String,Object>> entry : jcc.classAnnotations.entrySet()) {
+                    Class<?> annoType = entry.getKey();
                     Map<String,Object> fields = entry.getValue();
 
                     AnnotationVisitor av = cw.visitAnnotation(ci(annoType), true);
@@ -1618,18 +1615,17 @@ public class RubyClass extends RubyModule {
         }
 
         private void defineFields() {
-            for (Map.Entry<String, Class> fieldSignature : getFieldSignatures().entrySet()) {
+            for (Map.Entry<String, Class<?>> fieldSignature : getFieldSignatures().entrySet()) {
                 String fieldName = fieldSignature.getKey();
-                Class type = fieldSignature.getValue();
-                Map<Class, Map<String, Object>> fieldAnnos = getFieldAnnotations().get(fieldName);
+                Class<?> type = fieldSignature.getValue();
+                Map<Class<?>, Map<String, Object>> fieldAnnos = getFieldAnnotations().get(fieldName);
 
-                // TODO: public?
                 FieldVisitor fieldVisitor = cw.visitField(ACC_PUBLIC, fieldName, ci(type), null, null);
 
                 if (fieldAnnos == null) continue;
 
-                for (Map.Entry<Class, Map<String, Object>> fieldAnno : fieldAnnos.entrySet()) {
-                    Class annoType = fieldAnno.getKey();
+                for (Map.Entry<Class<?>, Map<String, Object>> fieldAnno : fieldAnnos.entrySet()) {
+                    Class<?> annoType = fieldAnno.getKey();
                     AnnotationVisitor av = fieldVisitor.visitAnnotation(ci(annoType), true);
                     CodegenUtils.visitAnnotationFields(av, fieldAnno.getValue());
                 }
@@ -1650,9 +1646,9 @@ public class RubyClass extends RubyModule {
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
                 if (position.getLine() > 1) cw.visitSource(position.getFile(), null);
 
-                Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(id);
-                List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(id);
-                Class[] methodSignature = getMetaClass().getMethodSignatures().get(id);
+                Map<Class<?>,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(id);
+                List<Map<Class<?>,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(id);
+                Class<?>[] methodSignature = getMetaClass().getMethodSignatures().get(id);
 
                 String signature;
                 if (methodSignature == null) {
@@ -1667,7 +1663,7 @@ public class RubyClass extends RubyModule {
                             m.line(position.getLine());
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
-                            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                            m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
                             m.ldc(id);
                             m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
                             break;
@@ -1678,7 +1674,7 @@ public class RubyClass extends RubyModule {
                             m.line(position.getLine());
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
-                            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                            m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
                             m.ldc(id);
                             m.aload(0); // load the parameter array
                             m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
@@ -1688,7 +1684,7 @@ public class RubyClass extends RubyModule {
                 else { // generate a real method signature for the method, with to/from coercions
 
                     // indices for temp values
-                    Class[] params = new Class[methodSignature.length - 1];
+                    Class<?>[] params = new Class[methodSignature.length - 1];
                     System.arraycopy(methodSignature, 1, params, 0, params.length);
                     final int baseIndex = RealClassGenerator.calcBaseIndex(params, 0);
                     int rubyIndex = baseIndex;
@@ -1699,10 +1695,10 @@ public class RubyClass extends RubyModule {
                     m.line(position.getLine());
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
-                    m.getstatic(javaPath, "ruby", ci(Ruby.class));
+                    m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
                     m.astore(rubyIndex);
 
-                    m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                    m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
 
                     m.ldc(id); // method name
                     RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
@@ -1739,14 +1735,14 @@ public class RubyClass extends RubyModule {
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
                 if (position.getLine() > 1) cw.visitSource(position.getFile(), null);
 
-                Class[] methodSignature = getMethodSignatures().get(callid); // ruby side, use callid
+                Class<?>[] methodSignature = getMethodSignatures().get(callid); // ruby side, use callid
                 
                 // for concrete extension, see if the method is one we are overriding,
                 // even if we didn't specify it manually
                 if (methodSignature == null)
                 {
                 	//TODO: should inherited search for java mangledName?
-                	for (Class[] sig : searchInheritedSignatures(id, arity)) // id (vs callid) here as this is searching in java
+                	for (Class<?>[] sig : searchInheritedSignatures(id, arity)) // id (vs callid) here as this is searching in java
         			{
     	                String signature = defineInstanceMethod(id, callid, arity, position, sig);
     	                if (signature != null)
@@ -1763,12 +1759,12 @@ public class RubyClass extends RubyModule {
         }
         
         protected String defineInstanceMethod(final String id, final String callid, final Arity arity,
-				PositionAware position, Class[] methodSignature)
+				PositionAware position, Class<?>[] methodSignature)
 		{
         	String javaMethodName = JavaNameMangler.mangleMethodName(id);
         	
-            Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(callid); // ruby side, use callid
-            List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(callid); // ruby side, use callid
+            Map<Class<?>,Map<String,Object>> methodAnnos = getMethodAnnotations().get(callid); // ruby side, use callid
+            List<Map<Class<?>,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(callid); // ruby side, use callid
             
 			final String signature;
 			SkinnyMethodAdapter m;
@@ -1807,7 +1803,7 @@ public class RubyClass extends RubyModule {
 			        default:
 			            if ( arity.isFixed() ) {
 			                final int paramCount = arity.getValue();
-			                Class[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
+			                Class<?>[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
 			                signature = sig(IRubyObject.class, params);
 			                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
 			                m.line(position.getLine());
@@ -1846,7 +1842,7 @@ public class RubyClass extends RubyModule {
 			else { // generate a real method signature for the method, with to/from coercions
 
 			    // indices for temp values
-			    Class[] params = new Class[methodSignature.length - 1];
+			    Class<?>[] params = new Class[methodSignature.length - 1];
 			    ArraySupport.copy(methodSignature, 1, params, 0, params.length);
 			    final int baseIndex = RealClassGenerator.calcBaseIndex(params, 1);
 			    final int rubyIndex = baseIndex;
@@ -1859,7 +1855,7 @@ public class RubyClass extends RubyModule {
 			    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 			    generateObjectBarrier(m);
 
-			    m.getstatic(javaPath, "ruby", ci(Ruby.class)); // runtime
+			    m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class)); // runtime
 			    m.astore(rubyIndex);
 
 			    loadRubyObject(m); // self/rubyObject
@@ -1881,7 +1877,7 @@ public class RubyClass extends RubyModule {
 			return javaMethodName + signature;
         }
         
-        protected void generateSuperBridges(String javaMethodName, Class[] methodSignature)
+        protected void generateSuperBridges(String javaMethodName, Class<?>[] methodSignature)
 		{
         	// Only for concrete java
 		}
@@ -1906,10 +1902,10 @@ public class RubyClass extends RubyModule {
             m.pushInt(0); // ruby index
             m.aaload(); // extract ruby
             m.checkcast(p(Ruby.class));
-            m.putstatic(javaPath, "ruby", ci(Ruby.class));
+            m.putstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
             m.aaload(); // extract rubyclass
             m.checkcast(p(RubyClass.class));
-            m.putstatic(javaPath, "rubyClass", ci(RubyClass.class));
+            m.putstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
             extraClinitLookup(m);
         }
         
@@ -1926,21 +1922,21 @@ public class RubyClass extends RubyModule {
         	m.pop();
         }
 
-		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
+		protected Collection<Class<?>[]> searchInheritedSignatures(String id, Arity arity)
 		{
-			HashMap<String, Class[]> types = new HashMap<>();
-			for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))
+			HashMap<String, Class<?>[]> types = new HashMap<>();
+			for (Class<?> intf : Java.getInterfacesFromRubyClass(RubyClass.this))
 				searchClassMethods(intf, arity, id, types);
 			if (types.size() == 0)
 				types.put("", null);
 			return types.values();
 		}
 
-		protected Collection<Class[]> searchClassMethods(Class clz, Arity arity, String id, HashMap<String, Class[]> options)
+		protected Collection<Class<?>[]> searchClassMethods(Class<?> clz, Arity arity, String id, HashMap<String, Class<?>[]> options)
 		{
 			if (clz.getSuperclass() != null)
 				searchClassMethods(clz.getSuperclass(),arity, id, options);
-			for (Class intf : clz.getInterfaces())
+			for (Class<?> intf : clz.getInterfaces())
 				searchClassMethods(intf, arity, id, options);
 			for (Method method : clz.getDeclaredMethods())
 			{
@@ -1961,7 +1957,7 @@ public class RubyClass extends RubyModule {
 	            }
 	            
 	            // found! built a signature to return
-	            Class[] types  = join(new Class[]{method.getReturnType()}, method.getParameterTypes());
+	            Class<?>[] types  = join(new Class[]{method.getReturnType()}, method.getParameterTypes());
 	            options.put(sig(types), types);
 			}
         	// Note: not stable. May flicker between different arities. TODO: sort?
@@ -2053,8 +2049,8 @@ public class RubyClass extends RubyModule {
             m.putstatic(javaPath, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
             
             // now create proxy class
-            m.getstatic(javaPath, "ruby", ci(Ruby.class));
-            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+            m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
+            m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
             m.ldc(org.objectweb.asm.Type.getType("L"+javaPath+";"));
             if (simpleAlloc) // if simple, don't init, if complex, do init
             	m.iconst_0(); // false (as int)
@@ -2083,12 +2079,12 @@ public class RubyClass extends RubyModule {
 		
 		
 		@Override
-		protected void generateSuperBridges(String javaMethodName, Class[] methodSignature)
+		protected void generateSuperBridges(String javaMethodName, Class<?>[] methodSignature)
 		{
 			//TODO: cache, don't look up this+ sIS repetedly
 			
 			// don't look on interfaces, just the parent
-			Class[] args = new Class[methodSignature.length - 1];
+			Class<?>[] args = new Class[methodSignature.length - 1];
 			ArraySupport.copy(methodSignature, 1, args, 0, methodSignature.length - 1);
 			Method supr = findTarget(reifiedParent, javaMethodName, methodSignature[0], args);
 			if (supr == null) return;
@@ -2130,16 +2126,16 @@ public class RubyClass extends RubyModule {
 		}
 
 		@Override //TODO: check for final?
-		protected Collection<Class[]> searchInheritedSignatures(String id, Arity arity)
+		protected Collection<Class<?>[]> searchInheritedSignatures(String id, Arity arity)
 		{
-			HashMap<String, Class[]> types = new HashMap<>();
+			HashMap<String, Class<?>[]> types = new HashMap<>();
 			searchClassMethods(reifiedParent, arity, id, types);
-			for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))// TODO: cleanup duplication in 3 places (super)
+			for (Class<?> intf : Java.getInterfacesFromRubyClass(RubyClass.this))// TODO: cleanup duplication in 3 places (super)
 				searchClassMethods(intf, arity, id, types);
 			if (types.size() == 0)
 			{
 				searchClassMethods(reifiedParent, null, id, types);
-				for (Class intf : Java.getInterfacesFromRubyClass(RubyClass.this))
+				for (Class<?> intf : Java.getInterfacesFromRubyClass(RubyClass.this))
 					searchClassMethods(intf, null, id, types);
 			}
 			if (types.size() == 0)
@@ -2168,7 +2164,7 @@ public class RubyClass extends RubyModule {
 			// TODO: guess from arity?
 			
 			// update the source location
-			DynamicMethod methodEntry = searchMethod("initialize");
+			DynamicMethod methodEntry = searchMethod(jcc.javaCtorMethodName);
 			PositionAware position = getPositionOrDefault(methodEntry);
             cw.visitSource(position.getFile(), null);
             int superpos = ConcreteJavaProxy.findSuperLine(runtime, methodEntry, position.getLine());
@@ -2324,7 +2320,7 @@ if (!jcc.allCtors) //TODO: fix logic
      * Gets a reified Ruby or Java class.
      * To ensure a specific type, see {@link #getReifiedRubyClass()} or  {@link #getReifiedJavaClass()}
      */
-    public Class<? extends Reified> getReifiedAnyClass() {
+    public Class<? extends Reified> getReifiedClass() {
         return reifiedClass;
     }
 
@@ -2353,7 +2349,7 @@ if (!jcc.allCtors) //TODO: fix logic
     public static Class<?> nearestReifiedClass(final RubyClass klass) {
         RubyClass current = klass;
         do {
-            Class<?> reified = current.getReifiedAnyClass();
+            Class<?> reified = current.getReifiedClass();
             if ( reified != null ) return reified;
             current = current.getSuperClass();
         }
@@ -2361,17 +2357,17 @@ if (!jcc.allCtors) //TODO: fix logic
         return null;
     }
 
-    public Map<String, List<Map<Class, Map<String,Object>>>> getParameterAnnotations() {
-        if (parameterAnnotations == null) return Collections.EMPTY_MAP;
-        return parameterAnnotations;
+    public Map<String, List<Map<Class<?>, Map<String,Object>>>> getParameterAnnotations() {
+        if (javaClassConfiguration == null || getClassConfig().parameterAnnotations == null) return Collections.EMPTY_MAP;
+        return javaClassConfiguration.parameterAnnotations;
     }
 
-    public synchronized void addParameterAnnotation(String method, int i, Class annoClass, Map<String,Object> value) {
-        if (parameterAnnotations == null) parameterAnnotations = new HashMap<>(8);
-        List<Map<Class,Map<String,Object>>> paramList = parameterAnnotations.get(method);
+    public synchronized void addParameterAnnotation(String method, int i, Class<?> annoClass, Map<String,Object> value) {
+        if (getClassConfig().parameterAnnotations == null) javaClassConfiguration.parameterAnnotations = new HashMap<>(8);
+        List<Map<Class<?>,Map<String,Object>>> paramList = javaClassConfiguration.parameterAnnotations.get(method);
         if (paramList == null) {
             paramList = new ArrayList<>(i + 1);
-            parameterAnnotations.put(method, paramList);
+            javaClassConfiguration.parameterAnnotations.put(method, paramList);
         }
         if (paramList.size() < i + 1) {
             for (int j = paramList.size(); j < i + 1; j++) {
@@ -2379,7 +2375,7 @@ if (!jcc.allCtors) //TODO: fix logic
             }
         }
         if (annoClass != null && value != null) {
-            Map<Class, Map<String, Object>> annos = paramList.get(i);
+            Map<Class<?>, Map<String, Object>> annos = paramList.get(i);
             if (annos == null) {
                 paramList.set(i, annos = new LinkedHashMap<>(4));
             }
@@ -2389,75 +2385,88 @@ if (!jcc.allCtors) //TODO: fix logic
         }
     }
 
-    public Map<String,Map<Class,Map<String,Object>>> getMethodAnnotations() {
-        if (methodAnnotations == null) return Collections.EMPTY_MAP;
+    public Map<String,Map<Class<?>,Map<String,Object>>> getMethodAnnotations() {
+        if (javaClassConfiguration == null || getClassConfig().methodAnnotations == null) return Collections.EMPTY_MAP;
 
-        return methodAnnotations;
+        return javaClassConfiguration.methodAnnotations;
     }
 
-    public Map<String,Map<Class,Map<String,Object>>> getFieldAnnotations() {
-        if (fieldAnnotations == null) return Collections.EMPTY_MAP;
+    public Map<String,Map<Class<?>,Map<String,Object>>> getFieldAnnotations() {
+        if (javaClassConfiguration == null || getClassConfig().fieldAnnotations == null) return Collections.EMPTY_MAP;
 
-        return fieldAnnotations;
+        return javaClassConfiguration.fieldAnnotations;
     }
 
-    public synchronized void addMethodAnnotation(String methodName, Class annotation, Map fields) {
-        if (methodAnnotations == null) methodAnnotations = new HashMap<>(8);
+    public synchronized void addMethodAnnotation(String methodName, Class<?> annotation, Map fields) {
+        if (getClassConfig().methodAnnotations == null) javaClassConfiguration.methodAnnotations = new HashMap<>(8);
 
-        Map<Class,Map<String,Object>> annos = methodAnnotations.get(methodName);
+        Map<Class<?>,Map<String,Object>> annos = javaClassConfiguration.methodAnnotations.get(methodName);
         if (annos == null) {
-            methodAnnotations.put(methodName, annos = new LinkedHashMap<>(4));
+        	javaClassConfiguration.methodAnnotations.put(methodName, annos = new LinkedHashMap<>(4));
         }
 
         annos.put(annotation, fields);
     }
 
-    public synchronized void addFieldAnnotation(String fieldName, Class annotation, Map fields) {
-        if (fieldAnnotations == null) fieldAnnotations = new HashMap<>(8);
+    public synchronized void addFieldAnnotation(String fieldName, Class<?> annotation, Map fields) {
+        if (getClassConfig().fieldAnnotations == null) javaClassConfiguration.fieldAnnotations = new HashMap<>(8);
 
-        Map<Class,Map<String,Object>> annos = fieldAnnotations.get(fieldName);
+        Map<Class<?>,Map<String,Object>> annos = javaClassConfiguration.fieldAnnotations.get(fieldName);
         if (annos == null) {
-            fieldAnnotations.put(fieldName, annos = new LinkedHashMap<>(4));
+        	javaClassConfiguration.fieldAnnotations.put(fieldName, annos = new LinkedHashMap<>(4));
         }
 
         annos.put(annotation, fields);
     }
 
 
-    public Map<String,Class[]> getMethodSignatures() {
-        if (methodSignatures == null) return Collections.EMPTY_MAP;
+    public Map<String,Class<?>[]> getMethodSignatures() {
+        if (javaClassConfiguration == null || getClassConfig().methodSignatures == null) return Collections.EMPTY_MAP;
 
-        return methodSignatures;
+        return javaClassConfiguration.methodSignatures.entrySet()
+        		.stream()
+        		.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().get(0)));
+    }
+    
+    public Map<String,List<Class<?>[]>> getAllMethodSignatures() {
+        if (javaClassConfiguration == null || getClassConfig().methodSignatures == null) return Collections.EMPTY_MAP;
+
+        return javaClassConfiguration.methodSignatures;
     }
 
-    public Map<String, Class> getFieldSignatures() {
-        if (fieldSignatures == null) return Collections.EMPTY_MAP;
+    public Map<String, Class<?>> getFieldSignatures() {
+        if (javaClassConfiguration == null || getClassConfig().fieldSignatures == null) return Collections.EMPTY_MAP;
 
-        return fieldSignatures;
+        return javaClassConfiguration.fieldSignatures;
     }
 
-    public synchronized void addMethodSignature(String methodName, Class[] types) {
-        if (methodSignatures == null) methodSignatures = new HashMap<>(16);
+    public synchronized void addMethodSignature(String methodName, Class<?>[] types) {
+        if (getClassConfig().methodSignatures == null) javaClassConfiguration.methodSignatures = new HashMap<>(16);
+        
+        List<Class<?>[]> annos = javaClassConfiguration.methodSignatures.get(methodName);
+        if (annos == null) {
+        	javaClassConfiguration.methodSignatures.put(methodName, annos = new ArrayList<Class<?>[]>(4));
+        }
 
-        methodSignatures.put(methodName, types);
+        annos.add(types);
     }
 
-    public synchronized void addFieldSignature(String fieldName, Class type) {
-        if (fieldSignatures == null) fieldSignatures = new LinkedHashMap<>(8);
+    public synchronized void addFieldSignature(String fieldName, Class<?> type) {
+        if (getClassConfig().fieldSignatures == null) javaClassConfiguration.fieldSignatures = new LinkedHashMap<>(8);
 
-        fieldSignatures.put(fieldName, type);
+        javaClassConfiguration.fieldSignatures.put(fieldName, type);
     }
 
-    public Map<Class,Map<String,Object>> getClassAnnotations() {
-        if (classAnnotations == null) return Collections.EMPTY_MAP;
+    public Map<Class<?>,Map<String,Object>> getClassAnnotations() {
+        if (javaClassConfiguration == null || getClassConfig().classAnnotations == null) return Collections.EMPTY_MAP;
 
-        return classAnnotations;
+        return javaClassConfiguration.classAnnotations;
     }
 
-    public synchronized void addClassAnnotation(Class annotation, Map fields) {
-        if (classAnnotations == null) classAnnotations = new LinkedHashMap<>(4);
+    public synchronized void addClassAnnotation(Class<?> annotation, Map fields) {
+        if (getClassConfig().classAnnotations == null) javaClassConfiguration.classAnnotations = new LinkedHashMap<>(4);
 
-        classAnnotations.put(annotation, fields);
+        javaClassConfiguration.classAnnotations.put(annotation, fields);
     }
 
     public synchronized JavaClassConfiguration getClassConfig() {
@@ -3105,18 +3114,6 @@ if (!jcc.allCtors) //TODO: fix logic
 
     private Class<? extends Reified> reifiedClass;
     private Boolean reifiedClassJava;
-
-    private Map<String, List<Map<Class, Map<String,Object>>>> parameterAnnotations;
-
-    private Map<String, Map<Class, Map<String,Object>>> methodAnnotations;
-
-    private Map<String, Map<Class, Map<String,Object>>> fieldAnnotations;
-
-    private Map<String, Class[]> methodSignatures;
-
-    private Map<String, Class> fieldSignatures;
-
-    private Map<Class, Map<String,Object>> classAnnotations;
     
     private JavaClassConfiguration javaClassConfiguration;
 

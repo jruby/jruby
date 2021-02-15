@@ -111,12 +111,12 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
 
         // TODO: JIT?
 
-        IRubyObject result = INTERPRET_METHOD(state,  args, block);
+        ExitableReturn result = INTERPRET_METHOD(state,  args, block);
         
         return new SplitSuperState<>(result, state);
     }
 
-    private IRubyObject INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block)
+    private ExitableReturn INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block)
 	{
     	ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.context.getLine());
     	

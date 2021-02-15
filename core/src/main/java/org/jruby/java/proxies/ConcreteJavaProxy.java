@@ -13,6 +13,7 @@ import org.jruby.internal.runtime.*;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.internal.runtime.methods.JavaMethod.*;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.ExitableInterpreterEngine;
 import org.jruby.ir.interpreter.ExitableInterpreterEngineState;
@@ -116,7 +117,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         	if (parent.getJavaProxy()) return newMethod;
         	
         	// overridden class: reify and re-lookup new as reification changes it
-            if (parent.getReifiedAnyClass() == null) {
+            if (parent.getReifiedClass() == null) {
             	parent.reifyWithAncestors(); // TODO: is this good?
             }
             //System.err.println(parent.getName() + " is " + parent.getJavaProxy());
@@ -379,9 +380,9 @@ public class ConcreteJavaProxy extends JavaProxy {
 		DynamicMethod dm1 = base.searchMethodLateral(name); // only on ourself //TODO: missing default
 		if ((dm1 != null && !(dm instanceof InitializeMethod)&& !(dm instanceof StaticJCreateMethod))) //jcreate is for nested ruby classes from a java class
 		{
-            //TODO: if not defined, then ctors = all valid superctors
 			
 			AbstractIRMethod air = (AbstractIRMethod)dm; // TODO: getMetaClass() ? or base? (below     v)
+
 			SplitSuperState<?> state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(), name, args, blk);
 			if (state == null) // no super in method
 			{
@@ -389,8 +390,8 @@ public class ConcreteJavaProxy extends JavaProxy {
 			}
 			else
 			{
-				return new Object[] { state.callArrayArgs, // TODO: nils?
-						air, state };
+				return new Object[] { state.callArrayArgs,
+						air, state };// TODO: add block
 			}
 		}
 		else

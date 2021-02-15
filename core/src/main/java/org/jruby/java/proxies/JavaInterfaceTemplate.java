@@ -130,7 +130,7 @@ public class JavaInterfaceTemplate {
         // not allowed for original (non-generated) Java classes
         // note: not allowing for any previously created class right now;
         // this restriction might be loosened later for generated classes
-        if ( ( Java.NEW_STYLE_EXTENSION && clazz.getReifiedAnyClass() != null )
+        if ( ( Java.NEW_STYLE_EXTENSION && clazz.getReifiedClass() != null )
                 ||
                 ( clazz.hasInstanceVariable("@java_class")
                     && clazz.getInstanceVariable("@java_class").isTrue()

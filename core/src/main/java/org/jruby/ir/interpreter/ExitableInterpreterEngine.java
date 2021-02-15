@@ -2,13 +2,9 @@ package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.internal.runtime.methods.ExitableReturn;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.CheckForLJEInstr;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.GetFieldInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.RuntimeHelperCall;
+import org.jruby.ir.instructions.*;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -32,7 +28,7 @@ import static org.jruby.util.RubyStringBuilder.str;
  *   - I dislike replicating this code but we do not want our default interpreter to have an extra stack frame.
  */
 public class ExitableInterpreterEngine extends InterpreterEngine {
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
+    public ExitableReturn interpret(ThreadContext context, Block block, IRubyObject self,
                                  ExitableInterpreterContext interpreterContext, ExitableInterpreterEngineState state,
                                  RubyModule implClass, String name, IRubyObject[] args, Block blockArg) {
         Instr[] instrs = interpreterContext.getInstructions();
@@ -64,7 +60,9 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                 state.setIPC(ipc + 1);  // Mark next instr to execute when we call execute again using this state.
                 // FIXME: We are forcing a boxing to a Ruby array we probably do not need but did it anyways so it matched the
                 // interface of interpreterengine (re-consider this).
-                return context.runtime.newArray(interpreterContext.getArgs(context, self, currScope, currDynScope, temp));
+                return new ExitableReturn(
+                		context.runtime.newArray(interpreterContext.getArgs(context, self, currScope, currDynScope, temp)),
+        				((CallBase)instrs[ipc]).prepareBlock(context, self, currScope, currDynScope, temp));
             }
 
             Instr instr = instrs[ipc];
@@ -88,7 +86,8 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
-                        return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
+                        processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
+                        return new ExitableReturn(context.runtime.newArray(), Block.NULL_BLOCK);
                     case BRANCH_OP:
                         switch (operation) {
                             case JUMP:

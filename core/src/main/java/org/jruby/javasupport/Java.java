@@ -601,6 +601,7 @@ public class Java implements Library {
                 return context.nil;
             }
         });
+        ///TODO: investigate this method
 
         subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
     }
@@ -1583,7 +1584,7 @@ public class Java implements Library {
         catch (ClassNotFoundException ex) {
             // try to use super's reified class; otherwise, RubyObject (for now)
         	//TODO: test java reified?
-            Class<?> superClass = clazz.getSuperClass().getRealClass().getReifiedAnyClass();
+            Class<?> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
             if ( superClass == null ) superClass = RubyObject.class;
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
 

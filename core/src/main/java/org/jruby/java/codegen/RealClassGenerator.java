@@ -830,46 +830,38 @@ public abstract class RealClassGenerator {
     
     private static final String CONCRETE_CTOR_SIG = sig(void.class, ConcreteJavaProxy.class, boolean.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
     
-    // shouls this be in in this spot?
+    // should this be in in this spot?
     /**
      * Main switch constructor. Required for concrete reification
      */
     public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition, int superpos, boolean hasParent, ConcreteJavaReifier cjr, JavaConstructor[] constructors)
     {
-    	
-    	final boolean callsInit = true; // TODO: ????
-    	
-    	
-    	
     	// TODO: add source position of super call
     	
     	/* This generates this code template. Note that lines of  //// show what code is being generated
-    	 * public Demo(int var1, String var2) {
-	      Ruby var3 = ruby;
-	      this.$rubyInitArgs = new IRubyObject[]{JavaUtil.convertJavaToRuby(var3, var1), JavaUtil.convertJavaToUsableRubyObject(var3, var2)};
-	      this.$rubyObject = new ConcreteJavaProxy(ruby, rubyClass);
-	      IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
-			RubyArray ra = c.convertToArray();
-			c = ra.entry(0);
-			IRubyObject continuation = ra.entry(1);
-			switch(Java.JCreateMethod.forTypes(constructors, c))
-			{
-				case -1:
-					ra = c.convertToArray();
-					thing(ra.entry(0).toJava(Integer.TYPE).longValue());
-					//return;
-					break;
-				case 0:
-					//ra = c.convertToArray();
-					thing(id);
-					break;
-				default:
-					throw new RuntimeException("NANANANANANA");
-			}
-			
-	     (this.$rubyObject.setObject(this))
-      
-		continuation.callMethod(null, "call")
+    	 * 
+   // $FF: synthetic method
+   protected StatsBarView(ConcreteJavaProxy var1, boolean var2, IRubyObject[] var3, Block var4, Ruby var5, RubyClass var6) {
+      this.this$rubyObject = var1;
+      Object[] var10000 = var1.splitInitialized(var2 ? rubyClass : var6, var3, var4);
+      IRubyObject var10001 = (IRubyObject)var10000[0];
+      RubyArray var7;
+      switch(JCreateMethod.forTypes((IRubyObject)var10000[0], this$rubyCtorCache, var5)) {
+      case 0:
+         var7 = var10001.convertToArray();
+         super();
+         break;
+      case 1:
+         var7 = var10001.convertToArray();
+         super((Node[])var7.entry(0).toJava(Node[].class));
+         break;
+      default:
+         throw new IllegalStateException("No available superconstructors match that type signature");
+      }
+
+      var1.setObject(this);
+      var1.finishInitialize(var10000);
+   }
 
    }*/
     	// (rubyobject, isSuperCall, args, block, ruby, class)
@@ -899,7 +891,7 @@ public abstract class RealClassGenerator {
     	Label normal = new Label();
     	Label done = new Label();
     	m.iffalse(normal);//// if (super branch) {
-        m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class)); // use static if this is from the super
+        m.getstatic(cjr.javaPath, cjr.RUBY_CLASS_FIELD, ci(RubyClass.class)); // use static if this is from the super
         m.go_to(done);
         //// else { // normal branch
         m.label(normal);
@@ -1069,8 +1061,8 @@ public abstract class RealClassGenerator {
         // save for argument converter
         if (!hasRuby)
         {
-			m.getstatic(cjr.javaPath, "ruby", ci(Ruby.class));
-			m.getstatic(cjr.javaPath, "rubyClass", ci(RubyClass.class));
+			m.getstatic(cjr.javaPath, cjr.RUBY_FIELD, ci(Ruby.class));
+			m.getstatic(cjr.javaPath, cjr.RUBY_CLASS_FIELD, ci(RubyClass.class));
             m.astore(rubyClassIndex); // rubyclass
 	        m.astore(rubyIndex); // ruby
         }

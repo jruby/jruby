@@ -66,8 +66,7 @@ public abstract class ClassJavaAddons {
 
         klass.reifyWithAncestors(dumpDir, useChildLoader);
 
-        Class<?> reifiedClass = klass.getReifiedAnyClass();
-        // TODO: ensure deleted line is no longer necessary
+        Class<?> reifiedClass = klass.getReifiedClass();
         if (reifiedClass == null) {
             throw context.runtime.newTypeError("requested class " + klass.getName() + " was not reifiable");
         }
