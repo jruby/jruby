@@ -113,6 +113,7 @@ public class ByteListHelper {
      * @param headVisitor visitor for the last segment (if null if will use bodyVisitor).
      * @param <T> Return type of visitor
      * @return last T from headVisitor
+     * @deprecated This was only used by Module#const_defined, but was difficult to match MRI's equivalent in this form
      */
     public static <T> T split(ByteList value, ByteList pattern, Visit<ByteList, T> bodyVisitor, Visit<ByteList, T> headVisitor) {
         if (headVisitor == null) headVisitor = bodyVisitor;

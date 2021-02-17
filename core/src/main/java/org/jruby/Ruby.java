@@ -58,6 +58,7 @@ import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
+import org.jruby.ext.thread.Queue;
 import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
@@ -478,10 +479,13 @@ public final class Ruby implements Constantizable {
 
         // Initialize exceptions
         initExceptions();
-        Mutex.setup(this);
-        ConditionVariable.setup(this);
-        org.jruby.ext.thread.Queue.setup(this);
-        SizedQueue.setup(this);
+
+        // Thread library utilities
+        mutexClass = Mutex.setup(threadClass, objectClass);
+        conditionVariableClass = ConditionVariable.setup(threadClass, objectClass);
+        queueClass = Queue.setup(threadClass, objectClass);
+        closedQueueError = Queue.setupError(queueClass, stopIteration, objectClass);
+        sizedQueueClass = SizedQueue.setup(threadClass, queueClass, objectClass);
 
         fiberClass = new ThreadFiberLibrary().createFiberClass(this);
 
@@ -562,10 +566,10 @@ public final class Ruby implements Constantizable {
         }
 
         // Provide some legacy libraries
-        loadService.provide("enumerator", "enumerator.rb");
-        loadService.provide("rational", "rational.rb");
-        loadService.provide("complex", "complex.rb");
-        loadService.provide("thread", "thread.rb");
+        loadService.provide("enumerator.rb");
+        loadService.provide("rational.rb");
+        loadService.provide("complex.rb");
+        loadService.provide("thread.rb");
 
         // Load preludes
         initRubyPreludes();
@@ -1774,8 +1778,8 @@ public final class Ruby implements Constantizable {
             new Java().load(this, false);
             new JRubyUtilLibrary().load(this, false);
 
-            loadService.provide("java", "java.rb");
-            loadService.provide("jruby/util", "jruby/util.rb");
+            loadService.provide("java.rb");
+            loadService.provide("jruby/util.rb");
         }
     }
 
@@ -2224,6 +2228,26 @@ public final class Ruby implements Constantizable {
 
     public void setLocation(RubyClass location) {
         this.locationClass = location;
+    }
+
+    public RubyClass getMutex() {
+        return mutexClass;
+    }
+
+    public RubyClass getConditionVariable() {
+        return conditionVariableClass;
+    }
+
+    public RubyClass getQueue() {
+        return queueClass;
+    }
+
+    public RubyClass getClosedQueueError() {
+        return closedQueueError;
+    }
+
+    public RubyClass getSizedQueueClass() {
+        return sizedQueueClass;
     }
 
     public RubyModule getWarning() {
@@ -3527,6 +3551,10 @@ public final class Ruby implements Constantizable {
 
     public RubyString newString(String string) {
         return RubyString.newString(this, string);
+    }
+
+    public RubyString newDeduplicatedString(String string) {
+        return freezeAndDedupString(RubyString.newString(this, string));
     }
 
     public RubyString newString(ByteList byteList) {
@@ -5315,6 +5343,11 @@ public final class Ruby implements Constantizable {
     private final RubyClass dummyClass;
     private final RubyClass randomClass;
     private final RubyClass dataClass;
+    private final RubyClass mutexClass;
+    private final RubyClass conditionVariableClass;
+    private final RubyClass queueClass;
+    private final RubyClass closedQueueError;
+    private final RubyClass sizedQueueClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;

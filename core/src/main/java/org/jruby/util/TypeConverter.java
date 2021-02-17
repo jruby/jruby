@@ -53,6 +53,9 @@ import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
 public class TypeConverter {
+    private static final String[] IMPLICIT_CONVERTED_METHODS = new String[] {
+            "to_int", "to_ary", "to_str", "to_sym", "to_hash", "to_proc", "to_io", "to_a", "to_s", "to_i", "to_r"
+    };
 
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
@@ -98,7 +101,7 @@ public class TypeConverter {
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(obj, target, convertMethod, true);
-        if (!target.isInstance(val)) throw newTypeError(obj.getRuntime(), obj, target, convertMethod, val);
+        if (!target.isInstance(val)) throw newTypeErrorMismatch(obj.getRuntime(), obj, target, convertMethod, val);
         return val;
 
     }
@@ -114,7 +117,7 @@ public class TypeConverter {
     public static IRubyObject convertToType(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(context, obj, target, sites, true);
-        if (!target.isInstance(val)) throw newTypeError(context.runtime, obj, target, sites.methodName, val);
+        if (!target.isInstance(val)) throw newTypeErrorMismatch(context.runtime, obj, target, sites.methodName, val);
         return val;
     }
 
@@ -260,6 +263,14 @@ public class TypeConverter {
 
     public static RaiseException newTypeError(Ruby runtime, IRubyObject obj, RubyClass target, String methodName, IRubyObject val) {
         IRubyObject className =  types(runtime, obj.getType());
+        String message = isImplicitTypeError(methodName) ? "no implicit conversion of" : "can't convert ";
+
+        return runtime.newTypeError(str(runtime, message, className, " to ", types(runtime, target)));
+    }
+
+    public static RaiseException newTypeErrorMismatch(Ruby runtime, IRubyObject obj, RubyClass target, String methodName, IRubyObject val) {
+        IRubyObject className =  types(runtime, obj.getType());
+
         return runtime.newTypeError(str(runtime, "can't convert ", className, " to ", types(runtime, target), " (",
                 className, '#' + methodName + " gives ", types(runtime, val.getType()), ")"));
     }
@@ -555,5 +566,13 @@ public class TypeConverter {
             throw runtime.newTypeError(str(runtime, types(runtime, obj.getMetaClass()), "#" + convertMethod + " should return ", types(runtime, target)));
         }
         return val;
+    }
+
+    private static boolean isImplicitTypeError(String methodID) {
+        for (int i = 0; i < IMPLICIT_CONVERTED_METHODS.length; i++) {
+            if (IMPLICIT_CONVERTED_METHODS[i].equals(methodID)) return true;
+        }
+
+        return false;
     }
 }

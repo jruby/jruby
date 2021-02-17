@@ -775,6 +775,28 @@ public class Numeric {
         return x instanceof RubyNumeric;
     }
 
+    /**
+     * Rotate the given long bits left.
+     *
+     * @param bits the bits to rotate
+     * @param rot how many bit positions to rotate
+     * @return the rotated value
+     */
+    public static long rotl(long bits, int rot) {
+        return (bits << (rot & 63)) | (bits >>> (-rot & 63));
+    }
+
+    /**
+     * Rotate the given long bits right.
+     *
+     * @param bits the bits to rotate
+     * @param rot how many bit positions to rotate
+     * @return the rotated value
+     */
+    public static long rotr(long bits, int rot) {
+        return (bits << (-rot & 63)) | (bits >>> (rot & 63));
+    }
+
     public static final class ComplexPatterns {
         public static final Regex comp_pat0, comp_pat1, comp_pat2, underscores_pat;
         static {

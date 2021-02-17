@@ -1,1 +1,0 @@
-fails:BasicObject#instance_eval evaluates string with given filename and negative linenumber

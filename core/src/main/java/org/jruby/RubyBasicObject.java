@@ -74,7 +74,6 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
-import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -84,6 +83,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
+import static org.jruby.util.Inspector.*;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -1146,28 +1146,19 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject inspect() {
-        if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
+        if (!isImmediate() && !(this instanceof RubyModule) && hasVariables()) {
             return hashyInspect();
         }
         return to_s();
     }
 
-    private static final byte[] INSPECT_POUND_LT = "#<".getBytes();
-    private static final byte[] INSPECT_COLON_ZERO_X = ":0x".getBytes();
     private static final byte[] INSPECT_SPACE_DOT_DOT_DOT_GT = " ...>".getBytes();
-    private static final byte[] INSPECT_COMMA = ",".getBytes();
-    private static final byte[] INSPECT_SPACE = " ".getBytes();
     private static final byte[] INSPECT_EQUALS = "=".getBytes();
-    private static final byte[] INSPECT_GT = ">".getBytes();
 
     public final IRubyObject hashyInspect() {
         final Ruby runtime = getRuntime();
-        ByteList name = types(runtime, metaClass.getRealClass()).getByteList();
-        RubyString part = RubyString.newStringLight(runtime, 2 + name.length() + 3 + 8 + 1); // #<Object:0x5a1c0542>
-        encStrBufCat(runtime, part, INSPECT_POUND_LT);
-        encStrBufCat(runtime, part, name);
-        encStrBufCat(runtime, part, INSPECT_COLON_ZERO_X);
-        encStrBufCat(runtime, part, ConvertBytes.longToHexBytes(inspectHashCode()));
+
+        RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
 
         if (runtime.isInspecting(this)) {
             encStrBufCat(runtime, part, INSPECT_SPACE_DOT_DOT_DOT_GT);
@@ -1227,8 +1218,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
             IRubyObject obj = (IRubyObject) value;
 
-            if (!first) encStrBufCat(runtime, part, INSPECT_COMMA);
-            encStrBufCat(runtime, part, INSPECT_SPACE);
+            if (!first) encStrBufCat(runtime, part, COMMA);
+            encStrBufCat(runtime, part, SPACE);
             // FIXME: bytelist_love: EPICLY wrong but something in MRI gets around identifiers of arbitrary encoding.
             encStrBufCat(runtime, part, symbol.asString().encode(context, runtime.getEncodingService().convertEncodingToRubyEncoding(part.getEncoding())).asString().getByteList());
             encStrBufCat(runtime, part, INSPECT_EQUALS);
@@ -1236,7 +1227,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
             first = false;
         }
-        encStrBufCat(runtime, part, INSPECT_GT);
+        encStrBufCat(runtime, part, GT);
         part.setTaint(isTaint());
         return part;
     }

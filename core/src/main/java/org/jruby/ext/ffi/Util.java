@@ -194,7 +194,7 @@ public final class Util {
                 return ByteOrder.LITTLE_ENDIAN;
             
             } else {
-                return ByteOrder.nativeOrder();
+                throw runtime.newArgumentError("unknown byte order");
             }
 
         } else {

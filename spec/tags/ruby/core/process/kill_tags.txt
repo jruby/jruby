@@ -6,6 +6,7 @@ unstable(travis,intermittent):Process.kill accepts a signal name without the 'SI
 windows:Process.kill raises Errno::ESRCH if the process does not exist
 windows:Process.kill accepts a Symbol as a signal name
 windows:Process.kill accepts a String as signal name
+hangs:Process.kill accepts a String as signal name
 windows:Process.kill accepts a signal name without the 'SIG' prefix
 windows:Process.kill accepts a signal name with the 'SIG' prefix
 windows:Process.kill acceps an Integer as a signal value

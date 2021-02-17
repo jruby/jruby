@@ -96,26 +96,24 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     private static IRubyObject exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData, IRubyObject val) {
-        // At this point we consider ourselves "in" the resume, so we need to enforce exception-propagation
-        // rules for both the push (to wake up fiber) and pop (to wait for fiber). Failure to do this can
-        // cause interrupts destined for the fiber to be caught after the fiber is running but before the
-        // resuming thread has started waiting for it, leaving the fiber to run rather than receiving the
-        // interrupt, and the parent thread propagates the error.
+        // push should not block and does not check interrupts
+        targetFiberData.queue.push(context, val);
 
-        // Note: these need to be separate try/catches because of the while loop.
+        // At this point we consider ourselves "in" the resume, so we need to make an effort to propagate any interrupt
+        // raise to the fiber. We forward the exception using the interrupt mechanism and then try once more to let the
+        // fiber deal with the exception and either re-raise it or handle it and give us a non-exceptional result. If
+        // the second pop is interrupted, either the fiber has propagated the exception back to us or we are being
+        // interrupted again and must abandon the fiber.
+
         try {
-            targetFiberData.queue.push(context, new IRubyObject[] {val});
+            IRubyObject result = currentFiberData.queue.pop(context);
+            return result == NEVER ? context.nil : result;
         } catch (RaiseException re) {
             handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
-        }
 
-        while (true) {
-            try {
-                IRubyObject result = currentFiberData.queue.pop(context);
-                return result == NEVER ? context.nil : result;
-            } catch (RaiseException re) {
-                handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
-            }
+            // if we get here, we forwarded exception so try once more
+            IRubyObject result = currentFiberData.queue.pop(context);
+            return result == NEVER ? context.nil : result;
         }
     }
 
@@ -156,8 +154,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // Otherwise, we want to forward the exception to the target fiber
         // since it has the ball
         final ThreadFiber fiber = targetFiberData.fiber.get();
-        if ( fiber != null && fiber.alive() ) fiber.thread.raise(re.getException());
-        else LOG.warn("no fiber thread to raise: {}", re.getException().inspect(context));
+        if ( fiber != null && fiber.alive() ) {
+            fiber.thread.raise(re.getException());
+        } else {
+            // target fiber has gone away, it's our ball now
+            throw re;
+        }
     }
 
     @JRubyMethod(rest = true)
@@ -308,7 +310,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             ThreadFiber tf = data.fiber.get();
                             if (tf != null) tf.thread = null;
 
-                            data.prev.data.queue.push(context, new IRubyObject[]{result});
+                            data.prev.data.queue.push(context, result);
                         } finally {
                             // Ensure we do everything for shutdown now
                             data.queue.shutdown();

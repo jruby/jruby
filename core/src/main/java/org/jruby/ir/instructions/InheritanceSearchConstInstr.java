@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;

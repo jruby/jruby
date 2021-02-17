@@ -245,15 +245,17 @@ public class ShellLauncher {
                 if (mergeEnv instanceof Set) {
                     for (Map.Entry e : (Set<Map.Entry>)mergeEnv) {
                         // if the key is nil, raise TypeError
-                        if (e.getKey() == null) {
+                        Object key = e.getKey();
+                        if (key == null) {
                             throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
                         }
                         // ignore if the value is nil
-                        if (e.getValue() == null) {
-                            hash.remove(e.getKey().toString());
+                        Object value = e.getValue();
+                        if (value == null) {
+                            hash.remove(key.toString());
                             continue;
                         }
-                        hash.put(e.getKey().toString(), e.getValue().toString());
+                        hash.put(key.toString(), value.toString());
                     }
                 } else if (mergeEnv instanceof RubyArray) {
                     for (int j = 0; j < mergeEnv.size(); j++) {
@@ -262,16 +264,21 @@ public class ShellLauncher {
                         if (e.size() != 2) {
                             throw runtime.newArgumentError("env assignments must come in pairs");
                         }
+
                         // if the key is nil, raise TypeError
-                        if (e.eltOk(0) == null) {
+                        IRubyObject key = e.eltOk(0);
+                        if (key == null || key.isNil()) {
                             throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
                         }
+
                         // ignore if the value is nil
-                        if (e.eltOk(1) == null) {
-                            hash.remove(e.eltOk(0).toString());
+                        IRubyObject value = e.eltOk(1);
+                        if (value == null || value.isNil()) {
+                            hash.remove(key.toString());
                             continue;
                         }
-                        hash.put(e.eltOk(0).toString(), e.eltOk(1).toString());
+
+                        hash.put(key.toString(), value.toString());
                     }
                 }
             }
@@ -811,33 +818,17 @@ public class ShellLauncher {
             }
 
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
-            LaunchConfig lc = new LaunchConfig(runtime, strings, false);
-            boolean useShell = Platform.IS_WINDOWS ? lc.shouldRunInShell() : false;
+            LaunchConfig cfg = new LaunchConfig(runtime, strings, true);
+            boolean useShell = Platform.IS_WINDOWS ? cfg.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
 
-            if (strings.length == 1) {
-                if (useShell) {
-                    // single string command, pass to sh to expand wildcards
-                    String[] argArray = new String[3];
-                    argArray[0] = shell;
-                    argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-                    argArray[2] = strings[0].asJavaString();
-                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
-                } else {
-                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
-                }
+            if (useShell) {
+                cfg.verifyExecutableForShell();
             } else {
-                if (useShell) {
-                    String[] argArray = new String[args.length + 2];
-                    argArray[0] = shell;
-                    argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-                    System.arraycopy(args, 0, argArray, 2, args.length);
-                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
-                } else {
-                    // direct invocation of the command
-                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
-                }
+                cfg.verifyExecutableForDirect();
             }
+
+            childProcess = buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }

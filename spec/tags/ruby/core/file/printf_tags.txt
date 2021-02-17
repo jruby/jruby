@@ -1,6 +1,4 @@
 fails:File#printf integer formats u converts argument as a decimal number
-fails:File#printf float formats g otherwise cuts fraction part to have only 6 digits at all
-fails:File#printf float formats G otherwise cuts fraction part to have only 6 digits at all
 fails:File#printf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
 fails:File#printf float formats a displays Float::INFINITY as Inf
 fails:File#printf float formats a displays Float::NAN as NaN

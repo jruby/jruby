@@ -16,14 +16,18 @@ module TestLibrary
       else
         "i386"
       end
-    when /amd64|x86_64/
+    when /amd64|x86_64|x64/
       "x86_64"
     when /ppc64|powerpc64/
       "powerpc64"
     when /ppc|powerpc/
       "powerpc"
     when /^arm/
-      "arm"
+      if RbConfig::CONFIG['host_os'] =~ /darwin/
+        "aarch64"
+      else
+        "arm"
+      end
     else
       RbConfig::CONFIG['host_cpu']
     end

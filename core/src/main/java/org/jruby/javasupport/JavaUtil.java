@@ -326,6 +326,13 @@ public class JavaUtil {
         throw runtime.newTypeError(errorMessage);
     }
 
+    public static RubyString inspectObject(ThreadContext context, Object obj) {
+        if (!(obj instanceof IRubyObject)) {
+            obj = Java.getInstance(context.runtime, obj);
+        }
+        return RubyObject.inspect(context, (IRubyObject) obj);
+    }
+
     /**
      * @param object
      * @note Returns null if not a wrapped Java value.

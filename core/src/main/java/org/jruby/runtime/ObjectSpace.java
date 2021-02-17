@@ -76,8 +76,8 @@ public class ObjectSpace {
     }
 
     public static long calculateObjectId(Object object) {
-        // Fixnums get all the odd IDs, so we use identityHashCode * 2
-        return maxId.getAndIncrement() * 2;
+        // Fixnums get all the 0b01 id's, flonums get the 0b10 id's, so we use next ID * 4
+        return maxId.getAndIncrement() * 4;
     }
 
     public long createAndRegisterObjectId(IRubyObject rubyObject) {

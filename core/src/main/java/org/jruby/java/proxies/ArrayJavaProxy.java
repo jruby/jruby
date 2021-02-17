@@ -17,6 +17,11 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ConvertBytes;
+import org.jruby.util.RubyStringBuilder;
+
+import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
+import static org.jruby.util.Inspector.*;
 
 public final class ArrayJavaProxy extends JavaProxy {
 
@@ -489,24 +494,114 @@ public final class ArrayJavaProxy extends JavaProxy {
         return Java.getProxyClass(context.runtime, javaClass);
     }
 
+    private static final byte[] END_BRACKET_COLON_SPACE = new byte[] { ']', ':', ' ' };
+
+    // #<Java::long[3]: [1, 2, 0]>
+    // #<Java::int[0]: []>
+    // #<Java::JavaLang::String[1]: ["foo"]>
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, arrayToString());
+        final Ruby runtime = context.runtime;
+
+        final Class<?> componentClass = getObject().getClass().getComponentType();
+        if (componentClass.isPrimitive()) {
+            return inspectPrimitiveArray(runtime, componentClass);
+        }
+
+        final Object[] ary = (Object[]) getObject();
+
+        RubyModule type = Java.getProxyClass(runtime, componentClass);
+        RubyString buf = inspectPrefixTypeOnly(context, type);
+        RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+        RubyStringBuilder.cat(runtime, buf, ConvertBytes.intToCharBytes(ary.length));
+        RubyStringBuilder.cat(runtime, buf, END_BRACKET_COLON_SPACE); // ]:
+
+        if (ary.length == 0) {
+            RubyStringBuilder.cat(runtime, buf, EMPTY_ARRAY_BL);
+        } else if (runtime.isInspecting(ary)) {
+            RubyStringBuilder.cat(runtime, buf, RECURSIVE_ARRAY_BL);
+        } else {
+            try {
+                runtime.registerInspecting(ary);
+
+                RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
+                for (int i = 0; i < ary.length; i++) {
+                    RubyString s = JavaUtil.inspectObject(context, ary[i]);
+                    if (i > 0) {
+                        RubyStringBuilder.cat(runtime, buf, COMMA_SPACE); // ,
+                    } else {
+                        buf.setEncoding(s.getEncoding());
+                    }
+                    buf.cat19(s);
+                }
+                RubyStringBuilder.cat(runtime, buf, END_BRACKET); // ]
+            } finally {
+                runtime.unregisterInspecting(ary);
+            }
+        }
+
+        RubyStringBuilder.cat(runtime, buf, GT); // >
+        return buf;
     }
 
+    private RubyString inspectPrimitiveArray(final Ruby runtime, final Class<?> componentClass) {
+        final int len = Array.getLength(getObject());
+
+        final StringBuilder buffer = new StringBuilder(24);
+        final String name = componentClass.getName();
+        buffer.append("#<Java::").append(name).append('[').append(len).append("]: ");
+        switch (name.charAt(0)) {
+            case 'b':
+                if (componentClass == byte.class) buffer.append(Arrays.toString((byte[])getObject()));
+                else /* if (componentClass == boolean.class) */ buffer.append(Arrays.toString((boolean[])getObject()));
+                break;
+            case 's':
+                /* if (componentClass == short.class) */ buffer.append(Arrays.toString((short[])getObject()));
+                break;
+            case 'c':
+                /* if (componentClass == char.class) */
+                return inspectCharArrayPart(runtime, buffer, (char[])getObject(), len);
+            case 'i':
+                /* if (componentClass == int.class) */ buffer.append(Arrays.toString((int[])getObject()));
+                ///* if (componentClass == int.class) */ toString(buffer, (int[])getObject());
+                break;
+            case 'l':
+                /* if (componentClass == long.class) */ buffer.append(Arrays.toString((long[])getObject()));
+                break;
+            case 'f':
+                /* if (componentClass == float.class) */ buffer.append(Arrays.toString((float[])getObject()));
+                break;
+            case 'd':
+                /* if (componentClass == double.class) */ buffer.append(Arrays.toString((double[])getObject()));
+                break;
+        }
+        return RubyString.newUSASCIIString(runtime, buffer.append('>').toString());
+    }
+
+    // NOTE: special case as we want to inspect like a Character wrapper e.g. ['', 'a']
+    private static RubyString inspectCharArrayPart(final Ruby runtime, final StringBuilder buffer, final char[] ary, final int len) {
+        buffer.append('[');
+        for (int i = 0; ; i++) {
+            inspectCharValue(buffer, ary[i]);
+            if (i == len - 1) break;
+            buffer.append(", ");
+        }
+        buffer.append(']');
+        return RubyString.newString(runtime, buffer.append('>'));
+    }
+
+    // long[1, 2, 0]
+    // int[]
+    // java.lang.String["foo"]
     @Override
     public String toString() {
-        return arrayToString().toString();
-    }
-
-    private StringBuilder arrayToString() {
         final StringBuilder buffer = new StringBuilder(24);
-        Class<?> componentClass = getObject().getClass().getComponentType();
-
-        buffer.append(componentClass.getName());
+        final Class<?> componentClass = getObject().getClass().getComponentType();
+        final String name = componentClass.getName();
+        buffer.append(name);
 
         if (componentClass.isPrimitive()) {
-            switch (componentClass.getName().charAt(0)) {
+            switch (name.charAt(0)) {
                 case 'b':
                     if (componentClass == byte.class) buffer.append(Arrays.toString((byte[])getObject()));
                     else /* if (componentClass == boolean.class) */ buffer.append(Arrays.toString((boolean[])getObject()));
@@ -519,6 +614,7 @@ public final class ArrayJavaProxy extends JavaProxy {
                     break;
                 case 'i':
                     /* if (componentClass == int.class) */ buffer.append(Arrays.toString((int[])getObject()));
+                    ///* if (componentClass == int.class) */ toString(buffer, (int[])getObject());
                     break;
                 case 'l':
                     /* if (componentClass == long.class) */ buffer.append(Arrays.toString((long[])getObject()));
@@ -534,7 +630,7 @@ public final class ArrayJavaProxy extends JavaProxy {
             buffer.append(Arrays.toString((Object[]) getObject()));
         }
 
-        return buffer.append('@').append(Integer.toHexString(inspectHashCode()));
+        return buffer.toString();
     }
 
     @Override

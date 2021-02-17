@@ -244,20 +244,24 @@ public class Queue extends RubyObject implements DataType {
         last = head = new Node(null);
     }
 
-    public static void setup(Ruby runtime) {
-        RubyClass cQueue = runtime.getThread().defineClassUnder("Queue", runtime.getObject(), new ObjectAllocator() {
+    public static RubyClass setup(RubyClass threadClass, RubyClass objectClass) {
+        RubyClass cQueue = threadClass.defineClassUnder("Queue", objectClass, Queue::new);
 
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new Queue(runtime, klass);
-            }
-        });
         cQueue.undefineMethod("initialize_copy");
         cQueue.setReifiedClass(Queue.class);
         cQueue.defineAnnotatedMethods(Queue.class);
-        runtime.getObject().setConstant("Queue", cQueue);
 
-        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", runtime.getStopIteration(), runtime.getStopIteration().getAllocator());
-        runtime.getObject().setConstant("ClosedQueueError", cClosedQueueError);
+        objectClass.setConstant("Queue", cQueue);
+
+        return cQueue;
+    }
+
+    public static RubyClass setupError(RubyClass cQueue, RubyClass stopIteration, RubyClass objectClass) {
+        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", stopIteration, stopIteration.getAllocator());
+
+        objectClass.setConstant("ClosedQueueError", cClosedQueueError);
+
+        return cClosedQueueError;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -602,7 +606,7 @@ public class Queue extends RubyObject implements DataType {
     };
 
     public IRubyObject raiseClosedError(ThreadContext context) {
-        throw context.runtime.newRaiseException(context.runtime.getClass("ClosedQueueError"), "queue closed");
+        throw context.runtime.newRaiseException(context.runtime.getClosedQueueError(), "queue closed");
     }
 
     protected RaiseException createInterruptedError(ThreadContext context, String methodName) {

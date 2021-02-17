@@ -19,6 +19,7 @@ default_gems = [
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],
     ['e2mmap', '0.1.0'],
+    ['ffi', '1.14.2'],
     ['fileutils', '1.4.1'],
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
@@ -33,7 +34,6 @@ default_gems = [
     ['ostruct', '0.3.0'],
     ['prime', '0.1.0'],
     ['psych', '3.2.0'],
-    ['racc', '1.5.1'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
     ['rexml', '3.1.9'],
@@ -223,14 +223,13 @@ project 'JRuby Lib Setup' do
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
         # copy bin files if the gem has any
-        Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir || 'bin' )) do |bin|
-          if File.exists?(bin)
-            Dir[ File.join( bin, '*' ) ].each do |f|
-              log "copy to bin: #{File.basename( f )}"
-              target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
-              FileUtils.mkdir_p( File.dirname( target ) )
-              FileUtils.cp_r( f, target )
-            end
+        bin = File.join( gems, "#{gem_name}", spec.bindir || 'bin' )        
+        if File.exists? bin
+          Dir[ File.join( bin, '*' ) ].each do |f|
+            log "copy to bin: #{File.basename( f )}"
+            target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
+            FileUtils.mkdir_p( File.dirname( target ) )
+            FileUtils.cp_r( f, target )
           end
         end
 

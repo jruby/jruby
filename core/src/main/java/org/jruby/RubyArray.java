@@ -92,6 +92,7 @@ import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.murmurCombine;
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.Inspector.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -363,9 +364,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     private static final int TMPLOCK_ARR_F = 1 << 9;
     private static final int TMPLOCK_OR_FROZEN_ARR_F = TMPLOCK_ARR_F | FROZEN_F;
 
-    private static final ByteList EMPTY_ARRAY_BYTELIST = new ByteList(new byte[] { '[',']' }, USASCIIEncoding.INSTANCE);
-    private static final ByteList RECURSIVE_ARRAY_BYTELIST = new ByteList(new byte[] { '[','.','.','.',']' }, USASCIIEncoding.INSTANCE);
-
     private volatile boolean isShared = false;
 
     protected IRubyObject[] values;
@@ -496,20 +494,50 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return realLength;
     }
 
+    /**
+     * Return a Java array copy of the elements contained in this Array.
+     *
+     * This version always creates a new Java array that is exactly the length of the Array's elements.
+     *
+     * @return a Java array with exactly the size and contents of this RubyArray's elements
+     */
     public IRubyObject[] toJavaArray() {
         IRubyObject[] copy = IRubyObject.array(realLength);
         copyInto(copy, 0);
         return copy;
     }
 
+    /**
+     * Return a reference to this RubyArray's underlying Java array, if it is not shared with another RubyArray, or
+     * an exact copy of the relevant range otherwise.
+     *
+     * This method is typically used to work with the underlying array directly, knowing that it is not shared and that
+     * all accesses must consider the begin offset.
+     *
+     * @return The underlying Java array for this RubyArray, or a copy if that array is shared.
+     */
+
     public IRubyObject[] toJavaArrayUnsafe() {
         unpack();
         return !isShared ? values : toJavaArray();
     }
 
+    /**
+     * Return a Java array of the elements contained in this array, possibly a new array object.
+     *
+     * Use this method to potentially avoid making a new array and copying elements when the Array does not view a
+     * subset of the underlying Java array.
+     *
+     * @return a Java array with exactly the size and contents of this RubyArray's elements, possibly the actual
+     *         underlying array.
+     */
     public IRubyObject[] toJavaArrayMaybeUnsafe() {
         unpack();
         return (!isShared && begin == 0 && values.length == realLength) ? values : toJavaArray();
+    }
+
+    public boolean isSharedJavaArray(RubyArray other) {
+        return values == other.values && begin == other.begin && realLength == other.realLength;
     }
 
     /** rb_ary_make_shared
@@ -1079,6 +1107,19 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         values = vals;
     }
 
+    private void unshiftRealloc(int valuesLength) {
+        final long newLength = valuesLength << 1;
+        if (newLength >= Integer.MAX_VALUE) {
+            throw getRuntime().newIndexError("index " + newLength + " too big");
+        }
+        final int newBegin = valuesLength - 1;
+        IRubyObject[] reallocated = IRubyObject.array((int) newLength);
+        safeArrayCopy(values, begin, reallocated, valuesLength, valuesLength);
+        Helpers.fillNil(reallocated, 0, newBegin, metaClass.runtime);
+        values = reallocated;
+        begin = newBegin;
+    }
+
     public IRubyObject insert() {
         throw metaClass.runtime.newArgumentError(0, 1);
     }
@@ -1404,16 +1445,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (begin == 0 || isShared) {
             modify();
             final int valuesLength = values.length - begin;
-            if (realLength == valuesLength) {
-                int newLength = valuesLength >> 1;
-                if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
-
-                newLength += valuesLength;
-                IRubyObject[] vals = IRubyObject.array(newLength);
-                safeArrayCopy(values, begin, vals, 1, valuesLength);
-                Helpers.fillNil(vals, valuesLength + 1, newLength, metaClass.runtime);
-                values = vals;
-                begin = 0;
+            if (valuesLength == 0) {
+                alloc(ARRAY_DEFAULT_SIZE);
+                begin = ARRAY_DEFAULT_SIZE - 1;
+            } else if (realLength == valuesLength) {
+                unshiftRealloc(valuesLength);
             } else {
                 safeArrayCopy(values, begin, values, begin + 1, realLength);
             }
@@ -1701,8 +1737,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
-        if (realLength == 0) return RubyString.newStringShared(runtime, EMPTY_ARRAY_BYTELIST);
-        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_ARRAY_BYTELIST);
+        if (realLength == 0) return RubyString.newStringShared(runtime, EMPTY_ARRAY_BL);
+        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_ARRAY_BL);
 
         try {
             runtime.registerInspecting(this);
@@ -4337,76 +4373,124 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return eltOk((int) (context.runtime.getDefaultRand().genrandReal() * realLength));
     }
 
+    @JRubyMethod(name = "shuffle!")
     public IRubyObject shuffle_bang(ThreadContext context) {
-        return shuffle_bang(context, IRubyObject.NULL_ARRAY);
+        return shuffleBang(context, context.runtime.getRandomClass());
     }
 
-    @JRubyMethod(name = "shuffle!", optional = 1)
-    public IRubyObject shuffle_bang(ThreadContext context, IRubyObject[] args) {
-        modify();
-        IRubyObject randgen = context.runtime.getRandomClass();
-        if (args.length > 0) {
-            IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
-            if (!hash.isNil()) {
-                IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
-                if (ret != null) randgen = ret;
-            }
+    @JRubyMethod(name = "shuffle!")
+    public IRubyObject shuffle_bang(ThreadContext context, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject hash = TypeConverter.checkHashType(runtime, opts);
+
+        if (hash.isNil()) {
+            throw runtime.newArgumentError(1, 0, 0);
         }
+
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+
+        if (ret == null) {
+            return shuffle(context);
+        }
+
+        return shuffleBang(context, ret);
+    }
+
+    private IRubyObject shuffleBang(ThreadContext context, IRubyObject randgen) {
+        Ruby runtime = context.runtime;
+
+        modify();
+
         int i = realLength;
         int len = i;
         try {
             while (i > 0) {
                 int r = (int) RubyRandom.randomLongLimited(context, randgen, i - 1);
                 if (len != realLength) { // || ptr != RARRAY_CONST_PTR(ary)
-                    throw context.runtime.newRuntimeError("modified during shuffle");
+                    throw runtime.newRuntimeError("modified during shuffle");
                 }
                 T tmp = eltOk(--i);
                 eltSetOk(i, eltOk(r));
                 eltSetOk(r, tmp);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            throw concurrentModification(context.runtime, ex);
+            throw concurrentModification(runtime, ex);
         }
 
         return this;
     }
 
+
+    @JRubyMethod(name = "shuffle")
     public IRubyObject shuffle(ThreadContext context) {
-        return shuffle(context, IRubyObject.NULL_ARRAY);
+        RubyArray ary = aryDup();
+        ary.shuffle_bang(context);
+        return ary;
     }
 
-    @JRubyMethod(name = "shuffle", optional = 1)
-    public IRubyObject shuffle(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "shuffle")
+    public IRubyObject shuffle(ThreadContext context, IRubyObject opts) {
         RubyArray ary = aryDup();
-        ary.shuffle_bang(context, args);
+        ary.shuffle_bang(context, opts);
         return ary;
     }
 
     private static final int SORTED_THRESHOLD = 10;
 
-    @JRubyMethod(name = "sample", optional = 2)
-    public IRubyObject sample(ThreadContext context, IRubyObject[] args) {
-        unpack();
+    @JRubyMethod(name = "sample")
+    public IRubyObject sample(ThreadContext context) {
+        return sampleCommon(context, context.runtime.getRandomClass());
+    }
+
+    @JRubyMethod(name = "sample")
+    public IRubyObject sample(ThreadContext context, IRubyObject sampleOrOpts) {
+        final Ruby runtime = context.runtime;
+
+        IRubyObject hash = TypeConverter.checkHashType(runtime, sampleOrOpts);
+
+        if (hash.isNil()) {
+            return sampleCommon(context, sampleOrOpts, runtime.getRandomClass());
+        }
+
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+
+        return sampleCommon(context, ret != null ? ret : runtime.getRandomClass());
+    }
+
+    @JRubyMethod(name = "sample")
+    public IRubyObject sample(ThreadContext context, IRubyObject sample, IRubyObject opts) {
+        final Ruby runtime = context.runtime;
+
+        IRubyObject hash = TypeConverter.checkHashType(runtime, opts);
+
+        if (hash.isNil()) {
+            throw runtime.newArgumentError(2, 0, 1);
+        }
+
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+
+        return sampleCommon(context, sample, ret != null ? ret : runtime.getRandomClass());
+    }
+
+    /**
+     * Common sample logic when no sample size was specified.
+     */
+    private IRubyObject sampleCommon(ThreadContext context, IRubyObject randgen) {
+        if (realLength == 0) return context.nil;
+
+        return eltOk(realLength == 1 ? 0 : RubyRandom.randomLongLimited(context, randgen, realLength - 1));
+    }
+
+    /**
+     * Common sample logic when a sample size was specified.
+     */
+    private IRubyObject sampleCommon(ThreadContext context, IRubyObject sample, IRubyObject randgen) {
+        Ruby runtime = context.runtime;
+
+        int n = RubyNumeric.num2int(sample);
+
         try {
-            IRubyObject randgen = context.runtime.getRandomClass();
-
-            if (args.length > 0) {
-                IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
-                if (!hash.isNil()) {
-                    IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
-                    if (ret != null) randgen = ret;
-                    args = ArraySupport.newCopy(args, args.length - 1);
-                }
-            }
-
-            if (args.length == 0) {
-                if (realLength == 0) return context.nil;
-                return eltOk(realLength == 1 ? 0 : RubyRandom.randomLongLimited(context, randgen, realLength - 1));
-            }
-
-            final Ruby runtime = context.runtime;
-            int n = RubyNumeric.num2int(args[0]);
-
             if (n < 0) throw runtime.newArgumentError("negative sample number");
             if (n > realLength) n = realLength;
 
@@ -5702,5 +5786,43 @@ float_loop:
             return dupImpl(runtime, arrayClass);
         }
         return this;
+    }
+
+    @Deprecated
+    public IRubyObject shuffle(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return shuffle(context);
+            case 1:
+                return shuffle(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 0);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject shuffle_bang(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return shuffle_bang(context, context.nil);
+            case 1:
+                return shuffle_bang(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 0);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject sample(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return sample(context);
+            case 1:
+                return sample(context, args[0]);
+            case 2:
+                return sample(context, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
     }
 }
