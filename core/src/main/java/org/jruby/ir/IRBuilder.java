@@ -3837,16 +3837,10 @@ public class IRBuilder {
     }
 
     public Operand buildSuper(SuperNode superNode) {
-        if (scope.isModuleBody()) return buildSuperInScriptBody();
-
         Operand[] args = setupCallArgs(superNode.getArgsNode());
         Operand block = setupCallClosure(superNode.getIterNode());
         if (block == null) block = getYieldClosureVariable();
         return buildSuperInstr(block, args);
-    }
-
-    private Operand buildSuperInScriptBody() {
-        return addResultInstr(new UnresolvedSuperInstr(scope, createTemporaryVariable(), buildSelf(), EMPTY_OPERANDS, null, scope.maybeUsingRefinements()));
     }
 
     public Operand buildSValue(SValueNode node) {
@@ -4043,8 +4037,6 @@ public class IRBuilder {
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {
-        if (scope.isModuleBody()) return buildSuperInScriptBody();
-
         Operand block = setupCallClosure(zsuperNode.getIterNode());
         if (block == null) block = getYieldClosureVariable();
 
