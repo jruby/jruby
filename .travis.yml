@@ -13,7 +13,7 @@ cache:
 
 before_install:
   - unset _JAVA_OPTIONS
-  - rm ~/.m2/settings.xml
+  - rm -f ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
   - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:CompressedClassSpaceSize=96M"
   - export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=96M"
