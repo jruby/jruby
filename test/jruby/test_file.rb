@@ -1385,4 +1385,49 @@ class TestFile < Test::Unit::TestCase
     assert_equal "#<File:test/jruby/gem.jar>", file.inspect
   end
 
+  A_PATH = File.expand_path('.test_write_chown', File.dirname(__FILE__))
+  FileUtils.rm_r(A_PATH) if File.exist?(A_PATH)
+
+  def test_an_atomic_write
+    FileUtils.touch a_path = A_PATH
+
+    stat = AtomicFileWrite.call(a_path) do |io|
+      io.write('0 1 2 3 4 5 6 7 8 9')
+    end
+
+    puts "#{a_path.inspect} - #{stat.inspect}" if $VERBOSE
+    assert_equal 19, stat.size
+  ensure
+    FileUtils.rm_r(A_PATH) rescue nil
+  end
+
+  module AtomicFileWrite
+
+    module_function
+
+    def call(file_name)
+      old_stat = File.stat(file_name)
+
+      mode = old_stat ? old_stat.mode : nil
+
+      # Create temporary file with identical permissions
+      temp_file = File.new(rand_filename(file_name), "w", mode)
+      temp_file.binmode
+      yield temp_file
+      temp_file.close
+
+      # Overwrite original file with temp file
+      File.rename(temp_file.path, file_name)
+      # Set correct uid/gid on new file
+      File.chown(old_stat.uid, old_stat.gid, file_name)
+
+      File.stat(file_name)
+    end
+
+    def rand_filename(prefix)
+      [ prefix, Thread.current.object_id, Process.pid, rand(1000000) ].join('.')
+    end
+
+  end
+
 end
