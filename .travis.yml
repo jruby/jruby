@@ -26,19 +26,19 @@ before_script:
   - echo $JAVA_OPTS
   - echo $MAVEN_OPTS
 
-jdk:
-  - openjdk8
+#jdk:
+#  - openjdk8
 
 os:
   - linux
 
 arch:
-  - arm64
+  - arm64 # has AdoptOpenJDK 11 installed
 
-env:
-  global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx720M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
-    - MALLOC_ARENA_MAX=2
+#env:
+#  global:
+#    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx720M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
+#    - MALLOC_ARENA_MAX=2
 
 install: true
 
@@ -82,12 +82,12 @@ matrix:
 #        - jruby -S rake test:mri:extra
 #      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - name: MRI stdlib
-      script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:mri:stdlib
-      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+#    - name: MRI stdlib
+#      script:
+#        - mvn clean package -Pbootstrap
+#        - bundle install
+#        - jruby -S rake test:mri:stdlib
+#      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: spec/ruby fast
       script:
@@ -158,11 +158,11 @@ matrix:
         - jruby -S rake test:jruby
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
-    - name: JRuby tests aot
-      script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:jruby:aot
+#    - name: JRuby tests aot
+#      script:
+#        - mvn clean package -Pbootstrap
+#        - bundle install
+#        - jruby -S rake test:jruby:aot
 
 #    - name: JRuby slow tests
 #      script:
@@ -305,11 +305,11 @@ notifications:
       # note: `travis encrypt -r "jruby/jruby" "irc.freenode.org#jruby"`
       secure: "2DmwSfKvhnrdcC6LTXHHJ4QlSRXDlVUa9jEjXcdgIIZZm4ghbg/mmLjD6bv/ueCC8idQrYyuXRLeKIdaIss64q/lbbaj5VVV1p91fkZ3H+AhgHRPviboEm2bweSmjSWr7luXg4qifoL7YcXEtXw0YKGmub8WSZj4uPZbm5ce2l8="
 
-services:
-  - redis-server
-  - haveged
-
-addons:
-  apt:
-    packages:
-      - haveged
+#services:
+#  - redis-server
+#  - haveged
+#
+#addons:
+#  apt:
+#    packages:
+#      - haveged
