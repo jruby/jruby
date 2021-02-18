@@ -4,6 +4,9 @@ require 'rbconfig'
 require 'java'
 require 'jruby'
 
+# Inherit from the default configuration
+load "#{__dir__}/ruby/default.mspec"
+
 # Some non-deterministic specs assume a GC will actually fire.  For spec
 # runs we change our noop version of GC.start to requesting we actually
 # perform a GC on the JVM.
@@ -15,35 +18,18 @@ module GC
 end
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
-WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
+HOST_OS = RbConfig::CONFIG['host_os']
+WINDOWS = HOST_OS =~ /mswin/
 
 SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
 TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 
 class MSpecScript
+  set :prefix, 'spec/ruby'
+
   jruby = RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
   jruby = File.expand_path("../../bin/#{jruby}", __FILE__)
   set :target, jruby
-
-  # Command Line specs
-  set :command_line, [
-    SPEC_DIR + '/command_line',
-  ]
-
-  # Language features specs
-  set :language, [
-    SPEC_DIR + '/language',
-  ]
-
-  # Core library specs
-  set :core, [
-    SPEC_DIR + '/core',
-  ]
-
-  # Standard library specs
-  set :library, [
-    SPEC_DIR + '/library',
-  ]
 
   slow_specs = [
       SPEC_DIR + '/core/process',
@@ -61,16 +47,17 @@ class MSpecScript
       SPEC_DIR + '/library/net/http',
       # This requires --debug which slows down or changes other spec results
       SPEC_DIR + '/core/tracepoint',
-      *get(:command_line)
+      *get(:command_line),
+      *get(:security),
   ]
 
   set :fast, [
-    *get(:language),
-    *get(:core),
-    *get(:library),
+      *get(:language),
+      *get(:core),
+      *get(:library),
 
-    # These all spawn sub-rubies, making them very slow to run
-    *slow_specs.map {|name| '^' + name},
+      # These all spawn sub-rubies, making them very slow to run
+      *slow_specs.map {|name| '^' + name},
   ]
 
   set :slow, slow_specs
@@ -94,15 +81,21 @@ class MSpecScript
 
   get(:xtags) << 'critical'
   get(:ci_xtags) << 'critical'
+  get(:xtags) << 'hangs'
+  get(:ci_xtags) << 'hangs'
 
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
+
+  if (ENV["TRAVIS"] == "true")
+    get(:ci_xtags) << "travis" # Failing only on Travis
+  end
+
+  get(:ci_xtags) << HOST_OS
 
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via
     # ruby_exe() in-process (see core/argf/gets_spec.rb)
     JRuby.runtime.instance_config.run_ruby_in_process = false
-    # core
-    get(:core) << '^' + SPEC_DIR + '/core/file/stat'    # many failures
 
     # exclude specs tagged with 'windows' keyword
     get(:ci_xtags) << 'windows'
@@ -110,20 +103,19 @@ class MSpecScript
 
   # If running specs with jit threshold = 1 or force (AOT) compile, additional tags
   if JRuby.runtime.instance_config.compile_mode.to_s == "FORCE" ||
-     JRuby.runtime.instance_config.jit_threshold == 1
+      JRuby.runtime.instance_config.jit_threshold == 1
     get(:ci_xtags) << 'compiler'
   end
 
   # This set of files is run by mspec ci
-  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
-
-  set :backtrace_filter, /mspec\//
+  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library) + get(:security)
 
   set :tags_patterns, [
-                        [%r(^.*/language/),     TAGS_DIR + '/ruby/language/'],
-                        [%r(^.*/core/),         TAGS_DIR + '/ruby/core/'],
-                        [%r(^.*/command_line/), TAGS_DIR + '/ruby/command_line/'],
-                        [%r(^.*/library/),      TAGS_DIR + '/ruby/library/'],
-                        [/_spec.rb$/,       '_tags.txt']
-                      ]
+      [%r(^.*/language/),     TAGS_DIR + '/ruby/language/'],
+      [%r(^.*/core/),         TAGS_DIR + '/ruby/core/'],
+      [%r(^.*/command_line/), TAGS_DIR + '/ruby/command_line/'],
+      [%r(^.*/library/),      TAGS_DIR + '/ruby/library/'],
+      [%r(^.*/security/),     TAGS_DIR + '/ruby/security/'],
+      [/_spec.rb$/,       '_tags.txt']
+  ]
 end
