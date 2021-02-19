@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyKernel;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.IRException;
@@ -8,6 +9,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -43,9 +45,16 @@ public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityIn
             throw ((IRException) getException()).getException(context.runtime);
         }
 
-        Throwable throwable = (Throwable) getException().retrieve(context, self, currScope, currDynScope, temp);
-        Helpers.throwException(throwable);
-        return null; // not reached
+        Object excObj = getException().retrieve(context, self, currScope, currDynScope, temp);
+
+        if (excObj instanceof IRubyObject) {
+            RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
+        } else if (excObj instanceof Throwable) { // java exception -- avoid having to add 'throws' clause everywhere!
+            Helpers.throwException((Throwable)excObj);
+        }
+
+        // should never get here
+        throw new RuntimeException("Control shouldn't have reached here in ThrowEx");
     }
 
     @Override
