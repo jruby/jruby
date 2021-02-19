@@ -4022,7 +4022,13 @@ public class IRBuilder {
     }
 
     private boolean isMethodDefine() {
-        return methodName != null && "define_method".equals(methodName.asJavaString());
+        if (methodName != null) {
+            String name = methodName.asJavaString();
+
+            return "define_method".equals(name) || "define_singleton_method".equals(name);
+        }
+
+        return false;
     }
 
     private void addRaiseError(String id, String message) {
