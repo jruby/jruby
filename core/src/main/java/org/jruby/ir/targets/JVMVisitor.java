@@ -603,14 +603,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void ArgScopeDepthInstr(ArgScopeDepthInstr instr) {
-        jvmMethod().loadContext();
-        jvmMethod().loadStaticScope();
-        jvmMethod().invokeIRHelper("getArgScopeDepth", sig(RubyFixnum.class, ThreadContext.class, StaticScope.class));
-        jvmStoreLocal(instr.getResult());
-    }
-
-    @Override
     public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) {
         jvmMethod().loadContext();
         jvmMethod().loadSelf();
