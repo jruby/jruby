@@ -4003,6 +4003,10 @@ public class IRBuilder {
             Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
             addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
         } else {
+            // We will not have a zsuper show up since we won't emit it but we still need to toggle it.
+            // define_method optimization will try and create a method from a closure but it should not in this case.
+            scope.setUsesZSuper();
+
             // Two conditions will inject an error:
             // 1. We cannot find any method scope above the closure (e.g. module A; define_method(:a) { super }; end)
             // 2. One of the method calls the closure is passed to is named define_method.
@@ -4030,15 +4034,19 @@ public class IRBuilder {
                 exceptionClass,
                 new Operand[]{new StringLiteral(message)},
                 null));
-        addInstr(new ThrowExceptionInstr(exception));
-
+        Operand kernel = searchModuleForConst(new ObjectClass(), runtime.newSymbol("Kernel"));
+        addResultInstr(CallInstr.create(scope,
+                createTemporaryVariable(),
+                runtime.newSymbol("raise"),
+                kernel,
+                new Operand[] { exception },
+                null));
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {
         Operand block = setupCallClosure(zsuperNode.getIterNode());
         if (block == null) block = getYieldClosureVariable();
 
-        // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs to fixup depth.
         if (scope instanceof IRMethod) {
             return buildSuperInstr(block, getCallArgs(scope, this));
         } else {
