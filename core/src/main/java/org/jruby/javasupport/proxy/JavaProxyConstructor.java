@@ -63,7 +63,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     private final Constructor<?> proxyConstructor;
     private final Class<?>[] actualParameterTypes;
     private final boolean actualVarArgs;
-    private final boolean exportable; //exportable to java, or does it have the jruby JavaProxyInvocationHandler class at the end?
+    private final boolean exportable; //exportable to java, or: does it have the jruby Ruby+RubyClass classes at the end?
 
     private final JavaProxyClass declaringProxyClass;
 
@@ -85,9 +85,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         this.proxyConstructor = constructor;
         Class<?>[] parameterTypes = constructor.getParameterTypes();
         this.exportable = parameterTypes.length == 0 || parameterTypes[parameterTypes.length - 1] != RubyClass.class;
-        // see JavaProxyClassFactory's generateConstructor ...
+        // see ruby constructors, last two are Ruby,RubyClass for generated/reified constructors (RubyClass/reifiy)
         this.actualParameterTypes = ArraySupport.newCopy(parameterTypes, parameterTypes.length - (exportable?0:2));
-        this.actualVarArgs = JavaProxyClassFactory.isVarArgs(proxyConstructor);
+        this.actualVarArgs = proxyConstructor.isVarArgs();
     }
 
     public final Class<?>[] getParameterTypes() {
@@ -97,9 +97,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     public final Class<?>[] getExceptionTypes() {
         return proxyConstructor.getExceptionTypes();
     }
-    
+
     public final boolean isExportable() {
-    	return exportable;
+        return exportable;
     }
 
     public final boolean isVarArgs() { return actualVarArgs; }

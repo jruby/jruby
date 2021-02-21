@@ -72,7 +72,6 @@ import org.jruby.util.ClassDefiningClassLoader;
 
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
-import static org.jruby.javasupport.proxy.JavaProxyClassFactory.runtimeTLS;
 
 /**
  * Generalized proxy for classes and interfaces.
@@ -97,11 +96,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();
     private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<>();
 
-    /* package scope */
-    JavaProxyClass(final Class<?> proxyClass) {
-        this(getThreadLocalRuntime(), proxyClass);
-    }
-
     private JavaProxyClass(final Ruby runtime, final Class<?> proxyClass) {
         super(runtime, runtime.getModule("Java").getClass("JavaProxyClass"));
         this.proxyClass = proxyClass;
@@ -122,11 +116,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return this;
     }
 
-    private static Ruby getThreadLocalRuntime() {
-        return runtimeTLS.get();
-    }
-
-
     public Class getSuperclass() {
         return proxyClass.getSuperclass();
     }
@@ -143,7 +132,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     private transient JavaProxyConstructor[] constructors;
 
-    // TODO: filter out in Java Jcreate or here?
     public JavaProxyConstructor[] getConstructors() {
         JavaProxyConstructor[] constructorsCached = this.constructors;
         if ( constructorsCached != null ) return constructorsCached;
@@ -151,10 +139,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         final Ruby runtime = getRuntime();
         final Constructor[] ctors = proxyClass.getConstructors();
         List<JavaProxyConstructor> constructors = new ArrayList<>(ctors.length);
-        for ( int i = 0; i < ctors.length; i++ ) {
-        	JavaProxyConstructor jpc = new JavaProxyConstructor(runtime, this, ctors[i]);
-        	if (!jpc.isExportable())
-        		constructors.add(jpc);
+        for (int i = 0; i < ctors.length; i++) {
+            JavaProxyConstructor jpc = new JavaProxyConstructor(runtime, this, ctors[i]);
+            if (!jpc.isExportable()) constructors.add(jpc);
         }
         return this.constructors = constructors.toArray(new JavaProxyConstructor[constructors.size()]);
     }
@@ -396,7 +383,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     }
 
-    //called from reified java concrete-extended classes
+    //called from reified java concrete-extended classes with super-overrides
     @SuppressWarnings("unchecked")
     public void initMethod(final String name, final String desc, final boolean hasSuper) {
         final Class proxy = this.proxyClass;
@@ -417,8 +404,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 methodMap.put(name, methodsWithName);
             }
             methodsWithName.add(proxyMethod);
-
-            //return proxyMethod;
         }
         catch (ClassNotFoundException e) {
             throw new InternalError(e.getMessage());
@@ -501,13 +486,13 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         JavaProxyClass.defineAnnotatedMethods(JavaProxyClass.class);
         return JavaProxyClass;
     }
-
-    @JRubyMethod(meta = true)
-    public static RubyObject get(IRubyObject self, IRubyObject obj) {
-        final Ruby runtime = self.getRuntime();
-
-        throw runtime.newNotImplementedError("Internal implementation has changed. JavaProxyClass's have been partially replaced with reification.");
-    }
+//
+//    @JRubyMethod(meta = true)
+//    public static RubyObject get(IRubyObject self, IRubyObject obj) {
+//        final Ruby runtime = self.getRuntime();
+//
+//        throw runtime.newNotImplementedError("Internal implementation has changed. JavaProxyClass's have been partially replaced with reification.");
+//    }
 
     private static final HashSet<String> EXCLUDE_MODULES = new HashSet<>(8, 1);
     static {
@@ -528,14 +513,10 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return getProxyClass(runtime, (RubyClass) obj);
     }
     
-    //Note: called from <clinit> of reified classes
-    public static JavaProxyClass setProxyClassReified(final Ruby runtime, final RubyClass clazz, final Class<? extends ReifiedJavaProxy> reified, final boolean allocator) {
-    	JavaProxyClass proxyClass = new JavaProxyClass(runtime, reified);
-    	// TODO: don't duplicate this code from above
-        // NOTE: currently we regenerate proxy classes when a Ruby method is added on the type
-        //JavaSupport.ProxyClassKey classKey = JavaSupport.ProxyClassKey.getInstance(superClass, interfaces, names);
-    	//TODO:
-    	//JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
+    // Note: called from <clinit> of reified classes
+    public static JavaProxyClass setProxyClassReified(final Ruby runtime, final RubyClass clazz,
+            final Class<? extends ReifiedJavaProxy> reified, final boolean allocator) {
+        JavaProxyClass proxyClass = new JavaProxyClass(runtime, reified);
         clazz.setInstanceVariable("@java_proxy_class", proxyClass);
 
         RubyClass singleton = clazz.getSingletonClass();
@@ -543,47 +524,39 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
         singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
 
-        if (allocator)
-    	{
-        	DynamicMethod oldNewMethod = singleton.searchMethod("new");
-        	if (!(oldNewMethod instanceof AbstractIRMethod))
-    		{
-        		singleton.addMethod("new", new NewMethodReified(clazz, reified));
-        		// Install initialize 
-                StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified, true);
-    		}
-        	else
-    		{
-        		System.out.println("SKIPPING NEW for class " + singleton.toString());
-        		// Don't initialize, just jinit 
-                StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified, false);
-    		}
-    	}
+        if (allocator) {
+            DynamicMethod oldNewMethod = singleton.searchMethod("new");
+            boolean defaultNew = !(oldNewMethod instanceof AbstractIRMethod); // TODO: is this the proper way to check if user-code has/not defined a method?
+            if (defaultNew) {
+                singleton.addMethod("new", new NewMethodReified(clazz, reified));
+            }
+            // Install initialize
+            StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified, defaultNew);
+        }
         return proxyClass;
     }
-    
+
     /**
-     * These objects are to allow static initializers in reified code. See RubyClass.BaseReifier for 
-     * details
+     * These objects are to allow static initializers in reified code. See
+     * RubyClass.BaseReifier for details
      */
     private static final ThreadLocal<Object[]> lookup = new ThreadLocal<>();
-    
-    public static Integer addStaticInitLookup(Object... objects)
-    {
-    	int val = objects.hashCode();
-    	// TODO: is this a log or an exception?
-    	if (lookup.get() != null) throw new IllegalStateException("Thread local class wasn't consumed");
-    	lookup.set(objects);
-    	return val;
+
+    public static Integer addStaticInitLookup(Object... objects) {
+        int val = objects.hashCode();
+        // TODO: is this a log or an exception?
+        if (lookup.get() != null) throw new IllegalStateException("Thread local class wasn't consumed");
+        lookup.set(objects);
+        return val;
     }
+
     // used by reified code in RubyClass
-    public static Object[] getStaticInitLookup(int id)
-    {
-    	if (lookup.get() == null) throw new IllegalStateException("Thread local class wasn't set up for reification");
-    	if (lookup.get().hashCode() != id) throw new IllegalStateException("Thread local class wasn't was reification was expecting");
-    	Object[] o = lookup.get();
-    	lookup.set(null);
-    	return o;
+    public static Object[] getStaticInitLookup(int id) {
+        if (lookup.get() == null) throw new IllegalStateException("Thread local class wasn't set up for reification");
+        if (lookup.get().hashCode() != id) throw new IllegalStateException("Thread local class wasn't was reification was expecting");
+        Object[] o = lookup.get();
+        lookup.set(null);
+        return o;
     }
 
     public static JavaProxyClass getProxyClass(final Ruby runtime, final RubyClass clazz) {

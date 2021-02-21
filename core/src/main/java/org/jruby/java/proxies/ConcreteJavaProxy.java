@@ -1,32 +1,59 @@
+/***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
+
 package org.jruby.java.proxies;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
 
-import java.lang.reflect.*;
-import java.util.ArrayList;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
-import org.jruby.*;
-import org.jruby.ast.*;
-import org.jruby.exceptions.ArgumentError;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.*;
-import org.jruby.internal.runtime.methods.*;
-import org.jruby.internal.runtime.methods.JavaMethod.*;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.interpreter.ExitableInterpreterContext;
-import org.jruby.ir.interpreter.ExitableInterpreterEngine;
-import org.jruby.ir.interpreter.ExitableInterpreterEngineState;
-import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.java.dispatch.CallableSelector;
-import org.jruby.java.dispatch.CallableSelector.CallableCache;
-import org.jruby.javasupport.*;
-import org.jruby.javasupport.Java.JCtorCache;
-import org.jruby.javasupport.proxy.*;
-import org.jruby.runtime.*;
+import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.SplitSuperState;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.proxy.JavaProxyClass;
+import org.jruby.javasupport.proxy.JavaProxyConstructor;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.JavaInternalBlockBody;
+import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.collections.NonBlockingHashMapLong;
 
 public class ConcreteJavaProxy extends JavaProxy {
 
@@ -101,7 +128,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
 
     }
-//new override
+    
+    //new override
     private static final class NewMethod extends org.jruby.internal.runtime.methods.JavaMethod {
     	final DynamicMethod newMethod;
 
@@ -109,18 +137,18 @@ public class ConcreteJavaProxy extends JavaProxy {
             super(clazz, Visibility.PUBLIC, "new");
             newMethod = clazz.searchMethod("new");
         }
-// TODO: reload this on method changes?
+        
+        // TODO: reload this on method changes?
         private DynamicMethod reifyAndNewMethod(IRubyObject clazz) { 
 
         	RubyClass parent = ((RubyClass)clazz);
-        	//System.err.println(parent.getName() + " is, (from NewMethod, original, a proxy) " + parent.getJavaProxy());// TODO: remove
         	if (parent.getJavaProxy()) return newMethod;
         	
         	// overridden class: reify and re-lookup new as reification changes it
             if (parent.getReifiedClass() == null) {
-            	parent.reifyWithAncestors(); // TODO: is this good?
+            	parent.reifyWithAncestors();
             }
-            //System.err.println(parent.getName() + " is " + parent.getJavaProxy());
+            
             return new NewMethodReified(parent, parent.getReifiedJavaClass());
         }
 
@@ -193,10 +221,6 @@ public class ConcreteJavaProxy extends JavaProxy {
 		{
 			try
 			{
-				if (oldInit == null)
-				{
-					System.out.println("ys");
-				}
 				ConcreteJavaProxy cjp = (ConcreteJavaProxy)self;
 				//TODO: Insead of selectively overwriting, silently fail? or only use the other method/this method?
 				if (cjp.getObject() == null)
@@ -291,15 +315,7 @@ public class ConcreteJavaProxy extends JavaProxy {
   			}
   			else
   			{
-  				/*try
-  				{
 
-  		  			JavaObject jo = (JavaObject)initialize.call(context, self, clazz, "new", args);
-  		  			return ((ReifiedJavaProxy)jo.getValue()).___jruby$rubyObject();
-  				}//TODO: the latter two shouldn't be caught here
-  				catch (ArgumentError | AssertionError | ClassCastException ae)*/
-  				{
-  					//System.out.println("AE");
   					// assume no easy conversions, use ruby fallback.
 	  				ConcreteJavaProxy object = new ConcreteJavaProxy(context.runtime, (RubyClass) self);
 	  				try
@@ -316,61 +332,17 @@ public class ConcreteJavaProxy extends JavaProxy {
 	  				}
   				}
   			}
-  		}
+  		
 
       }
-      
-
-    //TODO: cleanup
-    public static final class SimpleJavaInitializes {
-
-        public static Object[] freshMethodArray(DynamicMethod initialize, Ruby runtime, IRubyObject self, RubyModule clazz, String name,
-				IRubyObject[] args)
-        {
-
-			return new Object[] {
-					runtime.newArray(args), //TODO:? 
-		            runtime.newProc(Block.Type.LAMBDA, new Block(new JavaInternalBlockBody(runtime, Signature.from(initialize.getArity()))
-					{
-						
-						@Override
-						public IRubyObject yield(ThreadContext _context, IRubyObject[] _args)
-						{
-							return initialize.call(_context, self, clazz, name, args);
-						}
-						
-					}))
-			};
-        }
-        
-        public static Object[] freshNopArray(Ruby runtime, IRubyObject[] args)
-        {
-
-			return new Object[] {
-					runtime.newArray(args), 
-		            runtime.newProc(Block.Type.LAMBDA, new Block(new JavaInternalBlockBody(runtime, Signature.OPTIONAL)
-					{
-						@Override
-						public IRubyObject yield(ThreadContext _context, IRubyObject[] _args)
-						{
-							return _context.nil; // no body/super is java
-						}
-						
-					}))
-			};
-        }
-
-    }
-    
+          
     public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start)
     {
     	// TODO: ???
 		return start;
     }
     
-
-	//TODO: test thar calls jcrwates new vs initialize
-    // used by reified classes
+    // used by reified classes, this method is tighly coupled with RealClassGenerator
     public Object[] splitInitialized(RubyClass base, IRubyObject[] args, Block blk)
     {
     	String name = base.getClassConfig().javaCtorMethodName;
@@ -390,8 +362,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 			}
 			else
 			{
-				return new Object[] { state.callArrayArgs,
-						air, state };// TODO: add block
+				return new Object[] { state.callArrayArgs, air, state };// TODO: add block
 			}
 		}
 		else
@@ -426,12 +397,6 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     protected static void initialize(final RubyClass concreteJavaProxy) {
         concreteJavaProxy.addMethod("initialize", new InitializeMethod(concreteJavaProxy));
-        if (concreteJavaProxy.getName().equals("ConcreteJavaProxy"))
-        {}
-        else if (concreteJavaProxy.getName().equals("MapJavaProxy"))
-        {}
-        else
-        System.err.println("adding to " + concreteJavaProxy.getName()); //TODO: remove
         // We define a custom "new" method to ensure that __jcreate! is getting called,
         // so that if the user doesn't call super in their subclasses, the object will
         // still get set up properly. See JRUBY-4704.

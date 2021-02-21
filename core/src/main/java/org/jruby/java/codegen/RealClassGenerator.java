@@ -42,6 +42,7 @@ import org.jruby.RubyClass.ConcreteJavaReifier;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.util.BasicObjectStubGenerator;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.*;
@@ -836,7 +837,7 @@ public abstract class RealClassGenerator {
      */
     public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition, int superpos, boolean hasParent, ConcreteJavaReifier cjr, JavaConstructor[] constructors)
     {
-    	// TODO: add source position of super call
+    	// TODO: add source position of super call?
     	
     	/* This generates this code template. Note that lines of  //// show what code is being generated
     	 * 
@@ -845,18 +846,17 @@ public abstract class RealClassGenerator {
       this.this$rubyObject = var1;
       Object[] var10000 = var1.splitInitialized(var2 ? rubyClass : var6, var3, var4);
       IRubyObject var10001 = (IRubyObject)var10000[0];
-      RubyArray var7;
-      switch(JCreateMethod.forTypes((IRubyObject)var10000[0], this$rubyCtorCache, var5)) {
+      int var10003 = JCreateMethod.forTypes((IRubyObject)var10000[0], this$rubyCtorCache, var5);
+      RubyArray var7 = var10001.convertToArray();
+      switch(var10003) {
       case 0:
-         var7 = var10001.convertToArray();
-         super();
+         super((String)var7.entry(0).toJava(String.class), (Boolean)var7.entry(1).toJava(Boolean.TYPE));
          break;
       case 1:
-         var7 = var10001.convertToArray();
-         super((Node[])var7.entry(0).toJava(Node[].class));
+         super(((Number)var7.entry(0).toJava(Integer.TYPE)).intValue(), (String)var7.entry(1).toJava(String.class));
          break;
       default:
-         throw new IllegalStateException("No available superconstructors match that type signature");
+         throw var5.newNoMethodError("No available java superconstructors match that type signature", "super.<init>", var7.toJavaArrayMaybeUnsafe());
       }
 
       var1.setObject(this);
@@ -886,7 +886,7 @@ public abstract class RealClassGenerator {
         m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
         
         ////IRubyObject c =  this$rubyObject.splitInitialized(this.$rubyInitArgs);
-    	m.iload(isSuperCallIndex); //TODO:
+    	m.iload(isSuperCallIndex);
     	
     	Label normal = new Label();
     	Label done = new Label();
@@ -924,6 +924,10 @@ public abstract class RealClassGenerator {
 
             m.invokestatic(p(JCreateMethod.class), "forTypes", sig(int.class, IRubyObject.class, JCtorCache.class, Ruby.class));
             // ..., arglist, index
+            m.swap();
+        	////ra = c.convertToArray();
+        	m.invokeinterface(p(IRubyObject.class), "convertToArray", sig(RubyArray.class));
+        	m.astore(rubyArrayIndex); // ....
             Label defaultLabel = new Label();
             Label[] cases = new Label[constructors.length]; //note: offset by one from index
             for (int i = 0; i < constructors.length; i++)
@@ -931,15 +935,17 @@ public abstract class RealClassGenerator {
             	cases[i] = new Label();
             }
             Label endofswitch = new Label();
-			GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
+            //// switch (...)
             m.tableswitch(0, constructors.length-1, defaultLabel, cases);
             {
-            	// default: throw new IllegalStateException("corruption"?) //TODO: type & message
+            	// default: throw runtime.newNoMethodError("No available superconstructors match that type signature", "super.<init>", [])
             	m.label(defaultLabel);
-            	m.newobj(p(IllegalStateException.class));
-            	m.dup();
-            	m.ldc("No available superconstructors match that type signature");
-            	m.invokespecial(p(IllegalStateException.class), "<init>", sig(void.class, String.class));
+            	m.aload(rubyIndex);
+            	m.ldc("No available java superconstructors match that type signature");
+            	m.ldc("super.<init>");
+            	m.aload(rubyArrayIndex);
+            	m.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
+            	m.invokevirtual(p(Ruby.class), "newNoMethodError", sig(RaiseException.class, String.class, String.class, IRubyObject[].class));
             	m.athrow();
             	
     	        // case n:
@@ -948,10 +954,6 @@ public abstract class RealClassGenerator {
                 	m.label(cases[i]);
 
                 	
-                	////ra = c.convertToArray();
-                	// Note: can't pull this code up above the switch because of nils
-                	m.invokeinterface(p(IRubyObject.class), "convertToArray", sig(RubyArray.class));
-                	m.astore(rubyArrayIndex); // ....
                 	
                 	// setup super call
                 	m.aload(thisIndex); //...,  uninitialized this
@@ -985,7 +987,6 @@ public abstract class RealClassGenerator {
 			m.iconst_1(); // true, we are super
 			m.swap();
 			
-			//TODO: unsafe, maybeunsafe, normal?
         	m.invokeinterface(p(IRubyObject.class), "convertToArray", sig(RubyArray.class));
         	m.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
         	

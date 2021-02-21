@@ -105,7 +105,6 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         }
     }
     
-    //TODO: copy to other code?
     public String getSignature() {
     	return signature;
     }
