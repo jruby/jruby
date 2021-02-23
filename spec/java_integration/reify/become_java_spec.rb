@@ -158,6 +158,7 @@ describe "JRuby class reification" do
 			@array = array
 			super(array.inspect)
 			@at=0
+			@loop = false
 		end
 		def hasNext
 			@at<@array.length
@@ -165,12 +166,34 @@ describe "JRuby class reification" do
 		def next()
 			@array[@array.length - 1 - @at].tap{@at+=1}
 		end
+		
+		def remove
+			raise java.lang.StackOverflowError.new if @loop
+			@loop = true
+			begin
+				@array<< :fail1
+				super
+				@array << :fail2
+			rescue java.lang.UnsupportedOperationException => uo
+				@array = [:success]
+			rescue java.lang.StackOverflowError => so
+				@array << :failSO
+			end
+			@loop = false
+		end
 	end
 
 	gotten = []
 	clz.new([:a, :b, :c]).forEachRemaining { |k| gotten << k }
 	expect(gotten).to eql([:c,:b, :a])
 	expect(clz.new([:a, :b, :c]).message).to eql("[:a, :b, :c]")
+	
+	obj = clz.new(["fail3"])
+	obj.remove
+	gotten = []
+	obj.forEachRemaining { |k| gotten << k }
+	expect(gotten).to eql([:success])
+	expect(gotten.length).to eql(2)
   end
   
   it "supports reification of ruby classes with interfaces" do
