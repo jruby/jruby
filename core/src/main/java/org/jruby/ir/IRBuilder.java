@@ -3989,7 +3989,7 @@ public class IRBuilder {
         boolean defineMethod = false;
         // Figure out depth from argument scope and whether defineMethod may be one of the method calls.
         while (superScope instanceof IRClosure) {
-            if (superBuilder != null && superBuilder.isMethodDefine()) defineMethod = true;
+            if (superBuilder != null && superBuilder.isDefineMethod()) defineMethod = true;
 
             // We may run out of live builds and walk int already built scopes if zsuper in an eval
             superBuilder = superBuilder != null && superBuilder.parent != null ? superBuilder.parent : null;
@@ -4021,7 +4021,7 @@ public class IRBuilder {
         return zsuperResult;
     }
 
-    private boolean isMethodDefine() {
+    private boolean isDefineMethod() {
         if (methodName != null) {
             String name = methodName.asJavaString();
 
@@ -4034,18 +4034,12 @@ public class IRBuilder {
     private void addRaiseError(String id, String message) {
         Ruby runtime = scope.getManager().getRuntime();
         Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol(id));
-        Operand exception = addResultInstr(CallInstr.create(scope,
-                createTemporaryVariable(),
-                runtime.newSymbol("new"),
-                exceptionClass,
-                new Operand[]{new StringLiteral(message)},
-                null));
         Operand kernel = searchModuleForConst(new ObjectClass(), runtime.newSymbol("Kernel"));
         addResultInstr(CallInstr.create(scope,
                 createTemporaryVariable(),
                 runtime.newSymbol("raise"),
                 kernel,
-                new Operand[] { exception },
+                new Operand[] { exceptionClass, new StringLiteral(message) },
                 null));
     }
 
