@@ -79,7 +79,6 @@ public class ConcreteJavaProxy extends JavaProxy {
         return ConcreteJavaProxy;
     }
 
-    ///jcreates site
     private static final class InitializeMethod extends org.jruby.internal.runtime.methods.JavaMethod {
 
         private final CallSite jcreateSite = MethodIndex.getFunctionalCallSite("__jcreate!");
@@ -128,8 +127,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
 
     }
-    
-    //new override
+
     private static final class NewMethod extends org.jruby.internal.runtime.methods.JavaMethod {
     	final DynamicMethod newMethod;
 
@@ -137,18 +135,18 @@ public class ConcreteJavaProxy extends JavaProxy {
             super(clazz, Visibility.PUBLIC, "new");
             newMethod = clazz.searchMethod("new");
         }
-        
-        // TODO: reload this on method changes?
-        private DynamicMethod reifyAndNewMethod(IRubyObject clazz) { 
 
-        	RubyClass parent = ((RubyClass)clazz);
-        	if (parent.getJavaProxy()) return newMethod;
-        	
-        	// overridden class: reify and re-lookup new as reification changes it
+        // TODO: reload this on method changes?
+        private DynamicMethod reifyAndNewMethod(IRubyObject clazz) {
+
+            RubyClass parent = ((RubyClass) clazz);
+            if (parent.getJavaProxy()) return newMethod;
+
+            // overridden class: reify and re-lookup new as reification changes it
             if (parent.getReifiedClass() == null) {
-            	parent.reifyWithAncestors();
+                parent.reifyWithAncestors();
             }
-            
+
             return new NewMethodReified(parent, parent.getReifiedJavaClass());
         }
 
@@ -204,10 +202,13 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     }
     
+    /**
+     * Manually added as an override of `new` for Concrete Extension
+     */
     public static class StaticJCreateMethod extends JavaMethodNBlock {
 
-		private Constructor<? extends ReifiedJavaProxy> withBlock;
-		private DynamicMethod oldInit;
+        private Constructor<? extends ReifiedJavaProxy> withBlock;
+        private DynamicMethod oldInit;
 
         StaticJCreateMethod(RubyModule cls, Constructor<? extends ReifiedJavaProxy> withBlock2, DynamicMethod oldinit) {
             super(cls, PUBLIC, "__jcreate_static!");
@@ -215,184 +216,139 @@ public class ConcreteJavaProxy extends JavaProxy {
             this.oldInit = oldinit;
         }
 
-		@Override
-		public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
-				IRubyObject[] args, Block block)
-		{
-			try
-			{
-				ConcreteJavaProxy cjp = (ConcreteJavaProxy)self;
-				//TODO: Insead of selectively overwriting, silently fail? or only use the other method/this method?
-				if (cjp.getObject() == null)
-				{
-					withBlock.newInstance(cjp, args, block, context.runtime, clazz);
-					// note: the generated ctor sets self.object = our discarded return of the new object
-				}
-			}
-			catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException e)
-			{
-				// TODO Auto-generated catch block
-				//e.printStackTrace(); //TODO: print?
-				if (e instanceof InvocationTargetException)
-				{
-					InvocationTargetException ite = (InvocationTargetException) e; // TODO: move to mapIE?
-					if (ite.getCause() instanceof RaiseException)
-					{
-						throw (RaiseException)ite.getCause();
-					}
-				}
-				throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
-			}
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
+                IRubyObject[] args, Block block) {
+            try {
+                ConcreteJavaProxy cjp = (ConcreteJavaProxy) self;
+                // TODO: Insead of selectively overwriting, silently fail? or only use the other method/this method?
+                if (cjp.getObject() == null) {
+                    withBlock.newInstance(cjp, args, block, context.runtime, clazz);
+                    // note: the generated ctor sets self.object = our discarded return of the new object
+                }
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                    | InvocationTargetException e) {
+                if (e instanceof InvocationTargetException) {
+                    InvocationTargetException ite = (InvocationTargetException) e; // TODO: move to mapIE?
+                    if (ite.getCause() instanceof RaiseException) {
+                        throw (RaiseException) ite.getCause();
+                    }
+                }
+                throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
+            }
             return self;
-		}
-        
-        public DynamicMethod getOriginal()
-        {
-        	return oldInit;
         }
-        
-        
 
-		public static void tryInstall(Ruby runtime, RubyClass clazz, JavaProxyClass proxyClass,
-				Class<? extends ReifiedJavaProxy> reified, boolean overwriteInitialize)
-		{
-			try
-			{
-				Constructor<? extends ReifiedJavaProxy> withBlock = reified.getConstructor(
-							new Class[] { ConcreteJavaProxy.class, IRubyObject[].class, Block.class,
-										Ruby.class, RubyClass.class});
-				//TODO: move initialize to real_initialize
-				//TODO: don't lock in this initialize method
-				if (overwriteInitialize)
-					clazz.addMethod("initialize", new StaticJCreateMethod(clazz, withBlock, clazz.searchMethod("initialize")));
-				clazz.addMethod("__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
-			}
-			catch (SecurityException | NoSuchMethodException e)
-			{
-				// TODO log?
-				//e.printStackTrace();
-				// ignore, don't install
-			}
-		}
+        public DynamicMethod getOriginal() {
+            return oldInit;
+        }
+
+        public static void tryInstall(Ruby runtime, RubyClass clazz, JavaProxyClass proxyClass,
+                Class<? extends ReifiedJavaProxy> reified, boolean overwriteInitialize) {
+            try {
+                Constructor<? extends ReifiedJavaProxy> withBlock = reified.getConstructor(new Class[] {
+                        ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class });
+                // TODO: move initialize to real_initialize
+                // TODO: don't lock in this initialize method
+                if (overwriteInitialize) clazz.addMethod("initialize",
+                        new StaticJCreateMethod(clazz, withBlock, clazz.searchMethod("initialize")));
+                clazz.addMethod("__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
+            } catch (SecurityException | NoSuchMethodException e) {
+                // TODO log?
+                // e.printStackTrace();
+                // ignore, don't install
+            }
+        }
     }
 
-  //TODO: cleanup
-      public static final class NewMethodReified extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock {
+    public static final class NewMethodReified extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock {
 
-          private final DynamicMethod initialize;
-          private final Constructor<? extends ReifiedJavaProxy> ctor;
+        private final DynamicMethod initialize;
+        private final Constructor<? extends ReifiedJavaProxy> ctor;
 
-          //TODO: package?
-          public NewMethodReified(final RubyClass clazz, Class<? extends ReifiedJavaProxy> reified) {
-              super(clazz, Visibility.PUBLIC, "new");
-              initialize = clazz.searchMethod("__jcreate!");
+        public NewMethodReified(final RubyClass clazz, Class<? extends ReifiedJavaProxy> reified) {
+            super(clazz, Visibility.PUBLIC, "new");
+            initialize = clazz.searchMethod("__jcreate!");
 
-              Constructor<? extends ReifiedJavaProxy> withBlock;
-              try
-	  			{
-	  				withBlock = reified.getConstructor(
-	  							new Class[] { ConcreteJavaProxy.class, IRubyObject[].class, Block.class,
-	  										Ruby.class, RubyClass.class});
-	  			}
-	  			catch (SecurityException | NoSuchMethodException e)
-	  			{
-	  				// ignore, don't install
-	  				withBlock = null;
-	  			}
-              ctor = withBlock;
-          }
+            Constructor<? extends ReifiedJavaProxy> withBlock;
+            try {
+                withBlock = reified.getConstructor(new Class[] { ConcreteJavaProxy.class, IRubyObject[].class,
+                        Block.class, Ruby.class, RubyClass.class });
+            } catch (SecurityException | NoSuchMethodException e) {
+                // ignore, don't install
+                withBlock = null;
+            }
+            ctor = withBlock;
+        }
 
-  		@Override
-  		public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
-  				IRubyObject[] args, Block blk)
-  		{
-			//TODO: deduplicate this method, and decide on order of preference after testing 
-  			if (ctor == null)
-  			{
-	  			JavaObject jo = (JavaObject)initialize.call(context, self, clazz, "new", args);
-	  			return ((ReifiedJavaProxy)jo.getValue()).___jruby$rubyObject();
-  			}
-  			else
-  			{
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
+                IRubyObject[] args, Block blk) {
 
-  					// assume no easy conversions, use ruby fallback.
-	  				ConcreteJavaProxy object = new ConcreteJavaProxy(context.runtime, (RubyClass) self);
-	  				try
-	  				{
-	  					ctor.newInstance(object, args, blk, context.runtime, self);// TODO: clazz?
-	  					// note: the generated ctor sets self.object = our discarded return of the new object
-	  					return object;
-	  				}
-	  				catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-	  						| InvocationTargetException e)
-	  				{
-	  					//e.printStackTrace();
-	  					throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
-	  				}
-  				}
-  			}
-  		
+            if (ctor == null) {
+                JavaObject jo = (JavaObject) initialize.call(context, self, clazz, "new", args);
+                return ((ReifiedJavaProxy) jo.getValue()).___jruby$rubyObject();
+            } else {
 
-      }
-          
-    public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start)
-    {
-    	// TODO: ???
-		return start;
+                // assume no easy conversions, use ruby fallback.
+                ConcreteJavaProxy object = new ConcreteJavaProxy(context.runtime, (RubyClass) self);
+                try {
+                    ctor.newInstance(object, args, blk, context.runtime, self);// TODO: clazz?
+                    // note: the generated ctor sets self.object = our discarded return of the new object
+                    return object;
+                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                        | InvocationTargetException e) {
+                    // e.printStackTrace();
+                    throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
+                }
+            }
+        }
+
     }
-    
+
+    public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start) {
+        // TODO: ???
+        return start;
+    }
+
     // used by reified classes, this method is tighly coupled with RealClassGenerator
-    public Object[] splitInitialized(RubyClass base, IRubyObject[] args, Block blk)
-    {
-    	String name = base.getClassConfig().javaCtorMethodName;
-		DynamicMethod dm = base.searchMethod(name);
-		if (dm != null && (dm instanceof StaticJCreateMethod))
-			dm = ((StaticJCreateMethod)dm).getOriginal();
-		DynamicMethod dm1 = base.searchMethodLateral(name); // only on ourself //TODO: missing default
-		if ((dm1 != null && !(dm instanceof InitializeMethod)&& !(dm instanceof StaticJCreateMethod))) //jcreate is for nested ruby classes from a java class
-		{
-			
-			AbstractIRMethod air = (AbstractIRMethod)dm; // TODO: getMetaClass() ? or base? (below     v)
+    public Object[] splitInitialized(RubyClass base, IRubyObject[] args, Block blk) {
+        String name = base.getClassConfig().javaCtorMethodName;
+        DynamicMethod dm = base.searchMethod(name);
+        if (dm != null && (dm instanceof StaticJCreateMethod)) dm = ((StaticJCreateMethod) dm).getOriginal();
+        DynamicMethod dm1 = base.searchMethodLateral(name); // only on ourself //TODO: missing default
 
-			SplitSuperState<?> state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(), name, args, blk);
-			if (state == null) // no super in method
-			{
-				return new Object[] { getRuntime().newArray(args), air, name, blk };
-			}
-			else
-			{
-				return new Object[] { state.callArrayArgs, air, state };// TODO: add block
-			}
-		}
-		else
-		{
-			return new Object[] { getRuntime().newArray(args) }; //TODO: super if parent not java?
-		}
+        // jcreate is for nested ruby classes from a java class
+        if ((dm1 != null && !(dm instanceof InitializeMethod) && !(dm instanceof StaticJCreateMethod))) {
+
+            AbstractIRMethod air = (AbstractIRMethod) dm; // TODO: getMetaClass() ? or base? (below v)
+
+            SplitSuperState<?> state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(),
+                    name, args, blk);
+            if (state == null) { // no super in method
+                return new Object[] { getRuntime().newArray(args), air, name, blk };
+            } else {
+                return new Object[] { state.callArrayArgs, air, state };// TODO: add block
+            }
+        } else {
+            return new Object[] { getRuntime().newArray(args) };
+        }
     }
-
-	
 
     // called from concrete reified code
-    public void finishInitialize(Object[] returned)
-    {
-    	if (returned.length == 3)
-    	{
-            ((AbstractIRMethod)returned[1]).finishSplitCall((SplitSuperState<?>)returned[2]);
-    	}
-    	else if (returned.length == 4) // no super, direct call
-    	{	
-    		((AbstractIRMethod)returned[1]).call(getRuntime().getCurrentContext(), this, getMetaClass(), (String)returned[2], ((RubyArray)returned[0]).toJavaArrayMaybeUnsafe(), (Block)returned[3]);
-    	}
-    	// Ignore other cases
+    public void finishInitialize(Object[] returned) {
+        if (returned.length == 3) {
+            ((AbstractIRMethod) returned[1]).finishSplitCall((SplitSuperState<?>) returned[2]);
+        } else if (returned.length == 4) { // no super, direct call
+            ((AbstractIRMethod) returned[1]).call(getRuntime().getCurrentContext(), this, getMetaClass(),
+                    (String) returned[2], ((RubyArray) returned[0]).toJavaArrayMaybeUnsafe(), (Block) returned[3]);
+        }
+        // Ignore other cases
     }
 
-    
     // used by reified classes
-    public void ensureThis(Object self)
-    {
-    	if (getObject() == null)
-    		setObject(self);
+    public void ensureThis(Object self) {
+        if (getObject() == null) setObject(self);
     }
 
     protected static void initialize(final RubyClass concreteJavaProxy) {
@@ -431,10 +387,8 @@ public class ConcreteJavaProxy extends JavaProxy {
     @SuppressWarnings("unchecked")
     public <T> T toJava(Class<T> type) {
         final Object object = getObject();
-        if (object == null)
-        {
-        	System.out.println(":-(");
-        	return null;
+        if (object == null) {
+            throw getRuntime().newRuntimeError("Java proxy not initialized. Did you call super() yet?");
         }
         final Class clazz = object.getClass();
 

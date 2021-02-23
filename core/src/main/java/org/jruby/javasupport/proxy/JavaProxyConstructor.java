@@ -121,23 +121,24 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         else
         	return newInstanceImpl(ArraySupport.newCopy(args, len + 2), runtime, clazz); // does args[ len ] = handler;
     }
-	/**
-	 * For exportable objects, argsPlus1 is not plus one
-	 * @param argsPlus1
-	 * @param handler
-	 * @return
-	 * @throws IllegalArgumentException
-	 * @throws InstantiationException
-	 * @throws IllegalAccessException
-	 * @throws InvocationTargetException
-	 */
+
+    /**
+     * For exportable objects, argsPlus1 is not plus one
+     * 
+     * @param argsPlus1
+     * @param handler
+     * @return
+     * @throws IllegalArgumentException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     */
     final Object newInstanceImpl(Object[] argsPlus1, Ruby runtime, IRubyObject clazz)
-        throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
-    	if (!exportable)
-    	{
-    		argsPlus1[ argsPlus1.length - 2 ] = runtime;
-    		argsPlus1[ argsPlus1.length - 1 ] = (RubyClass)clazz;
-    	}
+            throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        if (!exportable) {
+            argsPlus1[argsPlus1.length - 2] = runtime;
+            argsPlus1[argsPlus1.length - 1] = (RubyClass) clazz;
+        }
         return proxyConstructor.newInstance(argsPlus1);
     }
 

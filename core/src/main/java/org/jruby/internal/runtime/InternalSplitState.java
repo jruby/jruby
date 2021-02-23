@@ -26,7 +26,6 @@
 
 package org.jruby.internal.runtime;
 
-public interface InternalSplitState
-{
-	
+public interface InternalSplitState {
+
 }

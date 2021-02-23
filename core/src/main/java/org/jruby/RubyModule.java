@@ -1810,11 +1810,12 @@ public class RubyModule extends RubyObject {
         }
         return null;
     }
-    
-	/**
-	 * Searches for a method up until the superclass, but include modules. This is for Concrete java ctor initialization
-	 * TODO: add a cache?
-	 */
+
+    /**
+     * Searches for a method up until the superclass, but include modules. This is
+     * for Concrete java ctor initialization
+     * TODO: add a cache?
+     */
     public DynamicMethod searchMethodLateral(String id) {
        // int token = generation;
         // This flattens some of the recursion that would be otherwise be necessary.
