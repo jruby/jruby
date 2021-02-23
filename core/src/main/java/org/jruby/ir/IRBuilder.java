@@ -306,6 +306,11 @@ public class IRBuilder {
     private boolean executesOnce = true;
     private int temporaryVariableIndex = -1;
 
+    // This variable is an out-of-band passing mechanism to pass the method name to the block the
+    // method is attached to.  call/fcall will set this and iter building will pass it into the iter
+    // builder and set it.
+    private RubySymbol methodName = null;
+
     // Current index to put next BEGIN blocks and other things at the front of this scope.
     // Note: in the case of multiple BEGINs this index slides forward so they maintain proper
     // execution order
@@ -1069,6 +1074,8 @@ public class IRBuilder {
     public Operand buildCall(Variable result, CallNode callNode, Label lazyLabel, Label endLabel) {
         Node receiverNode = callNode.getReceiverNode();
         RubySymbol name = callNode.getName();
+
+        methodName = name;
 
         // Frozen string optimization: check for "string".freeze
         String id = name.idString(); // ID Str ok here since it is 7bit check.
@@ -2718,6 +2725,8 @@ public class IRBuilder {
     public Operand buildFCall(Variable result, FCallNode fcallNode) {
         Node      callArgsNode = fcallNode.getArgsNode();
 
+        methodName = fcallNode.getName();
+
         if (result == null) result = createTemporaryVariable();
 
         HashNode keywordArgs = getPossibleKeywordArgument(fcallNode.getArgsNode());
@@ -2790,12 +2799,7 @@ public class IRBuilder {
     }
 
     public Operand buildFlip(FlipNode flipNode) {
-        Ruby runtime = scope.getManager().getRuntime();
-        Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol("NotImplementedError"));
-        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new StringLiteral("flip-flop is no longer supported in JRuby")}, null));
-
-        addInstr(new ThrowExceptionInstr(exception));
-
+        addRaiseError("NotImplementedError", "flip-flop is no longer supported in JRuby");
         return manager.getNil(); // not-reached
     }
 
@@ -2821,7 +2825,7 @@ public class IRBuilder {
         IRClosure closure = new IRFor(manager, scope, forNode.getLine(), forNode.getScope(), Signature.from(forNode));
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager, closure).buildIterInner(forNode);
+        newIRBuilder(manager, closure).buildIterInner(null, forNode);
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -2954,7 +2958,9 @@ public class IRBuilder {
         return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getName()));
     }
 
-    private InterpreterContext buildIterInner(IterNode iterNode) {
+    private InterpreterContext buildIterInner(RubySymbol methodName, IterNode iterNode) {
+        this.methodName = methodName;
+
         boolean forNode = iterNode instanceof ForNode;
         prepareImplicitState();                                    // recv_self, add frame block, etc)
 
@@ -2993,7 +2999,9 @@ public class IRBuilder {
         IRClosure closure = new IRClosure(manager, scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), needsCodeCoverage);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager, closure).buildIterInner(iterNode);
+        newIRBuilder(manager, closure).buildIterInner(methodName, iterNode);
+
+        methodName = null;
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -3837,16 +3845,10 @@ public class IRBuilder {
     }
 
     public Operand buildSuper(SuperNode superNode) {
-        if (scope.isModuleBody()) return buildSuperInScriptBody();
-
         Operand[] args = setupCallArgs(superNode.getArgsNode());
         Operand block = setupCallClosure(superNode.getIterNode());
         if (block == null) block = getYieldClosureVariable();
         return buildSuperInstr(block, args);
-    }
-
-    private Operand buildSuperInScriptBody() {
-        return addResultInstr(new UnresolvedSuperInstr(scope, createTemporaryVariable(), buildSelf(), EMPTY_OPERANDS, null, scope.maybeUsingRefinements()));
     }
 
     public Operand buildSValue(SValueNode node) {
@@ -3980,75 +3982,71 @@ public class IRBuilder {
     }
 
     private Operand buildZSuperIfNest(final Operand block) {
-        final IRBuilder builder = this;
-        // If we are in a block, we cannot make any assumptions about what args
-        // the super instr is going to get -- if there were no 'define_method'
-        // for defining methods, we could guarantee that the super is going to
-        // receive args from the nearest method the block is embedded in.  But,
-        // in the presence of 'define_method' (and eval and aliasing), all bets
-        // are off because, any of the intervening block scopes could be a method
-        // via a define_method call.
-        //
-        // Instead, we can actually collect all arguments of all scopes from here
-        // till the nearest method scope and select the right set at runtime based
-        // on which one happened to be a method scope. This has the additional
-        // advantage of making explicit all used arguments.
-        CodeBlock zsuperBuilder = new CodeBlock() {
-            public Operand run() {
-                Variable scopeDepth = createTemporaryVariable();
-                addInstr(new ArgScopeDepthInstr(scopeDepth));
+        int depthFromSuper = 0;
+        IRBuilder superBuilder = this;
+        IRScope superScope = scope;
 
-                Label allDoneLabel = getNewLabel();
+        boolean defineMethod = false;
+        // Figure out depth from argument scope and whether defineMethod may be one of the method calls.
+        while (superScope instanceof IRClosure) {
+            if (superBuilder != null && superBuilder.isDefineMethod()) defineMethod = true;
 
-                int depthFromSuper = 0;
-                Label next = null;
-                IRBuilder superBuilder = builder;
-                IRScope superScope = scope;
+            // We may run out of live builds and walk int already built scopes if zsuper in an eval
+            superBuilder = superBuilder != null && superBuilder.parent != null ? superBuilder.parent : null;
+            superScope = superScope.getLexicalParent();
+            depthFromSuper++;
+        }
 
-                // Loop and generate a block for each possible value of depthFromSuper
-                Variable zsuperResult = createTemporaryVariable();
-                while (superScope instanceof IRClosure) {
-                    // Generate the next set of instructions
-                    if (next != null) addInstr(new LabelInstr(next));
-                    next = getNewLabel();
-                    addInstr(BNEInstr.create(next, manager.newFixnum(depthFromSuper), scopeDepth));
-                    Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-                    addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
-                    addInstr(new JumpInstr(allDoneLabel));
+        // If we hit a method, this is known to always succeed
+        Variable zsuperResult = createTemporaryVariable();
+        if (superScope instanceof IRMethod && !defineMethod) {
+            Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
+            addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
+        } else {
+            // We will not have a zsuper show up since we won't emit it but we still need to toggle it.
+            // define_method optimization will try and create a method from a closure but it should not in this case.
+            scope.setUsesZSuper();
 
-                    // We may run out of live builds and walk int already built scopes if zsuper in an eval
-                    superBuilder = superBuilder != null && superBuilder.parent != null ? superBuilder.parent : null;
-                    superScope = superScope.getLexicalParent();
-                    depthFromSuper++;
-                }
+            // Two conditions will inject an error:
+            // 1. We cannot find any method scope above the closure (e.g. module A; define_method(:a) { super }; end)
+            // 2. One of the method calls the closure is passed to is named define_method.
+            //
+            // Note: We are introducing an issue but it is so obscure we are ok with it.
+            // A method named define_method containing zsuper in a method scope which is not actually
+            // a define_method will get raised as invalid even though it should zsuper to the method.
+            addRaiseError("RuntimeError",
+                    "implicit argument passing of super from method defined by define_method() is not supported. Specify all arguments explicitly.");
+        }
 
-                addInstr(new LabelInstr(next));
+        return zsuperResult;
+    }
 
-                // If we hit a method, this is known to always succeed
-                if (superScope instanceof IRMethod) {
-                    Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-                    addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
-                } //else {
-                // FIXME: Do or don't ... there is no try
-                    /* Control should never get here in the runtime */
-                    /* Should we add an exception throw here just in case? */
-                //}
+    private boolean isDefineMethod() {
+        if (methodName != null) {
+            String name = methodName.asJavaString();
 
-                addInstr(new LabelInstr(allDoneLabel));
-                return zsuperResult;
-            }
-        };
+            return "define_method".equals(name) || "define_singleton_method".equals(name);
+        }
 
-        return receiveBreakException(block, zsuperBuilder);
+        return false;
+    }
+
+    private void addRaiseError(String id, String message) {
+        Ruby runtime = scope.getManager().getRuntime();
+        Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol(id));
+        Operand kernel = searchModuleForConst(new ObjectClass(), runtime.newSymbol("Kernel"));
+        addResultInstr(CallInstr.create(scope,
+                createTemporaryVariable(),
+                runtime.newSymbol("raise"),
+                kernel,
+                new Operand[] { exceptionClass, new StringLiteral(message) },
+                null));
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {
-        if (scope.isModuleBody()) return buildSuperInScriptBody();
-
         Operand block = setupCallClosure(zsuperNode.getIterNode());
         if (block == null) block = getYieldClosureVariable();
 
-        // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs to fixup depth.
         if (scope instanceof IRMethod) {
             return buildSuperInstr(block, getCallArgs(scope, this));
         } else {
