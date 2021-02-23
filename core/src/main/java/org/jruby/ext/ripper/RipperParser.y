@@ -901,16 +901,16 @@ arg             : lhs '=' arg_rhs {
                 }
 
 relop           : tGT {
-                    $$ = $1;
+                    $$ = p.intern(">");
                 }
                 | tLT  {
-                    $$ = $1;
+                    $$ = p.intern("<");
                 }
                 | tGEQ {
-                     $$ = $1;
+                    $$ = p.intern(">=");
                 }
                 | tLEQ {
-                     $$ = $1;
+                    $$ = p.intern("<=");
                 }
 
 rel_expr        : arg relop arg   %prec tGT {
@@ -1749,7 +1749,7 @@ symbol          : tSYMBEG sym {
 // Token:symbol
 sym             : fname | tIVAR | tGVAR | tCVAR
 
-dsym            : tSYMBEG xstring_contents tSTRING_END {
+dsym            : tSYMBEG string_contents tSTRING_END {
                      p.setState(EXPR_END|EXPR_ENDARG);
                      $$ = p.dispatch("on_dyna_symbol", $2);
                 }
