@@ -295,7 +295,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return javaArgs;
     }
 
-    private static Object convertVarArgumentsOnly(final Class<?> varArrayType,
+    @SuppressWarnings("unchecked")
+    private static <T> Object convertVarArgumentsOnly(final Class<T> varArrayType,
         final int varStart, final IRubyObject[] args) {
         final int varCount = args.length - varStart;
 
@@ -310,8 +311,15 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
         final Class<?> compType = varArrayType.getComponentType();
         final Object varArgs = Array.newInstance(compType, varCount);
-        for ( int i = 0; i < varCount; i++ ) {
-            Array.set(varArgs, i, args[varStart + i].toJava(compType));
+        if (varArrayType.isPrimitive()) {
+            for (int i = 0; i < varCount; i++) {
+                Array.set(varArgs, i, args[varStart + i].toJava(compType));
+            }
+        } else { // 10x speedup avoiding Array.set
+            T[] base = (T[]) varArgs;
+            for (int i = 0; i < varCount; i++) {
+                base[i] = (T) (args[varStart + i].toJava(compType));
+            }
         }
         return varArgs;
     }
