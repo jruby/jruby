@@ -77,7 +77,7 @@ public abstract class IOChannel implements Channel {
         ThreadContext context = runtime.getCurrentContext();
 
         if (respondToClosed.respondsTo(context, io, io)) {
-            return !isClosedAdapter.call(context, io, io).isTrue();oh
+            return !isClosedAdapter.call(context, io, io).isTrue();
         }
 
         // can't determine, assume it's open
