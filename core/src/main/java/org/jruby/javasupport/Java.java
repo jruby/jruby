@@ -959,7 +959,6 @@ public class Java implements Library {
     }
 
     static Class loadJavaClass(final Ruby runtime, final String className, boolean initialize) throws ClassNotFoundException, RaiseException {
-        final Class<?> clazz;
         try { // loadJavaClass here to handle things like LinkageError through
             synchronized (Java.class) {
                 // a circular load might potentially dead-lock when loading concurrently
@@ -1509,7 +1508,7 @@ public class Java implements Library {
         String implClassName = Constants.GENERATED_PACKAGE;
         if (clazz.getBaseName() == null) {
             // no-name class, generate a bogus name for it
-            implClassName += "anon_class" + Math.abs(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
+            implClassName += "Class0x" + Integer.toHexString(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
         } else {
             implClassName += StringSupport.replaceAll(clazz.getName(), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
         }
