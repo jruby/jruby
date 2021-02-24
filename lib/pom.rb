@@ -23,7 +23,7 @@ default_gems = [
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.5'],
     ['json', '${json.version}'],
-    ['psych', '3.3.1'],
+    ['psych', '3.2.0'],
     ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
