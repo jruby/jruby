@@ -103,26 +103,8 @@ public class JavaSupportImpl extends JavaSupport {
         this.instanceAssignedNames = ClassValue.newInstance(klass -> new HashMap<>(8, 1));
     }
 
-    public Class loadJavaClass(String className) throws ClassNotFoundException {
-        return loadJavaClass(className, true);
-    }
-
-    public Class loadJavaClass(String className, boolean initialize) throws ClassNotFoundException {
-        Class<?> primitiveClass;
-        if ((primitiveClass = JavaUtil.getPrimitiveClass(className)) == null) {
-            if (!Ruby.isSecurityRestricted()) {
-                for (Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
-                    try {
-                        return loader.loadClass(className);
-                    } catch (ClassNotFoundException ignored) { /* continue */ }
-                }
-                return Class.forName(className, initialize, runtime.getJRubyClassLoader());
-            }
-            return Class.forName(className, initialize, JavaSupport.class.getClassLoader());
-        }
-        return primitiveClass;
-    }
-
+    @Override
+    @Deprecated
     public Class loadJavaClassVerbose(String className) {
         try {
             return loadJavaClass(className);
@@ -138,6 +120,8 @@ public class JavaSupportImpl extends JavaSupport {
         }
     }
 
+    @Override
+    @Deprecated
     public Class loadJavaClassQuiet(String className) {
         try {
             return loadJavaClass(className);

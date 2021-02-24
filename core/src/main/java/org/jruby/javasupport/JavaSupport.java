@@ -42,6 +42,7 @@ import org.jruby.javasupport.ext.JavaExtensions;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.util.collections.ClassValueCalculator;
 
@@ -89,13 +90,30 @@ public abstract class JavaSupport {
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
     }
 
-    public Class loadJavaClass(String className) throws ClassNotFoundException {
+    public Class<?> loadJavaClass(String className) throws ClassNotFoundException {
         return loadJavaClass(className, true);
     }
 
-    public abstract Class loadJavaClass(String className, boolean initialize) throws ClassNotFoundException;
+    public Class<?> loadJavaClass(String className, boolean initialize) throws ClassNotFoundException {
+        Class<?> primitiveClass;
+        if ((primitiveClass = JavaUtil.getPrimitiveClass(className)) == null) {
+            if (!Ruby.isSecurityRestricted()) {
+                for (Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
+                    try {
+                        return loader.loadClass(className);
+                    } catch (ClassNotFoundException ignored) { /* continue */ }
+                }
+                return Class.forName(className, initialize, runtime.getJRubyClassLoader());
+            }
+            return Class.forName(className, initialize, JavaSupport.class.getClassLoader());
+        }
+        return primitiveClass;
+    }
+
+    @Deprecated
     public abstract Class loadJavaClassVerbose(String className);
 
+    @Deprecated
     public abstract Class loadJavaClassQuiet(String className);
 
     public abstract void handleNativeException(Throwable exception, Member target);
