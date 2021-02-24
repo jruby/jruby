@@ -3,7 +3,7 @@ package org.jruby.test;
 import org.jruby.RubyArray;
 import org.jruby.exceptions.RaiseException;
 
-public class TestProcessSpawn extends TestRubyBase {
+public class TestProcessSpawn extends Base {
 
     public void testSpawnAndDetach() throws RaiseException {
         runtime.evalScriptlet("require 'open3'; require 'jruby'");
