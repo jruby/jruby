@@ -9,7 +9,7 @@ describe "Dir.each_child" do
   after :all do
     DirSpecs.delete_mock_dirs
   end
-  
+
   it "accepts an encoding keyword for the encoding of the entries" do
     dirs = Dir.each_child("#{DirSpecs.mock_dir}/deeply/nested", encoding: "utf-8").to_a.sort
     dirs.each {|dir| dir.encoding.should == Encoding::UTF_8}
