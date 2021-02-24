@@ -100,10 +100,14 @@ ruby_version_is "2.6" do
       a.should == %w|.dotfile.ext directory|
     end
 
-    it "accepts an options Hash" do
-      @dir = Dir.new("#{DirSpecs.mock_dir}/deeply/nested", encoding: "utf-8")
-      a = @dir.children.sort
-      a.should == %w|.dotfile.ext directory|
+    it "accepts an encoding keyword for the encoding of the entries" do
+      dirs = Dir.new("#{DirSpecs.mock_dir}/deeply/nested", encoding: "utf-8").to_a.sort
+      dirs.each {|dir| dir.encoding.should == Encoding::UTF_8}
+    end
+
+    it "accepts nil options" do
+      dirs = Dir.new("#{DirSpecs.mock_dir}/deeply/nested", nil).to_a.sort
+      dirs.each {|dir| dir.encoding.should == Encoding.find("filesystem")}
     end
 
     it "returns children encoded with the filesystem encoding by default" do

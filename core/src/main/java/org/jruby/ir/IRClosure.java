@@ -181,7 +181,8 @@ public class IRClosure extends IRScope {
         // We want variable scoping to be the same as a method and not see outside itself.
         if (source == null ||
             accessesParentsLocalVariables() ||  // Built methods cannot search down past method scope
-            receivesClosureArg() ||            // we pass in captured block at define_method as block so explicits ones not supported
+            receivesClosureArg() ||             // we pass in captured block at define_method as block so explicits ones not supported
+            usesZSuper() ||                     // methods defined from closures cannot use zsuper
             !isNestedClosuresSafeForMethodConversion()) {
             source = null;
             return null;

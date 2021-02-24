@@ -124,7 +124,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     prologueBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
                 } else {
                     if (sig.isFixed()) {
-                        if (arityValue == 1) {
+                        if (arityValue == 1 && !sig.hasKwargs()) {
                             prologueBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
                         } else {
                             prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);

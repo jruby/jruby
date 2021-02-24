@@ -144,7 +144,6 @@ public enum Operation {
     COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
-    ARG_SCOPE_DEPTH(0),
     BINDING_LOAD(OpFlags.f_is_load),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BUILD_BACKREF(OpFlags.f_can_raise_exception),
