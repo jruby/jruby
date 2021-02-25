@@ -56,10 +56,6 @@ abstract public class NativeInvoker extends DynamicMethod {
         return true;
     }
 
-    Signature getSignature() {
-        return signature;
-    }
-
     CallContext getCallContext() {
         return function.getCallContext();
     }
