@@ -1884,7 +1884,7 @@ public class PopenExecutor {
 
             newArgv[0] = newString(runtime, "sh");
             newArgv[1] = newString(runtime, "-c");
-            newArgv[2] = newString(runtime, "cd -- \"$1\"; shift; exec \"$@\"");
+            newArgv[2] = newString(runtime, "cd -- \"$1\"; shift; \"$@\"");
             newArgv[3] = newString(runtime, "sh");
             newArgv[4] = newString(runtime, eargp.chdir_dir);
 
