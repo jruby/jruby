@@ -464,15 +464,15 @@ public final class ArrayJavaProxy extends JavaProxy {
             return runtime.getEnumerator().callMethod("new", this, runtime.newSymbol("each_with_index"));
         }
 
-        final boolean arity2 = block.getSignature().arity() == Arity.TWO_ARGUMENTS;
-
+        final boolean twoArguments = block.getSignature().isTwoArguments();
         final Object array = getObject();
         final int length = Array.getLength(array);
 
         for ( int i = 0; i < length; i++ ) {
             IRubyObject element = ArrayUtils.arefDirect(runtime, array, converter, i);
             final RubyInteger index = RubyFixnum.newFixnum(runtime, i);
-            if ( arity2 ) {
+
+            if (twoArguments) {
                 block.yieldSpecific(context, element, index);
             } else {
                 block.yield(context, RubyArray.newArray(runtime, element, index));

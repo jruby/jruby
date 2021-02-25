@@ -111,12 +111,13 @@ public abstract class JavaLang {
             }
             java.lang.Iterable iterable = unwrapIfJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();
-            final boolean arity2 = block.getSignature().arity() == Arity.TWO_ARGUMENTS;
+            final boolean twoArguments = block.getSignature().isTwoArguments();
             int i = 0; while ( iterator.hasNext() ) {
                 final RubyInteger index = RubyFixnum.newFixnum(runtime, i++);
                 final Object value = iterator.next();
                 final IRubyObject rValue = convertJavaToUsableRubyObject(runtime, value);
-                if ( arity2 ) {
+
+                if (twoArguments) {
                     block.yieldSpecific(context, rValue, index);
                 } else {
                     block.yield(context, RubyArray.newArray(runtime, rValue, index));
