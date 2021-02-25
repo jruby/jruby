@@ -266,9 +266,6 @@ public abstract class BlockBody {
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature, args[0] instanceof RubyArray && type == Block.Type.NORMAL);
-            } else if (signature.arityValue() == 1 && !signature.hasKwargs()) {
-                // discard excess arguments
-                args = args.length == 0 ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
             }
         }
 
