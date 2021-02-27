@@ -217,7 +217,7 @@ public class JRubyUtilLibrary implements Library {
     }
 
     private static boolean loadExtension(final Ruby runtime, final String className) {
-        Class<?> clazz = runtime.getJavaSupport().loadJavaClassQuiet(className);
+        Class<?> clazz = Java.getJavaClass(runtime, className);
         // 1. BasicLibraryService interface
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {
             try {
