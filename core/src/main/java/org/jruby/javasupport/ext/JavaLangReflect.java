@@ -100,6 +100,24 @@ public abstract class JavaLangReflect {
             return convertJavaToUsableRubyObject(context.runtime, thiz.getParameterTypes());
         }
 
+        // NOTE: (legacy) JavaConstructor compat - converting arguments
+        @JRubyMethod(name = "newInstance", alias = "new_instance", rest = true)
+        public static IRubyObject new_instance(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
+            final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
+            final Object[] javaArgs;
+            if (args.length == 0) {
+                javaArgs = NO_ARGS;
+            } else {
+                javaArgs = convertArguments(args, thiz.getParameterTypes(), 0);
+            }
+            try {
+                return convertJavaToUsableRubyObject(context.runtime, thiz.newInstance(javaArgs));
+            }
+            catch (IllegalAccessException|InvocationTargetException|InstantiationException e) {
+                Helpers.throwException(e); return null;
+            }
+        }
+
         // JavaUtilities::ModifiedShortcuts :
 
         @JRubyMethod(name = "public?")
@@ -134,6 +152,8 @@ public abstract class JavaLangReflect {
 
     }
 
+    private static final Object[] NO_ARGS = new Object[0];
+
     @JRubyClass(name = "Java::JavaLangReflect::Method")
     public static class Method {
 
@@ -162,7 +182,7 @@ public abstract class JavaLangReflect {
             final Object[] javaArgs;
             if (args.length == 0) {
                 target = null;
-                javaArgs = new Object[0];
+                javaArgs = NO_ARGS;
             } else {
                 target = unwrapJavaObject(args[0]);
                 javaArgs = convertArguments(args, method.getParameterTypes(), 1);

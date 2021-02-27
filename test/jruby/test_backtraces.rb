@@ -53,9 +53,9 @@ class TestBacktraces < Test::Unit::TestCase
       constructor.new_instance(-1)
       fail 'did no raise exception'
     rescue NativeException => ex
-      assert_equal 'java.lang.IllegalStateException: param == -1', ex.message
-      assert_equal '#<NativeException: java.lang.IllegalStateException: param == -1>', ex.inspect
-      assert_instance_of java.lang.IllegalStateException, ex.cause
+      assert_equal 'java.lang.reflect.InvocationTargetException: param == -1', ex.message
+      assert_equal '#<NativeException: java.lang.reflect.InvocationTargetException: param == -1>', ex.inspect
+      assert_instance_of java.lang.reflect.InvocationTargetException, ex.cause
       # NOTE: backtrace will be messed in this case as long as there's filtering
       # clases org.jruby.javasupport.test.name.Sample "org.jruby.javasupport" prefix is considered internal
       # ex.backtrace.each { |b| puts "  #{b.inspect}" }
