@@ -13,14 +13,6 @@ describe "A JavaClass" do
     expect(PublicField.java_class.declared_field(:strField)).not_to eq(nil)
     expect(PackageField.java_class.declared_field(:strField)).not_to eq(nil)
   end
-
-  it "should provide a look up for a fields using a Ruby formatted name" do
-    skip "worked in JRuby 9.2 but compatibility was broken purposefully"
-    expect(PrivateField.java_class.declared_field(:str_field)).not_to eq(nil)
-    expect(ProtectedField.java_class.declared_field(:str_field)).not_to eq(nil)
-    expect(PublicField.java_class.declared_field(:str_field)).not_to eq(nil)
-    expect(PackageField.java_class.declared_field(:str_field)).not_to eq(nil)
-  end
 end
 
 describe "A JavaField" do
