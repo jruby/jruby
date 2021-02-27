@@ -680,17 +680,16 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_support_of_other_class_loaders
-    assert_helper_class = java.lang.Class.for_name("org.jruby.test.TestHelper")
-    assert_helper_class2 = java.lang.Class.forName("org.jruby.test.TestHelper")
-    assert(assert_helper_class.java_class == assert_helper_class2.java_class, "Successive calls return the same class")
-    method = assert_helper_class.java_method('loadAlternateClass')
-    alt_assert_helper_class = method.invoke_static()
+    loaded_class = JRuby::Util.load_java_class("org.jruby.test.AlternativelyLoaded")
+    assert_equal loaded_class, java.lang.Class.forName("org.jruby.test.AlternativelyLoaded")
+    method = loaded_class.java_method('loadAlternateClass')
+    alt_loaded_class = method.invoke_static() # loaded with a different class loader
+    assert_not_equal loaded_class, alt_loaded_class
 
-    constructor = alt_assert_helper_class.constructor();
-    alt_assert_helper = constructor.new_instance();
-    identityMethod = alt_assert_helper_class.java_method('identityTest')
-    identity = identityMethod.invoke(alt_assert_helper)
-    assert_equal("ABCDEFGH",  identity)
+    method = loaded_class.java_method('invokeIdentifyTest', java.lang.Class)
+    assert_equal"Original", method.invoke_static(loaded_class)
+
+    assert_equal"ABCDEFGH", method.invoke_static(alt_loaded_class)
   end
 
   module Foo
