@@ -1,2 +1,1 @@
 fails(timeout):WeakRef#__getobj__ raises WeakRef::RefError if the object is no longer reachable
-fails(timeout):WeakRef#weakref_alive? returns a falsy value if the object is no longer reachable
