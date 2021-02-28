@@ -125,13 +125,16 @@ public class PopenExecutor {
         if (eargp.chdirGiven) {
             // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
             // just need to add chdir to the cmd
-            prog = (RubyString)prog.strDup(runtime).prepend(context, newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
+            String script = "cd '" + eargp.chdir_dir + "'; ";
+
+            // use exec to eliminate extra sh process if we do not need to run command as a shell script
+            if (!searchForMetaChars(prog)) {
+                script = script + "exec ";
+            }
+            
+            prog = (RubyString)prog.strDup(runtime).prepend(context, newString(runtime, script));
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
-
-            // create new pgroup to prevent orphaned processes when the parent is killed
-            eargp.attributes.add(SpawnAttribute.pgroup(0));
-            eargp.attributes.add(SpawnAttribute.flags((short)SpawnAttribute.SETPGROUP));
         }
 
         if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
