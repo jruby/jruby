@@ -62,7 +62,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:thread_pooling] ||= false
   mspec_options[:reflection] ||= false
   mspec_options[:format] ||= "m"
-  mspec_options[:timeout] ||= 180
+  mspec_options[:timeout] ||= 120
   ms = mspec_options
 
   # We can check this property to see whether we failed the run or not
