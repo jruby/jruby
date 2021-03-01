@@ -120,12 +120,21 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaMath.define(runtime);
         org.jruby.javasupport.ext.JavaTime.define(runtime);
 
+        // TODO: these are still used internally with Ruby 2 Java invocation:
+        JavaMethod.createJavaMethodClass(runtime, Java);
+        JavaConstructor.createJavaConstructorClass(runtime, Java);
+        // (legacy) JavaClass compatibility:
+        Java.setConstant("JavaClass", getProxyClass(runtime, java.lang.Class.class));
+        Java.deprecateConstant(runtime, "JavaClass");
+        Java.setConstant("JavaField", getProxyClass(runtime, java.lang.reflect.Field.class));
+        Java.deprecateConstant(runtime, "JavaField");
+
         // load Ruby parts of the 'java' library
         runtime.getLoadService().load("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
-        ArrayJavaProxy.setSuperClass(runtime.getJavaSupport().getObjectJavaClass().getProxyClass());
+        ArrayJavaProxy.setSuperClass((RubyClass) getProxyClass(runtime, java.lang.Object.class));
         ArrayJavaProxy.includeModule(runtime.getEnumerable());
 
         RubyClassPathVariable.createClassPathVariable(runtime);
@@ -148,10 +157,6 @@ public class Java implements Library {
 
         final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
         JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
-        JavaClass.createJavaClassClass(runtime, Java, _JavaObject);
-        JavaMethod.createJavaMethodClass(runtime, Java);
-        JavaConstructor.createJavaConstructorClass(runtime, Java);
-        JavaField.createJavaFieldClass(runtime, Java);
 
         // set of utility methods for Java-based proxy objects
         JavaProxyMethods.createJavaProxyMethods(context);
@@ -241,6 +246,7 @@ public class Java implements Library {
         return proxyClass;
     }
 
+    @Deprecated // no longer used
     public static IRubyObject get_java_class(final IRubyObject self, final IRubyObject name) {
         try {
             return JavaClass.for_name(self, name);
@@ -310,18 +316,18 @@ public class Java implements Library {
 
     public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
         final Ruby runtime = self.getRuntime();
-        final JavaClass javaClass; String javaName;
+        final Class<?> javaClass; String javaName;
         if ( java_class instanceof RubyString ) {
-            javaClass = JavaClass.for_name(self, java_class);
+            javaClass = getJavaClass(runtime, java_class.asJavaString());
         }
         else if ( java_class instanceof JavaClass ) {
-            javaClass = (JavaClass) java_class;
+            javaClass = ((JavaClass) java_class).javaClass();
         }
         else if ( (javaName = unwrapJavaString(java_class)) != null ) {
-            javaClass = JavaClass.for_name(self, javaName);
+            javaClass = getJavaClass(runtime, javaName);
         }
         else {
-            throw runtime.newTypeError(java_class, runtime.getJavaSupport().getJavaClassClass());
+            throw runtime.newTypeError(java_class, "String");
         }
         return getProxyClass(runtime, javaClass);
     }

@@ -236,9 +236,14 @@ public class JavaObject extends RubyObject {
         return getRuntime().newString(getJavaClass().getName());
     }
 
-    @JRubyMethod
+    @Deprecated
     public JavaClass java_class() {
         return JavaClass.get(getRuntime(), getJavaClass());
+    }
+
+    @JRubyMethod
+    public IRubyObject get_java_class() {
+        return Java.getInstance(getRuntime(), getJavaClass());
     }
 
     @JRubyMethod

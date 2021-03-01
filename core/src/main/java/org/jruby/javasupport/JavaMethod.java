@@ -65,6 +65,7 @@ import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 import static org.jruby.util.RubyStringBuilder.ids;
 
+@Deprecated
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
 

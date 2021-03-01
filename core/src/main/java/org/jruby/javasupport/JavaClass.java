@@ -217,7 +217,8 @@ public class JavaClass extends JavaObject {
      * @param type
      * @return Java proxy class, Java reified class or nil
      */
-    public static IRubyObject java_class(final ThreadContext context, final RubyModule type) {
+    @Deprecated
+    public static IRubyObject java_class(final ThreadContext context, final RubyModule type) { // TODO avoid callers!
         IRubyObject java_class = type.getInstanceVariable("@java_class");
         if ( java_class == null ) { // || java_class.isNil()
             if ( type.respondsTo("java_class") ) { // NOTE: quite bad since built-in Ruby classes will return
@@ -254,6 +255,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
+    @Deprecated // no longer used
     public static JavaClass forNameQuiet(Ruby runtime, String className) {
         synchronized (JavaClass.class) {
             Class<?> klass = runtime.getJavaSupport().loadJavaClassQuiet(className);

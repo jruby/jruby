@@ -51,6 +51,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@Deprecated
 @JRubyClass(name="Java::JavaConstructor")
 public class JavaConstructor extends JavaCallable {
 

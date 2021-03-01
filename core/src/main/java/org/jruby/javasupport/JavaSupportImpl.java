@@ -40,25 +40,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.javasupport.ext.JavaExtensions;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
-import org.jruby.util.collections.ClassValueCalculator;
 
 import static org.jruby.javasupport.Java.initCause;
 
@@ -198,14 +193,16 @@ public class JavaSupportImpl extends JavaSupport {
         return javaProxyConstructorClass = getJavaModule().getClass("JavaProxyConstructor");
     }
 
+    @Deprecated // no longer used
     public JavaClass getObjectJavaClass() {
         JavaClass clazz;
         if ((clazz = objectJavaClass) != null) return clazz;
         return objectJavaClass = JavaClass.get(runtime, Object.class);
     }
 
+    @Deprecated
     public void setObjectJavaClass(JavaClass objectJavaClass) {
-        this.objectJavaClass = objectJavaClass;
+        // noop
     }
 
     public RubyClass getJavaArrayClass() {

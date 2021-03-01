@@ -2,12 +2,10 @@ package org.jruby.java.addons;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

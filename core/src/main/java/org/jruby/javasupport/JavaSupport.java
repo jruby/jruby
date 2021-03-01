@@ -137,8 +137,10 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getJavaObjectClass();
 
+    @Deprecated
     public abstract JavaClass getObjectJavaClass();
 
+    @Deprecated
     public abstract void setObjectJavaClass(JavaClass objectJavaClass);
 
     public abstract RubyClass getJavaArrayClass();
@@ -162,6 +164,7 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getArrayProxyClass();
 
+    @Deprecated
     public abstract RubyClass getJavaFieldClass();
 
     public abstract RubyClass getJavaMethodClass();
