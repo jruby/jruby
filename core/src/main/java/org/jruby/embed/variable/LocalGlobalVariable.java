@@ -114,7 +114,7 @@ public class LocalGlobalVariable extends GlobalVariable {
         final GlobalVariables globalVars = runtime.getGlobalVariables();
         // if the specified key doesn't exist, this method is called before the
         // evaluation. Don't update value in this case.
-        final String gName = ("$" + name).intern();
+        final String gName = ('$' + name);
         if ( ! globalVars.getNames().contains(gName) ) return;
 
         // the specified key is found, so let's update

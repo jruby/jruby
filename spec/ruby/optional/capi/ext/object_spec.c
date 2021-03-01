@@ -147,6 +147,10 @@ static VALUE object_specs_rb_obj_method_arity(VALUE self, VALUE obj, VALUE mid) 
   return INT2FIX(rb_obj_method_arity(obj, SYM2ID(mid)));
 }
 
+static VALUE object_specs_rb_obj_method(VALUE self, VALUE obj, VALUE method) {
+  return rb_obj_method(obj, method);
+}
+
 static VALUE object_spec_rb_obj_taint(VALUE self, VALUE obj) {
   return rb_obj_taint(obj);
 }
@@ -420,6 +424,7 @@ void Init_object_spec(void) {
   rb_define_method(cls, "rb_obj_is_instance_of", so_instance_of, 2);
   rb_define_method(cls, "rb_obj_is_kind_of", so_kind_of, 2);
   rb_define_method(cls, "rb_obj_method_arity", object_specs_rb_obj_method_arity, 2);
+  rb_define_method(cls, "rb_obj_method", object_specs_rb_obj_method, 2);
   rb_define_method(cls, "rb_obj_taint", object_spec_rb_obj_taint, 1);
   rb_define_method(cls, "rb_require", so_require, 0);
   rb_define_method(cls, "rb_respond_to", so_respond_to, 2);

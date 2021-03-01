@@ -29,26 +29,20 @@
 
 package org.jruby.embed.jsr223;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.Objects;
 import javax.script.Bindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
 import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 import org.jruby.embed.AttributeName;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -56,40 +50,18 @@ import static org.junit.Assert.*;
  *
  * @author Yoko Harada
  */
-public class JRubyCompiledScriptTest {
-    String basedir = System.getProperty("user.dir");
-    static Logger logger0 = Logger.getLogger(JRubyCompiledScriptTest.class.getName());
-    static Logger logger1 = Logger.getLogger(JRubyCompiledScriptTest.class.getName());
-    static OutputStream outStream = null;
-
-    public JRubyCompiledScriptTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-        outStream.close();
-    }
+public class JRubyCompiledScriptTest extends BaseTest {
 
     @Before
-    public void setUp() throws FileNotFoundException {
-        System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
+    public void setUp() throws Exception {
+        super.setUp();
 
-        outStream = new FileOutputStream(basedir + "/target/run-junit-embed.log", true);
-        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
-        logger0.addHandler(handler);
-        logger0.setUseParentHandlers(false);
-        logger0.setLevel(Level.INFO);
-        logger1.setUseParentHandlers(false);
-        logger1.addHandler(new ConsoleHandler());
-        logger1.setLevel(Level.WARNING);
+        System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        super.tearDown();
     }
 
     /**
@@ -97,7 +69,6 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testEval() throws Exception {
-        logger1.info("eval");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         String script = "return \"Hello World!!!\"";
@@ -108,13 +79,42 @@ public class JRubyCompiledScriptTest {
         assertEquals(expResult, result);
     }
 
+    @Test
+    public void testEvalInvalidSyntax() {
+        ScriptEngine instance;
+        ScriptEngineManager manager = new ScriptEngineManager();
+        instance = manager.getEngineByName("jruby");
+        try {
+            ((Compilable) instance).compile("def foo;");
+            fail("parse exception expected");
+        } catch (ScriptException e) {
+            assertNotNull(e.getCause());
+            assertTrue(e.getCause().toString(), e.getCause() instanceof org.jruby.exceptions.SyntaxError);
+        }
+    }
+
+    @Test
+    public void testRaisingErrorPropagatesError() throws Exception {
+        ScriptEngine instance;
+        ScriptEngineManager manager = new ScriptEngineManager();
+        instance = manager.getEngineByName("jruby");
+        CompiledScript script = ((Compilable) instance).compile("raise NotImplementedError.new()");
+        try {
+            script.eval((Bindings) null); // passing null here is allowed per JSR-223 spec
+            fail("exception raise expected");
+        } catch (ScriptException e) {
+            assertNotNull(e.getCause());
+            assertTrue(e.getCause().toString(), e.getCause() instanceof org.jruby.exceptions.NotImplementedError);
+        }
+    }
+
     /**
      * Test of eval method, of class Jsr223JRubyCompiledScript.
      */
     @Test
     public void testEval_context() throws Exception {
-        logger1.info("eval with context");
         System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         ScriptContext context = new SimpleScriptContext();
@@ -123,83 +123,98 @@ public class JRubyCompiledScriptTest {
         context.setWriter(writer);
         context.setErrorWriter(errorWriter);
 
-        context.setAttribute("message", "Hello World!!!!!", ScriptContext.ENGINE_SCOPE);
-        engine.setContext(context);
-        String script = "puts message";
-        JRubyCompiledScript instance = (JRubyCompiledScript) engine.compile(script);
-        Object expResult = "Hello World!!!!!";
-        instance.eval(context);
-        Object result = writer.toString().trim();
-        assertEquals(expResult, result);
-        writer.close();
+        try {
+            context.setAttribute("message", "Hello World!!!!!", ScriptContext.ENGINE_SCOPE);
+            engine.setContext(context);
+            JRubyCompiledScript script = (JRubyCompiledScript) engine.compile("puts message");
+            Object expResult = "Hello World!!!!!";
+            script.eval(context);
+            assertEquals(expResult, writer.toString().trim());
+            writer.close();
+            context.removeAttribute("message", ScriptContext.ENGINE_SCOPE);
 
-        writer = new StringWriter();
-        context.setWriter(writer);
-        context.setAttribute("@message", "Say Hey.", ScriptContext.ENGINE_SCOPE);
-        engine.setContext(context);
-        script = "puts @message";
-        instance = (JRubyCompiledScript) engine.compile(script);
-        expResult = "Say Hey.";
-        instance.eval(context);
-        result = writer.toString().trim();
-        assertEquals(expResult, result);
+            writer = new StringWriter();
+            context.setWriter(writer);
+            context.setAttribute("@message", "Say Hey.", ScriptContext.ENGINE_SCOPE);
+            engine.setContext(context);
+            script = (JRubyCompiledScript) engine.compile("puts @message");
+            script.eval(context);
+            assertEquals("Say Hey.", writer.toString().trim());
 
-        context.setAttribute("@message", "Yeah!", ScriptContext.ENGINE_SCOPE);
-        engine.setContext(context);
-        expResult = "Say Hey.\nYeah!";
-        instance.eval(context);
-        result = writer.toString().trim();
-        assertEquals(expResult, result);
-        writer.close();
+            context.setAttribute("@message", "Yeah!", ScriptContext.ENGINE_SCOPE);
+            engine.setContext(context);
+            script.eval(context);
+            assertEquals("Say Hey.\nYeah!", writer.toString().trim());
+            writer.close();
 
-        writer = new StringWriter();
-        context.setWriter(writer);
-        context.setAttribute("$message", "Hiya.", ScriptContext.ENGINE_SCOPE);
-        engine.setContext(context);
-        script = "puts $message";
-        instance = (JRubyCompiledScript) engine.compile(script);
-        expResult = "Hiya.";
-        instance.eval(context);
-        result = writer.toString().trim();
-        assertEquals(expResult, result);
-        writer.close();
-        errorWriter.close();
+            writer = new StringWriter();
+            context.setWriter(writer);
+            context.setAttribute("$message", "Hiya.", ScriptContext.ENGINE_SCOPE);
+            engine.setContext(context);
+            script = (JRubyCompiledScript) engine.compile("puts $message");
+            script.eval(context);
+            assertEquals("Hiya.", writer.toString().trim());
+            writer.close();
+        } finally {
+            engine.eval("remove_instance_variable :@message");
+            engine.eval("$message = nil");
+            errorWriter.close();
+        }
     }
 
     /**
      * Test of eval method, of class Jsr223JRubyCompiledScript.
      */
     @Test
-    public void testEval_bindings() throws Exception {
-        logger1.info("eval with bindings");
+    public void testEvalWithBindings() throws Exception {
         System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+
+        JRubyEngineFactory factory = new JRubyEngineFactory();
+        JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
+
+        try {
+            CompiledScript script = engine.compile("'I heard, '.concat @the_message.to_s");
+            Bindings bindings = new SimpleBindings();
+            Object result = script.eval(bindings);
+            assertEquals("I heard, ", result);
+
+            bindings.put("@the_message", "Saaaay Heeeey.");
+            result = script.eval(bindings);
+            assertEquals("I heard, Saaaay Heeeey.", result);
+
+            script = engine.compile("'I heard: ' + $a_message.inspect");
+            result = script.eval(bindings);
+            assertEquals("I heard: nil", result);
+
+            bindings = new SimpleBindings();
+            bindings.put("$a_message", "Hiya, hiya, hiya");
+            result = script.eval(bindings);
+            assertEquals("I heard: \"Hiya, hiya, hiya\"", result);
+        } finally {
+            engine.eval("remove_instance_variable :@the_message");
+            engine.eval("$a_message = nil");
+        }
+    }
+
+    @Test
+    public void testEvalWithBindingsLocalVar() throws Exception {
+        System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         Bindings bindings = new SimpleBindings();
-        bindings.put("message", "Helloooo Woooorld!");
         engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        String script = "\"I heard, \"#{message}\"\"";
-        JRubyCompiledScript instance = (JRubyCompiledScript) engine.compile(script);
-        Object expResult = "I heard, Helloooo Woooorld!";
-        Object result = instance.eval(bindings);
-        // Bug? a local variable isn't shared.
-        //assertEquals(expResult, result);
-
-        bindings.put("@message", "Saaaay Heeeey.");
-        engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        script = "\"I heard, #{@message}\"";
-        instance = (JRubyCompiledScript) engine.compile(script);
-        expResult = "I heard, Saaaay Heeeey.";
-        result = instance.eval(bindings);
-        assertEquals(expResult, result);
-
-        bindings.put("$message", "Hiya, hiya, hiya");
-        engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        script = "\"I heard, #{$message}\"";
-        instance = (JRubyCompiledScript) engine.compile(script);
-        expResult = "I heard, Hiya, hiya, hiya";
-        result = instance.eval(bindings);
-        assertEquals(expResult, result);
+        JRubyCompiledScript script = (JRubyCompiledScript) engine.compile("sprintf(\"%4s\", sample_message)");
+        Object result;
+        // NOTE: compiled script can not know sample_message is meant as a local variable (isn't a method invocation)
+        try {
+            bindings.put("sample_message", "foo"); // no effect since script was 'compiled' (parsed) already
+            result = script.eval(bindings);
+            fail("script expected to fail but returned: " + result);
+        } catch (ScriptException e) {
+            assertTrue(Objects.toString(e.getCause()), e.getCause() instanceof org.jruby.exceptions.NameError);
+            assertTrue(e.getCause().getMessage(), e.getCause().getMessage().contains("undefined local variable or method `sample_message'"));
+        }
     }
 
     /**
@@ -207,7 +222,6 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testGetEngine() throws ScriptException {
-        logger1.info("getEngine");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         String script = "puts \"Hello World!!!\"";
@@ -220,8 +234,7 @@ public class JRubyCompiledScriptTest {
 
     @Test
     public void testTerminate() throws ScriptException {
-        logger1.info("termination");
-        JRubyEngine engine = null;
+        JRubyEngine engine;
         synchronized (this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
             System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
@@ -247,4 +260,5 @@ public class JRubyCompiledScriptTest {
         assertEquals(expResult, writer.toString().trim());
         engine.getContext().setAttribute(AttributeName.TERMINATION.toString(), false, ScriptContext.ENGINE_SCOPE);
     }
+
 }
