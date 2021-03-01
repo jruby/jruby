@@ -131,7 +131,7 @@ public class PopenExecutor {
             if (!searchForMetaChars(prog)) {
                 script = script + "exec ";
             }
-            
+
             prog = (RubyString)prog.strDup(runtime).prepend(context, newString(runtime, script));
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
