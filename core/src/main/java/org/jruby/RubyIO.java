@@ -1462,6 +1462,19 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return write(context, str, false);
     }
 
+    /**
+     * Write a single byte to this IO's write target but do not return the number of bytes written (it will be 1).
+     *
+     * This version does not dig out any wrapped write IO (bytes will be written to this IO).
+     *
+     * @param context the current context
+     * @param ch the byte to write, as an int
+     */
+    public final void write(ThreadContext context, byte ch) {
+        ByteList bytes = RubyInteger.singleCharByteList(ch);
+
+        write(context, bytes.unsafeBytes(), bytes.begin(), bytes.realSize(), bytes.getEncoding(), false);
+    }
 
     /**
      * Write the given range of bytes to this IO's write target.
@@ -1510,7 +1523,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * Write the given range of bytes to this IO.
      *
      * Equivalent to io_write_m with source bytes and no digging out any wrapped write IO (bytes will be written to this
-     * IO.
+     * IO).
      *
      * @param context the current context
      * @param bytes the bytes to write
@@ -1519,7 +1532,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param encoding encoding of the bytes (will not be verified)
      * @return the count of bytes written
      */
-    public IRubyObject write(ThreadContext context,  byte[] bytes, int start, int length, Encoding encoding) {
+    public int write(ThreadContext context,  byte[] bytes, int start, int length, Encoding encoding) {
         return write(context, bytes, start, length, encoding, false);
     }
 
@@ -1537,12 +1550,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param nosync whether to write without syncing
      * @return the count of bytes written
      */
-    public IRubyObject write(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
+    public int write(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
-        long n;
+        int n;
 
-        if (length == 0) return RubyFixnum.zero(runtime);
+        if (length == 0) return 0;
 
         fptr = getOpenFileChecked();
 
@@ -1557,7 +1570,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (locked) fptr.unlock();
         }
 
-        return RubyFixnum.newFixnum(runtime, n);
+        return n;
     }
 
     /** rb_io_addstr

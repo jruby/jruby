@@ -2092,11 +2092,11 @@ public class OpenFile implements Finalizable {
 
         str = doWriteconv(context, str);
         ByteList strByteList = str.getByteList();
-        return binwrite(context, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+        return binwriteInt(context, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
     }
 
-    // MRI: io_fwrite
-    public long fwrite(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
+    // MRI: io_fwrite with source bytes
+    public int fwrite(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
         // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
         if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
             return rbW32WriteConsole(bytes, start, length, encoding);
@@ -2110,7 +2110,7 @@ public class OpenFile implements Finalizable {
             length = str.realSize();
         }
 
-        return binwrite(context, bytes, start, length, nosync);
+        return binwriteInt(context, bytes, start, length, nosync);
     }
 
     // MRI: rb_w32_write_console
@@ -2120,7 +2120,7 @@ public class OpenFile implements Finalizable {
     }
 
     // MRI: rb_w32_write_console
-    public static long rbW32WriteConsole(byte[] bytes, int start, int length, Encoding encoding) {
+    public static int rbW32WriteConsole(byte[] bytes, int start, int length, Encoding encoding) {
         // The actual port in MRI uses win32 APIs, but System.console seems to do what we want. See jruby/jruby#3292.
         // FIXME: This assumes the System.console() is the right one to write to. Can you have multiple active?
         System.console().printf("%s", RubyEncoding.decode(bytes, start, length, encoding.getCharset()));
@@ -2244,7 +2244,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_binwrite
-    public long binwrite(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
+    public int binwriteInt(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
         int n, r, offset = 0;
 
         /* don't write anything if current thread has a pending interrupt. */
@@ -2279,7 +2279,7 @@ public class OpenFile implements Finalizable {
                     n = 0;
                 }
 
-                if (io_fflush(context) < 0) return -1L;
+                if (io_fflush(context) < 0) return -1;
                 if (n == 0) return len;
 
                 checkClosed();
@@ -2314,7 +2314,7 @@ public class OpenFile implements Finalizable {
                         if (offset < len)
                             continue retry;
                     }
-                    return -1L;
+                    return -1;
                 }
             }
 
@@ -2834,5 +2834,10 @@ public class OpenFile implements Finalizable {
 
     public boolean lockedByMe() {
         return lock.isHeldByCurrentThread();
+    }
+
+    @Deprecated
+    public long binwrite(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
+        return binwriteInt(context, ptrBytes, ptr, len, nosync);
     }
 }
