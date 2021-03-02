@@ -1573,6 +1573,64 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return n;
     }
 
+    /**
+     * Same as {@link #write(ThreadContext, byte[], int, int, Encoding, boolean)} but context will be retrieved.
+     *
+     * Heavy use should retrieve context once and call the original method to avoid thread-local overhead.
+     *
+     * @param bytes the bytes to write
+     * @param start start offset for writing
+     * @param length length to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @param nosync whether to write without syncing
+     * @return the count of bytes written
+     */
+    public int write(byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
+        return write(getRuntime().getCurrentContext(), bytes, start, length, encoding, nosync);
+    }
+
+    /**
+     * Same as {@link #write(ThreadContext, byte[], int, int, Encoding, boolean)} but context will be retrieved and
+     * nosync defaults to false.
+     *
+     * Heavy use should retrieve context once and call the original method to avoid thread-local overhead.
+     *
+     * @param bytes the bytes to write
+     * @param start start offset for writing
+     * @param length length to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @return the count of bytes written
+     */
+    public int write(byte[] bytes, int start, int length, Encoding encoding) {
+        return write(bytes, start, length, encoding, false);
+    }
+
+
+    /**
+     * Same as {@link #write(ThreadContext, byte[], int, int, Encoding, boolean)} but context will be retrieved nosync
+     * defaults to false, and the entire byte array will be written.
+     *
+     * Heavy use should retrieve context once and call the original method to avoid thread-local overhead.
+     *
+     * @param bytes the bytes to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @return the count of bytes written
+     */
+    public int write(byte[] bytes, Encoding encoding) {
+        return write(bytes, 0, bytes.length, encoding);
+    }
+
+    /**
+     * Same as {@link #write(ThreadContext, byte)} but context will be retrieved.
+     *
+     * Heavy use should retrieve context once and call the original method to avoid thread-local overhead.
+     *
+     * @param bite the byte to write, as an int
+     */
+    public void write(int bite) {
+        write(getRuntime().getCurrentContext(), (byte) bite);
+    }
+
     /** rb_io_addstr
      *
      */
