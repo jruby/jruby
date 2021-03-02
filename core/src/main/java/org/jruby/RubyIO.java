@@ -3784,13 +3784,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         POSIX posix = runtime.getNativePosix();
 
-        if (!(posix instanceof Linux)) {
-            return context.nil;
-        }
-
         RubyIO io = GetWriteIO();
 
         fptr = io.getOpenFileChecked();
+
+        if (!(posix instanceof Linux)) {
+            return context.nil;
+        }
 
         int fd = fptr.fd().realFileno;
 
