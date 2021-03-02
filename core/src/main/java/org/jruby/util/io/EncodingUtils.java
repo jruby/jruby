@@ -21,7 +21,6 @@ import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.transcode.Transcoding;
 import org.jcodings.unicode.UnicodeEncoding;
-import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -30,7 +29,6 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
-import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -47,7 +45,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.CodeRangeable;
-import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
@@ -518,6 +515,11 @@ public class EncodingUtils {
         return econvSubstrAppend(context, ec, src, null, flags);
     }
 
+    // rb_econv_str_convert with source bytes
+    public static ByteList econvByteConvert(ThreadContext context, EConv ec, byte[] bytes, int start, int length, int flags) {
+        return econvAppend(context, ec, bytes, start, length, new ByteList(length, ec.destinationEncoding), flags);
+    }
+
     // rb_econv_substr_append
     public static ByteList econvSubstrAppend(ThreadContext context, EConv ec, ByteList src, ByteList dst, int flags) {
         return econvAppend(context, ec, src, dst, flags);
@@ -527,22 +529,24 @@ public class EncodingUtils {
     public static ByteList econvAppend(ThreadContext context, EConv ec, ByteList sByteList, ByteList dst, int flags) {
         int len = sByteList.getRealSize();
 
+        if (dst == null) {
+            dst = new ByteList(len, ec.destinationEncoding);
+        }
+
+        return econvAppend(context, ec, sByteList.unsafeBytes(), sByteList.begin(), len, dst, flags);
+    }
+
+    // rb_econv_append with source bytes
+    public static ByteList econvAppend(ThreadContext context, EConv ec, byte[] bytes, int start, int length, ByteList dst, int flags) {
         Ptr sp = new Ptr(0);
         int se;
         int ds;
-        int ss = sByteList.getBegin();
+        int ss = start;
         byte[] dBytes;
         Ptr dp = new Ptr(0);
         int de;
         EConvResult res;
         int maxOutput;
-
-        if (dst == null) {
-            dst = new ByteList(len);
-            if (ec.destinationEncoding != null) {
-                dst.setEncoding(ec.destinationEncoding);
-            }
-        }
 
         if (ec.lastTranscoding != null) {
             maxOutput = ec.lastTranscoding.transcoder.maxOutput;
@@ -552,8 +556,8 @@ public class EncodingUtils {
 
         do {
             int dlen = dst.getRealSize();
-            if ((dst.getUnsafeBytes().length - dst.getBegin()) - dlen < len + maxOutput) {
-                long newCapa = dlen + len + maxOutput;
+            if ((dst.getUnsafeBytes().length - dst.getBegin()) - dlen < length + maxOutput) {
+                long newCapa = dlen + length + maxOutput;
                 if (Integer.MAX_VALUE < newCapa) {
                     throw context.runtime.newArgumentError("too long string");
                 }
@@ -561,13 +565,13 @@ public class EncodingUtils {
                 dst.setRealSize(dlen);
             }
             sp.p = ss;
-            se = sp.p + len;
+            se = sp.p + length;
             dBytes = dst.getUnsafeBytes();
             ds = dst.getBegin();
             de = dBytes.length;
             dp.p = ds += dlen;
-            res = ec.convert(sByteList.getUnsafeBytes(), sp, se, dBytes, dp, de, flags);
-            len -= sp.p - ss;
+            res = ec.convert(bytes, sp, se, dBytes, dp, de, flags);
+            length -= sp.p - ss;
             ss = sp.p;
             dst.setRealSize(dlen + (dp.p - ds));
             EncodingUtils.econvCheckError(context, ec);
@@ -829,7 +833,7 @@ public class EncodingUtils {
 
     // encoding_equal
     public static boolean encodingEqual(byte[] enc1, byte[] enc2) {
-        return new String(enc1).equalsIgnoreCase(new String(enc2));
+        return ByteList.memcmp(enc1, 0, enc1.length, enc2, 0, enc2.length) == 0;
     }
 
     // enc_arg
@@ -917,6 +921,50 @@ public class EncodingUtils {
         return encodedDup(context, newstr_p[0], str, dencindex);
     }
 
+    // rb_str_encode
+    public static ByteList rbByteEncode(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, int cr, Encoding to, int ecflags, IRubyObject ecopt) {
+        byte[] sname, dname;
+
+        sname = encoding.getName();
+        dname = to.getName();
+
+        if (noDecorators(ecflags)) {
+            if (encoding.isAsciiCompatible() && to.isAsciiCompatible()) {
+                if (cr == StringSupport.CR_7BIT) {
+                    return null;
+                }
+            } else if (encodingEqual(sname, dname)) {
+                return null;
+            }
+        } else if (encodingEqual(sname, dname)) {
+            sname = NULL_BYTE_ARRAY;
+            dname = NULL_BYTE_ARRAY;
+        }
+
+        int slen = length;
+        int blen = slen + 30;
+        ByteList dest = new ByteList(blen, to);
+
+        Ptr fromPos = new Ptr(start);
+        int destBegin = dest.getBegin();
+        transcodeLoop(context, bytes, fromPos, dest.unsafeBytes(), new Ptr(destBegin), start + slen, destBegin + blen, dest, strTranscodingResize, sname, dname, ecflags, ecopt);
+
+        if (fromPos.p != start + slen) {
+            throw context.runtime.newArgumentError("not fully converted, " + (slen - fromPos.p) + " bytes left");
+        }
+
+        dest.setEncoding(to);
+
+        return dest;
+    }
+
+    protected static boolean noDecorators(int ecflags) {
+        return (ecflags & (EConvFlags.NEWLINE_DECORATOR_MASK
+                | EConvFlags.XML_TEXT_DECORATOR
+                | EConvFlags.XML_ATTR_CONTENT_DECORATOR
+                | EConvFlags.XML_ATTR_QUOTE_DECORATOR)) == 0;
+    }
+
     // str_transcode
     public static Encoding strTranscode(ThreadContext context, IRubyObject[] args, IRubyObject[] self_p) {
         int ecflags = 0;
@@ -968,10 +1016,7 @@ public class EncodingUtils {
 
         IRubyObject dest;
 
-        if ((ecflags & (EConvFlags.NEWLINE_DECORATOR_MASK
-                | EConvFlags.XML_TEXT_DECORATOR
-                | EConvFlags.XML_ATTR_CONTENT_DECORATOR
-                | EConvFlags.XML_ATTR_QUOTE_DECORATOR)) == 0) {
+        if (noDecorators(ecflags)) {
             if (senc_p[0] != null && senc_p[0] == denc_p[0]) {
                 if ((ecflags & EConvFlags.INVALID_MASK) != 0 && explicitlyInvalidReplace) {
                     IRubyObject rep = context.nil;

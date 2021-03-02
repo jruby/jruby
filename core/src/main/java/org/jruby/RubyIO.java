@@ -346,12 +346,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             @Override
             public void write(byte[] b) throws IOException {
-                RubyIO.this.write(runtime.getCurrentContext(), RubyString.newStringNoCopy(runtime, b));
+                RubyIO.this.write(runtime.getCurrentContext(), b, 0, b.length, ASCIIEncoding.INSTANCE);
             }
 
             @Override
             public void write(byte[] b, int off, int len) throws IOException {
-                RubyIO.this.write(runtime.getCurrentContext(), RubyString.newStringNoCopy(runtime, b, off, len));
+                RubyIO.this.write(runtime.getCurrentContext(), b, off, len, ASCIIEncoding.INSTANCE);
             }
 
             @Override
@@ -1441,7 +1441,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return RubyFixnum.newFixnum(context.runtime, acc);
     }
 
-    final IRubyObject write(ThreadContext context, int ch) {
+    public final IRubyObject write(ThreadContext context, int ch) {
         RubyString str = RubyString.newStringShared(context.runtime, RubyInteger.singleCharByteList((byte) ch));
         return write(context, str, false);
     }
@@ -1455,14 +1455,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         RubyIO io = GetWriteIO();
 
-        str = str.asString();
+        RubyString string = str.asString();
         tmp = TypeConverter.ioCheckIO(runtime, io);
         if (tmp == context.nil) {
 	        /* port is not IO, call write method for it. */
-            return sites(context).write.call(context, io, io, str);
+            return sites(context).write.call(context, io, io, string);
         }
         io = (RubyIO) tmp;
-        if (((RubyString) str).size() == 0) return RubyFixnum.zero(runtime);
+        if (string.size() == 0) return RubyFixnum.zero(runtime);
 
         fptr = io.getOpenFileChecked();
 
@@ -1471,7 +1471,36 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr = io.getOpenFileChecked();
             fptr.checkWritable(context);
 
-            n = fptr.fwrite(context, str, nosync);
+            n = fptr.fwrite(context, string, nosync);
+            if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+        } finally {
+            if (locked) fptr.unlock();
+        }
+
+        return RubyFixnum.newFixnum(runtime, n);
+    }
+
+    // io_write_m with source bytes
+    public IRubyObject write(ThreadContext context,  byte[] bytes, int start, int length, Encoding encoding) {
+        return write(context, bytes, start, length, encoding, false);
+    }
+
+    // io_write with source bytes
+    public IRubyObject write(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+        long n;
+
+        if (length == 0) return RubyFixnum.zero(runtime);
+
+        fptr = getOpenFileChecked();
+
+        boolean locked = fptr.lock();
+        try {
+            fptr = getOpenFileChecked();
+            fptr.checkWritable(context);
+
+            n = fptr.fwrite(context, bytes, start, length, encoding, nosync);
             if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         } finally {
             if (locked) fptr.unlock();

@@ -382,7 +382,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @Deprecated
     public static final ByteList[] SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
 
-    static ByteList singleCharByteList(final byte index) {
+    public static ByteList singleCharByteList(final byte index) {
         return SINGLE_CHAR_BYTELISTS[index & 0xFF];
     }
 

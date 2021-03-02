@@ -30,6 +30,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArgsFile;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
@@ -42,6 +43,7 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
@@ -53,7 +55,7 @@ public class OpenFile implements Finalizable {
     // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
     public OpenFile(IRubyObject nil) {
         runtime = nil.getRuntime();
-        writeconvAsciicompat = nil;
+        writeconvAsciicompat = null;
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
         posix = new PosixShim(runtime);
@@ -134,7 +136,7 @@ public class OpenFile implements Finalizable {
 
     public EConv readconv;
     public EConv writeconv;
-    public IRubyObject writeconvAsciicompat;
+    public Encoding writeconvAsciicompat;
     public int writeconvPreEcflags;
     public IRubyObject writeconvPreEcopts;
     public boolean writeconvInitialized;
@@ -976,7 +978,6 @@ public class OpenFile implements Finalizable {
     public void makeWriteConversion(ThreadContext context) {
         if (writeconvInitialized) return;
 
-        byte[] senc;
         byte[] denc;
         Encoding enc;
         int ecflags;
@@ -996,30 +997,34 @@ public class OpenFile implements Finalizable {
             if (writeconv == null) {
                 throw EncodingUtils.econvOpenExc(context, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, ecflags);
             }
-            writeconvAsciicompat = context.nil;
+            writeconvAsciicompat = null;
         }
         else {
+            byte[] senc;
+            Encoding sEncoding;
+
             enc = encs.enc2 != null ? encs.enc2 : encs.enc;
             Encoding tmpEnc = EncodingUtils.econvAsciicompatEncoding(enc);
             senc = tmpEnc == null ? null : tmpEnc.getName();
-            if (senc == null && (encs.ecflags & EConvFlags.STATEFUL_DECORATOR_MASK) == 0) {
+            sEncoding = tmpEnc == null ? null : tmpEnc;
+            if (sEncoding == null && (encs.ecflags & EConvFlags.STATEFUL_DECORATOR_MASK) == 0) {
                 /* single conversion */
                 writeconvPreEcflags = ecflags;
                 writeconvPreEcopts = ecopts;
                 writeconv = null;
-                writeconvAsciicompat = context.nil;
+                writeconvAsciicompat = null;
             }
             else {
                 /* double conversion */
                 writeconvPreEcflags = ecflags & ~EConvFlags.STATEFUL_DECORATOR_MASK;
                 writeconvPreEcopts = ecopts;
-                if (senc != null) {
+                if (sEncoding != null) {
                     denc = enc.getName();
-                    writeconvAsciicompat = RubyString.newString(context.runtime, senc);
+                    writeconvAsciicompat = sEncoding;
                 }
                 else {
                     senc = denc = EMPTY_BYTE_ARRAY;
-                    writeconvAsciicompat = RubyString.newString(context.runtime, enc.getName());
+                    writeconvAsciicompat = enc;
                 }
                 ecflags = encs.ecflags & (EConvFlags.ERROR_HANDLER_MASK | EConvFlags.STATEFUL_DECORATOR_MASK);
                 ecopts = encs.ecopts;
@@ -2079,56 +2084,67 @@ public class OpenFile implements Finalizable {
     }
 
     // MRI: io_fwrite
-    public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
+    public long fwrite(ThreadContext context, RubyString str, boolean nosync) {
         // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
         if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
-            return rbW32WriteConsole((RubyString)str);
+            return rbW32WriteConsole(str);
         }
 
         str = doWriteconv(context, str);
-        ByteList strByteList = ((RubyString)str).getByteList();
-        return binwrite(context, str, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+        ByteList strByteList = str.getByteList();
+        return binwrite(context, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+    }
+
+    // MRI: io_fwrite
+    public long fwrite(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
+        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
+        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
+            return rbW32WriteConsole(bytes, start, length, encoding);
+        }
+
+        ByteList str = doWriteconv(context, bytes, start, length, encoding);
+
+        if (str != null) {
+            bytes = str.unsafeBytes();
+            start = str.begin();
+            length = str.realSize();
+        }
+
+        return binwrite(context, bytes, start, length, nosync);
     }
 
     // MRI: rb_w32_write_console
     public static long rbW32WriteConsole(RubyString buffer) {
+        ByteList bl = buffer.getByteList();
+        return rbW32WriteConsole(bl.unsafeBytes(), bl.begin(), bl.realSize(), bl.getEncoding());
+    }
+
+    // MRI: rb_w32_write_console
+    public static long rbW32WriteConsole(byte[] bytes, int start, int length, Encoding encoding) {
         // The actual port in MRI uses win32 APIs, but System.console seems to do what we want. See jruby/jruby#3292.
         // FIXME: This assumes the System.console() is the right one to write to. Can you have multiple active?
-        System.console().printf("%s", buffer.asJavaString());
+        System.console().printf("%s", RubyEncoding.decode(bytes, start, length, encoding.getCharset()));
 
-        return buffer.size();
+        return length;
     }
 
     // do_writeconv
-    public IRubyObject doWriteconv(ThreadContext context, IRubyObject str) {
+    public RubyString doWriteconv(ThreadContext context, RubyString str) {
         boolean locked = lock();
         try {
             if (needsWriteConversion(context)) {
-                IRubyObject common_encoding = context.nil;
                 SET_BINARY_MODE();
 
                 makeWriteConversion(context);
 
-                if (writeconv != null) {
-                    int fmode = mode;
-                    if (!writeconvAsciicompat.isNil())
-                        common_encoding = writeconvAsciicompat;
-                    else if (EncodingUtils.MODE_BTMODE(fmode, EncodingUtils.DEFAULT_TEXTMODE, 0, 1) != 0 && !((RubyString) str).getEncoding().isAsciiCompatible()) {
-                        throw context.runtime.newArgumentError("ASCII incompatible string written for text mode IO without encoding conversion: %s" + ((RubyString) str).getEncoding().toString());
-                    }
-                } else {
-                    if (encs.enc2 != null)
-                        common_encoding = context.runtime.getEncodingService().convertEncodingToRubyEncoding(encs.enc2);
-                    else if (encs.enc != EncodingUtils.ascii8bitEncoding(context.runtime))
-                        common_encoding = context.runtime.getEncodingService().convertEncodingToRubyEncoding(encs.enc);
-                }
+                Encoding common_encoding = getCommonEncodingForWriteConv(context, str.getEncoding());
 
-                if (!common_encoding.isNil()) {
-                    str = EncodingUtils.rbStrEncode(context, str, common_encoding, writeconvPreEcflags, writeconvPreEcopts);
+                if (common_encoding != null) {
+                    str = (RubyString) EncodingUtils.rbStrEncode(context, str, runtime.getEncodingService().convertEncodingToRubyEncoding(common_encoding), writeconvPreEcflags, writeconvPreEcopts);
                 }
 
                 if (writeconv != null) {
-                    str = context.runtime.newString(EncodingUtils.econvStrConvert(context, writeconv, ((RubyString) str).getByteList(), EConvFlags.PARTIAL_INPUT));
+                    str = context.runtime.newString(EncodingUtils.econvStrConvert(context, writeconv, str.getByteList(), EConvFlags.PARTIAL_INPUT));
                 }
             }
             //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
@@ -2154,16 +2170,81 @@ public class OpenFile implements Finalizable {
         return str;
     }
 
+    protected Encoding getCommonEncodingForWriteConv(ThreadContext context, Encoding strEncoding) {
+        Encoding common_encoding = null;
+        if (writeconv != null) {
+            int fmode = mode;
+            if (writeconvAsciicompat != null)
+                common_encoding = writeconvAsciicompat;
+            else if (EncodingUtils.MODE_BTMODE(fmode, EncodingUtils.DEFAULT_TEXTMODE, 0, 1) != 0 && !strEncoding.isAsciiCompatible()) {
+                throw context.runtime.newArgumentError("ASCII incompatible string written for text mode IO without encoding conversion: %s" + strEncoding.toString());
+            }
+        } else {
+            if (encs.enc2 != null)
+                common_encoding = encs.enc2;
+            else if (encs.enc != EncodingUtils.ascii8bitEncoding(context.runtime))
+                common_encoding = encs.enc;
+        }
+        return common_encoding;
+    }
+
+    // do_writeconv with source bytes
+    public ByteList doWriteconv(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding) {
+        boolean locked = lock();
+
+        ByteList newBytes = null;
+        try {
+            if (needsWriteConversion(context)) {
+                SET_BINARY_MODE();
+
+                makeWriteConversion(context);
+
+                Encoding common_encoding = getCommonEncodingForWriteConv(context, encoding);
+
+                if (common_encoding != null) {
+                    newBytes = EncodingUtils.rbByteEncode(context, bytes, start, length, encoding, CR_UNKNOWN, common_encoding, writeconvPreEcflags, writeconvPreEcopts);
+                }
+
+                if (writeconv != null) {
+                    if (newBytes != null) {
+                        newBytes = EncodingUtils.econvStrConvert(context, writeconv, newBytes, EConvFlags.PARTIAL_INPUT);
+                    } else {
+                        newBytes = EncodingUtils.econvByteConvert(context, writeconv, bytes, start, length, EConvFlags.PARTIAL_INPUT);
+                    }
+                }
+            }
+            //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
+            //        #define fmode (fptr->mode)
+            //        else if (MODE_BTMODE(DEFAULT_TEXTMODE,0,1)) {
+            //        if ((fptr->mode & FMODE_READABLE) &&
+            //                !(fptr->encs.ecflags & ECONV_NEWLINE_DECORATOR_MASK)) {
+            //            setmode(fptr->fd, O_BINARY);
+            //        }
+            //        else {
+            //            setmode(fptr->fd, O_TEXT);
+            //        }
+            //        if (!rb_enc_asciicompat(rb_enc_get(str))) {
+            //            rb_raise(rb_eArgError, "ASCII incompatible string written for text mode IO without encoding conversion: %s",
+            //                    rb_enc_name(rb_enc_get(str)));
+            //        }
+            //    }
+            //        #undef fmode
+            //        #endif
+        } finally {
+            if (locked) unlock();
+        }
+        return newBytes;
+    }
+
     private static class BinwriteArg {
         OpenFile fptr;
-        IRubyObject str;
         byte[] ptrBytes;
         int ptr;
         int length;
     }
 
     // io_binwrite
-    public long binwrite(ThreadContext context, IRubyObject str, byte[] ptrBytes, int ptr, int len, boolean nosync) {
+    public long binwrite(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
         int n, r, offset = 0;
 
         /* don't write anything if current thread has a pending interrupt. */
@@ -2203,7 +2284,6 @@ public class OpenFile implements Finalizable {
 
                 checkClosed();
                 arg.fptr = this;
-                arg.str = str;
                 retry:
                 while (true) {
                     arg.ptrBytes = ptrBytes;

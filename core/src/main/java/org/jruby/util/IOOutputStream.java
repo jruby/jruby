@@ -111,14 +111,12 @@ public class IOOutputStream extends OutputStream {
     public void write(final int bite) throws IOException {
         ThreadContext context = runtime.getCurrentContext();
 
-        RubyString str = RubyString.newStringLight(runtime, new ByteList(new byte[]{(byte) bite}, encoding, false));
-
         RubyIO realIO = this.realIO;
         if (realIO != null) {
-            realIO.write(context, str);
+            realIO.write(context, bite);
         } else {
             IRubyObject io = this.io;
-            writeAdapter.call(context, io, io, str);
+            writeAdapter.call(context, io, io, RubyString.newStringShared(runtime, new ByteList(new byte[]{(byte) bite}, encoding, false)));
         }
     }
 
@@ -131,14 +129,12 @@ public class IOOutputStream extends OutputStream {
     public void write(final byte[] b,final int off, final int len) throws IOException {
         ThreadContext context = runtime.getCurrentContext();
 
-        RubyString str = RubyString.newStringLight(runtime, new ByteList(b, off, len, encoding, false));
-
         RubyIO realIO = this.realIO;
         if (realIO != null) {
-            realIO.write(context, str);
+            realIO.write(context, b, off, len, encoding);
         } else {
             IRubyObject io = this.io;
-            writeAdapter.call(context, io, io, str);
+            writeAdapter.call(context, io, io, RubyString.newStringLight(runtime, new ByteList(b, off, len, encoding, false)));
         }
     }
     
