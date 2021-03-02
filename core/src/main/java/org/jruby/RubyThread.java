@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
@@ -179,7 +179,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /** Current status in an atomic reference */
-    private final AtomicReference<Status> status = new AtomicReference<>(Status.RUN);
+    private volatile Status status = Status.RUN;
+    private final static AtomicReferenceFieldUpdater<RubyThread, Status> STATUS =
+            AtomicReferenceFieldUpdater.newUpdater(RubyThread.class, Status.class, "status");
 
     /** Mail slot for cross-thread events */
     private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue<>();
@@ -298,7 +300,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private void toKill() {
         pendingInterruptClear();
-        status.set(Status.ABORTING);
+        STATUS.set(this, Status.ABORTING);
         throwThreadKill();
     }
 
@@ -725,7 +727,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void beDead() {
-        status.set(Status.DEAD);
+        STATUS.set(this, Status.DEAD);
     }
 
     public void pollThreadEvents() {
@@ -1275,12 +1277,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             rubyThread.pollThreadEvents(context);
             Status oldStatus = rubyThread.getStatus();
             try {
-                rubyThread.status.set(Status.SLEEP);
+                STATUS.set(rubyThread, Status.SLEEP);
                 rubyThread.wait();
             } catch (InterruptedException ie) {
             } finally {
                 rubyThread.pollThreadEvents(context);
-                rubyThread.status.set(oldStatus);
+                STATUS.set(rubyThread, oldStatus);
             }
         }
 
@@ -1312,7 +1314,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             throw getRuntime().newThreadError("killed thread");
         }
 
-        status.set(Status.RUN);
+        STATUS.set(this, Status.RUN);
         interrupt();
 
         return this;
@@ -1606,7 +1608,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public <Data, Return> Return executeTask(ThreadContext context, Data data, Status status, Task<Data, Return> task) throws InterruptedException {
-        Status oldStatus = this.status.get();
+        Status oldStatus = STATUS.get(this);
         try {
             this.unblockArg = data;
             this.unblockFunc = task;
@@ -1614,11 +1616,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // check for interrupt before going into blocking call
             pollThreadEvents(context);
 
-            this.status.set(status);
+            STATUS.set(this, status);
 
             return task.run(context, data);
         } finally {
-            this.status.set(oldStatus);
+            STATUS.set(this, oldStatus);
             this.unblockFunc = null;
             this.unblockArg = null;
             pollThreadEvents(context);
@@ -1626,17 +1628,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void enterSleep() {
-        status.set(Status.SLEEP);
+        STATUS.set(this, Status.SLEEP);
     }
 
     public void exitSleep() {
-        if (getStatus() != Status.ABORTING) {
-            status.set(Status.RUN);
+        if (status != Status.ABORTING) {
+            STATUS.set(this, Status.RUN);
         }
     }
 
     private Status getStatus() {
-        Status status = this.status.get();
+        Status status = STATUS.get(this);
 
         if (status != Status.NATIVE) return status;
 
@@ -1668,7 +1670,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // rb_exit to hard exit process...not quite right for us
         }
 
-        status.set(Status.ABORTING);
+        STATUS.set(this, Status.ABORTING);
 
         return genericKill(runtime, currentThread);
     }
