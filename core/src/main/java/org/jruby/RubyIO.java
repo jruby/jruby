@@ -3281,7 +3281,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param buffer the target buffer
      * @param start start offset in target buffer
      * @param len count of bytes to read
-     * @return the number of bytes actually read
+     * @return the number of bytes actually read or -1 for EOF
      */
     public int read(ThreadContext context, byte[] buffer, int start, int len) {
         checkLength(context, len);
@@ -3291,7 +3291,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             fptr.checkByteReadable(context);
 
-            return doRead(context, fptr, buffer, start, len);
+            len = doRead(context, fptr, buffer, start, len);
+
+            // Java convention
+            if (len == 0) return -1;
+
+            return len;
         } finally {
             if (locked) fptr.unlock();
         }
