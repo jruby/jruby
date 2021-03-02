@@ -67,9 +67,22 @@ public class IOOutputStream extends OutputStream {
     public IOOutputStream(final IRubyObject io, Encoding encoding, boolean checkAppend, boolean verifyCanWrite) {
         this.io = io;
         this.runtime = io.getRuntime();
-        this.realIO = ( io instanceof RubyIO && !((RubyIO) io).isClosed() &&
-                ((RubyIO) io).isBuiltin("write") ) ?
-                    ((RubyIO) io) : null;
+
+        // If we can get a real IO from the object, we can do fast writes
+        RubyIO realIO = null;
+        if (io instanceof RubyIO) {
+            RubyIO tmpIO = (RubyIO) io;
+            if (fastWritable(tmpIO)) {
+                tmpIO = tmpIO.GetWriteIO();
+
+                // recheck write IO for IOness
+                if (tmpIO == io || fastWritable(tmpIO)) {
+                    realIO = tmpIO;
+                }
+            }
+        }
+        this.realIO = realIO;
+
         if (realIO == null || verifyCanWrite) {
             final String site;
             if (io.respondsTo("write")) {
@@ -89,7 +102,12 @@ public class IOOutputStream extends OutputStream {
         }
         this.encoding = encoding;
     }
-    
+
+    protected boolean fastWritable(RubyIO io) {
+        return !io.isClosed() &&
+                io.isBuiltin("write");
+    }
+
     public IOOutputStream(final IRubyObject io, boolean checkAppend, boolean verifyCanWrite) {
         this(io, ASCIIEncoding.INSTANCE, checkAppend, verifyCanWrite);
     }    
