@@ -1422,14 +1422,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    /** io_write_m
+    /**
+     * Ruby method IO#write(str), equivalent to io_write_m.
      *
+     * @param context the current context
+     * @param str the string to write
      */
     @JRubyMethod(name = "write", required = 1)
     public IRubyObject write(ThreadContext context, IRubyObject str) {
         return write(context, str, false);
     }
 
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param args the strings to write
+     */
     @JRubyMethod(name = "write", rest = true)
     public IRubyObject write(ThreadContext context, IRubyObject[] args) {
         long acc = 0l;
@@ -1441,12 +1450,29 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return RubyFixnum.newFixnum(context.runtime, acc);
     }
 
+    /**
+     * Write a single byte to this IO's write target.
+     *
+     * @param context the current context
+     * @param ch the byte to write, as an int
+     * @return the count of bytes written
+     */
     public final IRubyObject write(ThreadContext context, int ch) {
         RubyString str = RubyString.newStringShared(context.runtime, RubyInteger.singleCharByteList((byte) ch));
         return write(context, str, false);
     }
 
-    // io_write
+
+    /**
+     * Write the given range of bytes to this IO's write target.
+     *
+     * Equivalent to io_write.
+     *
+     * @param context the current context
+     * @param str the string to write
+     * @param nosync whether to write without syncing
+     * @return the count of bytes written
+     */
     public IRubyObject write(ThreadContext context, IRubyObject str, boolean nosync) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
@@ -1480,12 +1506,37 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return RubyFixnum.newFixnum(runtime, n);
     }
 
-    // io_write_m with source bytes
+    /**
+     * Write the given range of bytes to this IO.
+     *
+     * Equivalent to io_write_m with source bytes and no digging out any wrapped write IO (bytes will be written to this
+     * IO.
+     *
+     * @param context the current context
+     * @param bytes the bytes to write
+     * @param start start offset for writing
+     * @param length length to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @return the count of bytes written
+     */
     public IRubyObject write(ThreadContext context,  byte[] bytes, int start, int length, Encoding encoding) {
         return write(context, bytes, start, length, encoding, false);
     }
 
-    // io_write with source bytes
+    /**
+     * Write the given range of bytes to this IO.
+     *
+     * Equivalent to io_write with source bytes and no digging out any wrapped write IO (bytes will be written to this
+     * IO.
+     *
+     * @param context the current context
+     * @param bytes the bytes to write
+     * @param start start offset for writing
+     * @param length length to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @param nosync whether to write without syncing
+     * @return the count of bytes written
+     */
     public IRubyObject write(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
