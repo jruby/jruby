@@ -69,19 +69,7 @@ public class IOOutputStream extends OutputStream {
         this.runtime = io.getRuntime();
 
         // If we can get a real IO from the object, we can do fast writes
-        RubyIO realIO = null;
-        if (io instanceof RubyIO) {
-            RubyIO tmpIO = (RubyIO) io;
-            if (fastWritable(tmpIO)) {
-                tmpIO = tmpIO.GetWriteIO();
-
-                // recheck write IO for IOness
-                if (tmpIO == io || fastWritable(tmpIO)) {
-                    realIO = tmpIO;
-                }
-            }
-        }
-        this.realIO = realIO;
+        RubyIO realIO = this.realIO = getRealIO(io);
 
         if (realIO == null || verifyCanWrite) {
             final String site;
@@ -101,6 +89,22 @@ public class IOOutputStream extends OutputStream {
             writeAdapter = null; // won't be used
         }
         this.encoding = encoding;
+    }
+
+    protected RubyIO getRealIO(IRubyObject io) {
+        RubyIO realIO = null;
+        if (io instanceof RubyIO) {
+            RubyIO tmpIO = (RubyIO) io;
+            if (fastWritable(tmpIO)) {
+                tmpIO = tmpIO.GetWriteIO();
+
+                // recheck write IO for IOness
+                if (tmpIO == io || fastWritable(tmpIO)) {
+                    realIO = tmpIO;
+                }
+            }
+        }
+        return realIO;
     }
 
     protected boolean fastWritable(RubyIO io) {

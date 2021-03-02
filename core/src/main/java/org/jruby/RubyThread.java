@@ -1255,7 +1255,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 result.catString(Integer.toString(line + 1));
             }
             result.cat(' ');
-            result.catString(status.toString().toLowerCase());
+            result.catString(getStatus().toString().toLowerCase());
             result.cat('>');
             return result;
         }
@@ -1673,7 +1673,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void exitSleep() {
-        if (status != Status.ABORTING) {
+        if (getStatus() != Status.ABORTING) {
             STATUS.set(this, Status.RUN);
         }
     }

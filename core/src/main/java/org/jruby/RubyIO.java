@@ -1548,26 +1548,24 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @return the count of bytes written
      */
     public int write(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
-        Ruby runtime = context.runtime;
-        OpenFile fptr;
-        int n;
-
         if (length == 0) return 0;
 
-        fptr = getOpenFileChecked();
+        OpenFile fptr = getOpenFileChecked();
 
         boolean locked = fptr.lock();
         try {
             fptr = getOpenFileChecked();
             fptr.checkWritable(context);
 
-            n = fptr.fwrite(context, bytes, start, length, encoding, nosync);
-            if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+            int n = fptr.fwrite(context, bytes, start, length, encoding, nosync);
+
+            if (n == -1) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+
+            return n;
         } finally {
             if (locked) fptr.unlock();
         }
 
-        return n;
     }
 
     /**
