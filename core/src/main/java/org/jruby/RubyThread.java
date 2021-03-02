@@ -1628,7 +1628,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /**
-     * Execute an interruptible write operation with the given byte range and data object.
+     * Execute an interruptible read or write operation with the given byte range and data object.
      *
      * @param context the current context
      * @param data a data object
@@ -1640,10 +1640,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @return the number of bytes written
      * @throws InterruptedException
      */
-    public <Data> int executeWriteTask(
+    public <Data> int executeReadWrite(
             ThreadContext context,
             Data data, byte[] bytes, int start, int length,
-            WriteTask<Data> task) throws InterruptedException {
+            ReadWrite<Data> task) throws InterruptedException {
         Status oldStatus = STATUS.get(this);
         try {
             this.unblockArg = data;
@@ -1663,7 +1663,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public interface WriteTask<Data> extends Unblocker<Data> {
+    public interface ReadWrite<Data> extends Unblocker<Data> {
         public int run(ThreadContext context, Data data, byte[] bytes, int start, int length) throws InterruptedException;
         public void wakeup(RubyThread thread, Data data);
     }

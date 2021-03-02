@@ -382,10 +382,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             @Override
             public int read(byte[] b, int off, int len) throws IOException {
-                RubyString str = RubyString.newStringNoCopy(runtime, b, off, len);
-                IRubyObject i = RubyIO.this.doRead(runtime.getCurrentContext(), len, str);
-                if (i == null || i.isNil()) return -1;
-                return str.size();
+                return RubyIO.this.read(runtime.getCurrentContext(), b, off, len);
             }
 
             @Override
@@ -3188,75 +3185,135 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // io_read
+    /**
+     * Read all available bytes.
+     *
+     * Equivalent to io_read with no arguments.
+     *
+     * @param context the current context
+     * @return the output buffer viewing the actual range of bytes read
+     */
     @JRubyMethod(name = "read")
     public IRubyObject read(ThreadContext context) {
         return read(context, context.nil, context.nil);
     }
 
-    // io_read
+    /**
+     * Read length bytes.
+     *
+     * Equivalent to io_read with a length argument.
+     *
+     * @param context the current context
+     * @param length a numeric value of the count of bytes to read
+     * @return the output buffer viewing the actual range of bytes read
+     */
     @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject arg0) {
-        return read(context, arg0, context.nil);
+    public IRubyObject read(ThreadContext context, IRubyObject length) {
+        return read(context, length, context.nil);
     }
 
-    // io_read
+    /**
+     * Read into the given buffer (or create a new one) reading length bytes.
+     *
+     * Equivalent to io_read.
+     *
+     * @param context the current context
+     * @param length a numeric value of the count of bytes to read
+     * @param maybeStr a RubyString buffer or a nil to indicate a new buffer should be created
+     * @return the output buffer viewing the actual range of bytes read
+     */
     @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject str) {
+    public IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject maybeStr) {
         if (length == context.nil) {
             OpenFile fptr = getOpenFileChecked();
 
             boolean locked = fptr.lock();
             try {
                 fptr.checkCharReadable(context);
-                return fptr.readAll(context, fptr.remainSize(), str);
+                return fptr.readAll(context, fptr.remainSize(), maybeStr);
             } finally {
                 if (locked) fptr.unlock();
             }
         }
 
-        str = doRead(context, RubyNumeric.num2int(length), str);
-        return str == null ? context.nil : str;
-    }
+        int len = RubyNumeric.num2int(length);
 
-    private RubyString doRead(ThreadContext context, int len, IRubyObject str) {
-        Ruby runtime = context.runtime;
+        checkLength(context, len);
 
-        if (len < 0) {
-            throw runtime.newArgumentError("negative length " + len + " given");
-        }
-
-        str = EncodingUtils.setStrBuf(runtime, str, len);
+        RubyString str = EncodingUtils.setStrBuf(context.runtime, maybeStr, len);
 
         OpenFile fptr = getOpenFileChecked();
-        int n;
         boolean locked = fptr.lock();
         try {
             fptr.checkByteReadable(context);
+
             if (len == 0) {
-                ((RubyString) str).setReadLength(0);
-                return (RubyString) str;
+                str.setReadLength(0);
+                return str;
             }
 
-            fptr.READ_CHECK(context);
-            //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
-            //        previous_mode = set_binary_mode_with_seek_cur(fptr);
-            //        #endif
-            n = fptr.fread(context, str, 0, len);
+            ByteList strByteList = str.getByteList();
+
+            len = doRead(context, fptr, strByteList.unsafeBytes(), strByteList.begin(), len);
         } finally {
             if (locked) fptr.unlock();
         }
 
-        ((RubyString)str).setReadLength(n);
+        str.setReadLength(len);
+
+        if (len == 0) return context.nil;
+
+        str.setTaint(true);
+
+        return str;
+    }
+
+    protected void checkLength(ThreadContext context, int len) {
+        if (len < 0) {
+            throw context.runtime.newArgumentError("negative length " + len + " given");
+        }
+    }
+
+    /**
+     * Read into the given buffer starting from start and reading len bytes.
+     *
+     * Equivalent to io_read with target byte[] buffer already in hand.
+     *
+     * @param context the current context
+     * @param buffer the target buffer
+     * @param start start offset in target buffer
+     * @param len count of bytes to read
+     * @return the number of bytes actually read
+     */
+    public int read(ThreadContext context, byte[] buffer, int start, int len) {
+        checkLength(context, len);
+
+        OpenFile fptr = getOpenFileChecked();
+        boolean locked = fptr.lock();
+        try {
+            fptr.checkByteReadable(context);
+
+            return doRead(context, fptr, buffer, start, len);
+        } finally {
+            if (locked) fptr.unlock();
+        }
+    }
+
+    protected static int doRead(ThreadContext context, OpenFile fptr, byte[] buffer, int start, int len) {
+        if (len == 0) return len;
+
+        fptr.READ_CHECK(context);
+        //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
+        //        previous_mode = set_binary_mode_with_seek_cur(fptr);
+        //        #endif
+
 //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
 //        if (previous_mode == O_TEXT) {
 //            setmode(fptr->fd, O_TEXT);
 //        }
 //        #endif
-        if (n == 0) return null;
-        str.setTaint(true);
 
-        return (RubyString) str;
+        return fptr.fread(context, buffer, start, len);
     }
 
     @Deprecated
