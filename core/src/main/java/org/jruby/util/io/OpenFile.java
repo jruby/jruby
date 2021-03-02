@@ -1354,23 +1354,21 @@ public class OpenFile implements Finalizable {
         }
     };
 
-    final static RubyThread.Task<InternalWriteStruct, Integer> writeTask = new RubyThread.Task<InternalWriteStruct, Integer>() {
+    final static RubyThread.WriteTask<OpenFile> WRITE_TASK = new RubyThread.WriteTask<OpenFile>() {
         @Override
-        public Integer run(ThreadContext context, InternalWriteStruct iis) throws InterruptedException {
-            OpenFile fptr = iis.fptr;
-
+        public int run(ThreadContext context, OpenFile fptr, byte[] bytes, int start, int length) throws InterruptedException {
             assert fptr.lockedByMe();
 
             fptr.unlock();
             try {
-                return iis.fptr.posix.write(iis.fd, iis.bufBytes, iis.buf, iis.capa, iis.fptr.nonblock);
+                return fptr.posix.write(fptr.fd, bytes, start, length, fptr.nonblock);
             } finally {
                 fptr.lock();
             }
         }
 
         @Override
-        public void wakeup(RubyThread thread, InternalWriteStruct data) {
+        public void wakeup(RubyThread thread, OpenFile data) {
             // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
             thread.getNativeThread().interrupt();
         }
@@ -2290,7 +2288,7 @@ public class OpenFile implements Finalizable {
                         }
                     } else {
                         int l = writableLength(n);
-                        r = writeInternal(context, this, fd, ptrBytes, ptr + offset, l);
+                        r = writeInternal(context, this, ptrBytes, ptr + offset, l);
                     }
                     /* xxx: other threads may modify given string. */
                     if (r == n) return len;
@@ -2327,28 +2325,10 @@ public class OpenFile implements Finalizable {
         return fptr.writeInternal2(fptr.fd, bytes, start, l);
     }
 
-    public static class InternalWriteStruct {
-        InternalWriteStruct(OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
-            this.fptr = fptr;
-            this.fd = fd;
-            this.bufBytes = bufBytes;
-            this.buf = buf;
-            this.capa = count;
-        }
-
-        public final OpenFile fptr;
-        public final ChannelFD fd;
-        public final byte[] bufBytes;
-        public final int buf;
-        public final int capa;
-    }
-
     // rb_write_internal
-    public static int writeInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
-        InternalWriteStruct iis = new InternalWriteStruct(fptr, fd, bufBytes, buf, count);
-
+    public static int writeInternal(ThreadContext context, OpenFile fptr, byte[] bufBytes, int buf, int count) {
         try {
-            return context.getThread().executeTask(context, iis, writeTask);
+            return context.getThread().executeWriteTask(context, fptr, bufBytes, buf, count, WRITE_TASK);
         } catch (InterruptedException ie) {
             throw context.runtime.newConcurrencyError("IO operation interrupted");
         }
@@ -2423,7 +2403,7 @@ public class OpenFile implements Finalizable {
                             if (write_lock != null && write_lock.isWriteLockedByCurrentThread())
                                 r = writeInternal2(fd, dsBytes, ds, dpPtr.p - ds);
                             else
-                                r = writeInternal(context, this, fd, dsBytes, ds, dpPtr.p - ds);
+                                r = writeInternal(context, this, dsBytes, ds, dpPtr.p - ds);
                             if (r == dpPtr.p - ds)
                                 break outer;
                             if (0 <= r) {

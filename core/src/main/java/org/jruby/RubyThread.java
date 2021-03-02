@@ -1627,6 +1627,47 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    /**
+     * Execute an interruptible write operation with the given byte range and data object.
+     *
+     * @param context the current context
+     * @param data a data object
+     * @param bytes the bytes to write
+     * @param start start range of bytes to write
+     * @param length length of bytes to write
+     * @param task the write task
+     * @param <Data> the type of the data object
+     * @return the number of bytes written
+     * @throws InterruptedException
+     */
+    public <Data> int executeWriteTask(
+            ThreadContext context,
+            Data data, byte[] bytes, int start, int length,
+            WriteTask<Data> task) throws InterruptedException {
+        Status oldStatus = STATUS.get(this);
+        try {
+            this.unblockArg = data;
+            this.unblockFunc = task;
+
+            // check for interrupt before going into blocking call
+            pollThreadEvents(context);
+
+            STATUS.set(this, Status.SLEEP);
+
+            return task.run(context, data, bytes, start, length);
+        } finally {
+            STATUS.set(this, oldStatus);
+            this.unblockFunc = null;
+            this.unblockArg = null;
+            pollThreadEvents(context);
+        }
+    }
+
+    public interface WriteTask<Data> extends Unblocker<Data> {
+        public int run(ThreadContext context, Data data, byte[] bytes, int start, int length) throws InterruptedException;
+        public void wakeup(RubyThread thread, Data data);
+    }
+
     public void enterSleep() {
         STATUS.set(this, Status.SLEEP);
     }

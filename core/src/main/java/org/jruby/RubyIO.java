@@ -1346,7 +1346,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
 
             ByteList strByteList = ((RubyString) str).getByteList();
-            n = OpenFile.writeInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
+            n = OpenFile.writeInternal(context, fptr, strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
 
             if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         } finally {
