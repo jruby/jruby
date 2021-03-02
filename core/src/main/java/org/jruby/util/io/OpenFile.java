@@ -2236,13 +2236,6 @@ public class OpenFile implements Finalizable {
         return newBytes;
     }
 
-    private static class BinwriteArg {
-        OpenFile fptr;
-        byte[] ptrBytes;
-        int ptr;
-        int length;
-    }
-
     // io_binwrite
     public int binwriteInt(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
         int n, r, offset = 0;
@@ -2253,7 +2246,7 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             if ((n = len) <= 0) return n;
-            if (wbuf.ptr == null && !(!nosync && (mode & SYNC) != 0)) {
+            if (wbuf.ptr == null && (nosync || (mode & SYNC) == 0)) {
                 wbuf.off = 0;
                 wbuf.len = 0;
                 wbuf.capa = IO_WBUF_CAPA_MIN;
@@ -2267,8 +2260,6 @@ public class OpenFile implements Finalizable {
             //              if the write buffer does not have enough capacity to store all incoming data...unbuffered write
             if ((!nosync && (mode & (SYNC | TTY)) != 0) ||
                     (wbuf.ptr != null && wbuf.capa <= wbuf.len + len)) {
-                BinwriteArg arg = new BinwriteArg();
-
                 if (wbuf.len != 0 && wbuf.len + len <= wbuf.capa) {
                     if (wbuf.capa < wbuf.off + wbuf.len + len) {
                         System.arraycopy(wbuf.ptr, wbuf.off, wbuf.ptr, 0, wbuf.len);
@@ -2283,18 +2274,17 @@ public class OpenFile implements Finalizable {
                 if (n == 0) return len;
 
                 checkClosed();
-                arg.fptr = this;
+                OpenFile fptr = this;
                 retry:
                 while (true) {
-                    arg.ptrBytes = ptrBytes;
-                    arg.ptr = ptr + offset;
-                    arg.length = n;
+                    int start = ptr + offset;
+                    int length = n;
                     if (write_lock != null) {
                         // FIXME: not interruptible by Ruby
                         //                r = rb_mutex_synchronize(fptr->write_lock, io_binwrite_string, (VALUE)&arg);
                         write_lock.writeLock().lock();
                         try {
-                            r = binwriteString(context, arg);
+                            r = binwriteString(fptr, ptrBytes, start, length);
                         } finally {
                             write_lock.writeLock().unlock();
                         }
@@ -2332,10 +2322,9 @@ public class OpenFile implements Finalizable {
     }
 
     // io_binwrite_string
-    static int binwriteString(ThreadContext context, BinwriteArg arg) {
-        BinwriteArg p = arg;
-        int l = p.fptr.writableLength(p.length);
-        return p.fptr.writeInternal2(p.fptr.fd, p.ptrBytes, p.ptr, l);
+    static int binwriteString(OpenFile fptr, byte[] bytes, int start, int length) {
+        int l = fptr.writableLength(length);
+        return fptr.writeInternal2(fptr.fd, bytes, start, l);
     }
 
     public static class InternalWriteStruct {
