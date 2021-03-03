@@ -248,7 +248,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                 newArgs[i] = JavaUtil.convertJavaToUsableRubyObject(runtime, nargs[i]);
             }
 
-            final int arity = method.getArity().getValue();
+            final int arity = method.getSignature().arityValue();
 
             if ( arity < 0 || arity == newArgs.length ) {
                 final ThreadContext context = runtime.getCurrentContext();

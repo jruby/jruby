@@ -162,8 +162,7 @@ public class ProfilingDynamicMethod extends DelegatingDynamicMethod implements I
     }
 
     public Signature getSignature() {
-        return delegate instanceof IRMethodArgs ?
-                ((IRMethodArgs) delegate).getSignature() : Signature.from(delegate.getArity());
+        return delegate.getSignature();
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {

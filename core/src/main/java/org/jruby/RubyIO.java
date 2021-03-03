@@ -2772,7 +2772,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         CachingCallSite write = sites(context).write;
 
         // In MRI this is used for all multi-arg puts calls to write. Here, we just do it for two
-        if (write.retrieveCache(maybeIO.getMetaClass()).method.getArity() == Arity.ONE_ARGUMENT) {
+        if (write.retrieveCache(maybeIO.getMetaClass()).method.getSignature().isOneArgument()) {
             Ruby runtime = context.runtime;
             if (runtime.isVerbose() && maybeIO != runtime.getGlobalVariables().get("$stderr")) {
                 warnWrite(runtime, maybeIO);

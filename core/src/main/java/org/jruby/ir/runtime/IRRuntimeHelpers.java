@@ -1928,11 +1928,12 @@ public class IRRuntimeHelpers {
         return args;
     }
 
+    // This is always for PROC type
     private static IRubyObject[] prepareProcArgs(ThreadContext context, Block b, IRubyObject[] args) {
         if (args.length != 1) return args;
 
         // Potentially expand single value if it is an array depending on what we are calling.
-        return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], b.getBody().getSignature(), args[0] instanceof RubyArray && b.type == Block.Type.NORMAL);
+        return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], b.getBody().getSignature(), false);
     }
 
     private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
