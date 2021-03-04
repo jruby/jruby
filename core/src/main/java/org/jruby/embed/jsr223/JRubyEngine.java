@@ -47,6 +47,7 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaEmbedUtils;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -72,7 +73,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         try {
             return new JRubyCompiledScript(container, this, script);
         } catch (RaiseException e) {
-            throw wrapException(e);
+            throw wrapRaiseException(e);
         }
     }
 
@@ -82,7 +83,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         try {
             return new JRubyCompiledScript(container, this, reader);
         } catch (RaiseException e) {
-            throw wrapException(e);
+            throw wrapRaiseException(e);
         }
     }
 
@@ -95,6 +96,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         try {
             IRubyObject ret = unit.get().run();
             return JavaEmbedUtils.rubyToJava(ret);
+        } catch (RaiseException e) {
+            throw wrapRaiseException(e);
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
@@ -216,6 +219,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             return container.callMethod(receiver, method, args, Object.class);
         } catch (NoMethodError e) {
             throw wrapMethodException(e);
+        } catch (RaiseException e) {
+            throw wrapRaiseException(e);
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
@@ -235,6 +240,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             return container.callMethod(receiver, method, args, Object.class);
         } catch (NoMethodError e) {
             throw wrapMethodException(e);
+        } catch (RaiseException e) {
+            throw wrapRaiseException(e);
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
@@ -251,6 +258,25 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     }
 
     private static ScriptException wrapException(Exception e) {
+        return new ScriptException(e);
+    }
+
+    private static ScriptException wrapRaiseException(RaiseException e) {
+        RubyStackTraceElement[] trace = e.getException().getBacktraceElements();
+
+        if (trace.length > 0) {
+            RubyStackTraceElement top = trace[0];
+
+            String file = top.getFileName();
+            int line = top.getLineNumber();
+
+            if (file == null) file = "<script>";
+
+            ScriptException se = new ScriptException("Error during evaluation of Ruby in " + file + " at line " + line + ": " + e.getMessage());
+            se.initCause(e);
+            return se;
+        }
+
         return new ScriptException(e);
     }
 
