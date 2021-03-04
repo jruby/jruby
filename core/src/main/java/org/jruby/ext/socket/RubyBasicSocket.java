@@ -34,7 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.IntBuffer;
+import jnr.ffi.byref.IntByReference;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
@@ -435,7 +435,7 @@ public class RubyBasicSocket extends RubyIO {
                         if (Platform.IS_LINUX && validTcpSockOpt(intOpt) &&
                                 fd.realFileno > 0 && SOCKOPT != null) {
                             ByteBuffer buf = ByteBuffer.allocate(256);
-                            IntBuffer len = IntBuffer.allocate(256);
+                            IntByReference len = new IntByReference(4);
                             
                             int ret = SOCKOPT.getsockoptInt(fd.realFileno, intLevel, intOpt, buf, len);
 
@@ -443,8 +443,8 @@ public class RubyBasicSocket extends RubyIO {
                                 throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
                             }
                             buf.flip();
-                            ByteList bytes = new ByteList(buf.array(), 0, len.get());
-                            
+                            ByteList bytes = new ByteList(buf.array(), buf.position(), len.getValue());
+
                             return new Option(runtime, ProtocolFamily.PF_INET, level, opt, bytes);
                         }
 
@@ -547,7 +547,7 @@ public class RubyBasicSocket extends RubyIO {
         int F_SETFL = jnr.constants.platform.Fcntl.F_SETFL.intValue();
         int O_NONBLOCK = jnr.constants.platform.OpenFlags.O_NONBLOCK.intValue();
 
-        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntBuffer optlen);
+        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntByReference optlen);
         int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
         int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
         default int setsockoptInt(int s, int level, int optname, int value) {
@@ -556,7 +556,7 @@ public class RubyBasicSocket extends RubyIO {
             buf.putInt(value).flip();
             return SOCKOPT.setsockopt(s, level, optname, buf, buf.remaining());
         }
-        default int getsockoptInt(int s, int level, int optname, ByteBuffer buf, IntBuffer len) {
+        default int getsockoptInt(int s, int level, int optname, ByteBuffer buf, IntByReference len) {
             return SOCKOPT.getsockopt(s, level, optname, buf, len);
         }
         String strerror(int error);
