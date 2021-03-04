@@ -40,7 +40,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -62,7 +61,7 @@ import static org.jruby.util.Numeric.*;
 public class RubyRational extends RubyNumeric {
     
     public static RubyClass createRationalClass(Ruby runtime) {
-        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RATIONAL_ALLOCATOR);
+        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RubyRational::new);
 
         rationalc.setClassIndex(ClassIndex.RATIONAL);
         rationalc.setReifiedClass(RubyRational.class);
@@ -78,18 +77,17 @@ public class RubyRational extends RubyNumeric {
         return rationalc;
     }
 
-    private static final ObjectAllocator RATIONAL_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFixnum zero = RubyFixnum.zero(runtime);
-            return new RubyRational(runtime, klass, zero, zero);
-        }
-    };
-
     private RubyRational(Ruby runtime, RubyClass clazz, RubyInteger num, RubyInteger den) {
         super(runtime, clazz);
         this.num = num;
         this.den = den;
+    }
+
+    private RubyRational(Ruby runtime, RubyClass clazz) {
+        super(runtime, clazz);
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+        this.num = zero;
+        this.den = zero;
     }
 
     /** rb_rational_raw

@@ -35,18 +35,14 @@
 package org.jruby;
 
 import java.io.FileDescriptor;
-import java.io.IOException;
 import java.nio.file.attribute.FileTime;
-import java.util.concurrent.TimeUnit;
 
 import jnr.posix.NanosecondFileStat;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -73,16 +69,9 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) throw getRuntime().newTypeError("uninitialized File::Stat");
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyFileStat(runtime, klass);
-        }
-    };
-
     public static RubyClass createFileStatClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
+        final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), RubyFileStat::new);
 
         fileStatClass.includeModule(runtime.getModule("Comparable"));
         fileStatClass.defineAnnotatedMethods(RubyFileStat.class);

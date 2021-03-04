@@ -51,7 +51,7 @@ public class RubyPathname extends RubyObject {
     
     static void createPathnameClass(Ruby runtime) {
         RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
-                PATHNAME_ALLOCATOR);
+                RubyPathname::new);
 
         cPathname.defineAnnotatedMethods(RubyPathname.class);
 
@@ -165,13 +165,6 @@ public class RubyPathname extends RubyObject {
             return RubyPathname.newInstance(recv.getRuntime().getCurrentContext(), path);
         }
     }
-
-    private static final ObjectAllocator PATHNAME_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyPathname(runtime, klass);
-        }
-    };
 
     public RubyPathname(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);

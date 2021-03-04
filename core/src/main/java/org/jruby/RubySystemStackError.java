@@ -42,7 +42,7 @@ public class RubySystemStackError extends RubyException {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass systemStackErrorClass = runtime.defineClass("SystemStackError", exceptionClass, (r, klass) -> new RubySystemStackError(runtime, klass));
+        RubyClass systemStackErrorClass = runtime.defineClass("SystemStackError", exceptionClass, RubySystemStackError::new);
 
         return systemStackErrorClass;
     }

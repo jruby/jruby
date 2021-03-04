@@ -226,7 +226,7 @@ public class RubyStruct extends RubyObject {
 
         if (name == null || nilName) {
             newStruct = RubyClass.newClass(runtime, superClass);
-            newStruct.setAllocator(STRUCT_INSTANCE_ALLOCATOR);
+            newStruct.setAllocator(RubyStruct::new);
             newStruct.makeMetaClass(superClass.metaClass);
             newStruct.inherit(superClass);
         } else {
@@ -236,7 +236,7 @@ public class RubyStruct extends RubyObject {
                 runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
                 superClass.deleteConstant(name);
             }
-            newStruct = superClass.defineClassUnder(name, superClass, STRUCT_INSTANCE_ALLOCATOR);
+            newStruct = superClass.defineClassUnder(name, superClass, RubyStruct::new);
         }
 
         // set reified class to RubyStruct, for Java subclasses to use
@@ -846,15 +846,6 @@ public class RubyStruct extends RubyObject {
         // or if it's a module.
         return (RubyClass) runtime.getClassFromPath(path);
     }
-
-    private static final ObjectAllocator STRUCT_INSTANCE_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public RubyStruct allocate(Ruby runtime, RubyClass klass) {
-            RubyStruct instance = new RubyStruct(runtime, klass);
-            instance.setMetaClass(klass);
-            return instance;
-        }
-    };
 
     @Override
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)

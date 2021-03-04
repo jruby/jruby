@@ -46,7 +46,7 @@ public class RubyStandardError extends RubyException {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass standardErrorClass = runtime.defineClass("StandardError", exceptionClass, (r, klass) -> new RubyStandardError(runtime, klass));
+        RubyClass standardErrorClass = runtime.defineClass("StandardError", exceptionClass, RubyStandardError::new);
 
         return standardErrorClass;
     }

@@ -59,7 +59,7 @@ public class RubyKeyError extends RubyIndexError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass superClass) {
-        RubyClass KeyError = runtime.defineClass("KeyError", superClass, (runtime1, klass) -> new RubyKeyError(runtime1, klass));
+        RubyClass KeyError = runtime.defineClass("KeyError", superClass, RubyKeyError::new);
         KeyError.defineAnnotatedMethods(RubyKeyError.class);
         KeyError.setReifiedClass(RubyKeyError.class);
         return KeyError;

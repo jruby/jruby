@@ -124,12 +124,10 @@ public class RubyClass extends RubyModule {
         runtime.setBaseNewMethod(classClass.searchMethod("new"));
     }
 
-    public static final ObjectAllocator CLASS_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyClass clazz = new RubyClass(runtime);
-            clazz.allocator = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
-            return clazz;
-        }
+    public static final ObjectAllocator CLASS_ALLOCATOR = (runtime, klass) -> {
+        RubyClass clazz = new RubyClass(runtime);
+        clazz.allocator = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
+        return clazz;
     };
 
     public ObjectAllocator getAllocator() {
@@ -147,17 +145,15 @@ public class RubyClass extends RubyModule {
      * @param cls The class on which to call the default constructor to allocate
      */
     public void setClassAllocator(final Class cls) {
-        this.allocator = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                try {
-                    RubyBasicObject object = (RubyBasicObject)cls.getConstructor().newInstance();
-                    object.setMetaClass(klazz);
-                    return object;
-                } catch (InstantiationException | InvocationTargetException ie) {
-                    throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
-                } catch (IllegalAccessException | NoSuchMethodException iae) {
-                    throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor:\n" + iae);
-                }
+        this.allocator = (runtime, klazz) -> {
+            try {
+                RubyBasicObject object = (RubyBasicObject)cls.getConstructor().newInstance();
+                object.setMetaClass(klazz);
+                return object;
+            } catch (InstantiationException | InvocationTargetException ie) {
+                throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
+            } catch (IllegalAccessException | NoSuchMethodException iae) {
+                throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor:\n" + iae);
             }
         };
 
@@ -174,17 +170,15 @@ public class RubyClass extends RubyModule {
         try {
             final Constructor<? extends IRubyObject> constructor = clazz.getConstructor(Ruby.class, RubyClass.class);
 
-            this.allocator = new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                    try {
-                        return constructor.newInstance(runtime, klazz);
-                    } catch (InvocationTargetException ite) {
-                        throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
-                    } catch (InstantiationException ie) {
-                        throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ie);
-                    } catch (IllegalAccessException iae) {
-                        throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
-                    }
+            this.allocator = (runtime, klazz) -> {
+                try {
+                    return constructor.newInstance(runtime, klazz);
+                } catch (InvocationTargetException ite) {
+                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
+                } catch (InstantiationException ie) {
+                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ie);
+                } catch (IllegalAccessException iae) {
+                    throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
                 }
             };
 
@@ -207,15 +201,13 @@ public class RubyClass extends RubyModule {
         try {
             final Method method = clazz.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
 
-            this.allocator = new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                    try {
-                        return (IRubyObject) method.invoke(null, runtime, klazz);
-                    } catch (InvocationTargetException ite) {
-                        throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
-                    } catch (IllegalAccessException iae) {
-                        throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
-                    }
+            this.allocator = (runtime, klazz) -> {
+                try {
+                    return (IRubyObject) method.invoke(null, runtime, klazz);
+                } catch (InvocationTargetException ite) {
+                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
+                } catch (IllegalAccessException iae) {
+                    throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
                 }
             };
 

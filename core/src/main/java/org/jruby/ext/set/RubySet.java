@@ -59,7 +59,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 public class RubySet extends RubyObject implements Set {
 
     static RubyClass createSetClass(final Ruby runtime) {
-        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), ALLOCATOR);
+        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), RubySet::new);
 
         Set.setReifiedClass(RubySet.class);
 
@@ -97,12 +97,6 @@ public class RubySet extends RubyObject implements Set {
     void unmarshal() {
         this.hash = (RubyHash) getInstanceVariable("@hash");
     }
-
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public RubySet allocate(Ruby runtime, RubyClass klass) {
-            return new RubySet(runtime, klass);
-        }
-    };
 
     RubyHash hash; // @hash
 

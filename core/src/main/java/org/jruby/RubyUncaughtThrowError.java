@@ -47,7 +47,7 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
     private IRubyObject tag, value;
 
     static RubyClass define(Ruby runtime, RubyClass argumentError) {
-        RubyClass UncaughtThrowError = runtime.defineClass("UncaughtThrowError", argumentError, (runtime1, klass) -> new RubyUncaughtThrowError(runtime1, klass));
+        RubyClass UncaughtThrowError = runtime.defineClass("UncaughtThrowError", argumentError, RubyUncaughtThrowError::new);
         UncaughtThrowError.defineAnnotatedMethods(RubyUncaughtThrowError.class);
         return UncaughtThrowError;
     }

@@ -62,13 +62,6 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  */
 @JRubyClass(name = "Zlib::GzipWriter", parent = "Zlib::GzipFile")
 public class JZlibRubyGzipWriter extends RubyGzipFile {
-    protected static final ObjectAllocator GZIPWRITER_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new JZlibRubyGzipWriter(runtime, klass);
-        }
-    };
-
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         JZlibRubyGzipWriter result = newInstance(recv, args);

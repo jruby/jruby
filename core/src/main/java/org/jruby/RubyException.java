@@ -163,7 +163,7 @@ public class RubyException extends RubyObject {
         return exceptionClass;
     }
 
-    public static final ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
+    public static final ObjectAllocator EXCEPTION_ALLOCATOR = RubyException::new;
 
     private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
