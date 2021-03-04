@@ -55,8 +55,6 @@ public class RubyIPSocket extends RubyBasicSocket {
 
         rb_cIPSocket.defineAnnotatedMethods(RubyIPSocket.class);
         rb_cIPSocket.undefineMethod("initialize");
-
-        runtime.getObject().setConstant("IPsocket",rb_cIPSocket);
     }
 
     private static ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
