@@ -31,7 +31,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
+
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -45,10 +45,8 @@ public class RubySystemExit extends RubyException {
 
     IRubyObject status;
 
-    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubySystemExit(runtime, klass);
-
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass systemExitClass = runtime.defineClass("SystemExit", exceptionClass, ALLOCATOR);
+        RubyClass systemExitClass = runtime.defineClass("SystemExit", exceptionClass, RubySystemExit::new);
 
         systemExitClass.defineAnnotatedMethods(RubySystemExit.class);
 

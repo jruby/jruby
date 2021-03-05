@@ -8,7 +8,6 @@ import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,16 +22,10 @@ public class ConcreteJavaProxy extends JavaProxy {
         super(runtime, klazz, object);
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new ConcreteJavaProxy(runtime, klazz);
-        }
-    };
-
     public static RubyClass createConcreteJavaProxy(final ThreadContext context) {
         final Ruby runtime = context.runtime;
         final RubyClass JavaProxy = runtime.getJavaSupport().getJavaProxyClass();
-        RubyClass ConcreteJavaProxy = runtime.defineClass("ConcreteJavaProxy", JavaProxy, ALLOCATOR);
+        RubyClass ConcreteJavaProxy = runtime.defineClass("ConcreteJavaProxy", JavaProxy, ConcreteJavaProxy::new);
         initialize(ConcreteJavaProxy);
         return ConcreteJavaProxy;
     }

@@ -51,11 +51,7 @@ public class Addrinfo extends RubyObject {
         RubyClass addrinfo = runtime.defineClass(
                 "Addrinfo",
                 runtime.getData(),
-                new ObjectAllocator() {
-                    public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                        return new Addrinfo(runtime, klazz);
-                    }
-                });
+                Addrinfo::new);
 
         addrinfo.defineAnnotatedMethods(Addrinfo.class);
     }

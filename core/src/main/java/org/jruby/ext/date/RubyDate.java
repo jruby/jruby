@@ -99,17 +99,13 @@ public class RubyDate extends RubyObject {
     static final int REFORM_BEGIN_YEAR = 1582;
     static final int REFORM_END_YEAR = 1930;
 
-    protected RubyDate(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
-    }
-
     DateTime dt;
     int off; // @of (in seconds)
     long start = ITALY; // @sg
     long subMillisNum = 0, subMillisDen = 1; // @sub_millis
 
     static RubyClass createDateClass(Ruby runtime) {
-        RubyClass Date = runtime.defineClass("Date", runtime.getObject(), ALLOCATOR);
+        RubyClass Date = runtime.defineClass("Date", runtime.getObject(), RubyDate::new);
         Date.setReifiedClass(RubyDate.class);
         Date.includeModule(runtime.getComparable());
         Date.defineAnnotatedMethods(RubyDate.class);
@@ -121,19 +117,16 @@ public class RubyDate extends RubyObject {
     // Julian Day Number day 0 ... `def self.civil(y=-4712, m=1, d=1, sg=ITALY)`
     static final DateTime defaultDateTime = new DateTime(-4712 - 1, 1, 1, 0, 0, CHRONO_ITALY_UTC);
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyDate(runtime, klass, defaultDateTime);
-        }
-    };
-
     static RubyClass getDate(final Ruby runtime) {
         return (RubyClass) runtime.getObject().getConstantAt("Date");
     }
 
     static RubyClass getDateTime(final Ruby runtime) {
         return (RubyClass) runtime.getObject().getConstantAt("DateTime");
+    }
+
+    protected RubyDate(Ruby runtime, RubyClass klass) {
+        this(runtime, klass, defaultDateTime);
     }
 
     public RubyDate(Ruby runtime, RubyClass klass, DateTime dt) {

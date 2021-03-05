@@ -52,12 +52,7 @@ public class RubyChain extends RubyObject {
     private int pos = -1;
 
     public static RubyClass createChainClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass chainc = runtime.defineClassUnder("Chain", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new RubyChain(runtime, klazz);
-            }
-        }, enumeratorModule);
+        RubyClass chainc = runtime.defineClassUnder("Chain", runtime.getObject(), RubyChain::new, enumeratorModule);
 
         chainc.includeModule(runtime.getEnumerable());
         chainc.defineAnnotatedMethods(RubyChain.class);

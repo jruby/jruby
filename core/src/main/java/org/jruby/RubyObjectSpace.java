@@ -193,11 +193,7 @@ public class RubyObjectSpace {
 
     public static class WeakMap extends RubyObject {
         static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
-            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                    return new WeakMap(runtime, klazz);
-                }
-            });
+            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), WeakMap::new);
 
             weakMap.defineAnnotatedMethods(WeakMap.class);
         }

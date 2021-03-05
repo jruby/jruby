@@ -15,8 +15,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import com.headius.backport9.modules.Module;
-import com.headius.backport9.modules.Modules;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -44,7 +42,6 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,16 +66,10 @@ public class JavaProxy extends RubyObject {
         this.object = object;
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new JavaProxy(runtime, klazz);
-        }
-    };
-
     public static RubyClass createJavaProxy(ThreadContext context) {
         final Ruby runtime = context.runtime;
 
-        RubyClass JavaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), ALLOCATOR);
+        RubyClass JavaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), JavaProxy::new);
 
         JavaProxy.getSingletonClass().addReadWriteAttribute(context, "java_class");
         JavaProxy.defineAnnotatedMethods(JavaProxy.class);

@@ -65,7 +65,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -81,7 +80,6 @@ import static jnr.constants.platform.TCP.TCP_INFO;
 import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
 import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_KEEPCNT;
-import static jnr.constants.platform.TCP.TCP_CORK;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
@@ -92,17 +90,11 @@ import static org.jruby.runtime.Helpers.throwErrorFromException;
 @JRubyClass(name="BasicSocket", parent="IO")
 public class RubyBasicSocket extends RubyIO {
     static void createBasicSocket(Ruby runtime) {
-        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), BASICSOCKET_ALLOCATOR);
+        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), RubyBasicSocket::new);
 
         rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
         rb_cBasicSocket.undefineMethod("initialize");
     }
-
-    private static final ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyBasicSocket(runtime, klass);
-        }
-    };
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
