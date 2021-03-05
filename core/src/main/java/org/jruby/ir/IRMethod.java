@@ -179,7 +179,7 @@ public class IRMethod extends IRScope {
                 ipc++;
             }
 
-            if (!earlyJumps.isEmpty()) getManager().getRuntime().newRuntimeError("forward control flow found around super");
+            if (!earlyJumps.isEmpty()) throw getManager().getRuntime().newRuntimeError("forward control flow found around super");
 
             if (superIPC != -1) {
                 return new ExitableInterpreterContext(interpreterContext, superCall, superIPC);

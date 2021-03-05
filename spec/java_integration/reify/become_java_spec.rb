@@ -151,7 +151,8 @@ describe "JRuby class reification" do
   end
   
   it "supports reification of java classes with interfaces" do
-  
+    pending "GH#6479 + reification not yet hooked up"
+
 	clz = Class.new(java.lang.Exception) do
 		include java.util.Iterator
 		def initialize(array)
@@ -197,7 +198,8 @@ describe "JRuby class reification" do
   end
   
   it "supports reification of ruby classes with interfaces" do
-  
+    pending "GH#6479 + reification not yet hooked up"
+
 	clz = Class.new do
 		include java.util.Iterator
 		def initialize(array)

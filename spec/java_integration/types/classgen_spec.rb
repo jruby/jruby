@@ -12,6 +12,9 @@ describe "A Ruby subclass of a Java concrete class with custom methods" do
           @start=1
           @calls = list
       end
+
+      configure_java_class methods: :explicit
+
       # no signature
       def read(cbuf, off, len)
         str = "ztest\nreaders\n"

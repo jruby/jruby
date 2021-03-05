@@ -226,14 +226,9 @@ public class ConcreteJavaProxy extends JavaProxy {
                     withBlock.newInstance(cjp, args, block, context.runtime, clazz);
                     // note: the generated ctor sets self.object = our discarded return of the new object
                 }
-            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-                    | InvocationTargetException e) {
-                if (e instanceof InvocationTargetException) {
-                    InvocationTargetException ite = (InvocationTargetException) e; // TODO: move to mapIE?
-                    if (ite.getCause() instanceof RaiseException) {
-                        throw (RaiseException) ite.getCause();
-                    }
-                }
+            } catch (InstantiationException | InvocationTargetException e) {
+                throw JavaProxyConstructor.throwInstantiationExceptionCause(context.runtime, e);
+            } catch (IllegalAccessException | IllegalArgumentException e) {
                 throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
             }
             return self;
@@ -296,9 +291,9 @@ public class ConcreteJavaProxy extends JavaProxy {
                     ctor.newInstance(object, args, blk, context.runtime, self);// TODO: clazz?
                     // note: the generated ctor sets self.object = our discarded return of the new object
                     return object;
-                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-                        | InvocationTargetException e) {
-                    // e.printStackTrace();
+                } catch (InstantiationException | InvocationTargetException e) {
+                    throw JavaProxyConstructor.throwInstantiationExceptionCause(context.runtime, e);
+                } catch (IllegalAccessException | IllegalArgumentException e) {
                     throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
                 }
             }

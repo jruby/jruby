@@ -239,6 +239,13 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         ex.addSuppressed(e);
         throw ex;
     }
+    
+    public static RuntimeException throwInstantiationExceptionCause(final Ruby runtime, final ReflectiveOperationException e) {
+        Throwable cause = e;
+        if (cause.getCause() != null) cause = cause.getCause();
+        Helpers.throwException(cause);
+        return new RuntimeException("Dead code... If you see this, file a bug: JPCtIEC fail"); // greppable
+    }
 
     @JRubyMethod(required = 1, optional = 1)
     public RubyObject new_instance(IRubyObject[] args, Block block) {
