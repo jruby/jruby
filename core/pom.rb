@@ -58,7 +58,6 @@ project 'JRuby Base' do
   jar 'com.headius:invokebinder:1.11'
   jar 'com.headius:options:1.5'
 
-  jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
   jar 'junit:junit', :scope => 'test'
@@ -241,10 +240,7 @@ project 'JRuby Base' do
               'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
           },
           includes: [
-              'org/jruby/test/**/*Test*.java',
-              'org/jruby/embed/**/*Test*.java',
-              'org/jruby/util/**/*Test*.java',
-              'org/jruby/runtime/**/*Test*.java'
+              'org/jruby/test/TestAdoptedThreading.java',
           ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 

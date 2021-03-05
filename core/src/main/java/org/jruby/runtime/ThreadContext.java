@@ -912,17 +912,6 @@ public final class ThreadContext {
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
     }
 
-    public void preBsfApply(String[] names) {
-        // FIXME: I think we need these pushed somewhere?
-        StaticScope staticScope = runtime.getStaticScopeFactory().newLocalScope(null);
-        staticScope.setVariables(names);
-        pushFrame();
-    }
-
-    public void postBsfApply() {
-        popFrame();
-    }
-
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block,
             StaticScope staticScope) {
         pushCallFrame(clazz, name, self, block);
