@@ -77,6 +77,7 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.DefineMethodMethod;
+import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.NativeCallMethod;
@@ -1575,6 +1576,11 @@ public class RubyModule extends RubyObject {
         RubyModule superClass;
 
         DynamicMethod method = entry.method;
+
+        // unwrap delegated methods so we can see them properly
+        if (method instanceof DelegatingDynamicMethod) {
+            method = ((DelegatingDynamicMethod) method).getDelegate();
+        }
 
         if (method instanceof RefinedWrapper){
             // original without refined flag

@@ -31,6 +31,7 @@ package org.jruby.embed;
 
 import org.jruby.ast.Node;
 import org.jruby.javasupport.JavaEmbedUtils;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
@@ -54,5 +55,10 @@ public interface EmbedEvalUnit extends JavaEmbedUtils.EvalUnit {
      *
      * @return scope to refer local variables.
      */
-    public ManyVarsDynamicScope getScope();
+    DynamicScope getLocalVarScope();
+
+    @Deprecated
+    default ManyVarsDynamicScope getScope() {
+        return (ManyVarsDynamicScope) getLocalVarScope();
+    }
 }

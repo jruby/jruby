@@ -1,5 +1,4 @@
-/**
- * **** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -12,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
- *
+ * Copyright (C) 2016 Karol Bucek
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -25,21 +24,24 @@
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
- * **** END LICENSE BLOCK *****
- */
-package org.jruby.embed.internal;
+ ***** END LICENSE BLOCK *****/
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package org.jruby.ext.monitor;
 
-/**
- *
- * @author Yoko Harada <yokolet@gmail.com>
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface CallMethodType {
-    int methodType();
+import org.jruby.Ruby;
+import org.jruby.ext.set.EnumerableExt;
+import org.jruby.ext.set.RubySet;
+import org.jruby.ext.set.RubySortedSet;
+import org.jruby.runtime.load.Library;
+
+public final class MonitorLibrary implements Library {
+
+    public void load(Ruby runtime, boolean wrap) {
+        MonitorLibrary.load(runtime);
+    }
+
+    public static void load(Ruby runtime) {
+        Monitor.createMonitorClass(runtime);
+    }
+
 }

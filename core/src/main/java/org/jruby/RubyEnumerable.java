@@ -1989,7 +1989,8 @@ public class RubyEnumerable {
 
         IRubyObject enumerator = runtime.getEnumerator().allocate();
         enumerator.getInternalVariables().setInternalVariable("chunk_enumerable", self);
-        enumerator.getInternalVariables().setInternalVariable("chunk_categorize", RubyProc.newProc(runtime, block, block.type));
+        enumerator.getInternalVariables().setInternalVariable("chunk_categorize",
+                RubyProc.newProc(runtime, block, block.type == Block.Type.LAMBDA ? block.type : Block.Type.PROC));
 
         Helpers.invoke(context, enumerator, "initialize",
                 CallBlock.newCallClosure(context, self, Signature.ONE_ARGUMENT,
@@ -2242,115 +2243,8 @@ public class RubyEnumerable {
     }
 
     @Deprecated
-    public static IRubyObject none_p(final ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        try {
-            if (block.isGiven()) {
-                callEach(context.runtime, context, self, callbackArity, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(context, ctx, "none?");
-                        IRubyObject larg = packEnumValues(ctx, largs);
-                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return ctx.nil;
-                    }
-                    @Override
-                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
-                        checkContext(context, ctx, "none?");
-                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return ctx.nil;
-                    }
-                });
-            } else {
-                callEach(context, eachSite(context), self, Signature.ONE_REQUIRED, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(context, ctx, "none?");
-                        IRubyObject larg = packEnumValues(ctx, largs);
-                        if (larg.isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return ctx.nil;
-                    }
-                    @Override
-                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
-                        checkContext(context, ctx, "none?");
-                        if (larg.isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return ctx.nil;
-                    }
-                });
-            }
-        } catch (JumpException.SpecialJump sj) {
-            return context.fals;
-        }
-        return context.tru;
-    }
-
-    @Deprecated
     public static IRubyObject one_p19(ThreadContext context, IRubyObject self, final Block block) {
         return one_p(context, self, null, block);
-    }
-
-    @Deprecated
-    public static IRubyObject one_p(final ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        final Ruby runtime = context.runtime;
-        final boolean[] result = new boolean[] { false };
-
-        try {
-            if (block.isGiven()) {
-                callEach(runtime, context, self, callbackArity, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(context, ctx, "one?");
-                        IRubyObject larg = packEnumValues(ctx, largs);
-                        if (block.yield(ctx, larg).isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
-                            }
-                        }
-                        return ctx.nil;
-                    }
-                    @Override
-                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
-                        checkContext(context, ctx, "one?");
-                        if (block.yield(ctx, larg).isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
-                            }
-                        }
-                        return ctx.nil;
-                    }
-                });
-            } else {
-                callEach(context, eachSite(context), self, Signature.ONE_REQUIRED, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(context, ctx, "one?");
-                        IRubyObject larg = packEnumValues(ctx, largs);
-                        if (larg.isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
-                            }
-                        }
-                        return ctx.nil;
-                    }
-                    @Override
-                    public IRubyObject call(ThreadContext ctx, IRubyObject larg) {
-                        checkContext(context, ctx, "one?");
-                        if (larg.isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
-                            }
-                        }
-                        return ctx.nil;
-                    }
-                });
-            }
-        } catch (JumpException.SpecialJump sj) {
-            return runtime.getFalse();
-        }
-        return result[0] ? runtime.getTrue() : runtime.getFalse();
     }
 
     protected static CachingCallSite eachSite(ThreadContext context) {
@@ -2380,30 +2274,10 @@ public class RubyEnumerable {
     }
 
     @Deprecated
-    public static IRubyObject callEach19(Ruby runtime, ThreadContext context, IRubyObject self,
-                                         Arity arity, BlockCallback callback) {
-        return Helpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
-                arity, callback, context));
-    }
-
-    @Deprecated
-    public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject[] args,
-                                       Arity arity, BlockCallback callback) {
-        return Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), arity, callback, context));
-    }
-
-    @Deprecated
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject[] args,
                                        Signature signature, BlockCallback callback) {
         return Helpers.invoke(context, self, "each", args,
                 CallBlock.newCallClosure(context, self, signature, callback));
-    }
-
-    @Deprecated
-    public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self,
-                                       Arity arity, BlockCallback callback) {
-        return Helpers.invoke(context, self, "each", CallBlock.newCallClosure(self, runtime.getEnumerable(),
-                arity, callback, context));
     }
 
     @Deprecated
@@ -2448,42 +2322,8 @@ public class RubyEnumerable {
     }
 
     @Deprecated
-    public static IRubyObject find_index(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        boolean blockGiven = block.isGiven();
-
-        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find_index(context, block);
-
-        return blockGiven ? find_indexCommon(context, self, block, callbackArity) :
-                enumeratorize(context.runtime, self, "find_index");
-    }
-
-    @Deprecated
     public static IRubyObject find_index19(ThreadContext context, IRubyObject self, final IRubyObject cond, final Block block) {
         return find_index(context, self, cond, block);
-    }
-
-    @Deprecated
-    public static IRubyObject find_indexCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        final Ruby runtime = context.runtime;
-        final long result[] = new long[] {0};
-
-        try {
-            callEach(runtime, context, self, callbackArity, new BlockCallback() {
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    return call(ctx, packEnumValues(ctx, largs), blk);
-                }
-                @Override
-                public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
-                    if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
-                    result[0]++;
-                    return ctx.nil;
-                }
-            });
-        } catch (JumpException.SpecialJump sj) {
-            return RubyFixnum.newFixnum(runtime, result[0]);
-        }
-
-        return context.nil;
     }
 
     @Deprecated

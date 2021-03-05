@@ -44,6 +44,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Numeric;
 import org.jruby.util.collections.WeakValuedIdentityMap;
 
 @JRubyModule(name="ObjectSpace")
@@ -98,9 +99,21 @@ public class RubyObjectSpace {
             return runtime.getTrue();
         } else if (longId == 8) {
             return runtime.getNil();
-        } else if (longId % 2 != 0) {
-            // odd
+        } else if ((longId & 0b01) == 0b01) {
+            // fixnum
             return runtime.newFixnum((longId - 1) / 2);
+        } else if ((longId & 0b11) == 0b10) {
+            // flonum
+            double d = 0.0;
+            if (longId != 0x8000000000000002L) {
+                long b63 = (longId >>> 63);
+                /* e: xx1... -> 011... */
+                /*    xx0... -> 100... */
+                /*      ^b63           */
+                long longBits = Numeric.rotr((2 - b63) | (longId & ~0x03), 3);
+                d = Double.longBitsToDouble(longBits);
+            }
+            return runtime.newFloat(d);
         } else {
             if (runtime.isObjectSpaceEnabled()) {
                 IRubyObject object = runtime.getObjectSpace().id2ref(longId);

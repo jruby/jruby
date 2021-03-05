@@ -494,17 +494,43 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return realLength;
     }
 
+    /**
+     * Return a Java array copy of the elements contained in this Array.
+     *
+     * This version always creates a new Java array that is exactly the length of the Array's elements.
+     *
+     * @return a Java array with exactly the size and contents of this RubyArray's elements
+     */
     public IRubyObject[] toJavaArray() {
         IRubyObject[] copy = IRubyObject.array(realLength);
         copyInto(copy, 0);
         return copy;
     }
 
+    /**
+     * Return a reference to this RubyArray's underlying Java array, if it is not shared with another RubyArray, or
+     * an exact copy of the relevant range otherwise.
+     *
+     * This method is typically used to work with the underlying array directly, knowing that it is not shared and that
+     * all accesses must consider the begin offset.
+     *
+     * @return The underlying Java array for this RubyArray, or a copy if that array is shared.
+     */
+
     public IRubyObject[] toJavaArrayUnsafe() {
         unpack();
         return !isShared ? values : toJavaArray();
     }
 
+    /**
+     * Return a Java array of the elements contained in this array, possibly a new array object.
+     *
+     * Use this method to potentially avoid making a new array and copying elements when the Array does not view a
+     * subset of the underlying Java array.
+     *
+     * @return a Java array with exactly the size and contents of this RubyArray's elements, possibly the actual
+     *         underlying array.
+     */
     public IRubyObject[] toJavaArrayMaybeUnsafe() {
         unpack();
         return (!isShared && begin == 0 && values.length == realLength) ? values : toJavaArray();
@@ -1081,6 +1107,19 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         values = vals;
     }
 
+    private void unshiftRealloc(int valuesLength) {
+        final long newLength = valuesLength << 1;
+        if (newLength >= Integer.MAX_VALUE) {
+            throw getRuntime().newIndexError("index " + newLength + " too big");
+        }
+        final int newBegin = valuesLength - 1;
+        IRubyObject[] reallocated = IRubyObject.array((int) newLength);
+        safeArrayCopy(values, begin, reallocated, valuesLength, valuesLength);
+        Helpers.fillNil(reallocated, 0, newBegin, metaClass.runtime);
+        values = reallocated;
+        begin = newBegin;
+    }
+
     public IRubyObject insert() {
         throw metaClass.runtime.newArgumentError(0, 1);
     }
@@ -1406,16 +1445,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (begin == 0 || isShared) {
             modify();
             final int valuesLength = values.length - begin;
-            if (realLength == valuesLength) {
-                int newLength = valuesLength >> 1;
-                if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
-
-                newLength += valuesLength;
-                IRubyObject[] vals = IRubyObject.array(newLength);
-                safeArrayCopy(values, begin, vals, 1, valuesLength);
-                Helpers.fillNil(vals, valuesLength + 1, newLength, metaClass.runtime);
-                values = vals;
-                begin = 0;
+            if (valuesLength == 0) {
+                alloc(ARRAY_DEFAULT_SIZE);
+                begin = ARRAY_DEFAULT_SIZE - 1;
+            } else if (realLength == valuesLength) {
+                unshiftRealloc(valuesLength);
             } else {
                 safeArrayCopy(values, begin, values, begin + 1, realLength);
             }

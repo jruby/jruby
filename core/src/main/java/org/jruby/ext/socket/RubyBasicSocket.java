@@ -78,6 +78,9 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
 import static jnr.constants.platform.TCP.TCP_INFO;
+import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
+import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
+import static jnr.constants.platform.TCP.TCP_KEEPCNT;
 import static jnr.constants.platform.TCP.TCP_CORK;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
@@ -429,7 +432,7 @@ public class RubyBasicSocket extends RubyIO {
  
                 switch (proto) {
                     case IPPROTO_TCP:
-                        if (Platform.IS_LINUX && TCP_INFO.intValue() == intOpt &&
+                        if (Platform.IS_LINUX && validTcpSockOpt(intOpt) &&
                                 fd.realFileno > 0 && SOCKOPT != null) {
                             ByteBuffer buf = ByteBuffer.allocate(256);
                             IntBuffer len = IntBuffer.allocate(256);
@@ -446,11 +449,9 @@ public class RubyBasicSocket extends RubyIO {
                         }
 
                         break;
-                    default:
-                        throw runtime.newErrnoENOPROTOOPTError();
                 }
 
-                return RubyFixnum.zero(runtime);
+                throw runtime.newErrnoENOPROTOOPTError();
             }
         } catch (Exception e) {
             throwErrorFromException(context.runtime, e);
@@ -505,7 +506,7 @@ public class RubyBasicSocket extends RubyIO {
                     case IPPROTO_TCP:
                         if (TCP_NODELAY.intValue() == intOpt) {
                             socketType.setTcpNoDelay(channel, asBoolean(context, val));
-                        } else if (Platform.IS_LINUX && TCP_CORK.intValue() == intOpt &&
+                        } else if (Platform.IS_LINUX && validTcpSockOpt(intOpt) &&
                                 fd.realFileno > 0 && SOCKOPT != null) {
                             int ret = SOCKOPT.setsockoptInt(fd.realFileno, intLevel, intOpt, val.convertToInteger().getIntValue());
 
@@ -826,6 +827,17 @@ public class RubyBasicSocket extends RubyIO {
         }
 
         return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
+    }
+
+    private boolean validTcpSockOpt(int intOpt) {
+        if (TCP_INFO.intValue() == intOpt ||
+            TCP_KEEPIDLE.intValue() == intOpt ||
+            TCP_KEEPINTVL.intValue() == intOpt ||
+            TCP_KEEPCNT.intValue() == intOpt) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private static IRubyObject shutdownInternal(ThreadContext context, OpenFile fptr, int how) {

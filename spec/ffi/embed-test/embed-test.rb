@@ -37,7 +37,7 @@ module LibWrap
   extend FFI::Library
   ffi_lib EXT
   callback :completion_function, [:string, :long, :uint8], :void
-  attach_function :do_work, [:pointer, :completion_function], :int
+  attach_function :do_work, [:string, :completion_function], :int
   Callback = Proc.new do |buf_ptr, count, code|
     puts "callback called with #{[buf_ptr, count, code].inspect}"
     nil

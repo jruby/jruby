@@ -233,7 +233,7 @@ describe "Process.setrlimit" do
   platform_is :windows do
     it "is not implemented" do
       Process.respond_to?(:setrlimit).should be_false
-      lambda do
+      -> do
         Process.setrlimit(nil, nil)
       end.should raise_error NotImplementedError
     end

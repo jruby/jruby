@@ -65,7 +65,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
-              'json.version' => '2.3.0',
+              'json.version' => '2.5.1',
               'rspec.version' => '3.7.0',
               'rspec-core.version' => '3.7.0',
               'rspec-expectations.version' => '3.7.0',
@@ -84,7 +84,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'ant.version' => '1.9.8',
               'asm.version' => '9.0',
               'jffi.version' => '1.3.1',
-              'joda.time.version' => '2.10.5' )
+              'joda.time.version' => '2.10.10' )
 
   plugin_management do
     jar( 'junit:junit:4.13.1',
@@ -104,20 +104,20 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                      :phase => 'prepare-package' )
     end
 
-    plugin( :site, '3.3', 'skipDeploy' =>  'true' )
-    plugin 'org.codehaus.mojo:build-helper-maven-plugin:1.8'
-    plugin 'org.codehaus.mojo:exec-maven-plugin:1.2.1'
-    plugin :antrun, '1.8'
-    plugin :source, '2.1.2'
-    plugin :assembly, '2.4'
-    plugin :install, '2.4'
-    plugin :deploy, '2.7'
-    plugin :javadoc, '2.10.4'
-    plugin :resources, '2.6'
-    plugin :clean, '2.5'
+    plugin( :site, '3.9.1', 'skipDeploy' =>  'true' )
+    plugin 'org.codehaus.mojo:build-helper-maven-plugin:3.2.0'
+    plugin 'org.codehaus.mojo:exec-maven-plugin:3.0.0'
+    plugin :antrun, '3.0.0'
+    plugin :source, '3.2.1'
+    plugin :assembly, '3.3.0'
+    plugin :install, '3.0.0-M1'
+    plugin :deploy, '3.0.0-M1'
+    plugin :javadoc, '3.2.0'
+    plugin :resources, '3.2.0'
+    plugin :clean, '3.1.0'
     plugin :dependency, '2.8'
-    plugin :release, '2.4.1'
-    plugin :jar, '3.0.0'
+    plugin :release, '3.0.0-M1'
+    plugin :jar, '3.2.0'
 
     rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
@@ -127,11 +127,11 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       execute_goal :enforce, :rules => rules
     end
 
-    plugin :compiler, '3.3'
-    plugin :shade, '3.1.0'
+    plugin :compiler, '3.8.1'
+    plugin :shade, '3.2.4'
     plugin :surefire, '3.0.0-M2'
-    plugin :plugin, '3.2'
-    plugin( :invoker, '1.8',
+    plugin :plugin, '3.6.0'
+    plugin( :invoker, '3.2.1',
             'properties' => { 'jruby.version' => '${project.version}',
                               'jruby.plugins.version' => '${jruby.plugins.version}' },
             'pomIncludes' => [ '*/pom.xml' ],
@@ -147,7 +147,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
 
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
-    plugin :'scm-publish', '1.0-beta-2'
+    plugin :'scm-publish', '3.1.0'
   end
 
   plugin( :site,

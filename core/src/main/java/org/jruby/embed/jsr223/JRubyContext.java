@@ -29,13 +29,12 @@
  */
 package org.jruby.embed.jsr223;
 
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.SimpleBindings;
@@ -47,6 +46,12 @@ import org.jruby.embed.ScriptingContainer;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 class JRubyContext implements ScriptContext {
+
+    private static final int[] SCOPES = new int[] { ScriptContext.ENGINE_SCOPE, ScriptContext.GLOBAL_SCOPE };
+
+    private static final List<Integer> SCOPE_LIST =
+            Collections.unmodifiableList( Arrays.stream(SCOPES).boxed().collect(Collectors.toList()) );
+
     private final ScriptingContainer container;
     private final List<Integer> scopeList;
     private Bindings globalMap = null;
@@ -54,44 +59,16 @@ class JRubyContext implements ScriptContext {
     private Reader reader = null;
     private Writer writer = null;
     private Writer errorWriter = null;
-    
-    public enum Scope {
-
-        ENGINE(ScriptContext.ENGINE_SCOPE),
-        GLOBAL(ScriptContext.GLOBAL_SCOPE);
-        private final int priority;
-
-        Scope(int priority) {
-            this.priority = priority;
-        }
-
-        int getPriority() {
-            return priority;
-        }
-    }
 
     JRubyContext(ScriptingContainer container) {
         this.container = container;
-        List<Integer> list = new ArrayList<Integer>();
-        for (Scope scope : Scope.values()) {
-            list.add(scope.getPriority());
-        }
-        scopeList = Collections.unmodifiableList(list);
-    }
-
-    private void checkName(String name) {
-        if (name == null) {
-            throw new NullPointerException("name is null");
-        }
-        if (name.length() == 0) {
-            throw new IllegalArgumentException("name is empty");
-        }
+        this.scopeList = SCOPE_LIST;
     }
 
     public Object getAttribute(String name) {
         Object ret = null;
-        for (Scope scope : Scope.values()) {
-            ret = getAttributeFromScope(scope.getPriority(), name);
+        for (int scope : SCOPES) {
+            ret = getAttributeFromScope(scope, name);
             if (ret != null) {
                 return ret;
             }
@@ -99,23 +76,23 @@ class JRubyContext implements ScriptContext {
         return ret;
     }
 
-    private Object getAttributeFromScope(int priority, String name) {
-        checkName(name);
+    private Object getAttributeFromScope(final int scope, String name) {
         Object value;
-        if (priority == Scope.ENGINE.getPriority()) {
-            value = engineMap.get(name);
-            if (value == null && Utils.isRubyVariable(container, name)) {
-                value = container.get(Utils.getReceiver(this), name);
-                engineMap.put(name, value);
-            }
-            return value;
-        } else if (priority == Scope.GLOBAL.getPriority()) {
-            if (globalMap == null) {
-                return null;
-            }
-            return globalMap.get(name);
-        } else {
-            throw new IllegalArgumentException("invalid scope");
+        switch (scope) {
+            case ScriptContext.ENGINE_SCOPE:
+                value = engineMap.get(name);
+                if (value == null && Utils.isRubyVariable(container, name)) {
+                    value = container.get(Utils.getReceiver(this), name);
+                    engineMap.put(name, value);
+                }
+                return value;
+            case ScriptContext.GLOBAL_SCOPE:
+                if (globalMap == null) {
+                    return null;
+                }
+                return globalMap.get(name);
+            default:
+                throw new IllegalArgumentException("invalid scope");
         }
     }
 
@@ -124,31 +101,22 @@ class JRubyContext implements ScriptContext {
     }
 
     public int getAttributesScope(String name) {
-        for (Scope scope : Scope.values()) {
-            Object ret = getAttributeFromScope(scope.getPriority(), name);
-            if (ret != null) {
-                return scope.getPriority();
-            }
+        for (int scope : SCOPES) {
+            Object ret = getAttributeFromScope(scope, name);
+            if (ret != null) return scope;
         }
         return -1;
     }
 
-    public Bindings getBindings(int priority) {
-        if (priority == Scope.ENGINE.getPriority()) {
-            return engineMap;
-        } else if (priority == Scope.GLOBAL.getPriority()) {
-            return globalMap;
-        } else {
-            throw new IllegalArgumentException("invalid scope");
+    public Bindings getBindings(int scope) {
+        switch (scope) {
+            case ScriptContext.ENGINE_SCOPE:
+                return engineMap;
+            case ScriptContext.GLOBAL_SCOPE:
+                return globalMap;
+            default:
+                throw new IllegalArgumentException("invalid scope");
         }
-    }
-
-    Bindings getEngineScopeBindings() {
-        return engineMap;
-    }
-
-    Bindings getGlobalScopeBindings() {
-        return globalMap;
     }
 
     public Writer getErrorWriter() {
@@ -167,17 +135,16 @@ class JRubyContext implements ScriptContext {
         return writer;
     }
 
-    public Object removeAttribute(String name, int priority) {
-        checkName(name);
-        Bindings bindings = getBindings(priority);
+    public Object removeAttribute(String name, int scope) {
+        Bindings bindings = getBindings(scope);
         if (bindings == null) {
             return null;
         }
         return bindings.remove(name);
     }
 
-    public void setAttribute(String key, Object value, int priority) {
-        Bindings bindings = getBindings(priority);
+    public void setAttribute(String key, Object value, int scope) {
+        Bindings bindings = getBindings(scope);
         if (bindings == null) {
             return;
         }
@@ -185,24 +152,17 @@ class JRubyContext implements ScriptContext {
     }
 
     public void setBindings(Bindings bindings, int scope) {
-        if (scope == Scope.ENGINE.getPriority() && bindings == null) {
-            throw new NullPointerException("null bindings in ENGINE scope");
+        switch (scope) {
+            case ScriptContext.ENGINE_SCOPE:
+                if (bindings == null) {
+                    throw new NullPointerException("null bindings in ENGINE scope");
+                }
+                engineMap = bindings; break;
+            case ScriptContext.GLOBAL_SCOPE:
+                globalMap = bindings; break;
+            default:
+                throw new IllegalArgumentException("invalid scope");
         }
-        if (scope == Scope.ENGINE.getPriority()) {
-            engineMap = bindings;
-        } else if (scope == Scope.GLOBAL.getPriority()) {
-            globalMap = bindings;
-        } else {
-            throw new IllegalArgumentException("invalid scope");
-        }
-    }
-
-    void setEngineScopeBindings(Bindings bindings) {
-        engineMap = bindings;
-    }
-
-    void setGlobalScopeBindings(Bindings bindings) {
-        globalMap = bindings;
     }
 
     public void setErrorWriter(Writer errorWriter) {
@@ -216,10 +176,6 @@ class JRubyContext implements ScriptContext {
     }
 
     public void setReader(Reader reader) {
-        setReader(reader, true);
-    }
-
-    void setReader(Reader reader, boolean updateContainer) {
         if (reader == null) {
             return;
         }

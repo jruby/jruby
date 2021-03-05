@@ -33,6 +33,7 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -161,9 +162,14 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
         return delegate.isImplementedBy(other);
     }
 
-    @Override
+    @Deprecated @Override
     public Arity getArity() {
         return delegate.getArity();
+    }
+
+    @Override
+    public Signature getSignature() {
+        return delegate.getSignature();
     }
 
     @Override

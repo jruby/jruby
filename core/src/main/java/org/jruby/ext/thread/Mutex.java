@@ -62,29 +62,36 @@ public class Mutex extends RubyObject implements DataType {
         super(runtime, type);
     }
 
-    public static void setup(Ruby runtime) {
-        RubyClass cMutex = runtime.getThread().defineClassUnder("Mutex", runtime.getObject(), new ObjectAllocator() {
+    public static RubyClass setup(RubyClass threadClass, RubyClass objectClass) {
+        RubyClass cMutex = threadClass.defineClassUnder("Mutex", objectClass, Mutex::new);
 
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new Mutex(runtime, klass);
-            }
-        });
         cMutex.setReifiedClass(Mutex.class);
         cMutex.defineAnnotatedMethods(Mutex.class);
-        runtime.getObject().setConstant("Mutex", cMutex);
+
+        objectClass.setConstant("Mutex", cMutex);
+
+        return cMutex;
     }
 
     @JRubyMethod(name = "locked?")
     public RubyBoolean locked_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, lock.isLocked());
+        return RubyBoolean.newBoolean(context, isLocked());
+    }
+
+    public boolean isLocked() {
+        return lock.isLocked();
     }
 
     @JRubyMethod
     public RubyBoolean try_lock(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, tryLock(context));
+    }
+
+    public boolean tryLock(ThreadContext context) {
         if (lock.isHeldByCurrentThread()) {
-            return context.fals;
+            return false;
         }
-        return RubyBoolean.newBoolean(context, context.getThread().tryLock(lock));
+        return context.getThread().tryLock(lock);
     }
 
     @JRubyMethod
@@ -111,7 +118,7 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject unlock(ThreadContext context) {
-        if (!lock.isLocked()) {
+        if (!isLocked()) {
             throw context.runtime.newThreadError("Mutex is not locked");
         }
         if (!lock.isHeldByCurrentThread()) {

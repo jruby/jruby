@@ -346,12 +346,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             @Override
             public void write(byte[] b) throws IOException {
-                RubyIO.this.write(runtime.getCurrentContext(), RubyString.newStringNoCopy(runtime, b));
+                RubyIO.this.write(runtime.getCurrentContext(), b, 0, b.length, ASCIIEncoding.INSTANCE);
             }
 
             @Override
             public void write(byte[] b, int off, int len) throws IOException {
-                RubyIO.this.write(runtime.getCurrentContext(), RubyString.newStringNoCopy(runtime, b, off, len));
+                RubyIO.this.write(runtime.getCurrentContext(), b, off, len, ASCIIEncoding.INSTANCE);
             }
 
             @Override
@@ -382,10 +382,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             @Override
             public int read(byte[] b, int off, int len) throws IOException {
-                RubyString str = RubyString.newStringNoCopy(runtime, b, off, len);
-                IRubyObject i = RubyIO.this.doRead(runtime.getCurrentContext(), len, str);
-                if (i == null || i.isNil()) return -1;
-                return str.size();
+                return RubyIO.this.read(runtime.getCurrentContext(), b, off, len);
             }
 
             @Override
@@ -916,11 +913,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 }
             }
         } else {
-            ChannelFD descriptor = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
+            fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
 
-            if (descriptor == null) throw runtime.newErrnoEBADFError();
-
-            fd = descriptor;
+            if (fd == null) throw runtime.newErrnoEBADFError();
         }
 
         if (!fd.ch.isOpen()) {
@@ -1348,7 +1343,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
 
             ByteList strByteList = ((RubyString) str).getByteList();
-            n = OpenFile.writeInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
+            n = OpenFile.writeInternal(context, fptr, strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
 
             if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         } finally {
@@ -1424,14 +1419,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    /** io_write_m
+    /**
+     * Ruby method IO#write(str), equivalent to io_write_m.
      *
+     * @param context the current context
+     * @param str the string to write
      */
     @JRubyMethod(name = "write", required = 1)
     public IRubyObject write(ThreadContext context, IRubyObject str) {
         return write(context, str, false);
     }
 
+    /**
+     * Ruby method IO#write(str, ...), equivalent to io_write_m.
+     *
+     * @param context the current context
+     * @param args the strings to write
+     */
     @JRubyMethod(name = "write", rest = true)
     public IRubyObject write(ThreadContext context, IRubyObject[] args) {
         long acc = 0l;
@@ -1443,12 +1447,42 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return RubyFixnum.newFixnum(context.runtime, acc);
     }
 
-    final IRubyObject write(ThreadContext context, int ch) {
+    /**
+     * Write a single byte to this IO's write target.
+     *
+     * @param context the current context
+     * @param ch the byte to write, as an int
+     * @return the count of bytes written
+     */
+    public final IRubyObject write(ThreadContext context, int ch) {
         RubyString str = RubyString.newStringShared(context.runtime, RubyInteger.singleCharByteList((byte) ch));
         return write(context, str, false);
     }
 
-    // io_write
+    /**
+     * Write a single byte to this IO's write target but do not return the number of bytes written (it will be 1).
+     *
+     * This version does not dig out any wrapped write IO (bytes will be written to this IO).
+     *
+     * @param context the current context
+     * @param ch the byte to write, as an int
+     */
+    public final void write(ThreadContext context, byte ch) {
+        ByteList bytes = RubyInteger.singleCharByteList(ch);
+
+        write(context, bytes.unsafeBytes(), bytes.begin(), bytes.realSize(), bytes.getEncoding(), false);
+    }
+
+    /**
+     * Write the given range of bytes to this IO's write target.
+     *
+     * Equivalent to io_write.
+     *
+     * @param context the current context
+     * @param str the string to write
+     * @param nosync whether to write without syncing
+     * @return the count of bytes written
+     */
     public IRubyObject write(ThreadContext context, IRubyObject str, boolean nosync) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
@@ -1457,14 +1491,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         RubyIO io = GetWriteIO();
 
-        str = str.asString();
+        RubyString string = str.asString();
         tmp = TypeConverter.ioCheckIO(runtime, io);
         if (tmp == context.nil) {
 	        /* port is not IO, call write method for it. */
-            return sites(context).write.call(context, io, io, str);
+            return sites(context).write.call(context, io, io, string);
         }
         io = (RubyIO) tmp;
-        if (((RubyString) str).size() == 0) return RubyFixnum.zero(runtime);
+        if (string.size() == 0) return RubyFixnum.zero(runtime);
 
         fptr = io.getOpenFileChecked();
 
@@ -1473,13 +1507,123 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr = io.getOpenFileChecked();
             fptr.checkWritable(context);
 
-            n = fptr.fwrite(context, str, nosync);
+            n = fptr.fwrite(context, string, nosync);
             if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         } finally {
             if (locked) fptr.unlock();
         }
 
         return RubyFixnum.newFixnum(runtime, n);
+    }
+
+    /**
+     * Write the given range of bytes to this IO.
+     *
+     * Equivalent to io_write_m with source bytes and no digging out any wrapped write IO (bytes will be written to this
+     * IO).
+     *
+     * @param context the current context
+     * @param bytes the bytes to write
+     * @param start start offset for writing
+     * @param length length to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @return the count of bytes written
+     */
+    public int write(ThreadContext context,  byte[] bytes, int start, int length, Encoding encoding) {
+        return write(context, bytes, start, length, encoding, false);
+    }
+
+    /**
+     * Write the given range of bytes to this IO.
+     *
+     * Equivalent to io_write with source bytes and no digging out any wrapped write IO (bytes will be written to this
+     * IO.
+     *
+     * @param context the current context
+     * @param bytes the bytes to write
+     * @param start start offset for writing
+     * @param length length to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @param nosync whether to write without syncing
+     * @return the count of bytes written
+     */
+    public int write(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
+        if (length == 0) return 0;
+
+        OpenFile fptr = getOpenFileChecked();
+
+        boolean locked = fptr.lock();
+        try {
+            fptr = getOpenFileChecked();
+            fptr.checkWritable(context);
+
+            int n = fptr.fwrite(context, bytes, start, length, encoding, nosync);
+
+            if (n == -1) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+
+            return n;
+        } finally {
+            if (locked) fptr.unlock();
+        }
+
+    }
+
+    /**
+     * Same as {@link #write(ThreadContext, byte[], int, int, Encoding, boolean)} but context will be retrieved.
+     *
+     * Heavy use should retrieve context once and call the original method to avoid thread-local overhead.
+     *
+     * @param bytes the bytes to write
+     * @param start start offset for writing
+     * @param length length to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @param nosync whether to write without syncing
+     * @return the count of bytes written
+     */
+    public int write(byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
+        return write(getRuntime().getCurrentContext(), bytes, start, length, encoding, nosync);
+    }
+
+    /**
+     * Same as {@link #write(ThreadContext, byte[], int, int, Encoding, boolean)} but context will be retrieved and
+     * nosync defaults to false.
+     *
+     * Heavy use should retrieve context once and call the original method to avoid thread-local overhead.
+     *
+     * @param bytes the bytes to write
+     * @param start start offset for writing
+     * @param length length to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @return the count of bytes written
+     */
+    public int write(byte[] bytes, int start, int length, Encoding encoding) {
+        return write(bytes, start, length, encoding, false);
+    }
+
+
+    /**
+     * Same as {@link #write(ThreadContext, byte[], int, int, Encoding, boolean)} but context will be retrieved nosync
+     * defaults to false, and the entire byte array will be written.
+     *
+     * Heavy use should retrieve context once and call the original method to avoid thread-local overhead.
+     *
+     * @param bytes the bytes to write
+     * @param encoding encoding of the bytes (will not be verified)
+     * @return the count of bytes written
+     */
+    public int write(byte[] bytes, Encoding encoding) {
+        return write(bytes, 0, bytes.length, encoding);
+    }
+
+    /**
+     * Same as {@link #write(ThreadContext, byte)} but context will be retrieved.
+     *
+     * Heavy use should retrieve context once and call the original method to avoid thread-local overhead.
+     *
+     * @param bite the byte to write, as an int
+     */
+    public void write(int bite) {
+        write(getRuntime().getCurrentContext(), (byte) bite);
     }
 
     /** rb_io_addstr
@@ -2628,7 +2772,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         CachingCallSite write = sites(context).write;
 
         // In MRI this is used for all multi-arg puts calls to write. Here, we just do it for two
-        if (write.retrieveCache(maybeIO.getMetaClass()).method.getArity() == Arity.ONE_ARGUMENT) {
+        if (write.retrieveCache(maybeIO.getMetaClass()).method.getSignature().isOneArgument()) {
             Ruby runtime = context.runtime;
             if (runtime.isVerbose() && maybeIO != runtime.getGlobalVariables().get("$stderr")) {
                 warnWrite(runtime, maybeIO);
@@ -3039,75 +3183,140 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // io_read
+    /**
+     * Read all available bytes.
+     *
+     * Equivalent to io_read with no arguments.
+     *
+     * @param context the current context
+     * @return the output buffer viewing the actual range of bytes read
+     */
     @JRubyMethod(name = "read")
     public IRubyObject read(ThreadContext context) {
         return read(context, context.nil, context.nil);
     }
 
-    // io_read
+    /**
+     * Read length bytes.
+     *
+     * Equivalent to io_read with a length argument.
+     *
+     * @param context the current context
+     * @param length a numeric value of the count of bytes to read
+     * @return the output buffer viewing the actual range of bytes read
+     */
     @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject arg0) {
-        return read(context, arg0, context.nil);
+    public IRubyObject read(ThreadContext context, IRubyObject length) {
+        return read(context, length, context.nil);
     }
 
-    // io_read
+    /**
+     * Read into the given buffer (or create a new one) reading length bytes.
+     *
+     * Equivalent to io_read.
+     *
+     * @param context the current context
+     * @param length a numeric value of the count of bytes to read
+     * @param maybeStr a RubyString buffer or a nil to indicate a new buffer should be created
+     * @return the output buffer viewing the actual range of bytes read
+     */
     @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject str) {
+    public IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject maybeStr) {
         if (length == context.nil) {
             OpenFile fptr = getOpenFileChecked();
 
             boolean locked = fptr.lock();
             try {
                 fptr.checkCharReadable(context);
-                return fptr.readAll(context, fptr.remainSize(), str);
+                return fptr.readAll(context, fptr.remainSize(), maybeStr);
             } finally {
                 if (locked) fptr.unlock();
             }
         }
 
-        str = doRead(context, RubyNumeric.num2int(length), str);
-        return str == null ? context.nil : str;
-    }
+        int len = RubyNumeric.num2int(length);
 
-    private RubyString doRead(ThreadContext context, int len, IRubyObject str) {
-        Ruby runtime = context.runtime;
+        checkLength(context, len);
 
-        if (len < 0) {
-            throw runtime.newArgumentError("negative length " + len + " given");
-        }
-
-        str = EncodingUtils.setStrBuf(runtime, str, len);
+        RubyString str = EncodingUtils.setStrBuf(context.runtime, maybeStr, len);
 
         OpenFile fptr = getOpenFileChecked();
-        int n;
         boolean locked = fptr.lock();
         try {
             fptr.checkByteReadable(context);
+
             if (len == 0) {
-                ((RubyString) str).setReadLength(0);
-                return (RubyString) str;
+                str.setReadLength(0);
+                return str;
             }
 
-            fptr.READ_CHECK(context);
-            //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
-            //        previous_mode = set_binary_mode_with_seek_cur(fptr);
-            //        #endif
-            n = fptr.fread(context, str, 0, len);
+            ByteList strByteList = str.getByteList();
+
+            len = doRead(context, fptr, strByteList.unsafeBytes(), strByteList.begin(), len);
         } finally {
             if (locked) fptr.unlock();
         }
 
-        ((RubyString)str).setReadLength(n);
+        str.setReadLength(len);
+
+        if (len == 0) return context.nil;
+
+        str.setTaint(true);
+
+        return str;
+    }
+
+    protected void checkLength(ThreadContext context, int len) {
+        if (len < 0) {
+            throw context.runtime.newArgumentError("negative length " + len + " given");
+        }
+    }
+
+    /**
+     * Read into the given buffer starting from start and reading len bytes.
+     *
+     * Equivalent to io_read with target byte[] buffer already in hand.
+     *
+     * @param context the current context
+     * @param buffer the target buffer
+     * @param start start offset in target buffer
+     * @param len count of bytes to read
+     * @return the number of bytes actually read or -1 for EOF
+     */
+    public int read(ThreadContext context, byte[] buffer, int start, int len) {
+        checkLength(context, len);
+
+        OpenFile fptr = getOpenFileChecked();
+        boolean locked = fptr.lock();
+        try {
+            fptr.checkByteReadable(context);
+
+            len = doRead(context, fptr, buffer, start, len);
+
+            // Java convention
+            if (len == 0) return -1;
+
+            return len;
+        } finally {
+            if (locked) fptr.unlock();
+        }
+    }
+
+    protected static int doRead(ThreadContext context, OpenFile fptr, byte[] buffer, int start, int len) {
+        if (len == 0) return len;
+
+        fptr.READ_CHECK(context);
+        //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
+        //        previous_mode = set_binary_mode_with_seek_cur(fptr);
+        //        #endif
+
 //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
 //        if (previous_mode == O_TEXT) {
 //            setmode(fptr->fd, O_TEXT);
 //        }
 //        #endif
-        if (n == 0) return null;
-        str.setTaint(true);
 
-        return (RubyString) str;
+        return fptr.fread(context, buffer, start, len);
     }
 
     @Deprecated
@@ -3578,13 +3787,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         POSIX posix = runtime.getNativePosix();
 
-        if (!(posix instanceof Linux)) {
-            return context.nil;
-        }
-
         RubyIO io = GetWriteIO();
 
         fptr = io.getOpenFileChecked();
+
+        if (!(posix instanceof Linux)) {
+            return context.nil;
+        }
 
         int fd = fptr.fd().realFileno;
 
@@ -4476,10 +4685,16 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             long w = 0;
             while (w < n) {
                 w += to.write(buffer);
+
+                if (to instanceof IOChannel) {
+                    // if this channel is wrapping an IO, we assume write wrote as much as possible (GH-6555)
+                    break;
+                }
             }
             clearBuffer(buffer);
 
-            transferred += n;
+            // add only written count since it may not match read count for a false IO (GH-6555)
+            transferred += w;
             if (length > 0) {
                 length -= n;
                 if (length <= 0) break;

@@ -35,6 +35,7 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
@@ -683,26 +684,14 @@ public class RubyClass extends RubyModule {
      * MRI: check_funcall_respond_to
      */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
-        final Ruby runtime = context.runtime;
         CacheEntry entry = klass.searchWithCache("respond_to?");
         DynamicMethod me = entry.method;
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
-        if (me != null && !me.isUndefined() && !me.isBuiltin()) {
-            int arityValue = me.getArity().getValue();
+        if (me == null || me.isUndefined() || me.isBuiltin()) return true;
 
-            if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
-
-            IRubyObject result;
-            if (arityValue == 1) {
-                result = me.call(context, recv, entry.sourceModule, "respond_to?", runtime.newSymbol(mid));
-            } else {
-                result = me.call(context, recv, entry.sourceModule, "respond_to?", runtime.newSymbol(mid), runtime.getTrue());
-            }
-            return result.isTrue();
-        }
-        return true;
+        return me.callRespondTo(context, recv, "respond_to?", entry.sourceModule, context.runtime.newSymbol(mid));
     }
 
     /**
@@ -716,20 +705,17 @@ public class RubyClass extends RubyModule {
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
-        if (!me.isUndefined() && !me.isBuiltin()) {
-            int arityValue = me.getArity().getValue();
+        if (me.isUndefined() || me.isBuiltin()) return true;
 
-            if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
+        int required = me.getSignature().required();
 
-            boolean result;
-            if (arityValue == 1) {
-                result = respondToSite.respondsTo(context, recv, recv);
-            } else {
-                result = respondToSite.respondsTo(context, recv, recv, true);
-            }
-            return result;
+        if (required > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + required + ")");
+
+        if (required == 1) {
+            return respondToSite.respondsTo(context, recv, recv);
+        } else {
+            return respondToSite.respondsTo(context, recv, recv, true);
         }
-        return true;
     }
 
     // MRI: check_funcall_callable
@@ -750,14 +736,8 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = klass.searchWithCache("respond_to_missing?");
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if (!me.isUndefined() && !me.isBuiltin()) {
-            IRubyObject ret;
-            if (me.getArity().getValue() == 1) {
-                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
-            } else {
-                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
-            }
-            if ( ! ret.isTrue() ) return null;
+        if (!me.isUndefined() && !me.isBuiltin() && !me.callRespondTo(context, self, "respond_to_missing?", entry.sourceModule, runtime.newSymbol(method))) {
+            return null;
         }
 
         if ( klass.isMethodBuiltin("method_missing") ) return null;
@@ -765,8 +745,7 @@ public class RubyClass extends RubyModule {
         final IRubyObject $ex = context.getErrorInfo();
         try {
             return checkFuncallExec(context, self, method, args);
-        }
-        catch (RaiseException e) {
+        } catch (RaiseException e) {
             context.setErrorInfo($ex); // restore $!
             return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
         }
@@ -779,14 +758,8 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = respondToMissingSite.retrieveCache(klass);
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if (!me.isUndefined() && !me.isBuiltin()) {
-            IRubyObject ret;
-            if (me.getArity().getValue() == 1) {
-                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
-            } else {
-                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
-            }
-            if ( ! ret.isTrue() ) return null;
+        if (!me.isUndefined() && !me.isBuiltin() && !me.callRespondTo(context, self, "respond_to_missing?", entry.sourceModule, runtime.newSymbol(method))) {
+            return null;
         }
 
         if (methodMissingSite.retrieveCache(klass).method.isBuiltin()) return null;
@@ -1536,30 +1509,28 @@ public class RubyClass extends RubyModule {
 
                 String signature;
                 if (methodSignature == null) {
-                    final Arity arity = methodEntry.getValue().getArity();
+                    Signature sig = methodEntry.getValue().getSignature();
                     // non-signature signature with just IRubyObject
-                    switch (arity.getValue()) {
-                        case 0:
-                            signature = sig(IRubyObject.class);
-                            if (instanceMethods.contains(javaMethodName + signature)) continue;
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, javaMethodName, signature, null, null);
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                    if (sig.isNoArguments()) {
+                        signature = sig(IRubyObject.class);
+                        if (instanceMethods.contains(javaMethodName + signature)) continue;
+                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, javaMethodName, signature, null, null);
+                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
-                            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                            //m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
-                            m.ldc(id);
-                            m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
-                            break;
-                        default:
-                            signature = sig(IRubyObject.class, IRubyObject[].class);
-                            if (instanceMethods.contains(javaMethodName + signature)) continue;
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                        m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                        //m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
+                        m.ldc(id);
+                        m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class));
+                    } else {
+                        signature = sig(IRubyObject.class, IRubyObject[].class);
+                        if (instanceMethods.contains(javaMethodName + signature)) continue;
+                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
+                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
-                            m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                            m.ldc(id);
-                            m.aload(0);
-                            m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
+                        m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                        m.ldc(id);
+                        m.aload(0);
+                        m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
                     }
                     m.areturn();
                 }
@@ -1607,36 +1578,37 @@ public class RubyClass extends RubyModule {
 
                 final String signature;
                 if (methodSignature == null) { // non-signature signature with just IRubyObject
-                    final Arity arity = methodEntry.getValue().getArity();
-                    switch (arity.getValue()) {
-                        case 0:
-                            signature = sig(IRubyObject.class); // return IRubyObject foo()
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                    Signature sig = methodEntry.getValue().getSignature();
+                    if (sig.isFixed()) {
+                        switch (sig.required()) {
+                            case 0:
+                                signature = sig(IRubyObject.class); // return IRubyObject foo()
+                                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
-                            m.aload(0);
-                            m.ldc(id);
-                            m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
-                            break;
-                        case 1:
-                            signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                                m.aload(0);
+                                m.ldc(id);
+                                m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
+                                break;
+                            case 1:
+                                signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
+                                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
-                            m.aload(0);
-                            m.ldc(id);
-                            m.aload(1); // IRubyObject arg1
-                            m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject.class));
-                            break;
-                        // currently we only have :
-                        //  callMethod(context, name)
-                        //  callMethod(context, name, arg1)
-                        // so for other arities use generic:
-                        //  callMethod(context, name, args...)
-                        default:
-                            if ( arity.isFixed() ) {
-                                final int paramCount = arity.getValue();
-                                Class[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
+                                m.aload(0);
+                                m.ldc(id);
+                                m.aload(1); // IRubyObject arg1
+                                m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject.class));
+                                break;
+                            default:
+                                // currently we only have :
+                                //  callMethod(context, name)
+                                //  callMethod(context, name, arg1)
+                                // so for other arities use generic:
+                                //  callMethod(context, name, args...)
+                                final int paramCount = sig.required();
+                                Class[] params = new Class[paramCount];
+                                Arrays.fill(params, IRubyObject.class);
                                 signature = sig(IRubyObject.class, params);
                                 m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
@@ -1647,28 +1619,28 @@ public class RubyClass extends RubyModule {
                                 // generate an IRubyObject[] for the method arguments :
                                 m.pushInt(paramCount);
                                 m.anewarray(p(IRubyObject.class)); // new IRubyObject[size]
-                                for ( int i = 1; i <= paramCount; i++ ) {
+                                for (int i = 1; i <= paramCount; i++) {
                                     m.dup();
                                     m.pushInt(i - 1); // array index e.g. iconst_0
                                     m.aload(i); // IRubyObject arg1, arg2 e.g. aload_1
                                     m.aastore(); // arr[ i - 1 ] = arg_i
                                 }
-                            }
-                            else { // (generic) variable arity e.g. method(*args)
-                                // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
-                                signature = sig(IRubyObject.class, IRubyObject[].class);
-                                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
-                                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                                m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+                        }
+                    } else {
+                        // (generic) variable arity e.g. method(*args)
+                        // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
+                        signature = sig(IRubyObject.class, IRubyObject[].class);
+                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
-                                m.aload(0);
-                                m.ldc(id);
-                                m.aload(1); // IRubyObject[] arg1
-                            }
-                            m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+                        m.aload(0);
+                        m.ldc(id);
+                        m.aload(1); // IRubyObject[] arg1
+                        m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
                     }
                     m.areturn();
-                }
-                else { // generate a real method signature for the method, with to/from coercions
+                } else { // generate a real method signature for the method, with to/from coercions
 
                     // indices for temp values
                     Class[] params = new Class[methodSignature.length - 1];

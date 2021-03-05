@@ -37,6 +37,7 @@ import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -128,10 +129,17 @@ public class AliasMethod extends DynamicMethod {
         return new AliasMethod(implementationClass, entry, name);
     }
 
-    @Override
+
+    @Deprecated @Override
     public Arity getArity(){
         return entry.method.getArity();
     }
+
+    @Override
+    public Signature getSignature() {
+        return entry.method.getSignature();
+    }
+
 
     public String getOldName() {
         return entry.method.getName();
