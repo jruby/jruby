@@ -22,6 +22,7 @@ default_gems = [
     ['ffi', '1.14.2'],
     ['fileutils', '1.4.1'],
     ['forwardable', '1.2.0'],
+    ['io-console', '0.5.8'],
     ['ipaddr', '1.2.2'],
     ['irb', '1.2.9'],
     ['jar-dependencies', '${jar-dependencies.version}'],
