@@ -302,6 +302,10 @@ describe "JRuby class reification" do
     expect { Class.new(java.lang.Exception) do; include java.util.Iterator; end.hasNext }.to raise_error(NoMethodError)
     expect { Class.new(java.util.AbstractList) do; end.get(0) }.to raise_error(NoMethodError)
   end
+  
+  it "Errors on invalid logic jumps" do
+    expect { Class.new(java.util.AbstractList) do; def initialize();while true; super([]); fail_by_not_existing; end; end; end.new }.to raise_error(RuntimeError)
+  end
 
   it "supports reification of annotations and signatures on static methods with parameters" do
 
