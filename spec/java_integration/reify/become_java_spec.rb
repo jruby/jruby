@@ -151,8 +151,6 @@ describe "JRuby class reification" do
   end
   
   it "supports reification of java classes with interfaces" do
-    pending "GH#6479 + reification not yet hooked up"
-
 	clz = Class.new(java.lang.Exception) do
 		include java.util.Iterator
 		def initialize(array)
@@ -188,7 +186,8 @@ describe "JRuby class reification" do
 	clz.new([:a, :b, :c]).forEachRemaining { |k| gotten << k }
 	expect(gotten).to eql([:c,:b, :a])
 	expect(clz.new([:a, :b, :c]).message).to eql("[:a, :b, :c]")
-	
+
+	pending "GH#6479 + reification not yet hooked up"
 	obj = clz.new(["fail3"])
 	obj.remove
 	gotten = []
