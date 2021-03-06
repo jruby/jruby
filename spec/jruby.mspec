@@ -52,12 +52,12 @@ class MSpecScript
   ]
 
   set :fast, [
-    *get(:language),
-    *get(:core),
-    *get(:library),
+      *get(:language),
+      *get(:core),
+      *get(:library),
 
-    # These all spawn sub-rubies, making them very slow to run
-    *slow_specs.map {|name| '^' + name},
+      # These all spawn sub-rubies, making them very slow to run
+      *slow_specs.map {|name| '^' + name},
   ]
 
   set :slow, slow_specs
@@ -103,7 +103,7 @@ class MSpecScript
 
   # If running specs with jit threshold = 1 or force (AOT) compile, additional tags
   if JRuby.runtime.instance_config.compile_mode.to_s == "FORCE" ||
-     JRuby.runtime.instance_config.jit_threshold == 1
+      JRuby.runtime.instance_config.jit_threshold == 1
     get(:ci_xtags) << 'compiler'
   end
 

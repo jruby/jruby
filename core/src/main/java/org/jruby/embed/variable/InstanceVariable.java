@@ -166,7 +166,7 @@ public class InstanceVariable extends AbstractVariable {
      */
     @Override
     public void inject() {
-        ((RubyObject) getReceiver()).setInstanceVariable(name.intern(), getRubyObject());
+        ((RubyObject) getReceiver()).setInstanceVariable(name, getRubyObject());
     }
 
     /**

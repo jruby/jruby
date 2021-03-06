@@ -123,12 +123,10 @@ public class RubyClass extends RubyModule {
         runtime.setBaseNewMethod(classClass.searchMethod("new"));
     }
 
-    public static final ObjectAllocator CLASS_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyClass clazz = new RubyClass(runtime);
-            clazz.allocator = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
-            return clazz;
-        }
+    public static final ObjectAllocator CLASS_ALLOCATOR = (runtime, klass) -> {
+        RubyClass clazz = new RubyClass(runtime);
+        clazz.allocator = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
+        return clazz;
     };
 
     public ObjectAllocator getAllocator() {
@@ -147,17 +145,15 @@ public class RubyClass extends RubyModule {
      */
     @SuppressWarnings("unchecked")
     public void setClassAllocator(final Class<?> cls) {
-        this.allocator = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                try {
-                    RubyBasicObject object = (RubyBasicObject)cls.getConstructor().newInstance();
-                    object.setMetaClass(klazz);
-                    return object;
-                } catch (InstantiationException | InvocationTargetException ie) {
-                    throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
-                } catch (IllegalAccessException | NoSuchMethodException iae) {
-                    throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor:\n" + iae);
-                }
+        this.allocator = (runtime, klazz) -> {
+            try {
+                RubyBasicObject object = (RubyBasicObject)cls.getConstructor().newInstance();
+                object.setMetaClass(klazz);
+                return object;
+            } catch (InstantiationException | InvocationTargetException ie) {
+                throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
+            } catch (IllegalAccessException | NoSuchMethodException iae) {
+                throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor:\n" + iae);
             }
         };
 
@@ -175,17 +171,15 @@ public class RubyClass extends RubyModule {
         try {
             final Constructor<? extends IRubyObject> constructor = clazz.getConstructor(Ruby.class, RubyClass.class);
 
-            this.allocator = new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                    try {
-                        return constructor.newInstance(runtime, klazz);
-                    } catch (InvocationTargetException ite) {
-                        throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
-                    } catch (InstantiationException ie) {
-                        throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ie);
-                    } catch (IllegalAccessException iae) {
-                        throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
-                    }
+            this.allocator = (runtime, klazz) -> {
+                try {
+                    return constructor.newInstance(runtime, klazz);
+                } catch (InvocationTargetException ite) {
+                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
+                } catch (InstantiationException ie) {
+                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ie);
+                } catch (IllegalAccessException iae) {
+                    throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
                 }
             };
 
@@ -209,15 +203,13 @@ public class RubyClass extends RubyModule {
         try {
             final Method method = clazz.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
 
-            this.allocator = new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                    try {
-                        return (IRubyObject) method.invoke(null, runtime, klazz);
-                    } catch (InvocationTargetException ite) {
-                        throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
-                    } catch (IllegalAccessException iae) {
-                        throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
-                    }
+            this.allocator = (runtime, klazz) -> {
+                try {
+                    return (IRubyObject) method.invoke(null, runtime, klazz);
+                } catch (InvocationTargetException ite) {
+                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
+                } catch (IllegalAccessException iae) {
+                    throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
                 }
             };
 
@@ -686,26 +678,14 @@ public class RubyClass extends RubyModule {
      * MRI: check_funcall_respond_to
      */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
-        final Ruby runtime = context.runtime;
         CacheEntry entry = klass.searchWithCache("respond_to?");
         DynamicMethod me = entry.method;
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
-        if (me != null && !me.isUndefined() && !me.isBuiltin()) {
-            int arityValue = me.getArity().getValue();
+        if (me == null || me.isUndefined() || me.isBuiltin()) return true;
 
-            if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
-
-            IRubyObject result;
-            if (arityValue == 1) {
-                result = me.call(context, recv, entry.sourceModule, "respond_to?", runtime.newSymbol(mid));
-            } else {
-                result = me.call(context, recv, entry.sourceModule, "respond_to?", runtime.newSymbol(mid), runtime.getTrue());
-            }
-            return result.isTrue();
-        }
-        return true;
+        return me.callRespondTo(context, recv, "respond_to?", entry.sourceModule, context.runtime.newSymbol(mid));
     }
 
     /**
@@ -719,20 +699,17 @@ public class RubyClass extends RubyModule {
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
-        if (!me.isUndefined() && !me.isBuiltin()) {
-            int arityValue = me.getArity().getValue();
+        if (me.isUndefined() || me.isBuiltin()) return true;
 
-            if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
+        int required = me.getSignature().required();
 
-            boolean result;
-            if (arityValue == 1) {
-                result = respondToSite.respondsTo(context, recv, recv);
-            } else {
-                result = respondToSite.respondsTo(context, recv, recv, true);
-            }
-            return result;
+        if (required > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + required + ")");
+
+        if (required == 1) {
+            return respondToSite.respondsTo(context, recv, recv);
+        } else {
+            return respondToSite.respondsTo(context, recv, recv, true);
         }
-        return true;
     }
 
     // MRI: check_funcall_callable
@@ -753,14 +730,8 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = klass.searchWithCache("respond_to_missing?");
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if (!me.isUndefined() && !me.isBuiltin()) {
-            IRubyObject ret;
-            if (me.getArity().getValue() == 1) {
-                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
-            } else {
-                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
-            }
-            if ( ! ret.isTrue() ) return null;
+        if (!me.isUndefined() && !me.isBuiltin() && !me.callRespondTo(context, self, "respond_to_missing?", entry.sourceModule, runtime.newSymbol(method))) {
+            return null;
         }
 
         if ( klass.isMethodBuiltin("method_missing") ) return null;
@@ -768,8 +739,7 @@ public class RubyClass extends RubyModule {
         final IRubyObject $ex = context.getErrorInfo();
         try {
             return checkFuncallExec(context, self, method, args);
-        }
-        catch (RaiseException e) {
+        } catch (RaiseException e) {
             context.setErrorInfo($ex); // restore $!
             return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
         }
@@ -782,14 +752,8 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = respondToMissingSite.retrieveCache(klass);
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if (!me.isUndefined() && !me.isBuiltin()) {
-            IRubyObject ret;
-            if (me.getArity().getValue() == 1) {
-                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
-            } else {
-                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
-            }
-            if ( ! ret.isTrue() ) return null;
+        if (!me.isUndefined() && !me.isBuiltin() && !me.callRespondTo(context, self, "respond_to_missing?", entry.sourceModule, runtime.newSymbol(method))) {
+            return null;
         }
 
         if (methodMissingSite.retrieveCache(klass).method.isBuiltin()) return null;
@@ -1640,31 +1604,29 @@ public class RubyClass extends RubyModule {
                 String signature;
                 if (methodSignature == null) {
                     if (!jcc.allClassMethods) continue;
-                    final Arity arity = methodEntry.getValue().getArity();
+                    Signature sig = methodEntry.getValue().getSignature();
                     // non-signature signature with just IRubyObject
-                    switch (arity.getValue()) {
-                        case 0:
-                            signature = sig(IRubyObject.class);
-                            if (instanceMethods.contains(javaMethodName + signature)) continue;
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, javaMethodName, signature, null, null);
+                    if (sig.isNoArguments()) {
+                        signature = sig(IRubyObject.class);
+                        if (instanceMethods.contains(javaMethodName + signature)) continue;
+                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, javaMethodName, signature, null, null);
                             m.line(position.getLine());
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                             m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
-                            m.ldc(id);
-                            m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
-                            break;
-                        default:
-                            signature = sig(IRubyObject.class, IRubyObject[].class);
-                            if (instanceMethods.contains(javaMethodName + signature)) continue;
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
+                        m.ldc(id);
+                        m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class));
+                    } else {
+                        signature = sig(IRubyObject.class, IRubyObject[].class);
+                        if (instanceMethods.contains(javaMethodName + signature)) continue;
+                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
                             m.line(position.getLine());
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                             m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
-                            m.ldc(id);
+                        m.ldc(id);
                             m.aload(0); // load the parameter array
-                            m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
+                        m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
                     }
                     m.areturn();
                 }
@@ -1716,7 +1678,7 @@ public class RubyClass extends RubyModule {
                 {
                     method = searchMethod(callid);
                 }
-                final Arity arity = method.getArity();
+                final Signature arity = method.getSignature();
 
                 
                 PositionAware position = getPositionOrDefault(methodEntry.getValue());
@@ -1741,7 +1703,7 @@ public class RubyClass extends RubyModule {
             }
         }
         
-        protected String defineInstanceMethod(final String id, final String callid, final Arity arity,
+        protected String defineInstanceMethod(final String id, final String callid, final Signature sig,
                 PositionAware position, Class<?>[] methodSignature) {
             String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
@@ -1752,39 +1714,40 @@ public class RubyClass extends RubyModule {
             SkinnyMethodAdapter m;
             if (methodSignature == null) { // non-signature signature with just IRubyObject
                 if (!jcc.allMethods) return null;
-                switch (arity.getValue()) {
-                    case 0:
-                        signature = sig(IRubyObject.class); // return IRubyObject foo()
-                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                        m.line(position.getLine());
-                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                        generateObjectBarrier(m);
+                if (sig.isFixed()) {
+                    switch (sig.required()) {
+                        case 0:
+                            signature = sig(IRubyObject.class); // return IRubyObject foo()
+                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                            m.line(position.getLine());
+                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                            generateObjectBarrier(m);
 
-                        loadRubyObject(m); // self/rubyObject
-                        m.ldc(callid);
-                        rubycall(m, sig(IRubyObject.class, String.class));
-                        break;
-                    case 1:
-                        signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
-                        m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
-                        m.line(position.getLine());
-                        generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                        generateObjectBarrier(m);
+                            loadRubyObject(m); // self/rubyObject
+                            m.ldc(callid);
+                            rubycall(m, sig(IRubyObject.class, String.class));
+                            break;
+                        case 1:
+                            signature = sig(IRubyObject.class, IRubyObject.class); // return IRubyObject foo(IRubyObject arg1)
+                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
+                            m.line(position.getLine());
+                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                            generateObjectBarrier(m);
 
-                        loadRubyObject(m); // self/rubyObject
-                        m.ldc(callid);
-                        m.aload(1); // IRubyObject arg1
-                        rubycall(m, sig(IRubyObject.class, String.class, IRubyObject.class));
-                        break;
-                    // currently we only have :
-                    //  callMethod(context, name)
-                    //  callMethod(context, name, arg1)
-                    // so for other arities use generic:
-                    //  callMethod(context, name, args...)
-                    default:
-                        if ( arity.isFixed() ) {
-                            final int paramCount = arity.getValue();
-                            Class<?>[] params = new Class[paramCount]; Arrays.fill(params, IRubyObject.class);
+                            loadRubyObject(m); // self/rubyObject
+                            m.ldc(callid);
+                            m.aload(1); // IRubyObject arg1
+                            rubycall(m, sig(IRubyObject.class, String.class, IRubyObject.class));
+                            break;
+                        default:
+                            // currently we only have :
+                            //  callMethod(context, name)
+                            //  callMethod(context, name, arg1)
+                            // so for other arities use generic:
+                            //  callMethod(context, name, args...)
+                            final int paramCount = sig.required();
+                            Class<?>[] params = new Class[paramCount];
+                            Arrays.fill(params, IRubyObject.class);
                             signature = sig(IRubyObject.class, params);
                             m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                             m.line(position.getLine());
@@ -1797,30 +1760,30 @@ public class RubyClass extends RubyModule {
                             // generate an IRubyObject[] for the method arguments :
                             m.pushInt(paramCount);
                             m.anewarray(p(IRubyObject.class)); // new IRubyObject[size]
-                            for ( int i = 1; i <= paramCount; i++ ) {
+                            for (int i = 1; i <= paramCount; i++) {
                                 m.dup();
                                 m.pushInt(i - 1); // array index e.g. iconst_0
                                 m.aload(i); // IRubyObject arg1, arg2 e.g. aload_1
                                 m.aastore(); // arr[ i - 1 ] = arg_i
                             }
-                        }
-                        else { // (generic) variable arity e.g. method(*args)
-                            // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
-                            signature = sig(IRubyObject.class, IRubyObject[].class);
-                            m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
-                            m.line(position.getLine());
-                            generateMethodAnnotations(methodAnnos, m, parameterAnnos);
-                            generateObjectBarrier(m);
+                            rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
+                    }
+                } else {
+                    // (generic) variable arity e.g. method(*args)
+                    // NOTE: maybe improve to match fixed part for < -1 e.g. (IRubObject, IRubyObject, IRubyObject...)
+                    signature = sig(IRubyObject.class, IRubyObject[].class);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                    m.line(position.getLine());
+                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+                    generateObjectBarrier(m);
 
-                            loadRubyObject(m); // self/rubyObject
-                            m.ldc(callid);
-                            m.aload(1); // IRubyObject[] arg1
-                        }
-                        rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
+                    loadRubyObject(m); // self/rubyObject
+                    m.ldc(callid);
+                    m.aload(1); // IRubyObject[] arg1
+                    rubycall(m, sig(IRubyObject.class, String.class, IRubyObject[].class));
                 }
                 m.areturn();
-            }
-            else { // generate a real method signature for the method, with to/from coercions
+            } else { // generate a real method signature for the method, with to/from coercions
 
                 // indices for temp values
                 Class<?>[] params = new Class[methodSignature.length - 1];
@@ -1898,7 +1861,7 @@ public class RubyClass extends RubyModule {
             m.pop();
         }
 
-        protected Collection<Class<?>[]> searchInheritedSignatures(String id, Arity arity) {
+        protected Collection<Class<?>[]> searchInheritedSignatures(String id, Signature arity) {
             HashMap<String, Class<?>[]> types = new HashMap<>();
             for (Class<?> intf : Java.getInterfacesFromRubyClass(RubyClass.this))
                 searchClassMethods(intf, arity, id, types);
@@ -1906,7 +1869,7 @@ public class RubyClass extends RubyModule {
             return types.values();
         }
 
-        protected Collection<Class<?>[]> searchClassMethods(Class<?> clz, Arity arity, String id,
+        protected Collection<Class<?>[]> searchClassMethods(Class<?> clz, Signature arity, String id,
                 HashMap<String, Class<?>[]> options) {
             if (clz.getSuperclass() != null) searchClassMethods(clz.getSuperclass(), arity, id, options);
             for (Class<?> intf : clz.getInterfaces())
@@ -2075,7 +2038,7 @@ public class RubyClass extends RubyModule {
         }
 
         @Override
-        protected Collection<Class<?>[]> searchInheritedSignatures(String id, Arity arity) {
+        protected Collection<Class<?>[]> searchInheritedSignatures(String id, Signature arity) {
             HashMap<String, Class<?>[]> types = new HashMap<>();
             searchClassMethods(reifiedParent, arity, id, types);
             for (Class<?> intf : Java.getInterfacesFromRubyClass(RubyClass.this)) // this pattern is duplicated a lot. refactor?

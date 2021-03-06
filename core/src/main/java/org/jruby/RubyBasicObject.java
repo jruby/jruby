@@ -34,6 +34,7 @@ import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
@@ -193,12 +194,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @see org.jruby.runtime.ObjectAllocator
      */
-    public static final ObjectAllocator BASICOBJECT_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyBasicObject(runtime, klass);
-        }
-    };
+    public static final ObjectAllocator BASICOBJECT_ALLOCATOR = RubyBasicObject::new;
 
     /**
      * Will create the Ruby class Object in the runtime
@@ -602,23 +598,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // respond_to? or respond_to_missing? is not defined, so we must dispatch to trigger method_missing
         if ( respondTo.isUndefined() ) {
             return sites(context).respond_to.call(context, this, this, mname).isTrue();
+        } else {
+            return respondTo.callRespondTo(context, this, "respond_to?", entry.sourceModule, mname);
         }
-
-        // respond_to? is defined, invoke already-retrieved method object
-        final String respondName = "respond_to?";
-
-        // We have to check and enforce arity
-        final Arity arity = respondTo.getArity();
-        if ( arity.isFixed() ) {
-            if ( arity.required() == 1 ) {
-                return respondTo.call(context, this, entry.sourceModule, respondName, mname).isTrue();
-            }
-            if ( arity.required() != 2 ) {
-                throw runtime.newArgumentError(str(runtime, ids(runtime, respondName), " must accept 1 or 2 arguments (requires " + arity.getValue() + ")"));
-            }
-        }
-
-        return respondTo.call(context, this, entry.sourceModule, respondName, mname, runtime.getTrue()).isTrue();
     }
 
     /**

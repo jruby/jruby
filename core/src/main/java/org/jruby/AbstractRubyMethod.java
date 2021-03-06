@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -35,7 +36,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
@@ -71,14 +71,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
      */
     @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
-        int value;
-        if (method instanceof IRMethodArgs) {
-            value = ((IRMethodArgs) method).getSignature().arityValue();
-        } else {
-            value = method.getArity().getValue();
-        }
-
-        return getRuntime().newFixnum(value);
+        return getRuntime().newFixnum(method.getSignature().arityValue());
     }
 
     @Deprecated

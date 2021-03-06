@@ -49,7 +49,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -71,14 +70,8 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
-    private static final ObjectAllocator UNIXSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyUNIXSocket(runtime, klass);
-        }
-    };
-
     static void createUNIXSocket(Ruby runtime) {
-        RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.getClass("BasicSocket"), UNIXSOCKET_ALLOCATOR);
+        RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.getClass("BasicSocket"), RubyUNIXSocket::new);
         runtime.getObject().setConstant("UNIXsocket", rb_cUNIXSocket);
 
         rb_cUNIXSocket.defineAnnotatedMethods(RubyUNIXSocket.class);

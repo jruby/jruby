@@ -60,7 +60,6 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.exceptions.EncodingError;
 import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -72,7 +71,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.StringSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -111,8 +109,6 @@ import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.util.StringSupport.memchr;
 import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
-import static org.jruby.util.StringSupport.memsearch;
-import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.util.StringSupport.searchNonAscii;
 
 /**
@@ -149,7 +145,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private ByteList value;
 
     public static RubyClass createStringClass(Ruby runtime) {
-        RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
+        RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), RubyString::newAllocatedString);
 
         stringClass.setClassIndex(ClassIndex.STRING);
         stringClass.setReifiedClass(RubyString.class);
@@ -160,13 +156,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         return stringClass;
     }
-
-    private static final ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return RubyString.newAllocatedString(runtime, klass);
-        }
-    };
 
     @Override
     public Encoding getEncoding() {
@@ -4374,7 +4363,54 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
     }
 
-    final RubyArray split(IRubyObject spat, ThreadContext context, boolean useBackref) {
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param delimiter
+     * @return splited entries
+     */
+    public RubyArray split(RubyRegexp delimiter) {
+        return doSplit(delimiter, 0);
+    }
+
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param delimiter
+     * @param limit
+     * @return splited entries
+     */
+    public RubyArray split(RubyRegexp delimiter, int limit) {
+        return doSplit(delimiter, limit);
+    }
+
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param delimiter
+     * @return splited entries
+     */
+    public RubyArray split(RubyString delimiter) {
+        return doSplit(delimiter, 0);
+    }
+
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param delimiter
+     * @param limit
+     * @return splited entries
+     */
+    public RubyArray split(RubyString delimiter, int limit) {
+        return doSplit(delimiter, limit);
+    }
+
+    private RubyArray doSplit(IRubyObject delimiter, final int limit) {
+        ThreadContext context = getRuntime().getCurrentContext();
+        if (limit == 1) {
+            Ruby runtime = context.runtime;
+            return isEmpty() ? runtime.newEmptyArray() : runtime.newArray(this.strDup(runtime));
+        }
+        return splitCommon(context, delimiter, limit > 0, limit, 1, false);
+    }
+
+    final RubyArray split(ThreadContext context, RubyRegexp spat, boolean useBackref) {
         return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
     }
 

@@ -21,7 +21,9 @@ module Gem
   def self.platform_defaults
     return {
         'install' => '--env-shebang',
-        'update' => '--env-shebang'
+        'update' => '--env-shebang',
+        'setup' => '--env-shebang',
+        'pristine' => '--env-shebang'
     }
   end
 

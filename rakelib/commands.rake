@@ -62,6 +62,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:thread_pooling] ||= false
   mspec_options[:reflection] ||= false
   mspec_options[:format] ||= "m"
+  mspec_options[:timeout] ||= 120
   ms = mspec_options
 
   # We can check this property to see whether we failed the run or not
@@ -97,6 +98,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Demma.verbosity.level=silent"
     arg :line => "-T -J-XX:MaxMetaspaceSize=512M"
     arg :line => "-f #{ms[:format]}"
+    arg :line => "--timeout #{ms[:timeout]}"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
     arg :line => "#{ms[:spec_target]}" if ms[:spec_target]
   end

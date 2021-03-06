@@ -58,7 +58,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -199,7 +198,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static RubyClass createRegexpClass(Ruby runtime) {
-        RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
+        RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), RubyRegexp::new);
 
         regexpClass.setClassIndex(ClassIndex.REGEXP);
         regexpClass.setReifiedClass(RubyRegexp.class);
@@ -218,13 +217,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         return regexpClass;
     }
-
-    private static final ObjectAllocator REGEXP_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyRegexp(runtime, klass);
-        }
-    };
 
     public static int matcherSearch(ThreadContext context, Matcher matcher, int start, int range, int option) {
         if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.search(start, range, option);

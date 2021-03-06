@@ -137,14 +137,7 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public RubyFixnum arity() {
-        int value;
-        if (method instanceof IRMethodArgs) {
-            value = ((IRMethodArgs) method).getSignature().arityValue();
-        } else {
-            value = method.getArity().getValue();
-        }
-
-        return getRuntime().newFixnum(value);
+        return getRuntime().newFixnum(method.getSignature().arityValue());
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -220,13 +213,11 @@ public class RubyMethod extends AbstractRubyMethod {
         Ruby runtime = context.runtime;
 
         MethodBlockBody body;
-        Signature signature;
+        Signature signature = method.getSignature();
         ArgumentDescriptor[] argsDesc;
         if (method instanceof IRMethodArgs) {
-            signature = ((IRMethodArgs) method).getSignature();
             argsDesc = ((IRMethodArgs) method).getArgumentDescriptors();
         } else {
-            signature = Signature.from(method.getArity());
             argsDesc = Helpers.methodToArgumentDescriptors(method);
         }
 

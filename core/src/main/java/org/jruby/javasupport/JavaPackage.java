@@ -374,10 +374,14 @@ public class JavaPackage extends RubyModule {
                 }
             }
 
-            @Override
+            @Deprecated @Override
             public Arity getArity() { return Arity.NO_ARGUMENTS; }
 
+            public Signature getSignature() {
+                return Signature.NO_ARGUMENTS;
+            }
         }
+
         private static String handlesMethod(final String name) {
             // FIXME: We should consider pure-bytelist search here.
             switch (name) {

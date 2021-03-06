@@ -39,11 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ThreadFiberLibrary {
     public RubyClass createFiberClass(final Ruby runtime) {
-        RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new ThreadFiber(runtime, klazz);
-            }
-        });
+        RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), ThreadFiber::new);
 
         cFiber.defineAnnotatedMethods(ThreadFiber.class);
 

@@ -96,6 +96,20 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
+     * Creates a new instance of Bytelist with a pre-allocated size and specified encoding.
+     *
+     * See {@link #ByteList(int)}
+     *
+     * @param size to preallocate the bytelist to
+     * @param enc encoding to set
+     */
+    public ByteList(int size, Encoding enc) {
+        bytes = new byte[size];
+        realSize = 0;
+        encoding = safeEncoding(enc);
+    }
+
+    /**
      * Create a new instance of ByteList with the bytes supplied using the specified encoding.
      *
      * Important: bytes is used as the initial backing store for the bytelist.  Over time as the

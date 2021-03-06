@@ -45,7 +45,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
@@ -119,6 +118,18 @@ public class RubyObject extends RubyBasicObject {
     }
 
     /**
+     * Reify the class and allocate an instance.
+     *
+     * @param runtime the current runtime
+     * @param klass the target Ruby class
+     * @return a new instance of the now-reified class
+     */
+    private static IRubyObject reifyAndAllocate(Ruby runtime, RubyClass klass) {
+        klass.reifyWithAncestors();
+        return klass.allocate();
+    }
+
+    /**
      * Will create the Ruby class Object in the runtime
      * specified. This method needs to take the actual class as an
      * argument because of the Object class' central part in runtime
@@ -137,12 +148,7 @@ public class RubyObject extends RubyBasicObject {
      *
      * @see org.jruby.runtime.ObjectAllocator
      */
-    public static final ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObject(runtime, klass);
-        }
-    };
+    public static final ObjectAllocator OBJECT_ALLOCATOR = RubyObject::new;
 
     /**
      * Allocator that inspects all methods for instance variables and chooses
@@ -182,13 +188,7 @@ public class RubyObject extends RubyBasicObject {
         }
     };
 
-    public static final ObjectAllocator REIFYING_OBJECT_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            klass.reifyWithAncestors();
-            return klass.allocate();
-        }
-    };
+    public static final ObjectAllocator REIFYING_OBJECT_ALLOCATOR = RubyObject::reifyAndAllocate;
 
     /**
      * Will make sure that this object is added to the current object

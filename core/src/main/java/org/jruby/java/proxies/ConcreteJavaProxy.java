@@ -65,16 +65,10 @@ public class ConcreteJavaProxy extends JavaProxy {
         super(runtime, klazz, object);
     }
 
-    public static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new ConcreteJavaProxy(runtime, klazz);
-        }
-    };
-
     public static RubyClass createConcreteJavaProxy(final ThreadContext context) {
         final Ruby runtime = context.runtime;
         final RubyClass JavaProxy = runtime.getJavaSupport().getJavaProxyClass();
-        RubyClass ConcreteJavaProxy = runtime.defineClass("ConcreteJavaProxy", JavaProxy, ALLOCATOR);
+        RubyClass ConcreteJavaProxy = runtime.defineClass("ConcreteJavaProxy", JavaProxy, ConcreteJavaProxy::new);
         initialize(ConcreteJavaProxy);
         return ConcreteJavaProxy;
     }

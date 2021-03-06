@@ -40,6 +40,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -48,7 +49,7 @@ public abstract class TypePopulator {
 
     public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented) {
         javaMethod.setIsBuiltin(true);
-        javaMethod.setArity(Arity.createArity(arity));
+        javaMethod.setSignature(Signature.fromArityValue(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);
         javaMethod.setNotImplemented(notImplemented);
@@ -57,7 +58,7 @@ public abstract class TypePopulator {
     public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented,
             Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeArguments) {
         javaMethod.setIsBuiltin(true);
-        javaMethod.setArity(Arity.createArity(arity));
+        javaMethod.setSignature(Signature.fromArityValue(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);
         javaMethod.setNotImplemented(notImplemented);

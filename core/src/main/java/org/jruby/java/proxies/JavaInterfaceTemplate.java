@@ -188,12 +188,10 @@ public class JavaInterfaceTemplate {
                 // The replacement "new" allocates and inits the Ruby object as before, but
                 // also instantiates our proxified Java object by calling __jcreate!
                 final ObjectAllocator proxyAllocator = clazz.getAllocator();
-                clazz.setAllocator(new ObjectAllocator() {
-                    public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                        IRubyObject newObj = proxyAllocator.allocate(runtime, klazz);
-                        Helpers.invoke(runtime.getCurrentContext(), newObj, "__jcreate!");
-                        return newObj;
-                    }
+                clazz.setAllocator((runtime, klazz) -> {
+                    IRubyObject newObj = proxyAllocator.allocate(runtime, klazz);
+                    Helpers.invoke(runtime.getCurrentContext(), newObj, "__jcreate!");
+                    return newObj;
                 });
 
                 // jcreate instantiates the proxy object which implements all interfaces

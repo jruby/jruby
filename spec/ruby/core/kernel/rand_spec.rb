@@ -119,9 +119,9 @@ describe "Kernel.rand" do
 
   context "given an inclusive range between 0 and 1" do
     it "returns an Integer between the two Integers" do
-        x = rand(0..1)
-        x.should be_kind_of(Integer)
-        (0..1).should include(x)
+      x = rand(0..1)
+      x.should be_kind_of(Integer)
+      (0..1).should include(x)
     end
 
     it "returns a Float if at least one side is Float" do
@@ -140,9 +140,9 @@ describe "Kernel.rand" do
 
   context "given an exclusive range between 0 and 1" do
     it "returns zero as an Integer" do
-        x = rand(0...1)
-        x.should be_kind_of(Integer)
-        x.should eql(0)
+      x = rand(0...1)
+      x.should be_kind_of(Integer)
+      x.should eql(0)
     end
 
     it "returns a Float if at least one side is Float" do

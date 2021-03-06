@@ -42,7 +42,7 @@ public class RubyFloatDomainError extends RubyRangeError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass floatDomainErrorClass = runtime.defineClass("FloatDomainError", exceptionClass, (r, klass) -> new RubyFloatDomainError(runtime, klass));
+        RubyClass floatDomainErrorClass = runtime.defineClass("FloatDomainError", exceptionClass, RubyFloatDomainError::new);
 
         return floatDomainErrorClass;
     }

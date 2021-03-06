@@ -52,7 +52,6 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -94,7 +93,7 @@ public class RubyRange extends RubyObject {
     private boolean isInited = false;
 
     public static RubyClass createRangeClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
+        RubyClass result = runtime.defineClass("Range", runtime.getObject(), RubyRange::new);
 
         result.setClassIndex(ClassIndex.RANGE);
         result.setReifiedClass(RubyRange.class);
@@ -114,13 +113,6 @@ public class RubyRange extends RubyObject {
 
         return result;
     }
-
-    private static final ObjectAllocator RANGE_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyRange(runtime, klass);
-        }
-    };
 
     private RubyRange(Ruby runtime, RubyClass klass) {
         super(runtime, klass);

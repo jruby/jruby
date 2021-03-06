@@ -45,7 +45,7 @@ public class RubyDomainError extends RubyArgumentError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass superClass, RubyModule under) {
-        return under.defineClassUnder("DomainError", superClass, (runtime1, klass) -> new RubyDomainError(runtime1, klass));
+        return under.defineClassUnder("DomainError", superClass, RubyDomainError::new);
     }
 
     @Override
