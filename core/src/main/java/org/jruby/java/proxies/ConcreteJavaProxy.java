@@ -280,6 +280,10 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
                 IRubyObject[] args, Block blk) {
+            // TODO: is there a better way to shake off old reified NewMethodReified methods on extension?
+            if (self != implementationClass) { // someone extended the base, we are no longer them, re-reify
+                return new NewMethod((RubyClass)self).call(context, self, clazz, name, args, blk);
+            }
 
             if (ctor == null) {
                 JavaObject jo = (JavaObject) initialize.call(context, self, clazz, "new", args);

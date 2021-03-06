@@ -1358,6 +1358,7 @@ public class RubyClass extends RubyModule {
             java.lang.reflect.Field rt = result.getDeclaredField(BaseReificator.RUBY_FIELD);
             rt.setAccessible(true);
             if (rt.get(null) != runtime) throw new RuntimeException("No ruby field set!");
+            JavaProxyClass.ensureStaticIntConsumed();
 
             if (concreteExt) {
                 // setAllocator(ConcreteJavaProxy.ALLOCATOR); // this should be already set
@@ -1372,6 +1373,7 @@ public class RubyClass extends RubyModule {
             return; // success
         }
         catch (LinkageError error) { // fall through to failure path
+            JavaProxyClass.addStaticInitLookup((Object[])null); // wipe any local values not retrieved
             final String msg = error.getMessage();
             if ( msg != null && msg.contains("duplicate class definition for name") ) {
                 logReifyException(error, false);
@@ -1381,6 +1383,7 @@ public class RubyClass extends RubyModule {
             }
         }
         catch (Exception ex) {
+            JavaProxyClass.addStaticInitLookup((Object[])null); // wipe any local values not retrieved
             logReifyException(ex, true);
         }
 
