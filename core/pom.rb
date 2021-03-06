@@ -59,7 +59,6 @@ project 'JRuby Base' do
   jar 'com.headius:options:1.5'
 
   jar 'com.jcraft:jzlib:1.1.3'
-  jar 'com.martiansoftware:nailgun-server:0.9.1'
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
