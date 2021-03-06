@@ -271,6 +271,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
     }
 
+    //TODO: should I replace this with RubyToJavaInvoker.convertArguments calls?
     private Object[] convertArguments(final RubyArray arguments) {
         final int argsSize = arguments.size();
 

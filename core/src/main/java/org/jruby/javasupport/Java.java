@@ -612,7 +612,7 @@ public class Java implements Library {
     public static class JCtorCache implements CallableSelector.CallableCache<ParameterTypes> {
 
         private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
-        final JavaConstructor[] constructors;
+        public final JavaConstructor[] constructors;
         private final List<JavaConstructor> constructorList;
 
         public JCtorCache(JavaConstructor[] constructors) {
@@ -642,16 +642,13 @@ public class Java implements Library {
         }
 
         /**
-         * Disambiguate which ctor index to call from the given cache. Called from generated code (RealClassGenerator)
+         * Disambiguate which ctor index to call from the given cache
          * @param argarray argument list for the ctors
          * @param cache cache of ctors
          * @param runtime
          * @return Index of ctor in cache to call, or throws a new exception
          */
-        public static int forTypes(IRubyObject argarray, JCtorCache cache, Ruby runtime) {
-            RubyArray ra = argarray.convertToArray();
-            IRubyObject[] args = ra.toJavaArrayMaybeUnsafe();
-
+        public static int forTypes(IRubyObject[] args, JCtorCache cache, Ruby runtime) {
             JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache,
                     args.length, args);
             int index = cache.indexOf(ctor);

@@ -67,6 +67,7 @@ import org.jruby.compiler.util.BasicObjectStubGenerator;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.java.proxies.ConcreteJavaProxy.SplitCtorData;
 import org.jruby.javasupport.Java.JCreateMethod;
 import org.jruby.javasupport.Java.JCtorCache;
 import org.jruby.javasupport.JavaConstructor;
@@ -874,26 +875,25 @@ public abstract class RealClassGenerator {
          * This generates the code template in lines of //// show what code is being generated
          * TODO: link and put on wiki?
          * Generated method:
-    protected MyClass(ConcreteJavaProxy var1, boolean var2, IRubyObject[] var3, Block var4, Ruby var5, RubyClass var6) { 
+   // $FF: synthetic method
+   protected MyClass(ConcreteJavaProxy var1, boolean var2, IRubyObject[] var3, Block var4, Ruby var5, RubyClass var6) {
       this.this$rubyObject = var1;
-      Object[] var10000 = var1.splitInitialized(var2 ? rubyClass : var6, var3, var4);
-      IRubyObject var10001 = (IRubyObject)var10000[0];
-      int var10003 = JCreateMethod.forTypes((IRubyObject)var10000[0], this$rubyCtorCache, var5);
-      RubyArray var7 = var10001.convertToArray();
-      switch(var10003) {
+      SplitCtorData var10000 = var1.splitInitialized(var2 ? rubyClass : var6, var3, var4, this$rubyCtorCache);
+      Object[] var7 = var10000.arguments;
+      switch(var10000.ctorIndex) {
       case 0:
-         super((String)var7.entry(0).toJava(String.class), (Boolean)var7.entry(1).toJava(Boolean.TYPE));
+         super((String)var7[0], (Boolean)var7[1]);
          break;
       case 1:
-         super(((Number)var7.entry(0).toJava(Integer.TYPE)).intValue(), (String)var7.entry(1).toJava(String.class));
+         super(((Number)var7[0]).intValue(), (String)var7[1]);
          break;
       default:
-         throw var5.newNoMethodError("No available java superconstructors match that type signature", "super.<init>", var7.toJavaArrayMaybeUnsafe());
+         throw var5.newNoMethodError("No available java superconstructors match that type signature", "super.<init>", var10000.rbarguments);
       }
 
       var1.setObject(this);
       var1.finishInitialize(var10000);
-    }
+   }
          */
         // (rubyobject, isSuperCall, args, block, ruby, class)
         SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PROTECTED | ACC_SYNTHETIC, "<init>", CONCRETE_CTOR_SIG,
@@ -917,7 +917,7 @@ public abstract class RealClassGenerator {
         m.swap();
         m.putfield(cjr.javaPath, ConcreteJavaReifier.RUBY_OBJECT_FIELD, cjr.rubyName);
 
-        //// IRubyObject c = this$rubyObject.splitInitialized(this.$rubyInitArgs);
+        //// SplitCtorData c = this$rubyObject.splitInitialized(this.$rubyInitArgs);
         m.iload(isSuperCallIndex);
 
         Label normal = new Label();
@@ -931,35 +931,30 @@ public abstract class RealClassGenerator {
         m.label(done);
 
         m.aload(rubyArrayIndex);
-
         m.aload(blockIndex); // load block from arg 3
+        if (!hasParent) {
+            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
+        } else {
+            m.aconst_null();
+        }
         m.invokevirtual(cjr.rubyPath, "splitInitialized",
-                sig(Object[].class, RubyClass.class, IRubyObject[].class, Block.class)); // pushes rubyarray
+                sig(SplitCtorData.class, RubyClass.class, IRubyObject[].class, Block.class, JCtorCache.class)); // pushes splitctordata
 
-        m.dup(); // rubyarray (results of splitInitialized)
+        m.dup(); // splitctordata (results of splitInitialized)
 
         m.line(superpos); // mark this line as the super call, so the stack trace is slightly accurate.
 
-        //// c = ra.entry(0);
-        //// IRubyObject continuation = ra.entry(1);
-        m.iconst_0(); // ..., rubyarray, rubyarray, 0
-        m.aaload(); // ..., rubyarray, rubyobject(Object)
-        m.checkcast(p(IRubyObject.class));
         // top of stack is now the arg list ruby array
 
         if (!hasParent) {
 
-            //// switch(Java.JCreateMethod.forTypes(constructors, c))
+            //// switch(c.ctorIndex)
             m.dup();
-            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));// ... arglist, arglist, ctors,
-            m.aload(rubyIndex); // ruby
-
-            m.invokestatic(p(JCreateMethod.class), "forTypes",
-                    sig(int.class, IRubyObject.class, JCtorCache.class, Ruby.class));
-            // ..., arglist, index
+            m.getfield(p(SplitCtorData.class), "ctorIndex", ci(int.class));
+            // ..., scd, index
             m.swap();
-            //// ra = c.convertToArray();
-            m.invokeinterface(p(IRubyObject.class), "convertToArray", sig(RubyArray.class));
+            //// ra = c.arguments;
+            m.getfield(p(SplitCtorData.class), "arguments", ci(Object[].class));
             m.astore(rubyArrayIndex); // ....
             Label defaultLabel = new Label();
             Label[] cases = new Label[constructors.length]; // note: offset by one from index
@@ -973,10 +968,12 @@ public abstract class RealClassGenerator {
                 // default: throw runtime.newNoMethodError("...", "super.<init>", [])
                 m.label(defaultLabel);
                 m.aload(rubyIndex);
+                m.swap();
                 m.ldc("No available java superconstructors match that type signature");
+                m.swap();
                 m.ldc("super.<init>");
-                m.aload(rubyArrayIndex);
-                m.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
+                m.swap();
+                m.getfield(p(SplitCtorData.class), "rbarguments", ci(IRubyObject[].class));
                 m.invokevirtual(p(Ruby.class), "newNoMethodError",
                         sig(RaiseException.class, String.class, String.class, IRubyObject[].class));
                 m.athrow();
@@ -991,12 +988,16 @@ public abstract class RealClassGenerator {
                     Class[] destType = constructors[i].getParameterTypes();
 
                     // coerce args. No error checking as the forTypes() call should have done that for us
-                    //// thing(ra.entry(0).toJava(Integer.TYPE).longValue());
+                    //// super((long)ra[0]);
                     for (int argi = 0; argi < destType.length; argi++) {
                         m.aload(rubyArrayIndex);
                         m.pushInt(argi);
-                        m.invokevirtual(p(RubyArray.class), "entry", sig(IRubyObject.class, int.class));
-                        RealClassGenerator.coerceResult(m, destType[argi], false);
+                        m.aaload();
+                        if (destType[argi].isPrimitive()) {
+                            makeGenerator(m).unbox(Type.getType(destType[argi]));
+                        } else {
+                            m.checkcast(p(destType[argi]));
+                        }
                     }
                     //// super(*args)
                     m.invokespecial(p(cjr.reifiedParent), "<init>", sig(void.class, destType));
@@ -1014,10 +1015,12 @@ public abstract class RealClassGenerator {
             m.iconst_1(); // true, we are super
             m.swap();
 
-            m.invokeinterface(p(IRubyObject.class), "convertToArray", sig(RubyArray.class));
-            m.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
+            m.dup();
+            m.getfield(p(SplitCtorData.class), "rbarguments", ci(IRubyObject[].class));
+            m.swap();
 
-            m.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class)); // block, TODO: block args!
+
+            m.getfield(p(SplitCtorData.class), "blk", ci(Block.class));
             m.aload(rubyIndex); // ruby
             m.aload(rubyClassIndex); // rubyclass
             m.invokespecial(p(cjr.reifiedParent), "<init>", CONCRETE_CTOR_SIG);
@@ -1038,7 +1041,7 @@ public abstract class RealClassGenerator {
 
         //// continuation.callMethod(ruby.getTheadContext(), "call")
         m.swap();
-        m.invokevirtual(p(ConcreteJavaProxy.class), "finishInitialize", sig(void.class, Object[].class));
+        m.invokevirtual(p(ConcreteJavaProxy.class), "finishInitialize", sig(void.class, SplitCtorData.class));
 
         m.voidreturn();
         m.end();

@@ -543,11 +543,18 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     private static final ThreadLocal<Object[]> lookup = new ThreadLocal<>();
 
     public static Integer addStaticInitLookup(Object... objects) {
-        int val = objects.hashCode();
         // TODO: is this a log or an exception?
-        if (lookup.get() != null) throw new IllegalStateException("Thread local class wasn't consumed");
+        if (objects != null) ensureStaticIntConsumed();
         lookup.set(objects);
+        if (objects == null) return 0;
+        int val = objects.hashCode();
         return val;
+    }
+
+    public static void ensureStaticIntConsumed() {
+        if (lookup.get() != null) {
+            throw new IllegalStateException("Thread local class wasn't consumed for class " + ((RubyClass)lookup.get()[1]).getName());
+        }
     }
 
     // used by reified code in RubyClass
