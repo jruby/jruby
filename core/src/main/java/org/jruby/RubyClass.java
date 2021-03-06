@@ -1348,6 +1348,7 @@ public class RubyClass extends RubyModule {
                 parentCL = runtime.getJRubyClassLoader();
             }
         }
+        boolean nearEnd=false;
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
             Class result = parentCL.defineClass(javaName, classBytes);
@@ -1358,7 +1359,6 @@ public class RubyClass extends RubyModule {
             java.lang.reflect.Field rt = result.getDeclaredField(BaseReificator.RUBY_FIELD);
             rt.setAccessible(true);
             if (rt.get(null) != runtime) throw new RuntimeException("No ruby field set!");
-            JavaProxyClass.ensureStaticIntConsumed();
 
             if (concreteExt) {
                 // setAllocator(ConcreteJavaProxy.ALLOCATOR); // this should be already set
@@ -1369,7 +1369,8 @@ public class RubyClass extends RubyModule {
                 setRubyClassAllocator(result);
             }
             reifiedClass = result;
-
+            nearEnd = true;
+            JavaProxyClass.ensureStaticIntConsumed();
             return; // success
         }
         catch (LinkageError error) { // fall through to failure path
@@ -1383,6 +1384,7 @@ public class RubyClass extends RubyModule {
             }
         }
         catch (Exception ex) {
+            if (nearEnd) throw (RuntimeException)ex;
             JavaProxyClass.addStaticInitLookup((Object[])null); // wipe any local values not retrieved
             logReifyException(ex, true);
         }
