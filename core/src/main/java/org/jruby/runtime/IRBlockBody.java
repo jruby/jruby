@@ -82,14 +82,14 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         IRubyObject[] args;
         if (canCallDirect()) {
             if (arg0 instanceof RubyArray) { // Unwrap the array arg
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, (RubyArray) arg0, signature);
             } else {
                 args = new IRubyObject[] { arg0 };
             }
             return yieldDirect(context, block, args, null);
         } else {
             if (arg0 instanceof RubyArray) { // Unwrap the array arg
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, (RubyArray) arg0, signature);
 
                 // FIXME: arity error is against new args but actual error shows arity of original args.
                 if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
