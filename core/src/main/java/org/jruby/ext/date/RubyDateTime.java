@@ -51,6 +51,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.time.JodaConverters;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -83,14 +84,12 @@ public class RubyDateTime extends RubyDate {
         this(runtime, klass, defaultDateTime);
     }
 
-    public RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt) {
-        super(runtime, klass, dt);
-
-        this.off = dt.getZone().getOffset(dt.getMillis()) / 1000;
+    public RubyDateTime(Ruby runtime, RubyClass klass, ZonedDateTime zdt) {
+        this(runtime, klass, JodaConverters.javaToJodaDateTime(zdt));
     }
 
-    public RubyDateTime(Ruby runtime, DateTime dt) {
-        this(runtime, getDateTime(runtime), dt);
+    public RubyDateTime(Ruby runtime, ZonedDateTime zdt) {
+        this(runtime, JodaConverters.javaToJodaDateTime(zdt));
     }
 
     public RubyDateTime(Ruby runtime, long millis, Chronology chronology) {
@@ -590,6 +589,18 @@ public class RubyDateTime extends RubyDate {
         }
 
         return super.toJava(target);
+    }
+
+    @Deprecated
+    public RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt) {
+        super(runtime, klass, dt);
+
+        this.off = dt.getZone().getOffset(dt.getMillis()) / 1000;
+    }
+
+    @Deprecated
+    public RubyDateTime(Ruby runtime, DateTime dt) {
+        this(runtime, getDateTime(runtime), dt);
     }
 
 }

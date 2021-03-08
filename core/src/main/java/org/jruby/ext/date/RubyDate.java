@@ -51,6 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.*;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.util.time.JodaConverters;
 
 import java.io.Serializable;
 import java.time.*;
@@ -130,14 +131,14 @@ public class RubyDate extends RubyObject {
         this(runtime, klass, defaultDateTime);
     }
 
-    public RubyDate(Ruby runtime, RubyClass klass, DateTime dt) {
+    public RubyDate(Ruby runtime, RubyClass klass, ZonedDateTime zdt) {
         super(runtime, klass);
 
-        this.dt = dt; // assuming of = 0 (UTC)
+        this.dt = JodaConverters.javaToJodaDateTime(zdt); // assuming of = 0 (UTC)
     }
 
-    public RubyDate(Ruby runtime, DateTime dt) {
-        this(runtime, getDate(runtime), dt);
+    public RubyDate(Ruby runtime, ZonedDateTime zdt) {
+        this(runtime, getDate(runtime), zdt);
     }
 
     RubyDate(Ruby runtime, RubyClass klass, DateTime dt, int off, long start) {
@@ -189,16 +190,6 @@ public class RubyDate extends RubyObject {
     // to be overriden by RubyDateTime
     RubyDate newInstance(final ThreadContext context, final DateTime dt, int off, long start, long subNum, long subDen) {
         return new RubyDate(context.runtime, getMetaClass(), dt, off, start, subNum, subDen);
-    }
-
-    /**
-     * @note since <code>Date.new</code> is a <code>civil</code> alias, this won't ever get used
-     * @deprecated kept due AR-JDBC (uses RubyClass.newInstance(...) to 'fast' allocate a Date instance)
-     */
-    @JRubyMethod(visibility = Visibility.PRIVATE)
-    public RubyDate initialize(ThreadContext context, IRubyObject dt) {
-        this.dt = (DateTime) JavaUtil.unwrapJavaValue(dt);
-        return this;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -433,25 +424,8 @@ public class RubyDate extends RubyObject {
         return civilImpl(context, (RubyClass) self, args[0], args[1], args[2], sg);
     }
 
-    public static DateTime civilDate(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
-        DateTime dt;
-        try {
-            if (d >= 0) { // let d == 0 fail (raise 'invalid date')
-                dt = new DateTime(y, m, d, 0, 0, chronology);
-            }
-            else {
-                dt = new DateTime(y, m, 1, 0, 0, chronology);
-                long ms = dt.getMillis();
-                int last = chronology.dayOfMonth().getMaximumValue(ms);
-                ms = chronology.dayOfMonth().set(ms, last + d + 1); // d < 0 (d == -1 -> d == 31)
-                dt = dt.withMillis(ms);
-            }
-        }
-        catch (IllegalArgumentException ex) {
-            debug(context, "invalid date", ex);
-            throw context.runtime.newArgumentError("invalid date");
-        }
-        return dt;
+    public static ZonedDateTime civilZonedDateTime(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
+        return JodaConverters.jodaToJavaDateTime(civilDate(context, y, m, d, chronology));
     }
 
     // NOTE: no Bignum special care since JODA does not support 'huge' years anyway
@@ -749,7 +723,7 @@ public class RubyDate extends RubyObject {
         return RubyDate._valid_civil_p(context, null, args);
     }
 
-    public DateTime getDateTime() { return dt; }
+    public ZonedDateTime getZonedDateTime() { return JodaConverters.jodaToJavaDateTime(dt); }
 
     @Override
     public boolean equals(Object other) {
@@ -2589,5 +2563,53 @@ public class RubyDate extends RubyObject {
 
         return super.toJava(target);
     }
+
+    @Deprecated
+    public RubyDate(Ruby runtime, RubyClass klass, DateTime dt) {
+        super(runtime, klass);
+
+        this.dt = dt; // assuming of = 0 (UTC)
+    }
+
+    @Deprecated
+    public RubyDate(Ruby runtime, DateTime dt) {
+        this(runtime, getDate(runtime), dt);
+    }
+
+    /**
+     * @note since <code>Date.new</code> is a <code>civil</code> alias, this won't ever get used
+     * @deprecated kept due AR-JDBC (uses RubyClass.newInstance(...) to 'fast' allocate a Date instance)
+     */
+    @Deprecated
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public RubyDate initialize(ThreadContext context, IRubyObject dt) {
+        this.dt = (DateTime) JavaUtil.unwrapJavaValue(dt);
+        return this;
+    }
+
+    @Deprecated
+    public static DateTime civilDate(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
+        DateTime dt;
+        try {
+            if (d >= 0) { // let d == 0 fail (raise 'invalid date')
+                dt = new DateTime(y, m, d, 0, 0, chronology);
+            }
+            else {
+                dt = new DateTime(y, m, 1, 0, 0, chronology);
+                long ms = dt.getMillis();
+                int last = chronology.dayOfMonth().getMaximumValue(ms);
+                ms = chronology.dayOfMonth().set(ms, last + d + 1); // d < 0 (d == -1 -> d == 31)
+                dt = dt.withMillis(ms);
+            }
+        }
+        catch (IllegalArgumentException ex) {
+            debug(context, "invalid date", ex);
+            throw context.runtime.newArgumentError("invalid date");
+        }
+        return dt;
+    }
+
+    @Deprecated
+    public DateTime getDateTime() { return dt; }
 
 }
