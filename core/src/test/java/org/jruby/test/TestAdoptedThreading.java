@@ -30,14 +30,13 @@ package org.jruby.test;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.bsf.BSFManager;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.apache.bsf.BSFException;
 import org.jruby.RubyArray;
 import org.jruby.RubyThreadGroup;
+import org.jruby.embed.LocalContextScope;
+import org.jruby.embed.ScriptingContainer;
 import org.jruby.runtime.Block;
 
 /**
@@ -84,15 +83,12 @@ public class TestAdoptedThreading extends TestCase {
         return suite;
     }
 
-    private BSFManager manager_;
+    private ScriptingContainer container;
 
     protected void setUp() throws Exception {
         LOGGER.log(Level.FINEST, SCRIPT);
-        BSFManager.registerScriptingEngine("ruby",
-                "org.jruby.javasupport.bsf.JRubyEngine",
-                new String[] { "rb" });
-        manager_ = new BSFManager();
-        manager_.exec("ruby", "(java)", 1, 1, SCRIPT);
+        container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        container.runScriptlet(SCRIPT);
     }
     
     private static final int RUNNER_COUNT = 10;
@@ -123,7 +119,7 @@ public class TestAdoptedThreading extends TestCase {
         final Object start = new Object();
         final Exception[] fail = {null};
         
-        RubyThreadGroup rtg = (RubyThreadGroup)manager_.eval("ruby", "(java)", 1, 1, "ThreadGroup::Default");
+        RubyThreadGroup rtg = (RubyThreadGroup)container.runScriptlet("ThreadGroup::Default");
         
         int initialCount = ((RubyArray)rtg.list(Block.NULL_BLOCK)).getLength();
 
@@ -146,11 +142,7 @@ public class TestAdoptedThreading extends TestCase {
 
                 // run ten separate calls into Ruby, with delay and explicit GC
                 for (int i = 0; i < 10; i++) {
-                    try {
-                        manager_.exec("ruby", "(java)", 1, 1, "a = 0; while a < 1000; a += 1; end");
-                    } catch (BSFException bsfe) {
-                        fail[0] = bsfe;
-                    }
+                    container.runScriptlet("a = 0; while a < 1000; a += 1; end");
                     System.gc();
 
                     try {
@@ -236,10 +228,9 @@ public class TestAdoptedThreading extends TestCase {
 
         private ITest getTest() {
             ITest result = null;
-            synchronized (manager_) {
+            synchronized (container) {
                 try {
-                    result = (ITest) manager_.eval("ruby", "(java)", 1, 1,
-                            "TestImpl.new");
+                    result = (ITest) container.runScriptlet("TestImpl.new");
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }

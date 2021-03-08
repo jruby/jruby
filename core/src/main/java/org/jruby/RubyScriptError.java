@@ -42,7 +42,7 @@ public class RubyScriptError extends RubyException {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass scriptErrorClass = runtime.defineClass("ScriptError", exceptionClass, (r, klass) -> new RubyScriptError(runtime, klass));
+        RubyClass scriptErrorClass = runtime.defineClass("ScriptError", exceptionClass, RubyScriptError::new);
 
         return scriptErrorClass;
     }

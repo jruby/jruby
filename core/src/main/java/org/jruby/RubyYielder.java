@@ -32,7 +32,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -43,7 +42,7 @@ public class RubyYielder extends RubyObject {
     private Block block;
 
     public static RubyClass createYielderClass(Ruby runtime) {
-        RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), YIELDER_ALLOCATOR, runtime.getEnumerator());
+        RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), RubyYielder::new, runtime.getEnumerator());
 
         yielderc.setClassIndex(ClassIndex.YIELDER);
         yielderc.kindOf = new RubyModule.JavaClassKindOf(RubyYielder.class);
@@ -52,13 +51,6 @@ public class RubyYielder extends RubyObject {
 
         return yielderc;
     }
-
-    private static final ObjectAllocator YIELDER_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyYielder(runtime, klass);
-        }
-    };
 
     public RubyYielder(Ruby runtime, RubyClass klass) {
         super(runtime, klass);

@@ -46,7 +46,7 @@ import org.jruby.util.ArraySupport;
 public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 
-    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubyNoMethodError(runtime, klass);
+    private static final ObjectAllocator ALLOCATOR = RubyNoMethodError::new;
 
     static RubyClass define(Ruby runtime, RubyClass nameErrorClass) {
         RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, ALLOCATOR);

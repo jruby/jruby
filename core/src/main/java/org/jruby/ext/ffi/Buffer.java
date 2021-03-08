@@ -28,19 +28,11 @@ public final class Buffer extends AbstractMemory {
     public static RubyClass createBufferClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Buffer",
                 module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
-                BufferAllocator.INSTANCE);
+                Buffer::new);
         result.defineAnnotatedMethods(Buffer.class);
         result.defineAnnotatedConstants(Buffer.class);
 
         return result;
-    }
-
-    private static final class BufferAllocator implements ObjectAllocator {
-        static final ObjectAllocator INSTANCE = new BufferAllocator();
-
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new Buffer(runtime, klazz);
-        }
     }
 
     public Buffer(Ruby runtime, RubyClass klass) {

@@ -41,12 +41,7 @@ import org.jruby.util.ArraySupport;
 @JRubyClass(name = "Enumerator::Generator")
 public class RubyGenerator extends RubyObject {
     public static RubyClass createGeneratorClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass genc = runtime.defineClassUnder("Generator", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new RubyGenerator(runtime, klazz);
-            }
-        }, enumeratorModule);
+        RubyClass genc = runtime.defineClassUnder("Generator", runtime.getObject(), RubyGenerator::new, enumeratorModule);
 
         genc.includeModule(runtime.getEnumerable());
         genc.defineAnnotatedMethods(RubyGenerator.class);

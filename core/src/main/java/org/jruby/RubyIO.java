@@ -80,7 +80,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IOSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -297,13 +296,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return openFile;
     }
 
-    private static final ObjectAllocator IO_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyIO(runtime, klass);
-        }
-    };
-
     /*
      * We use FILE versus IO to match T_FILE in MRI.
      */
@@ -313,7 +305,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     public static RubyClass createIOClass(Ruby runtime) {
-        RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);
+        RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), RubyIO::new);
 
         ioClass.setClassIndex(ClassIndex.IO);
         ioClass.setReifiedClass(RubyIO.class);

@@ -34,7 +34,6 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -64,14 +63,12 @@ public class RubyNameError extends RubyStandardError {
     @JRubyClass(name = "NameError::Message", parent = "Data")
     public static final class RubyNameErrorMessage extends RubyObject {
 
-        private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubyNameErrorMessage(runtime);
-
         private final String message;
         private final IRubyObject object;
         private final IRubyObject name;
 
-        RubyNameErrorMessage(Ruby runtime) {
-            super(runtime, runtime.getNameErrorMessage());
+        RubyNameErrorMessage(Ruby runtime, RubyClass klazz) {
+            super(runtime, klazz);
             this.message = null;
             this.object = null;
             this.name = null;
@@ -90,7 +87,7 @@ public class RubyNameError extends RubyStandardError {
         }
 
         static RubyClass define(Ruby runtime, RubyClass NameError) {
-            RubyClass Message = NameError.defineClassUnder("Message", runtime.getClass("Data"), ALLOCATOR);
+            RubyClass Message = NameError.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage::new);
             NameError.setConstantVisibility(runtime, "Message", true);
             Message.defineAnnotatedMethods(RubyNameErrorMessage.class);
             return Message;
@@ -151,10 +148,8 @@ public class RubyNameError extends RubyStandardError {
         }
     }
 
-    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubyNameError(runtime, klass);
-
     static RubyClass define(Ruby runtime, RubyClass StandardError) {
-        RubyClass NameError = runtime.defineClass("NameError", StandardError, ALLOCATOR);
+        RubyClass NameError = runtime.defineClass("NameError", StandardError, RubyNameError::new);
         NameError.defineAnnotatedMethods(RubyNameError.class);
         NameError.setReifiedClass(RubyNameError.class);
         return NameError;

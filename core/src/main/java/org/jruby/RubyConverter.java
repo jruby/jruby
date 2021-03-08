@@ -46,7 +46,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
@@ -115,7 +114,7 @@ public class RubyConverter extends RubyObject {
     }
 
     public static RubyClass createConverterClass(Ruby runtime) {
-        RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getData(), CONVERTER_ALLOCATOR, runtime.getEncoding());
+        RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getData(), RubyConverter::new, runtime.getEncoding());
 
         converterc.setClassIndex(ClassIndex.CONVERTER);
         converterc.setReifiedClass(RubyConverter.class);
@@ -126,13 +125,6 @@ public class RubyConverter extends RubyObject {
 
         return converterc;
     }
-
-    private static final ObjectAllocator CONVERTER_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyConverter(runtime, klass);
-        }
-    };
 
     public RubyConverter(Ruby runtime, RubyClass klass) {
         super(runtime, klass);

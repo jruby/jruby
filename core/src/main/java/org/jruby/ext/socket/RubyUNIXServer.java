@@ -37,7 +37,6 @@ import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -49,14 +48,8 @@ import java.nio.channels.SelectionKey;
 
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
-    private static final ObjectAllocator UNIXSERVER_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyUNIXServer(runtime, klass);
-        }
-    };
-
     static void createUNIXServer(Ruby runtime) {
-        RubyClass rb_cUNIXServer = runtime.defineClass("UNIXServer", runtime.getClass("UNIXSocket"), UNIXSERVER_ALLOCATOR);
+        RubyClass rb_cUNIXServer = runtime.defineClass("UNIXServer", runtime.getClass("UNIXSocket"), RubyUNIXServer::new);
 
         runtime.getObject().setConstant("UNIXserver", rb_cUNIXServer);
         

@@ -42,7 +42,7 @@ public class RubyRegexpError extends RubyStandardError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass regexpErrorClass = runtime.defineClass("RegexpError", exceptionClass, (r, klass) -> new RubyRegexpError(runtime, klass));
+        RubyClass regexpErrorClass = runtime.defineClass("RegexpError", exceptionClass, RubyRegexpError::new);
 
         return regexpErrorClass;
     }

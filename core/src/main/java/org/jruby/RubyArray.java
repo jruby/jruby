@@ -65,7 +65,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.ArraySites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -110,7 +109,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     private static final boolean USE_PACKED_ARRAYS = Options.PACKED_ARRAYS.load();
 
     public static RubyClass createArrayClass(Ruby runtime) {
-        RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
+        RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), RubyArray::newEmptyArray);
 
         arrayc.setClassIndex(ClassIndex.ARRAY);
         arrayc.setReifiedClass(RubyArray.class);
@@ -122,13 +121,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         return arrayc;
     }
-
-    private static final ObjectAllocator ARRAY_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyArray(runtime, klass, IRubyObject.NULL_ARRAY);
-        }
-    };
-
 
     @Override
     public ClassIndex getNativeClassIndex() {
@@ -244,6 +236,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public static RubyArray newEmptyArray(Ruby runtime) {
         return new RubyArray(runtime, NULL_ARRAY);
+    }
+
+    public static RubyArray newEmptyArray(Ruby runtime, RubyClass klass) {
+        return new RubyArray(runtime, klass, NULL_ARRAY);
     }
 
     /** rb_ary_new4, rb_ary_new3

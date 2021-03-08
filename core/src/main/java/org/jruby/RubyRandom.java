@@ -31,7 +31,6 @@ import java.math.BigInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -226,7 +225,7 @@ public class RubyRandom extends RubyObject {
     @SuppressWarnings("deprecation")
     public static RubyClass createRandomClass(Ruby runtime) {
         RubyClass randomClass = runtime
-                .defineClass("Random", runtime.getObject(), RANDOM_ALLOCATOR);
+                .defineClass("Random", runtime.getObject(), RubyRandom::new);
 
         randomClass.defineAnnotatedMethods(RubyRandom.class);
 
@@ -237,13 +236,6 @@ public class RubyRandom extends RubyObject {
 
         return randomClass;
     }
-
-    private static final ObjectAllocator RANDOM_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyRandom(runtime, klass);
-        }
-    };
 
     private RandomType random = null;
 

@@ -194,12 +194,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @see org.jruby.runtime.ObjectAllocator
      */
-    public static final ObjectAllocator BASICOBJECT_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyBasicObject(runtime, klass);
-        }
-    };
+    public static final ObjectAllocator BASICOBJECT_ALLOCATOR = RubyBasicObject::new;
 
     /**
      * Will create the Ruby class Object in the runtime

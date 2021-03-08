@@ -163,12 +163,7 @@ public class RubyModule extends RubyObject {
     public static final int OMOD_SHARED = ObjectFlags.OMOD_SHARED;
     public static final int INCLUDED_INTO_REFINEMENT = ObjectFlags.INCLUDED_INTO_REFINEMENT;
 
-    public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyModule(runtime, klass);
-        }
-    };
+    public static final ObjectAllocator MODULE_ALLOCATOR = RubyModule::new;
 
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
         moduleClass.setClassIndex(ClassIndex.MODULE);

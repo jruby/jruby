@@ -50,29 +50,6 @@ if [ -z "$JRUBY_OPTS" ] ; then
   JRUBY_OPTS=""
 fi
 
-JRUBY_OPTS_SPECIAL="--ng" # space-separated list of special flags
-unset JRUBY_OPTS_TEMP
-process_special_opts() {
-    case $1 in
-        --ng) nailgun_client=true;;
-        *) break;;
-    esac
-}
-for opt in ${JRUBY_OPTS}; do
-    for special in ${JRUBY_OPTS_SPECIAL}; do
-        if [ $opt != $special ]; then
-            JRUBY_OPTS_TEMP="${JRUBY_OPTS_TEMP} $opt"
-        else
-            # make sure flags listed in JRUBY_OPTS_SPECIAL are processed
-            case "$opt" in
-            --ng)
-                process_special_opts $opt;;
-            esac
-        fi
-    done
-done
-JRUBY_OPTS=${JRUBY_OPTS_TEMP}
-
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
     JAVACMD='java'
@@ -151,7 +128,6 @@ JAVA_ENCODING=""
 
 JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
-JAVA_CLASS_NGSERVER=com.martiansoftware.nailgun.NGServer
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
@@ -237,15 +213,11 @@ do
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
         java_args="${java_args} -Xprof" ;;
-     --ng-server)
-        # Start up as Nailgun server
-        java_class=$JAVA_CLASS_NGSERVER
-        VERIFY_JRUBY=true ;;
+     --ng*)
+       echo "Error: Nailgun is no longer supported" 1>&2
+       exit 1 ;;
      --no-bootclasspath)
         NO_BOOTCLASSPATH=true ;;
-     --ng)
-        # Use native Nailgun client to toss commands to server
-        process_special_opts "--ng" ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
@@ -272,14 +244,6 @@ JAVA_OPTS="$JAVA_OPTS $JAVA_VM $JAVA_MEM $JAVA_STACK"
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
 
-if [ "$nailgun_client" != "" ]; then
-  if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
-    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $JRUBY_OPTS "$@"
-  else
-    echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
-    exit 1
-  fi
-else
 if [[ "$NO_BOOTCLASSPATH" != "" || ( "$VERIFY_JRUBY" != "" ) ]]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"

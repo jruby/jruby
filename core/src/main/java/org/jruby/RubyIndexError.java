@@ -46,7 +46,7 @@ public class RubyIndexError extends RubyStandardError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass IndexErrorClass = runtime.defineClass("IndexError", exceptionClass, (r, klass) -> new RubyIndexError(runtime, klass));
+        RubyClass IndexErrorClass = runtime.defineClass("IndexError", exceptionClass, RubyIndexError::new);
 
         return IndexErrorClass;
     }

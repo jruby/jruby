@@ -24,7 +24,7 @@ public class Pointer extends AbstractMemory {
     public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
         RubyClass pointerClass = module.defineClassUnder("Pointer",
                 module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(Pointer.class) : PointerAllocator.INSTANCE);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(Pointer.class) : Pointer::new);
 
         pointerClass.defineAnnotatedMethods(Pointer.class);
         pointerClass.defineAnnotatedConstants(Pointer.class);
@@ -46,14 +46,6 @@ public class Pointer extends AbstractMemory {
         runtime.getNilClass().addMethod("to_ptr", new NilToPointerMethod(runtime.getNilClass(), nullPointer, "to_ptr"));
 
         return pointerClass;
-    }
-
-    private static final class PointerAllocator implements ObjectAllocator {
-        static final ObjectAllocator INSTANCE = new PointerAllocator();
-
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new Pointer(runtime, klazz);
-        }
     }
 
     public static final Pointer getNull(Ruby runtime) {

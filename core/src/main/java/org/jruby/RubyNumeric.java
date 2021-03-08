@@ -46,7 +46,6 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -79,7 +78,7 @@ import static org.jruby.util.RubyStringBuilder.types;
 public class RubyNumeric extends RubyObject {
 
     public static RubyClass createNumericClass(Ruby runtime) {
-        RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
+        RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), RubyNumeric::new);
 
         numeric.setClassIndex(ClassIndex.NUMERIC);
         numeric.setReifiedClass(RubyNumeric.class);
@@ -91,12 +90,6 @@ public class RubyNumeric extends RubyObject {
 
         return numeric;
     }
-
-    protected static final ObjectAllocator NUMERIC_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyNumeric(runtime, klass);
-        }
-    };
 
     public static final double DBL_EPSILON=2.2204460492503131e-16;
 

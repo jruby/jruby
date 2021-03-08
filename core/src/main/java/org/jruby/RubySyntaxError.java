@@ -42,7 +42,7 @@ public class RubySyntaxError extends RubyScriptError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass SyntaxErrorClass = runtime.defineClass("SyntaxError", exceptionClass, (r, klass) -> new RubySyntaxError(runtime, klass));
+        RubyClass SyntaxErrorClass = runtime.defineClass("SyntaxError", exceptionClass, RubySyntaxError::new);
 
         return SyntaxErrorClass;
     }

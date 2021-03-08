@@ -42,7 +42,7 @@ public class RubyZeroDivisionError extends RubyStandardError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass zeroDivisionErrorClass = runtime.defineClass("ZeroDivisionError", exceptionClass, (r, klass) -> new RubyZeroDivisionError(runtime, klass));
+        RubyClass zeroDivisionErrorClass = runtime.defineClass("ZeroDivisionError", exceptionClass, RubyZeroDivisionError::new);
 
         return zeroDivisionErrorClass;
     }

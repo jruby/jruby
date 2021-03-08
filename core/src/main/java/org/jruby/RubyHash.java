@@ -51,7 +51,6 @@ import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.HashSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -120,7 +119,7 @@ public class RubyHash extends RubyObject implements Map {
     public static final int COMPARE_BY_IDENTITY_F = ObjectFlags.COMPARE_BY_IDENTITY_F;
 
     public static RubyClass createHashClass(Ruby runtime) {
-        RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
+        RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), RubyHash::new);
 
         hashc.setClassIndex(ClassIndex.HASH);
         hashc.setReifiedClass(RubyHash.class);
@@ -133,13 +132,6 @@ public class RubyHash extends RubyObject implements Map {
 
         return hashc;
     }
-
-    private final static ObjectAllocator HASH_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyHash(runtime, klass);
-        }
-    };
 
     @Override
     public ClassIndex getNativeClassIndex() {

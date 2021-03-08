@@ -110,10 +110,6 @@ test/pom.xml
 test/prawn
 test/rails
 test/jruby/testapp/testapp
-tool/nailgun/Makefile
-tool/nailgun/config.log
-tool/nailgun/config.status
-tool/nailgun/ng
 reference.txt
 rubyspec_temp
 .polyglot.pom.rb

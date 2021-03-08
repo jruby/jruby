@@ -12,7 +12,6 @@ import org.jruby.exceptions.SystemCallError;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -133,17 +132,6 @@ public class RubySystemCallError extends RubyStandardError {
         return new SystemCallError(message, this);
     }
 
-    private static final ObjectAllocator SYSTEM_CALL_ERROR_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyException instance = new RubySystemCallError(runtime, klass);
-            
-            instance.setMetaClass(klass);
-            
-            return instance;
-        }
-    };
-    
     private static final ObjectMarshal SYSTEM_CALL_ERROR_MARSHAL = new ObjectMarshal() {
         @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
@@ -178,7 +166,7 @@ public class RubySystemCallError extends RubyStandardError {
     };
 
     public static RubyClass define(Ruby runtime, RubyClass standardError) {
-        RubyClass exceptionClass = runtime.defineClass("SystemCallError", standardError, SYSTEM_CALL_ERROR_ALLOCATOR);
+        RubyClass exceptionClass = runtime.defineClass("SystemCallError", standardError, RubySystemCallError::new);
 
         exceptionClass.setMarshal(SYSTEM_CALL_ERROR_MARSHAL);
         

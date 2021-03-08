@@ -42,7 +42,7 @@ public class RubyNotImplementedError extends RubyScriptError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass NotImplementedErrorClass = runtime.defineClass("NotImplementedError", exceptionClass, (r, klass) -> new RubyNotImplementedError(runtime, klass));
+        RubyClass NotImplementedErrorClass = runtime.defineClass("NotImplementedError", exceptionClass, RubyNotImplementedError::new);
 
         return NotImplementedErrorClass;
     }

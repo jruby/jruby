@@ -40,11 +40,7 @@ public class Ifaddr extends RubyObject {
         RubyClass ifaddr = runtime.getClass("Socket").defineClassUnder(
                 "Ifaddr",
                 runtime.getData(),
-                new ObjectAllocator() {
-                    public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                        return new Ifaddr(runtime, klazz);
-                    }
-                });
+                Ifaddr::new);
         ifaddr.defineAnnotatedMethods(Ifaddr.class);
     }
 

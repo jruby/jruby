@@ -12,8 +12,10 @@ import jnr.netdb.Service;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyInteger;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -51,11 +53,7 @@ public class Addrinfo extends RubyObject {
         RubyClass addrinfo = runtime.defineClass(
                 "Addrinfo",
                 runtime.getData(),
-                new ObjectAllocator() {
-                    public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                        return new Addrinfo(runtime, klazz);
-                    }
-                });
+                Addrinfo::new);
 
         addrinfo.defineAnnotatedMethods(Addrinfo.class);
     }
@@ -667,6 +665,23 @@ public class Addrinfo extends RubyObject {
 
     private static InetAddress getRubyInetAddress(IRubyObject node) {
         try {
+            if (node instanceof RubyInteger) {
+                byte[] bytes;
+                if (node instanceof RubyBignum) {
+                    // IP6 addresses will be 16 bytes wide
+                    bytes = ((RubyBignum) node).getBigIntegerValue().toByteArray();
+                } else {
+                    long i = node.convertToInteger().getIntValue() & 0xFFFFL;
+
+                    bytes = new byte[]{
+                            (byte) ((i >> 24) & 0xFF),
+                            (byte) ((i >> 16) & 0xFF),
+                            (byte) ((i >> 8) & 0xFF),
+                            (byte) (i & 0xFF),
+                    };
+                }
+                return SocketUtils.getRubyInetAddress(bytes);
+            }
             return SocketUtils.getRubyInetAddress(node.convertToString().toString());
         } catch (UnknownHostException uhe) {
             return null;

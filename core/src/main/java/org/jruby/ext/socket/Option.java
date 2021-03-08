@@ -30,11 +30,7 @@ public class Option extends RubyObject {
         RubyClass addrinfo = runtime.getClass("Socket").defineClassUnder(
                 "Option",
                 runtime.getObject(),
-                new ObjectAllocator() {
-                    public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                        return new Option(runtime, klazz);
-                    }
-                });
+                Option::new);
 
         addrinfo.defineAnnotatedMethods(Option.class);
     }

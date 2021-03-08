@@ -65,7 +65,6 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
    jnr-unixsocket (https://github.com/jnr/jnr-unixsocket)
    joda-time (http://joda-time.sourceforge.net)
    maven (http://maven.apache.org/)
-   nailgun (http://martiansoftware.com/nailgun)
    options (https://github.com/headius/options)
    snakeyaml (https://github.com/asomov/snakeyaml)
    unsafe-fences (https://github.com/headius/unsafe-fences)

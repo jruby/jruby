@@ -67,7 +67,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -95,7 +94,7 @@ public class RubyComplex extends RubyNumeric {
                 "round", "step", "truncate", "positive?", "negative?"
         };
 
-        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
+        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), RubyComplex::new);
 
         complexc.setClassIndex(ClassIndex.COMPLEX);
         complexc.setReifiedClass(RubyComplex.class);
@@ -116,14 +115,6 @@ public class RubyComplex extends RubyNumeric {
         return complexc;
     }
 
-    private static final ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFixnum zero = RubyFixnum.zero(runtime);
-            return new RubyComplex(runtime, klass, zero, zero);
-        }
-    };
-
     /** internal
      * 
      */
@@ -134,6 +125,15 @@ public class RubyComplex extends RubyNumeric {
         this.flags |= FROZEN_F;
     }
 
+    private RubyComplex(Ruby runtime, RubyClass clazz) {
+        super(runtime, clazz);
+
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+
+        this.real = zero;
+        this.image = zero;
+        this.flags |= FROZEN_F;
+    }
 
     @Override
     public ClassIndex getNativeClassIndex() {

@@ -32,7 +32,6 @@ project 'JRuby Integration Tests' do
   end
   scope :provided do
     jar 'org.apache.ant:ant:${ant.version}'
-    jar 'bsf:bsf:2.4.0'
   end
   jar( 'org.jruby:requireTest:1.0',
        :scope => 'system',
@@ -98,14 +97,7 @@ project 'JRuby Integration Tests' do
                                           'type' =>  'jar',
                                           'overWrite' =>  'false',
                                           'outputDirectory' =>  'target',
-                                          'destFileName' =>  'jarjar.jar' },
-                                        { 'groupId' =>  'bsf',
-                                          'artifactId' =>  'bsf',
-                                          'version' =>  '2.4.0',
-                                          'type' =>  'jar',
-                                          'overWrite' =>  'false',
-                                          'outputDirectory' =>  'target',
-                                          'destFileName' =>  'bsf.jar' } ] )
+                                          'destFileName' =>  'jarjar.jar' } ] )
   end
 
   plugin( :deploy,

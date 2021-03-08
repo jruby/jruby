@@ -8,7 +8,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
@@ -18,14 +17,8 @@ public class JRubyObjectInputStream extends RubyObject {
 
     JRubyObjectInputStreamImpl impl;
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-	    public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-		    return new JRubyObjectInputStream(runtime, klass);
-        }
-    };
-
     public static RubyClass createJRubyObjectInputStream(Ruby runtime) {
-	    RubyClass result = runtime.defineClass("JRubyObjectInputStream",runtime.getObject(), ALLOCATOR);
+	    RubyClass result = runtime.defineClass("JRubyObjectInputStream",runtime.getObject(), JRubyObjectInputStream::new);
 	    result.defineAnnotatedMethods(JRubyObjectInputStream.class);
 	    return result;
     }

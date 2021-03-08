@@ -37,7 +37,6 @@ import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.WeakHashSet;
 
@@ -54,7 +53,7 @@ public class RubyThreadGroup extends RubyObject {
     private boolean enclosed = false;
 
     public static RubyClass createThreadGroupClass(Ruby runtime) {
-        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), THREADGROUP_ALLOCATOR);
+        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), RubyThreadGroup::new);
 
         threadGroupClass.setClassIndex(ClassIndex.THREADGROUP);
         
@@ -67,12 +66,6 @@ public class RubyThreadGroup extends RubyObject {
 
         return threadGroupClass;
     }
-
-    private static final ObjectAllocator THREADGROUP_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new RubyThreadGroup(runtime, klazz);
-        }
-    };
 
     @JRubyMethod(name = "add", required = 1)
     public IRubyObject add(IRubyObject rubyThread, Block block) {

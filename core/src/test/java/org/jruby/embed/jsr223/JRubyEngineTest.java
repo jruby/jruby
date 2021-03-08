@@ -51,6 +51,7 @@ import org.jruby.embed.PositionFunction;
 import org.jruby.embed.RadioActiveDecay;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.exceptions.NoMethodError;
+import org.jruby.exceptions.RuntimeError;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -616,6 +617,25 @@ public class JRubyEngineTest extends BaseTest {
             fail("Expected javax.script.ScriptException");
         } catch (javax.script.ScriptException sex) {
             // javax.script.ScriptException is expected
+        }
+    }
+
+    /**
+     * Test of invokeMethod method throwing a Ruby exception.
+     */
+    @Test
+    public void testInvokeMethodWithRubyException() throws Exception {
+        ScriptEngine instance = newScriptEngine();
+        String filename = "scriptyscript.rb";
+        instance.put(ScriptEngine.FILENAME, filename);
+        instance.eval("def trigger_raise\nraise 'hello from ruby'\nend");
+        try {
+            ((Invocable) instance).invokeMethod(Object.class,"trigger_raise", null);
+            fail("Expected javax.script.ScriptException");
+        } catch (javax.script.ScriptException sex) {
+            String message = sex.getMessage();
+            assertTrue("message did not contain filename: \"" + message + "\"", message.contains(filename + " at line 2"));
+            assertEquals("cause was not RuntimeError: " + sex.getCause(), RuntimeError.class, sex.getCause().getClass());
         }
     }
 

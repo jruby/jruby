@@ -50,7 +50,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -63,7 +62,7 @@ public class RubyArgsFile extends RubyObject {
     }
 
     public static void initArgsFile(final Ruby runtime) {
-        RubyClass argfClass = runtime.defineClass("ARGFClass", runtime.getObject(), ARGF_ALLOCATOR);
+        RubyClass argfClass = runtime.defineClass("ARGFClass", runtime.getObject(), RubyArgsFile::new);
         argfClass.includeModule(runtime.getEnumerable());
 
         argfClass.defineAnnotatedMethods(RubyArgsFile.class);
@@ -90,13 +89,6 @@ public class RubyArgsFile extends RubyObject {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
-
-    private static final ObjectAllocator ARGF_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyArgsFile(runtime, klass);
-        }
-    };
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
