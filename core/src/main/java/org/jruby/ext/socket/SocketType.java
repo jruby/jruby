@@ -28,6 +28,7 @@ package org.jruby.ext.socket;
 
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketOption;
+import jnr.unixsocket.UnixDatagramChannel;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
@@ -260,6 +261,9 @@ public enum SocketType {
             return SERVER;
 
         } else if (channel instanceof DatagramChannel) {
+            return DATAGRAM;
+
+        } else if (channel instanceof UnixDatagramChannel) {
             return DATAGRAM;
 
         } else if (channel instanceof UnixSocketChannel) {
