@@ -73,7 +73,7 @@ project 'JRuby Base' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.11'
+  jar 'com.headius:backport9:1.12'
 
   jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
 
@@ -175,8 +175,7 @@ project 'JRuby Base' do
           'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '1.8' ],
-          'target' => [ '${base.javac.version}', '1.8' ],
+          'release' => '9',
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',
@@ -188,7 +187,8 @@ project 'JRuby Base' do
                                    'org/jruby/CompatVersion.java',
                                    'org/jruby/runtime/Visibility.java',
                                    'org/jruby/util/CodegenUtils.java',
-                                   'org/jruby/util/SafePropertyAccessor.java' ] )
+                                   'org/jruby/util/SafePropertyAccessor.java' ],
+                   release: '8')
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
@@ -244,7 +244,7 @@ project 'JRuby Base' do
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   plugin(:jar,
-         archive: {manifestEntries: {'Automatic-Module-Name' => 'org.jruby'}})
+         archive: {manifestEntries: {'Automatic-Module-Name' => 'org.jruby.base'}})
 
   build do
     default_goal 'package'
@@ -259,6 +259,20 @@ project 'JRuby Base' do
       includes 'META-INF/**/*'
     end
 
+    plugin(:dependency) do
+      execute_goals('copy-dependencies',
+                    id: 'copy dependencies to lib',
+                    prependGroupId: true,
+                    outputDirectory: "${basedir}/../lib/modules",
+                    excludeArtifactIds: 'joda-timezones')
+      execute_goals('copy',
+                    id: 'copy jruby jar to lib',
+                    phase: :package,
+                    prependGroupId: true,
+                    outputDirectory: "${basedir}/../lib/modules",
+                    artifactItems: [
+                        {groupId: "${project.groupId}", artifactId: "${project.artifactId}", version: "${project.version}"}])
+    end
   end
 
   plugin :resources do

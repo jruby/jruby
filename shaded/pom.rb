@@ -14,23 +14,6 @@ project 'JRuby Core' do
             )
 
   jar 'org.jruby:jruby-base', '${project.version}'
-  plugin :shade do
-    execute_goals( 'shade',
-                   id: 'create lib/jruby.jar',
-                   phase: 'package',
-                   artifactSet: {
-                       excludes: 'javax.annotation:javax.annotation-api'
-                   },
-                   relocations: [
-                       {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
-                   ],
-                   outputFile: '${jruby.basedir}/lib/jruby.jar',
-                   transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         mainClass: 'org.jruby.Main',
-                                         manifestEntries: {'Automatic-Module-Name' => 'org.jruby.dist'}}],
-                   createSourcesJar: '${create.sources.jar}',
-    )
-  end
 
   [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
     profile name do

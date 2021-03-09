@@ -190,21 +190,23 @@ JAVA_OPTS="$JAVA_OPTS_TEMP"
 
 CP_DELIMITER=":"
 
-# add main jruby jar to the classpath
-for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
-    if [ ! -e "$j" ]; then
-      continue
-    fi
+# add jruby jar and dependencies to the module path or classpath
+if [ "$is_java9" ]; then
+    module_path="${JRUBY_HOME}/lib/modules"
     if [ "$JRUBY_CP" ]; then
-        JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
+        JRUBY_CP="${JRUBY_CP}${CP_DELIMITER}${module_path}"
     else
-        JRUBY_CP="$j"
+        JRUBY_CP="${module_path}"
     fi
-    if [ "$JRUBY_ALREADY_ADDED" ]; then
-        echo "WARNING: more than one JRuby JAR found in lib directory" 1>&2
-    fi
-    JRUBY_ALREADY_ADDED=true
-done
+else
+    for j in "$JRUBY_HOME"/lib/modules/*.jar; do
+        if [ "$JRUBY_CP" ]; then
+            JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
+            else
+            JRUBY_CP="$j"
+        fi
+    done
+fi
 
 if $cygwin; then
     JRUBY_CP="$(cygpath -p -w "$JRUBY_CP")"
@@ -218,12 +220,6 @@ if [ "$JRUBY_PARENT_CLASSPATH" ]; then
 else
     # add other jars in lib to CP for command-line execution
     for j in "$JRUBY_HOME"/lib/*.jar; do
-        if [ "$j" = "$JRUBY_HOME"/lib/jruby.jar ]; then
-          continue
-        fi
-        if [ "$j" = "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
-          continue
-        fi
         if [ "$CP" ]; then
             CP="$CP$CP_DELIMITER$j"
             else
