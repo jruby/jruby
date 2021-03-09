@@ -184,8 +184,7 @@ project 'JRuby Base' do
           'verbose' => 'false',
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '17' ],
-          'target' => [ '${base.javac.version}', '17' ],
+          'release' => '9',
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',
@@ -197,7 +196,8 @@ project 'JRuby Base' do
                                    'org/jruby/CompatVersion.java',
                                    'org/jruby/runtime/Visibility.java',
                                    'org/jruby/util/CodegenUtils.java',
-                                   'org/jruby/util/SafePropertyAccessor.java' ] )
+                                   'org/jruby/util/SafePropertyAccessor.java' ],
+                   release: '8')
     execute_goals( 'compile',
                    default_compile_configuration.merge(
                      :id => 'default-compile',
@@ -251,7 +251,7 @@ project 'JRuby Base' do
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   plugin(:jar,
-         archive: {manifestEntries: {'Automatic-Module-Name' => 'org.jruby'}})
+         archive: {manifestEntries: {'Automatic-Module-Name' => 'org.jruby.base'}})
 
   build do
     default_goal 'package'
@@ -266,6 +266,20 @@ project 'JRuby Base' do
       includes 'META-INF/**/*'
     end
 
+    plugin(:dependency) do
+      execute_goals('copy-dependencies',
+                    id: 'copy dependencies to lib',
+                    prependGroupId: true,
+                    outputDirectory: "${basedir}/../lib/modules",
+                    excludeArtifactIds: 'joda-timezones')
+      execute_goals('copy',
+                    id: 'copy jruby jar to lib',
+                    phase: :package,
+                    prependGroupId: true,
+                    outputDirectory: "${basedir}/../lib/modules",
+                    artifactItems: [
+                        {groupId: "${project.groupId}", artifactId: "${project.artifactId}", version: "${project.version}"}])
+    end
   end
 
   plugin :resources do
