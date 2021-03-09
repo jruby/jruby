@@ -18,6 +18,7 @@ default_gems = [
     ['bundler', '1.17.3'],
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],
+    ['did_you_mean', '1.2.1'],
     ['e2mmap', '0.1.0'],
     ['ffi', '1.14.2'],
     ['fileutils', '1.4.1'],
@@ -48,7 +49,6 @@ default_gems = [
 ]
 
 bundled_gems = [
-    ['did_you_mean', '1.2.1'],
     ['minitest', '${minitest.version}'],
     ['net-telnet', '0.1.1'],
     ['power_assert', '${power_assert.version}'],

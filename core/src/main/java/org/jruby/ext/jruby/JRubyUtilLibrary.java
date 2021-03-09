@@ -34,18 +34,21 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.List;
 
+import com.headius.options.Option;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.util.URLUtil.getPath;
 
@@ -397,6 +400,24 @@ public class JRubyUtilLibrary implements Library {
         stat.op_aset(context, runtime.newSymbol("constant_invalidation_count"), runtime.newFixnum(runtime.getCaches().getConstantInvalidationCount()));
 
         return stat;
+    }
+
+    /**
+     * Expose path-coersion logic.
+     */
+    @JRubyMethod(name = "coerce_to_path", module = true)
+    public static IRubyObject coerce_to_path(ThreadContext context, IRubyObject self, IRubyObject pathlike) {
+        return RubyFile.get_path(context, pathlike);
+    }
+
+    /**
+     * Retrieve a configuration option by name.
+     */
+    @JRubyMethod(name = "retrieve_option", module = true)
+    public static IRubyObject retrieve_option(ThreadContext context, IRubyObject self, IRubyObject name) {
+        Option option = Options.OPTION_MAP.get(name.toString());
+        if (option == null) throw context.runtime.newArgumentError("unknown option: " + name);
+        return JavaUtil.convertJavaToUsableRubyObject(context.runtime, option.load());
     }
 
     /**
