@@ -865,10 +865,10 @@ arg             : lhs '=' arg_rhs {
                     $$ = p.dispatch("on_dot3", $1, $3);
                 }
                 | arg tDOT2 {
-                    $$ = p.dispatch("on_dot2", $1);
+                    $$ = p.dispatch("on_dot2", $1, p.new_nil_at());
                 }
                 | arg tDOT3 {
-                    $$ = p.dispatch("on_dot3", $1);
+                    $$ = p.dispatch("on_dot3", $1, p.new_nil_at());
                 }
                 | arg tPLUS arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("+"), $3);

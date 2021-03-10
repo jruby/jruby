@@ -2574,13 +2574,13 @@ states[232] = new RipperParserState() {
 };
 states[233] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_dot2", ((IRubyObject)yyVals[-1+yyTop]));
+                    yyVal = p.dispatch("on_dot2", ((IRubyObject)yyVals[-1+yyTop]), p.new_nil_at());
     return yyVal;
   }
 };
 states[234] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_dot3", ((IRubyObject)yyVals[-1+yyTop]));
+                    yyVal = p.dispatch("on_dot3", ((IRubyObject)yyVals[-1+yyTop]), p.new_nil_at());
     return yyVal;
   }
 };
