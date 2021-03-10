@@ -158,12 +158,10 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
         if (block.type == Block.Type.LAMBDA) return doYieldLambda(context, block, value);
 
-        int blockArity = signature.arityValue();
-
         IRubyObject[] args;
         if (value == null) { // no args case from BlockBody.yieldSpecific
             args = IRubyObject.NULL_ARRAY;
-        } else if (!signature.hasKwargs() && blockArity >= -1 && blockArity <= 1) {
+        } else if (!signature.hasKwargs() && !signature.isSpreadable()) {
             args = new IRubyObject[] { value };
         } else {
             args = toAry(context, value);
