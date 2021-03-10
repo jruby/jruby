@@ -291,21 +291,7 @@ project 'JRuby Lib Setup' do
   build do
     resource do
       directory '${gem.home}'
-      # assume all dependencies are met with this gems + the default gems
-      incl = (default_gems + bundled_gems).collect do |name, version|
-        [
-          "cache/#{name}*#{version}.gem",
-          "gems/#{name}*#{version}/**",
-          "specifications/#{name}*#{version}.gemspec"
-        ]
-      end.flatten
-      includes incl
-      target_path '${jruby.complete.gems}'
-    end
-
-    resource do
-      directory '${gem.home}'
-      includes 'specifications/default/*.gemspec'
+      includes '**/*'
       target_path '${jruby.complete.gems}'
     end
 
