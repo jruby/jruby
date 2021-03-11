@@ -112,13 +112,13 @@ project 'JRuby Lib Setup' do
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
     jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
+    bin_stubs = File.join( jruby_gems, 'gems' )
     default_specs = File.join( jruby_gems, 'specifications', 'default' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
     stdlib_dir = File.join( ruby_dir, 'stdlib' )
     jruby_home = ctx.project.parent.basedir.to_pathname
 
-    # bin locations for default gems and global binstubs
-    default_bin = File.join( default_specs, 'bin' )
+    # bin location for global binstubs
     global_bin = File.join( jruby_home, "bin" )
 
     FileUtils.mkdir_p( default_specs )
@@ -128,7 +128,6 @@ project 'JRuby Lib Setup' do
     lib_dir = File.join( target, 'lib' )
     openssl = File.join( lib_dir, 'openssl.rb' )
     FileUtils.mkdir_p( lib_dir )
-    FileUtils.mkdir_p( default_bin )
     FileUtils.touch( openssl )
     $LOAD_PATH.unshift lib_dir
 
@@ -212,11 +211,14 @@ project 'JRuby Lib Setup' do
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
         # copy bin files if the gem has any
-        if spec.bindir
-          Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir )) do |bin|
-            Dir[ File.join( bin, '*' ) ].each do |f|
-              FileUtils.cp_r(f, File.join(default_bin, File.basename(f)))
-            end
+        unless spec.executables.empty?
+          spec.executables.each do |f|
+            bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
+            source = File.join( bin, f )
+            target = File.join( bin_stubs, source.sub( /#{gems}/, '' ) )
+            log "copy #{f} to #{target}}"
+            FileUtils.mkdir_p( File.dirname( target ) )
+            FileUtils.cp_r( source, target )
           end
         end
 
