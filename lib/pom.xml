@@ -331,16 +331,7 @@ DO NOT MODIFIY - GENERATED CODE
         <targetPath>${jruby.complete.home}</targetPath>
         <directory>${basedir}/..</directory>
         <includes>
-          <include>bin/ast*</include>
-          <include>bin/gem*</include>
-          <include>bin/irb*</include>
-          <include>bin/jgem*</include>
-          <include>bin/jirb*</include>
-          <include>bin/jruby*</include>
-          <include>bin/rake*</include>
-          <include>bin/ri*</include>
-          <include>bin/rdoc*</include>
-          <include>bin/testrb*</include>
+          <include>bin/*</include>
           <include>lib/ruby/include/**</include>
           <include>lib/ruby/stdlib/**</include>
         </includes>
