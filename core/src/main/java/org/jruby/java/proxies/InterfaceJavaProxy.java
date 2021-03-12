@@ -11,7 +11,6 @@ import org.jruby.RubyProc;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -26,16 +25,10 @@ public class InterfaceJavaProxy extends JavaProxy {
         super(runtime, klazz);
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new InterfaceJavaProxy(runtime, klazz);
-        }
-    };
-
     public static RubyClass createInterfaceJavaProxy(ThreadContext context) {
         final Ruby runtime = context.runtime;
         RubyClass InterfaceJavaProxy = runtime.defineClass(
-            "InterfaceJavaProxy", runtime.getJavaSupport().getJavaProxyClass(), ALLOCATOR
+            "InterfaceJavaProxy", runtime.getJavaSupport().getJavaProxyClass(), InterfaceJavaProxy::new
         );
 
         RubyClass JavaInterfaceExtended = runtime.defineClass(

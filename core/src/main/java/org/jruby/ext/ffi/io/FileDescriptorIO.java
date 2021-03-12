@@ -49,12 +49,6 @@ import java.nio.channels.ByteChannel;
 @JRubyClass(name="FFI::" + FileDescriptorIO.CLASS_NAME, parent="IO")
 public class FileDescriptorIO extends RubyIO {
     public static final String CLASS_NAME = "FileDescriptorIO";
-    private static final class Allocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new FileDescriptorIO(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new Allocator();
-    }
 
     public FileDescriptorIO(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -86,7 +80,7 @@ public class FileDescriptorIO extends RubyIO {
 
     public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getClass("IO"),
-                Allocator.INSTANCE, module);
+                FileDescriptorIO::new, module);
         result.defineAnnotatedMethods(FileDescriptorIO.class);
         result.defineAnnotatedConstants(FileDescriptorIO.class);
 

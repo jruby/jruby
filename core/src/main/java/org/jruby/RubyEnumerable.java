@@ -1990,7 +1990,8 @@ public class RubyEnumerable {
 
         IRubyObject enumerator = runtime.getEnumerator().allocate();
         enumerator.getInternalVariables().setInternalVariable("chunk_enumerable", self);
-        enumerator.getInternalVariables().setInternalVariable("chunk_categorize", RubyProc.newProc(runtime, block, block.type));
+        enumerator.getInternalVariables().setInternalVariable("chunk_categorize",
+                RubyProc.newProc(runtime, block, block.type == Block.Type.LAMBDA ? block.type : Block.Type.PROC));
 
         Helpers.invoke(context, enumerator, "initialize",
                 CallBlock.newCallClosure(context, self, Signature.ONE_ARGUMENT,

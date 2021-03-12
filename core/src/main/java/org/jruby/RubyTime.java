@@ -55,7 +55,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.TimeSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -418,15 +417,8 @@ public class RubyTime extends RubyObject {
         setIsTzRelative(tzRelative);
     }
 
-    private static final ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyTime(runtime, klass);
-        }
-    };
-
     public static RubyClass createTimeClass(Ruby runtime) {
-        RubyClass timeClass = runtime.defineClass("Time", runtime.getObject(), TIME_ALLOCATOR);
+        RubyClass timeClass = runtime.defineClass("Time", runtime.getObject(), RubyTime::new);
 
         timeClass.setClassIndex(ClassIndex.TIME);
         timeClass.setReifiedClass(RubyTime.class);

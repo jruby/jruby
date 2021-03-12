@@ -67,7 +67,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -85,7 +84,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     public static final double RECV_BUFFER_COPY_SCALE = 1.5;
 
     static void createUDPSocket(Ruby runtime) {
-        RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.getClass("IPSocket"), UDPSOCKET_ALLOCATOR);
+        RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.getClass("IPSocket"), RubyUDPSocket::new);
 
         rb_cUDPSocket.includeModule(runtime.getClass("Socket").getConstant("Constants"));
 
@@ -93,13 +92,6 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         runtime.getObject().setConstant("UDPsocket", rb_cUDPSocket);
     }
-
-    private static final ObjectAllocator UDPSOCKET_ALLOCATOR = new ObjectAllocator() {
-
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyUDPSocket(runtime, klass);
-        }
-    };
 
     public RubyUDPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);

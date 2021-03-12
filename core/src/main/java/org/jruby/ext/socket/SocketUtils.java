@@ -464,8 +464,11 @@ public class SocketUtils {
             return specialAddress;
         } else {
             return InetAddress.getByName(addressString);
-
         }
+    }
+
+    public static InetAddress getRubyInetAddress(byte[] addressBytes) throws UnknownHostException {
+        return InetAddress.getByAddress(addressBytes);
     }
     
     private static InetAddress specialAddress(String addressString) throws UnknownHostException {

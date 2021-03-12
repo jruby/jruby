@@ -47,7 +47,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -70,7 +69,7 @@ public class RubyMatchData extends RubyObject {
     private Region charOffsets;
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
-        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
+        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), RubyMatchData::new);
 
         matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
@@ -83,13 +82,6 @@ public class RubyMatchData extends RubyObject {
 
         return matchDataClass;
     }
-
-    private static final ObjectAllocator MATCH_DATA_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyMatchData(runtime, klass);
-        }
-    };
 
     public RubyMatchData(Ruby runtime) {
         super(runtime, runtime.getMatchData());

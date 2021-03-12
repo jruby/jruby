@@ -42,7 +42,7 @@ public class RubyThreadError extends RubyStandardError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass threadErrorClass = runtime.defineClass("ThreadError", exceptionClass, (r, klass) -> new RubyThreadError(runtime, klass));
+        RubyClass threadErrorClass = runtime.defineClass("ThreadError", exceptionClass, RubyThreadError::new);
 
         return threadErrorClass;
     }

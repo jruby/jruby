@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NoRouteToHostException;
@@ -45,7 +44,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
@@ -54,25 +52,18 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {
-        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.getClass("IPSocket"), TCPSOCKET_ALLOCATOR);
+        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.getClass("IPSocket"), RubyTCPSocket::new);
 
         rb_cTCPSocket.defineAnnotatedMethods(RubyTCPSocket.class);
 
         runtime.getObject().setConstant("TCPsocket",rb_cTCPSocket);
     }
-
-    private static final ObjectAllocator TCPSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyTCPSocket(runtime, klass);
-        }
-    };
 
     public RubyTCPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);

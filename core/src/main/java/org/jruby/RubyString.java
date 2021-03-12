@@ -60,7 +60,6 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.exceptions.EncodingError;
 import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -72,7 +71,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.StringSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -111,8 +109,6 @@ import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.util.StringSupport.memchr;
 import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
-import static org.jruby.util.StringSupport.memsearch;
-import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.util.StringSupport.searchNonAscii;
 
 /**
@@ -149,7 +145,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private ByteList value;
 
     public static RubyClass createStringClass(Ruby runtime) {
-        RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
+        RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), RubyString::newAllocatedString);
 
         stringClass.setClassIndex(ClassIndex.STRING);
         stringClass.setReifiedClass(RubyString.class);
@@ -160,13 +156,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         return stringClass;
     }
-
-    private static final ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return RubyString.newAllocatedString(runtime, klass);
-        }
-    };
 
     @Override
     public Encoding getEncoding() {
