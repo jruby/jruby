@@ -1,18 +1,4 @@
 #!/usr/bin/env jruby
-#--
-# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
-# All rights reserved.
-# See LICENSE.txt for permissions.
-#++
 
-require 'rubygems'
-require 'rubygems/gem_runner'
-require 'rubygems/exceptions'
-
-args = ARGV.clone
-
-begin
-  Gem::GemRunner.new.run args
-rescue Gem::SystemExitException => e
-  exit e.exit_code
-end
+# Just load jgem, since that's what RubyGems updates.
+load File.join(File.dirname(__FILE__), 'jgem')
