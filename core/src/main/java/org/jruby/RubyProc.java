@@ -245,13 +245,17 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     /**
-     * For Type.LAMBDA, ensures that the args have the correct arity.
-     *
-     * For others, transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
+     * For non-lambdas transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
      * arity of one, etc.)
+     *
+     * Note: nothing should be calling this any more.
      */
     @Deprecated
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
+        if (type == Block.Type.LAMBDA) return args;
+
+        int arityValue = blockBody.getSignature().arityValue();
+        if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
         return args;
     }
 
