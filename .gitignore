@@ -93,6 +93,7 @@ lib/ruby/stdlib/readline*
 lib/ruby/stdlib/rexml*
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rss*
+lib/ruby/stdlib/rubygems*
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
 lib/ruby/stdlib/scanf.rb
 lib/ruby/stdlib/shell*
