@@ -15,7 +15,11 @@ def log(message=nil)
 end
 
 default_gems = [
-    # Bundler is shipped with RubyGems
+    # treat RGs update special:
+    # - we do not want bin/update_rubygems or bin/gem overrides
+    # - do not copy rubygems-update.spec for (default) gem
+    ['rubygems-update', '3.2.14', { bin: false, spec: false }],
+    ['bundler', '2.2.14'],
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],
     ['e2mmap', '0.1.0'],
@@ -177,10 +181,11 @@ project 'JRuby Lib Setup' do
       end
     end
 
-    default_gems.each do |name, version|
+    default_gems.each do |name, version, options|
       version = ctx.project.properties.get(version[2..-2]) || version
       version = version.sub( /-SNAPSHOT/, '' )
       gem_name = "#{name}-#{version}"
+      options = { bin: true, spec: true }.merge!(options || {})
 
       # install the gem unless already installed
       if Dir[ File.join( default_specs, "#{gem_name}*.gemspec" ) ].empty?
@@ -221,13 +226,10 @@ project 'JRuby Lib Setup' do
           raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
         end
 
-        specname = File.basename( specfile )
-        log "copy to specifications/default: #{specname}"
-
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
         # copy bin files if the gem has any
-        unless spec.executables.empty?
+        if options[:bin] && !spec.executables.empty?
           spec.executables.each do |f|
             bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
             source = File.join( bin, f )
@@ -238,8 +240,14 @@ project 'JRuby Lib Setup' do
           end
         end
 
-        File.open( File.join( default_specs, specname ), 'w' ) do |f|
-          f.print( spec.to_ruby )
+        if options[:spec]
+          specname = File.basename( specfile )
+
+          log "copy to specifications/default: #{specname}"
+
+          File.open( File.join( default_specs, specname ), 'w' ) do |f|
+            f.print( spec.to_ruby )
+          end
         end
       end
     end
