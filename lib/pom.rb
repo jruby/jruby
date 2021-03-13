@@ -176,8 +176,21 @@ project 'JRuby Lib Setup' do
       end
     end
 
+    copy_gem_executables = lambda do |name, version, gem_home|
+      spec = Gem::Package.new( Dir[ File.join( gem_home, 'cache', "#{name}-#{version}*.gem" ) ].first ).spec
+      if !spec.executables.empty?
+        bin_source = Gem.bindir(gem_home) # Gem::Installer generated bin scripts here
+        spec.executables.each do |file|
+          source = File.expand_path(file, bin_source)
+          target = File.join(jruby_home, 'bin') # JRUBY_HOME/bin binstubs
+          log "copy executable #{source} to #{target}"
+          FileUtils.cp(source, target)
+        end
+      end
+    end
+
     default_gems.each do |name, version, options|
-      version = ctx.project.properties.get(version[2..-2]) || version
+      version = ctx.project.properties.get(version[2..-2]) || version # resolve ${xyz.version} declarations
       version = version.sub( /-SNAPSHOT/, '' )
       gem_name = "#{name}-#{version}"
       options = { bin: true, spec: true }.merge(options || {})
@@ -224,15 +237,7 @@ project 'JRuby Lib Setup' do
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
         # copy bin files if the gem has any
-        if options[:bin] && !spec.executables.empty?
-          bin_source = Gem.bindir(gem_home) # Gem::Installer generated bin scripts here
-          spec.executables.each do |file|
-            source = File.expand_path(file, bin_source)
-            target = File.join(jruby_home, 'bin') # JRUBY_HOME/bin binstubs
-            log "copy executable #{source} to #{target}"
-            FileUtils.cp(source, target)
-          end
-        end
+        copy_gem_executables.call(name, version, gem_home) if options[:bin]
 
         if options[:spec]
           specname = File.basename( specfile )
@@ -242,6 +247,11 @@ project 'JRuby Lib Setup' do
           end
         end
       end
+    end
+
+    bundled_gems.each do |name, version| # copy bin files for bundled gems (e.g. rake) as well
+      version = ctx.project.properties.get(version[2..-2]) || version # e.g. resolve '${rake.version}' from properties
+      copy_gem_executables.call(name, version, jruby_gems)
     end
 
     # patch jruby-openssl - remove file which should be only inside gem
