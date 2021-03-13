@@ -27,10 +27,10 @@ default_gems = [
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
     ['irb', '1.0.0'],
-    ['jar-dependencies', '${jar-dependencies.version}'],
+    ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.5'],
-    ['json', '${json.version}'],
+    ['json', '2.5.1'],
     ['logger', '1.3.0'],
     ['matrix', '0.3.0'],
     ['mutex_m', '0.1.0'],
@@ -39,7 +39,7 @@ default_gems = [
     ['psych', '3.2.0'],
     ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
-    ['rdoc', '${rdoc.version}'],
+    ['rdoc', '6.1.2'],
     ['rexml', '3.1.9'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
@@ -52,11 +52,11 @@ default_gems = [
 
 bundled_gems = [
     ['did_you_mean', '1.2.1'],
-    ['minitest', '${minitest.version}'],
+    ['minitest', '5.11.3'],
     ['net-telnet', '0.1.1'],
-    ['power_assert', '${power_assert.version}'],
+    ['power_assert', '1.1.3'],
     ['rake', '${rake.version}'],
-    ['test-unit', '${test-unit.version}'],
+    ['test-unit', '3.2.9'],
     ['xmlrpc', '0.3.0'],
 ]
 
