@@ -137,9 +137,6 @@ project 'JRuby Lib Setup' do
     stdlib_dir = File.join( ruby_dir, 'stdlib' )
     jruby_home = ctx.project.parent.basedir.to_pathname
 
-    # bin location for global binstubs
-    global_bin = File.join( jruby_home, "bin" )
-
     FileUtils.mkdir_p( default_specs )
 
     # have an empty openssl.rb so we do not run in trouble with not having
@@ -173,7 +170,6 @@ project 'JRuby Lib Setup' do
                                         wrappers: true,
                                         ignore_dependencies: true,
                                         install_dir: ghome,
-                                        bin_dir: global_bin,
                                         env_shebang: true )
         def installer.ensure_required_ruby_version_met; end
         installer.install
@@ -184,7 +180,7 @@ project 'JRuby Lib Setup' do
       version = ctx.project.properties.get(version[2..-2]) || version
       version = version.sub( /-SNAPSHOT/, '' )
       gem_name = "#{name}-#{version}"
-      options = { bin: true, spec: true }.merge!(options || {})
+      options = { bin: true, spec: true }.merge(options || {})
 
       # install the gem unless already installed
       if Dir[ File.join( default_specs, "#{gem_name}*.gemspec" ) ].empty?
@@ -229,21 +225,18 @@ project 'JRuby Lib Setup' do
 
         # copy bin files if the gem has any
         if options[:bin] && !spec.executables.empty?
-          spec.executables.each do |f|
-            bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
-            source = File.join( bin, f )
-            target = File.join( bin_stubs, source.sub( /#{gems}/, '' ) )
-            log "copy #{f} to #{target}}"
-            FileUtils.mkdir_p( File.dirname( target ) )
-            FileUtils.cp_r( source, target )
+          bin_source = Gem.bindir(gem_home) # Gem::Installer generated bin scripts here
+          spec.executables.each do |file|
+            source = File.expand_path(file, bin_source)
+            target = File.join(jruby_home, 'bin') # JRUBY_HOME/bin binstubs
+            log "copy executable #{source} to #{target}"
+            FileUtils.cp(source, target)
           end
         end
 
         if options[:spec]
           specname = File.basename( specfile )
-
           log "copy to specifications/default: #{specname}"
-
           File.open( File.join( default_specs, specname ), 'w' ) do |f|
             f.print( spec.to_ruby )
           end
