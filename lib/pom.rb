@@ -234,10 +234,18 @@ project 'JRuby Lib Setup' do
           raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
         end
 
-        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
-
         # copy bin files if the gem has any
         copy_gem_executables.call(name, version, gem_home) if options[:bin]
+        # TODO: try avoiding these binstub of gems - should use a full gem location
+        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
+        spec.executables.each do |f|
+          bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
+          source = File.join( bin, f )
+          target = File.join( bin_stubs, source.sub( /#{gems}/, '' ) )
+          log "copy #{f} to #{target}"
+          FileUtils.mkdir_p( File.dirname( target ) )
+          FileUtils.cp_r( source, target )
+        end
 
         if options[:spec]
           specname = File.basename( specfile )
