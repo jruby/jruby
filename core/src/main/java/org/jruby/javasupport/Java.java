@@ -297,47 +297,33 @@ public class Java implements Library {
         return Java.getProxyClass(runtime, javaClass);
     }
 
-    public static RubyModule get_interface_module(final Ruby runtime, IRubyObject javaClassObject) {
-        Class<?> javaClass; String javaName;
-        if ( javaClassObject instanceof RubyString ) {
-            javaClass = Java.getJavaClass(runtime, javaClassObject.asJavaString());
-        }
-        else if ( javaClassObject instanceof JavaClass ) {
-            javaClass = ((JavaClass) javaClassObject).javaClass();
-        }
-        else if ( (javaName = unwrapJavaString(javaClassObject)) != null ) {
-            javaClass = Java.getJavaClass(runtime, javaName);
-        }
-        else {
-            throw runtime.newArgumentError("expected a Java class, got " + javaClassObject.inspect());
-        }
-        return getInterfaceModule(runtime, javaClass);
+    public static RubyModule get_interface_module(final Ruby runtime, final IRubyObject java_class) {
+        return getInterfaceModule(runtime, resolveJavaClassArgument(runtime, java_class));
     }
 
     public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
         final Ruby runtime = self.getRuntime();
-        final Class<?> javaClass; String javaName;
-        if ( java_class instanceof RubyString ) {
-            javaClass = getJavaClass(runtime, java_class.asJavaString());
-        }
-        else if ( java_class instanceof JavaClass ) {
-            javaClass = ((JavaClass) java_class).javaClass();
-        }
-        else if ( (javaName = unwrapJavaString(java_class)) != null ) {
-            javaClass = getJavaClass(runtime, javaName);
-        }
-        else {
-            throw runtime.newTypeError(java_class, "String");
-        }
-        return getProxyClass(runtime, javaClass);
+        return getProxyClass(runtime, resolveJavaClassArgument(runtime, java_class));
     }
 
-    private static String unwrapJavaString(IRubyObject arg) {
-        if (arg instanceof JavaProxy) {
-            Object str = ((JavaProxy) arg).getObject();
-            return str instanceof String ? (String) str : null;
+    private static Class<?> resolveJavaClassArgument(final Ruby runtime, final IRubyObject java_class) {
+        if (java_class instanceof RubyString) {
+            return getJavaClass(runtime, java_class.asJavaString());
         }
-        return null;
+        if (java_class instanceof JavaProxy) {
+            Object obj = ((JavaProxy) java_class).getObject();
+            if (obj instanceof Class) return (Class<?>) obj;
+            if (obj instanceof String) { // java.lang.String proxy
+                return getJavaClass(runtime, (String) obj);
+            }
+            throw runtime.newArgumentError("expected a Java class, got " + java_class.inspect());
+        }
+
+        if ( java_class instanceof JavaClass ) { // legacy
+            return ((JavaClass) java_class).javaClass();
+        }
+
+        throw runtime.newArgumentError("expected a Java class (or String), got " + java_class.inspect());
     }
 
     public static Class<?> unwrapClassProxy(final IRubyObject self) {
