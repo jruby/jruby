@@ -324,7 +324,70 @@ DO NOT MODIFIY - GENERATED CODE
         <targetPath>${jruby.complete.gems}</targetPath>
         <directory>${gem.home}</directory>
         <includes>
-          <include>**/*</include>
+          <include>specifications/default/*</include>
+          <include>specifications/cmath-1.0.0*</include>
+          <include>specifications/csv-1.0.0*</include>
+          <include>specifications/fileutils-1.1.0*</include>
+          <include>specifications/ipaddr-1.2.0*</include>
+          <include>specifications/jar-dependencies-${jar-dependencies.version}*</include>
+          <include>specifications/jruby-readline-1.3.7*</include>
+          <include>specifications/jruby-openssl-0.10.5*</include>
+          <include>specifications/json-${json.version}*</include>
+          <include>specifications/psych-3.2.0*</include>
+          <include>specifications/racc-1.5.2*</include>
+          <include>specifications/rake-ant-1.0.4*</include>
+          <include>specifications/rdoc-${rdoc.version}*</include>
+          <include>specifications/scanf-1.0.0*</include>
+          <include>specifications/webrick-1.6.1*</include>
+          <include>specifications/did_you_mean-1.2.1*</include>
+          <include>specifications/minitest-${minitest.version}*</include>
+          <include>specifications/net-telnet-0.1.1*</include>
+          <include>specifications/power_assert-${power_assert.version}*</include>
+          <include>specifications/rake-${rake.version}*</include>
+          <include>specifications/test-unit-${test-unit.version}*</include>
+          <include>specifications/xmlrpc-0.3.0*</include>
+          <include>gems/cmath-1.0.0*/**/*</include>
+          <include>gems/csv-1.0.0*/**/*</include>
+          <include>gems/fileutils-1.1.0*/**/*</include>
+          <include>gems/ipaddr-1.2.0*/**/*</include>
+          <include>gems/jar-dependencies-${jar-dependencies.version}*/**/*</include>
+          <include>gems/jruby-readline-1.3.7*/**/*</include>
+          <include>gems/jruby-openssl-0.10.5*/**/*</include>
+          <include>gems/json-${json.version}*/**/*</include>
+          <include>gems/psych-3.2.0*/**/*</include>
+          <include>gems/racc-1.5.2*/**/*</include>
+          <include>gems/rake-ant-1.0.4*/**/*</include>
+          <include>gems/rdoc-${rdoc.version}*/**/*</include>
+          <include>gems/scanf-1.0.0*/**/*</include>
+          <include>gems/webrick-1.6.1*/**/*</include>
+          <include>gems/did_you_mean-1.2.1*/**/*</include>
+          <include>gems/minitest-${minitest.version}*/**/*</include>
+          <include>gems/net-telnet-0.1.1*/**/*</include>
+          <include>gems/power_assert-${power_assert.version}*/**/*</include>
+          <include>gems/rake-${rake.version}*/**/*</include>
+          <include>gems/test-unit-${test-unit.version}*/**/*</include>
+          <include>gems/xmlrpc-0.3.0*/**/*</include>
+          <include>cache/cmath-1.0.0*</include>
+          <include>cache/csv-1.0.0*</include>
+          <include>cache/fileutils-1.1.0*</include>
+          <include>cache/ipaddr-1.2.0*</include>
+          <include>cache/jar-dependencies-${jar-dependencies.version}*</include>
+          <include>cache/jruby-readline-1.3.7*</include>
+          <include>cache/jruby-openssl-0.10.5*</include>
+          <include>cache/json-${json.version}*</include>
+          <include>cache/psych-3.2.0*</include>
+          <include>cache/racc-1.5.2*</include>
+          <include>cache/rake-ant-1.0.4*</include>
+          <include>cache/rdoc-${rdoc.version}*</include>
+          <include>cache/scanf-1.0.0*</include>
+          <include>cache/webrick-1.6.1*</include>
+          <include>cache/did_you_mean-1.2.1*</include>
+          <include>cache/minitest-${minitest.version}*</include>
+          <include>cache/net-telnet-0.1.1*</include>
+          <include>cache/power_assert-${power_assert.version}*</include>
+          <include>cache/rake-${rake.version}*</include>
+          <include>cache/test-unit-${test-unit.version}*</include>
+          <include>cache/xmlrpc-0.3.0*</include>
         </includes>
       </resource>
       <resource>

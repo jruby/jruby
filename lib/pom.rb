@@ -92,6 +92,7 @@ project 'JRuby Lib Setup' do
   end
 
   default_gemnames = default_gems.collect(&:first)
+  all_gems     = default_gems + bundled_gems
 
   plugin :dependency,
     :useRepositoryLayout => true,
@@ -288,7 +289,12 @@ project 'JRuby Lib Setup' do
   build do
     resource do
       directory '${gem.home}'
-      includes '**/*'
+      includes [
+                   'specifications/default/*',
+                   *all_gems.map {|name,version| "specifications/#{name}-#{version}*"},
+                   *all_gems.map {|name,version| "gems/#{name}-#{version}*/**/*"},
+                   *all_gems.map {|name,version| "cache/#{name}-#{version}*"},
+               ]
       target_path '${jruby.complete.gems}'
     end
 
