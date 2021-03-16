@@ -61,8 +61,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'invoker.skip' => 'true',
               'version.jruby' => '${project.version}',
               'github.global.server' => 'github',
-              'polyglot.dump.pom' => 'pom.xml',
-              'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
               'json.version' => '2.5.1',

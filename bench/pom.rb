@@ -7,8 +7,7 @@ project 'JRuby Benchmark' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-benchmark'
 
-  properties('polyglot.dump.pom' => 'pom.xml',
-             'polyglot.dump.readonly' => true,
+  properties(
              'maven.build.timestamp.format' => 'yyyy-MM-dd',
              'maven.test.skip' => 'true',
              'build.date' => '${maven.build.timestamp}',

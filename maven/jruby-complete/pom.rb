@@ -15,8 +15,7 @@ project 'JRuby Complete' do
 
   plugin_repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
-  properties( 'polyglot.dump.pom' => 'pom.xml',
-              'polyglot.dump.readonly' => true,
+  properties(
               'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
