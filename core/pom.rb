@@ -9,9 +9,7 @@ project 'JRuby Base' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-base'
 
-  properties( 'polyglot.dump.pom' => 'pom.xml',
-              'polyglot.dump.readonly' => true,
-
+  properties(
               'tzdata.version' => '2019c',
               'tzdata.scope' => 'provided',
 
