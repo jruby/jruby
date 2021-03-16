@@ -140,4 +140,11 @@ public interface ValueCompiler {
      * Stack required: none
      */
     void pushEmptyString(Encoding encoding);
+
+    /**
+     * Push a {@link java.lang.invoke.MethodHandles.Lookup} for the current class
+     *
+     * Stack required: none
+     */
+    void pushLookup();
 }

@@ -43,6 +43,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -63,10 +64,10 @@ public class JVMVisitor extends IRVisitor {
     public static final String SELF_BLOCK_NAME = "selfBlock";
     public static final String SUPER_NAME_NAME = "superName";
 
-    private static final Signature METHOD_SIGNATURE_BASE = Signature
+    public static final Signature METHOD_SIGNATURE_BASE = Signature
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", "scope", "self", BLOCK_ARG_NAME, "class", "superName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
-    private static final Signature METHOD_SIGNATURE_VARARGS = METHOD_SIGNATURE_BASE.insertArg(BLOCK_ARG_NAME, "args", IRubyObject[].class);
+    public static final Signature METHOD_SIGNATURE_VARARGS = METHOD_SIGNATURE_BASE.insertArg(BLOCK_ARG_NAME, "args", IRubyObject[].class);
 
     public static final Signature CLOSURE_SIGNATURE = Signature
             .returning(IRubyObject.class)
@@ -1316,6 +1317,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext(); // for invokeModuleBody
 
         jvmMethod().loadContext();
+        jvmMethod().getValueCompiler().pushLookup();
         Handle handle = emitModuleBody(newIRClassBody);
         jvmMethod().pushHandle(handle);
         jvmAdapter().ldc(newIRClassBody.getId());
@@ -1326,7 +1328,7 @@ public class JVMVisitor extends IRVisitor {
         visit(defineclassinstr.getSuperClass());
         jvmAdapter().ldc(newIRClassBody.maybeUsingRefinements());
         jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class,
-                java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, Object.class, Object.class, boolean.class));
+                MethodHandles.Lookup.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, Object.class, Object.class, boolean.class));
 
         jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(defineclassinstr.getResult());
@@ -1346,8 +1348,8 @@ public class JVMVisitor extends IRVisitor {
                 context.getSpecificName(),
                 context.getNativeSignaturesExceptVariable(),
                 METHOD_SIGNATURE_VARARGS.type(),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, String.class, IRubyObject.class, boolean.class, boolean.class, boolean.class),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, int.class, StaticScope.class, String.class, IRubyObject.class, boolean.class, boolean.class, boolean.class));
+                sig(void.class, ThreadContext.class, MethodHandles.Lookup.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, String.class, IRubyObject.class, boolean.class, boolean.class, boolean.class),
+                sig(void.class, ThreadContext.class, MethodHandles.Lookup.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, int.class, StaticScope.class, String.class, IRubyObject.class, boolean.class, boolean.class, boolean.class));
 
         jvmAdapter().ldc(method.getId());
         jvmAdapter().ldc(method.getLine());
@@ -1383,8 +1385,8 @@ public class JVMVisitor extends IRVisitor {
                 context.getSpecificName(),
                 context.getNativeSignaturesExceptVariable(),
                 variable,
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, String.class, DynamicScope.class, IRubyObject.class, boolean.class, boolean.class, boolean.class),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, int.class, StaticScope.class, String.class, DynamicScope.class, IRubyObject.class, boolean.class, boolean.class, boolean.class));
+                sig(void.class, ThreadContext.class, MethodHandles.Lookup.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, String.class, DynamicScope.class, IRubyObject.class, boolean.class, boolean.class, boolean.class),
+                sig(void.class, ThreadContext.class, MethodHandles.Lookup.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, int.class, StaticScope.class, String.class, DynamicScope.class, IRubyObject.class, boolean.class, boolean.class, boolean.class));
 
         a.ldc(method.getId());
         a.ldc(method.getLine());
@@ -1402,6 +1404,8 @@ public class JVMVisitor extends IRVisitor {
 
     private String pushHandlesForDef(String variableName, String specificName, IntHashMap<MethodType> signaturesExceptVariable, MethodType variable, String variableOnly, String variableAndSpecific) {
         String defSignature;
+
+        jvmMethod().getValueCompiler().pushLookup();
 
         jvmMethod().pushHandle(new Handle(
                 Opcodes.H_INVOKESTATIC,
@@ -1478,6 +1482,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext(); // for invokeModuleBody
 
         jvmMethod().loadContext();
+        jvmMethod().getValueCompiler().pushLookup();
         Handle handle = emitModuleBody(newIRModuleBody);
         jvmMethod().pushHandle(handle);
         jvmAdapter().ldc(newIRModuleBody.getId());
@@ -1486,7 +1491,7 @@ public class JVMVisitor extends IRVisitor {
         visit(definemoduleinstr.getContainer());
         jvmAdapter().ldc(newIRModuleBody.maybeUsingRefinements());
         jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class,
-                java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, Object.class, boolean.class));
+                MethodHandles.Lookup.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, Object.class, boolean.class));
 
         jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(definemoduleinstr.getResult());

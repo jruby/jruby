@@ -22,6 +22,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
+import java.lang.invoke.MethodHandles;
 import java.math.BigInteger;
 
 import static org.jruby.util.CodegenUtils.ci;
@@ -138,5 +139,10 @@ public class IndyValueCompiler implements ValueCompiler {
     @Override
     public void pushConstantLookupSite(String className, String siteName, ByteList name) {
         normalValueCompiler.pushConstantLookupSite(className, siteName, name);
+    }
+
+    @Override
+    public void pushLookup() {
+        compiler.adapter.invokedynamic("lookup", sig(MethodHandles.Lookup.class), Bootstrap.lookupCache());
     }
 }

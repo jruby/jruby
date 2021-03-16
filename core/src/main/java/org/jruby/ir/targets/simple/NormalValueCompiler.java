@@ -36,6 +36,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -254,6 +255,13 @@ public class NormalValueCompiler implements ValueCompiler {
         method.putstatic(className, siteName, ci(ConstantLookupSite.class));
 
         method.label(doLookup);
+    }
+
+    @Override
+    public void pushLookup() {
+        cacheValuePermanently("lookup", MethodHandles.Lookup.class, "MethodHandles.Lookup", false, () -> {
+            compiler.adapter.invokestatic(p(MethodHandles.class), "lookup", sig(MethodHandles.Lookup.class));
+        });
     }
 
     public String cacheValuePermanentlyLoadContext(String what, Class type, Object key, Runnable construction) {

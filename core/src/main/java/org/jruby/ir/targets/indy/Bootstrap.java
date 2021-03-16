@@ -204,6 +204,10 @@ public class Bootstrap {
         return new ByteList(RubyEncoding.encodeISO(value), encoding, false);
     }
 
+    public static CallSite lookupCache(Lookup lookup, String name, MethodType type) {
+        return new ConstantCallSite(constant(Lookup.class, lookup));
+    }
+
     private static Encoding encodingFromName(String encodingName) {
         Encoding encoding;
         EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
@@ -357,6 +361,15 @@ public class Bootstrap {
                 p(Bootstrap.class),
                 "bytelist",
                 sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class),
+                false);
+    }
+
+    public static Handle lookupCache() {
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "lookupCache",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
                 false);
     }
 
