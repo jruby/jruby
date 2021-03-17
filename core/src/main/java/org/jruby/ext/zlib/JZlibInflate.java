@@ -61,14 +61,12 @@ public class JZlibInflate extends ZStream {
         JZlibInflate inflate = (JZlibInflate) klass.allocate();
         inflate.init(JZlib.DEF_WBITS);
 
-        IRubyObject result;
         try {
-            inflate.append(string.convertToString().getByteList());
+            return inflate.inflate(context, string, Block.NULL_BLOCK);
         } finally {
-            result = inflate.finish(context, Block.NULL_BLOCK);
+            inflate.finish(context, Block.NULL_BLOCK);
             inflate.close();
         }
-        return result;
     }
 
     @JRubyMethod(name = "initialize", optional = 1, visibility = PRIVATE)

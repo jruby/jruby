@@ -24,6 +24,7 @@ default_gems = [
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
     ['irb', '1.0.0'],
+    ['io-console', '0.5.9'],
     ['jar-dependencies', '${jar-dependencies.version}'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.5'],
