@@ -59,6 +59,7 @@ lib/ruby/stdlib/csv*
 lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/fileutils.rb
 lib/ruby/stdlib/gauntlet_rdoc.rb
+lib/ruby/stdlib/io/console*
 lib/ruby/stdlib/ipaddr*
 lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
