@@ -54,7 +54,7 @@ process_java_opts() {
 
     # On Java 9+, add an @argument for the given file.
     # On earlier versions the file contents will be read and expanded on the Java command line.
-    if [ "$is_java9" ]; then
+    if [ "$use_modules" ]; then
       java_opts_from_files="$java_opts_from_files @$java_opts_file"
     else
       java_opts_from_files="$java_opts_from_files $(cat "$java_opts_file")"
@@ -140,17 +140,17 @@ else
   fi
 fi
 
-# Detect Java 9+ by the presence of a jmods directory in JAVA_HOME
-if [ -d "$JAVA_HOME"/jmods ]; then
-  is_java9=1
+# Detect modularized Java
+if [ -f ${JAVA_HOME}/lib/modules ] || [ -f ${JAVA_HOME}/release ] && grep -q ^MODULES ${JAVA_HOME}/release; then
+  use_modules=1
 fi
 
 add_log "  JAVACMD: $JAVACMD"
 add_log "  JAVA_HOME: $JAVA_HOME"
 
-if [ "$is_java9" ]; then
+if [ "$use_modules" ]; then
   add_log
-  add_log "Detected Java modules at $JAVA_HOME/jmods"
+  add_log "Detected Java modules at $JAVA_HOME"
 fi
 
 # ----- Process .java_opts files ----------------------------------------------
@@ -380,7 +380,7 @@ fi
 
 # ----- Module and Class Data Sharing flags for Java 9+ -----------------------
 
-if [ "$is_java9" ]; then
+if [ "$use_modules" ]; then
   # Use module path instead of classpath for the jruby libs
   classpath_args=(--module-path "$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH")
 
