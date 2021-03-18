@@ -52,14 +52,12 @@ public class JavaProxyMethods {
 
     @JRubyMethod
     public static IRubyObject java_object(ThreadContext context, IRubyObject recv) {
-        return (IRubyObject) recv.dataGetStruct();
-    }
-
-    @JRubyMethod(name = "java_object=")
-    public static IRubyObject java_object_set(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        // XXX: Check if it's appropriate type?
-        recv.dataWrapStruct(obj);
-        return obj;
+        Object javaObj = recv.dataGetStruct();
+        if (javaObj instanceof IRubyObject) {
+            return (IRubyObject) javaObj;
+        }
+        if (javaObj == null) return context.nil;
+        return Java.getInstance(context.runtime, javaObj);
     }
 
     @JRubyMethod
@@ -68,25 +66,33 @@ public class JavaProxyMethods {
     }
 
     @JRubyMethod(name = "eql?")
-    public static IRubyObject op_eql(IRubyObject recv, IRubyObject obj) {
-        return op_equal(recv, obj);
+    public static IRubyObject op_eql(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        return op_equal(context, recv, obj);
     }
 
     @JRubyMethod(name = "==")
-    public static IRubyObject op_equal(IRubyObject recv, IRubyObject rhs) {
+    public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (recv instanceof JavaProxy) {
-            return JavaObject.op_equal((JavaProxy) recv, rhs);
+            return JavaObject.equals(context.runtime, ((JavaProxy) recv).getObject(), other);
         }
-        return ((JavaObject)recv.dataGetStruct()).op_equal(rhs);
+        // NOTE: only JavaProxy includes JavaProxyMethods
+        // these is only here for 'manual' JavaObject wrapping :
+        if (recv.dataGetStruct() instanceof RubyBasicObject) {
+            return ((RubyBasicObject) recv.dataGetStruct()).op_equal(context, other);
+        }
+        return context.nil;
     }
     
     @JRubyMethod
-    public static IRubyObject to_s(IRubyObject recv) {
+    public static IRubyObject to_s(ThreadContext context, IRubyObject recv) {
         if (recv instanceof JavaProxy) {
-            return JavaObject.to_s(recv.getRuntime(), ((JavaProxy) recv).getObject());
+            return JavaObject.to_s(context.runtime, ((JavaProxy) recv).getObject());
         }
-        final Object unwrap = recv.dataGetStruct();
-        if (unwrap != null) return ((JavaObject) unwrap).to_s();
+        // NOTE: only JavaProxy includes JavaProxyMethods
+        // these is only here for 'manual' JavaObject wrapping :
+        if (recv.dataGetStruct() instanceof IRubyObject) {
+            return ((RubyBasicObject) recv.dataGetStruct()).to_s();
+        }
         return ((RubyBasicObject) recv).to_s();
     }
 
@@ -99,11 +105,16 @@ public class JavaProxyMethods {
     }
     
     @JRubyMethod
-    public static IRubyObject hash(IRubyObject recv) {
+    public static IRubyObject hash(ThreadContext context, IRubyObject recv) {
         if (recv instanceof JavaProxy) {
-            return RubyFixnum.newFixnum(recv.getRuntime(), ((JavaProxy) recv).getObject().hashCode());
+            return RubyFixnum.newFixnum(context.runtime, ((JavaProxy) recv).getObject().hashCode());
         }
-        return ((JavaObject) recv.dataGetStruct()).hash();
+        // NOTE: only JavaProxy includes JavaProxyMethods
+        // these is only here for 'manual' JavaObject wrapping :
+        if (recv.dataGetStruct() instanceof IRubyObject) {
+            return ((RubyBasicObject) recv.dataGetStruct()).hash();
+        }
+        return ((RubyBasicObject) recv).hash();
     }
     
     @JRubyMethod(name = "synchronized")
@@ -111,6 +122,14 @@ public class JavaProxyMethods {
         if (recv instanceof JavaProxy) {
             return JavaObject.ruby_synchronized(context, ((JavaProxy) recv).getObject(), block);
         }
-        return ((JavaObject) recv.dataGetStruct()).ruby_synchronized(context, block);
+        final Object lock;
+        // NOTE: only JavaProxy includes JavaProxyMethods
+        // these is only here for 'manual' JavaObject wrapping :
+        if (recv.dataGetStruct() instanceof IRubyObject) {
+            lock = recv.dataGetStruct();
+        } else {
+            lock = recv;
+        }
+        synchronized (lock) { return block.yield(context, null); }
     }
 }

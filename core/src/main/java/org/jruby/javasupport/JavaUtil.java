@@ -263,8 +263,8 @@ public class JavaUtil {
             }
 
         }
-        JavaObject javaObject = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
-        return (T) javaObject.getValue();
+        JavaProxy javaObject = (JavaProxy) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
+        return (T) javaObject.getObject();
     }
 
     public static <T> NumericConverter<T> getNumericConverter(Class<T> target) {
@@ -658,7 +658,7 @@ public class JavaUtil {
     public static final JavaConverter JAVA_DEFAULT_CONVERTER = new JavaConverter(Object.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             IRubyObject result = trySimpleConversions(runtime, object);
-            return result == null ? JavaObject.wrap(runtime, object) : result;
+            return result == null ? Java.getInstance(runtime, object) : result;
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Object[]) array)[i]);
@@ -1514,6 +1514,7 @@ public class JavaUtil {
     }
 
     @Deprecated
+    @SuppressWarnings("deprecation")
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         if (object instanceof JavaObject) {
             return object;
@@ -1553,7 +1554,7 @@ public class JavaUtil {
         }
 
         // we've found a Java type to which we've coerced the Ruby value, wrap it
-        return JavaObject.wrap(runtime, javaObject);
+        return Java.getInstance(runtime, javaObject);
     }
 
     @Deprecated

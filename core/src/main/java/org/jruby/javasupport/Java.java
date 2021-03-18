@@ -647,7 +647,7 @@ public class Java implements Library {
 
         /**
          * Disambiguate which ctor index to call from the given cache
-         * @param argarray argument list for the ctors
+         * @param args argument list for the ctors
          * @param cache cache of ctors
          * @param runtime
          * @return Index of ctor in cache to call, or throws a new exception
@@ -690,8 +690,8 @@ public class Java implements Library {
             if (self instanceof JavaProxy) {
                 return context.nil;
             }
-            JavaObject newObject = matching.newInstance(self, arg0);
-            return newObject;
+            IRubyObject newObject = matching.newInstance(context.runtime, self, arg0);
+            return JavaUtilities.set_java_object(self, self, newObject);
         }
         
         @Override
@@ -713,11 +713,8 @@ public class Java implements Library {
             	context.runtime.newArgumentError("ahck").printStackTrace();
             	return context.nil; 
             }
-            JavaObject newObject = matching.newInstance(self, args);
-            if (self instanceof JavaProxy) { // TODO: ^?
-                JavaUtilities.set_java_object(self, self, newObject);
-            }
-            return newObject;
+            IRubyObject newObject = matching.newInstance(context.runtime, self, args);
+            return JavaUtilities.set_java_object(self, self, newObject);
         }
 
         // assumes only 1 *Ruby* constructor exists! (Filters out nonruby)
@@ -1409,10 +1406,10 @@ public class Java implements Library {
             interfaces[i] = ((JavaClass) javaClasses[i]).javaClass();
         }
 
-        return newInterfaceImpl(wrapper, interfaces);
+        return getInstance(recv.getRuntime(), newInterfaceImpl(wrapper, interfaces));
     }
 
-    public static JavaObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
+    public static Object newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
         final Ruby runtime = wrapper.getRuntime();
 
         final int length = interfaces.length;
@@ -1432,7 +1429,7 @@ public class Java implements Library {
         final JRubyClassLoader jrubyClassLoader = runtime.getJRubyClassLoader();
 
         if ( RubyInstanceConfig.INTERFACES_USE_PROXY ) {
-            return JavaObject.wrap(runtime, newProxyInterfaceImpl(wrapper, interfaces, jrubyClassLoader));
+            return newProxyInterfaceImpl(wrapper, interfaces, jrubyClassLoader);
         }
 
         final ClassDefiningClassLoader classLoader;
@@ -1459,7 +1456,7 @@ public class Java implements Library {
 
         try {
             Constructor<?> proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
-            return JavaObject.wrap(runtime, proxyConstructor.newInstance(wrapper));
+            return proxyConstructor.newInstance(wrapper);
         }
         catch (InvocationTargetException e) {
             throw mapGeneratedProxyException(runtime, e);
@@ -1677,10 +1674,9 @@ public class Java implements Library {
         final IRubyObject proxy = clazz.allocate();
         if ( proxy instanceof JavaProxy ) {
             ((JavaProxy) proxy).setObject(javaObject);
-        }
-        else {
-            JavaObject wrappedObject = JavaObject.wrap(runtime, javaObject);
-            proxy.dataWrapStruct(wrappedObject);
+        } else {
+            // TODO (JavaObject transition) is this really necessary?
+            proxy.dataWrapStruct(new JavaProxy(runtime, clazz, javaObject));
         }
         return proxy;
     }

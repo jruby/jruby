@@ -44,6 +44,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.invokers.RubyToJavaInvoker;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
@@ -184,48 +185,46 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     }
 
     @JRubyMethod(rest = true)
-    public RubyObject new_instance2(IRubyObject[] args, Block unusedBlock) {
-        final Ruby runtime = getRuntime();
+    public IRubyObject new_instance2(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
+        final Ruby runtime = context.runtime;
         Arity.checkArgumentCount(runtime, args, 2, 2);
 
         final IRubyObject self = args[0];
         final Object[] convertedArgs = convertArguments((RubyArray) args[1]); // constructor arguments
 
         try {
-            return JavaObject.wrap(runtime, newInstance(convertedArgs, runtime, self));
+            return wrapJavaObject(runtime, newInstance(convertedArgs, runtime, self));
         }
         catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
     }
 
-    public JavaObject newInstance(final IRubyObject self, Object[] args) throws RaiseException {
-        final Ruby runtime = getRuntime();
-        
+    public final IRubyObject newInstance(final Ruby runtime, final IRubyObject self, Object[] args) throws RaiseException {
         try {
-            return JavaObject.wrap(runtime, newInstance(args, runtime, self));
+            return wrapJavaObject(runtime, newInstance(args, runtime, self));
         }
-        catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
+        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
     }
 
-    public final JavaObject newInstance(final IRubyObject self, IRubyObject[] args) throws RaiseException {
-        final Ruby runtime = getRuntime();
-
+    public final IRubyObject newInstance(final Ruby runtime, final IRubyObject self, IRubyObject[] args) throws RaiseException {
         final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, args, (exportable?0:+2));
 
         try {
-            return JavaObject.wrap(runtime, newInstanceImpl(javaArgsPlus1, runtime, self));
+            return wrapJavaObject(runtime, newInstanceImpl(javaArgsPlus1, runtime, self));
         }
-        catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
+        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
     }
 
-    public final JavaObject newInstance(final IRubyObject self, IRubyObject arg0) throws RaiseException {
-        final Ruby runtime = getRuntime();
-
+    public final IRubyObject newInstance(final Ruby runtime, final IRubyObject self, IRubyObject arg0) throws RaiseException {
         final Object[] javaArgsPlus1 = RubyToJavaInvoker.convertArguments(this, arg0, (exportable?0:+2));
 
         try {
-            return JavaObject.wrap(runtime, newInstanceImpl(javaArgsPlus1, runtime, self));
+            return wrapJavaObject(runtime, newInstanceImpl(javaArgsPlus1, runtime, self));
         }
-        catch (Throwable ex) { throw mapInstantiationException(runtime, ex); }
+        catch (Exception ex) { throw mapInstantiationException(runtime, ex); }
+    }
+
+    private static IRubyObject wrapJavaObject(final Ruby runtime, final Object obj) {
+        return Java.getInstance(runtime, obj);
     }
 
     public static RaiseException mapInstantiationException(final Ruby runtime, final Throwable e) {
@@ -248,7 +247,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     }
 
     @JRubyMethod(required = 1, optional = 1)
-    public RubyObject new_instance(IRubyObject[] args, Block block) {
+    public IRubyObject new_instance(IRubyObject[] args, Block block) {
         final Ruby runtime = getRuntime();
 
         final int last = Arity.checkArgumentCount(runtime, args, 1, 2) - 1;
@@ -264,7 +263,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         final Object[] convertedArgs = convertArguments((RubyArray) args[0]);
 
         try {
-            return JavaObject.wrap(runtime, newInstance(convertedArgs, runtime, proc));
+            return wrapJavaObject(runtime, newInstance(convertedArgs, runtime, proc));
         }
         catch (Exception e) {
             throw mapInstantiationException(runtime, e);

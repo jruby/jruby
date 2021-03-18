@@ -56,7 +56,6 @@ import static org.jruby.runtime.Helpers.arrayOf;
 
 public class JavaProxy extends RubyObject {
 
-    private transient JavaObject javaObject;
     Object object;
 
     public JavaProxy(Ruby runtime, RubyClass klazz) {
@@ -114,16 +113,18 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public final Object dataGetStruct() {
-        if (javaObject == null) {
-            javaObject = asJavaObject(object);
-        }
-        return javaObject;
+        return object;
     }
 
     @Override
     public final void dataWrapStruct(Object object) {
-        this.javaObject = (JavaObject) object;
-        this.object = javaObject.getValue();
+        if (object instanceof JavaObject) {
+            this.object = ((JavaObject) object).getValue();
+        } else if (object instanceof JavaProxy) {
+            this.object = ((JavaProxy) object).object;
+        } else {
+            this.object = object;
+        }
     }
 
     public final Object getObject() {
@@ -136,6 +137,8 @@ public class JavaProxy extends RubyObject {
 
     public Object unwrap() { return getObject(); }
 
+    @Deprecated
+    @SuppressWarnings("deprecation")
     protected JavaObject asJavaObject(final Object object) {
         return JavaObject.wrap(getRuntime(), object);
     }

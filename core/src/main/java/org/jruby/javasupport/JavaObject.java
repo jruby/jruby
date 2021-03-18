@@ -93,6 +93,7 @@ public class JavaObject extends RubyObject {
         this(runtime, runtime.getJavaSupport().getJavaObjectClass(), value);
     }
 
+    @Deprecated
     public static JavaObject wrap(final Ruby runtime, final Object value) {
         if ( value != null ) {
             if ( value instanceof Class ) {
@@ -193,9 +194,7 @@ public class JavaObject extends RubyObject {
         return equals(self.getRuntime(), self.getObject(), other);
     }
 
-    private static RubyBoolean equals(final Ruby runtime,
-        final Object thisValue, final IRubyObject other) {
-
+    static RubyBoolean equals(final Ruby runtime, final Object thisValue, final IRubyObject other) {
         final Object otherValue = unwrapObject(other, NEVER);
 
         if ( otherValue == NEVER ) { // not a wrapped object
