@@ -946,7 +946,7 @@ public class Java implements Library {
         try {
             return loadJavaClass(runtime, className);
         } catch (ClassNotFoundException ex) {
-            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex), ex);
+            throw initCause(runtime.newNameError("Java class " + className + " not found", className, ex), ex);
         }
     }
 
