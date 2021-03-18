@@ -289,6 +289,7 @@ public class Java implements Library {
         return runtime.getNil();
     }
 
+    @Deprecated
     public static RubyModule getInterfaceModule(final Ruby runtime, final JavaClass javaClass) {
         return getInterfaceModule(runtime, javaClass.javaClass());
     }
@@ -347,13 +348,16 @@ public class Java implements Library {
             klass = resolveShortClassName(className);
             if (klass == null) klass = getJavaClass(runtime, className);
         } else {
-            klass = resolveClassTypeInternal(runtime, type);
+            klass = resolveClassType(runtime, type);
+            if (klass == null) {
+                throw runtime.newTypeError("expected a Java class, got: " + type);
+            }
         }
         return getProxyClass(runtime, klass);
     }
 
     // this should handle the type returned from Class#java_class
-    static Class<?> resolveClassTypeInternal(final Ruby runtime, final IRubyObject type) {
+    static Class<?> resolveClassType(final Ruby runtime, final IRubyObject type) {
         if (type instanceof JavaProxy) { // due Class#java_class wrapping
             final Object wrapped = ((JavaProxy) type).getObject();
             if (wrapped instanceof Class) return (Class) wrapped;
