@@ -205,17 +205,17 @@ public class RubyEnumerable {
      */
     private static IRubyObject cycleCommon(ThreadContext context, IRubyObject self, long nv, final Block block) {
         final Ruby runtime = context.runtime;
-        final List<IRubyObject[]> result = new ArrayList<>();
+        final List<IRubyObject> result = new ArrayList<>();
 
         each(context, eachSite(context), self, new JavaInternalBlockBody(runtime, Signature.OPTIONAL) {
             @Override
             public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
-                return doYield(context1, null, args, self);
+                return doYield(context1, null, packEnumValues(context1, args));
             }
             @Override
-            public IRubyObject doYield(ThreadContext context1, Block unused, IRubyObject[] args, IRubyObject self) {
+            public IRubyObject doYield(ThreadContext context1, Block unused, IRubyObject args) {
                 synchronized (result) { result.add(args); }
-                block.yieldValues(context1, args);
+                block.yield(context1, args);
                 return context1.nil;
             }
         });
@@ -225,7 +225,7 @@ public class RubyEnumerable {
 
         while (nv < 0 || 0 < --nv) {
             for (int i = 0; i < length; i++) {
-                block.yieldValues(context, result.get(i));
+                block.yield(context, result.get(i));
             }
         }
 
