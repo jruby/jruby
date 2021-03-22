@@ -709,6 +709,16 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_high_level_java_should_only_deal_with_proxies_and_not_low_level_java_class
     a = JString.new
     assert_equal Java::JavaLang::Class, a.getClass().class
+    assert Java::JavaLang::Class.equal? a.getClass().class
+    assert_equal java.lang.Class.object_id, Java::JavaLang::Class.object_id
+  end
+
+  def test_proxy_class_initialized_once
+    assert_equal java.lang.Class.object_id, Java::JavaLang::Class.object_id
+    assert_equal java.lang.String.object_id, Java::JavaLang::String.object_id
+    assert_equal Java::JavaIo::Serializable.object_id, java.io.Serializable.object_id
+    assert Java::JavaLang::Object.equal? java.lang.Object.new.class
+    assert Java::JavaLang::Object.equal? java.lang.Object
   end
 
   # We had a problem with accessing singleton class versus class earlier. Sanity check
