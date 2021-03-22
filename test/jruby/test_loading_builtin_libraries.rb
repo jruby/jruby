@@ -101,7 +101,14 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
     requires = requires.map { |lib| "-r#{lib}" }.join(' ')
     lib_out = `#{RbConfig.ruby} #{requires} -e '#{code}'`
     assert $?.success?, "a library self-reflected (JI) during boot!"
-    assert_equal out, lib_out
+    assert_same_output_lines out, lib_out
   end if defined? JRUBY_VERSION
+
+  private
+
+  def assert_same_output_lines(expected, actual)
+    p expected.split("\n").sort
+    assert_equal expected.split("\n").sort, actual.split("\n").sort
+  end
 
 end
