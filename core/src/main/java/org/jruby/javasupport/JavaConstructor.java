@@ -198,47 +198,47 @@ public class JavaConstructor extends JavaCallable {
     }
 
     @JRubyMethod
-    public IRubyObject type_parameters() {
-        return Java.getInstance(getRuntime(), constructor.getTypeParameters());
+    public IRubyObject type_parameters(ThreadContext context) {
+        return Java.getInstance(context.runtime, constructor.getTypeParameters());
     }
 
     @JRubyMethod
-    public IRubyObject return_type() {
-        return getRuntime().getNil();
+    public IRubyObject return_type(ThreadContext context) {
+        return context.runtime.getNil();
     }
 
     @JRubyMethod
     @SuppressWarnings("deprecation")
-    public IRubyObject declaring_class() {
-        return JavaClass.get(getRuntime(), getDeclaringClass());
+    public IRubyObject declaring_class(ThreadContext context) {
+        return Java.getProxyClass(context.runtime, getDeclaringClass());
     }
 
     @JRubyMethod(rest = true)
-    public final IRubyObject new_instance(final IRubyObject[] args) {
-        checkArity(args.length);
+    public final IRubyObject new_instance(ThreadContext context, final IRubyObject[] args) {
+        checkArity(context, args.length);
 
-        return newInstanceExactArity( convertArguments(args) );
+        return newInstanceExactArity(context, convertArguments(args));
     }
 
-    public final IRubyObject new_instance(final Object[] arguments) {
-        checkArity(arguments.length);
+    public final IRubyObject new_instance(ThreadContext context, final Object[] arguments) {
+        checkArity(context, arguments.length);
 
-        return newInstanceExactArity(arguments);
+        return newInstanceExactArity(context, arguments);
     }
 
-    private IRubyObject newInstanceExactArity(Object[] arguments) {
+    private IRubyObject newInstanceExactArity(ThreadContext context, Object[] arguments) {
         try {
             Object result = constructor.newInstance(arguments);
             return JavaObject.wrap(getRuntime(), result);
         }
         catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, constructor, false, arguments);
+            return handlelIllegalArgumentEx(context, iae, constructor, false, arguments);
         }
         catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError("illegal access");
         }
         catch (InvocationTargetException ite) {
-            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), constructor);
+            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), constructor); // NOTE: we no longer unwrap
             // not reached
             assert false;
             return null;
@@ -249,14 +249,14 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public Object newInstanceDirect(ThreadContext context, Object... arguments) {
-        checkArity(arguments.length);
+        checkArity(context, arguments.length);
 
         try {
             return constructor.newInstance(arguments);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, constructor, arguments);
+            return handlelIllegalArgumentEx(context, iae, constructor, arguments);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, constructor);
+            return handleIllegalAccessEx(context, iae, constructor);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -265,14 +265,14 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public Object newInstanceDirect(ThreadContext context) {
-        checkArity(0);
+        checkArity(context, 0);
 
         try {
             return constructor.newInstance();
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, constructor);
+            return handlelIllegalArgumentEx(context, iae, constructor);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, constructor);
+            return handleIllegalAccessEx(context, iae, constructor);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -281,14 +281,14 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public Object newInstanceDirect(ThreadContext context, Object arg0) {
-        checkArity(1);
+        checkArity(context, 1);
 
         try {
             return constructor.newInstance(arg0);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, constructor, arg0);
+            return handlelIllegalArgumentEx(context, iae, constructor, arg0);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, constructor);
+            return handleIllegalAccessEx(context, iae, constructor);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -297,14 +297,14 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public Object newInstanceDirect(ThreadContext context, Object arg0, Object arg1) {
-        checkArity(2);
+        checkArity(context, 2);
 
         try {
             return constructor.newInstance(arg0, arg1);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, constructor, arg0, arg1);
+            return handlelIllegalArgumentEx(context, iae, constructor, arg0, arg1);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, constructor);
+            return handleIllegalAccessEx(context, iae, constructor);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -313,14 +313,14 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public Object newInstanceDirect(ThreadContext context, Object arg0, Object arg1, Object arg2) {
-        checkArity(3);
+        checkArity(context, 3);
 
         try {
             return constructor.newInstance(arg0, arg1, arg2);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, constructor, arg0, arg1, arg2);
+            return handlelIllegalArgumentEx(context, iae, constructor, arg0, arg1, arg2);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, constructor);
+            return handleIllegalAccessEx(context, iae, constructor);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -329,14 +329,14 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public Object newInstanceDirect(ThreadContext context, Object arg0, Object arg1, Object arg2, Object arg3) {
-        checkArity(4);
+        checkArity(context, 4);
 
         try {
             return constructor.newInstance(arg0, arg1, arg2, arg3);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, constructor, arg0, arg1, arg2, arg3);
+            return handlelIllegalArgumentEx(context, iae, constructor, arg0, arg1, arg2, arg3);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, constructor);
+            return handleIllegalAccessEx(context, iae, constructor);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {

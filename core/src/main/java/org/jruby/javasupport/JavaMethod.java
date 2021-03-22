@@ -199,24 +199,24 @@ public class JavaMethod extends JavaCallable {
 
     @JRubyMethod
     @Override
-    public RubyString name() {
-        return getRuntime().newString(method.getName());
+    public RubyString name(ThreadContext context) {
+        return context.runtime.newString(method.getName());
     }
 
     @JRubyMethod(name = "public?")
     @Override
-    public RubyBoolean public_p() {
-        return getRuntime().newBoolean(Modifier.isPublic(method.getModifiers()));
+    public RubyBoolean public_p(ThreadContext context) {
+        return context.runtime.newBoolean(Modifier.isPublic(method.getModifiers()));
     }
 
     @JRubyMethod(name = "final?")
-    public RubyBoolean final_p() {
-        return getRuntime().newBoolean(Modifier.isFinal(method.getModifiers()));
+    public RubyBoolean final_p(ThreadContext context) {
+        return context.runtime.newBoolean(Modifier.isFinal(method.getModifiers()));
     }
 
     @JRubyMethod(rest = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
-        checkArity(args.length - 1);
+        checkArity(context, args.length - 1);
 
         final IRubyObject invokee = args[0];
         final Object[] arguments = convertArguments(args, 1);
@@ -262,7 +262,7 @@ public class JavaMethod extends JavaCallable {
 
     @JRubyMethod(rest = true)
     public IRubyObject invoke_static(ThreadContext context, IRubyObject[] args) {
-        checkArity(args.length);
+        checkArity(context, args.length);
 
         final Object[] arguments = convertArguments(args, 0);
         return invokeWithExceptionHandling(context, method, null, arguments);
@@ -270,23 +270,23 @@ public class JavaMethod extends JavaCallable {
 
     @JRubyMethod
     @SuppressWarnings("deprecation")
-    public IRubyObject return_type() {
+    public IRubyObject return_type(ThreadContext context) {
         Class<?> klass = method.getReturnType();
 
         if (klass.equals(void.class)) {
-            return getRuntime().getNil();
+            return context.runtime.getNil();
         }
-        return JavaClass.get(getRuntime(), klass);
+        return Java.getProxyClass(context.runtime, klass);
     }
 
     @JRubyMethod
-    public IRubyObject type_parameters() {
-        return Java.getInstance(getRuntime(), method.getTypeParameters());
+    public IRubyObject type_parameters(ThreadContext context) {
+        return Java.getInstance(context.runtime, method.getTypeParameters());
     }
 
     public IRubyObject invokeDirect(ThreadContext context, Object javaInvokee, Object[] args) {
-        checkArity(args.length);
-        checkInstanceof(javaInvokee);
+        checkArity(context, args.length);
+        checkInstanceof(context.runtime, javaInvokee);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(context, javaInvokee, args);
@@ -298,7 +298,7 @@ public class JavaMethod extends JavaCallable {
     public IRubyObject invokeDirect(ThreadContext context, Object javaInvokee) {
         assert method.getDeclaringClass().isInstance(javaInvokee);
 
-        checkArity(0);
+        checkArity(context, 0);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(context, javaInvokee);
@@ -310,7 +310,7 @@ public class JavaMethod extends JavaCallable {
     public IRubyObject invokeDirect(ThreadContext context, Object javaInvokee, Object arg0) {
         assert method.getDeclaringClass().isInstance(javaInvokee);
 
-        checkArity(1);
+        checkArity(context, 1);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(context, javaInvokee, arg0);
@@ -322,7 +322,7 @@ public class JavaMethod extends JavaCallable {
     public IRubyObject invokeDirect(ThreadContext context, Object javaInvokee, Object arg0, Object arg1) {
         assert method.getDeclaringClass().isInstance(javaInvokee);
 
-        checkArity(2);
+        checkArity(context, 2);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(context, javaInvokee, arg0, arg1);
@@ -334,7 +334,7 @@ public class JavaMethod extends JavaCallable {
     public IRubyObject invokeDirect(ThreadContext context, Object javaInvokee, Object arg0, Object arg1, Object arg2) {
         assert method.getDeclaringClass().isInstance(javaInvokee);
 
-        checkArity(3);
+        checkArity(context, 3);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(context, javaInvokee, arg0, arg1, arg2);
@@ -346,7 +346,7 @@ public class JavaMethod extends JavaCallable {
     public IRubyObject invokeDirect(ThreadContext context, Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
         assert method.getDeclaringClass().isInstance(javaInvokee);
 
-        checkArity(4);
+        checkArity(context, 4);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(context, javaInvokee, arg0, arg1, arg2, arg3);
@@ -356,49 +356,49 @@ public class JavaMethod extends JavaCallable {
     }
 
     public IRubyObject invokeStaticDirect(ThreadContext context, Object[] args) {
-        checkArity(args.length);
+        checkArity(context, args.length);
         return invokeDirectWithExceptionHandling(context, method, null, args);
     }
 
     public IRubyObject invokeStaticDirect(ThreadContext context) {
-        checkArity(0);
+        checkArity(context, 0);
         return invokeDirectWithExceptionHandling(context, method, null);
     }
 
     public IRubyObject invokeStaticDirect(ThreadContext context, Object arg0) {
-        checkArity(1);
+        checkArity(context, 1);
         return invokeDirectWithExceptionHandling(context, method, null, arg0);
     }
 
     public IRubyObject invokeStaticDirect(ThreadContext context, Object arg0, Object arg1) {
-        checkArity(2);
+        checkArity(context, 2);
         return invokeDirectWithExceptionHandling(context, method, null, arg0, arg1);
     }
 
     public IRubyObject invokeStaticDirect(ThreadContext context, Object arg0, Object arg1, Object arg2) {
-        checkArity(3);
+        checkArity(context, 3);
         return invokeDirectWithExceptionHandling(context, method, null, arg0, arg1, arg2);
     }
 
     public IRubyObject invokeStaticDirect(ThreadContext context, Object arg0, Object arg1, Object arg2, Object arg3) {
-        checkArity(4);
+        checkArity(context, 4);
         return invokeDirectWithExceptionHandling(context, method, null, arg0, arg1, arg2, arg3);
     }
 
-    private void checkInstanceof(Object javaInvokee) throws RaiseException {
+    private void checkInstanceof(final Ruby runtime, Object javaInvokee) throws RaiseException {
         if (!method.getDeclaringClass().isInstance(javaInvokee)) {
-            throw getRuntime().newTypeError("invokee not instance of method's class (" + "got" + javaInvokee.getClass().getName() + " wanted " + method.getDeclaringClass().getName() + ")");
+            throw runtime.newTypeError("invokee not instance of method's class (" + "got" + javaInvokee.getClass().getName() + " wanted " + method.getDeclaringClass().getName() + ")");
         }
     }
 
     private IRubyObject invokeWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return returnConverter.convert(getRuntime(), result);
+            return returnConverter.convert(context.runtime, result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, method, arguments);
+            return handlelIllegalArgumentEx(context, iae, method, arguments);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, method);
+            return handleIllegalAccessEx(context, iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -411,11 +411,11 @@ public class JavaMethod extends JavaCallable {
         // FIXME: possible to make handles do the superclass call?
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return convertReturn(result);
+            return convertReturn(context.runtime, result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, method, arguments);
+            return handlelIllegalArgumentEx(context, iae, method, arguments);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, method);
+            return handleIllegalAccessEx(context, iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -426,11 +426,11 @@ public class JavaMethod extends JavaCallable {
     private IRubyObject invokeDirectWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return convertReturn(result);
+            return convertReturn(context.runtime, result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, method, arguments);
+            return handlelIllegalArgumentEx(context, iae, method, arguments);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, method);
+            return handleIllegalAccessEx(context, iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -441,11 +441,11 @@ public class JavaMethod extends JavaCallable {
     private IRubyObject invokeDirectWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee) {
         try {
             Object result = method.invoke(javaInvokee);
-            return convertReturn(result);
+            return convertReturn(context.runtime, result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, method);
+            return handlelIllegalArgumentEx(context, iae, method);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, method);
+            return handleIllegalAccessEx(context, iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -456,11 +456,11 @@ public class JavaMethod extends JavaCallable {
     private IRubyObject invokeDirectWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object arg0) {
         try {
             Object result = method.invoke(javaInvokee, arg0);
-            return convertReturn(result);
+            return convertReturn(context.runtime, result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, method, arg0);
+            return handlelIllegalArgumentEx(context, iae, method, arg0);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, method);
+            return handleIllegalAccessEx(context, iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -471,11 +471,11 @@ public class JavaMethod extends JavaCallable {
     private IRubyObject invokeDirectWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object arg0, Object arg1) {
         try {
             Object result = method.invoke(javaInvokee, arg0, arg1);
-            return convertReturn(result);
+            return convertReturn(context.runtime, result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, method, arg0, arg1);
+            return handlelIllegalArgumentEx(context, iae, method, arg0, arg1);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, method);
+            return handleIllegalAccessEx(context, iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -486,11 +486,11 @@ public class JavaMethod extends JavaCallable {
     private IRubyObject invokeDirectWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2) {
         try {
             Object result = method.invoke(javaInvokee, arg0, arg1, arg2);
-            return convertReturn(result);
+            return convertReturn(context.runtime, result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, method, arg0, arg1, arg2);
+            return handlelIllegalArgumentEx(context, iae, method, arg0, arg1, arg2);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, method);
+            return handleIllegalAccessEx(context, iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -501,11 +501,11 @@ public class JavaMethod extends JavaCallable {
     private IRubyObject invokeDirectWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
         try {
             Object result = method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
-            return convertReturn(result);
+            return convertReturn(context.runtime, result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(iae, method, arg0, arg1, arg2, arg3);
+            return handlelIllegalArgumentEx(context, iae, method, arg0, arg1, arg2, arg3);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(iae, method);
+            return handleIllegalAccessEx(context, iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
@@ -513,13 +513,13 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    private IRubyObject convertReturn(Object result) {
+    private IRubyObject convertReturn(Ruby runtime, Object result) {
         if (result != null && result.getClass() != boxedReturnType) {
             // actual type does not exactly match method return type, re-get converter
             // FIXME: when the only autoconversions are primitives, this won't be needed
-            return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), result);
+            return JavaUtil.convertJavaToUsableRubyObject(runtime, result);
         }
-        return JavaUtil.convertJavaToUsableRubyObjectWithConverter(getRuntime(), result, returnConverter);
+        return JavaUtil.convertJavaToUsableRubyObjectWithConverter(runtime, result, returnConverter);
     }
 
     //@Override
