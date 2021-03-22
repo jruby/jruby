@@ -16,16 +16,18 @@ describe "Kernel\#java_import" do
 end
 
 describe "Java::JavaClass.for_name" do
-  it "should return primitive classes for Java primitive type names" do
-    expect(Java::JavaClass.for_name("byte")).to eq(Java::byte.java_class)
-    expect(Java::JavaClass.for_name("boolean")).to eq(Java::boolean.java_class)
-    expect(Java::JavaClass.for_name("short")).to eq(Java::short.java_class)
-    expect(Java::JavaClass.for_name("char")).to eq(Java::char.java_class)
-    expect(Java::JavaClass.for_name("int")).to eq(Java::int.java_class)
-    expect(Java::JavaClass.for_name("long")).to eq(Java::long.java_class)
-    expect(Java::JavaClass.for_name("float")).to eq(Java::float.java_class)
-    expect(Java::JavaClass.for_name("double")).to eq(Java::double.java_class)
-  end
+  # NOTE: 'breaking compatibility' used to work for JavaClass, we could make it
+  # work for java.lang.Class by patching for_name but it's counter-intuitive.
+  # it "should return primitive classes for Java primitive type names" do
+  #   expect(Java::JavaClass.for_name("byte")).to eq(Java::byte.java_class)
+  #   expect(Java::JavaClass.for_name("boolean")).to eq(Java::boolean.java_class)
+  #   expect(Java::JavaClass.for_name("short")).to eq(Java::short.java_class)
+  #   expect(Java::JavaClass.for_name("char")).to eq(Java::char.java_class)
+  #   expect(Java::JavaClass.for_name("int")).to eq(Java::int.java_class)
+  #   expect(Java::JavaClass.for_name("long")).to eq(Java::long.java_class)
+  #   expect(Java::JavaClass.for_name("float")).to eq(Java::float.java_class)
+  #   expect(Java::JavaClass.for_name("double")).to eq(Java::double.java_class)
+  # end
 
   it "should return Java class from JRuby class-path" do
     expect(Java::JavaClass.for_name('java_integration.fixtures.Reflector')).to_not be nil
