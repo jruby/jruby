@@ -53,7 +53,7 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
     #code += "all.select { |m| m.inspect.start_with? \"Java::\" }.each { |m| puts m.inspect };"
     # self-reflecting this would fail (on RubyBasicObject.UNDEF)
 
-    expected_count = 5
+    expected_count = 7 # 5 on JDK 11 TODO on Java 14 loads 2 more (Java::JavaLangInvoke, Java::JavaLangConstant)
 
     out = `#{RbConfig.ruby} -e '#{code}'`
     assert $?.success?, "JRuby self-reflected (JI) during boot!"
