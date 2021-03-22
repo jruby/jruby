@@ -36,15 +36,19 @@ import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public abstract class JavaAccessibleObject extends RubyObject {
+public abstract class JavaAccessibleObject {
 
     protected JavaAccessibleObject(Ruby runtime, RubyClass rubyClass) {
-        super(runtime, rubyClass);
+        this(runtime, rubyClass, false);
+    }
+
+    JavaAccessibleObject(Ruby runtime, RubyClass rubyClass, boolean objectSpace) {
+        // super(runtime, rubyClass, objectSpace);
     }
 
     public static void registerRubyMethods(Ruby runtime, RubyClass result) {
@@ -69,25 +73,25 @@ public abstract class JavaAccessibleObject extends RubyObject {
     }
 
     @JRubyMethod
-    public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCode());
     }
 
     @JRubyMethod(name = {"==", "eql?"})
-    public RubyBoolean op_equal(final IRubyObject other) {
-        return RubyBoolean.newBoolean(getRuntime(), equals(other));
+    public RubyBoolean op_equal(ThreadContext context, final IRubyObject other) {
+        return RubyBoolean.newBoolean(context.runtime, equals(other));
     }
 
     @JRubyMethod(name = "equal?")
-    public RubyBoolean same(final IRubyObject other) {
+    public RubyBoolean same(ThreadContext context, final IRubyObject other) {
         final boolean same = other instanceof JavaAccessibleObject && same((JavaAccessibleObject) other);
-        return same ? getRuntime().getTrue() : getRuntime().getFalse();
+        return same ? context.runtime.getTrue() : context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "accessible?")
     @Deprecated
-    public RubyBoolean isAccessible() {
-        return RubyBoolean.newBoolean(getRuntime(), accessibleObject().isAccessible());
+    public RubyBoolean isAccessible(ThreadContext context) {
+        return RubyBoolean.newBoolean(context.runtime, accessibleObject().isAccessible());
     }
 
     @JRubyMethod(name = "accessible=")
@@ -98,85 +102,85 @@ public abstract class JavaAccessibleObject extends RubyObject {
 
     @SuppressWarnings("unchecked")
     @JRubyMethod
-    public IRubyObject annotation(final IRubyObject annoClass) {
-        if ( ! ( annoClass instanceof JavaClass ) ) {
-            throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
+    public IRubyObject annotation(ThreadContext context, final IRubyObject annoClass) {
+        final Class annotation;
+        if (annoClass instanceof RubyClass && ((RubyClass) annoClass).getJavaProxy()) {
+            annotation = ((RubyClass) annoClass).getJavaClass();
+        } else if (annoClass instanceof JavaClass) {
+            annotation = ((JavaClass) annoClass).javaClass();
+        } else {
+            throw context.runtime.newTypeError("expected a Java (proxy) class, got: " + annoClass);
         }
-        final Class annotation = ((JavaClass) annoClass).javaClass();
-        return Java.getInstance(getRuntime(), accessibleObject().getAnnotation(annotation));
+        return Java.getInstance(context.runtime, accessibleObject().getAnnotation(annotation));
     }
 
     @JRubyMethod
-    public IRubyObject annotations() {
-        return Java.getInstance(getRuntime(), accessibleObject().getAnnotations());
+    public IRubyObject annotations(ThreadContext context) {
+        return Java.getInstance(context.runtime, accessibleObject().getAnnotations());
     }
 
     @JRubyMethod(name = "annotations?")
-    public RubyBoolean annotations_p() {
-        return getRuntime().newBoolean(accessibleObject().getAnnotations().length > 0);
+    public RubyBoolean annotations_p(ThreadContext context) {
+        return context.runtime.newBoolean(accessibleObject().getAnnotations().length > 0);
     }
 
     @JRubyMethod
-    public IRubyObject declared_annotations() {
-        return Java.getInstance(getRuntime(), accessibleObject().getDeclaredAnnotations());
+    public IRubyObject declared_annotations(ThreadContext context) {
+        return Java.getInstance(context.runtime, accessibleObject().getDeclaredAnnotations());
     }
 
     @JRubyMethod(name = "declared_annotations?")
-    public RubyBoolean declared_annotations_p() {
-        return getRuntime().newBoolean(accessibleObject().getDeclaredAnnotations().length > 0);
+    public RubyBoolean declared_annotations_p(ThreadContext context) {
+        return context.runtime.newBoolean(accessibleObject().getDeclaredAnnotations().length > 0);
     }
 
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "annotation_present?")
-    public IRubyObject annotation_present_p(final IRubyObject annoClass) {
-        if ( ! ( annoClass instanceof JavaClass ) ) {
-            throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
+    public IRubyObject annotation_present_p(ThreadContext context, final IRubyObject annoClass) {
+        final Class annotation;
+        if (annoClass instanceof RubyClass && ((RubyClass) annoClass).getJavaProxy()) {
+            annotation = ((RubyClass) annoClass).getJavaClass();
+        } else if (annoClass instanceof JavaClass) {
+            annotation = ((JavaClass) annoClass).javaClass();
+        } else {
+            throw context.runtime.newTypeError("expected a Java (proxy) class, got: " + annoClass);
         }
-        final Class annotation = ((JavaClass) annoClass).javaClass();
-        return getRuntime().newBoolean( accessibleObject().isAnnotationPresent(annotation) );
+        return context.runtime.newBoolean( accessibleObject().isAnnotationPresent(annotation) );
     }
 
     // for our purposes, Accessibles are also Members, and vice-versa,
     // so we'll include Member methods here.
     @JRubyMethod
-    public IRubyObject declaring_class() {
+    @SuppressWarnings("deprecation")
+    public IRubyObject declaring_class(ThreadContext context) {
         Class<?> clazz = ((Member) accessibleObject()).getDeclaringClass();
-        if ( clazz != null ) return JavaClass.get(getRuntime(), clazz);
-        return getRuntime().getNil();
+        if ( clazz != null ) return Java.getProxyClass(context.runtime, clazz);
+        return context.runtime.getNil();
     }
 
     @JRubyMethod
-    public IRubyObject modifiers() {
-        return getRuntime().newFixnum(((Member) accessibleObject()).getModifiers());
+    public IRubyObject modifiers(ThreadContext context) {
+        return context.runtime.newFixnum(((Member) accessibleObject()).getModifiers());
     }
 
     @JRubyMethod
-    public IRubyObject name() {
-        return getRuntime().newString(((Member) accessibleObject()).getName());
+    public IRubyObject name(ThreadContext context) {
+        return context.runtime.newString(((Member) accessibleObject()).getName());
     }
 
     @JRubyMethod(name = "synthetic?")
-    public IRubyObject synthetic_p() {
-        return getRuntime().newBoolean(((Member) accessibleObject()).isSynthetic());
+    public IRubyObject synthetic_p(ThreadContext context) {
+        return context.runtime.newBoolean(((Member) accessibleObject()).isSynthetic());
     }
 
     @JRubyMethod(name = {"to_s", "to_string"})
-    public RubyString to_string() {
-        return getRuntime().newString( toString() );
+    public RubyString to_string(ThreadContext context) {
+        return context.runtime.newString( toString() );
     }
 
     @Override
     public String toString() {
         return accessibleObject().toString();
-    }
-
-    @Override
-    public <T> T toJava(Class<T> target) {
-        AccessibleObject accessibleObject = accessibleObject();
-        if (target.isAssignableFrom(accessibleObject.getClass())) {
-            return target.cast(accessibleObject);
-        }
-        return super.toJava(target);
     }
 
 }

@@ -41,16 +41,24 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
     pend "TODO: JRuby (still) self-reflects on Windows" if TestHelper::WINDOWS
 
     code  = "all = []; ObjectSpace.each_object(Module) { |mod| all << mod }; "
-    code += "p all.count { |m| m.is_a?(Java::JavaPackage) }; " # <= 3
+    code += "packages = all.select { |m| m.is_a?(Java::JavaPackage) }; "
+    code += "p packages.size; packages.each { |m| p m }; "
+    # TODO due ENV_JAVA we (still) load 3 Java packages
     # org.jruby.java.util (SystemPropertiesMap) and dependencies :
     # java.util (Map) implemented interface
     # java.lang (Object) super-class
-    code += "all.each { |m| m.inspect }; " # if self-reflecting this would fail (on RubyBasicObject.UNDEF)
+    # TODO since 9.3 also java.lang.Class and dependencies :
+    # java.lang.reflect (interfaces)
+    # java.io (Class implements java.io.Serializable)
+    #code += "all.select { |m| m.inspect.start_with? \"Java::\" }.each { |m| puts m.inspect };"
+    # self-reflecting this would fail (on RubyBasicObject.UNDEF)
+
+    expected_count = 7 # 5 on JDK 11 TODO on Java 14 loads 2 more (Java::JavaLangInvoke, Java::JavaLangConstant)
 
     out = `#{RbConfig.ruby} -e '#{code}'`
     assert $?.success?, "JRuby self-reflected (JI) during boot!"
     pkg_count = out.strip.to_i
-    assert pkg_count <= 3 # due ENV_JAVA we (still) load 3 Java packages - see ^^^
+    assert pkg_count <= expected_count, "expected less than #{expected_count} packages but loaded: #{out}"
 
     requires = [ 'stringio',
                  'rbconfig',
@@ -91,9 +99,16 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
                  'yaml',
     ]
     requires = requires.map { |lib| "-r#{lib}" }.join(' ')
-    out = `#{RbConfig.ruby} #{requires} -e '#{code}'`
+    lib_out = `#{RbConfig.ruby} #{requires} -e '#{code}'`
     assert $?.success?, "a library self-reflected (JI) during boot!"
-    assert_equal pkg_count.to_s, out.strip
+    assert_same_output_lines out, lib_out
   end if defined? JRUBY_VERSION
+
+  private
+
+  def assert_same_output_lines(expected, actual)
+    p expected.split("\n").sort
+    assert_equal expected.split("\n").sort, actual.split("\n").sort
+  end
 
 end
