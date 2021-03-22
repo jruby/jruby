@@ -120,6 +120,21 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaMath.define(runtime);
         org.jruby.javasupport.ext.JavaTime.define(runtime);
 
+        // initialize java.lang.Object proxy early
+        RubyClass objectClass = (RubyClass) getProxyClass(runtime, java.lang.Object.class);
+
+        // load Ruby parts of the 'java' library
+        runtime.getLoadService().load("jruby/java.rb", false);
+
+        // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
+        final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
+        ArrayJavaProxy.setSuperClass(objectClass);
+        ArrayJavaProxy.includeModule(runtime.getEnumerable());
+
+        RubyClassPathVariable.createClassPathVariable(runtime);
+
+        runtime.setJavaProxyClassFactory(JavaProxyClassFactory.createFactory());
+
         // TODO: these are still used internally with Ruby 2 Java invocation:
         JavaMethod.createJavaMethodClass(runtime, Java);
         JavaConstructor.createJavaConstructorClass(runtime, Java);
@@ -128,18 +143,6 @@ public class Java implements Library {
         Java.deprecateConstant(runtime, "JavaClass");
         Java.setConstant("JavaField", getProxyClass(runtime, java.lang.reflect.Field.class));
         Java.deprecateConstant(runtime, "JavaField");
-
-        // load Ruby parts of the 'java' library
-        runtime.getLoadService().load("jruby/java.rb", false);
-
-        // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
-        ArrayJavaProxy.setSuperClass((RubyClass) getProxyClass(runtime, java.lang.Object.class));
-        ArrayJavaProxy.includeModule(runtime.getEnumerable());
-
-        RubyClassPathVariable.createClassPathVariable(runtime);
-
-        runtime.setJavaProxyClassFactory(JavaProxyClassFactory.createFactory());
 
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
