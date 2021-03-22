@@ -135,14 +135,15 @@ public class Java implements Library {
 
         runtime.setJavaProxyClassFactory(JavaProxyClassFactory.createFactory());
 
-        // TODO: these are still used internally with Ruby 2 Java invocation:
-        JavaMethod.createJavaMethodClass(runtime, Java);
-        JavaConstructor.createJavaConstructorClass(runtime, Java);
         // (legacy) JavaClass compatibility:
         Java.setConstant("JavaClass", getProxyClass(runtime, java.lang.Class.class));
         Java.deprecateConstant(runtime, "JavaClass");
         Java.setConstant("JavaField", getProxyClass(runtime, java.lang.reflect.Field.class));
         Java.deprecateConstant(runtime, "JavaField");
+        Java.setConstant("JavaMethod", getProxyClass(runtime, java.lang.reflect.Method.class));
+        Java.deprecateConstant(runtime, "JavaMethod");
+        Java.setConstant("JavaConstructor", getProxyClass(runtime, java.lang.reflect.Constructor.class));
+        Java.deprecateConstant(runtime, "JavaConstructor");
 
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();

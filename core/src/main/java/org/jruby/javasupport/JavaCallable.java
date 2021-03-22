@@ -60,7 +60,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
 
     private static final boolean REWRITE_JAVA_TRACE = Options.REWRITE_JAVA_TRACE.load();
 
-    public JavaCallable(Ruby runtime, RubyClass rubyClass, Class<?>[] parameterTypes) {
+    protected JavaCallable(Ruby runtime, RubyClass rubyClass, Class<?>[] parameterTypes) {
         super(runtime, rubyClass);
         this.parameterTypes = parameterTypes;
     }
@@ -82,11 +82,6 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     public abstract Annotation[][] getParameterAnnotations();
     public abstract boolean isVarArgs();
     public abstract String toGenericString();
-
-    /**
-     * @return the name used in the head of the string returned from inspect()
-     */
-    protected abstract String nameOnInspection();
 
     @JRubyMethod
     public final RubyFixnum arity(ThreadContext context) {

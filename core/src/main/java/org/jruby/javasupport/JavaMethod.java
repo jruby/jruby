@@ -39,6 +39,7 @@ package org.jruby.javasupport;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -65,8 +66,7 @@ import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 import static org.jruby.util.RubyStringBuilder.ids;
 
-@Deprecated
-@JRubyClass(name="Java::JavaMethod")
+// @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
 
     //private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
@@ -94,7 +94,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     public JavaMethod(Ruby runtime, Method method) {
-        super(runtime, runtime.getJavaSupport().getJavaMethodClass(), method.getParameterTypes());
+        super(runtime, null, method.getParameterTypes());
         this.method = method;
         this.isFinal = Modifier.isFinal(method.getModifiers());
         final Class<?> returnType = method.getReturnType();
@@ -124,7 +124,6 @@ public class JavaMethod extends JavaCallable {
         returnConverter = JavaUtil.getJavaConverter(returnType);
     }
 
-    @Deprecated // no-longer used
     public static JavaMethod create(Ruby runtime, Method method) {
         return new JavaMethod(runtime, method);
     }
@@ -229,11 +228,11 @@ public class JavaMethod extends JavaCallable {
         if (!isStatic()) {
             javaInvokee = JavaUtil.unwrapJavaValue(invokee);
             if ( javaInvokee == null ) {
-                throw getRuntime().newTypeError("invokee not a java object");
+                throw context.runtime.newTypeError("invokee not a java object");
             }
 
             if ( ! method.getDeclaringClass().isInstance(javaInvokee) ) {
-                throw getRuntime().newTypeError(
+                throw context.runtime.newTypeError(
                     "invokee not instance of method's class" +
                     " (got" + javaInvokee.getClass().getName() +
                     " wanted " + method.getDeclaringClass().getName() + ")");
@@ -561,28 +560,9 @@ public class JavaMethod extends JavaCallable {
         return method.isVarArgs();
     }
 
-    @Override // not used
-    protected String nameOnInspection() {
-        return getType().toString() + '/' + method.getName();
-    }
-
-    @JRubyMethod
-    public RubyString inspect() {
-        StringBuilder str = new StringBuilder();
-        str.append("#<");
-        str.append( getType().toString() ).append('/').append(method.getName());
-        inspectParameterTypes(str, this);
-        str.append('>');
-        return RubyString.newString(getRuntime(), str);
-    }
-
     @JRubyMethod(name = "static?")
-    public RubyBoolean static_p() {
-        return getRuntime().newBoolean(isStatic());
-    }
-
-    public RubyBoolean bridge_p() {
-        return getRuntime().newBoolean(method.isBridge());
+    public RubyBoolean static_p(ThreadContext context) {
+        return context.runtime.newBoolean(isStatic());
     }
 
     private boolean isStatic() {

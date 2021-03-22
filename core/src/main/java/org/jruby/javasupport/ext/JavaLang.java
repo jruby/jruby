@@ -692,7 +692,9 @@ public abstract class JavaLang {
 
             JavaCallable callable = JavaClass.getMatchingCallable(context.runtime, klass, methodName, argumentTypes);
 
-            if ( callable != null ) return callable;
+            if ( callable != null ) {
+                return Java.getInstance(context.runtime, callable.accessibleObject()); // a JavaMethod or JavaConstructor like
+            }
 
             final Ruby runtime = context.runtime;
             throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, klass.getName()), false), methodName);

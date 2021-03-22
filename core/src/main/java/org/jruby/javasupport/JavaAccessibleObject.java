@@ -36,16 +36,19 @@ import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public abstract class JavaAccessibleObject extends RubyObject {
+public abstract class JavaAccessibleObject {
 
     protected JavaAccessibleObject(Ruby runtime, RubyClass rubyClass) {
-        super(runtime, rubyClass);
+        this(runtime, rubyClass, false);
+    }
+
+    JavaAccessibleObject(Ruby runtime, RubyClass rubyClass, boolean objectSpace) {
+        // super(runtime, rubyClass, objectSpace);
     }
 
     public static void registerRubyMethods(Ruby runtime, RubyClass result) {
@@ -178,15 +181,6 @@ public abstract class JavaAccessibleObject extends RubyObject {
     @Override
     public String toString() {
         return accessibleObject().toString();
-    }
-
-    @Override
-    public <T> T toJava(Class<T> target) {
-        AccessibleObject accessibleObject = accessibleObject();
-        if (target.isAssignableFrom(accessibleObject.getClass())) {
-            return target.cast(accessibleObject);
-        }
-        return super.toJava(target);
     }
 
 }

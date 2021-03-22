@@ -44,12 +44,9 @@ import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.java.addons.ClassJavaAddons;
-import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.util.ArrayUtils;
@@ -72,7 +69,7 @@ import java.lang.reflect.Modifier;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.util.RubyStringBuilder.ids;
 
-@JRubyClass(name="Java::JavaClass", parent="Java::JavaObject", include = "Comparable")
+// @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject", include = "Comparable")
 public class JavaClass extends JavaObject {
 
     public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
@@ -471,7 +468,7 @@ public class JavaClass extends JavaObject {
     public IRubyObject enclosing_constructor() {
         Constructor<?> ctor = javaClass().getEnclosingConstructor();
         if (ctor != null) {
-            return new JavaConstructor(getRuntime(), ctor);
+            return Java.getInstance(getRuntime(), ctor);
         }
         return getRuntime().getNil();
     }
@@ -480,7 +477,7 @@ public class JavaClass extends JavaObject {
     public IRubyObject enclosing_method() {
         Method meth = javaClass().getEnclosingMethod();
         if (meth != null) {
-            return new JavaMethod(getRuntime(), meth);
+            return Java.getInstance(getRuntime(), meth);
         }
         return getRuntime().getNil();
     }
@@ -601,7 +598,7 @@ public class JavaClass extends JavaObject {
         for ( int i = 0; i < methods.length; i++ ) {
             final Method method = methods[i];
             if ( isStatic == Modifier.isStatic(method.getModifiers()) ) {
-                result.append( new JavaMethod(runtime, method) );
+                result.append(Java.getInstance(runtime, method));
             }
         }
         return result;
@@ -688,6 +685,7 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod
+    @SuppressWarnings("deprecation")
     public RubyArray classes() {
         return toRubyArray(getRuntime(), javaClass().getClasses());
     }
@@ -735,7 +733,7 @@ public class JavaClass extends JavaObject {
     private static RubyArray buildConstructors(final Ruby runtime, Constructor<?>[] constructors) {
         RubyArray result = RubyArray.newArray(runtime, constructors.length);
         for ( int i = 0; i < constructors.length; i++ ) {
-            result.append( new JavaConstructor(runtime, constructors[i]) );
+            result.append(Java.getInstance(runtime, constructors[i]));
         }
         return result;
     }
@@ -847,7 +845,7 @@ public class JavaClass extends JavaObject {
     private static RubyArray buildFieldResults(final Ruby runtime, Field[] fields) {
         RubyArray result = runtime.newArray( fields.length );
         for ( int i = 0; i < fields.length; i++ ) {
-            result.append( new JavaField(runtime, fields[i]) );
+            result.append(Java.getInstance(runtime, fields[i]));
         }
         return result;
     }
@@ -895,6 +893,7 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod
+    @SuppressWarnings("deprecation")
     public RubyArray interfaces() {
         return toRubyArray(getRuntime(), javaClass().getInterfaces());
     }

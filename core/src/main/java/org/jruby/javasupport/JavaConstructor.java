@@ -44,15 +44,12 @@ import java.lang.reflect.Type;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@Deprecated
-@JRubyClass(name="Java::JavaConstructor")
+// @JRubyClass(name="Java::JavaConstructor")
 public class JavaConstructor extends JavaCallable {
 
     private final Constructor<?> constructor;
@@ -74,8 +71,8 @@ public class JavaConstructor extends JavaCallable {
         return result;
     }
 
-    public JavaConstructor(Ruby runtime, Constructor<?> constructor) {
-        super(runtime, runtime.getJavaSupport().getJavaConstructorClass(), constructor.getParameterTypes());
+    JavaConstructor(Ruby runtime, Constructor<?> constructor) {
+        super(runtime, null, constructor.getParameterTypes());
         this.constructor = constructor;
         //this.objectConverter = JavaUtil.getJavaConverter(constructor.getDeclaringClass());
     }
@@ -129,21 +126,6 @@ public class JavaConstructor extends JavaCallable {
     @Override
     public final int hashCode() {
         return constructor.hashCode();
-    }
-
-    @Override // not-used
-    protected String nameOnInspection() {
-        return getType().toString();
-    }
-
-    @JRubyMethod
-    public RubyString inspect() {
-        StringBuilder str = new StringBuilder();
-        str.append("#<");
-        str.append( getType().toString() );
-        inspectParameterTypes(str, this);
-        str.append('>');
-        return RubyString.newString(getRuntime(), str);
     }
 
     //@Override
@@ -229,22 +211,22 @@ public class JavaConstructor extends JavaCallable {
     private IRubyObject newInstanceExactArity(ThreadContext context, Object[] arguments) {
         try {
             Object result = constructor.newInstance(arguments);
-            return JavaObject.wrap(getRuntime(), result);
+            return JavaObject.wrap(context.runtime, result);
         }
         catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(context, iae, constructor, false, arguments);
         }
         catch (IllegalAccessException iae) {
-            throw getRuntime().newTypeError("illegal access");
+            throw context.runtime.newTypeError("illegal access");
         }
         catch (InvocationTargetException ite) {
-            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), constructor); // NOTE: we no longer unwrap
+            context.runtime.getJavaSupport().handleNativeException(ite.getTargetException(), constructor); // NOTE: we no longer unwrap
             // not reached
             assert false;
             return null;
         }
         catch (InstantiationException ie) {
-            throw getRuntime().newTypeError("can't make instance of " + constructor.getDeclaringClass().getName());
+            throw context.runtime.newTypeError("can't make instance of " + constructor.getDeclaringClass().getName());
         }
     }
 

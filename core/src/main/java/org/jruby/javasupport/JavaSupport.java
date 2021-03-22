@@ -167,8 +167,10 @@ public abstract class JavaSupport {
     @Deprecated
     public abstract RubyClass getJavaFieldClass();
 
+    @Deprecated
     public abstract RubyClass getJavaMethodClass();
 
+    @Deprecated
     public abstract RubyClass getJavaConstructorClass();
 
     public abstract RubyClass getJavaProxyConstructorClass();
