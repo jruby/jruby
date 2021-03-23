@@ -408,10 +408,10 @@ public class RubyKernel {
         if (object instanceof RubyFloat) {
             return (RubyFloat) object;
         }
-        if (object instanceof RubyString){
+        if (object instanceof RubyString) {
             RubyString str = (RubyString) object;
             ByteList bytes = str.getByteList();
-            if (bytes.getRealSize() == 0){ // rb_cstr_to_dbl case
+            if (bytes.getRealSize() == 0) { // rb_cstr_to_dbl case
                 throw runtime.newArgumentError("invalid value for Float(): " + object.inspect());
             }
 
@@ -1668,7 +1668,7 @@ public class RubyKernel {
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
-        if (!needChdir && PopenExecutor.nativePopenAvailable(runtime)) {
+        if (PopenExecutor.nativePopenAvailable(runtime)) {
             // MRI: rb_f_system
             long pid;
             int status;

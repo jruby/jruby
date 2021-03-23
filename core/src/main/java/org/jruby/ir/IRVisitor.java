@@ -30,7 +30,6 @@ public abstract class IRVisitor {
 
     // standard instructions
     public void AliasInstr(AliasInstr aliasinstr) { error(aliasinstr); }
-    public void ArgScopeDepthInstr(ArgScopeDepthInstr instr) { error(instr); }
     public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) { error(arrayderefinstr); }
     public void AsStringInstr(AsStringInstr asstring) { error(asstring); }
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }

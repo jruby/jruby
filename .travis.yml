@@ -47,40 +47,54 @@ matrix:
       name: MRI core int
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:core:int
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: MRI core fullint
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:core:fullint
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: MRI core jit
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:core:jit
 
     - name: MRI extra
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:extra
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: MRI stdlib
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:mri:stdlib
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
     - name: spec/ruby fast
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ruby:fast
 
     - name: spec/ruby slow
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ruby:slow
 
     - env: COMMAND=test/check_versions.sh
@@ -102,74 +116,102 @@ matrix:
     - name: JRuby tests jit
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby
 
     - name: JRuby tests jit indy
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: JRuby tests aot
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby:aot
 
     - name: JRuby tests fullint
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:jruby:fullint
 
     - name: JRuby slow tests
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake test:slow_suites
 
     - name: JI specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ji
 
     - name: Compiler specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:compiler
 
     - name: Compiler specs indy
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:compiler
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: FFI specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:ffi
 
     - name: Regression specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:regression
 
     - name: Regression specs jit
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:regression
       env: JRUBY_OPTS=-Xjit.threshold=0
 
     - name: JRuby specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:jruby
 
     - name: jrubyc specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:jrubyc
 
     - name: Profilers specs
       script:
         - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
         - jruby -S rake spec:profiler
 
     - env: PHASE='-Pdist'
@@ -205,7 +247,7 @@ matrix:
       name: deploy snapshots
       script:
         - cp .travis-maven-settings.xml $HOME/.m2/settings.xml
-        - ./mvnw clean deploy -Prelease
+        - ./mvnw -B clean deploy -Prelease
       if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.2) # only master and maintenance pushes
 
   allow_failures:

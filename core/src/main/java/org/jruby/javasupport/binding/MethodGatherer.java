@@ -1,5 +1,6 @@
 package org.jruby.javasupport.binding;
 
+import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -166,7 +167,7 @@ public class MethodGatherer {
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
             // only add class's methods if it's public (JIRA issue JRUBY-4799)
-            if (Modifier.isPublic(klass.getModifiers())) {
+            if (Modifier.isPublic(klass.getModifiers()) && Modules.isExported(klass, Java.class)) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,

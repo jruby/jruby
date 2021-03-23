@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.boxing.*;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -115,7 +116,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     @Override
     public void applyPreMeetHandler() {
-        if (problem.getScope() instanceof IRClosure && basicBlock.isEntryBB()) {
+        if (problem.getFIC().getScope() instanceof IRClosure && basicBlock.isEntryBB()) {
             // If it is not null, it has already been initialized
             if (inState == null) {
                 inState = new UnboxState();
@@ -170,7 +171,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             if (hasRescuer) {
                 // All unboxed vars (local or tmp) will get boxed here.
                 state.unboxedDirtyVars.clear();
-            } else if (problem.getScope() instanceof IRClosure) {
+            } else if (problem.getFIC().getScope() instanceof IRClosure) {
                 // Only unboxed LOCAL vars will get boxed here.
                 markLocalVariables(varsToBox, state.unboxedDirtyVars);
                 state.unboxedDirtyVars.removeAll(varsToBox);
@@ -281,12 +282,12 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                 }
             } else if (o instanceof WrappedIRClosure) {
                 // Fetch the nested unboxing-analysis problem, creating one if necessary
-                IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                UnboxableOpsAnalysisProblem subProblem = cl.getUnboxableOpsAnalysisProblem();
+                FullInterpreterContext clfic = ((WrappedIRClosure)o).getClosure().getFullInterpreterContext();
+                UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem) clfic.getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
                 if (subProblem == null) {
                     subProblem = new UnboxableOpsAnalysisProblem();
-                    subProblem.setup(cl);
-                    cl.putUnboxableOpsAnalysisProblem(subProblem);
+                    subProblem.setup(clfic);
+                    clfic.getDataFlowProblems().put(UnboxableOpsAnalysisProblem.NAME, problem);
                 }
 
                 UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
@@ -359,7 +360,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         TemporaryLocalVariable unboxedVar = unboxMap.get(v);
         // FIXME: This is a bit broken -- SSA will eliminate this need for type verification
         if ((unboxedVar == null && createNew) || !matchingTypes(reqdType, unboxedVar.getType())) {
-            unboxedVar = problem.getScope().getNewUnboxedVariable(reqdType);
+            unboxedVar = problem.getFIC().getNewUnboxedVariable(reqdType);
             unboxMap.put(v, unboxedVar);
         } else if (unboxedVar == null) {
             // FIXME: throw an exception here
@@ -442,7 +443,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     private void boxRequiredVars(Instr i, UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Variable dst, boolean hasRescuer, boolean isDFBarrier, List<Instr> newInstrs) {
         // Special treatment for instructions that can raise exceptions
-        boolean isClosure = problem.getScope() instanceof IRClosure;
+        boolean isClosure = problem.getFIC().getScope() instanceof IRClosure;
         HashSet<Variable> varsToBox = new HashSet<Variable>();
         if (i.canRaiseException()) {
             // FIXME: Strictly speaking, only live dirty vars need to be boxed.
@@ -565,7 +566,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         }
 
         // Only worry about vars live on exit from the BB
-        LiveVariablesProblem lvp = problem.getScope().getLiveVariablesProblem();
+        LiveVariablesProblem lvp = (LiveVariablesProblem) problem.getFIC().getDataFlowProblems().get(LiveVariablesProblem.NAME);
         BitSet liveVarsSet = lvp.getFlowGraphNode(basicBlock).getLiveInBitSet();
 
         List<Instr> newInstrs = new ArrayList<Instr>();
@@ -654,8 +655,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                             hitDFBarrier = true;
 
                             // Fetch the nested unboxing-analysis problem, creating one if necessary
-                            IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                            UnboxableOpsAnalysisProblem subProblem = cl.getUnboxableOpsAnalysisProblem();
+                            FullInterpreterContext clfic = ((WrappedIRClosure)o).getClosure().getFullInterpreterContext();
+                            UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem) clfic.getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
                             UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
 
                             // Compute solution

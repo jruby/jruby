@@ -50,11 +50,11 @@ import org.jruby.runtime.callsite.RespondToCallSite;
  * @see IOReadableWritableByteChannel
  */
 public abstract class IOChannel implements Channel {
-    private final IRubyObject io;
+    protected final IRubyObject io;
     private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
     private final RespondToCallSite respondToClosed = new RespondToCallSite("closed?");
     private final CallSite isClosedAdapter = MethodIndex.getFunctionalCallSite("closed?");
-    private final Ruby runtime;
+    protected final Ruby runtime;
 
     protected IOChannel(final IRubyObject io) {
         this.io = io;
@@ -83,7 +83,7 @@ public abstract class IOChannel implements Channel {
         return true;
     }
 
-    protected int read(CallSite read, ByteBuffer dst) throws IOException {
+    protected static int read(Ruby runtime, IRubyObject io, CallSite read, ByteBuffer dst) {
         IRubyObject readValue = read.call(runtime.getCurrentContext(), io, io, runtime.newFixnum(dst.remaining()));
         int returnValue = -1;
         if (!readValue.isNil()) {
@@ -94,17 +94,32 @@ public abstract class IOChannel implements Channel {
         return returnValue;
     }
 
-    protected int write(CallSite write, ByteBuffer src) throws IOException {
-        ByteList buffer;
+    protected static int write(Ruby runtime, IRubyObject io, CallSite write, ByteBuffer src) {
+        RubyString string;
+        int position = src.position();
+        int remaining = src.remaining();
 
+        // wrap buffer contents with String
         if (src.hasArray()) {
-            buffer = new ByteList(src.array(), src.position(), src.remaining(), true);
+            // wrap heap src with shared string to prevent target from modifying our buffer (GH-4903)
+            string = RubyString.newStringShared(runtime, src.array(), position, remaining);
         } else {
-            buffer = new ByteList(src.remaining());
-            buffer.append(src, src.remaining());
+            // copy native src to heap bytes to use in string
+            byte[] bytes = new byte[remaining];
+            src.duplicate().get(bytes);
+            string = RubyString.newStringNoCopy(runtime, bytes);
         }
-        IRubyObject written = write.call(runtime.getCurrentContext(), io, io, RubyString.newStringLight(runtime, buffer));
-        return (int)written.convertToInteger().getLongValue();
+
+        // call write with new String based on this ByteList
+        IRubyObject written = write.call(runtime.getCurrentContext(), io, io, string);
+        int wrote = written.convertToInteger().getIntValue();
+
+        // set source position to match bytes written
+        if (wrote > 0) {
+            src.position(position + wrote);
+        }
+
+        return wrote;
     }
 
     protected CallSite initReadSite(String readMethod) {
@@ -143,7 +158,7 @@ public abstract class IOChannel implements Channel {
         }
         
         public int read(ByteBuffer dst) throws IOException {
-            return read(read, dst);
+            return read(runtime, io, read, dst);
         }
     }
 
@@ -159,7 +174,7 @@ public abstract class IOChannel implements Channel {
         }
 
         public int write(ByteBuffer src) throws IOException {
-            return write(write, src);
+            return write(runtime, io, write, src);
         }
     }
 
@@ -177,11 +192,11 @@ public abstract class IOChannel implements Channel {
         }
 
         public int read(ByteBuffer dst) throws IOException {
-            return read(read, dst);
+            return read(runtime, io, read, dst);
         }
 
         public int write(ByteBuffer src) throws IOException {
-            return write(write, src);
+            return write(runtime, io, write, src);
         }
     }
 }

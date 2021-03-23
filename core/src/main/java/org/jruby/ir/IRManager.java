@@ -16,6 +16,7 @@ import org.jruby.ast.RootNode;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.*;
@@ -40,7 +41,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 
 public class IRManager {
@@ -346,16 +346,16 @@ public class IRManager {
      * For scopes that don't require a dynamic scope we can run DCE and some other passes which cannot
      * be stymied by escaped bindings.
      */
-    protected void optimizeIfSimpleScope(IRScope scope) {
+    protected void optimizeIfSimpleScope(FullInterpreterContext fic) {
         // We cannot pick the passes if we want an explicit set to run.
         if (RubyInstanceConfig.IR_COMPILER_PASSES != null) return;
 
-        EnumSet<IRFlags> flags = scope.getFlags();
+        EnumSet<IRFlags> flags = fic.getFlags();
 
         if (!flags.contains(REQUIRES_DYNSCOPE)) {
-            if (flags.contains(RECEIVES_CLOSURE_ARG)) optimizeDelegationPass.run(scope);
-            deadCodeEliminationPass.run(scope);
-            optimizeDynScopesPass.run(scope);
+            if (fic.getScope().receivesClosureArg()) optimizeDelegationPass.run(fic);
+            deadCodeEliminationPass.run(fic);
+            optimizeDynScopesPass.run(fic);
         }
     }
 

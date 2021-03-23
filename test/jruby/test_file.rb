@@ -104,6 +104,15 @@ class TestFile < Test::Unit::TestCase
     assert_raise(TypeError) { File.expand_path(nil, nil) }
   end
 
+  def test_copy_file_and_preserve
+    FileUtils.touch("original")
+    FileUtils.copy_file('original', 'copy', true)
+    assert(File.exist?('original'))
+    assert(File.exist?('copy'))
+  ensure
+    FileUtils.rm_rf %w[ original copy ]
+  end
+
   # JRUBY-1116: these are currently broken on windows
   # what are these testing anyway?!?!
   if WINDOWS

@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 
+import java.net.BindException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
@@ -257,16 +258,23 @@ public class Helpers {
         } catch (AccessDeniedException ade) {
             return Errno.EACCES;
         } catch (DirectoryNotEmptyException dnee) {
-            switch (dnee.getMessage()) {
-                case "File exists":
-                    return Errno.EEXIST;
-                case "Directory not empty":
-                    return Errno.ENOTEMPTY;
+            return errnoFromMessage(dnee);
+        } catch (BindException be) {
+            return errnoFromMessage(be);
+        } catch (IOException ioe) {
+            String message = ioe.getMessage();
+            // Raised on Windows for process launch with missing file
+            if (message.endsWith("The system cannot find the file specified")) {
+                return Errno.ENOENT;
             }
         } catch (Throwable t2) {
             // fall through
         }
 
+        return errnoFromMessage(t);
+    }
+
+    private static Errno errnoFromMessage(Throwable t) {
         final String errorMessage = t.getMessage();
 
         if (errorMessage != null) {
@@ -297,6 +305,8 @@ public class Helpers {
                     return Errno.ENETUNREACH;
                 case "Address already in use":
                     return Errno.EADDRINUSE;
+                case "Cannot assign requested address":
+                    return Errno.EADDRNOTAVAIL;
                 case "No space left on device":
                     return Errno.ENOSPC;
                 case "Message too large": // Alpine Linux
@@ -311,8 +321,8 @@ public class Helpers {
                 case "permission denied":
                 case "Permission denied":
                     return Errno.EACCES;
-                case "Protocol family unavailable":
-                    return Errno.EADDRNOTAVAIL;
+                case "Protocol family not supported":
+                    return Errno.EPFNOSUPPORT;
             }
         }
         return null;
@@ -2586,6 +2596,17 @@ public class Helpers {
         }
 
         return (RubyFixnum) hval;
+    }
+
+    // MRI: mult_and_mix, roughly since we have no uint64 type
+    public static long multAndMix(long seed, long hash) {
+        long hm1 = seed >> 32, hm2 = hash >> 32;
+        long lm1 = seed, lm2 = hash;
+        long v64_128 = hm1 * hm2;
+        long v32_96 = hm1 * lm2 + lm1 * hm2;
+        long v1_32 = lm1 * lm2;
+
+        return (v64_128 + (v32_96 >> 32)) ^ ((v32_96 << 32) + v1_32);
     }
 
     public static long murmurCombine(long h, long i)

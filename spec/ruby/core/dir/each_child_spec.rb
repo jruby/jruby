@@ -1,6 +1,26 @@
 require_relative '../../spec_helper'
 require_relative 'fixtures/common'
 
+describe "Dir.each_child" do
+  before :all do
+    DirSpecs.create_mock_dirs
+  end
+
+  after :all do
+    DirSpecs.delete_mock_dirs
+  end
+
+  it "accepts an encoding keyword for the encoding of the entries" do
+    dirs = Dir.each_child("#{DirSpecs.mock_dir}/deeply/nested", encoding: "utf-8").to_a.sort
+    dirs.each {|dir| dir.encoding.should == Encoding::UTF_8}
+  end
+
+  it "accepts nil options" do
+    dirs = Dir.each_child("#{DirSpecs.mock_dir}/deeply/nested", nil).to_a.sort
+    dirs.each {|dir| dir.encoding.should == Encoding.find("filesystem")}
+  end
+end
+
 ruby_version_is "2.5" do
   describe "Dir.each_child" do
     before :all do

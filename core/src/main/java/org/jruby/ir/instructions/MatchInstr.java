@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -11,6 +12,8 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
+
+import java.util.EnumSet;
 
 import static org.jruby.ir.IRFlags.REQUIRES_BACKREF;
 
@@ -31,11 +34,11 @@ public class MatchInstr extends CallInstr implements FixedArityInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
         // $~ is implicitly used since Backref and NthRef operands
         // access it and $~ is not made explicit in those operands.
-        scope.getFlags().add(REQUIRES_BACKREF);
+        flags.add(REQUIRES_BACKREF);
         return true;
     }
 

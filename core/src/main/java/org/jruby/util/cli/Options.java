@@ -217,6 +217,8 @@ public class Options {
     public static final Option<Boolean> JI_AMBIGUOUS_CALLS_DEBUG = bool(JAVA_INTEGRATION, "ji.ambiguous.calls.debug", false, "Toggle verbose reporting of all ambiguous calls to Java objects");
     public static final Option<Boolean> AOT_LOADCLASSES = bool(JAVA_INTEGRATION, "aot.loadClasses", false, "Look for .class before .rb to load AOT-compiled code");
     public static final Option<Boolean> JI_LOAD_LAZY = bool(JAVA_INTEGRATION, "ji.load.lazy", true, "Load Java support (class extensions) lazily on demand or ahead of time.");
+    public static final Option<Boolean> JI_CLOSE_CLASSLOADER = bool(JAVA_INTEGRATION, "ji.close.classloader", true, "Close the JRubyClassLoader used by each runtime");
+    public static final Option<String> JI_NESTED_JAR_TMPDIR = string(JAVA_INTEGRATION, "ji.nested.jar.tmpdir", "Use specified dir as a base for unpacking nested jar files.");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
 

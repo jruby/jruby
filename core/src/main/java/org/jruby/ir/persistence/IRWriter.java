@@ -82,6 +82,7 @@ public class IRWriter {
         }
 
         persistStaticScope(file, scope.getStaticScope());
+        scope.persistScopeFlags(file);
         file.endEncodingScopeHeader(scope);
     }
 

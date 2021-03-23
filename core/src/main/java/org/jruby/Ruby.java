@@ -494,7 +494,7 @@ public final class Ruby implements Constantizable {
         // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
         IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
-        top.allocateInterpreterContext(Collections.EMPTY_LIST);
+        top.allocateInterpreterContext(Collections.EMPTY_LIST, 0, IRScope.allocateInitialFlags(top));
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
@@ -3767,9 +3767,16 @@ public final class Ruby implements Constantizable {
 
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 
-    public RaiseException newErrnoEADDRFromBindException(BindException be) {
-		return newErrnoEADDRFromBindException(be, null);
-	}
+    public RaiseException newErrnoFromBindException(BindException be, String contextMessage) {
+        Errno errno = Helpers.errnoFromException(be);
+
+        if (errno != null) {
+            return newErrnoFromErrno(errno, contextMessage);
+        }
+
+        // Messages may differ so revert to old behavior (jruby/jruby#6322)
+        return newErrnoEADDRFromBindException(be, contextMessage);
+    }
 
     public RaiseException newErrnoEADDRFromBindException(BindException be, String contextMessage) {
         String msg = be.getMessage();
@@ -5505,6 +5512,11 @@ public final class Ruby implements Constantizable {
                     + "If you need this option please set it manually as a JVM property.\n"
                     + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
         }
+    }
+
+    @Deprecated
+    public RaiseException newErrnoEADDRFromBindException(BindException be) {
+        return newErrnoEADDRFromBindException(be, null);
     }
 
 }

@@ -275,7 +275,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "target_cpu", arch);
 
         String jrubyJarFile = "jruby.jar";
-        URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource("/org/jruby/Ruby.class");
+        URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource("org/jruby/Ruby.class");
         if (jrubyPropertiesUrl != null) {
             Pattern jarFile = Pattern.compile("jar:file:.*?([a-zA-Z0-9.\\-]+\\.jar)!" + "/org/jruby/Ruby.class");
             Matcher jarMatcher = jarFile.matcher(jrubyPropertiesUrl.toString());

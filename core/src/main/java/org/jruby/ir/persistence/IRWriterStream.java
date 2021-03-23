@@ -8,6 +8,7 @@ package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -24,6 +25,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -129,6 +131,17 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     public void encode(float value) {
 //        buf.put(FLOAT);
         buf.putFloat(value);
+    }
+
+    @Override
+    public void encode(EnumSet<IRFlags> values) {
+        int value = 0;
+
+        for (IRFlags flags: values) {
+            value |= 1 << flags.ordinal();
+        }
+        
+        encode(value);
     }
 
     @Override

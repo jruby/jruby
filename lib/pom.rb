@@ -18,20 +18,22 @@ default_gems = [
     ['cmath', '1.0.0'],
     ['csv', '1.0.0'],
     ['fileutils', '1.1.0'],
+    ['io-console', '0.5.9'],
     ['ipaddr', '1.2.0'],
     ['jar-dependencies', '${jar-dependencies.version}'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.10.4'],
+    ['jruby-openssl', '0.10.5'],
     ['json', '${json.version}'],
-    ['psych', '3.1.0'],
+    ['psych', '3.2.0'],
+    ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '${rdoc.version}'],
     ['scanf', '1.0.0'],
-    ['webrick', '1.4.2'],
+    ['webrick', '1.6.1'],
 ]
 
 bundled_gems = [
-    ['did_you_mean', '1.2.0'],
+    ['did_you_mean', '1.2.1'],
     ['minitest', '${minitest.version}'],
     ['net-telnet', '0.1.1'],
     ['power_assert', '${power_assert.version}'],
@@ -91,6 +93,7 @@ project 'JRuby Lib Setup' do
   end
 
   default_gemnames = default_gems.collect(&:first)
+  all_gems     = default_gems + bundled_gems
 
   plugin :dependency,
     :useRepositoryLayout => true,
@@ -111,10 +114,14 @@ project 'JRuby Lib Setup' do
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
     jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
-    default_specs = File.join( jruby_gems, 'specifications', 'default' )
     bin_stubs = File.join( jruby_gems, 'gems' )
+    default_specs = File.join( jruby_gems, 'specifications', 'default' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
     stdlib_dir = File.join( ruby_dir, 'stdlib' )
+    jruby_home = ctx.project.parent.basedir.to_pathname
+
+    # bin location for global binstubs
+    global_bin = File.join( jruby_home, "bin" )
 
     FileUtils.mkdir_p( default_specs )
 
@@ -148,7 +155,9 @@ project 'JRuby Lib Setup' do
         installer = Gem::Installer.new( a.file.to_pathname,
                                         :wrappers => true,
                                         :ignore_dependencies => true,
-                                        :install_dir => ghome )
+                                        :install_dir => ghome,
+                                        :env_shebang => true,
+                                        :bin_dir => global_bin)
         def installer.ensure_required_ruby_version_met; end
         installer.install
       end
@@ -204,13 +213,14 @@ project 'JRuby Lib Setup' do
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
         # copy bin files if the gem has any
-        bin = File.join( gems, "#{gem_name}", spec.bindir || 'bin' )        
-        if File.exists? bin
-          Dir[ File.join( bin, '*' ) ].each do |f|
-            log "copy to bin: #{File.basename( f )}"
-            target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
+        unless spec.executables.empty?
+          spec.executables.each do |f|
+            bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
+            source = File.join( bin, f )
+            target = File.join( bin_stubs, source.sub( /#{gems}/, '' ) )
+            log "copy #{f} to #{target}}"
             FileUtils.mkdir_p( File.dirname( target ) )
-            FileUtils.cp_r( f, target )
+            FileUtils.cp_r( source, target )
           end
         end
 
@@ -238,17 +248,8 @@ project 'JRuby Lib Setup' do
   execute( 'fix shebang on gem bin files and add *.bat files',
            'generate-resources' ) do |ctx|
 
-    log 'fix the gem stub files'
-    jruby_home = ctx.project.basedir.to_pathname + '/../'
-    bindir = File.join( jruby_home, 'lib', 'ruby', 'gems', 'shared', 'bin' )
-    Dir[ File.join( bindir, '*' ) ].each do |f|
-      content = File.read( f )
-      new_content = content.sub( /#!.*/, "#!/usr/bin/env jruby
-" )
-      File.open( f, "w" ) { |file| file.print( new_content ) }
-    end
-
     log 'generating missing .bat files'
+    jruby_home = ctx.project.parent.basedir.to_pathname
     Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
       next unless File.file?(fn)
       next if fn =~ /.bat$/
@@ -289,28 +290,19 @@ project 'JRuby Lib Setup' do
   build do
     resource do
       directory '${gem.home}'
-      # assume all dependencies are met with this gems + the default gems
-      incl = (default_gems + bundled_gems).collect do |name, version|
-        [
-          "cache/#{name}*#{version}.gem",
-          "gems/#{name}*#{version}/**",
-          "specifications/#{name}*#{version}.gemspec"
-        ]
-      end.flatten
-      includes incl
-      target_path '${jruby.complete.gems}'
-    end
-
-    resource do
-      directory '${gem.home}'
-      includes 'specifications/default/*.gemspec'
+      includes [
+                   'specifications/default/*',
+                   *all_gems.map {|name,version| "specifications/#{name}-#{version}*"},
+                   *all_gems.map {|name,version| "gems/#{name}-#{version}*/**/*"},
+                   *all_gems.map {|name,version| "cache/#{name}-#{version}*"},
+               ]
       target_path '${jruby.complete.gems}'
     end
 
     resource do
       directory '${basedir}/..'
-      includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/include/**', 'lib/ruby/stdlib/**'
-      excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*',
+      includes 'bin/*', 'lib/ruby/include/**', 'lib/ruby/stdlib/**'
+      excludes 'bin/ruby', 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*',
         'lib/ruby/stdlib/rubygems/defaults/jruby_native.rb',
         'lib/ruby/stdlib/gauntlet*.rb' # gauntlet_rdoc.rb, gauntlet_rubygems.rb
       target_path '${jruby.complete.home}'

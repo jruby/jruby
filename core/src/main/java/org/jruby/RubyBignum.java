@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1043,12 +1044,17 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public RubyFixnum hash() {
-        return metaClass.runtime.newFixnum(value.hashCode());
+        Ruby runtime = metaClass.runtime;
+        return RubyFixnum.newFixnum(runtime, bigHash(runtime, value));
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return (int) bigHash(getRuntime(), value);
+    }
+
+    private static long bigHash(Ruby runtime, BigInteger value) {
+        return Helpers.multAndMix(runtime.getHashSeedK0(), value.hashCode());
     }
 
     /** rb_big_to_f

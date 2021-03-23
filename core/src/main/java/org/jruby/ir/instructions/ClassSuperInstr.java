@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -15,6 +14,8 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.EnumSet;
 
 public class ClassSuperInstr extends CallInstr {
     // clone constructor
@@ -34,10 +35,10 @@ public class ClassSuperInstr extends CallInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
-        scope.getFlags().add(IRFlags.REQUIRES_CLASS); // for current class and method name
-        scope.getFlags().add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
+        flags.add(IRFlags.REQUIRES_CLASS); // for current class and method name
+        flags.add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
         return true;
     }
 

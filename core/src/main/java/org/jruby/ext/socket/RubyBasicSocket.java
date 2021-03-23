@@ -245,10 +245,6 @@ public class RubyBasicSocket extends RubyIO {
             switch(level) {
 
             case SOL_SOCKET:
-            case SOL_IP:
-            case SOL_TCP:
-            case SOL_UDP:
-
                 if (opt == SocketOption.__UNKNOWN_CONSTANT__) {
                     throw runtime.newErrnoENOPROTOOPTError();
                 }
@@ -302,11 +298,7 @@ public class RubyBasicSocket extends RubyIO {
 
             switch(level) {
 
-            case SOL_IP:
             case SOL_SOCKET:
-            case SOL_TCP:
-            case SOL_UDP:
-
                 if (opt == SocketOption.SO_LINGER) {
                     if (val instanceof RubyString) {
                         int[] linger = Option.unpackLinger(val.convertToString().getByteList());
@@ -735,6 +727,10 @@ public class RubyBasicSocket extends RubyIO {
         }
         ret3 = runtime.newString(hostAddress);
         return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
+    }
+
+    protected static String bindContextMessage(IRubyObject host, int port) {
+        return "bind(2) for " + host.inspect() + " port " + port;
     }
 
     @Deprecated

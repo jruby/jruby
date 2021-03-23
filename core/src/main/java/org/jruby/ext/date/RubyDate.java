@@ -1395,7 +1395,7 @@ public class RubyDate extends RubyObject {
         final Ruby runtime = context.runtime;
         return context.runtime.newArrayNoCopy(new IRubyObject[] {
                 ajd(context),
-                RubyFixnum.newFixnum(runtime, off),
+                RubyRational.newRationalCanonicalize(context, off, DAY_IN_SECONDS),
                 RubyFixnum.newFixnum(runtime, start)
         });
     }
@@ -1681,7 +1681,8 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string, IRubyObject format) {
-        format = TypeConverter.checkStringType(context.runtime, format);
+        string = string.convertToString();
+        format = format.convertToString();
         return parse(context, string, ((RubyString) format).decodeString());
     }
 

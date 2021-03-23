@@ -36,11 +36,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
+import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.jar.JarFile;
 
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -65,7 +71,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static volatile File tempDir;
 
-    private List<String> cachedJarPaths = Collections.synchronizedList(new ArrayList<String>());
+    private final Map<String, URL> cachedJarPaths = new ConcurrentHashMap<>();
 
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
@@ -95,19 +101,19 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                     out.flush();
                     url = f.toURI().toURL();
 
-                    cachedJarPaths.add(URLUtil.getPath(url));
+                    cachedJarPaths.put(URLUtil.getPath(url), url);
                 }
             } catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
             }
         }
-        super.addURL( url );
+        super.addURL(url);
     }
 
     private static synchronized File getTempDir() {
         if (tempDir != null) return tempDir;
 
-        tempDir = new File(systemTmpDir(), tempDirName());
+        tempDir = new File(tempDir(), tempDirName());
         if (tempDir.mkdirs()) {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
@@ -145,21 +151,24 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         }
     }
 
-    private static String systemTmpDir() {
+    private static String tempDir() {
+        // try JRuby-specific option first
+        String jrubyTmpdir = Options.JI_NESTED_JAR_TMPDIR.load();
+
+        if (jrubyTmpdir != null) {
+            return jrubyTmpdir;
+        }
+
+        // fall back on Java tmpdir if available
         try {
             return System.getProperty("java.io.tmpdir");
         }
         catch (SecurityException ex) {
             LOG.warn("could not access 'java.io.tmpdir' will use working directory", ex);
         }
-        return "";
-    }
 
-    /**
-     * @deprecated use {@link #close()} instead
-     */
-    public void tearDown(boolean debug) {
-        close();
+        // give up and just use current dir
+        return "";
     }
 
     /**
@@ -167,10 +176,16 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
      */
     @Override
     public void close() {
-        try {
-            super.close();
+        if (Options.JI_CLOSE_CLASSLOADER.load()) {
+            // We no longer unconditionally close the classloader due to JDK issues with the open jar files it may be
+            // holding references to.
+            // See jruby/jruby#6218 and https://bugs.openjdk.java.net/browse/JDK-8246714
+            try {
+                super.close();
+            } catch (Exception ex) {
+                LOG.debug(ex);
+            }
         }
-        catch (Exception ex) { LOG.debug(ex); }
 
         try {
             // A hack to allow unloading all JDBC Drivers loaded by this classloader.
@@ -183,18 +198,31 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
     }
 
     protected void terminateJarIndexCacheEntries() {
-        for (String jarPath : cachedJarPaths){
+        cachedJarPaths.forEach((path, url) -> {
+            // close the jar file associated with the connection, since this might be cached by JDK
             try {
+                URLConnection connection = url.openConnection();
+
+                if (connection instanceof JarURLConnection) {
+                    JarFile jarFile = ((JarURLConnection) connection).getJarFile();
+
+                    try {
+                        jarFile.close();
+                    } catch (IOException ioe) {
+                        // ignore and proceed to delete the file
+                    }
+                }
+
                 // Remove reference from jar cache
-                JarResource.removeJarResource(jarPath);
+                JarResource.removeJarResource(path);
 
                 // Delete temp jar on disk
-                File jarFile = new File(jarPath);
+                File jarFile = new File(path);
                 jarFile.delete();
             } catch (Exception e) {
                 // keep trying to clean up other temp jars
             }
-        }
+        });
     }
 
     @Deprecated
