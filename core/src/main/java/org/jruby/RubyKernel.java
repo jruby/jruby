@@ -1481,7 +1481,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
-        // If we encounter a amp'd proc we leave it a proc for some reason.
+        // existing procs remain procs vs becoming lambdas.
         Block.Type type = block.type == Block.Type.PROC ? block.type : Block.Type.LAMBDA;
 
         return context.runtime.newProc(type, block);
@@ -1956,7 +1956,7 @@ public class RubyKernel {
         }
 
         if (block.isGiven()) {
-            sizeFn = (ctx, recv, args1) -> block.call(ctx, args1);
+            sizeFn = (ctx, recv, args1) -> block.yieldValues(ctx, args1);
         }
 
         return enumeratorizeWithSize(context, self, method, args, sizeFn);
