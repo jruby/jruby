@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 
 import org.jruby.*;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.junit.Test;
 
@@ -100,16 +101,17 @@ public class TestJava extends junit.framework.TestCase {
     @Test
     public void testJavaConstructorExceptionHandling() throws Exception {
         final Ruby runtime = Ruby.newInstance();
+        ThreadContext context = runtime.getCurrentContext();
         JavaConstructor constructor = JavaConstructor.create(runtime,
                 ThrowingConstructor.class.getDeclaredConstructor(Integer.class)
         );
-        assert constructor.new_instance(new IRubyObject[] { runtime.newFixnum(0) }) != null;
+        assertNotNull(constructor.new_instance(context, new IRubyObject[] { runtime.newFixnum(0) }));
 
-        assert constructor.new_instance(new Object[] { 1 }) != null;
+        assertNotNull(constructor.new_instance(context, new Object[] { 1 }));
 
         try {
-            constructor.new_instance(new Object[0]);
-            assert false;
+            constructor.new_instance(context, new Object[0]);
+            assertTrue("raise exception expected", false);
         }
         catch (RaiseException ex) {
             assertEquals("(ArgumentError) wrong number of arguments (given 0, expected 1)", ex.getMessage());
@@ -119,8 +121,8 @@ public class TestJava extends junit.framework.TestCase {
         }
 
         try {
-            constructor.new_instance(new Object[] { -1 });
-            assert false;
+            constructor.new_instance(context, new Object[] { -1 });
+            assertTrue("raise exception expected", false);
         }
         catch (IllegalStateException ex) {
             assertEquals("param == -1", ex.getMessage());
@@ -130,8 +132,8 @@ public class TestJava extends junit.framework.TestCase {
         }
 
         try {
-            constructor.new_instance(new Object[] { null }); // new IllegalStateException() null cause message
-            assert false;
+            constructor.new_instance(context, new Object[] { null }); // new IllegalStateException() null cause message
+            assertTrue("raise exception expected", false);
         }
         catch (IllegalStateException ex) {
             assertEquals(null, ex.getMessage());

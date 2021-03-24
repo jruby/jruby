@@ -147,6 +147,15 @@ public class Signature {
         return arityValue;
     }
 
+    /**
+     * If we are yield'ing to this signature should we spread/destructure a Ruby Array?
+     *
+     * @return true if the signature expects multiple args
+     */
+    public boolean isSpreadable() {
+        return arityValue < -1 || arityValue > 1;
+    }
+
 
     // Lossy conversion to support populator constructors
     public static Signature fromArityValue(int arityValue) {

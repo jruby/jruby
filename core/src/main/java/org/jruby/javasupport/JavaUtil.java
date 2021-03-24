@@ -233,7 +233,7 @@ public class JavaUtil {
         RubyClass procClass = rubyObject.getMetaClass();
 
         // Extend the interfaces into the proc's class. This creates a singleton class to connect up the Java proxy.
-        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, JavaClass.get(runtime, targetType));
+        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, targetType);
         if ( ! ifaceModule.isInstance(rubyObject) ) {
             ifaceModule.callMethod(context, "extend_object", rubyObject);
             ifaceModule.callMethod(context, "extended", rubyObject);

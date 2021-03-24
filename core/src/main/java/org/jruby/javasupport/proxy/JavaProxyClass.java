@@ -60,6 +60,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -375,7 +376,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         @JRubyMethod
         public RubyArray argument_types() {
-            return toRubyArray(getParameterTypes());
+            return toClassArray(getRuntime(), getParameterTypes());
         }
 
         @JRubyMethod(name = "super?")
@@ -607,7 +608,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         // intentionally overridden, except those from Kernel, Java, and JavaProxyMethods, as well as Enumerable.
         // TODO: may want to exclude other common mixins?
 
-        JavaClass javaClass = null;
+        Class<?> javaClass = null;
         HashSet<String> names = new HashSet<>(); // need names ordered for key generation later
         Collection<Class<?>> interfaceList = new LinkedHashSet<>(8);
 
@@ -616,24 +617,20 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             RubyModule ancestor = (RubyModule) ancestorObject;
             if (ancestor instanceof RubyClass) {
                 if (skipRemainingClasses) continue;
-                // we only collect methods and interfaces for
-                // user-defined proxy classes.
+                // we only collect methods and interfaces for user-defined proxy classes
                 if (!ancestor.getInstanceVariables().hasInstanceVariable("@java_proxy_class")) {
                     skipRemainingClasses = true;
                     continue;
                 }
 
-                // get JavaClass if this is the new proxy class; verify it
-                // matches if this is a superclass proxy.
-                IRubyObject var = ancestor.getInstanceVariables().getInstanceVariable("@java_class");
-                if ( ! (var instanceof JavaClass) ) {
-                    if (var == null) {
-                        throw runtime.newTypeError("no java_class defined for proxy (or ancestor): " + ancestor);
-                    }
-                    throw runtime.newTypeError("invalid java_class defined for proxy (or ancestor): " + ancestor + ": " + var);
+                // get JavaClass if this is the new proxy class; verify it matches if this is a superclass proxy.
+                IRubyObject var = JavaProxy.getJavaClass(ancestor);
+                if (var == null) {
+                    throw runtime.newTypeError("no java_class defined for proxy (or ancestor): " + ancestor);
                 }
-                if (javaClass == null) javaClass = (JavaClass) var;
-                else if (javaClass != var) {
+                if (javaClass == null) {
+                    javaClass = JavaUtil.unwrapJavaObject(var);
+                } else if (javaClass != JavaUtil.unwrapJavaObject(var)) {
                     throw runtime.newTypeError("java_class defined for " + clazz + " (" + javaClass +
                             ") does not match java_class for ancestor " + ancestor + " (" + var + ")");
                 }
@@ -646,7 +643,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                     RubyArray interfaces = (RubyArray) var;
                     for (int i = interfaces.size(); --i >= 0; ) {
                         IRubyObject iface = interfaces.eltInternal(i);
-                        Class interfaceClass = ((JavaClass) iface).javaClass();
+                        Class<?> interfaceClass = Java.unwrapClassProxy(iface);
                         if (!interfaceClass.isInterface()) {
                             throw runtime.newTypeError("invalid java interface defined for proxy (or ancestor): " +
                                     ancestor + ": " + iface + " (not an interface)");
@@ -693,7 +690,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         Class<?>[] interfaces = interfaceList.isEmpty() ? EMPTY_CLASS_ARRAY : interfaceList.toArray(new Class<?>[interfaceList.size()]);
 
         try {
-            return newProxyClass(runtime, javaClass.javaClass(), interfaces, names, clazz.getFieldSignatures(), clazz.getMethodSignatures(), clazz);
+            return newProxyClass(runtime, javaClass, interfaces, names, clazz.getFieldSignatures(), clazz.getMethodSignatures(), clazz);
         }
         catch (RaiseException e) {
             throw e;
@@ -708,8 +705,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     @JRubyMethod
-    public RubyObject superclass() {
-        return JavaClass.get(getRuntime(), getSuperclass());
+    public IRubyObject superclass() {
+        return Java.getInstance(getRuntime(), getSuperclass());
     }
 
     @JRubyMethod
@@ -719,12 +716,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     @JRubyMethod
     public RubyArray interfaces() {
-        return toRubyArray(getInterfaces());
+        return toClassArray(getRuntime(), getInterfaces());
     }
 
     @JRubyMethod
     public final RubyArray constructors() {
-        return toRubyArray( getConstructors() );
+        return toRubyArray(getConstructors());
     }
 
     public final String nameOnInspection() {

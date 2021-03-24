@@ -27,6 +27,7 @@ default_gems = [
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
     ['irb', '1.0.0'],
+    ['io-console', '0.5.9'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.5'],
@@ -111,6 +112,7 @@ project 'JRuby Lib Setup' do
   end
 
   default_gemnames = default_gems.collect(&:first)
+  all_gems     = default_gems + bundled_gems
 
   plugin :dependency,
     :useRepositoryLayout => true,
@@ -322,7 +324,12 @@ project 'JRuby Lib Setup' do
   build do
     resource do
       directory '${gem.home}'
-      includes '**/*'
+      includes [
+                   'specifications/default/*',
+                   *all_gems.map {|name,version| "specifications/#{name}-#{version}*"},
+                   *all_gems.map {|name,version| "gems/#{name}-#{version}*/**/*"},
+                   *all_gems.map {|name,version| "cache/#{name}-#{version}*"},
+               ]
       target_path '${jruby.complete.gems}'
     end
 

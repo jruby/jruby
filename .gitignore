@@ -67,6 +67,7 @@ lib/ruby/stdlib/fileutils.rb
 lib/ruby/stdlib/forwardable*
 lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/hoe*
+lib/ruby/stdlib/io/console*
 lib/ruby/stdlib/ipaddr*
 lib/ruby/stdlib/irb*
 lib/ruby/stdlib/jar*

@@ -184,20 +184,29 @@ public class Block {
         return body.yield(context, this, value);
     }
 
+    // PROC/NORMAL/THREAD will spread a single argument array if the block expects more than one required argument.
+    // This should be the only argument massaging in yield.  This handles all argument conversion logic except
+    // for the generic Block#yield(IRubyObject value).
+    private static IRubyObject[] maybeSpreadArgs(ThreadContext context, IRubyObject[] args, Block block) {
+        return block.type != Type.LAMBDA && args.length == 1 && block.getSignature().isSpreadable() ?
+                IRRuntimeHelpers.toAry(context, args) :
+                args;
+    }
+
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        return body.yield(context, this, new IRubyObject[] { value }, self);
+        IRubyObject[] args = maybeSpreadArgs(context, new IRubyObject[] { value }, this);
+
+        return body.yield(context, this, args, self);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        // SSS FIXME: Later on, we can move this code into IR insructions or
-        // introduce a specialized entry-point when we know that this block has
-        // explicit call protocol IR instructions.
-        IRubyObject[] args = IRRuntimeHelpers.singleBlockArgToArray(value);
+        IRubyObject[] args = maybeSpreadArgs(context, IRRuntimeHelpers.singleBlockArgToArray(value), this);
+
         return body.yield(context, this, args, self);
     }
 
     public IRubyObject yieldValues(ThreadContext context, IRubyObject[] args) {
-        return body.yield(context, this, args, null);
+        return body.yield(context, this, maybeSpreadArgs(context, args, this), null);
     }
 
     public Block cloneBlock() {
