@@ -2,7 +2,6 @@ package org.jruby.java.invokers;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
-import java.util.List;
 import java.util.function.Supplier;
 
 import org.jruby.Ruby;

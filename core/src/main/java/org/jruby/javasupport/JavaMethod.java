@@ -39,7 +39,6 @@ package org.jruby.javasupport;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -79,22 +78,8 @@ public class JavaMethod extends JavaCallable {
 
     public final Method getValue() { return method; }
 
-    public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
-        // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass result =
-            javaModule.defineClassUnder("JavaMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        JavaAccessibleObject.registerRubyMethods(runtime, result);
-        JavaCallable.registerRubyMethods(runtime, result);
-
-        result.defineAnnotatedMethods(JavaMethod.class);
-
-        return result;
-    }
-
     public JavaMethod(Ruby runtime, Method method) {
-        super(runtime, null, method.getParameterTypes());
+        super(method.getParameterTypes());
         this.method = method;
         this.isFinal = Modifier.isFinal(method.getModifiers());
         final Class<?> returnType = method.getReturnType();
@@ -196,92 +181,92 @@ public class JavaMethod extends JavaCallable {
         return method.hashCode();
     }
 
-    @JRubyMethod
-    @Override
-    public RubyString name(ThreadContext context) {
-        return context.runtime.newString(method.getName());
-    }
-
-    @JRubyMethod(name = "public?")
-    @Override
-    public RubyBoolean public_p(ThreadContext context) {
-        return context.runtime.newBoolean(Modifier.isPublic(method.getModifiers()));
-    }
-
-    @JRubyMethod(name = "final?")
-    public RubyBoolean final_p(ThreadContext context) {
-        return context.runtime.newBoolean(Modifier.isFinal(method.getModifiers()));
-    }
-
-    @JRubyMethod(rest = true)
-    public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
-        checkArity(context, args.length - 1);
-
-        final IRubyObject invokee = args[0];
-        final Object[] arguments = convertArguments(args, 1);
-
-        if ( invokee.isNil() ) {
-            return invokeWithExceptionHandling(context, method, null, arguments);
-        }
-
-        final Object javaInvokee;
-        if (!isStatic()) {
-            javaInvokee = JavaUtil.unwrapJavaValue(invokee);
-            if ( javaInvokee == null ) {
-                throw context.runtime.newTypeError("invokee not a java object");
-            }
-
-            if ( ! method.getDeclaringClass().isInstance(javaInvokee) ) {
-                throw context.runtime.newTypeError(
-                    "invokee not instance of method's class" +
-                    " (got" + javaInvokee.getClass().getName() +
-                    " wanted " + method.getDeclaringClass().getName() + ")");
-            }
-
-            //
-            // this test really means, that this is a ruby-defined subclass of a java class
-            //
-            if ( javaInvokee instanceof ReifiedJavaProxy &&
-                // don't bother to check if final method, it won't
-                // be there (not generated, can't be!)
-                ! isFinal ) {
-                JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
-                JavaProxyMethod jpm = jpc.getMethod( method.getName(), parameterTypes );
-                if ( jpm != null && jpm.hasSuperImplementation() ) {
-                    return invokeWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, arguments);
-                }
-            }
-        }
-        else {
-            javaInvokee = null;
-        }
-
-        return invokeWithExceptionHandling(context, method, javaInvokee, arguments);
-    }
-
-    @JRubyMethod(rest = true)
-    public IRubyObject invoke_static(ThreadContext context, IRubyObject[] args) {
-        checkArity(context, args.length);
-
-        final Object[] arguments = convertArguments(args, 0);
-        return invokeWithExceptionHandling(context, method, null, arguments);
-    }
-
-    @JRubyMethod
-    @SuppressWarnings("deprecation")
-    public IRubyObject return_type(ThreadContext context) {
-        Class<?> klass = method.getReturnType();
-
-        if (klass.equals(void.class)) {
-            return context.runtime.getNil();
-        }
-        return Java.getProxyClass(context.runtime, klass);
-    }
-
-    @JRubyMethod
-    public IRubyObject type_parameters(ThreadContext context) {
-        return Java.getInstance(context.runtime, method.getTypeParameters());
-    }
+//    @JRubyMethod
+//    @Override
+//    public RubyString name(ThreadContext context) {
+//        return context.runtime.newString(method.getName());
+//    }
+//
+//    @JRubyMethod(name = "public?")
+//    @Override
+//    public RubyBoolean public_p(ThreadContext context) {
+//        return context.runtime.newBoolean(Modifier.isPublic(method.getModifiers()));
+//    }
+//
+//    @JRubyMethod(name = "final?")
+//    public RubyBoolean final_p(ThreadContext context) {
+//        return context.runtime.newBoolean(Modifier.isFinal(method.getModifiers()));
+//    }
+//
+//    @JRubyMethod(rest = true)
+//    public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
+//        checkArity(context, args.length - 1);
+//
+//        final IRubyObject invokee = args[0];
+//        final Object[] arguments = convertArguments(args, 1);
+//
+//        if ( invokee.isNil() ) {
+//            return invokeWithExceptionHandling(context, method, null, arguments);
+//        }
+//
+//        final Object javaInvokee;
+//        if (!isStatic()) {
+//            javaInvokee = JavaUtil.unwrapJavaValue(invokee);
+//            if ( javaInvokee == null ) {
+//                throw context.runtime.newTypeError("invokee not a java object");
+//            }
+//
+//            if ( ! method.getDeclaringClass().isInstance(javaInvokee) ) {
+//                throw context.runtime.newTypeError(
+//                    "invokee not instance of method's class" +
+//                    " (got" + javaInvokee.getClass().getName() +
+//                    " wanted " + method.getDeclaringClass().getName() + ")");
+//            }
+//
+//            //
+//            // this test really means, that this is a ruby-defined subclass of a java class
+//            //
+//            if ( javaInvokee instanceof ReifiedJavaProxy &&
+//                // don't bother to check if final method, it won't
+//                // be there (not generated, can't be!)
+//                ! isFinal ) {
+//                JavaProxyClass jpc = ((ReifiedJavaProxy) javaInvokee).___jruby$proxyClass();
+//                JavaProxyMethod jpm = jpc.getMethod( method.getName(), parameterTypes );
+//                if ( jpm != null && jpm.hasSuperImplementation() ) {
+//                    return invokeWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, arguments);
+//                }
+//            }
+//        }
+//        else {
+//            javaInvokee = null;
+//        }
+//
+//        return invokeWithExceptionHandling(context, method, javaInvokee, arguments);
+//    }
+//
+//    @JRubyMethod(rest = true)
+//    public IRubyObject invoke_static(ThreadContext context, IRubyObject[] args) {
+//        checkArity(context, args.length);
+//
+//        final Object[] arguments = convertArguments(args, 0);
+//        return invokeWithExceptionHandling(context, method, null, arguments);
+//    }
+//
+//    @JRubyMethod
+//    @SuppressWarnings("deprecation")
+//    public IRubyObject return_type(ThreadContext context) {
+//        Class<?> klass = method.getReturnType();
+//
+//        if (klass.equals(void.class)) {
+//            return context.runtime.getNil();
+//        }
+//        return Java.getProxyClass(context.runtime, klass);
+//    }
+//
+//    @JRubyMethod
+//    public IRubyObject type_parameters(ThreadContext context) {
+//        return Java.getInstance(context.runtime, method.getTypeParameters());
+//    }
 
     public IRubyObject invokeDirect(ThreadContext context, Object javaInvokee, Object[] args) {
         checkArity(context, args.length);
@@ -521,16 +506,6 @@ public class JavaMethod extends JavaCallable {
         return JavaUtil.convertJavaToUsableRubyObjectWithConverter(runtime, result, returnConverter);
     }
 
-    //@Override
-    //public final int getArity() {
-    //    return parameterTypes.length;
-    //}
-
-    //@Override
-    //public final Class<?>[] getParameterTypes() {
-    //    return parameterTypes;
-    //}
-
     public String getName() {
         return method.getName();
     }
@@ -558,15 +533,6 @@ public class JavaMethod extends JavaCallable {
     @Override
     public final boolean isVarArgs() {
         return method.isVarArgs();
-    }
-
-    @JRubyMethod(name = "static?")
-    public RubyBoolean static_p(ThreadContext context) {
-        return context.runtime.newBoolean(isStatic());
-    }
-
-    private boolean isStatic() {
-        return Modifier.isStatic(method.getModifiers());
     }
 
     @Override

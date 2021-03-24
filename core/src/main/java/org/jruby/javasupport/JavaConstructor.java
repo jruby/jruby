@@ -42,10 +42,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -57,22 +53,8 @@ public class JavaConstructor extends JavaCallable {
 
     public final Constructor getValue() { return constructor; }
 
-    public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
-        // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass result =
-                javaModule.defineClassUnder("JavaConstructor", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        JavaAccessibleObject.registerRubyMethods(runtime, result);
-        JavaCallable.registerRubyMethods(runtime, result);
-
-        result.defineAnnotatedMethods(JavaConstructor.class);
-
-        return result;
-    }
-
     public JavaConstructor(Ruby runtime, Constructor<?> constructor) {
-        super(runtime, null, constructor.getParameterTypes());
+        super(constructor.getParameterTypes());
         this.constructor = constructor;
         //this.objectConverter = JavaUtil.getJavaConverter(constructor.getDeclaringClass());
     }
@@ -128,16 +110,6 @@ public class JavaConstructor extends JavaCallable {
         return constructor.hashCode();
     }
 
-    //@Override
-    //public final int getArity() {
-    //    return parameterTypes.length;
-    //}
-
-    //@Override
-    //public final Class<?>[] getParameterTypes() {
-    //    return parameterTypes;
-    //}
-
     @Override
     public final Class<?>[] getExceptionTypes() {
         return constructor.getExceptionTypes();
@@ -179,36 +151,7 @@ public class JavaConstructor extends JavaCallable {
         return constructor;
     }
 
-    @JRubyMethod
-    public IRubyObject type_parameters(ThreadContext context) {
-        return Java.getInstance(context.runtime, constructor.getTypeParameters());
-    }
-
-    @JRubyMethod
-    public IRubyObject return_type(ThreadContext context) {
-        return context.runtime.getNil();
-    }
-
-    @JRubyMethod
-    @SuppressWarnings("deprecation")
-    public IRubyObject declaring_class(ThreadContext context) {
-        return Java.getProxyClass(context.runtime, getDeclaringClass());
-    }
-
-    @JRubyMethod(rest = true)
-    public final IRubyObject new_instance(ThreadContext context, final IRubyObject[] args) {
-        checkArity(context, args.length);
-
-        return newInstanceExactArity(context, convertArguments(args));
-    }
-
-    public final IRubyObject new_instance(ThreadContext context, final Object[] arguments) {
-        checkArity(context, arguments.length);
-
-        return newInstanceExactArity(context, arguments);
-    }
-
-    private IRubyObject newInstanceExactArity(ThreadContext context, Object[] arguments) {
+    IRubyObject newInstanceExactArity(ThreadContext context, Object[] arguments) {
         try {
             Object result = constructor.newInstance(arguments);
             return JavaObject.wrap(context.runtime, result);
@@ -325,7 +268,5 @@ public class JavaConstructor extends JavaCallable {
             return handleThrowable(context, t);
         }
     }
-
-    boolean isConstructor() { return true; } // for error message in base class
 
 }
