@@ -660,6 +660,11 @@ public class IRRuntimeHelpers {
         }
     }
 
+    public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hashArg) {
+        return hashArg instanceof RubyHash && ((RubyHash) hashArg).size() == 0 ?
+                context.tru : context.fals;
+    }
+
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
         RubyHash syms;
         RubyHash others;
