@@ -104,15 +104,12 @@ extensions will be restored.
               end.flatten
             end
 
+    specs = specs.select{|spec| RUBY_ENGINE == spec.platform || Gem::Platform.local === spec.platform || spec.platform == Gem::Platform::RUBY }
+
     if specs.to_a.empty?
       raise Gem::Exception,
             "Failed to find gems #{options[:args]} #{options[:version]}"
     end
-
-    install_dir = Gem.dir # TODO use installer option
-
-    raise Gem::FilePermissionError.new(install_dir) unless
-      File.writable?(install_dir)
 
     say "Restoring gems to pristine condition..."
 
@@ -183,4 +180,5 @@ extensions will be restored.
       say "Restored #{spec.full_name}"
     end
   end
+
 end

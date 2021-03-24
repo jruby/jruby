@@ -7,6 +7,7 @@
 require 'rubygems/platform'
 
 class Gem::NameTuple
+
   def initialize(name, version, platform="ruby")
     @name = name
     @version = version
@@ -54,7 +55,7 @@ class Gem::NameTuple
       "#{@name}-#{@version}"
     else
       "#{@name}-#{@version}-#{@platform}"
-    end.dup.untaint
+    end.dup.tap(&Gem::UNTAINT)
   end
 
   ##

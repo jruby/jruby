@@ -143,7 +143,7 @@ that is a dependency of an existing gem.  You can use the
       uninstall_gem spec.name
     end
 
-    alert "Uninstalled all gems in #{options[:install_dir]}"
+    alert "Uninstalled all gems in #{options[:install_dir] || Gem.dir}"
   end
 
   def uninstall_specific
@@ -195,4 +195,5 @@ that is a dependency of an existing gem.  You can use the
   def uninstall(gem_name)
     Gem::Uninstaller.new(gem_name, options).uninstall
   end
+
 end

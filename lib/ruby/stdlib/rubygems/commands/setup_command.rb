@@ -6,6 +6,7 @@ require 'rubygems/command'
 # RubyGems checkout or tarball.
 
 class Gem::Commands::SetupCommand < Gem::Command
+
   HISTORY_HEADER = /^===\s*[\d.a-zA-Z]+\s*\/\s*\d{4}-\d{2}-\d{2}\s*$/.freeze
   VERSION_MATCHER = /^===\s*([\d.a-zA-Z]+)\s*\/\s*\d{4}-\d{2}-\d{2}\s*$/.freeze
 
@@ -16,6 +17,7 @@ class Gem::Commands::SetupCommand < Gem::Command
 
     super 'setup', 'Install RubyGems',
           :format_executable => true, :document => %w[ri],
+          :force => true,
           :site_or_vendor => 'sitelibdir',
           :destdir => '', :prefix => '', :previous_version => '',
           :regenerate_binstubs => true
@@ -87,6 +89,11 @@ class Gem::Commands::SetupCommand < Gem::Command
       options[:regenerate_binstubs] = value
     end
 
+    add_option '-f', '--[no-]force',
+               'Forcefully overwrite binstubs' do |value, options|
+      options[:force] = value
+    end
+
     add_option('-E', '--[no-]env-shebang',
                'Rewrite executables with a shebang',
                'of /usr/bin/env') do |value, options|
@@ -97,7 +104,7 @@ class Gem::Commands::SetupCommand < Gem::Command
   end
 
   def check_ruby_version
-    required_version = Gem::Requirement.new '>= 1.8.7'
+    required_version = Gem::Requirement.new '>= 2.3.0'
 
     unless required_version.satisfied_by? Gem.ruby_version
       alert_error "Expected Ruby version #{required_version}, is #{Gem.ruby_version}"
@@ -128,7 +135,7 @@ By default, this RubyGems will install gem as:
   end
 
   module MakeDirs
-    def mkdir_p(path, *opts)
+    def mkdir_p(path, **opts)
       super
       (@mkdirs ||= []) << path
     end
@@ -164,7 +171,7 @@ By default, this RubyGems will install gem as:
 
     remove_old_lib_files lib_dir
 
-    install_default_bundler_gem
+    install_default_bundler_gem bin_dir
 
     if mode = options[:dir_mode]
       @mkdirs.uniq!
@@ -198,10 +205,10 @@ By default, this RubyGems will install gem as:
     say
 
     say "RubyGems installed the following executables:"
-    say @bin_file_names.map { |name| "\t#{name}\n" }
+    say bin_file_names.map { |name| "\t#{name}\n" }
     say
 
-    unless @bin_file_names.grep(/#{File::SEPARATOR}gem$/)
+    unless bin_file_names.grep(/#{File::SEPARATOR}gem$/)
       say "If `gem` was installed by a previous RubyGems installation, you may need"
       say "to remove it by hand."
       say
@@ -233,30 +240,20 @@ By default, this RubyGems will install gem as:
     end
   end
 
-
   def install_executables(bin_dir)
-    @bin_file_names = []
-
     prog_mode = options[:prog_mode] || 0755
 
     executables = { 'gem' => 'bin' }
-    executables['bundler'] = 'bundler/exe' if Gem::USE_BUNDLER_FOR_GEMDEPS
     executables.each do |tool, path|
       say "Installing #{tool} executable" if @verbose
 
       Dir.chdir path do
         bin_files = Dir['*']
 
-        bin_files -= %w[update_rubygems bundler bundle_ruby]
+        bin_files -= %w[update_rubygems]
 
         bin_files.each do |bin_file|
-          bin_file_formatted = if options[:format_executable]
-                                 Gem.default_exec_format % bin_file
-                               else
-                                 bin_file
-                               end
-
-          dest_file = File.join bin_dir, bin_file_formatted
+          dest_file = target_bin_path(bin_dir, bin_file)
           bin_tmp_file = File.join Dir.tmpdir, "#{bin_file}.#{$$}"
 
           begin
@@ -268,7 +265,7 @@ By default, this RubyGems will install gem as:
             end
 
             install bin_tmp_file, dest_file, :mode => prog_mode
-            @bin_file_names << dest_file
+            bin_file_names << dest_file
           ensure
             rm bin_tmp_file
           end
@@ -320,7 +317,7 @@ By default, this RubyGems will install gem as:
 
   def install_lib(lib_dir)
     libs = { 'RubyGems' => 'lib' }
-    libs['Bundler'] = 'bundler/lib' if Gem::USE_BUNDLER_FOR_GEMDEPS
+    libs['Bundler'] = 'bundler/lib'
     libs.each do |tool, path|
       say "Installing #{tool}" if @verbose
 
@@ -382,10 +379,8 @@ By default, this RubyGems will install gem as:
     return false
   end
 
-  def install_default_bundler_gem
-    return unless Gem::USE_BUNDLER_FOR_GEMDEPS
-
-    specs_dir = Gem::Specification.default_specifications_dir
+  def install_default_bundler_gem(bin_dir)
+    specs_dir = Gem.default_specifications_dir
     specs_dir = File.join(options[:destdir], specs_dir) unless Gem.win_platform?
     mkdir_p specs_dir, :mode => 0755
 
@@ -427,14 +422,19 @@ By default, this RubyGems will install gem as:
       cp File.join("bundler", bundler_spec.bindir, e), File.join(bundler_bin_dir, e)
     end
 
-    if Gem.win_platform?
-      require 'rubygems/installer'
+    require 'rubygems/installer'
 
-      installer = Gem::Installer.for_spec bundler_spec
-      bundler_spec.executables.each do |e|
-        installer.generate_windows_script e, bundler_spec.bin_dir
+    Dir.chdir("bundler") do
+      built_gem = Gem::Package.build(bundler_spec)
+      begin
+        installer = Gem::Installer.at(built_gem, env_shebang: options[:env_shebang], format_executable: options[:format_executable], force: options[:force], install_as_default: true, bin_dir: bin_dir, wrappers: true)
+        installer.install
+      ensure
+        FileUtils.rm_f built_gem
       end
     end
+
+    bundler_spec.executables.each {|executable| bin_file_names << target_bin_path(bin_dir, executable) }
 
     say "Bundler #{bundler_spec.version} installed"
   end
@@ -546,7 +546,7 @@ abort "#{deprecation_message}"
 
   def remove_old_lib_files(lib_dir)
     lib_dirs = { File.join(lib_dir, 'rubygems') => 'lib/rubygems' }
-    lib_dirs[File.join(lib_dir, 'bundler')] = 'bundler/lib/bundler' if Gem::USE_BUNDLER_FOR_GEMDEPS
+    lib_dirs[File.join(lib_dir, 'bundler')] = 'bundler/lib/bundler'
     lib_dirs.each do |old_lib_dir, new_lib_dir|
       lib_files = rb_files_in(new_lib_dir)
       lib_files.concat(template_files_in(new_lib_dir)) if new_lib_dir =~ /bundler/
@@ -592,7 +592,7 @@ abort "#{deprecation_message}"
         history_string = ""
 
         until versions.length == 0 or
-              versions.shift < options[:previous_version] do
+              versions.shift <= options[:previous_version] do
           history_string += version_lines.shift + text.shift
         end
 
@@ -624,6 +624,21 @@ abort "#{deprecation_message}"
 
     command = Gem::Commands::PristineCommand.new
     command.invoke(*args)
+  end
+
+  private
+
+  def target_bin_path(bin_dir, bin_file)
+    bin_file_formatted = if options[:format_executable]
+                           Gem.default_exec_format % bin_file
+                         else
+                           bin_file
+                         end
+    File.join bin_dir, bin_file_formatted
+  end
+
+  def bin_file_names
+    @bin_file_names ||= []
   end
 
 end
