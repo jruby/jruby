@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.ObjectSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -448,21 +449,9 @@ public class RubyObject extends RubyBasicObject {
 
         ObjectSites sites = sites(context);
 
-        if ( obj instanceof RubyArray ) {
-            if (sites.dig_array.isBuiltin(obj.getMetaClass())) {
-                return ((RubyArray) obj).dig(context, args, idx);
-            }
-        }
-        if ( obj instanceof RubyHash ) {
-            if (sites.dig_hash.isBuiltin(obj.getMetaClass())) {
-                return ((RubyHash) obj).dig(context, args, idx);
-            }
-        }
-        if ( obj instanceof RubyStruct ) {
-            if (sites.dig_struct.isBuiltin(obj.getMetaClass())) {
-                return ((RubyStruct) obj).dig(context, args, idx);
-            }
-        }
+        if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, args, idx);
+        if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, args, idx);
+        if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, args, idx);
         if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
             final int len = args.length - idx;
             switch ( len ) {
@@ -479,6 +468,46 @@ public class RubyObject extends RubyBasicObject {
             }
         }
         throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
+    }
+
+    public static IRubyObject dig1(ThreadContext context, IRubyObject obj, IRubyObject arg1) {
+        if ( obj.isNil() ) return context.nil;
+
+        ObjectSites sites = sites(context);
+
+        if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, arg1);
+        if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, arg1);
+        if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, arg1);
+        if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
+            return sites.dig_misc.call(context, obj, obj, arg1);
+        }
+        throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
+    }
+
+    public static IRubyObject dig2(ThreadContext context, IRubyObject obj, IRubyObject arg1, IRubyObject arg2) {
+        if ( obj.isNil() ) return context.nil;
+
+        ObjectSites sites = sites(context);
+
+        if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, arg1, arg2);
+        if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, arg1, arg2);
+        if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, arg1, arg2);
+        if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
+            return sites.dig_misc.call(context, obj, obj, arg1, arg2);
+        }
+        throw context.runtime.newTypeError(obj.getMetaClass().getName() + " does not have #dig method");
+    }
+
+    private static boolean isStructDig(IRubyObject obj, ObjectSites sites) {
+        return obj instanceof RubyStruct && sites.dig_struct.isBuiltin(obj.getMetaClass());
+    }
+
+    private static boolean isHashDig(IRubyObject obj, ObjectSites sites) {
+        return obj instanceof RubyHash && sites.dig_hash.isBuiltin(obj.getMetaClass());
+    }
+
+    private static boolean isArrayDig(IRubyObject obj, ObjectSites sites) {
+        return obj instanceof RubyArray && sites.dig_array.isBuiltin(obj.getMetaClass());
     }
 
     /**

@@ -761,6 +761,23 @@ public class RubyStruct extends RubyObject {
         return result;
     }
 
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0) {
+        return arefImpl( arg0, true );
+    }
+
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        final IRubyObject val = arefImpl( arg0, true );
+        return RubyObject.dig1(context, val, arg1);
+    }
+
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        final IRubyObject val = arefImpl( arg0, true );
+        return RubyObject.dig2(context, val, arg1, arg2);
+    }
+
     @JRubyMethod(name = "dig", required = 1, rest = true)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
         return dig(context, args, 0);
