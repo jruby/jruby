@@ -661,7 +661,7 @@ public class Bootstrap {
                             site.name(),
                             self.getRuntime().newSymbol(site.methodName))
                     .insert(0, "method", DynamicMethod.class, method)
-                    .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity));
+                    .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity + 1));
         } else {
             SmartHandle fold = SmartBinder.from(
                     site.signature
