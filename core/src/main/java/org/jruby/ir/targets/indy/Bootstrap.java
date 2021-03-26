@@ -630,8 +630,26 @@ public class Bootstrap {
         SmartBinder binder;
         DynamicMethod method = entry.method;
 
-        binder = SmartBinder.from(site.signature)
-                .permute("context", "self", "arg.*", "block")
+        binder = SmartBinder.from(site.signature);
+
+        // only include block if native signature receives block, whatever its arity
+        boolean passBlock = true;
+        if (method instanceof NativeCallMethod) {
+            Class[] nativeSignature = ((NativeCallMethod) method).getNativeCall().getNativeSignature();
+
+            // no args or last arg not a block, do no pass block
+            if (nativeSignature.length == 0 || nativeSignature[nativeSignature.length - 1] != Block.class) {
+                passBlock = false;
+            }
+        }
+
+        if (passBlock) {
+            binder = binder.permute("context", "self", "arg.*", "block");
+        } else {
+            binder = binder.permute("context", "self", "arg.*");
+        }
+
+        binder = binder
                 .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, entry.sourceModule, site.name())
                 .insert(0, "method", DynamicMethod.class, method);
 
