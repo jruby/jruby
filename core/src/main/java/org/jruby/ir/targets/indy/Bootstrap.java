@@ -632,18 +632,7 @@ public class Bootstrap {
 
         binder = SmartBinder.from(site.signature);
 
-        // only include block if native signature receives block, whatever its arity
-        boolean passBlock = true;
-        if (method instanceof NativeCallMethod) {
-            Class[] nativeSignature = ((NativeCallMethod) method).getNativeCall().getNativeSignature();
-
-            // no args or last arg not a block, do no pass block
-            if (nativeSignature.length == 0 || nativeSignature[nativeSignature.length - 1] != Block.class) {
-                passBlock = false;
-            }
-        }
-
-        if (passBlock) {
+        if (methodWantsBlock(method)) {
             binder = binder.permute("context", "self", "arg.*", "block");
         } else {
             binder = binder.permute("context", "self", "arg.*");
@@ -662,6 +651,23 @@ public class Bootstrap {
         }
 
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
+    }
+
+    private static boolean methodWantsBlock(DynamicMethod method) {
+        // only include block if native signature receives block, whatever its arity
+        boolean wantsBlock = true;
+        if (method instanceof NativeCallMethod) {
+            DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
+            if (nativeCall != null) {
+                Class[] nativeSignature = nativeCall.getNativeSignature();
+
+                // no args or last arg not a block, do no pass block
+                if (nativeSignature.length == 0 || nativeSignature[nativeSignature.length - 1] != Block.class) {
+                    wantsBlock = false;
+                }
+            }
+        }
+        return wantsBlock;
     }
 
     static MethodHandle buildMethodMissingHandle(InvokeSite site, CacheEntry entry, IRubyObject self) {
