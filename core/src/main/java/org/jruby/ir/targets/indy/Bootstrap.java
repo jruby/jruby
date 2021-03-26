@@ -71,6 +71,7 @@ public class Bootstrap {
             "emptyString",
             sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class),
             false);
+    private static final String[] GENERIC_CALL_PERMUTE = {"context", "self", "arg.*"};
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
         return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, bytelist(value, encodingName), cr));
@@ -632,11 +633,7 @@ public class Bootstrap {
 
         binder = SmartBinder.from(site.signature);
 
-        if (methodWantsBlock(method)) {
-            binder = binder.permute("context", "self", "arg.*", "block");
-        } else {
-            binder = binder.permute("context", "self", "arg.*");
-        }
+        binder = permuteForGenericCall(binder, method, GENERIC_CALL_PERMUTE);
 
         binder = binder
                 .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, entry.sourceModule, site.name())
@@ -651,6 +648,15 @@ public class Bootstrap {
         }
 
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
+    }
+
+    private static SmartBinder permuteForGenericCall(SmartBinder binder, DynamicMethod method, String... basePermutes) {
+        if (methodWantsBlock(method)) {
+            binder = binder.permute(arrayOf(basePermutes, "block", String[]::new));
+        } else {
+            binder = binder.permute(basePermutes);
+        }
+        return binder;
     }
 
     private static boolean methodWantsBlock(DynamicMethod method) {
@@ -675,8 +681,9 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (site.arity >= 0) {
-            binder = SmartBinder.from(site.signature)
-                    .permute("context", "self", "arg.*", "block")
+            binder = SmartBinder.from(site.signature);
+
+            binder = permuteForGenericCall(binder, method, GENERIC_CALL_PERMUTE)
                     .insert(2,
                             new String[]{"rubyClass", "name", "argName"}
                             , new Class[]{RubyModule.class, String.class, IRubyObject.class},
@@ -694,10 +701,11 @@ public class Bootstrap {
                     .insert(0, "argName", IRubyObject.class, self.getRuntime().newSymbol(site.methodName))
                     .invokeStaticQuiet(LOOKUP, Helpers.class, "arrayOf");
 
-            binder = SmartBinder.from(site.signature)
-                    .permute("context", "self", "args", "block")
-                    .fold("args2", fold)
-                    .permute("context", "self", "args2", "block")
+            binder = SmartBinder.from(site.signature);
+
+            binder = permuteForGenericCall(binder, method, "context", "self", "args")
+                    .fold("args2", fold);
+            binder = permuteForGenericCall(binder, method, "context", "self", "args2")
                     .insert(2,
                             new String[]{"rubyClass", "name"}
                             , new Class[]{RubyModule.class, String.class},
