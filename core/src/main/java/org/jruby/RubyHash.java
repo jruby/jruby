@@ -2217,12 +2217,8 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
-        return dig(context, args, 0);
-    }
-
-    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
-        final IRubyObject val = op_aref( context, args[idx++] );
-        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+        final IRubyObject val = op_aref(context, args[0] );
+        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     @JRubyMethod

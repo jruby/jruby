@@ -4949,12 +4949,8 @@ float_loop:
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
     public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
-        return dig(context, args, 0);
-    }
-
-    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
-        final IRubyObject val = at( args[idx++] );
-        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+        final IRubyObject val = at( args[0] );
+        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     private IRubyObject maxWithBlock(ThreadContext context, Block block) {
