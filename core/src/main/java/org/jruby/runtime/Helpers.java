@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -2753,6 +2754,13 @@ public class Helpers {
         IRubyObject[] newValues = new IRubyObject[values.length + 1];
         newValues[0] = first;
         System.arraycopy(values, 0, newValues, 1, values.length);
+        return newValues;
+    }
+
+    public static <T> T[] arrayOf(T[] values, T last, IntFunction<T[]> allocator) {
+        T[] newValues = allocator.apply(values.length + 1);
+        newValues[values.length] = last;
+        System.arraycopy(values, 0, newValues, 0, values.length);
         return newValues;
     }
 

@@ -1252,6 +1252,8 @@ modes.each do |mode|
     it "handles method_missing dispatch forms" do
       run('obj = Class.new { def method_missing(name, *args); puts :here; [name, *args]; end }.new; obj.foo()') {|x| expect(x).to eq([:foo])}
       run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1)') {|x| expect(x).to eq([:foo, 1])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2)') {|x| expect(x).to eq([:foo, 1, 2])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2,3)') {|x| expect(x).to eq([:foo, 1, 2, 3])}
       run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2,3,4)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
       run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; ary = 1.upto(4).to_a; obj.foo(*ary)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
       run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; ary = 2.upto(4).to_a; obj.foo(1, *ary)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
@@ -1262,6 +1264,98 @@ modes.each do |mode|
       run('obj = Class.new { def foo(*args); args; end }.new; obj.send(:foo,1,2,3,4)') {|x| expect(x).to eq([1, 2, 3, 4])}
       run('obj = Class.new { def foo(*args); args; end }.new; ary = 1.upto(4).to_a; obj.send(:foo,*ary)') {|x| expect(x).to eq([1, 2, 3, 4])}
       run('obj = Class.new { def foo(*args); args; end }.new; ary = 2.upto(4).to_a; obj.send(:foo,1,*ary)') {|x| expect(x).to eq([1, 2, 3, 4])}
+    end
+
+    it "calls compiled methods of all arities with and without block" do
+      run('Class.new { def foo; 1; end; }.new.foo') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a); a; end; }.new.foo(1)') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a, b); [a, b]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(a, b, c); [a, b, c]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(a, b, c, d); [a, b, c, d]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(*a); a; end; }.new.foo()') {|x| expect(x).to eq([])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1)') {|x| expect(x).to eq([1])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1)') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { def foo(a, b, c, *d); [a, b, c, d]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { def foo(a, b, c, *d); [a, b, c, d]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,[4]])}
+
+      run('Class.new { def foo; yield 1; end; }.new.foo{|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a); yield a; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a, b); yield [a, b]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(a, b, c); yield [a, b, c]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(a, b, c, d); yield [a, b, c, d]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(){|x|x}') {|x| expect(x).to eq([])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { def foo(a, b, c, *d); yield [a, b, c, d]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { def foo(a, b, c, *d); yield [a, b, c, d]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,[4]])}
+    end
+
+    it "calls interpreted methods of all arities with and without block" do
+      run('Class.new { eval "def foo; 1; end"; }.new.foo') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a); a; end"; }.new.foo(1)') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a, b); [a, b]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(a, b, c); [a, b, c]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(a, b, c, d); [a, b, c, d]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo()') {|x| expect(x).to eq([])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1)') {|x| expect(x).to eq([1])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1)') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { eval "def foo(a, b, c, *d); [a, b, c, d]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { eval "def foo(a, b, c, *d); [a, b, c, d]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,[4]])}
+
+      run('Class.new { eval "def foo; yield 1; end"; }.new.foo{|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a); yield a; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a, b); yield [a, b]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(a, b, c); yield [a, b, c]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(a, b, c, d); yield [a, b, c, d]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(){|x|x}') {|x| expect(x).to eq([])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { eval "def foo(a, b, c, *d); yield [a, b, c, d]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { eval "def foo(a, b, c, *d); yield [a, b, c, d]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,[4]])}
+    end
+
+    it "calls root package methods with and without block" do
+      run('java') {|x| expect(x).to eq(java)}
+      run('javax') {|x| expect(x).to eq(javax)}
+      run('javafx') {|x| expect(x).to eq(javafx)}
+      run('org') {|x| expect(x).to eq(org)}
+      run('com') {|x| expect(x).to eq(com)}
     end
   end
 end
