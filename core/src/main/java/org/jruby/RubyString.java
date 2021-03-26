@@ -140,6 +140,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
     private static final byte[] FORCE_ENCODING_BYTES = ".force_encoding(\"".getBytes();
 
+    public static RubyString[] NULL_ARRAY = {};
+
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
     private ByteList value;

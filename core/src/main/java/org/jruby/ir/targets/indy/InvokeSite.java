@@ -341,7 +341,7 @@ public abstract class InvokeSite extends MutableCallSite {
                 binder = binder.insert(argOffset, "args", IRubyObject.NULL_ARRAY);
             } else {
                 binder = binder
-                        .collect("args", "arg[0-9]+");
+                        .collect("args", "arg[0-9]+", Helpers.constructObjectArrayHandle(arity));
             }
         }
 

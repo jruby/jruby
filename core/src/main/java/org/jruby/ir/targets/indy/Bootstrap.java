@@ -54,6 +54,7 @@ import java.math.BigInteger;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
+import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findStatic;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findVirtual;
 import static org.jruby.util.CodegenUtils.p;
@@ -597,7 +598,7 @@ public class Bootstrap {
                         if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
                         mh = SmartBinder.from(lookup(), siteToDyncall)
-                                .collect("args", "arg.*")
+                                .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity))
                                 .invoke(mh)
                                 .handle();
                     }
@@ -636,7 +637,7 @@ public class Bootstrap {
                 .insert(0, "method", DynamicMethod.class, method);
 
         if (site.arity > 3) {
-            binder = binder.collect("args", "arg.*");
+            binder = binder.collect("args", "arg.*", constructObjectArrayHandle(site.arity));
         }
 
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
@@ -660,7 +661,7 @@ public class Bootstrap {
                             site.name(),
                             self.getRuntime().newSymbol(site.methodName))
                     .insert(0, "method", DynamicMethod.class, method)
-                    .collect("args", "arg.*");
+                    .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity));
         } else {
             SmartHandle fold = SmartBinder.from(
                     site.signature
@@ -837,7 +838,7 @@ public class Bootstrap {
                     mh = specific;
                 } else {
                     mh = (MethodHandle) compiledIRMethod.getHandle();
-                    binder = binder.collect("args", "arg.*");
+                    binder = binder.collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity));
                 }
             }
 
@@ -898,7 +899,7 @@ public class Bootstrap {
                     } else {
                         // 1 or more args, collect into []
                         binder = SmartBinder.from(lookup(), site.signature)
-                                .collect("args", "arg.*");
+                                .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity));
                     }
                 }
 
