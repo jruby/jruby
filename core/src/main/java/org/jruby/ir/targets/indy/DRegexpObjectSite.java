@@ -4,6 +4,7 @@ import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.SmartBinder;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
@@ -60,7 +61,7 @@ public class DRegexpObjectSite extends ConstructObjectSite {
         // "once" deregexp must be handled on the call side
         return SmartBinder
                 .from(RubyRegexp.class, argNames, argTypes)
-                .collect("parts", "part.*")
+                .collect("parts", "part.*", Helpers.constructRubyStringArrayHandle(argNames.length - 1))
                 .binder();
     }
 

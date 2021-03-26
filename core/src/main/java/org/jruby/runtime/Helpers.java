@@ -3,6 +3,9 @@ package org.jruby.runtime;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
 import java.net.BindException;
@@ -32,6 +35,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
@@ -64,6 +68,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
 
@@ -78,6 +83,7 @@ import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
+import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -94,6 +100,8 @@ import org.jruby.util.io.EncodingUtils;
 public class Helpers {
 
     public static final Pattern SEMICOLON_PATTERN = Pattern.compile(";");
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -1297,6 +1305,106 @@ public class Helpers {
 
     public static IRubyObject[] constructObjectArray(IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five, IRubyObject six, IRubyObject seven, IRubyObject eight, IRubyObject nine, IRubyObject ten) {
         return new IRubyObject[] {one, two, three, four, five, six, seven, eight, nine, ten};
+    }
+
+    private static final MethodHandle[] constructObjectArrayHandles = new MethodHandle[11];
+
+    public static MethodHandle constructObjectArrayHandle(int size) {
+        if (size < 0) throw new IllegalArgumentException("illegal size: " + size);
+
+        if (size > 10) {
+            return Binder
+                    .from(IRubyObject[].class, params(IRubyObject.class, size))
+                    .collect(0, IRubyObject[].class).identity();
+        }
+
+        MethodHandle handle = constructObjectArrayHandles[size];
+
+        if (handle == null) {
+            try {
+                if (size == 0) {
+                    handle = Binder.from(IRubyObject[].class).getStatic(LOOKUP, IRubyObject.class, "NULL_ARRAY");
+                } else {
+                    handle = MethodHandles.publicLookup().findStatic(Helpers.class, "constructObjectArray", MethodType.methodType(IRubyObject[].class, CodegenUtils.params(IRubyObject.class, size)));
+                }
+
+                constructObjectArrayHandles[size] = handle;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return handle;
+    }
+    
+    public static RubyString[] constructRubyStringArray(RubyString one) {
+        return new RubyString[] {one};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two) {
+        return new RubyString[] {one, two};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three) {
+        return new RubyString[] {one, two, three};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four) {
+        return new RubyString[] {one, two, three, four};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five) {
+        return new RubyString[] {one, two, three, four, five};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six) {
+        return new RubyString[] {one, two, three, four, five, six};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six, RubyString seven) {
+        return new RubyString[] {one, two, three, four, five, six, seven};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six, RubyString seven, RubyString eight) {
+        return new RubyString[] {one, two, three, four, five, six, seven, eight};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six, RubyString seven, RubyString eight, RubyString nine) {
+        return new RubyString[] {one, two, three, four, five, six, seven, eight, nine};
+    }
+
+    public static RubyString[] constructRubyStringArray(RubyString one, RubyString two, RubyString three, RubyString four, RubyString five, RubyString six, RubyString seven, RubyString eight, RubyString nine, RubyString ten) {
+        return new RubyString[] {one, two, three, four, five, six, seven, eight, nine, ten};
+    }
+
+    private static final MethodHandle[] constructRubyStringArrayHandles = new MethodHandle[11];
+
+    public static MethodHandle constructRubyStringArrayHandle(int size) {
+        if (size < 0) throw new IllegalArgumentException("illegal size: " + size);
+
+        if (size > 10) {
+            return Binder
+                    .from(RubyString[].class, params(RubyString.class, size))
+                    .collect(0, RubyString[].class).identity();
+        }
+
+        MethodHandle handle = constructRubyStringArrayHandles[size];
+
+        if (handle == null) {
+            try {
+                if (size == 0) {
+                    handle = Binder.from(RubyString[].class).getStatic(LOOKUP, RubyString.class, "NULL_ARRAY");
+                } else {
+                    handle = MethodHandles.publicLookup().findStatic(Helpers.class, "constructRubyStringArray", MethodType.methodType(RubyString[].class, CodegenUtils.params(RubyString.class, size)));
+                }
+
+                constructRubyStringArrayHandles[size] = handle;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return handle;
     }
 
     public static RubyArray constructRubyArray(Ruby runtime, IRubyObject one) {
