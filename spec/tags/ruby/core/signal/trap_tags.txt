@@ -11,3 +11,6 @@ fails:Signal.trap raises ArgumentError for reserved signal: SIGUSR1
 fails:Signal.trap raises ArgumentError for reserved signal: SIGQUIT
 fails:Signal.trap accepts 'SYSTEM_DEFAULT' and uses the OS handler for SIGPIPE
 fails:Signal.trap allows to register a handler for all known signals, except reserved signals for which it raises ArgumentError
+fails:Signal.trap accepts a method
+fails:Signal.trap accepts anything you can call
+fails:Signal.trap accepts a non-callable that becomes callable when used
