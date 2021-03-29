@@ -292,7 +292,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return true;
+            return cache.method.isBuiltin();
         }
         return cacheAndGet(self, selfType, methodName).method.isBuiltin(); // false for method.isUndefined()
     }
