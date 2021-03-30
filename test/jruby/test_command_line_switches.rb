@@ -354,7 +354,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_symlinked_java_resolves_home
     Dir.mktmpdir do |tmpdir|
       tmp_java = File.join(tmpdir, "java")
-      real_home = ENV['JAVA_HOME']
+      real_home = ENV_JAVA['java.home']
       real_java = File.join(real_home, 'bin', 'java')
 
       FileUtils.symlink real_java, tmp_java
