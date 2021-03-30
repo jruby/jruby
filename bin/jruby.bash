@@ -62,7 +62,7 @@ process_java_opts() {
   fi
 }
 
-# Resolve all symlinks in a chain using only POSIX features
+# Resolve all symlinks in a chain
 unset resolve_symlinks
 resolve_symlinks() {
   cur_path="$1"
