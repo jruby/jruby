@@ -74,14 +74,15 @@ resolve_symlinks() {
     sym_base="$(cd -P -- "$(dirname -- "$cur_path")" >/dev/null && pwd -P)"
     cur_path="$(cd "$sym_base" && cd "$(dirname -- "$sym")" && pwd -P)/$(basename -- "$sym")"
   done
-  echo "$cur_path"
+  result="$cur_path"
 }
 
 # ----- Determine JRUBY_HOME based on this executable's path ------------------
 
 # get the absolute path of the executable
 BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
-SELF_PATH="$(resolve_symlinks "$BASE_DIR/$(basename -- "$BASH_SOURCE")")"
+resolve_symlinks "$BASE_DIR/$(basename -- "$BASH_SOURCE")"
+SELF_PATH="$result"
 
 export JRUBY_HOME="${SELF_PATH%/*/*}"
 
@@ -128,7 +129,8 @@ esac
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
-    export JAVACMD="$(resolve_symlinks "$(command -v java)")"
+    resolve_symlinks "$(command -v java)"
+    export JAVACMD="$result"
     export JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
   else
     if $cygwin; then
@@ -138,7 +140,8 @@ if [ -z "$JAVACMD" ] ; then
     fi
   fi
 else
-  expanded_javacmd="$(resolve_symlinks "$(command -v "$JAVACMD")")"
+  resolve_symlinks "$(command -v "$JAVACMD")"
+  expanded_javacmd="$result"
   if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ] ; then
     export JAVA_HOME="$(dirname "$(dirname "$expanded_javacmd")")"
   fi
