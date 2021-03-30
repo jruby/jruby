@@ -2,6 +2,7 @@ require 'test/unit'
 require 'test/jruby/test_helper'
 
 require 'fileutils'
+require 'tmpdir'
 
 class TestCommandLineSwitches < Test::Unit::TestCase
   include TestHelper
@@ -347,5 +348,27 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
   ensure
     ENV['RUBYOPT'] = rubyopt
+  end
+
+  # jruby/jruby#6637: symlinked `java` command interferes with JAVA_HOME determination
+  def test_symlinked_java_resolves_home
+    Dir.mktmpdir do |tmpdir|
+      tmp_java = File.join(tmpdir, "java")
+      real_home = ENV_JAVA['java.home']
+      real_java = File.join(real_home, 'bin', 'java')
+
+      FileUtils.symlink real_java, tmp_java
+
+      old_env = ENV.dup
+      ENV.delete "JAVA_HOME"
+      ENV["JAVACMD"] = tmp_java
+
+      found_home = jruby('-e "print ENV[\'JAVA_HOME\']"').chomp
+
+      assert_equal 0, $?.exitstatus
+      assert_equal real_home, found_home
+    ensure
+      ENV.replace(old_env)
+    end
   end
 end
