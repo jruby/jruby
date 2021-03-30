@@ -62,22 +62,27 @@ process_java_opts() {
   fi
 }
 
-# ----- Determine JRUBY_HOME based on this executable's path ------------------
-
-# get the absolute path of the executable
-BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
-SELF_PATH="$BASE_DIR/$(basename -- "$BASH_SOURCE")"
-
-# resolve symlinks
-while [ -h "$SELF_PATH" ]; do
+# Resolve all symlinks in a chain using only POSIX features
+unset resolve_symlinks
+resolve_symlinks() {
+  cur_path="$1"
+  while [ -h "$cur_path" ]; do
     # 1) cd to directory of the symlink
     # 2) cd to the directory of where the symlink points
     # 3) get the physical pwd
     # 4) append the basename
-    SYM="$(readlink "$SELF_PATH")"
-    BASE_SYM="$(cd -P -- "$(dirname -- "$SELF_PATH")" >/dev/null && pwd -P)"
-    SELF_PATH="$(cd "$BASE_SYM" && cd "$(dirname -- "$SYM")" && pwd -P)/$(basename -- "$SYM")"
-done
+    sym="$(readlink "$cur_path")"
+    sym_base="$(cd -P -- "$(dirname -- "$cur_path")" >/dev/null && pwd -P)"
+    cur_path="$(cd "$sym_base" && cd "$(dirname -- "$sym")" && pwd -P)/$(basename -- "$sym")"
+  done
+  echo "$cur_path"
+}
+
+# ----- Determine JRUBY_HOME based on this executable's path ------------------
+
+# get the absolute path of the executable
+BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
+SELF_PATH="$(resolve_symlinks "$BASE_DIR/$(basename -- "$BASH_SOURCE")")"
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
 
@@ -124,8 +129,8 @@ esac
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
-    JAVACMD='java'
-    JAVA_HOME="$(dirname "$(dirname "$(command -v java)")")"
+    JAVACMD="$(resolve_symlinks "$(command -v java)")"
+    JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
   else
     if $cygwin; then
       JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
@@ -134,7 +139,7 @@ if [ -z "$JAVACMD" ] ; then
     fi
   fi
 else
-  expanded_javacmd="$(command -v "$JAVACMD")"
+  expanded_javacmd="$(resolve_symlinks "$(command -v "$JAVACMD")")"
   if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ] ; then
     JAVA_HOME="$(dirname "$(dirname "$expanded_javacmd")")"
   fi
