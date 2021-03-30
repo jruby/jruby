@@ -84,7 +84,7 @@ resolve_symlinks() {
 BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
 SELF_PATH="$(resolve_symlinks "$BASE_DIR/$(basename -- "$BASH_SOURCE")")"
 
-JRUBY_HOME="${SELF_PATH%/*/*}"
+export JRUBY_HOME="${SELF_PATH%/*/*}"
 
 # ----- File paths for various options and files we'll process later ----------
 
@@ -129,19 +129,19 @@ esac
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
-    JAVACMD="$(resolve_symlinks "$(command -v java)")"
-    JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
+    export JAVACMD="$(resolve_symlinks "$(command -v java)")"
+    export JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
   else
     if $cygwin; then
-      JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
+      export JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
     else
-      JAVACMD="$JAVA_HOME/bin/java"
+      export JAVACMD="$JAVA_HOME/bin/java"
     fi
   fi
 else
   expanded_javacmd="$(resolve_symlinks "$(command -v "$JAVACMD")")"
   if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ] ; then
-    JAVA_HOME="$(dirname "$(dirname "$expanded_javacmd")")"
+    export JAVA_HOME="$(dirname "$(dirname "$expanded_javacmd")")"
   fi
 fi
 
