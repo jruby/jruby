@@ -371,4 +371,27 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       ENV.replace(old_env)
     end
   end
+
+  # jruby/jruby#6638: JAVA_HOME with spaces broken by lack of quoting in jruby.bash
+  def test_java_home_with_spaces
+    Dir.mktmpdir do |tmpdir|
+      tmp_home = File.join(tmpdir, "this is my jdk")
+      tmp_java = File.join(tmp_home, "bin", "java")
+      real_home = ENV_JAVA['java.home']
+
+      FileUtils.symlink real_home, tmp_home
+
+      old_env = ENV.dup
+      ENV.delete "JAVACMD"
+      ENV["JAVA_HOME"] = tmp_home
+
+      found_home, found_java = eval(jruby('-e "p [ENV[\'JAVA_HOME\'], ENV[\'JAVACMD\']]"'))
+
+      assert_equal 0, $?.exitstatus
+      assert_equal tmp_home, found_home
+      assert_equal tmp_java, found_java
+    ensure
+      ENV.replace(old_env)
+    end
+  end
 end
