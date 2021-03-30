@@ -84,7 +84,7 @@ BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
 resolve_symlinks "$BASE_DIR/$(basename -- "$BASH_SOURCE")"
 SELF_PATH="$result"
 
-export JRUBY_HOME="${SELF_PATH%/*/*}"
+JRUBY_HOME="${SELF_PATH%/*/*}"
 
 # ----- File paths for various options and files we'll process later ----------
 
@@ -130,22 +130,27 @@ esac
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
     resolve_symlinks "$(command -v java)"
-    export JAVACMD="$result"
-    export JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
+    JAVACMD="$result"
+
+    # export separately from command execution
+    JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
   else
     if $cygwin; then
-      export JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
+      JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
     else
-      export JAVACMD="$JAVA_HOME/bin/java"
+      JAVACMD="$JAVA_HOME/bin/java"
     fi
   fi
 else
   resolve_symlinks "$(command -v "$JAVACMD")"
   expanded_javacmd="$result"
   if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ] ; then
-    export JAVA_HOME="$(dirname "$(dirname "$expanded_javacmd")")"
+    JAVA_HOME="$(dirname "$(dirname "$expanded_javacmd")")"
   fi
 fi
+
+# Export discovered paths
+export JRUBY_HOME JAVACMD JAVA_HOME
 
 # Detect modularized Java
 if [ -f "$JAVA_HOME"/lib/modules ] || [ -f "$JAVA_HOME"/release ] && grep -q ^MODULES "$JAVA_HOME"/release; then
