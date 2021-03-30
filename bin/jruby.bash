@@ -63,7 +63,6 @@ process_java_opts() {
 }
 
 # Resolve all symlinks in a chain
-unset resolve_symlinks
 resolve_symlinks() {
   cur_path="$1"
   while [ -h "$cur_path" ]; do
