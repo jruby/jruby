@@ -252,6 +252,7 @@ matrix:
 
   allow_failures:
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - name: concurrent ruby # temporary, see ruby-concurrency/concurrent-ruby#862
 
 script: tool/travis-script.sh
 
