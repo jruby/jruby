@@ -4365,15 +4365,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyArray split(ThreadContext context, IRubyObject arg0) {
-        return splitCommon(context, arg0, false, 0, 0, true);
+        return splitCommon(context, arg0, false, 0, 0);
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
+    @JRubyMethod(name = "split")
     public IRubyObject splitWithBlock(ThreadContext context, Block block) {
         return splitWithBlock(context, context.nil, block);
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
+    @JRubyMethod(name = "split")
     public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, Block block) {
         RubyArray array = split(context, arg0);
         if (!block.isGiven()) {
@@ -4391,18 +4391,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         final int lim = RubyNumeric.num2int(arg1);
         RubyArray array;
         if (lim <= 0) {
-            array = splitCommon(context, arg0, false, lim, 1, true);
+            array = splitCommon(context, arg0, false, lim, 1);
         } else if (lim == 1) {
             Ruby runtime = context.runtime;
             array = value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime));
         } else {
-            array = splitCommon(context, arg0, true, lim, 1, true);
+            array = splitCommon(context, arg0, true, lim, 1);
         }
 
         return array;
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
+    @JRubyMethod(name = "split")
     public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyArray array = split(context, arg0, arg1);
         if (!block.isGiven()) {
@@ -4418,7 +4418,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Deprecated
     public RubyArray split19(IRubyObject spat, ThreadContext context, boolean useBackref) {
-        return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
+        return splitCommon(context, spat, false, value.realSize(), 0);
     }
 
     /**
@@ -4465,15 +4465,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             Ruby runtime = context.runtime;
             return isEmpty() ? runtime.newEmptyArray() : runtime.newArray(this.strDup(runtime));
         }
-        return splitCommon(context, delimiter, limit > 0, limit, 1, false);
+        return splitCommon(context, delimiter, limit > 0, limit, 1);
     }
 
     final RubyArray split(ThreadContext context, RubyRegexp spat, boolean useBackref) {
-        return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
+        return splitCommon(context, spat, false, value.realSize(), 0);
     }
 
     // MRI: rb_str_split_m, overall structure
-    private RubyArray splitCommon(ThreadContext context, IRubyObject spat, final boolean limit, final int lim, final int i, boolean useBackref) {
+    private RubyArray splitCommon(ThreadContext context, IRubyObject spat, final boolean limit, final int lim, final int i) {
         final RubyArray result;
         if (spat == context.nil && (spat = context.runtime.getGlobalVariables().get("$;")) == context.nil) {
             result = awkSplit(context.runtime, limit, lim, i);
@@ -4487,7 +4487,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (len == 0) {
                     // headius FIXME: MRI has a single-entry global cache here to reduce this cost in a loop
                     RubyRegexp pattern = RubyRegexp.newRegexpFromStr(context.runtime, (RubyString) spat, 0);
-                    result = regexSplit(context, pattern, limit, lim, i, useBackref);
+                    result = regexSplit(context, pattern, limit, lim, i);
                 } else {
                     final int c;
                     byte[]bytes = spatValue.getUnsafeBytes();
@@ -4500,7 +4500,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     result = c == ' ' ? awkSplit(context.runtime, limit, lim, i) : stringSplit(context, (RubyString)spat, limit, lim, i);
                 }
             } else {
-                result = regexSplit(context, (RubyRegexp) spat, limit, lim, i, useBackref);
+                result = regexSplit(context, (RubyRegexp) spat, limit, lim, i);
             }
         }
 
@@ -4516,7 +4516,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /**
      * Call regexpSplit using a thread-local backref holder to avoid cross-thread pollution.
      */
-    private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
+    private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i) {
         Ruby runtime = context.runtime;
 
         RubyArray result = runtime.newArray();
@@ -4561,9 +4561,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
-
-        // set backref for user
-        if (useBackref) context.clearBackRef();
 
         return result;
     }
@@ -7023,7 +7020,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Deprecated
     public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
-        return splitCommon(context, arg0, useBackref, flags, flags, useBackref);
+        return splitCommon(context, arg0, useBackref, flags, flags);
     }
 
     @Deprecated
