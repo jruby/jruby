@@ -314,6 +314,7 @@ public class IRBuilder {
     protected int coverageMode;
     private boolean executesOnce = true;
     private int temporaryVariableIndex = -1;
+    private boolean needsYieldBlock = false;
 
     // This variable is an out-of-band passing mechanism to pass the method name to the block the
     // method is attached to.  call/fcall will set this and iter building will pass it into the iter
@@ -565,7 +566,8 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildLambdaInner(LambdaNode node) {
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        prepareClosureImplicitState();
+
         addCurrentModule();                                        // %current_module
 
         receiveBlockArgs(node);
@@ -575,10 +577,18 @@ public class IRBuilder {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
+        preloadBlockImplicitClosure();
+
         handleBreakAndReturnsInLambdas();
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
+    private void preloadBlockImplicitClosure() {
+        if (needsYieldBlock) {
+            addInstrAtBeginning(new LoadBlockImplicitClosureInstr(getYieldClosureVariable()));
+        }
     }
 
     public Operand buildLambda(LambdaNode node) {
@@ -2404,6 +2414,15 @@ public class IRBuilder {
     }
 
     /**
+     * Prepare closure runtime state. This includes the implicit self variable and setting up a variable to hold any
+     * frame closure if it is needed later.
+     */
+    private void prepareClosureImplicitState() {
+        // Receive self
+        addInstr(manager.getReceiveSelfInstr());
+    }
+
+    /**
      * Process all arguments specified for this scope. This includes pre args (required args
      * at the beginning of the argument list), opt args (arguments with a default value),
      * a rest arg (catch-all for argument list overflow), post args (required arguments after
@@ -3125,7 +3144,7 @@ public class IRBuilder {
         this.methodName = methodName;
 
         boolean forNode = iterNode instanceof ForNode;
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
@@ -3149,6 +3168,8 @@ public class IRBuilder {
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
+
+        preloadBlockImplicitClosure();
 
         // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
         // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
@@ -4146,6 +4167,7 @@ public class IRBuilder {
 
         Variable ret = result == null ? createTemporaryVariable() : result;
         Operand value = argNode instanceof ArrayNode && unwrap ?  buildArray((ArrayNode)argNode, true) : build(argNode);
+
         addInstr(new YieldInstr(ret, getYieldClosureVariable(), value, unwrap));
 
         return ret;
@@ -4412,6 +4434,9 @@ public class IRBuilder {
      * Get the variable for accessing the "yieldable" closure in this scope.
      */
     public TemporaryVariable getYieldClosureVariable() {
+        // make sure we prepare yield block for this scope, since it is now needed
+        needsYieldBlock = true;
+
         if (yieldClosureVariable == null) {
             return yieldClosureVariable = createTemporaryVariable();
         }

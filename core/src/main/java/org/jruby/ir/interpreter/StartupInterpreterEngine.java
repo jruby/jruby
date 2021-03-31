@@ -162,9 +162,15 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             case CHECK_FOR_LJE:
                 ((CheckForLJEInstr) instr).check(context, currDynScope, block);
                 break;
+
             case LOAD_FRAME_CLOSURE:
                 setResult(temp, currDynScope, instr, context.getFrameBlock());
+                break;
+
+            case LOAD_BLOCK_IMPLICIT_CLOSURE:
+                setResult(temp, currDynScope, instr, Helpers.getImplicitBlockFromBlockBinding(block));
                 return;
+
             // ---------- All the rest ---------
             default:
                 setResult(temp, currDynScope, instr, instr.interpret(context, currScope, currDynScope, self, temp));
