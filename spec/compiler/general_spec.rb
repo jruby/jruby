@@ -1250,7 +1250,7 @@ modes.each do |mode|
     end
 
     it "handles method_missing dispatch forms" do
-      run('obj = Class.new { def method_missing(name, *args); puts :here; [name, *args]; end }.new; obj.foo()') {|x| expect(x).to eq([:foo])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo()') {|x| expect(x).to eq([:foo])}
       run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1)') {|x| expect(x).to eq([:foo, 1])}
       run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2)') {|x| expect(x).to eq([:foo, 1, 2])}
       run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2,3)') {|x| expect(x).to eq([:foo, 1, 2, 3])}
