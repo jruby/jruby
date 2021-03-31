@@ -4282,59 +4282,65 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    // MRI: rb_str_split_m, when split_type = regexp
-    private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
-        Ruby runtime = context.runtime;
+    /**
+     * Call regexpSplit using a thread-local backref holder to avoid cross-thread pollution.
+     */
+    private RubyArray regexSplit(ThreadContext context, RubyRegexp spat, boolean limit, int lim, int i, boolean useBackref) {
+        RubyArray result;
 
-        int ptr = value.getBegin();
-        int len = value.getRealSize();
-        byte[] bytes = value.getUnsafeBytes();
+        IRubyObject nil = context.nil;
 
-        RubyArray result = runtime.newArray();
-        Encoding enc = value.getEncoding();
-        boolean captures = pattern.getPattern().numberOfCaptures() != 0;
+        IRubyObject[] holder = RubyRegexp.getThreadHolder(nil);
+        try {
+            Ruby runtime = context.runtime;
 
-        int end, beg = 0;
-        boolean lastNull = false;
-        int start = beg;
-        IRubyObject[] holder = useBackref ? null : new IRubyObject[]{context.nil};
-        while ((end = pattern.search(context, this, start, false, holder)) >= 0) {
-            RubyMatchData match = useBackref ? (RubyMatchData)context.getBackRef() : (RubyMatchData)holder[0];
-            if (start == end && match.begin(0) == match.end(0)) {
-                if (len == 0) {
-                    result.append(newEmptyString(runtime, metaClass).infectBy(this));
-                    break;
-                } else if (lastNull) {
-                    result.append(makeShared(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
-                    beg = start;
-                } else {
-                    if ((ptr + start) == ptr + len) {
-                        start++;
+            int ptr = value.getBegin();
+            int len = value.getRealSize();
+            byte[] bytes = value.getUnsafeBytes();
+
+            result = runtime.newArray();
+            Encoding enc = value.getEncoding();
+            boolean captures = spat.getPattern().numberOfCaptures() != 0;
+
+            int end, beg = 0;
+            boolean lastNull = false;
+            int start = beg;
+            while ((end = spat.search(context, this, start, false, holder)) >= 0) {
+                RubyMatchData match = (RubyMatchData) holder[0];
+                if (start == end && match.begin(0) == match.end(0)) {
+                    if (len == 0) {
+                        result.append(newEmptyString(runtime, metaClass).infectBy(this));
+                        break;
+                    } else if (lastNull) {
+                        result.append(makeShared(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
+                        beg = start;
                     } else {
-                        start += StringSupport.length(enc, bytes, ptr + start, ptr + len);
+                        if ((ptr + start) == ptr + len) {
+                            start++;
+                        } else {
+                            start += StringSupport.length(enc, bytes, ptr + start, ptr + len);
+                        }
+                        lastNull = true;
+                        continue;
                     }
-                    lastNull = true;
-                    continue;
+                } else {
+                    result.append(makeShared(runtime, beg, end - beg));
+                    beg = match.end(0);
+                    start = beg;
                 }
-            } else {
-                result.append(makeShared(runtime, beg, end - beg));
-                beg = match.end(0);
-                start = beg;
+                lastNull = false;
+
+                if (captures) populateCapturesForSplit(runtime, result, match);
+                if (limit && lim <= ++i) break;
             }
-            lastNull = false;
 
-            if (captures) populateCapturesForSplit(runtime, result, match);
-            if (limit && lim <= ++i) break;
+            if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
+
+            if (useBackref) context.setBackRef(nil);
+        } finally {
+            RubyRegexp.clearThreadHolder(holder);
         }
 
-        // only this case affects backrefs
-        if (useBackref) {
-            context.setBackRef(context.nil);
-        } else {
-            holder[0] = context.nil;
-        }
-
-        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
         return result;
     }
 
