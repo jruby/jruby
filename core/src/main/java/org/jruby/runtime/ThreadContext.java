@@ -573,6 +573,23 @@ public final class ThreadContext {
     }
 
     /**
+     * Update the current frame's backref using the current thread-local match, or clear it if that match is null.
+     *
+     * @return The current match, or nil
+     */
+    public IRubyObject updateBackref() {
+        RubyMatchData match = matchData;
+
+        if (match == null) {
+            return clearBackRef();
+        }
+
+        match.use();
+
+        return getCurrentFrame().setBackRef(match);
+    }
+
+    /**
      * Set the $~ (backref) "global" to the given RubyMatchData value. The value will be marked as "in use" since it
      * can now be seen across threads that share the current frame.
      *
@@ -1396,6 +1413,15 @@ public final class ThreadContext {
     }
 
     /**
+     * Set the thread-local MatchData specific to this context to null.
+     *
+     * @see #setLocalMatch(RubyMatchData)
+     */
+    public void clearLocalMatch() {
+        matchData = null;
+    }
+
+    /**
      * Get the thread-local MatchData specific to this context. This is different from the frame backref since frames
      * may be shared by several executing contexts at once (see jruby/jruby#4868).
      *
@@ -1420,6 +1446,8 @@ public final class ThreadContext {
 
     @Deprecated
     public IRubyObject setBackRef(IRubyObject match) {
-        return getCurrentFrame().setBackRef(match);
+        if (match.isNil()) return clearBackRef();
+
+        return setBackRef((RubyMatchData) match);
     }
 }

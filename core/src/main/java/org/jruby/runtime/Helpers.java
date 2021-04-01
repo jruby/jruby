@@ -2948,6 +2948,6 @@ public class Helpers {
 
     @Deprecated
     public static IRubyObject backref(ThreadContext context) {
-        return RubyRegexp.getBackRef(context);
+        return context.getBackRef();
     }
 }
