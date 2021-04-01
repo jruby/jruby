@@ -85,6 +85,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private ByteList str = ByteList.EMPTY_BYTELIST;
     private RegexpOptions options;
 
+    private static final ThreadLocal<IRubyObject[]> TL_HOLDER = ThreadLocal.withInitial(() -> new IRubyObject[1]);
+
     public static final int ARG_ENCODING_FIXED     =   ReOptions.RE_FIXED;
     public static final int ARG_ENCODING_NONE      =   ReOptions.RE_NONE;
 
@@ -1805,6 +1807,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private static IRubyObject regOperand(IRubyObject str, boolean check) {
         if (str instanceof RubySymbol) return ((RubySymbol) str).to_s();
         return check ? str.convertToString() : str.checkStringType();
+    }
+
+    static void clearThreadHolder(IRubyObject[] holder) {
+        holder[0] = null;
+    }
+
+    static IRubyObject[] getThreadHolder(IRubyObject nil) {
+        IRubyObject[] holder = TL_HOLDER.get();
+        holder[0] = nil;
+        return holder;
     }
 
     @Deprecated
