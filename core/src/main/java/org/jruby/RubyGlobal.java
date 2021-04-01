@@ -882,12 +882,20 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return Helpers.getBackref(runtime.getCurrentContext());
+            return runtime.getCurrentContext().getBackRef();
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            Helpers.setBackref(runtime.getCurrentContext(), value);
+            ThreadContext context = runtime.getCurrentContext();
+            if (value.isNil()) {
+                context.clearBackRef();
+            } else if (value instanceof RubyMatchData) {
+                context.setBackRef((RubyMatchData) value);
+            } else {
+                throw runtime.newTypeError(value, runtime.getMatchData());
+            }
+
             return value;
         }
     }
