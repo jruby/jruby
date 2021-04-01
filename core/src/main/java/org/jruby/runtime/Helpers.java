@@ -827,12 +827,6 @@ public class Helpers {
 
     public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
         return getBlockFromBlockPassBody(proc.getRuntime(), proc, currentBlock);
-
-    }
-
-    @Deprecated
-    public static IRubyObject backref(ThreadContext context) {
-        return RubyRegexp.getBackRef(context);
     }
 
     @Deprecated
@@ -1674,27 +1668,6 @@ public class Helpers {
 
     public static IRubyObject getLastLine(Ruby runtime, ThreadContext context) {
         return context.getLastLine();
-    }
-
-    public static IRubyObject setBackref(ThreadContext context, IRubyObject value) {
-        if (!(value instanceof RubyMatchData) && value != context.nil) {
-            throw context.runtime.newTypeError(value, context.runtime.getMatchData());
-        }
-        return context.setBackRef(value);
-    }
-
-    @Deprecated
-    public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
-        return setBackref(context, value);
-    }
-
-    public static IRubyObject getBackref(ThreadContext context) {
-        return RubyRegexp.getBackRef(context);
-    }
-
-    @Deprecated
-    public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
-        return RubyRegexp.getBackRef(context);
     }
 
     public static RubyArray arrayValue(IRubyObject value) {
@@ -2960,5 +2933,21 @@ public class Helpers {
     @Deprecated
     public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, CallType callType) {
         return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
+    public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
+        if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
+        return context.setBackRef(value);
+    }
+
+    @Deprecated
+    public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
+        return context.getBackRef();
+    }
+
+    @Deprecated
+    public static IRubyObject backref(ThreadContext context) {
+        return RubyRegexp.getBackRef(context);
     }
 }

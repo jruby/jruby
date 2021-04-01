@@ -2989,7 +2989,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
         }
-        return context.setBackRef(context.nil);
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangIter(ThreadContext context, RubyRegexp regexp, RubyHash hash, Block block) {
@@ -3024,7 +3024,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
         }
-        return context.setBackRef(context.nil);
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangNoIter(ThreadContext context, IRubyObject arg0, RubyString repl) {
@@ -3046,7 +3046,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             return subBangCommon(context, mBeg, mEnd, repl, repl.flags);
         }
-        return context.setBackRef(context.nil);
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangNoIter(ThreadContext context, RubyRegexp regexp, RubyString repl) {
@@ -3057,7 +3057,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             return subBangCommon(context, match.begin, match.end, repl, repl.flags);
         }
-        return context.setBackRef(context.nil);
+        return context.clearBackRef();
     }
 
     /**
@@ -3257,7 +3257,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int beg = StringSupport.index(getByteList(), pattern.getByteList(), 0, patternEnc);
         int begz;
         if (beg < 0) {
-            if (useBackref) context.setBackRef(context.nil);
+            if (useBackref) context.clearBackRef();
             return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
@@ -3340,7 +3340,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int beg = RubyRegexp.matcherSearch(context, matcher, spBeg, spBeg + spLen, Option.NONE);
         if (beg < 0) {
-            if (useBackref) context.setBackRef(context.nil);
+            if (useBackref) context.clearBackRef();
             return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
@@ -3423,7 +3423,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (pos < 0) {
             pos += strLength();
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) context.setBackRef(context.nil);
+                if (arg0 instanceof RubyRegexp) context.clearBackRef();
                 return context.nil;
             }
         }
@@ -3534,7 +3534,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (pos < 0) {
             pos += length;
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) context.setBackRef(context.nil);
+                if (arg0 instanceof RubyRegexp) context.clearBackRef();
                 return context.nil;
             }
         }
@@ -4508,7 +4508,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
 
-        if (useBackref) context.setBackRef(nil);
+        if (useBackref) context.clearBackRef();
 
         return result;
     }
@@ -4751,7 +4751,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     setBackRefString(context, str, beg, strPattern).infectBy(pattern);
                 }
                 else {
-                    context.setBackRef(context.nil);
+                    context.clearBackRef();
                 }
             }
             return beg;

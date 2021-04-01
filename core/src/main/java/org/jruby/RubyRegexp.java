@@ -802,9 +802,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static IRubyObject getBackRef(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-        if (backref instanceof RubyMatchData) ((RubyMatchData) backref).use();
-        return backref;
+        return context.getBackRef();
     }
 
     /** rb_reg_s_last_match
@@ -1103,7 +1101,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (start < 0) return context.nil;
             return runtime.newFixnum(start);
         }
-        context.setBackRef(context.nil);
+        context.clearBackRef();
         return context.nil;
     }
 
@@ -1114,7 +1112,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
         arg = operandNoCheck(arg);
         if (arg == context.nil) {
-            context.setBackRef(arg);
+            context.clearBackRef();
             return context.fals;
         }
         int start = search(context, (RubyString) arg, 0, false);
@@ -1202,7 +1200,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private int matchPos(ThreadContext context, IRubyObject arg, RubyString[] strp, boolean useBackref, int pos) {
         if (arg == context.nil) {
             context.setLocalMatch(null);
-            if (useBackref) context.setBackRef(context.nil);
+            if (useBackref) context.clearBackRef();
             return -1;
         }
         final RubyString str = operandCheck(arg);
@@ -1262,14 +1260,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         try {
             int result = matcherMatch(context, matcher, beg, beg + strBL.realSize(), RE_OPTION_NONE);
             if (result == -1) {
-                context.setBackRef(context.nil);
+                context.setLocalMatch(null);
+                context.clearBackRef();
                 return false;
             }
 
-            final RubyMatchData matchData = createMatchData(context, str, matcher, reg);
-            matchData.regexp = this;
-            matchData.infectBy(this);
-            context.setBackRef(matchData);
+            RubyMatchData match = context.getLocalMatch();
+            if (match == null || match.used()) {
+                match = createMatchData(context, str, matcher, reg);
+            } else {
+                match.initMatchData(str, matcher, reg);
+            }
+
+            match.regexp = this;
+            match.infectBy(this);
+
+            context.setBackRef(match);
             return true;
         } catch (JOniException je) {
             throw context.runtime.newRegexpError(je.getMessage());
@@ -1293,17 +1299,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (pos > str.size() || pos < 0) {
             context.setLocalMatch(null);
-            if (useBackref) context.setBackRef(context.nil);
+            if (useBackref) context.clearBackRef();
             return -1;
         }
 
         final Regex reg = preparePattern(str);
-        RubyMatchData match = context.getLocalMatch();
-        if (match != null) {
-            if (match.used()) {
-                match = null;
-            }
-        }
 
         if (!reverse) range += str.size();
 
@@ -1313,11 +1313,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             int result = matcherSearch(context, matcher, beg + pos, range, RE_OPTION_NONE);
             if (result == -1) {
                 context.setLocalMatch(null);
-                if (useBackref) context.setBackRef(context.nil);
+                if (useBackref) context.clearBackRef();
                 return -1;
             }
 
-            if (match == null) {
+            RubyMatchData match = context.getLocalMatch();
+            if (match == null || match.used()) {
                 match = createMatchData(context, str, matcher, reg);
             } else {
                 match.initMatchData(str, matcher, reg);

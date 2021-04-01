@@ -564,12 +564,23 @@ public final class ThreadContext {
     }
 
     /**
-     * Set the $~ (backref) "global" to the given value.
+     * Set the $~ (backref) "global" to nil.
+     *
+     * @return nil
+     */
+    public IRubyObject clearBackRef() {
+        return getCurrentFrame().setBackRef(nil);
+    }
+
+    /**
+     * Set the $~ (backref) "global" to the given RubyMatchData value. The value will be marked as "in use" since it
+     * can now be seen across threads that share the current frame.
      *
      * @param match the value to set
      * @return the value passed in
      */
-    public IRubyObject setBackRef(IRubyObject match) {
+    public IRubyObject setBackRef(RubyMatchData match) {
+        match.use();
         return getCurrentFrame().setBackRef(match);
     }
 
@@ -1405,5 +1416,10 @@ public final class ThreadContext {
         RubyMatchData matchData = this.matchData;
         if (matchData != null) return matchData;
         return nil;
+    }
+
+    @Deprecated
+    public IRubyObject setBackRef(IRubyObject match) {
+        return getCurrentFrame().setBackRef(match);
     }
 }
