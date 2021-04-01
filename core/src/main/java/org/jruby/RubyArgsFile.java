@@ -40,6 +40,7 @@ import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 import org.jruby.anno.FrameField;
@@ -325,7 +326,7 @@ public class RubyArgsFile extends RubyObject {
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", optional = 1, writes = LASTLINE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return context.setLastLine(argf_getline(context, recv, args));
     }
@@ -333,7 +334,7 @@ public class RubyArgsFile extends RubyObject {
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", optional = 1)
+    @JRubyMethod(name = "readline", optional = 1, writes = LASTLINE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 

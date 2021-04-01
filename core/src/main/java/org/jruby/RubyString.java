@@ -1677,7 +1677,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
 
-    @JRubyMethod(name = "=~", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "=~", writes = BACKREF)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
@@ -1696,14 +1696,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return match19(context, pattern, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "match", required = 1, reads = BACKREF)
+    @JRubyMethod(name = "match", required = 1, writes = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this);
         return block.isGiven() && result != context.nil ? block.yield(context, result) : result;
     }
 
-    @JRubyMethod(name = "match", reads = BACKREF)
+    @JRubyMethod(name = "match", writes = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, IRubyObject pos, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this, pos);
@@ -2913,21 +2913,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
 
-    @JRubyMethod(name = "sub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub", writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, Block block) {
         RubyString str = strDup(context.runtime);
         str.sub_bang(context, arg0, block);
         return str;
     }
 
-    @JRubyMethod(name = "sub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub", writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyString str = strDup(context.runtime);
         str.sub_bang(context, arg0, arg1, block);
         return str;
     }
 
-    @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         Ruby runtime = context.runtime;
         frozenCheck();
@@ -2936,7 +2936,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         throw runtime.newArgumentError(1, 2);
     }
 
-    @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
@@ -3189,7 +3189,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return gsub_bang(context, arg0, arg1, block);
     }
 
-    @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub", writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "gsub", arg0);
 
@@ -3197,12 +3197,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     }
 
-    @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub", writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return gsubImpl(context, arg0, arg1, block, false);
     }
 
-    @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub!", writes = BACKREF)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         checkFrozen();
 
@@ -3211,7 +3211,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return gsubCommon(context, block, null, null, arg0, true, 0);
     }
 
-    @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub!", writes = BACKREF)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         checkFrozen();
 
@@ -3447,12 +3447,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_index_m
      *
      */
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
         return indexCommon19(context, arg0, 0);
     }
 
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         if (pos < 0) {
@@ -3559,12 +3559,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_rindex_m
      *
      */
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
         return rindexCommon(context, arg0, strLength());
     }
 
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         int length = strLength();
@@ -3985,7 +3985,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_slice_bang
      *
      */
-    @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "slice!", writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
         IRubyObject result = op_aref19(context, arg0);
         if (result.isNil()) {
@@ -3996,7 +3996,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "slice!", writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject result = op_aref(context, arg0, arg1);
         if (result.isNil()) {
