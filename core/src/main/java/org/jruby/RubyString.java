@@ -4465,56 +4465,50 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         IRubyObject nil = context.nil;
 
-        IRubyObject[] holder = RubyRegexp.getThreadHolder(nil);
-        try {
-            Ruby runtime = context.runtime;
+        Ruby runtime = context.runtime;
 
-            int ptr = value.getBegin();
-            int len = value.getRealSize();
-            byte[] bytes = value.getUnsafeBytes();
+        int ptr = value.getBegin();
+        int len = value.getRealSize();
+        byte[] bytes = value.getUnsafeBytes();
 
-            result = runtime.newArray();
-            Encoding enc = value.getEncoding();
-            boolean captures = pattern.getPattern().numberOfCaptures() != 0;
+        result = runtime.newArray();
+        Encoding enc = value.getEncoding();
+        boolean captures = pattern.getPattern().numberOfCaptures() != 0;
 
-            int end, beg = 0;
-            boolean lastNull = false;
-            int start = beg;
-            while ((end = pattern.search(context, this, start, false, holder)) >= 0) {
-                RubyMatchData match = (RubyMatchData) holder[0];
-                if (start == end && match.begin(0) == match.end(0)) {
-                    if (len == 0) {
-                        result.append(newEmptyString(runtime, metaClass).infectBy(this));
-                        break;
-                    } else if (lastNull) {
-                        result.append(makeShared(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
-                        beg = start;
+        int end, beg = 0;
+        boolean lastNull = false;
+        int start = beg;
+        while ((end = pattern.search(context, this, start, false, false)) >= 0) {
+            RubyMatchData match = context.getLocalMatch();
+            if (start == end && match.begin(0) == match.end(0)) {
+                if (len == 0) {
+                    result.append(newEmptyString(runtime, metaClass).infectBy(this));
+                    break;
+                } else if (lastNull) {
+                    result.append(makeShared(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
+                    beg = start;
+                    if ((ptr + start) == ptr + len) {
+                        start++;
                     } else {
-                        if ((ptr + start) == ptr + len) {
-                            start++;
-                        } else {
-                            start += StringSupport.length(enc, bytes, ptr + start, ptr + len);
-                        }
-                        lastNull = true;
-                        continue;
+                        start += StringSupport.length(enc, bytes, ptr + start, ptr + len);
                     }
-                } else {
-                    result.append(makeShared(runtime, beg, end - beg));
-                    beg = match.end(0);
-                    start = beg;
+                    lastNull = true;
+                    continue;
                 }
-                lastNull = false;
-
-                if (captures) populateCapturesForSplit(runtime, result, match);
-                if (limit && lim <= ++i) break;
+            } else {
+                result.append(makeShared(runtime, beg, end - beg));
+                beg = match.end(0);
+                start = beg;
             }
+            lastNull = false;
 
-            if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
-
-            if (useBackref) context.setBackRef(nil);
-        } finally {
-            RubyRegexp.clearThreadHolder(holder);
+            if (captures) populateCapturesForSplit(runtime, result, match);
+            if (limit && lim <= ++i) break;
         }
+
+        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
+
+        if (useBackref) context.setBackRef(nil);
 
         return result;
     }

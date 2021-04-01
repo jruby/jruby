@@ -44,6 +44,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyContinuation;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
@@ -164,6 +165,8 @@ public final class ThreadContext {
     private RubyModule privateConstantReference;
 
     public final JavaSites sites;
+
+    private RubyMatchData matchData;
 
     @SuppressWarnings("deprecation")
     public SecureRandom getSecureRandom() {
@@ -1369,5 +1372,38 @@ public final class ThreadContext {
     public Encoding[] encodingHolder() {
         if (encodingHolder == null) encodingHolder = new Encoding[1];
         return encodingHolder;
+    }
+
+    /**
+     * Set the thread-local MatchData specific to this context. This is different from the frame backref since frames
+     * may be shared by several executing contexts at once (see jruby/jruby#4868).
+     *
+     * @param localMatch the new thread-local MatchData or null
+     */
+    public void setLocalMatch(RubyMatchData localMatch) {
+        matchData = localMatch;
+    }
+
+    /**
+     * Get the thread-local MatchData specific to this context. This is different from the frame backref since frames
+     * may be shared by several executing contexts at once (see jruby/jruby#4868).
+     *
+     * @return the current thread-local MatchData, or null if none
+     */
+    public RubyMatchData getLocalMatch() {
+        return matchData;
+    }
+
+    /**
+     * Get the thread-local MatchData specific to this context or nil if none.
+     *
+     * @see #getLocalMatch()
+     *
+     * @return the current thread-local MatchData, or nil if none
+     */
+    public IRubyObject getLocalMatchOrNil() {
+        RubyMatchData matchData = this.matchData;
+        if (matchData != null) return matchData;
+        return nil;
     }
 }
