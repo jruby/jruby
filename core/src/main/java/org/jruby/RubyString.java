@@ -4531,7 +4531,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int end, beg = 0;
         boolean lastNull = false;
         int start = beg;
-        while ((end = pattern.search(context, this, start, false)) >= 0) {
+        while ((end = pattern.searchString(context, this, start, false)) >= 0) {
             RubyMatchData match = context.getLocalMatch();
             if (start == end && match.begin(0) == match.end(0)) {
                 if (len == 0) {
@@ -4540,6 +4540,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 } else if (lastNull) {
                     result.append(makeShared(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
                     beg = start;
+                } else {
                     if ((ptr + start) == ptr + len) {
                         start++;
                     } else {
