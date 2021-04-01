@@ -1704,6 +1704,13 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void LoadBlockImplicitClosure(LoadBlockImplicitClosureInstr loadblockimplicitclosureinstr) {
+        jvmMethod().loadSelfBlock();
+        jvmMethod().invokeHelper("getImplicitBlockFromBlockBinding", Block.class, Block.class);
+        jvmStoreLocal(loadblockimplicitclosureinstr.getResult());
+    }
+
+    @Override
     public void MatchInstr(MatchInstr matchInstr) {
         compileCallCommon(jvmMethod(), matchInstr);
     }

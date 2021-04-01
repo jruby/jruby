@@ -820,6 +820,11 @@ public class Helpers {
         return ((RubyProc) proc).getBlock();
     }
 
+    @JIT
+    public static Block getImplicitBlockFromBlockBinding(Block block) {
+        return block.getFrame().getBlock();
+    }
+
     public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
         return getBlockFromBlockPassBody(proc.getRuntime(), proc, currentBlock);
 
