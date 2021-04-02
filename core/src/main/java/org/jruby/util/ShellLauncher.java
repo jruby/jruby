@@ -1295,7 +1295,13 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) throws IOException {
-        return run(runtime, rawArgs, doExecutableSearch, false);
+        RubyHash env = null;
+        if (rawArgs.length > 0 && rawArgs[0] instanceof RubyHash) {
+            // peel off env hash
+            env = (RubyHash) rawArgs[0];
+            rawArgs = Arrays.copyOfRange(rawArgs, 1, rawArgs.length);
+        }
+        return run(runtime, env, rawArgs, doExecutableSearch, false);
     }
 
     private static boolean hasGlobCharacter(String word) {
@@ -1325,6 +1331,10 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
+        return run(runtime, Collections.EMPTY_MAP, rawArgs, doExecutableSearch, forceExternalProcess);
+    }
+
+    public static Process run(Ruby runtime, Map env, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
         Process aProcess;
         String virtualCWD = runtime.getCurrentDirectory();
         File pwd = new File(virtualCWD);
@@ -1334,7 +1344,7 @@ public class ShellLauncher {
             if (!forceExternalProcess && cfg.shouldRunInProcess()) {
                 log(runtime, "Launching in-process");
                 ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime,
-                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime), pwd);
+                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime, env), pwd);
                 ipScript.start();
                 return ipScript;
             } else {
@@ -1359,7 +1369,7 @@ public class ShellLauncher {
                                 "org.jruby.Main -C " + virtualCWD);
                     }
                 }
-                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime), pwd);
+                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
             }
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
