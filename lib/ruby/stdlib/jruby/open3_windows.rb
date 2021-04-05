@@ -72,24 +72,6 @@ module Open3
   #
   def popen3(*cmd, &block)
     return IO::popen3(*cmd, &block) if RUBY_ENGINE == 'jruby'
-    
-    if Hash === cmd.last
-      opts = cmd.pop.dup
-    else
-      opts = {}
-    end
-
-    in_r, in_w = IO.pipe
-    opts[:in] = in_r
-    in_w.sync = true
-
-    out_r, out_w = IO.pipe
-    opts[:out] = out_w
-
-    err_r, err_w = IO.pipe
-    opts[:err] = err_w
-
-    popen_run(cmd, opts, [in_r, out_w, err_w], [in_w, out_r, err_r], &block)
   end
   module_function :popen3
 
@@ -133,21 +115,15 @@ module Open3
   #     p o.read #=> "*"
   #   }
   #
-  def popen2(*cmd, &block)
-    if Hash === cmd.last
-      opts = cmd.pop.dup
-    else
-      opts = {}
-    end
+  BUILD_2 = proc do |builder|
+  end
 
-    in_r, in_w = IO.pipe
-    opts[:in] = in_r
-    in_w.sync = true
+  IO_2 = proc do |process|
+    [process.getOutputStream.to_io, process.getInputStream.to_io]
+  end
 
-    out_r, out_w = IO.pipe
-    opts[:out] = out_w
-
-    popen_run(cmd, opts, [in_r, out_w], [in_w, out_r], &block)
+  def popen2(*cmd, **opts, &block)
+    popen_run(cmd, opts, build: BUILD_2, io: IO_2, &block)
   end
   module_function :popen2
 
@@ -182,37 +158,57 @@ module Open3
   #     }
   #   }
   #
-  def popen2e(*cmd, &block)
-    if Hash === cmd.last
-      opts = cmd.pop.dup
-    else
-      opts = {}
-    end
+  BUILD_2E = proc do |builder|
+    builder.redirectErrorStream(true)
+  end
 
-    in_r, in_w = IO.pipe
-    opts[:in] = in_r
-    in_w.sync = true
+  IO_2E = proc do |process|
+    [process.getOutputStream.to_io, process.getInputStream.to_io]
+  end
 
-    out_r, out_w = IO.pipe
-    opts[[:out, :err]] = out_w
-
-    popen_run(cmd, opts, [in_r, out_w], [in_w, out_r], &block)
+  def popen2e(*cmd, **opts, &block)
+    popen_run(cmd, opts, build: BUILD_2E, io: IO_2E, &block)
   end
   module_function :popen2e
 
-  def popen_run(cmd, opts, child_io, parent_io) # :nodoc:
-    pid = spawn(*cmd, opts)
-    wait_thr = Process.detach(pid)
-    child_io.each {|io| io.close }
+  def popen_run(cmd, opts, build: nil, io:)
+    if Hash === cmd[0]
+      env = cmd.shift;
+    else
+      env = {}
+    end
+
+    if cmd.size == 1 && org.jruby.util.ShellLauncher.shouldUseShell(cmd[0])
+      cmd = [RbConfig::CONFIG['SHELL'], JRuby::Util::ON_WINDOWS ? '/c' : '-c', cmd[0]]
+    end
+
+    builder = java.lang.ProcessBuilder.new(cmd.to_java(:string))
+
+    builder.directory(java.io.File.new(opts[:chdir] || Dir.pwd))
+
+    environment = builder.environment
+    env.each { |k, v| v.nil? ? environment.remove(k) : environment.put(k, v) }
+
+    build.call(builder) if build
+
+    process = builder.start
+
+    pid = org.jruby.util.ShellLauncher.getPidFromProcess(process)
+
+    parent_io = io.call(process)
+    wait_thr = Thread.new { org.jruby.RubyProcess::RubyStatus.newProcessStatus(JRuby.runtime, process.waitFor, pid) }
+
     result = [*parent_io, wait_thr]
+
     if defined? yield
       begin
         return yield(*result)
       ensure
-        parent_io.each{|io| io.close unless io.closed?}
+        parent_io.each(&:close)
         wait_thr.join
       end
     end
+
     result
   end
   module_function :popen_run
