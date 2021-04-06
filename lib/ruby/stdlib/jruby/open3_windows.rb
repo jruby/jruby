@@ -29,6 +29,10 @@
 
 module Open3
 
+  java_import java.lang.ProcessBuilder
+  java_import org.jruby.RubyProcess
+  java_import org.jruby.util.ShellLauncher
+
   # Open stdin, stdout, and stderr streams and start external executable.
   # In addition, a thread for waiting the started process is noticed.
   # The thread has a pid method and thread variable :pid which is the pid of
@@ -70,10 +74,20 @@ module Open3
   #
   # Closing stdin, stdout and stderr does not wait the process.
   #
+
   def popen3(*cmd, &block)
-    return IO::popen3(*cmd, &block) if RUBY_ENGINE == 'jruby'
+    if cmd.size > 0 && Hash === cmd[-1]
+      opts = cmd.pop
+    else
+      opts = {}
+    end
+    popen_run(cmd, opts, io: IO_3, &block)
   end
   module_function :popen3
+
+  IO_3 = proc do |process|
+    [process.getOutputStream.to_io, process.getInputStream.to_io, process.getErrorStream.to_io]
+  end
 
   # Open3.popen2 is similer to Open3.popen3 except it doesn't make a pipe for
   # the standard error stream.
@@ -116,13 +130,19 @@ module Open3
   #   }
   #
   BUILD_2 = proc do |builder|
+    builder.redirectError(ProcessBuilder::Redirect::INHERIT)
   end
 
   IO_2 = proc do |process|
     [process.getOutputStream.to_io, process.getInputStream.to_io]
   end
 
-  def popen2(*cmd, **opts, &block)
+  def popen2(*cmd, &block)
+    if cmd.size > 0 && Hash === cmd[-1]
+      opts = cmd.pop
+    else
+      opts = {}
+    end
     popen_run(cmd, opts, build: BUILD_2, io: IO_2, &block)
   end
   module_function :popen2
@@ -166,7 +186,12 @@ module Open3
     [process.getOutputStream.to_io, process.getInputStream.to_io]
   end
 
-  def popen2e(*cmd, **opts, &block)
+  def popen2e(*cmd, &block)
+    if cmd.size > 0 && Hash === cmd[-1]
+      opts = cmd.pop
+    else
+      opts = {}
+    end
     popen_run(cmd, opts, build: BUILD_2E, io: IO_2E, &block)
   end
   module_function :popen2e
@@ -178,11 +203,11 @@ module Open3
       env = {}
     end
 
-    if cmd.size == 1 && org.jruby.util.ShellLauncher.shouldUseShell(cmd[0])
+    if cmd.size == 1 && ShellLauncher.shouldUseShell(cmd[0])
       cmd = [RbConfig::CONFIG['SHELL'], JRuby::Util::ON_WINDOWS ? '/c' : '-c', cmd[0]]
     end
 
-    builder = java.lang.ProcessBuilder.new(cmd.to_java(:string))
+    builder = ProcessBuilder.new(cmd.to_java(:string))
 
     builder.directory(java.io.File.new(opts[:chdir] || Dir.pwd))
 
@@ -196,7 +221,10 @@ module Open3
     pid = org.jruby.util.ShellLauncher.getPidFromProcess(process)
 
     parent_io = io.call(process)
-    wait_thr = Thread.new { org.jruby.RubyProcess::RubyStatus.newProcessStatus(JRuby.runtime, process.waitFor, pid) }
+
+    parent_io.each {|i| i.sync = true}
+
+    wait_thr = DetachThread.new(pid) { RubyProcess::RubyStatus.newProcessStatus(JRuby.runtime, process.waitFor << 8, pid) }
 
     result = [*parent_io, wait_thr]
 
@@ -214,6 +242,17 @@ module Open3
   module_function :popen_run
   class << self
     private :popen_run
+  end
+
+  class DetachThread < Thread
+    attr_reader :pid
+
+    def initialize(pid)
+      super
+
+      @pid = pid
+      self[:pid] = pid
+    end
   end
 
   # Open3.capture3 captures the standard output and the standard error of a command.
