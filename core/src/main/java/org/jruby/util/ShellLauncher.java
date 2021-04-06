@@ -662,10 +662,22 @@ public class ShellLauncher {
         Field pid = null;
         try {
             up = Class.forName("java.lang.UNIXProcess");
-            pid = up.getDeclaredField("pid");
-            Java.trySetAccessible(pid);
-        } catch (Exception e) {
-            // ignore and try windows version
+        } catch (ClassNotFoundException e) {
+            try {
+                // Renamed in 11 (or earlier)
+                up = Class.forName("java.lang.ProcessImpl");
+            } catch (ClassNotFoundException e2) {
+                // ignore and try windows version
+            }
+        }
+
+        if (up != null) {
+            try {
+                pid = up.getDeclaredField("pid");
+                Java.trySetAccessible(pid);
+            } catch (NoSuchFieldException | SecurityException e) {
+                // ignore and try windows version
+            }
         }
         UNIXProcess = up;
         UNIXProcess_pid = pid;
