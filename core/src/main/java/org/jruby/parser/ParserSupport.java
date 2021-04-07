@@ -56,6 +56,7 @@ import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
@@ -64,6 +65,9 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.lexer.LexingCommon.*;
+import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
+import static org.jruby.lexer.LexingCommon.OR_OR;
+import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
 
 /** 
@@ -75,12 +79,6 @@ public class ParserSupport {
     protected ScopedParserState scopedParserState;
 
     protected RubyLexer lexer;
-    
-    // Is the parser currently within a method definition
-    private boolean inDefinition;
-
-    // Is the parser currently within a class body.
-    private boolean inClass;
 
     // Should we warn if a variable is declared not actually used?
     private boolean warnOnUnusedVariables;
@@ -92,8 +90,10 @@ public class ParserSupport {
 
     public boolean isNextBreak = false;
 
+    public IRubyObject case_labels;
+
     public void reset() {
-        inDefinition = false;
+        lexer.getLexContext().reset();
     }
 
     public StaticScope getCurrentScope() {
@@ -1007,23 +1007,6 @@ public class ParserSupport {
         
         result.setScope(scope);
     }
-
-    public boolean isInDef() {
-        return inDefinition;
-    }
-
-    public void setInDef(boolean inDef) {
-        this.inDefinition = inDef;
-    }
-
-    public boolean isInClass() {
-        return inClass;
-    }
-
-    public void setIsInClass(boolean inClass) {
-        this.inClass = inClass;
-    }
-
     /**
      * Gets the result.
      * @return Returns a RubyParserResult
@@ -1201,7 +1184,7 @@ public class ParserSupport {
         return (node == null) ? new NilNode(defaultPosition) : node; 
     }
 
-    public Node new_args(int line, ListNode pre, ListNode optional, RestArgNode rest,
+    public ArgsNode new_args(int line, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, ArgsTailHolder tail) {
         ArgsNode argsNode;
         if (tail == null) {
@@ -1529,4 +1512,144 @@ public class ParserSupport {
         return INTERNAL_ID.toString();
     }
 
+    public Table push_pvtbl() {
+        return null;
+    }
+
+    public Table pop_pvtbl(Table arg) {
+        return null;
+    }
+
+    public Table push_pktbl() {
+        return null;
+    }
+
+    public Table pop_pktbl(Table arg) {
+        return null;
+    }
+
+    public Node newIn(Node node, Node value1, Node value2) {
+        return null;
+    }
+
+    public Node newTrue() {
+        return null;
+    }
+
+    public Node newFalse() {
+        return null;
+    }
+
+    public void endless_method_name(DefHolder name) {
+    }
+
+    public Node reduce_nodes(Node body) {
+        // FIXME: impl
+        return body;
+    }
+
+    public void restore_defun(DefHolder holder) {
+        lexer.getLexContext().restore(holder);
+        lexer.setCurrentArg(holder.current_arg);
+    }
+
+    public Node newOr(Node one, Node two) {
+        return null;
+    }
+
+    public Node new_array_pattern(Node one,Node two,Node three) {
+        return null;
+    }
+
+    public Node new_hash(Node one) {
+        return null;
+    }
+
+    public Node new_hash_pattern(Node node,Node node1) {
+        return null;
+    }
+
+    public Node new_hash_pattern_tail(Node node,ByteList node1) {
+        return null;
+    }
+
+    public void warn_one_line_pattern_matching(Object one,Node two ,boolean three) {
+
+    }
+
+    public Node rescued_expr(Node one, Node two) {
+        return null;
+    }
+
+    public Node new_array_pattern_tail(Node one,int two ,ByteList three,Node four) {
+        return null;
+    }
+
+    public Node new_unique_key_hash(Node one) {
+        return null;
+    }
+
+    public void error_duplicate_pattern_key(ByteList one) {
+
+    }
+
+    public void error_duplicate_pattern_variable(ByteList one) {
+
+    }
+
+    public Node new_find_pattern_tail(ByteList one,Node two,ByteList three) {
+        return null;
+    }
+
+    public boolean check_forwarding_args() {
+        if (is_local_id(FWD_REST) && is_local_id(FWD_KWREST) && is_local_id(FWD_BLOCK)) return true;
+
+        compile_error("unexpected ...");
+        return false;
+    }
+
+    public void add_forwarding_args() {
+        arg_var(FWD_REST);
+        arg_var(FWD_KWREST);
+        arg_var(FWD_BLOCK);
+    }
+
+    public Node new_args_forward_call(Node one) {
+        return null;
+    }
+
+    public ArgsNode new_args_forward_def(int line, ListNode leading) {
+        BlockArgNode blockArg = new BlockArgNode(arg_var(shadowing_lvar(FWD_BLOCK)));
+        ArgsTailHolder tail = new_args_tail(line, null, FWD_KWREST, blockArg);
+        RestArgNode forwordRestArg  = new RestArgNode(arg_var(shadowing_lvar(FWD_REST)));
+        return new_args(leading.getLine(), leading, null, forwordRestArg, null, tail);
+    }
+
+    public void check_literal_when(Node one) {
+    }
+
+    public Node last_arg_append(Node args, Node lastArg) {
+        Node n1 = splat_array(args);
+
+        return n1 == null ?  arg_append(args, lastArg) : list_append(n1, lastArg);
+    }
+
+    public Node rest_arg_append(Node args, Node restArg) {
+        Node n1;
+        if ((restArg instanceof ListNode) && (n1 = splat_array(args)) != null) {
+            return list_concat(n1, restArg);
+        }
+        return arg_concat(args, restArg);
+    }
+
+    public Node remove_begin(Node one) {
+        return null;
+    }
+
+    public Node new_find_pattern(Node one,Node two) {
+        return null;
+    }
+
+    public void nd_set_first_loc(Node node, int line) {
+    }
 }

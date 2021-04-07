@@ -11,6 +11,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,6 +48,7 @@ public abstract class LexingCommon {
         this.src = src;
     }
 
+    private LexContext lexContext = new LexContext();
     protected int braceNest = 0;
     public boolean commandStart;
     protected StackState conditionState = new StackState();
@@ -59,7 +61,6 @@ public abstract class LexingCommon {
     protected int heredoc_end = 0;
     protected int heredoc_indent = 0;
     protected int heredoc_line_indent = 0;
-    public boolean inKwarg = false;
     protected int last_cr_line;
     protected int last_state;
     private int leftParenBegin = 0;
@@ -217,6 +218,10 @@ public abstract class LexingCommon {
 
     protected void flush() {
         tokp = lex_p;
+    }
+
+    public LexContext getLexContext() {
+        return lexContext;
     }
 
     public int getBraceNest() {
