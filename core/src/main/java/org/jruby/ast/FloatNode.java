@@ -33,14 +33,17 @@
 package org.jruby.ast;
 
 import java.util.List;
+import java.util.Objects;
 
+import org.jruby.Ruby;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a float literal.
  */
-public class FloatNode extends NumericNode implements ILiteralNode, SideEffectFree {
+public class FloatNode extends NumericNode implements ILiteralNode, LiteralValue, SideEffectFree {
     private double value;
 
     public FloatNode(int line, double value) {
@@ -68,7 +71,20 @@ public class FloatNode extends NumericNode implements ILiteralNode, SideEffectFr
     public double getValue() {
         return value;
     }
-    
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FloatNode floatNode = (FloatNode) o;
+        return Double.compare(floatNode.value, value) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
+
     /**
      * Sets the value
      * @param value to set
@@ -80,5 +96,10 @@ public class FloatNode extends NumericNode implements ILiteralNode, SideEffectFr
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return runtime.newFloat(value);
     }
 }
