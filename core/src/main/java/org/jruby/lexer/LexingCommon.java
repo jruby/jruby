@@ -63,7 +63,7 @@ public abstract class LexingCommon {
     protected int heredoc_line_indent = 0;
     protected int last_cr_line;
     protected int last_state;
-    private int leftParenBegin = 0;
+    private int leftParenBegin = -1;
     public ByteList lexb = null;
     public ByteList lex_lastline = null;
     protected ByteList lex_nextline = null;
@@ -284,6 +284,18 @@ public abstract class LexingCommon {
 
     public boolean isEndSeen() {
         return __end__seen;
+    }
+
+    public boolean isLookingAtEOL() {
+        for (int i = lex_p + 1; i < lex_pend; i++) {
+            int c = lexb.get(i);
+            boolean eol = c == '\n' || c == '#';
+            if (eol || !isSpace(c)) {
+                return eol;
+            }
+        }
+
+        return true;
     }
 
     // mri: parser_isascii

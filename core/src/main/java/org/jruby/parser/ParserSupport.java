@@ -1608,8 +1608,13 @@ public class ParserSupport {
         return null;
     }
 
+    public boolean local_id(ByteList value) {
+        // FIXME: local_id_ref is more complicated and we just blanket look for a scope var of the same name.
+        return currentScope.isDefined(symbolID(value).idString()) > 0;
+    }
+
     public boolean check_forwarding_args() {
-        if (is_local_id(FWD_REST) && is_local_id(FWD_KWREST) && is_local_id(FWD_BLOCK)) return true;
+        if (local_id(FWD_REST) && local_id(FWD_KWREST) && local_id(FWD_BLOCK)) return true;
 
         compile_error("unexpected ...");
         return false;
@@ -1626,9 +1631,9 @@ public class ParserSupport {
     }
 
     public ArgsNode new_args_forward_def(int line, ListNode leading) {
-        BlockArgNode blockArg = new BlockArgNode(arg_var(shadowing_lvar(FWD_BLOCK)));
+        BlockArgNode blockArg = new BlockArgNode(arg_var(FWD_BLOCK));
         ArgsTailHolder tail = new_args_tail(line, null, FWD_KWREST, blockArg);
-        RestArgNode forwordRestArg  = new RestArgNode(arg_var(shadowing_lvar(FWD_REST)));
+        RestArgNode forwordRestArg  = new RestArgNode(arg_var(FWD_REST));
         return new_args(leading.getLine(), leading, null, forwordRestArg, null, tail);
     }
 

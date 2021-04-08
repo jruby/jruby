@@ -1386,7 +1386,7 @@ public class RubyLexer extends LexingCommon {
     private int doKeyword(int state) {
         int leftParenBegin = getLeftParenBegin();
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
-            setLeftParenBegin(0);
+            setLeftParenBegin(-1);
             parenNest--;
             return RubyParser.keyword_do_LAMBDA;
         }
@@ -1511,16 +1511,26 @@ public class RubyLexer extends LexingCommon {
 
     private int dot() {
         int c;
-        
+
+        boolean isBeg = isBEG();
         setState(EXPR_BEG);
         if ((c = nextc()) == '.') {
             if ((c = nextc()) == '.') {
                 yaccValue = DOT_DOT_DOT;
-                return RubyParser.tDOT3;
+
+                if (parenNest == 0 && isLookingAtEOL()) {
+                    warnings.warn(ID.MISCELLANEOUS, "... at EOL, should be parenthesized?");
+                } else if (getLeftParenBegin() >= 0 && getLeftParenBegin() + 1 == parenNest) {
+                    if (isLexState(last_state, EXPR_LABEL)) {
+                        return RubyParser.tDOT3;
+                    }
+                }
+
+                return isBeg ? RubyParser.tBDOT3 : RubyParser.tDOT3;
             }
             pushback(c);
             yaccValue = DOT_DOT;
-            return RubyParser.tDOT2;
+            return isBeg ? RubyParser.tBDOT2 : RubyParser.tDOT2;
         }
         
         pushback(c);
