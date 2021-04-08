@@ -99,7 +99,7 @@ public class ScopedParserState {
         if (definedVariables == null) return;
 
         for(RubySymbol name: definedVariables.keySet()) {
-            if ("_".equals(name.idString())) continue; // Hidden variable cannot be used.
+            if (ParserSupport.is_private_local_id(name.getBytes())) continue; // Hidden variable cannot be used.
             if (usedVariables == null || !usedVariables.contains(name)) {
                 warnings.warn(IRubyWarnings.ID.AMBIGUOUS_ARGUMENT, file, definedVariables.get(name), str(runtime, "assigned but unused variable - ", name));
             }
