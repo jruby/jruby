@@ -1219,14 +1219,20 @@ public class ParserSupport {
 
         for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
             Node key = pair.getKey();
-            if (key == null) continue;
+            if (key == null || !(key instanceof LiteralValue)) continue;
             int index = encounteredKeys.indexOf(key);
             if (index >= 0) {
-                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), "key " + key +
-                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1));
+                Ruby runtime = getConfiguration().getRuntime();
+                IRubyObject value = ((LiteralValue) key).literalValue(runtime);
+                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
+                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1)));
             } else {
                 encounteredKeys.add(key);
             }
+        }
+
+        for (Node key: encounteredKeys) {
+            hash.getPairs().remove(key);
         }
 
         return hash;
