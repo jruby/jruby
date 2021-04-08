@@ -1274,13 +1274,13 @@ public class ParserSupport {
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
-    public boolean is_local_id(ByteList name) {
-        return lexer.isIdentifierChar(name.charAt(0));
+    public static boolean is_local_id(ByteList name) {
+        return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
     @Deprecated
     public boolean is_local_id(String name) {
-        return lexer.isIdentifierChar(name.charAt(0));
+        return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
     // 1.9
@@ -1315,9 +1315,16 @@ public class ParserSupport {
         return shadowing_lvar(identifier);
     }
 
+    public static boolean is_private_local_id(ByteList name) {
+        if (name.realSize() == 1 && name.charAt(0) == '_') return true;
+        if (!is_local_id(name)) return false;
+
+        return name.charAt(0) == '_';
+    }
+
     // 1.9
     public ByteList shadowing_lvar(ByteList nameBytes) {
-        if (nameBytes.realSize() == 1 && nameBytes.charAt(0) == '_') return nameBytes;
+        if (is_private_local_id(nameBytes)) return nameBytes;
 
         RubySymbol name = symbolID(nameBytes);
         String id = name.idString();
