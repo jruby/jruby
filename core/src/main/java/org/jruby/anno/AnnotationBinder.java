@@ -207,8 +207,8 @@ public class AnnotationBinder extends AbstractProcessor {
             CharSequence primaryName = getActualQualifiedName(cd);
             classNames.add(primaryName);
 
-            List<CharSequence> classAndSubs = new ArrayList<>();
-            classAndSubs.add(cd.getQualifiedName());
+            List<String> classAndSubs = new ArrayList<>();
+            classAndSubs.add(cd.getQualifiedName().toString());
 
             JRubyClass classAnno = cd.getAnnotation(JRubyClass.class);
             if (classAnno != null) {
@@ -258,12 +258,10 @@ public class AnnotationBinder extends AbstractProcessor {
         }
     }
 
-    private void addSubclassNames(List<CharSequence> classAndSubs, JRubyClass classAnno) {
+    public void addSubclassNames(List<String> classAndSubs, JRubyClass classAnno) {
         // all implementer classes specified in annotation
         try {
-            for (int i = 0; i < classAnno.overrides().length; i++) {
-                classAndSubs.add(classAnno.overrides()[i].getCanonicalName());
-            }
+            AnnotationHelper.addSubclassNames(classAndSubs, classAnno);
         } catch (MirroredTypesException mte) {
             for (TypeMirror tm : mte.getTypeMirrors()) {
                 classAndSubs.add(((TypeElement) types.asElement(tm)).getQualifiedName().toString());
