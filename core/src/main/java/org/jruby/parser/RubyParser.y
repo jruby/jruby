@@ -73,6 +73,7 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
+import org.jruby.ast.HashPatternNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
@@ -319,7 +320,9 @@ public class RubyParser {
 %type <ArrayPatternNode> p_args_tail
 %type <ListNode> p_args_post p_arg
 %type <Node> p_value p_primitive p_variable p_var_ref p_const
-%type <Node> p_kwargs p_kwarg p_kw
+%type <HashPatternNode> p_kwargs
+%type <HashNode> p_kwarg
+%type <KeyValuePair> p_kw
   /* keyword_variable + user_variable are inlined into the grammar */
 %type <ByteList> sym operation operation2 operation3
 %type <ByteList> cname op fname 
@@ -2380,7 +2383,7 @@ p_expr_basic    : p_value
                     $$ = support.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
-                    $$ = support.new_hash_pattern(null, support.new_hash_pattern_tail(null, null));
+                    $$ = support.new_hash_pattern(null, support.new_hash_pattern_tail(@1.startLine(), null, null));
                 }
                 | tLPAREN {
                     $$ = support.push_pktbl();
@@ -2459,27 +2462,34 @@ p_arg           : p_expr {
                     $$ = support.newArrayNode($1.getLine(), $1);
                 }
 
+// HashPatternNode - [!null]
 p_kwargs        : p_kwarg ',' p_any_kwrest {
-                    $$ = support.new_hash_pattern_tail(support.new_unique_key_hash($1), $3);
+                    $$ = support.new_hash_pattern_tail(@1.startLine(), $1, $3);
                 }
 		| p_kwarg {
-                    $$ = support.new_hash_pattern_tail(support.new_unique_key_hash($1), null);
+                    $$ = support.new_hash_pattern_tail(@1.startLine(), $1, null);
                 }
                 | p_kwarg ',' {
-                    $$ = support.new_hash_pattern_tail(support.new_unique_key_hash($1), null);
+                    $$ = support.new_hash_pattern_tail(@1.startLine(), $1, null);
                 }
                 | p_any_kwrest {
-                    $$ = support.new_hash_pattern_tail(null, $1);
+                    $$ = support.new_hash_pattern_tail(@1.startLine(), null, $1);
                 }
 
-p_kwarg         : p_kw
+// HashNode - [!null]
+p_kwarg         : p_kw {
+                    $$ = new HashNode(@1.start, $1);
+                }
                 | p_kwarg ',' p_kw {
-                    $$ = support.list_concat($1, $3);
+                    $1.add($3);
+                    $$ = $1;
                 }
 
+// KeyValuePair - [!null]
 p_kw            : p_kw_label p_expr {
                     support.error_duplicate_pattern_key($1);
-                    $$ = support.list_append(support.newArrayNode(@1.startLine(), new LiteralNode(@1.startLine(), support.symbolID($1))), $2);
+
+                    $$ = new KeyValuePair($1, $2);
                 }
                 | p_kw_label {
                     support.error_duplicate_pattern_key($1);
@@ -2487,9 +2497,10 @@ p_kw            : p_kw_label p_expr {
                         support.yyerror("key must be valid as local variables");
                     }
                     support.error_duplicate_pattern_variable($1);
-                    $$ = support.list_append(support.newArrayNode(@1.startLine(), new LiteralNode(@1.startLine(), support.symbolID($1))), support.assignableInCurr($1, null));
+                    $$ = new KeyValuePair($1, support.assignableLabelOrIdentifier($1, null));
                 }
 
+// ByteList
 p_kw_label      : tLABEL
                 | tSTRING_BEG string_contents tLABEL_END {
                     if ($2 == null || $2 instanceof StrNode) {
@@ -2513,7 +2524,7 @@ p_kwnorest      : kwrest_mark keyword_nil {
 
 p_any_kwrest    : p_kwrest
                 | p_kwnorest {
-                    $$ = NilImplicitNode.NIL;
+                    $$ = support.KWNOREST;
                 }
 
 p_value         : p_primitive

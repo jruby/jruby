@@ -305,6 +305,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitHashPatternNode(HashPatternNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitInstAsgnNode(InstAsgnNode node) {
         return defaultVisit(node);
     }

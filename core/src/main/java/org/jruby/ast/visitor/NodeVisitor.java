@@ -91,6 +91,7 @@ public interface NodeVisitor<T> {
     T visitGlobalAsgnNode(GlobalAsgnNode iVisited);
     T visitGlobalVarNode(GlobalVarNode iVisited);
     T visitHashNode(HashNode iVisited);
+    T visitHashPatternNode(HashPatternNode iVisited);
     T visitInstAsgnNode(InstAsgnNode iVisited);
     T visitInstVarNode(InstVarNode iVisited);
     T visitIfNode(IfNode iVisited);

@@ -1576,13 +1576,22 @@ public class ParserSupport {
         return arrayPattern;
     }
 
-    public Node new_hash_pattern(Node node,Node node1) {
-        return null;
+    public HashPatternNode new_hash_pattern(Node constant, HashPatternNode hashPatternNode) {
+        hashPatternNode.setConstant(constant);
+
+        return hashPatternNode;
     }
 
-    public Node new_hash_pattern_tail(Node keywordArgs, ByteList keywordRestArg) {
-        // FIXME: MRI will guarantee !null keywordArgs (and pass in new_hash(Qnone).  We will just handle that case from here.
-        return null;
+    public static ByteList KWNOREST = new ByteList(new byte[] {});
+
+    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg) {
+        return new HashPatternNode(line,
+                keywordRestArg == KWNOREST ?
+                        new StarNode(lexer.getRubySourceline()) :
+                        keywordRestArg != null ?
+                                assignableLabelOrIdentifier(keywordRestArg, null) :
+                                null,
+                keywordArgs == null ? new HashNode(line) : keywordArgs);
     }
 
     public void warn_one_line_pattern_matching(Object one,Node two ,boolean three) {
@@ -1603,10 +1612,6 @@ public class ParserSupport {
                                 new StarNode(lexer.getRubySourceline()) :
                         null,
                 postArgs);
-    }
-
-    public Node new_unique_key_hash(Node one) {
-        return null;
     }
 
     public void error_duplicate_pattern_key(ByteList one) {

@@ -76,6 +76,7 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
+import org.jruby.ast.HashPatternNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
@@ -184,7 +185,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 188 "-"
+					// line 189 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -4203,7 +4204,7 @@ states[507] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[508] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.new_hash_pattern(null, ((Node)yyVals[0+yyTop].value));
+                    yyVal = support.new_hash_pattern(null, ((HashPatternNode)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[510] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -4236,7 +4237,7 @@ states[518] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[519] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
                      support.pop_pktbl(((Table)yyVals[-2+yyTop].value));
-                     yyVal = support.new_hash_pattern(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value));
+                     yyVal = support.new_hash_pattern(((Node)yyVals[-3+yyTop].value), ((HashPatternNode)yyVals[-1+yyTop].value));
                      support.nd_set_first_loc(((Node)yyVal), yyVals[yyTop - count + 1].startLine());
   return yyVal;
 };
@@ -4259,7 +4260,7 @@ states[522] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[523] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
                     support.pop_pktbl(((Table)yyVals[-2+yyTop].value));
-                    yyVal = support.new_hash_pattern(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value));
+                    yyVal = support.new_hash_pattern(((Node)yyVals[-3+yyTop].value), ((HashPatternNode)yyVals[-1+yyTop].value));
                     support.nd_set_first_loc(((Node)yyVal), yyVals[yyTop - count + 1].startLine());
   return yyVal;
 };
@@ -4291,11 +4292,11 @@ states[528] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 states[529] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
                     support.pop_pktbl(((Table)yyVals[-2+yyTop].value));
                     lexer.getLexContext().in_kwarg = ((LexContext)yyVals[-3+yyTop].value).in_kwarg;
-                    yyVal = support.new_hash_pattern(null, ((Node)yyVals[-1+yyTop].value));
+                    yyVal = support.new_hash_pattern(null, ((HashPatternNode)yyVals[-1+yyTop].value));
   return yyVal;
 };
 states[530] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.new_hash_pattern(null, support.new_hash_pattern_tail(null, null));
+                    yyVal = support.new_hash_pattern(null, support.new_hash_pattern_tail(yyVals[yyTop - count + 1].startLine(), null, null));
   return yyVal;
 };
 states[531] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -4382,28 +4383,34 @@ states[550] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[551] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.new_hash_pattern_tail(support.new_unique_key_hash(((Node)yyVals[-2+yyTop].value)), ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = support.new_hash_pattern_tail(yyVals[yyTop - count + 1].startLine(), ((HashNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[552] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.new_hash_pattern_tail(support.new_unique_key_hash(((Node)yyVals[0+yyTop].value)), null);
+                    yyVal = support.new_hash_pattern_tail(yyVals[yyTop - count + 1].startLine(), ((HashNode)yyVals[0+yyTop].value), null);
   return yyVal;
 };
 states[553] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.new_hash_pattern_tail(support.new_unique_key_hash(((Node)yyVals[-1+yyTop].value)), null);
+                    yyVal = support.new_hash_pattern_tail(yyVals[yyTop - count + 1].startLine(), ((HashNode)yyVals[-1+yyTop].value), null);
   return yyVal;
 };
 states[554] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.new_hash_pattern_tail(null, ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = support.new_hash_pattern_tail(yyVals[yyTop - count + 1].startLine(), null, ((ByteList)yyVals[0+yyTop].value));
+  return yyVal;
+};
+states[555] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
+                    yyVal = new HashNode(yyVals[yyTop - count + 1].start, ((KeyValuePair)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[556] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.list_concat(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    ((HashNode)yyVals[-2+yyTop].value).add(((KeyValuePair)yyVals[0+yyTop].value));
+                    yyVal = ((HashNode)yyVals[-2+yyTop].value);
   return yyVal;
 };
 states[557] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
                     support.error_duplicate_pattern_key(((ByteList)yyVals[-1+yyTop].value));
-                    yyVal = support.list_append(support.newArrayNode(yyVals[yyTop - count + 1].startLine(), new LiteralNode(yyVals[yyTop - count + 1].startLine(), support.symbolID(((ByteList)yyVals[-1+yyTop].value)))), ((Node)yyVals[0+yyTop].value));
+
+                    yyVal = new KeyValuePair(((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[558] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -4412,7 +4419,7 @@ states[558] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                         support.yyerror("key must be valid as local variables");
                     }
                     support.error_duplicate_pattern_variable(((ByteList)yyVals[0+yyTop].value));
-                    yyVal = support.list_append(support.newArrayNode(yyVals[yyTop - count + 1].startLine(), new LiteralNode(yyVals[yyTop - count + 1].startLine(), support.symbolID(((ByteList)yyVals[0+yyTop].value)))), support.assignableInCurr(((ByteList)yyVals[0+yyTop].value), null));
+                    yyVal = new KeyValuePair(((ByteList)yyVals[0+yyTop].value), support.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null));
   return yyVal;
 };
 states[560] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -4437,7 +4444,7 @@ states[563] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[565] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = NilImplicitNode.NIL;
+                    yyVal = support.KWNOREST;
   return yyVal;
 };
 states[567] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -5439,7 +5446,7 @@ states[803] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 }
-					// line 3438 "RubyParser.y"
+					// line 3449 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5454,4 +5461,4 @@ states[803] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
         return support.getResult();
     }
 }
-					// line 12829 "-"
+					// line 12838 "-"
