@@ -261,8 +261,8 @@ public class AnnotationBinder extends AbstractProcessor {
     private void addSubclassNames(List<CharSequence> classAndSubs, JRubyClass classAnno) {
         // all implementer classes specified in annotation
         try {
-            for (int i = 0; i < classAnno.implementers().length; i++) {
-                classAndSubs.add(classAnno.implementers()[i].getCanonicalName());
+            for (int i = 0; i < classAnno.overrides().length; i++) {
+                classAndSubs.add(classAnno.overrides()[i].getCanonicalName());
             }
         } catch (MirroredTypesException mte) {
             for (TypeMirror tm : mte.getTypeMirrors()) {
