@@ -36,6 +36,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.ArrayPatternNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
@@ -64,6 +65,7 @@ import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FalseNode;
 import org.jruby.ast.FileNode;
+import org.jruby.ast.FindPatternNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
@@ -292,7 +294,7 @@ public class RubyParser {
 %type <ArgsNode> block_param opt_block_param block_param_def
 %type <Node> f_opt
 %type <ListNode> f_kwarg
-%type <Node> f_kw
+%type <KeywordArgNode> f_kw
 %type <ListNode> f_block_kwarg
 %type <Node> f_block_kw
 %type <Node> bv_decls opt_bv_decl 
@@ -310,8 +312,10 @@ public class RubyParser {
 %type <ListNode> mlhs_post
 %type <Node> mlhs_inner
 %type <Node> p_case_body p_cases p_top_expr p_top_expr_body
-%type <Node> p_expr p_as p_alt p_expr_basic p_find
-%type <Node> p_args p_args_head p_args_tail p_args_post p_arg
+%type <Node> p_expr p_as p_alt p_expr_basic
+%type <FindPatternNode> p_find
+%type <ArrayPatternNode> p_args 
+%type <ListNode> p_args_head p_args_tail p_args_post p_arg
 %type <Node> p_value p_primitive p_variable p_var_ref p_const
 %type <Node> p_kwargs p_kwarg p_kw
   /* keyword_variable + user_variable are inlined into the grammar */
@@ -657,7 +661,7 @@ expr            : command_call
                 {
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<LexContext>3.in_kwarg;
-                    $$ = support.newCaseNode($1.getLine(), $1, support.newIn($5, support.newTrue(), support.newFalse()));
+                    $$ = support.newCaseNode($1.getLine(), $1, support.newIn($5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
                     support.warn_one_line_pattern_matching($$, $5, false);
                 }
 		| arg %prec tLBRACE_ARG
@@ -2279,7 +2283,7 @@ p_top_expr      : p_top_expr_body
 p_top_expr_body : p_expr
                 | p_expr ',' {
                     $$ = support.new_array_pattern(null, $1,
-                            support.new_array_pattern_tail(null, 1, null, null));
+                                                   support.new_array_pattern_tail(@1.startLine(), null, true, null, null));
                 }
                 | p_expr ',' p_args {
                     $$ = support.new_array_pattern(null, $1, $3);
@@ -2298,7 +2302,7 @@ p_top_expr_body : p_expr
 p_expr          : p_as
 
 p_as            : p_expr tASSOC p_variable {
-                    $$ = new HashNode(@1.start, new KeyValuePair($1, $3));
+                    $$ = new HashNode(@1.startLine(), new KeyValuePair($1, $3));
                 }
                 | p_alt
 
@@ -2332,7 +2336,7 @@ p_expr_basic    : p_value
                 }
                 | p_const '(' rparen {
                      $$ = support.new_array_pattern($1, null,
-                             support.new_array_pattern_tail(null, 0, null, null));
+                                                    support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
                 }
                 | p_const p_lbracket p_args rbracket {
                      support.pop_pktbl($<Table>2);
@@ -2351,7 +2355,7 @@ p_expr_basic    : p_value
                 }
                 | p_const '[' rbracket {
                     $$ = support.new_array_pattern($1, null,
-                            support.new_array_pattern_tail(null, 0, null, null));
+                            support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
                 }
                 | tLBRACK p_args rbracket {
                     $$ = support.new_array_pattern(null, null, $2);
@@ -2361,7 +2365,7 @@ p_expr_basic    : p_value
                 }
                 | tLBRACK rbracket {
                     $$ = support.new_array_pattern(null, null,
-                            support.new_array_pattern_tail(null, 0, null, null));
+                            support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
                 }
                 | tLBRACE {
                     $$ = support.push_pktbl();
@@ -2384,29 +2388,32 @@ p_expr_basic    : p_value
                 }
 
 p_args          : p_expr {
-                     Node preArgs = support.newArrayNode($1.getLine(), $1);
-                     $$ = support.new_array_pattern_tail(preArgs, 0, null, null);
+                     ListNode preArgs = support.newArrayNode($1.getLine(), $1);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), preArgs, false, null, null);
                 }
                 | p_args_head {
-                     $$ = support.new_array_pattern_tail($1, 1, null, null);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, null, null);
                 }
                 | p_args_head p_arg {
-                     $$ = support.new_array_pattern_tail(support.list_concat($1, $2), 0, null, null);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), support.list_concat($1, $2), false, null, null);
                 }
                 | p_args_head tSTAR tIDENTIFIER {
-                     $$ = support.new_array_pattern_tail($1, 1, $3, null);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, $3, null);
                 }
                 | p_args_head tSTAR tIDENTIFIER ',' p_args_post {
-                     $$ = support.new_array_pattern_tail($1, 1, $3, $5);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, $3, $5);
                 }
                 | p_args_head tSTAR {
-                     $$ = support.new_array_pattern_tail($1, 1, null, null);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, null, null);
                 }
                 | p_args_head tSTAR ',' p_args_post {
-                     $$ = support.new_array_pattern_tail($1, 1, null, $4);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, null, $4);
                 }
-                | p_args_tail
+                | p_args_tail {
+                     $$ = $1;
+                }
 
+// ListNode - [!null]
 p_args_head     : p_arg ',' {
                      $$ = $1;
                 }
@@ -2415,14 +2422,15 @@ p_args_head     : p_arg ',' {
                 }
 
 p_args_tail     : p_rest {
-                     $$ = support.new_array_pattern_tail(null, 1, $1, null);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), null, true, $1, null);
                 }
                 | p_rest ',' p_args_post {
-                     $$ = support.new_array_pattern_tail(null, 1, $1, $3);
+                     $$ = support.new_array_pattern_tail(@1.startLine(), null, true, $1, $3);
                 }
 
+// FindPatternNode - [!null]
 p_find          : p_rest ',' p_args_post ',' p_rest {
-                     $$ = support.new_find_pattern_tail($1, $3, $5);
+                     $$ = support.new_find_pattern_tail(@1.startLine(), $1, $3, $5);
 
                      /* FIXME: impl
                      if (rb_warning_category_enabled_p(RB_WARN_CATEGORY_EXPERIMENTAL)) {
@@ -2430,6 +2438,7 @@ p_find          : p_rest ',' p_args_post ',' p_rest {
                          }*/
                 }
 
+// ByteList
 p_rest          : tSTAR tIDENTIFIER {
                     $$ = $2;
                 }
@@ -2437,11 +2446,13 @@ p_rest          : tSTAR tIDENTIFIER {
                     $$ = null;
                 }
 
+// ListNode - [!null]
 p_args_post     : p_arg
                 | p_args_post ',' p_arg {
                     $$ = support.list_concat($1, $3);
                 }
 
+// ListNode - [!null]
 p_arg           : p_expr {
                     $$ = support.newArrayNode($1.getLine(), $1);
                 }
@@ -3167,6 +3178,7 @@ f_label 	: tLABEL {
                     $$ = $1;
                 }
 
+// KeywordArgNode - [!null]
 f_kw            : f_label arg_value {
                     lexer.setCurrentArg(null);
                     $$ = new KeywordArgNode($2.getLine(), support.assignableKeyword($1, $2));
@@ -3191,6 +3203,7 @@ f_block_kwarg   : f_block_kw {
                     $$ = $1.add($3);
                 }
 
+// ListNode - [!null]
 f_kwarg         : f_kw {
                     $$ = new ArrayNode($1.getLine(), $1);
                 }

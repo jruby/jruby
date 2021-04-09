@@ -95,6 +95,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitArrayPatternNode(ArrayPatternNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitAttrAssignNode(AttrAssignNode node) {
         return defaultVisit(node);
     }
@@ -256,6 +261,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitFalseNode(FalseNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    public T visitFindPatternNode(FindPatternNode node) {
         return defaultVisit(node);
     }
 

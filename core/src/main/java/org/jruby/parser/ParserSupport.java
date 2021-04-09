@@ -1544,14 +1544,6 @@ public class ParserSupport {
         return null;
     }
 
-    public Node newTrue() {
-        return null;
-    }
-
-    public Node newFalse() {
-        return null;
-    }
-
     public void endless_method_name(DefHolder name) {
     }
 
@@ -1590,8 +1582,16 @@ public class ParserSupport {
         return null;
     }
 
-    public Node new_array_pattern_tail(Node one,int two ,ByteList three,Node four) {
-        return null;
+    public Node new_array_pattern_tail(int line, ListNode preArgs, boolean hasRest, ByteList restArg, ListNode postArgs) {
+        return new ArrayPatternNode(
+                line,
+                preArgs,
+                hasRest ?
+                        restArg != null ?
+                                assignableLabelOrIdentifier(restArg, null) :
+                                new StarNode(lexer.getRubySourceline()) :
+                        null,
+                postArgs);
     }
 
     public Node new_unique_key_hash(Node one) {
@@ -1606,8 +1606,19 @@ public class ParserSupport {
 
     }
 
-    public Node new_find_pattern_tail(ByteList one,Node two,ByteList three) {
-        return null;
+    public Node new_find_pattern(Node constant, FindPatternNode findPattern) {
+        findPattern.setConstant(constant);
+
+        return findPattern;
+    }
+
+    public Node new_find_pattern_tail(int line, ByteList preRestArg, ListNode postArgs, ByteList postRestArg) {
+        // FIXME: in MRI all the StarNodes are the same node and so perhaps source line for them is unimportant.
+        return new FindPatternNode(
+                line,
+                preRestArg != null ? assignableLabelOrIdentifier(preRestArg, null) :  new StarNode(lexer.getRubySourceline()),
+                postArgs,
+                postRestArg != null ? assignableLabelOrIdentifier(postRestArg, null) :  new StarNode(lexer.getRubySourceline()));
     }
 
     public boolean local_id(ByteList value) {
@@ -1657,10 +1668,6 @@ public class ParserSupport {
     }
 
     public Node remove_begin(Node one) {
-        return null;
-    }
-
-    public Node new_find_pattern(Node one,Node two) {
         return null;
     }
 

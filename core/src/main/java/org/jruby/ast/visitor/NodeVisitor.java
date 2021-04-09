@@ -49,6 +49,7 @@ public interface NodeVisitor<T> {
     T visitArgsPushNode(ArgsPushNode iVisited);
     T visitArgumentNode(ArgumentNode iVisited);
     T visitArrayNode(ArrayNode iVisited);
+    T visitArrayPatternNode(ArrayPatternNode iVisited);
     T visitAttrAssignNode(AttrAssignNode iVisited);
     T visitBackRefNode(BackRefNode iVisited);
     T visitBeginNode(BeginNode iVisited);
@@ -82,6 +83,7 @@ public interface NodeVisitor<T> {
     T visitEvStrNode(EvStrNode iVisited);
     T visitFCallNode(FCallNode iVisited);
     T visitFalseNode(FalseNode iVisited);
+    T visitFindPatternNode(FindPatternNode iVisited);
     T visitFixnumNode(FixnumNode iVisited);
     T visitFlipNode(FlipNode iVisited);
     T visitFloatNode(FloatNode iVisited);
