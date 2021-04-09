@@ -315,7 +315,9 @@ public class RubyParser {
 %type <Node> p_expr p_as p_alt p_expr_basic
 %type <FindPatternNode> p_find
 %type <ArrayPatternNode> p_args 
-%type <ListNode> p_args_head p_args_tail p_args_post p_arg
+%type <ListNode> p_args_head
+%type <ArrayPatternNode> p_args_tail
+%type <ListNode> p_args_post p_arg
 %type <Node> p_value p_primitive p_variable p_var_ref p_const
 %type <Node> p_kwargs p_kwarg p_kw
   /* keyword_variable + user_variable are inlined into the grammar */
@@ -2282,18 +2284,18 @@ p_top_expr      : p_top_expr_body
 
 p_top_expr_body : p_expr
                 | p_expr ',' {
-                    $$ = support.new_array_pattern(null, $1,
+                    $$ = support.new_array_pattern(@1.startLine(), null, $1,
                                                    support.new_array_pattern_tail(@1.startLine(), null, true, null, null));
                 }
                 | p_expr ',' p_args {
-                    $$ = support.new_array_pattern(null, $1, $3);
+                    $$ = support.new_array_pattern(@1.startLine(), null, $1, $3);
                    support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_find {
                     $$ = support.new_find_pattern(null, $1);
                 }
                 | p_args_tail {
-                    $$ = support.new_array_pattern(null, null, $1);
+                    $$ = support.new_array_pattern(@1.startLine(), null, null, $1);
                 }
                 | p_kwargs {
                     $$ = support.new_hash_pattern(null, $1);
@@ -2321,7 +2323,7 @@ p_lbracket      : '[' {
 p_expr_basic    : p_value
                 | p_const p_lparen p_args rparen {
                     support.pop_pktbl($<Table>2);
-                    $$ = support.new_array_pattern($1, null, $3);
+                    $$ = support.new_array_pattern(@1.startLine(), $1, null, $3);
                     support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_const p_lparen p_find rparen {
@@ -2335,12 +2337,12 @@ p_expr_basic    : p_value
                      support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_const '(' rparen {
-                     $$ = support.new_array_pattern($1, null,
+                     $$ = support.new_array_pattern(@1.startLine(), $1, null,
                                                     support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
                 }
                 | p_const p_lbracket p_args rbracket {
                      support.pop_pktbl($<Table>2);
-                     $$ = support.new_array_pattern($1, null, $3);
+                     $$ = support.new_array_pattern(@1.startLine(), $1, null, $3);
                      support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_const p_lbracket p_find rbracket {
@@ -2354,17 +2356,17 @@ p_expr_basic    : p_value
                     support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_const '[' rbracket {
-                    $$ = support.new_array_pattern($1, null,
+                    $$ = support.new_array_pattern(@1.startLine(), $1, null,
                             support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
                 }
                 | tLBRACK p_args rbracket {
-                    $$ = support.new_array_pattern(null, null, $2);
+                    $$ = support.new_array_pattern(@1.startLine(), null, null, $2);
                 }
                 | tLBRACK p_find rbracket {
                     $$ = support.new_find_pattern(null, $2);
                 }
                 | tLBRACK rbracket {
-                    $$ = support.new_array_pattern(null, null,
+                    $$ = support.new_array_pattern(@1.startLine(), null, null,
                             support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
                 }
                 | tLBRACE {

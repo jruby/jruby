@@ -5,7 +5,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 import java.util.List;
 
 public class ArrayPatternNode extends Node {
-    private final ListNode preArgs;
+    private ListNode preArgs;
     private final Node restArg;
     private final ListNode postArgs;
 
@@ -36,5 +36,13 @@ public class ArrayPatternNode extends Node {
 
     public void setConstant(Node constant) {
         this.constant = constant;
+    }
+
+    public ListNode getPreArgs() {
+        return preArgs;
+    }
+
+    public void setPreArgs(ListNode preArgs) {
+        this.preArgs = preArgs;
     }
 }

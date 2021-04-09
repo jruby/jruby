@@ -1561,8 +1561,19 @@ public class ParserSupport {
         return null;
     }
 
-    public Node new_array_pattern(Node one,Node two,Node three) {
-        return null;
+    public ArrayPatternNode new_array_pattern(int line, Node constant, Node preArg, ArrayPatternNode arrayPattern) {
+        arrayPattern.setConstant(constant);
+
+        if (preArg != null) {
+            ListNode preArgs = new ListNode(line, preArg);
+            ListNode arrayPatternPreArgs = arrayPattern.getPreArgs();
+
+            arrayPattern.setPreArgs(arrayPatternPreArgs != null ?
+                    list_concat(preArgs, arrayPatternPreArgs) :
+                    preArgs);
+        }
+
+        return arrayPattern;
     }
 
     public Node new_hash_pattern(Node node,Node node1) {
@@ -1582,7 +1593,7 @@ public class ParserSupport {
         return null;
     }
 
-    public Node new_array_pattern_tail(int line, ListNode preArgs, boolean hasRest, ByteList restArg, ListNode postArgs) {
+    public ArrayPatternNode new_array_pattern_tail(int line, ListNode preArgs, boolean hasRest, ByteList restArg, ListNode postArgs) {
         return new ArrayPatternNode(
                 line,
                 preArgs,
