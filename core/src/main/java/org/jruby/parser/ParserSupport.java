@@ -1234,7 +1234,6 @@ public class ParserSupport {
         for (Node key: encounteredKeys) {
             hash.getPairs().remove(key);
         }
-
         return hash;
     }
 
