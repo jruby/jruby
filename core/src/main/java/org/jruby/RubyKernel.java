@@ -1703,12 +1703,6 @@ public class RubyKernel {
             return runtime.getFalse();
         }
 
-        // else old JDK logic
-        if (args[0] instanceof RubyHash) {
-            runtime.getENV().merge_bang(context, (RubyHash) args[0], Block.NULL_BLOCK);
-            // drop the first element for calling systemCommon()
-            args = ArraySupport.newCopy(args, 1, args.length - 1);
-        }
         int resultCode = systemCommon(context, recv, args);
         switch (resultCode) {
             case 0: return runtime.getTrue();
