@@ -2298,7 +2298,7 @@ p_top_expr_body : p_expr
 p_expr          : p_as
 
 p_as            : p_expr tASSOC p_variable {
-                    $$ = support.new_hash(support.list_append(support.newArrayNode($1.getLine(), $1), $3));
+                    $$ = new HashNode(@1.start, new KeyValuePair($1, $3));
                 }
                 | p_alt
 
@@ -2456,7 +2456,7 @@ p_kwargs        : p_kwarg ',' p_any_kwrest {
                     $$ = support.new_hash_pattern_tail(support.new_unique_key_hash($1), null);
                 }
                 | p_any_kwrest {
-                    $$ = support.new_hash_pattern_tail(support.new_hash(null), $1);
+                    $$ = support.new_hash_pattern_tail(null, $1);
                 }
 
 p_kwarg         : p_kw

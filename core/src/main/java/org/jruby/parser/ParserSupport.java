@@ -1573,15 +1573,12 @@ public class ParserSupport {
         return null;
     }
 
-    public Node new_hash(Node one) {
-        return null;
-    }
-
     public Node new_hash_pattern(Node node,Node node1) {
         return null;
     }
 
-    public Node new_hash_pattern_tail(Node node,ByteList node1) {
+    public Node new_hash_pattern_tail(Node keywordArgs, ByteList keywordRestArg) {
+        // FIXME: MRI will guarantee !null keywordArgs (and pass in new_hash(Qnone).  We will just handle that case from here.
         return null;
     }
 

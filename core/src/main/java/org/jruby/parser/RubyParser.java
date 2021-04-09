@@ -4205,7 +4205,7 @@ states[508] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[510] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.new_hash(support.list_append(support.newArrayNode(((Node)yyVals[-2+yyTop].value).getLine(), ((Node)yyVals[-2+yyTop].value)), ((Node)yyVals[0+yyTop].value)));
+                    yyVal = new HashNode(yyVals[yyTop - count + 1].start, new KeyValuePair(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value)));
   return yyVal;
 };
 states[512] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -4388,7 +4388,7 @@ states[553] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[554] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.new_hash_pattern_tail(support.new_hash(null), ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = support.new_hash_pattern_tail(null, ((ByteList)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[556] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
