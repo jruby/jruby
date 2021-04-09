@@ -36,8 +36,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
@@ -63,7 +65,13 @@ public class AnnotationBinder extends AbstractProcessor {
     public static final String SRC_GEN_DIR = "target/generated-sources/org/jruby/gen/";
     private final List<CharSequence> classNames = new ArrayList<>();
     private PrintStream out;
+    private Types types;
     private static final boolean DEBUG = false;
+
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        types = processingEnv.getTypeUtils();
+    }
 
     @Override
     public boolean process(Set<? extends TypeElement> typeElements, RoundEnvironment roundEnvironment) {
@@ -106,8 +114,6 @@ public class AnnotationBinder extends AbstractProcessor {
             if (!qualifiedName.contains("org$jruby")) {
                 return;
             }
-
-            Types types = processingEnv.getTypeUtils();
 
             ByteArrayOutputStream bytes = new ByteArrayOutputStream(1024);
             out = new PrintStream(bytes);
@@ -198,30 +204,33 @@ public class AnnotationBinder extends AbstractProcessor {
 
             if (methodCount == 0) return; // no annotated methods found, skip
 
-            classNames.add(getActualQualifiedName(cd));
+            CharSequence primaryName = getActualQualifiedName(cd);
+            classNames.add(primaryName);
+
+            List<CharSequence> classAndSubs = new ArrayList<>();
+            classAndSubs.add(cd.getQualifiedName());
+
+            JRubyClass classAnno = cd.getAnnotation(JRubyClass.class);
+            if (classAnno != null) {
+                addSubclassNames(classAndSubs, classAnno);
+            }
 
             // set up a list of class names for backtrace generation
-            Map<CharSequence, Map<CharSequence, CharSequence>> implementers = new HashMap<>();
+            Map<CharSequence, CharSequence> mappings = new HashMap<>();
 
             processMethodDeclarations(staticAnnotatedMethods);
-            gatherMappings(types, staticAnnotatedMethods, implementers);
+            gatherMappings(staticAnnotatedMethods, mappings);
 
             processMethodDeclarations(annotatedMethods);
-            gatherMappings(types, annotatedMethods, implementers);
+            gatherMappings(annotatedMethods, mappings);
 
             out.println("");
 
-            // addBoundMethods(String className, String... tuples)
-            implementers.forEach((clsName, mappings) -> {
-                out.print("        runtime.addBoundMethods(" + quote(clsName));
-
-                mappings.forEach(
-                        (javaName, rubyName) -> out.print(", " + quote(javaName) + ", " + quote(rubyName) + "")
-                );
-
-                out.println(");");
-            });
-
+            // addBoundMethods(int tuplesIndex, String... classNamesAndTuples)
+            out.print("        runtime.addBoundMethods(" + classAndSubs.size() + ", ");
+            out.print(classAndSubs.stream().map(s -> quote(s)).collect(Collectors.joining(", ")));
+            mappings.forEach((javaName, rubyName) -> out.print(", " + quote(javaName) + ", " + quote(rubyName) + ""));
+            out.println(");");
             out.println("    }");
 
             // write out a static initializer for frame names, so it only fires once
@@ -249,51 +258,32 @@ public class AnnotationBinder extends AbstractProcessor {
         }
     }
 
-    protected void gatherMappings(Types types, Map<CharSequence, List<ExecutableElement>> methods, Map<CharSequence, Map<CharSequence, CharSequence>> implementers) {
+    private void addSubclassNames(List<CharSequence> classAndSubs, JRubyClass classAnno) {
+        // all implementer classes specified in annotation
+        try {
+            for (int i = 0; i < classAnno.implementers().length; i++) {
+                classAndSubs.add(classAnno.implementers()[i].getCanonicalName());
+            }
+        } catch (MirroredTypesException mte) {
+            for (TypeMirror tm : mte.getTypeMirrors()) {
+                classAndSubs.add(((TypeElement) types.asElement(tm)).getQualifiedName().toString());
+            }
+        }
+
+    }
+
+    protected void gatherMappings(Map<CharSequence, List<ExecutableElement>> methods, Map<CharSequence, CharSequence> mappings) {
         for (Map.Entry<CharSequence, List<ExecutableElement>> entry : methods.entrySet()) {
             ExecutableElement decl = entry.getValue().get(0);
             JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
 
             if (anno.omit()) continue;
 
-            CharSequence rubyName = entry.getKey();
             CharSequence javaName = decl.getSimpleName().toString();
+            CharSequence rubyName = entry.getKey();
 
-            addMethodMappings(
-                    types,
-                    decl,
-                    anno,
-                    javaName,
-                    rubyName,
-                    implementers
-            );
+            mappings.putIfAbsent(javaName, rubyName);
         }
-    }
-
-    protected void addMethodMappings(Types types, ExecutableElement decl, JRubyMethod anno, CharSequence javaName, CharSequence rubyName, Map<CharSequence, Map<CharSequence, CharSequence>> implementers) {
-        TriConsumer<CharSequence, CharSequence, CharSequence> mapper = (clsName, jName, rName) -> implementers
-                .computeIfAbsent(clsName, s -> new HashMap<>())
-                .putIfAbsent(jName, rName);
-
-        // class itself, if the element is not abstract
-        if (!decl.getModifiers().contains(Modifier.ABSTRACT)) {
-            mapper.accept(((TypeElement) decl.getEnclosingElement()).getQualifiedName(), javaName, rubyName);
-        }
-
-        // all implementer classes specified in annotation
-        try {
-            for (int i = 0; i < anno.implementers().length; i++) {
-                mapper.accept(anno.implementers()[i].getCanonicalName(), javaName, rubyName);
-            }
-        } catch (MirroredTypesException mte) {
-            for (TypeMirror tm : mte.getTypeMirrors()) {
-                mapper.accept(((TypeElement) types.asElement(tm)).getQualifiedName().toString(), javaName, rubyName);
-            }
-        }
-    }
-
-    private interface TriConsumer<T, U, V> {
-        void accept(T t, U u, V v);
     }
 
     public void emitIndexCode(int bits, String names, String format) {
