@@ -1505,14 +1505,14 @@ paren_args      : '(' opt_call_args rparen {
                     if (!support.check_forwarding_args()) {
                         $$ = null;
                     } else {
-                        $$ = support.new_args_forward_call($2);
+                        $$ = support.new_args_forward_call(@1.startLine(), $2);
                     }
                }
                | '(' args_forward rparen {
                     if (!support.check_forwarding_args()) {
                         $$ = null;
                     } else {
-                        $$ = support.new_args_forward_call(null);
+                        $$ = support.new_args_forward_call(@1.startLine(), null);
                     }
                }
  

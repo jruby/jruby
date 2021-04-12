@@ -3309,7 +3309,7 @@ states[297] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     if (!support.check_forwarding_args()) {
                         yyVal = null;
                     } else {
-                        yyVal = support.new_args_forward_call(((Node)yyVals[-3+yyTop].value));
+                        yyVal = support.new_args_forward_call(yyVals[yyTop - count + 1].startLine(), ((Node)yyVals[-3+yyTop].value));
                     }
   return yyVal;
 };
@@ -3317,7 +3317,7 @@ states[298] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     if (!support.check_forwarding_args()) {
                         yyVal = null;
                     } else {
-                        yyVal = support.new_args_forward_call(null);
+                        yyVal = support.new_args_forward_call(yyVals[yyTop - count + 1].startLine(), null);
                     }
   return yyVal;
 };

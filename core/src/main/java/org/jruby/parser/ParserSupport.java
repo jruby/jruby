@@ -1645,7 +1645,9 @@ public class ParserSupport {
     }
 
     public boolean check_forwarding_args() {
-        if (local_id(FWD_REST) && local_id(FWD_KWREST) && local_id(FWD_BLOCK)) return true;
+        if (local_id(FWD_REST) &&
+//                local_id(FWD_KWREST) &&
+                local_id(FWD_BLOCK)) return true;
 
         compile_error("unexpected ...");
         return false;
@@ -1653,13 +1655,23 @@ public class ParserSupport {
 
     public void add_forwarding_args() {
         arg_var(FWD_REST);
-        arg_var(FWD_KWREST);
+        //arg_var(FWD_KWREST);
         arg_var(FWD_BLOCK);
     }
 
-    public Node new_args_forward_call(Node one) {
-        // FIXME: IMPL
-        return null;
+    public Node new_args_forward_call(int line, Node leadingArgs) {
+        RubySymbol splatName = symbolID(FWD_REST);
+        int splatLoc = getCurrentScope().exists(splatName.idString());
+        Node splatNode = new SplatNode(line, new LocalVarNode(line, splatLoc, splatName));
+//        RubySymbol kwRestName = symbolID(FWD_KWREST);
+//        int kwRestLoc = getCurrentScope().exists(kwRestName.idString());
+//        Node restNode = list_append(new ArrayNode(line), new LocalVarNode(line, kwRestLoc, kwRestName));
+        RubySymbol blockName = symbolID(FWD_BLOCK);
+        int blockLoc = getCurrentScope().exists(blockName.idString());
+        BlockPassNode block = new BlockPassNode(line, new LocalVarNode(line, blockLoc, blockName));
+        Node args = leadingArgs != null ? rest_arg_append(leadingArgs, splatNode) : splatNode;
+        //arg_append(splatNode, ) // This logic in MRI ignore leading so it cannot be ifdefd (unless it was fixed post 3.0.0.
+        return arg_blk_pass(args, block);
     }
 
     public ArgsNode new_args_forward_def(int line, ListNode leading) {
