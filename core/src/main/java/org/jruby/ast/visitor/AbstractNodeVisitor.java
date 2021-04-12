@@ -310,6 +310,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitInNode(InNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitInstAsgnNode(InstAsgnNode node) {
         return defaultVisit(node);
     }

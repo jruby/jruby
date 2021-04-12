@@ -1540,8 +1540,8 @@ public class ParserSupport {
         return null;
     }
 
-    public Node newIn(Node node, Node value1, Node value2) {
-        return null;
+    public Node newIn(int line, Node expression, Node body, Node nextCase) {
+        return new InNode(line, expression, body, nextCase);
     }
 
     public void endless_method_name(DefHolder name) {

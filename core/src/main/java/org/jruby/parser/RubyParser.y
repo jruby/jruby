@@ -74,6 +74,7 @@ import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.HashPatternNode;
+import org.jruby.ast.InNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
@@ -312,7 +313,8 @@ public class RubyParser {
 %type <Node> mlhs_item mlhs_node
 %type <ListNode> mlhs_post
 %type <Node> mlhs_inner
-%type <Node> p_case_body p_cases p_top_expr p_top_expr_body
+%type <InNode> p_case_body
+%type <Node> p_cases p_top_expr p_top_expr_body
 %type <Node> p_expr p_as p_alt p_expr_basic
 %type <FindPatternNode> p_find
 %type <ArrayPatternNode> p_args 
@@ -647,7 +649,7 @@ expr            : command_call
                 } {
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<LexContext>3.in_kwarg;
-                    $$ = support.newCaseNode($1.getLine(), $1, support.newIn($5, null, null));
+                    $$ = support.newCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, null, null));
                     support.warn_one_line_pattern_matching($$, $5, true);
                 }
                 | arg keyword_in {
@@ -666,7 +668,7 @@ expr            : command_call
                 {
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<LexContext>3.in_kwarg;
-                    $$ = support.newCaseNode($1.getLine(), $1, support.newIn($5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
+                    $$ = support.newCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
                     support.warn_one_line_pattern_matching($$, $5, false);
                 }
 		| arg %prec tLBRACE_ARG
@@ -2255,6 +2257,7 @@ case_body       : k_when case_args then compstmt cases {
 cases           : opt_else
                 | case_body
 
+// InNode - [!null]
 p_case_body     : keyword_in {
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
@@ -2269,11 +2272,13 @@ p_case_body     : keyword_in {
                     support.pop_pvtbl($<Table>2);
                     lexer.getLexContext().in_kwarg = $<LexContext>1.in_kwarg;
                 } compstmt p_cases {
-                    $$ = support.newIn($4, $7, $8);
+                    $$ = support.newIn(@1.startLine(), $4, $7, $8);
                 }
 
 p_cases         : opt_else
-                | p_case_body
+                | p_case_body {
+                    $$ = $1;
+                }
 
 p_top_expr      : p_top_expr_body
                 | p_top_expr_body modifier_if expr_value {
