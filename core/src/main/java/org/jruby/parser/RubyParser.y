@@ -2497,7 +2497,9 @@ p_kwarg         : p_kw {
 p_kw            : p_kw_label p_expr {
                     support.error_duplicate_pattern_key($1);
 
-                    $$ = new KeyValuePair($1, $2);
+                    Node label = support.asSymbol(@1.startLine(), $1);
+
+                    $$ = new KeyValuePair(label, $2);
                 }
                 | p_kw_label {
                     support.error_duplicate_pattern_key($1);
@@ -2505,7 +2507,9 @@ p_kw            : p_kw_label p_expr {
                         support.yyerror("key must be valid as local variables");
                     }
                     support.error_duplicate_pattern_variable($1);
-                    $$ = new KeyValuePair($1, support.assignableLabelOrIdentifier($1, null));
+
+                    Node label = support.asSymbol(@1.startLine(), $1);
+                    $$ = new KeyValuePair(label, support.assignableLabelOrIdentifier($1, null));
                 }
 
 // ByteList

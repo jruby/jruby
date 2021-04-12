@@ -4418,7 +4418,9 @@ states[556] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 states[557] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
                     support.error_duplicate_pattern_key(((ByteList)yyVals[-1+yyTop].value));
 
-                    yyVal = new KeyValuePair(((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    Node label = support.asSymbol(yyVals[yyTop - count + 1].startLine(), ((ByteList)yyVals[-1+yyTop].value));
+
+                    yyVal = new KeyValuePair(label, ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[558] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -4427,7 +4429,9 @@ states[558] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                         support.yyerror("key must be valid as local variables");
                     }
                     support.error_duplicate_pattern_variable(((ByteList)yyVals[0+yyTop].value));
-                    yyVal = new KeyValuePair(((ByteList)yyVals[0+yyTop].value), support.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null));
+
+                    Node label = support.asSymbol(yyVals[yyTop - count + 1].startLine(), ((ByteList)yyVals[0+yyTop].value));
+                    yyVal = new KeyValuePair(label, support.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null));
   return yyVal;
 };
 states[560] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -5454,7 +5458,7 @@ states[803] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 }
-					// line 3457 "RubyParser.y"
+					// line 3461 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5469,4 +5473,4 @@ states[803] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
         return support.getResult();
     }
 }
-					// line 12848 "-"
+					// line 12852 "-"
