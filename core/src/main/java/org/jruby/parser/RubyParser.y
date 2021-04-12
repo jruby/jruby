@@ -2317,7 +2317,7 @@ p_as            : p_expr tASSOC p_variable {
                 | p_alt
 
 p_alt           : p_alt '|' p_expr_basic {
-                    $$ = support.newOr($1, $3);
+                    $$ = support.newOrNode($1, $3);
                 }
                 | p_expr_basic
 

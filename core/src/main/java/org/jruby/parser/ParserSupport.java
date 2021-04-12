@@ -1525,18 +1525,22 @@ public class ParserSupport {
     }
 
     public Table push_pvtbl() {
+        // FIXME: IMPL
         return null;
     }
 
     public Table pop_pvtbl(Table arg) {
+        // FIXME: IMPL
         return null;
     }
 
     public Table push_pktbl() {
+        // FIXME: IMPL
         return null;
     }
 
     public Table pop_pktbl(Table arg) {
+        // FIXME: IMPL
         return null;
     }
 
@@ -1545,6 +1549,7 @@ public class ParserSupport {
     }
 
     public void endless_method_name(DefHolder name) {
+        // FIXME: IMPL
     }
 
     public Node reduce_nodes(Node body) {
@@ -1555,10 +1560,6 @@ public class ParserSupport {
     public void restore_defun(DefHolder holder) {
         lexer.getLexContext().restore(holder);
         lexer.setCurrentArg(holder.current_arg);
-    }
-
-    public Node newOr(Node one, Node two) {
-        return null;
     }
 
     public ArrayPatternNode new_array_pattern(int line, Node constant, Node preArg, ArrayPatternNode arrayPattern) {
@@ -1595,10 +1596,11 @@ public class ParserSupport {
     }
 
     public void warn_one_line_pattern_matching(Object one,Node two ,boolean three) {
-
+        // FIXME: IMPL
     }
 
     public Node rescued_expr(Node one, Node two) {
+        // FIXME: IMPL
         return null;
     }
 
@@ -1615,11 +1617,11 @@ public class ParserSupport {
     }
 
     public void error_duplicate_pattern_key(ByteList one) {
-
+        // FIXME: IMPL
     }
 
     public void error_duplicate_pattern_variable(ByteList one) {
-
+        // FIXME: IMPL
     }
 
     public Node new_find_pattern(Node constant, FindPatternNode findPattern) {
@@ -1656,6 +1658,7 @@ public class ParserSupport {
     }
 
     public Node new_args_forward_call(Node one) {
+        // FIXME: IMPL
         return null;
     }
 
@@ -1667,6 +1670,7 @@ public class ParserSupport {
     }
 
     public void check_literal_when(Node one) {
+        // FIXME: IMPL
     }
 
     public Node last_arg_append(Node args, Node lastArg) {
@@ -1684,9 +1688,11 @@ public class ParserSupport {
     }
 
     public Node remove_begin(Node one) {
-        return null;
+        // FIXME: IMPL
+        return one;
     }
 
     public void nd_set_first_loc(Node node, int line) {
+        // FIXME: IMPL
     }
 }

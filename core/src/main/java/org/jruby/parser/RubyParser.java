@@ -4217,7 +4217,7 @@ states[510] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[512] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
-                    yyVal = support.newOr(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    yyVal = support.newOrNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[514] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
