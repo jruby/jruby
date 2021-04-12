@@ -441,13 +441,16 @@ program       : {
                   lexer.setState(EXPR_BEG);
                   support.initTopLocalVariables();
               } top_compstmt {
-                  if ($2 != null && !support.getConfiguration().isEvalParse()) {
+                  Node expr = $2;
+                  if (expr != null && !support.getConfiguration().isEvalParse()) {
                       /* last expression should not be void */
                       if ($2 instanceof BlockNode) {
-                          support.void_expr($<BlockNode>2.getLast());
+                        expr = $<BlockNode>2.getLast();
                       } else {
-                          support.void_expr($2);
+                        expr = $2;
                       }
+                      expr = support.remove_begin(expr);
+                      support.void_expr(expr);
                   }
                   support.getResult().setAST(support.addRootNode($2));
               }
@@ -464,7 +467,7 @@ top_stmts     : none
                   $$ = support.appendToBlock($1, support.newline_node($3, support.getPosition($3)));
               }
               | error top_stmt {
-                  $$ = $2;
+                  $$ = support.remove_begin($2);
               }
 
 top_stmt      : stmt
@@ -529,11 +532,11 @@ stmt            : keyword_alias fitem {
                     $$ = $2;
                 }
                 | stmt modifier_if expr_value {
-                    $$ = support.new_if(support.getPosition($1), support.cond($3), $1, null);
+                    $$ = support.new_if(support.getPosition($1), support.cond($3), support.remove_begin($1), null);
                     support.fixpos($<Node>$, $3);
                 }
                 | stmt modifier_unless expr_value {
-                    $$ = support.new_if(support.getPosition($1), support.cond($3), null, $1);
+                    $$ = support.new_if(support.getPosition($1), support.cond($3), null, support.remove_begin($1));
                     support.fixpos($<Node>$, $3);
                 }
                 | stmt modifier_while expr_value {
@@ -569,8 +572,8 @@ stmt            : keyword_alias fitem {
                     $$ = node_assign($1, $4);
                 }
                 | mlhs '=' lex_ctxt mrhs_arg modifier_rescue stmt {
-                     // FIXME: ...
-                    $$ = null;
+                    support.value_expr(lexer, $4);
+                    $$ = node_assign($1, support.newRescueModNode($4, $6));
                 }
                 | mlhs '=' lex_ctxt mrhs_arg {
                     $$ = node_assign($1, $4);
@@ -1259,7 +1262,7 @@ reswords        : keyword__LINE__ {
                 }
 
 arg             : lhs '=' lex_ctxt arg_rhs {
-                    $$ = support.node_assign($1, $4);
+                    $$ = node_assign($1, $4);
                 }
                 | var_lhs tOP_ASGN lex_ctxt arg_rhs {
                     $$ = support.new_op_assign($1, $2, $4);
@@ -1415,14 +1418,14 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 | defn_head f_opt_paren_args '=' arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), support.reduce_nodes($4), @4.end);
+                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end);
                     if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     support.popCurrentScope();
 		}
                 | defn_head f_opt_paren_args '=' arg modifier_rescue arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.rescued_expr($4, $6));
+                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.startLine(), $4, $6)));
                     $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @6.end);
                     if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     support.popCurrentScope();
@@ -1430,14 +1433,14 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 | defs_head f_opt_paren_args '=' arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), support.reduce_nodes($4), @4.end);
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end);
                     if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     support.popCurrentScope();
 		}
                 | defs_head f_opt_paren_args '=' arg modifier_rescue arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.rescued_expr($4, $6));
+                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.startLine(), $4, $6)));
                     $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @6.end);
                     if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();                    support.popCurrentScope();
                 }
@@ -1816,13 +1819,13 @@ primary         : literal
                 }
                 | defn_head f_arglist bodystmt k_end {
                     support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.makeNullNil($3));
+                    Node body = support.reduce_nodes(support.remove_begin(support.makeNullNil($3)));
                     $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @4.end);
                     if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();                    support.popCurrentScope();
                 }
                 | defs_head f_arglist bodystmt k_end {
                     support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.makeNullNil($3));
+                    Node body = support.reduce_nodes(support.remove_begin(support.makeNullNil($3)));
                     $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @4.end);
                     if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     support.popCurrentScope();
@@ -2286,7 +2289,7 @@ p_top_expr      : p_top_expr_body
                     support.fixpos($<Node>$, $3);
                 }
                 | p_top_expr_body modifier_unless expr_value {
-  $$ = support.new_if(@1.startLine(), support.remove_begin($1), $3, null);
+                    $$ = support.new_if(@1.startLine(), support.remove_begin($1), $3, null);
                     support.fixpos($<Node>$, $3);
                 }
 

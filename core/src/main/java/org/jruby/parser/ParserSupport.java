@@ -229,6 +229,7 @@ public class ParserSupport {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
+        node = remove_begin(node);
         configuration.coverLine(line);
         node.setNewline();
 
@@ -1120,6 +1121,8 @@ public class ParserSupport {
     public Node newRescueModNode(Node body, Node rescueBody) {
         if (rescueBody == null) rescueBody = NilImplicitNode.NIL; // foo rescue () can make null.
         int line = getPosition(body);
+        body = remove_begin(body);
+        rescueBody = remove_begin(rescueBody);
 
         if (body instanceof OpElementAsgnNode) {
             OpElementAsgnNode original = (OpElementAsgnNode) body;
@@ -1599,9 +1602,9 @@ public class ParserSupport {
         // FIXME: IMPL
     }
 
-    public Node rescued_expr(Node one, Node two) {
-        // FIXME: IMPL
-        return null;
+    public Node rescued_expr(int line, Node arg, Node rescue) {
+        return new RescueNode(line, arg,
+                new RescueBodyNode(line, null, remove_begin(rescue), null), null);
     }
 
     public ArrayPatternNode new_array_pattern_tail(int line, ListNode preArgs, boolean hasRest, ByteList restArg, ListNode postArgs) {
@@ -1699,9 +1702,14 @@ public class ParserSupport {
         return arg_concat(args, restArg);
     }
 
-    public Node remove_begin(Node one) {
-        // FIXME: IMPL
-        return one;
+    public Node remove_begin(Node node) {
+        while (node instanceof BeginNode) {
+            Node body = ((BeginNode) node).getBodyNode();
+            if (body == null) break;
+            node = body;
+        }
+
+        return node;
     }
 
     public void nd_set_first_loc(Node node, int line) {
