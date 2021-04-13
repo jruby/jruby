@@ -5,16 +5,28 @@ import org.jruby.ast.visitor.NodeVisitor;
 import java.util.List;
 
 public class InNode extends Node {
-    private final Node expr;
+    private final Node expression;
     private final Node body;
     private final Node nextCase; // InNode or whatever is an else branch.
 
     public InNode(int line, Node expr, Node body, Node nextCase) {
         super(line, expr.containsVariableAssignment());
 
-        this.expr = expr;
+        this.expression = expr;
         this.body = body;
         this.nextCase = nextCase;
+    }
+
+    public Node getExpression() {
+        return expression;
+    }
+
+    public Node getBody() {
+        return body;
+    }
+
+    public Node getNextCase() {
+        return nextCase;
     }
 
     @Override
@@ -24,7 +36,7 @@ public class InNode extends Node {
 
     @Override
     public List<Node> childNodes() {
-        return createList(expr, body, nextCase);
+        return createList(expression, body, nextCase);
     }
 
     @Override

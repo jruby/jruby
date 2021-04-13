@@ -121,6 +121,7 @@ public interface NodeVisitor<T> {
     T visitOpAsgnOrNode(OpAsgnOrNode iVisited);
     T visitOptArgNode(OptArgNode iVisited);
     T visitOrNode(OrNode iVisited);
+    T visitPatternCaseNode(PatternCaseNode iVisited);
     T visitPreExeNode(PreExeNode iVisited);
     T visitPostExeNode(PostExeNode iVisited);
     T visitRationalNode(RationalNode iVisited);

@@ -496,6 +496,7 @@ public class IRBuilder {
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node);
             case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node);
             case ORNODE: return buildOr((OrNode) node);
+            case PATTERNCASENODE: return buildPatternCase((PatternCaseNode) node);
             case PREEXENODE: return buildPreExe((PreExeNode) node);
             case POSTEXENODE: return buildPostExe((PostExeNode) node);
             case RATIONALNODE: return buildRational((RationalNode) node);
@@ -1240,6 +1241,11 @@ public class IRBuilder {
         }
 
         return null;
+    }
+
+    public Operand buildPatternCase(PatternCaseNode patternCase) {
+        // FIXME: IMPL
+        return createTemporaryVariable();
     }
 
     public Operand buildCase(CaseNode caseNode) {

@@ -455,6 +455,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitPatternCaseNode(PatternCaseNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitPreExeNode(PreExeNode node) {
         return defaultVisit(node);
     }

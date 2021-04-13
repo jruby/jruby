@@ -652,7 +652,7 @@ expr            : command_call
                 } {
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<LexContext>3.in_kwarg;
-                    $$ = support.newCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, null, null));
+                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, null, null));
                     support.warn_one_line_pattern_matching($$, $5, true);
                 }
                 | arg keyword_in {
@@ -671,7 +671,7 @@ expr            : command_call
                 {
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<LexContext>3.in_kwarg;
-                    $$ = support.newCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
+                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
                     support.warn_one_line_pattern_matching($$, $5, false);
                 }
 		| arg %prec tLBRACE_ARG
@@ -1765,7 +1765,7 @@ primary         : literal
                     $$ = support.newCaseNode($1, null, $4);
                 }
 		| k_case expr_value opt_terms p_case_body k_end {
-                    $$ = support.newCaseNode($1, $2, $4);
+                    $$ = support.newPatternCaseNode($1, $2, $4);
                 }
                 | k_for for_var keyword_in expr_value_do compstmt k_end {
                     $$ = new ForNode($1, $2, $5, $4, support.getCurrentScope(), 111);

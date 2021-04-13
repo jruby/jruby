@@ -760,9 +760,8 @@ public class ParserSupport {
     }
 
     /**
-     * Ok I admit that this is somewhat ugly.  We post-process a chain of when nodes and analyze
-     * them to re-insert them back into our new CaseNode the way we want.  The grammar is being
-     * difficult and until I go back into the depths of that this is where things are.
+     * We post-process a chain of when nodes and analyze them to re-insert them back into our new CaseNode
+     * as a list.  The grammar is more amenable to linked list style so we correct it at this point.
      *
      * @param expression of the case node (e.g. case foo)
      * @param firstWhenNode first when (which could also be the else)
@@ -777,6 +776,22 @@ public class ParserSupport {
                 cases.add(current);
             } else if (current instanceof WhenNode) {
                 simplifyMultipleArgumentWhenNodes((WhenNode) current, cases);
+            } else {
+                caseNode.setElseNode(current);
+                break;
+            }
+        }
+
+        return caseNode;
+    }
+
+    public static PatternCaseNode newPatternCaseNode(int line, Node expression, Node firstWhenNode) {
+        ArrayNode cases = new ArrayNode(firstWhenNode != null ? firstWhenNode.getLine() : line);
+        PatternCaseNode caseNode = new PatternCaseNode(line, expression, cases);
+
+        for (Node current = firstWhenNode; current != null; current = ((InNode) current).getNextCase()) {
+            if (current instanceof InNode) {
+                cases.add(current);
             } else {
                 caseNode.setElseNode(current);
                 break;
