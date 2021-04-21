@@ -2663,8 +2663,17 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void ObjectClass(ObjectClass objectclass) {
-        jvmMethod().getValueCompiler().pushObjectClass();
+    public void BuiltinClass(BuiltinClass builtinClass) {
+        switch (builtinClass.getType()) {
+            case ARRAY:
+                jvmMethod().getValueCompiler().pushArrayClass();
+            case HASH:
+                jvmMethod().getValueCompiler().pushHashClass();
+            case OBJECT:
+                jvmMethod().getValueCompiler().pushObjectClass();
+            default:
+                throw new RuntimeException("BuiltinClass has unknown type");
+        }
     }
 
     @Override

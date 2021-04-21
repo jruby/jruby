@@ -1272,7 +1272,7 @@ public class IRBuilder {
         Label endArrayCheck = getNewLabel();
         Variable d = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("deconstruct"),
                 obj, Operand.EMPTY_ARRAY, NullBlock.INSTANCE));
-        addResultInstr(new EQQInstr(scope, result, new ArrayClass(), d, false, false));
+        addResultInstr(new EQQInstr(scope, result, new BuiltinClass(BuiltinClass.Type.ARRAY), d, false, false));
         // FIXME: Raise exception
         addInstr(new LabelInstr(endArrayCheck));
 
@@ -1796,7 +1796,7 @@ public class IRBuilder {
     }
 
     private Operand putConstant(Colon3Node node, Operand value) {
-        addInstr(new PutConstInstr(new ObjectClass(), node.getName(), value));
+        addInstr(new PutConstInstr(new BuiltinClass(BuiltinClass.Type.OBJECT), node.getName(), value));
 
         return value;
     }
@@ -1834,7 +1834,7 @@ public class IRBuilder {
     }
 
     public Operand buildColon3(Colon3Node node) {
-        return searchModuleForConst(new ObjectClass(), node.getName());
+        return searchModuleForConst(new BuiltinClass(BuiltinClass.Type.OBJECT), node.getName());
     }
 
     public Operand buildComplex(ComplexNode node) {
@@ -1886,7 +1886,7 @@ public class IRBuilder {
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         addInstr(new LabelInstr(rescueLabel));
         addInstr(new ReceiveRubyExceptionInstr(exc));
-        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(),
+        addInstr(new InheritanceSearchConstInstr(excType, new BuiltinClass(BuiltinClass.Type.OBJECT),
                 manager.runtime.newSymbol(CommonByteLists.EXCEPTION)));
         outputExceptionCheck(excType, exc, caughtLabel);
 
@@ -2081,7 +2081,7 @@ public class IRBuilder {
                                         createTemporaryVariable(),
                                         IS_DEFINED_CONSTANT_OR_METHOD,
                                         new Operand[] {
-                                                new ObjectClass(),
+                                                new BuiltinClass(BuiltinClass.Type.OBJECT),
                                                 new FrozenString(name),
                                                 new FrozenString(DefinedMessage.CONSTANT.getText()),
                                                 new FrozenString(DefinedMessage.METHOD.getText())
@@ -3464,7 +3464,7 @@ public class IRBuilder {
                 container = findContainerModule();
             }
         } else { //::Bar
-            container = new ObjectClass();
+            container = new BuiltinClass(BuiltinClass.Type.OBJECT);
         }
 
         return container;
@@ -3596,7 +3596,7 @@ public class IRBuilder {
             Operand leftValue = build(colon2Node.getLeftNode());
             copy(leftModule, leftValue);
         } else { // colon3
-            copy(leftModule, new ObjectClass());
+            copy(leftModule, new BuiltinClass(BuiltinClass.Type.OBJECT));
             name = ((Colon3Node) lhs).getName();
         }
 
@@ -4408,8 +4408,8 @@ public class IRBuilder {
 
     private void addRaiseError(String id, String message) {
         Ruby runtime = scope.getManager().getRuntime();
-        Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol(id));
-        Operand kernel = searchModuleForConst(new ObjectClass(), runtime.newSymbol("Kernel"));
+        Operand exceptionClass = searchModuleForConst(new BuiltinClass(BuiltinClass.Type.OBJECT), runtime.newSymbol(id));
+        Operand kernel = searchModuleForConst(new BuiltinClass(BuiltinClass.Type.OBJECT), runtime.newSymbol("Kernel"));
         addResultInstr(CallInstr.create(scope,
                 createTemporaryVariable(),
                 runtime.newSymbol("raise"),

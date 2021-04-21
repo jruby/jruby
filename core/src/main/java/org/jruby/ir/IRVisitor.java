@@ -164,9 +164,9 @@ public abstract class IRVisitor {
 
     // operands
     public void Array(Array array) { error(array); }
-    public void ArrayClass(ArrayClass arrayclass) { error(arrayclass); }
     public void Bignum(Bignum bignum) { error(bignum); }
     public void Boolean(Boolean bool) { error(bool); }
+    public void BuiltinClass(BuiltinClass builtinClass) { error(builtinClass); }
     public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { error(closurelocalvariable); }
     public void Complex(Complex complex) { error(complex); }
@@ -187,7 +187,6 @@ public abstract class IRVisitor {
     public void Nil(Nil nil) { error(nil); }
     public void NthRef(NthRef nthref) { error(nthref); }
     public void NullBlock(NullBlock nullblock) { error(nullblock); }
-    public void ObjectClass(ObjectClass objectclass) { error(objectclass); }
     public void Rational(Rational rational) { error(rational); }
     public void Regexp(Regexp regexp) { error(regexp); }
     public void Scope(Scope scope) { error(scope); }

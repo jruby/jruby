@@ -57,6 +57,16 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
     }
 
+    public void pushArrayClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getArray", sig(RubyClass.class, ThreadContext.class));
+    }
+
+    public void pushHashClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getHash", sig(RubyClass.class, ThreadContext.class));
+    }
+
     public void pushObjectClass() {
         compiler.loadContext();
         compiler.invokeIRHelper("getObject", sig(RubyClass.class, ThreadContext.class));

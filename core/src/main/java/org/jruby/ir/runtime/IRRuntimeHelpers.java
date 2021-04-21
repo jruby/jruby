@@ -2308,6 +2308,16 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
+    public static RubyClass getArray(ThreadContext context) {
+        return context.runtime.getArray();
+    }
+
+    @JIT
+    public static RubyClass getHash(ThreadContext context) {
+        return context.runtime.getHash();
+    }
+
+    @JIT
     public static RubyClass getObject(ThreadContext context) {
         return context.runtime.getObject();
     }

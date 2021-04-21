@@ -514,6 +514,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ARRAY: return Array.decode(this);
             case BIGNUM: return Bignum.decode(this);
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
+            case BUILTIN_CLASS: return BuiltinClass.decode(this);
             case COMPLEX: return Complex.decode(this);
             case CURRENT_SCOPE: return CurrentScope.decode(this);
             case DYNAMIC_SYMBOL: return DynamicSymbol.decode(this);
@@ -529,7 +530,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case NIL: return manager.getNil();
             case NTH_REF: return NthRef.decode(this);
             case NULL_BLOCK: return NullBlock.decode(this);
-            case OBJECT_CLASS: return new ObjectClass();
             case RATIONAL: return Rational.decode(this);
             case REGEXP: return Regexp.decode(this);
             case SCOPE_MODULE: return ScopeModule.decode(this);

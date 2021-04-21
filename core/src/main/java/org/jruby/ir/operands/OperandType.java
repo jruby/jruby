@@ -10,6 +10,7 @@ public enum OperandType {
     ARRAY("ary", (byte) 'A'),
     BIGNUM("big", (byte) 'B'),
     BOOLEAN("bool", (byte) 'b'),
+    BUILTIN_CLASS("cls", (byte) 'O'),
     COMPLEX("com", (byte) 'C'),
     CURRENT_SCOPE("scope", (byte) 's'),
     DYNAMIC_SYMBOL("dsym", (byte) 'd'),
@@ -23,7 +24,6 @@ public enum OperandType {
     LOCAL_VARIABLE("*", (byte) 'l'), // Also applicable for ClosureLocalVariable
     NIL("nil", (byte) 'N'),
     NTH_REF("nth", (byte) '1'),
-    OBJECT_CLASS("objcls", (byte) 'O'),
     RANGE("rng", (byte) '.'),
     RATIONAL("rat", (byte) 'r'),
     REGEXP("reg", (byte) '/'),
