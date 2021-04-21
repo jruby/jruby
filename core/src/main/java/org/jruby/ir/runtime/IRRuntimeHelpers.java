@@ -447,6 +447,7 @@ public class IRRuntimeHelpers {
         return RubyBoolean.newBoolean(context, ret);
     }
 
+    // partially: vm_insnhelper.c - vm_check_match + check_match
     public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite callSite, boolean splattedValue) {
         boolean isUndefValue = value == UndefinedValue.UNDEFINED;
 
@@ -2323,5 +2324,10 @@ public class IRRuntimeHelpers {
 
     private static IRRuntimeHelpersSites sites(ThreadContext context) {
         return context.sites.IRRuntimeHelpers;
+    }
+
+    @Interp @JIT
+    public static int arrayLength(RubyArray array) {
+        return array.getLength();
     }
 }

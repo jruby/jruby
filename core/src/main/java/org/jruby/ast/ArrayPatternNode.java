@@ -38,11 +38,55 @@ public class ArrayPatternNode extends Node {
         this.constant = constant;
     }
 
+    public boolean hasConstant() {
+        return constant != null;
+    }
+
+    public Node getConstant() {
+        return constant;
+    }
+
     public ListNode getPreArgs() {
         return preArgs;
     }
 
+    public ListNode getPostArgs() {
+        return postArgs;
+    }
+
     public void setPreArgs(ListNode preArgs) {
         this.preArgs = preArgs;
+    }
+
+    public Node getRestArg() {
+        return restArg;
+    }
+
+    public boolean hasRestArg() {
+        return restArg != null;
+    }
+
+    public boolean isNamedRestArg() {
+        return !(restArg instanceof StarNode);
+    }
+
+    public boolean usesRestNum() {
+        if (restArg == null) return false;
+
+        boolean named = !(restArg instanceof StarNode);
+
+        return named || !named && postArgsNum() > 0;
+    }
+
+    public int preArgsNum() {
+        return preArgs == null ? 0 : preArgs.size();
+    }
+
+    public int postArgsNum() {
+        return postArgs == null ? 0 : postArgs.size();
+    }
+
+    public int minimumArgsNum() {
+        return preArgsNum() + postArgsNum();
     }
 }

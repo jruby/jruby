@@ -2293,6 +2293,7 @@ p_top_expr      : p_top_expr_body
                     support.fixpos($<Node>$, $3);
                 }
 
+// FindPatternNode, HashPatternNode, ArrayPatternNode + p_expr(a lot)
 p_top_expr_body : p_expr
                 | p_expr ',' {
                     $$ = support.new_array_pattern(@1.startLine(), null, $1,

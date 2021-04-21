@@ -25,6 +25,7 @@ import org.jruby.parser.StaticScope;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.Integer;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;

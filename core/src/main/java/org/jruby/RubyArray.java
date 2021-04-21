@@ -2748,6 +2748,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
+    @JRubyMethod
+    public IRubyObject deconstruct(ThreadContext context) {
+        return this;
+    }
+
     /** rb_ary_delete
      *
      */

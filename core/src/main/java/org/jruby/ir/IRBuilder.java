@@ -11,6 +11,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.operands.Integer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -39,6 +40,8 @@ import java.util.*;
 
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
+import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
+import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 import static org.jruby.ir.operands.ScopeModule.*;
@@ -1243,9 +1246,171 @@ public class IRBuilder {
         return null;
     }
 
+    private Variable buildArrayPattern(Label testEnd, Variable result, ArrayPatternNode pattern, Operand obj) {
+        Variable restNum = createTemporaryVariable();
+
+        //if (pattern.usesRestNum()) {
+            addInstr(new CopyInstr(restNum, new Integer(0)));
+        //}
+
+        if (pattern.hasConstant()) {
+            Label endConstantCheck = getNewLabel();
+            Operand constant = build(pattern.getConstant());
+            addResultInstr(new EQQInstr(scope, result, constant, obj, false, false));
+            addInstr(createBranch(result, manager.getTrue(), endConstantCheck));
+            // FIXME: Raise exception
+            addInstr(new LabelInstr(endConstantCheck));
+        }
+
+        Label endRespondToCheck = getNewLabel();
+        addResultInstr(CallInstr.create(scope, result, symbol("respond_to?"),
+               obj, new Operand[] { new Symbol(symbol("respond_to?")) }, NullBlock.INSTANCE));
+        addInstr(createBranch(result, manager.getTrue(), endRespondToCheck));
+        // FIXME: Raise exception
+        addInstr(new LabelInstr(endRespondToCheck));
+
+        Label endArrayCheck = getNewLabel();
+        Variable d = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("deconstruct"),
+                obj, Operand.EMPTY_ARRAY, NullBlock.INSTANCE));
+        addResultInstr(new EQQInstr(scope, result, new ArrayClass(), d, false, false));
+        // FIXME: Raise exception
+        addInstr(new LabelInstr(endArrayCheck));
+
+        Label minArgsCheck = getNewLabel();
+        Operand minArgsCount = new Integer(pattern.minimumArgsNum());
+        Variable length = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), ARRAY_LENGTH, new Operand[] { d }));
+        BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
+        addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
+        // FIXME: Raise exception
+        addInstr(new LabelInstr(minArgsCheck));
+
+        ListNode preArgs = pattern.getPreArgs();
+        if (preArgs != null) {
+            for (int i = 0; i < preArgs.size(); i++) {
+                Label matchElementCheck = getNewLabel();
+                Variable elt = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("[]"), d, new Operand[]{new Fixnum(i)}, NullBlock.INSTANCE));
+                // FIXME: This needs to call only into the match logic for a single arg and not the whole patternmatch/case+ins.
+                buildPatternEach(testEnd, result, elt, preArgs.get(i));
+                addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
+                addInstr(new JumpInstr(testEnd));
+                addInstr(new LabelInstr(matchElementCheck));
+            }
+        }
+
+        if (pattern.hasRestArg()) {
+            addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
+
+            if (pattern.isNamedRestArg()) {
+                Label restArgCheck = getNewLabel();
+                Variable elt = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("[]"), d, new Operand[] { restNum }, NullBlock.INSTANCE));
+                buildPatternMatch(result, pattern.getRestArg(), elt);
+                addInstr(BNEInstr.create(restArgCheck, result, buildFalse()));
+                addInstr(new JumpInstr(testEnd));
+                addInstr(new LabelInstr(restArgCheck));
+            }
+        }
+
+        ListNode postArgs = pattern.getPostArgs();
+        if (postArgs != null) {
+            for (int i = 0; i < postArgs.size(); i++) {
+                Label matchElementCheck = getNewLabel();
+                Variable j = addResultInstr(new IntegerMathInstr(ADD, createTemporaryVariable(), new Integer(i + pattern.getPreArgs().size()), restNum));
+                Variable k = addResultInstr(new AsFixnumInstr(createTemporaryVariable(), j));
+                Variable elt = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("[]"), d, new Operand[]{k}, NullBlock.INSTANCE));
+                buildPatternEach(testEnd, result, elt, postArgs.get(i));
+                addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
+                addInstr(new JumpInstr(testEnd));
+                addInstr(new LabelInstr(matchElementCheck));
+            }
+        }
+
+        return result;
+    }
+
+    private void buildPatternMatch(Variable result, Node arg, Operand obj) {
+        Label testEnd = getNewLabel();
+        buildPatternEach(testEnd, result, obj, arg);
+        addInstr(new LabelInstr(testEnd));
+    }
+
+    private Variable buildPatternEach(Label testEnd, Variable result, Operand value, Node exprNodes) {
+        if (exprNodes instanceof ArrayPatternNode) {
+            buildArrayPattern(testEnd, result, (ArrayPatternNode) exprNodes, value);
+        } else if (exprNodes instanceof HashPatternNode) {
+        } else if (exprNodes instanceof FindPatternNode) {
+        } else if (exprNodes instanceof LocalAsgnNode) {
+            LocalAsgnNode localAsgnNode = (LocalAsgnNode) exprNodes;
+            Variable variable  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+            addInstr(new CopyInstr(variable, value));
+        } else if (exprNodes instanceof DAsgnNode) {
+            DAsgnNode localAsgnNode = (DAsgnNode) exprNodes;
+            Variable variable  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+            addInstr(new CopyInstr(variable, value));
+        } else {
+            Operand expression = build(exprNodes);
+            boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
+
+            addInstr(new EQQInstr(scope, result, expression, value, needsSplat, scope.maybeUsingRefinements()));
+        }
+
+        return result;
+    }
+
     public Operand buildPatternCase(PatternCaseNode patternCase) {
-        // FIXME: IMPL
-        return createTemporaryVariable();
+        Label     endLabel  = getNewLabel();
+        boolean   hasElse   = patternCase.getElseNode() != null;
+        Label     elseLabel = getNewLabel();
+        Variable  result    = createTemporaryVariable();
+        List<Label> labels = new ArrayList<>();
+        Map<Label, Node> bodies = new HashMap<>();
+
+        Operand value = build(patternCase.getCaseNode());
+
+        // build each "when"
+        for (Node aCase : patternCase.getCases().children()) {
+            InNode inNode = (InNode) aCase;
+            Label bodyLabel = getNewLabel();
+
+            Variable eqqResult = createTemporaryVariable();
+            labels.add(bodyLabel);
+            buildPatternMatch(eqqResult, inNode.getExpression(), value);
+            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
+            bodies.put(bodyLabel, inNode.getBody());
+        }
+
+        // Jump to else in case nothing matches!
+        addInstr(new JumpInstr(elseLabel));
+
+        // Build "else" if it exists
+        if (hasElse) {
+            labels.add(elseLabel);
+            bodies.put(elseLabel, patternCase.getElseNode());
+        }
+
+        // Now, emit bodies while preserving when clauses order
+        for (Label label: labels) {
+            addInstr(new LabelInstr(label));
+            Operand bodyValue = build(bodies.get(label));
+            // bodyValue can be null if the body ends with a return!
+            if (bodyValue != null) {
+                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
+                // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
+                // to look at what the last generated instruction was.
+                addInstr(new CopyInstr(result, bodyValue));
+                addInstr(new JumpInstr(endLabel));
+            }
+        }
+
+        if (!hasElse) {
+            addInstr(new LabelInstr(elseLabel));
+            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new JumpInstr(endLabel));
+        }
+
+        // Close it out
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
     }
 
     public Operand buildCase(CaseNode caseNode) {
@@ -1391,7 +1556,7 @@ public class IRBuilder {
     }
 
     private Operand buildFixnumCase(CaseNode caseNode) {
-        Map<Integer, Label> jumpTable = new HashMap<>();
+        Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
         Map<Node, Label> nodeBodies = new HashMap<>();
 
         // gather fixnum-when bodies or bail
@@ -1401,7 +1566,7 @@ public class IRBuilder {
 
             FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
             long exprLong = expr.getValue();
-            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + getFileName() + ":" + caseNode.getLine());
+            if (exprLong > java.lang.Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + getFileName() + ":" + caseNode.getLine());
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
@@ -1412,11 +1577,11 @@ public class IRBuilder {
         }
 
         // sort the jump table
-        Map.Entry<Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
-        Arrays.sort(jumpEntries, new Comparator<Map.Entry<Integer, Label>>() {
+        Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
+        Arrays.sort(jumpEntries, new Comparator<Map.Entry<java.lang.Integer, Label>>() {
             @Override
-            public int compare(Map.Entry<Integer, Label> o1, Map.Entry<Integer, Label> o2) {
-                return Integer.compare(o1.getKey(), o2.getKey());
+            public int compare(Map.Entry<java.lang.Integer, Label> o1, Map.Entry<java.lang.Integer, Label> o2) {
+                return java.lang.Integer.compare(o1.getKey(), o2.getKey());
             }
         });
 
@@ -1424,7 +1589,7 @@ public class IRBuilder {
         int[] jumps = new int[jumpTable.size()];
         Label[] targets = new Label[jumps.length];
         int i = 0;
-        for (Map.Entry<Integer, Label> jumpEntry : jumpEntries) {
+        for (Map.Entry<java.lang.Integer, Label> jumpEntry : jumpEntries) {
             jumps[i] = jumpEntry.getKey();
             targets[i] = jumpEntry.getValue();
             i++;

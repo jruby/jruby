@@ -5458,7 +5458,7 @@ states[803] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 }
-					// line 3461 "RubyParser.y"
+					// line 3462 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure

@@ -17,6 +17,7 @@ public enum OperandType {
     FLOAT("flo", (byte) 'F'),
     GLOBAL_VARIABLE("$", (byte) '$'),
     HASH("hash", (byte) '{'),
+    INTEGER("int", (byte) 'I'),
     IR_EXCEPTION("ir_ex", (byte) '!'),
     LABEL("ipc", (byte) 'L'),
     LOCAL_VARIABLE("*", (byte) 'l'), // Also applicable for ClosureLocalVariable

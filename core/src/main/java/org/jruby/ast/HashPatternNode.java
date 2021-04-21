@@ -35,4 +35,9 @@ public class HashPatternNode extends Node {
     public void setConstant(Node constant) {
         this.constant = constant;
     }
+
+    // MRI: args_num in compile.c
+    public int getArgumentSize() {
+        return keywordArgs == null ? 0 : keywordArgs.getPairs().size();
+    }
 }
