@@ -67,8 +67,17 @@ public class BuiltinClass extends Operand {
     }
 
     public static BuiltinClass decode(IRReaderDecoder d) {
-        // FIXME: This should use same instance so we only have one of each.
-        return new BuiltinClass(Type.fromOrdinal(d.decodeInt()));
+        Type type = Type.fromOrdinal(d.decodeInt());
+        switch (type) {
+            case ARRAY:
+                return d.getCurrentScope().getManager().getArrayClass();
+            case HASH:
+                return d.getCurrentScope().getManager().getHashClass();
+            case OBJECT:
+                return d.getCurrentScope().getManager().getObjectClass();
+            default:
+                throw new RuntimeException("BuiltinClass has unknown type");
+        }
     }
 
     @Override
