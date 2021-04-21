@@ -1,7 +1,9 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.util.KeyValuePair;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class HashPatternNode extends Node {
@@ -32,6 +34,10 @@ public class HashPatternNode extends Node {
         return NodeType.HASHPATTERNNODE;
     }
 
+    public Node getConstant() {
+        return constant;
+    }
+
     public void setConstant(Node constant) {
         this.constant = constant;
     }
@@ -39,5 +45,24 @@ public class HashPatternNode extends Node {
     // MRI: args_num in compile.c
     public int getArgumentSize() {
         return keywordArgs == null ? 0 : keywordArgs.getPairs().size();
+    }
+
+    public Node getRestArg() {
+        return restArg;
+    }
+
+    public HashNode getKeywordArgs() {
+        return keywordArgs;
+    }
+
+    public List getKeys() {
+        List<KeyValuePair<Node,Node>> pairs = keywordArgs.getPairs();
+        List<Node> keys = new ArrayList<>(pairs.size());
+
+        for (KeyValuePair<Node, Node> pair: pairs) {
+            keys.add(pair.getKey());
+        }
+
+        return keys;
     }
 }

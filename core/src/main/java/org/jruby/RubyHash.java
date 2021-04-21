@@ -2299,6 +2299,11 @@ public class RubyHash extends RubyObject implements Map {
         return ifNone;
     }
 
+    @JRubyMethod
+    public IRubyObject deconstruct_keys(ThreadContext context, IRubyObject _arg1) {
+        return this;
+    }
+
     @JRubyMethod(name = "dig")
     public IRubyObject dig(ThreadContext context, IRubyObject arg0) {
         return op_aref( context, arg0 );

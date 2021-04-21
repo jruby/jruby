@@ -1246,7 +1246,7 @@ public class IRBuilder {
         return null;
     }
 
-    private Variable buildArrayPattern(Label testEnd, Variable result, ArrayPatternNode pattern, Operand obj) {
+    private void buildArrayPattern(Label testEnd, Variable result, ArrayPatternNode pattern, Operand obj) {
         Variable restNum = createTemporaryVariable();
 
         //if (pattern.usesRestNum()) {
@@ -1323,8 +1323,68 @@ public class IRBuilder {
                 addInstr(new LabelInstr(matchElementCheck));
             }
         }
+    }
 
-        return result;
+    private void buildHashPattern(Label testEnd, Variable result, HashPatternNode pattern, Operand obj) {
+        boolean hasKeywordArgs = pattern.getArgumentSize() > 0;
+        boolean hasKeywordRestArg = pattern.getRestArg() != null;
+        Operand keys;
+
+        if (hasKeywordArgs && !hasKeywordRestArg) {
+            List<Node> keyNodes = pattern.getKeys();
+            int length = keyNodes.size();
+            Operand[] builtKeys = new Operand[length];
+
+            for (int i = 0; i < length; i++) {
+                builtKeys[i] = build(keyNodes.get(i));
+            }
+            keys = new Array(builtKeys);
+        } else {
+            keys = manager.getNil();
+        }
+
+        if (pattern.getConstant() != null) {
+            Label endConstantCheck = getNewLabel();
+            Operand constant = build(pattern.getConstant());
+            addResultInstr(new EQQInstr(scope, result, constant, obj, false, false));
+            addInstr(createBranch(result, manager.getTrue(), endConstantCheck));
+            // FIXME: Raise exception
+            addInstr(new LabelInstr(endConstantCheck));
+        }
+
+        Label endHashCheck = getNewLabel();
+        Variable d = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("deconstruct_keys"),
+                obj, new Operand[] { keys }, NullBlock.INSTANCE));
+        addResultInstr(new EQQInstr(scope, result, manager.getHashClass(), d, false, false));
+        // FIXME: Raise exception
+        addInstr(new LabelInstr(endHashCheck));
+
+        if (hasKeywordArgs) {
+
+        } else {
+
+        }
+
+        if (hasKeywordArgs) {
+            List<KeyValuePair<Node,Node>> kwargs = pattern.getKeywordArgs().getPairs();
+
+            for (KeyValuePair<Node,Node> pair: kwargs) {
+                Label keyCheck = getNewLabel();
+                Operand key = build(pair.getKey());
+                addInstr(CallInstr.create(scope, result, symbol("key?"), d, new Operand[] { key }, NullBlock.INSTANCE));
+                addInstr(BNEInstr.create(keyCheck, result, buildFalse()));
+                addInstr(new JumpInstr(testEnd));
+                addInstr(new LabelInstr(keyCheck));
+
+                Label valueCheck = getNewLabel();
+                Operand value = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("[]"), d, new Operand[] { key }, NullBlock.INSTANCE));
+                buildPatternEach(testEnd, result, value, pair.getValue());
+                addInstr(BNEInstr.create(valueCheck, result, buildFalse()));
+                addInstr(new JumpInstr(testEnd));
+                addInstr(new LabelInstr(valueCheck));
+            }
+        }
+
     }
 
     private void buildPatternMatch(Variable result, Node arg, Operand obj) {
@@ -1337,6 +1397,7 @@ public class IRBuilder {
         if (exprNodes instanceof ArrayPatternNode) {
             buildArrayPattern(testEnd, result, (ArrayPatternNode) exprNodes, value);
         } else if (exprNodes instanceof HashPatternNode) {
+            buildHashPattern(testEnd, result, (HashPatternNode) exprNodes, value);
         } else if (exprNodes instanceof FindPatternNode) {
         } else if (exprNodes instanceof LocalAsgnNode) {
             LocalAsgnNode localAsgnNode = (LocalAsgnNode) exprNodes;
