@@ -51,6 +51,10 @@ public class HashPatternNode extends Node {
         return restArg;
     }
 
+    public boolean hasKeywordArgs() {
+        return keywordArgs != null;
+    }
+
     public HashNode getKeywordArgs() {
         return keywordArgs;
     }

@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
@@ -1247,53 +1248,46 @@ public class IRBuilder {
     }
 
     private void buildArrayPattern(Label testEnd, Variable result, ArrayPatternNode pattern, Operand obj) {
-        Variable restNum = createTemporaryVariable();
-
-        //if (pattern.usesRestNum()) {
-            addInstr(new CopyInstr(restNum, new Integer(0)));
-        //}
+        Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
 
         if (pattern.hasConstant()) {
-            Label endConstantCheck = getNewLabel();
-            Operand constant = build(pattern.getConstant());
-            addResultInstr(new EQQInstr(scope, result, constant, obj, false, false));
-            addInstr(createBranch(result, manager.getTrue(), endConstantCheck));
-            // FIXME: Raise exception
-            addInstr(new LabelInstr(endConstantCheck));
+            label(endConstantCheck -> {
+                Operand constant = build(pattern.getConstant());
+                addInstr(new EQQInstr(scope, result, constant, obj, false, false));
+                cond(endConstantCheck, result, tru(), () -> jump(testEnd));
+            });
         }
 
-        Label endRespondToCheck = getNewLabel();
-        addResultInstr(CallInstr.create(scope, result, symbol("respond_to?"),
-               obj, new Operand[] { new Symbol(symbol("respond_to?")) }, NullBlock.INSTANCE));
-        addInstr(createBranch(result, manager.getTrue(), endRespondToCheck));
-        // FIXME: Raise exception
-        addInstr(new LabelInstr(endRespondToCheck));
+        label(endRespondToCheck -> {
+            call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
+            cond(endRespondToCheck, result, tru(), () -> type_error("deconstruct must return Array"));
+        });
 
-        Label endArrayCheck = getNewLabel();
-        Variable d = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("deconstruct"),
-                obj, Operand.EMPTY_ARRAY, NullBlock.INSTANCE));
-        addResultInstr(new EQQInstr(scope, result, manager.getArrayClass(), d, false, false));
-        // FIXME: Raise exception
-        addInstr(new LabelInstr(endArrayCheck));
+        Variable d = call(temp(), obj, "deconstruct");
+        label(arrayCheck -> {
+            addInstr(new EQQInstr(scope, result, manager.getArrayClass(), d, false, false));
+            cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
+        });
 
-        Label minArgsCheck = getNewLabel();
         Operand minArgsCount = new Integer(pattern.minimumArgsNum());
-        Variable length = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), ARRAY_LENGTH, new Operand[] { d }));
-        BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
-        addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
-        // FIXME: Raise exception
-        addInstr(new LabelInstr(minArgsCheck));
+        Variable length = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), ARRAY_LENGTH, new Operand[]{d}));
+        label(minArgsCheck -> {
+            BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
+            addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
+            addInstr(new CopyInstr(result, fals()));
+            jump(testEnd);
+        });
 
         ListNode preArgs = pattern.getPreArgs();
         if (preArgs != null) {
             for (int i = 0; i < preArgs.size(); i++) {
-                Label matchElementCheck = getNewLabel();
-                Variable elt = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("[]"), d, new Operand[]{new Fixnum(i)}, NullBlock.INSTANCE));
-                // FIXME: This needs to call only into the match logic for a single arg and not the whole patternmatch/case+ins.
-                buildPatternEach(testEnd, result, elt, preArgs.get(i));
-                addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
-                addInstr(new JumpInstr(testEnd));
-                addInstr(new LabelInstr(matchElementCheck));
+                Variable elt = call(temp(), d, "[]", fix(i));
+                Node arg = preArgs.get(i);
+
+                label(matchElementCheck -> {
+                    buildPatternEach(testEnd, result, elt, arg);
+                    cond(matchElementCheck, result, tru(), () -> jump(testEnd));
+                });
             }
         }
 
@@ -1301,12 +1295,11 @@ public class IRBuilder {
             addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
 
             if (pattern.isNamedRestArg()) {
-                Label restArgCheck = getNewLabel();
-                Variable elt = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("[]"), d, new Operand[] { restNum }, NullBlock.INSTANCE));
-                buildPatternMatch(result, pattern.getRestArg(), elt);
-                addInstr(BNEInstr.create(restArgCheck, result, buildFalse()));
-                addInstr(new JumpInstr(testEnd));
-                addInstr(new LabelInstr(restArgCheck));
+                label(restArgCheck -> {
+                    Variable elt = call(temp(), d, "[]", restNum);
+                    buildPatternMatch(result, pattern.getRestArg(), elt);
+                    cond(restArgCheck, result, tru(), () -> jump(testEnd));
+                });
             }
         }
 
@@ -1314,9 +1307,9 @@ public class IRBuilder {
         if (postArgs != null) {
             for (int i = 0; i < postArgs.size(); i++) {
                 Label matchElementCheck = getNewLabel();
-                Variable j = addResultInstr(new IntegerMathInstr(ADD, createTemporaryVariable(), new Integer(i + pattern.getPreArgs().size()), restNum));
-                Variable k = addResultInstr(new AsFixnumInstr(createTemporaryVariable(), j));
-                Variable elt = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("[]"), d, new Operand[]{k}, NullBlock.INSTANCE));
+                Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + pattern.getPreArgs().size()), restNum));
+                Variable k = addResultInstr(new AsFixnumInstr(temp(), j));
+                Variable elt = addResultInstr(CallInstr.create(scope, temp(), symbol("[]"), d, new Operand[]{k}, NullBlock.INSTANCE));
                 buildPatternEach(testEnd, result, elt, postArgs.get(i));
                 addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
                 addInstr(new JumpInstr(testEnd));
@@ -1325,12 +1318,11 @@ public class IRBuilder {
         }
     }
 
-    private void buildHashPattern(Label testEnd, Variable result, HashPatternNode pattern, Operand obj) {
-        boolean hasKeywordArgs = pattern.getArgumentSize() > 0;
+    private Variable deconstructHashPatternKeys(Label testEnd, HashPatternNode pattern, Variable result, Operand obj) {
         boolean hasKeywordRestArg = pattern.getRestArg() != null;
         Operand keys;
 
-        if (hasKeywordArgs && !hasKeywordRestArg) {
+        if (pattern.hasKeywordArgs() && !hasKeywordRestArg) {
             List<Node> keyNodes = pattern.getKeys();
             int length = keyNodes.size();
             Operand[] builtKeys = new Operand[length];
@@ -1344,53 +1336,117 @@ public class IRBuilder {
         }
 
         if (pattern.getConstant() != null) {
-            Label endConstantCheck = getNewLabel();
-            Operand constant = build(pattern.getConstant());
-            addResultInstr(new EQQInstr(scope, result, constant, obj, false, false));
-            addInstr(createBranch(result, manager.getTrue(), endConstantCheck));
-            // FIXME: Raise exception
-            addInstr(new LabelInstr(endConstantCheck));
+            label(endConstantCheck -> {
+                Operand constant = build(pattern.getConstant());
+                addInstr(new EQQInstr(scope, result, constant, obj, false, false));
+                cond(endConstantCheck, result, manager.getTrue(), () -> jump(testEnd));
+            });
         }
 
-        Label endHashCheck = getNewLabel();
-        Variable d = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("deconstruct_keys"),
-                obj, new Operand[] { keys }, NullBlock.INSTANCE));
-        addResultInstr(new EQQInstr(scope, result, manager.getHashClass(), d, false, false));
-        // FIXME: Raise exception
-        addInstr(new LabelInstr(endHashCheck));
+        label(endRespondToCheck -> {
+            call(result, obj, "respond_to?", new Symbol(symbol("deconstruct_keys")));
+            cond(endRespondToCheck, result, tru(), () -> type_error("deconstruct must return Array"));
+        });
 
-        if (hasKeywordArgs) {
+        return call(createTemporaryVariable(), obj, "deconstruct_keys", keys);
+    }
+
+    private void buildHashPattern(Label testEnd, Variable result, HashPatternNode pattern, Operand obj) {
+        Variable d = deconstructHashPatternKeys(testEnd, pattern, result, obj);
+
+        label(endHashCheck -> {
+            addInstr(new EQQInstr(scope, result, manager.getHashClass(), d, false, false));
+            cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
+        });
+
+        if (pattern.hasKeywordArgs()) {
 
         } else {
 
         }
 
-        if (hasKeywordArgs) {
+        if (pattern.hasKeywordArgs()) {
             List<KeyValuePair<Node,Node>> kwargs = pattern.getKeywordArgs().getPairs();
 
             for (KeyValuePair<Node,Node> pair: kwargs) {
-                Label keyCheck = getNewLabel();
+                // FIXME: only build literals (which are guaranteed to build without raising).
                 Operand key = build(pair.getKey());
-                addInstr(CallInstr.create(scope, result, symbol("key?"), d, new Operand[] { key }, NullBlock.INSTANCE));
-                addInstr(BNEInstr.create(keyCheck, result, buildFalse()));
-                addInstr(new JumpInstr(testEnd));
-                addInstr(new LabelInstr(keyCheck));
 
-                Label valueCheck = getNewLabel();
-                Operand value = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol("[]"), d, new Operand[] { key }, NullBlock.INSTANCE));
-                buildPatternEach(testEnd, result, value, pair.getValue());
-                addInstr(BNEInstr.create(valueCheck, result, buildFalse()));
-                addInstr(new JumpInstr(testEnd));
-                addInstr(new LabelInstr(valueCheck));
+                label(keyCheck -> {
+                    call(result, d, "key?", key);
+                    cond(keyCheck, result, tru(), () -> jump(testEnd));
+                });
+
+                label(valueCheck -> {
+                    Operand value = call(d, "[]", key);
+                    buildPatternEach(testEnd, result, value, pair.getValue());
+                    cond(valueCheck, result, tru(), () -> jump(testEnd));
+                });
             }
         }
 
     }
 
+    public interface RunIt {
+        void apply();
+    }
+    public interface Consume2<T, U> {
+        void apply(T t, U u);
+    }
+
+    private void type_error(String message) {
+        addRaiseError("TypeError", message);
+    }
+
+    private Variable temp() {
+        return createTemporaryVariable();
+    }
+
+    private Operand fals() {
+        return manager.getFalse();
+    }
+
+    private Fixnum fix(long value) {
+        return manager.newFixnum(value);
+    }
+
+    private Operand tru() {
+        return manager.getTrue();
+    }
+
+    private void cond(Label endLabel, Operand value, Operand test, RunIt body) {
+        addInstr(createBranch(value, test, endLabel));
+        body.apply();
+    }
+
+    private void jump(Label label) {
+        addInstr(new JumpInstr(label));
+    }
+
+    private Variable call(Variable result, Operand object, String name, Operand... args) {
+        addInstr(CallInstr.create(scope, result, symbol(name), object, args, NullBlock.INSTANCE));
+        return result;
+    }
+
+    private Operand call(Operand object, String name, Operand... args) {
+        Operand result = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol(name), object, args, NullBlock.INSTANCE));
+        return result;
+    }
+
+    private void label(Consumer<Label> block) {
+        Label label = getNewLabel();
+        block.accept(label);
+        addInstr(new LabelInstr(label));
+    }
+
+    private void label(Object data, Consume2<Label, Object> block) {
+        Label label = getNewLabel();
+        block.apply(label, data);
+        addInstr(new LabelInstr(label));
+    }
+
     private void buildPatternMatch(Variable result, Node arg, Operand obj) {
-        Label testEnd = getNewLabel();
-        buildPatternEach(testEnd, result, obj, arg);
-        addInstr(new LabelInstr(testEnd));
+        label(testEnd -> buildPatternEach(testEnd, result, obj, arg));
     }
 
     private Variable buildPatternEach(Label testEnd, Variable result, Operand value, Node exprNodes) {
