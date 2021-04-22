@@ -1253,7 +1253,7 @@ public class IRBuilder {
         if (pattern.hasConstant()) {
             label(endConstantCheck -> {
                 Operand constant = build(pattern.getConstant());
-                addInstr(new EQQInstr(scope, result, constant, obj, false, false));
+                addInstr(new EQQInstr(scope, result, obj, constant, false, false));
                 cond(endConstantCheck, result, tru(), () -> jump(testEnd));
             });
         }
@@ -1338,7 +1338,7 @@ public class IRBuilder {
         if (pattern.getConstant() != null) {
             label(endConstantCheck -> {
                 Operand constant = build(pattern.getConstant());
-                addInstr(new EQQInstr(scope, result, constant, obj, false, false));
+                addInstr(new EQQInstr(scope, result, obj, constant, false, false));
                 cond(endConstantCheck, result, manager.getTrue(), () -> jump(testEnd));
             });
         }
