@@ -1520,7 +1520,8 @@ public class IRBuilder {
 
         if (!hasElse) {
             addInstr(new LabelInstr(elseLabel));
-            addInstr(new CopyInstr(result, manager.getNil()));
+            Variable inspect = call(temp(), value, "inspect");
+            addRaiseError("NoMatchingPatternError", inspect);
             addInstr(new JumpInstr(endLabel));
         }
 
@@ -4524,15 +4525,13 @@ public class IRBuilder {
     }
 
     private void addRaiseError(String id, String message) {
-        Ruby runtime = scope.getManager().getRuntime();
-        Operand exceptionClass = searchModuleForConst(manager.getObjectClass(), runtime.newSymbol(id));
-        Operand kernel = searchModuleForConst(manager.getObjectClass(), runtime.newSymbol("Kernel"));
-        addResultInstr(CallInstr.create(scope,
-                createTemporaryVariable(),
-                runtime.newSymbol("raise"),
-                kernel,
-                new Operand[] { exceptionClass, new MutableString(message) },
-                null));
+        addRaiseError(id, new MutableString(message));
+    }
+
+    private void addRaiseError(String id, Operand message) {
+        Operand exceptionClass = searchModuleForConst(manager.getObjectClass(), symbol(id));
+        Operand kernel = searchModuleForConst(manager.getObjectClass(), symbol("Kernel"));
+        call(temp(), kernel, "raise", exceptionClass, message);
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {

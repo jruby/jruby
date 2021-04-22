@@ -1662,6 +1662,7 @@ public final class Ruby implements Constantizable {
         ifAllowed("Fatal",                  (ruby) -> fatal = RubyFatal.define(ruby, exceptionClass));
         ifAllowed("Interrupt",              (ruby) -> interrupt = RubyInterrupt.define(ruby, signalException));
         ifAllowed("TypeError",              (ruby) -> typeError = RubyTypeError.define(ruby, standardError));
+        ifAllowed("NoMatchingPatternError", (ruby) -> noMatchingPatternError = RubyNoMatchingPatternError.define(ruby, standardError));
         ifAllowed("ArgumentError",          (ruby) -> argumentError = RubyArgumentError.define(ruby, standardError));
         ifAllowed("UncaughtThrowError",     (ruby) -> uncaughtThrowError = RubyUncaughtThrowError.define(ruby, argumentError));
         ifAllowed("IndexError",             (ruby) -> indexError = RubyIndexError.define(ruby, standardError));
@@ -2315,6 +2316,10 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getTypeError() {
         return typeError;
+    }
+
+    public RubyClass getNoMatchingPatternError() {
+        return noMatchingPatternError;
     }
 
     public RubyClass getArgumentError() {
@@ -5380,6 +5385,7 @@ public final class Ruby implements Constantizable {
     private RubyClass fatal;
     private RubyClass interrupt;
     private RubyClass typeError;
+    private RubyClass noMatchingPatternError;
     private RubyClass argumentError;
     private RubyClass uncaughtThrowError;
     private RubyClass indexError;
