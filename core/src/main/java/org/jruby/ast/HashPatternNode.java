@@ -77,4 +77,8 @@ public class HashPatternNode extends Node {
 
         return keys;
     }
+
+    public boolean hashNamedKeywordRestArg() {
+        return hasRestArg() && !(restArg instanceof StarNode);
+    }
 }

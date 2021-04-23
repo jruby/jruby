@@ -1320,10 +1320,9 @@ public class IRBuilder {
     }
 
     private Variable deconstructHashPatternKeys(Label testEnd, HashPatternNode pattern, Variable result, Operand obj) {
-        boolean hasKeywordRestArg = pattern.getRestArg() != null;
         Operand keys;
 
-        if (pattern.hasKeywordArgs() && !hasKeywordRestArg) {
+        if (pattern.hasKeywordArgs() && !pattern.hashNamedKeywordRestArg()) {
             List<Node> keyNodes = pattern.getKeys();
             int length = keyNodes.size();
             Operand[] builtKeys = new Operand[length];
