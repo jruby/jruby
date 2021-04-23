@@ -95,6 +95,9 @@ public class ParserSupport {
 
     public IRubyObject case_labels;
 
+    private Set<ByteList> keyTable;
+    private Set<ByteList> variableTable;
+
     public void reset() {
         lexer.getLexContext().reset();
     }
@@ -1545,12 +1548,16 @@ public class ParserSupport {
         return INTERNAL_ID.toString();
     }
 
-    public Set push_pvtbl() {
-        // FIXME: IMPL
-        return null;
+    public Set<ByteList> push_pvtbl() {
+        Set<ByteList> currentTable = variableTable;
+
+        variableTable = new HashSet<>();
+
+        return currentTable;
     }
 
-    public void pop_pvtbl(Set arg) {
+    public void pop_pvtbl(Set<ByteList> table) {
+        variableTable = table;
     }
 
     public Set<ByteList> push_pktbl() {
@@ -1642,20 +1649,17 @@ public class ParserSupport {
                 postArgs);
     }
 
-    private Set<ByteList> keyTable;
+    public void error_duplicate_pattern_key(ByteList key) {
+        if (keyTable.contains(key)) yyerror("duplicated key name");
 
-    public void error_duplicate_pattern_key(ByteList one) {
-        if (keyTable == null) {
-            keyTable = new HashSet<>();
-        } else if (keyTable.contains(one)) {
-            yyerror("duplicated key name");
-        }
-
-        keyTable.add(one);
+        keyTable.add(key);
     }
 
-    public void error_duplicate_pattern_variable(ByteList one) {
-        // FIXME: IMPL
+    public void error_duplicate_pattern_variable(ByteList variable) {
+        if (is_private_local_id(variable)) return;
+        if (variableTable.contains(variable)) yyerror("duplicated variable name");
+
+        variableTable.add(variable);
     }
 
     public Node new_find_pattern(Node constant, FindPatternNode findPattern) {
