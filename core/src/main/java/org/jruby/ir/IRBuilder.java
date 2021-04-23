@@ -1296,7 +1296,9 @@ public class IRBuilder {
             addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
 
             if (pattern.isNamedRestArg()) {
-                Variable elt = call(temp(), deconstructed, "[]", restNum);
+                Variable min = addResultInstr(new CopyInstr(temp(), fix(preArgs.size())));
+                Variable max = addResultInstr(new AsFixnumInstr(temp(), restNum));
+                Variable elt = call(temp(), deconstructed, "[]", min, max);
                 Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
                 buildPatternMatch(result, dd, pattern.getRestArg(), elt);
                 cond_ne(testEnd, result, tru());
