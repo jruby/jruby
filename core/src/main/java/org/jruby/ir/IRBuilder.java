@@ -48,6 +48,7 @@ import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import static org.jruby.ir.operands.ScopeModule.*;
 import static org.jruby.runtime.CallType.FUNCTIONAL;
 import static org.jruby.runtime.CallType.NORMAL;
+import static org.jruby.util.RubyStringBuilder.str;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -1247,7 +1248,8 @@ public class IRBuilder {
         return null;
     }
 
-    private void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, ArrayPatternNode pattern, Operand obj) {
+    private void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, ArrayPatternNode pattern,
+                                   Operand obj, boolean inAlteration) {
         Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
 
         if (pattern.hasConstant()) {
@@ -1285,7 +1287,7 @@ public class IRBuilder {
                 Node arg = preArgs.get(i);
 
                 Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                buildPatternEach(testEnd, result, dd, elt, arg);
+                buildPatternEach(testEnd, result, dd, elt, arg, inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1298,7 +1300,7 @@ public class IRBuilder {
                 Variable max = addResultInstr(new AsFixnumInstr(temp(), restNum));
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
                 Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                buildPatternMatch(result, dd, pattern.getRestArg(), elt);
+                buildPatternMatch(result, dd, pattern.getRestArg(), elt, inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1311,7 +1313,7 @@ public class IRBuilder {
                 Variable k = addResultInstr(new AsFixnumInstr(temp(), j));
                 Variable elt = addResultInstr(CallInstr.create(scope, temp(), symbol("[]"), deconstructed, new Operand[]{k}, NullBlock.INSTANCE));
                 Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                buildPatternEach(testEnd, result, dd, elt, postArgs.get(i));
+                buildPatternEach(testEnd, result, dd, elt, postArgs.get(i), inAlteration);
                 addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
                 addInstr(new JumpInstr(testEnd));
                 addInstr(new LabelInstr(matchElementCheck));
@@ -1347,7 +1349,8 @@ public class IRBuilder {
         return call(createTemporaryVariable(), obj, "deconstruct_keys", keys);
     }
 
-    private void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, HashPatternNode pattern, Operand obj) {
+    private void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, HashPatternNode pattern,
+                                  Operand obj, boolean inAlteration) {
         Variable d = deconstructHashPatternKeys(testEnd, pattern, result, obj);
 
         label(endHashCheck -> {
@@ -1369,7 +1372,7 @@ public class IRBuilder {
 
                 String method = pattern.hasRestArg() ? "delete" : "[]";
                 Operand value = call(d, method, key);
-                buildPatternEach(testEnd, result, deconstructed, value, pair.getValue());
+                buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         } else {
@@ -1381,7 +1384,7 @@ public class IRBuilder {
                 call(result, d, "empty?");
                 cond_ne(testEnd, result, tru());
             } else if (pattern.isNamedRestArg()) {
-                buildPatternEach(testEnd, result, deconstructed, d, pattern.getRestArg());
+                buildPatternEach(testEnd, result, deconstructed, d, pattern.getRestArg(), inAlteration);
                 cond_ne(testEnd, result, tru());
             }
         }
@@ -1461,15 +1464,16 @@ public class IRBuilder {
         addInstr(new LabelInstr(label));
     }
 
-    private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj) {
-        label(testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg));
+    private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj, boolean inAlternation) {
+        label(testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation));
     }
 
-    private Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value, Node exprNodes) {
+    private Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
+                                      Node exprNodes, boolean inAlternation) {
         if (exprNodes instanceof ArrayPatternNode) {
-            buildArrayPattern(testEnd, result, deconstructed, (ArrayPatternNode) exprNodes, value);
+            buildArrayPattern(testEnd, result, deconstructed, (ArrayPatternNode) exprNodes, value, inAlternation);
         } else if (exprNodes instanceof HashPatternNode) {
-            buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value);
+            buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value, inAlternation);
         } else if (exprNodes instanceof FindPatternNode) {
         } else if (exprNodes instanceof HashNode) {
             HashNode hash = (HashNode) exprNodes;
@@ -1479,23 +1483,35 @@ public class IRBuilder {
             }
 
             KeyValuePair<Node, Node> pair = hash.getPairs().get(0);
-            buildPatternMatch(result, deconstructed, pair.getKey(), value);
-            buildPatternEach(testEnd, result, deconstructed, value, pair.getValue());
+            buildPatternMatch(result, deconstructed, pair.getKey(), value, inAlternation);
+            buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlternation);
         } else if (exprNodes instanceof LocalAsgnNode) {
             LocalAsgnNode localAsgnNode = (LocalAsgnNode) exprNodes;
-            Variable variable  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+            RubySymbol name = localAsgnNode.getName();
+
+            if (inAlternation && name.idString().charAt(0) != '_') {
+                throwSyntaxError(localAsgnNode, str(manager.getRuntime(), "illegal variable in alternative pattern (", name, ")"));
+            }
+
+            Variable variable  = getLocalVariable(name, localAsgnNode.getDepth());
             addInstr(new CopyInstr(variable, value));
         } else if (exprNodes instanceof DAsgnNode) {
             DAsgnNode localAsgnNode = (DAsgnNode) exprNodes;
-            Variable variable = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+            RubySymbol name = localAsgnNode.getName();
+
+            if (inAlternation && name.idString().charAt(0) != '_') {
+                throwSyntaxError(localAsgnNode, str(manager.getRuntime(), "illegal variable in alternative pattern (", name, ")"));
+            }
+
+            Variable variable = getLocalVariable(name, localAsgnNode.getDepth());
             addInstr(new CopyInstr(variable, value));
         } else if (exprNodes instanceof OrNode) {
             OrNode orNode = (OrNode) exprNodes;
             label(firstCase -> {
-                buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode());
+                buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode(), true);
             });
             label(secondCase -> {
-                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode()));
+                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode(), true));
             });
 
 
@@ -1527,7 +1543,7 @@ public class IRBuilder {
 
             Variable eqqResult = createTemporaryVariable();
             labels.add(bodyLabel);
-            buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value);
+            buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false);
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
             bodies.put(bodyLabel, inNode.getBody());
         }
