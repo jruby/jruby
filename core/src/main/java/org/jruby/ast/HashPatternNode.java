@@ -51,6 +51,14 @@ public class HashPatternNode extends Node {
         return restArg;
     }
 
+    public boolean hasRestArg() {
+        return restArg != null;
+    }
+
+    public boolean isNamedRestArg() {
+        return !(restArg instanceof StarNode);
+    }
+
     public boolean hasKeywordArgs() {
         return keywordArgs != null;
     }

@@ -1356,11 +1356,8 @@ public class IRBuilder {
             cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
         });
 
-        if (pattern.hasKeywordArgs()) {
-
-        } else {
-
-        }
+        // rest args destructively deletes elements from deconstruct_keys and the default impl is 'self'.
+        if (pattern.hasRestArg()) call(d, d, "dup");
 
         if (pattern.hasKeywordArgs()) {
             List<KeyValuePair<Node,Node>> kwargs = pattern.getKeywordArgs().getPairs();
@@ -1371,12 +1368,21 @@ public class IRBuilder {
                 call(result, d, "key?", key);
                 cond_ne(testEnd, result, tru());
 
-                Operand value = call(d, "[]", key);
+                String method = pattern.hasRestArg() ? "delete" : "[]";
+                Operand value = call(d, method, key);
                 buildPatternEach(testEnd, result, deconstructed, value, pair.getValue());
                 cond_ne(testEnd, result, tru());
             }
+        } else {
+
         }
 
+        if (pattern.hasRestArg()) {
+            if (pattern.isNamedRestArg()) {
+                buildPatternEach(testEnd, result, deconstructed, d, pattern.getRestArg());
+                cond_ne(testEnd, result, tru());
+            }
+        }
     }
 
     public interface RunIt {
