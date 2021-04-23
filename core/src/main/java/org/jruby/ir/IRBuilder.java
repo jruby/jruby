@@ -1251,11 +1251,9 @@ public class IRBuilder {
         Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
 
         if (pattern.hasConstant()) {
-            label(endConstantCheck -> {
-                Operand constant = build(pattern.getConstant());
-                addInstr(new EQQInstr(scope, result, constant, obj, false, false));
-                cond(endConstantCheck, result, tru(), () -> jump(testEnd));
-            });
+            Operand constant = build(pattern.getConstant());
+            addInstr(new EQQInstr(scope, result, constant, obj, false, false));
+            cond_ne(testEnd, result, tru());
         }
 
         label(deconstructCheck -> {
@@ -1288,11 +1286,9 @@ public class IRBuilder {
                 Variable elt = call(temp(), deconstructed, "[]", fix(i));
                 Node arg = preArgs.get(i);
 
-                label(matchElementCheck -> {
-                    Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                    buildPatternEach(testEnd, result, dd, elt, arg);
-                    cond(matchElementCheck, result, tru(), () -> jump(testEnd));
-                });
+                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
+                buildPatternEach(testEnd, result, dd, elt, arg);
+                cond_ne(testEnd, result, tru());
             }
         }
 
@@ -1300,12 +1296,10 @@ public class IRBuilder {
             addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
 
             if (pattern.isNamedRestArg()) {
-                label(restArgCheck -> {
-                    Variable elt = call(temp(), deconstructed, "[]", restNum);
-                    Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
-                    buildPatternMatch(result, dd, pattern.getRestArg(), elt);
-                    cond(restArgCheck, result, tru(), () -> jump(testEnd));
-                });
+                Variable elt = call(temp(), deconstructed, "[]", restNum);
+                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
+                buildPatternMatch(result, dd, pattern.getRestArg(), elt);
+                cond_ne(testEnd, result, tru());
             }
         }
 
@@ -1343,11 +1337,9 @@ public class IRBuilder {
         }
 
         if (pattern.getConstant() != null) {
-            label(endConstantCheck -> {
-                Operand constant = build(pattern.getConstant());
-                addInstr(new EQQInstr(scope, result, constant, obj, false, false));
-                cond(endConstantCheck, result, manager.getTrue(), () -> jump(testEnd));
-            });
+            Operand constant = build(pattern.getConstant());
+            addInstr(new EQQInstr(scope, result, constant, obj, false, false));
+            cond_ne(testEnd, result, tru());
         }
 
         label(endRespondToCheck -> {
@@ -1378,17 +1370,12 @@ public class IRBuilder {
             for (KeyValuePair<Node,Node> pair: kwargs) {
                 // FIXME: only build literals (which are guaranteed to build without raising).
                 Operand key = build(pair.getKey());
+                call(result, d, "key?", key);
+                cond_ne(testEnd, result, tru());
 
-                label(keyCheck -> {
-                    call(result, d, "key?", key);
-                    cond(keyCheck, result, tru(), () -> jump(testEnd));
-                });
-
-                label(valueCheck -> {
-                    Operand value = call(d, "[]", key);
-                    buildPatternEach(testEnd, result, deconstructed, value, pair.getValue());
-                    cond(valueCheck, result, tru(), () -> jump(testEnd));
-                });
+                Operand value = call(d, "[]", key);
+                buildPatternEach(testEnd, result, deconstructed, value, pair.getValue());
+                cond_ne(testEnd, result, tru());
             }
         }
 
@@ -1421,11 +1408,22 @@ public class IRBuilder {
         return manager.getTrue();
     }
 
+    // if-only
+    private void cond(Label label, Operand value, Operand test) {
+        addInstr(createBranch(value, test, label));
+    }
+
+    // if/else
     private void cond(Label endLabel, Operand value, Operand test, RunIt body) {
         addInstr(createBranch(value, test, endLabel));
         body.apply();
     }
 
+    // if-only
+    private void cond_ne(Label label, Operand value, Operand test) {
+        addInstr(BNEInstr.create(label, value, test));
+    }
+    // if !test/else
     private void cond_ne(Label endLabel, Operand value, Operand test, RunIt body) {
         addInstr(BNEInstr.create(endLabel, value, test));
         body.apply();
