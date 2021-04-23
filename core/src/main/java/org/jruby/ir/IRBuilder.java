@@ -1378,7 +1378,10 @@ public class IRBuilder {
         }
 
         if (pattern.hasRestArg()) {
-            if (pattern.isNamedRestArg()) {
+            if (pattern.getRestArg() instanceof NilRestArgNode) {
+                call(result, d, "empty?");
+                cond_ne(testEnd, result, tru());
+            } else if (pattern.isNamedRestArg()) {
                 buildPatternEach(testEnd, result, deconstructed, d, pattern.getRestArg());
                 cond_ne(testEnd, result, tru());
             }

@@ -1602,15 +1602,20 @@ public class ParserSupport {
     }
 
     public static ByteList KWNOREST = new ByteList(new byte[] {});
+    public static ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
 
     public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg) {
-        return new HashPatternNode(line,
-                keywordRestArg == KWNOREST ?
-                        new StarNode(lexer.getRubySourceline()) :
-                        keywordRestArg != null ?
-                                assignableLabelOrIdentifier(keywordRestArg, null) :
-                                null,
-                keywordArgs == null ? new HashNode(line) : keywordArgs);
+        Node restArg;
+
+        if (keywordRestArg == KWNOREST) {          // '**nil'
+            restArg = new NilRestArgNode(line);
+        } else if (keywordRestArg != null) {       // '**something'
+            restArg = assignableLabelOrIdentifier(keywordRestArg, null);
+        } else {                                   // '**'
+            restArg = new StarNode(lexer.getRubySourceline());
+        }
+
+        return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
     }
 
     public void warn_one_line_pattern_matching(Object one,Node two ,boolean three) {
