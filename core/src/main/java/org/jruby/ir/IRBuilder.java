@@ -1489,8 +1489,11 @@ public class IRBuilder {
             IfNode ifNode = (IfNode) exprNodes;
 
             buildPatternMatch(result, deconstructed, ifNode.getThenBody(), value, inAlternation);
-            Operand ifResult = build(ifNode.getCondition());
-            addInstr(new CopyInstr(result, ifResult));
+            label(conditionalEnd -> {
+                cond_ne(conditionalEnd, result, tru());
+                Operand ifResult = build(ifNode.getCondition());
+                addInstr(new CopyInstr(result, ifResult));
+            });
         } else if (exprNodes instanceof LocalAsgnNode) {
             LocalAsgnNode localAsgnNode = (LocalAsgnNode) exprNodes;
             RubySymbol name = localAsgnNode.getName();
