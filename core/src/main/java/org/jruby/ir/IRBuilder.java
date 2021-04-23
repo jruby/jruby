@@ -1478,13 +1478,19 @@ public class IRBuilder {
         } else if (exprNodes instanceof HashNode) {
             HashNode hash = (HashNode) exprNodes;
 
-            if (hash.getPairs().size() != 1 ) {
+            if (hash.getPairs().size() != 1) {
                 throwSyntaxError(hash, "unexpected node");
             }
 
             KeyValuePair<Node, Node> pair = hash.getPairs().get(0);
             buildPatternMatch(result, deconstructed, pair.getKey(), value, inAlternation);
             buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlternation);
+        } else if (exprNodes instanceof IfNode) {
+            IfNode ifNode = (IfNode) exprNodes;
+
+            buildPatternMatch(result, deconstructed, ifNode.getThenBody(), value, inAlternation);
+            Operand ifResult = build(ifNode.getCondition());
+            addInstr(new CopyInstr(result, ifResult));
         } else if (exprNodes instanceof LocalAsgnNode) {
             LocalAsgnNode localAsgnNode = (LocalAsgnNode) exprNodes;
             RubySymbol name = localAsgnNode.getName();
@@ -1513,8 +1519,6 @@ public class IRBuilder {
             label(secondCase -> {
                 cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode(), true));
             });
-
-
         } else {
             Operand expression = build(exprNodes);
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
