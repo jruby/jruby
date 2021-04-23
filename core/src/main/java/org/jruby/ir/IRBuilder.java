@@ -1258,10 +1258,8 @@ public class IRBuilder {
 
         label(deconstructCheck -> {
             cond_ne(deconstructCheck, deconstructed, buildNil(), () -> {
-                label(endRespondToCheck -> {
-                    call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
-                    cond(endRespondToCheck, result, tru(), () -> type_error("deconstruct must return Array"));
-                });
+                call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
+                cond_ne(testEnd, result, tru());
 
                 call(deconstructed, obj, "deconstruct");
                 label(arrayCheck -> {
@@ -1344,10 +1342,8 @@ public class IRBuilder {
             cond_ne(testEnd, result, tru());
         }
 
-        label(endRespondToCheck -> {
-            call(result, obj, "respond_to?", new Symbol(symbol("deconstruct_keys")));
-            cond(endRespondToCheck, result, tru(), () -> type_error("deconstruct must return Array"));
-        });
+        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct_keys")));
+        cond_ne(testEnd, result, tru());
 
         return call(createTemporaryVariable(), obj, "deconstruct_keys", keys);
     }
