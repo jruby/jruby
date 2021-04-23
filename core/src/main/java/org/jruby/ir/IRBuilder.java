@@ -1471,6 +1471,16 @@ public class IRBuilder {
         } else if (exprNodes instanceof HashPatternNode) {
             buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value);
         } else if (exprNodes instanceof FindPatternNode) {
+        } else if (exprNodes instanceof HashNode) {
+            HashNode hash = (HashNode) exprNodes;
+
+            if (hash.getPairs().size() != 1 ) {
+                throwSyntaxError(hash, "unexpected node");
+            }
+
+            KeyValuePair<Node, Node> pair = hash.getPairs().get(0);
+            buildPatternMatch(result, deconstructed, pair.getKey(), value);
+            buildPatternEach(testEnd, result, deconstructed, value, pair.getValue());
         } else if (exprNodes instanceof LocalAsgnNode) {
             LocalAsgnNode localAsgnNode = (LocalAsgnNode) exprNodes;
             Variable variable  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
