@@ -1487,8 +1487,18 @@ public class IRBuilder {
             addInstr(new CopyInstr(variable, value));
         } else if (exprNodes instanceof DAsgnNode) {
             DAsgnNode localAsgnNode = (DAsgnNode) exprNodes;
-            Variable variable  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+            Variable variable = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
             addInstr(new CopyInstr(variable, value));
+        } else if (exprNodes instanceof OrNode) {
+            OrNode orNode = (OrNode) exprNodes;
+            label(firstCase -> {
+                buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode());
+            });
+            label(secondCase -> {
+                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode()));
+            });
+
+
         } else {
             Operand expression = build(exprNodes);
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
