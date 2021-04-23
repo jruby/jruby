@@ -1519,14 +1519,8 @@ public class IRBuilder {
         for (Label label: labels) {
             addInstr(new LabelInstr(label));
             Operand bodyValue = build(bodies.get(label));
-            // bodyValue can be null if the body ends with a return!
-            if (bodyValue != null) {
-                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
-                // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
-                // to look at what the last generated instruction was.
-                addInstr(new CopyInstr(result, bodyValue));
-                addInstr(new JumpInstr(endLabel));
-            }
+            if (bodyValue != null) addInstr(new CopyInstr(result, bodyValue));
+            addInstr(new JumpInstr(endLabel));
         }
 
         if (!hasElse) {
