@@ -28,14 +28,19 @@
 package org.jruby.javasupport.ext;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaPackage;
+import org.jruby.javasupport.JavaUtilities;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -62,17 +67,97 @@ public class Module {
         Module.defineAnnotatedMethods(Module.class);
     }
 
+    @JRubyMethod(name = "import", required = 1, visibility = PRIVATE)
+    public static IRubyObject import_(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
+        if (arg instanceof RubyString) {
+            final String name = ((RubyString) arg).decodeString();
+            int i = name.lastIndexOf('.');
+            if (i != -1 && i + 1 < name.length() && Character.isUpperCase(name.charAt(i + 1))) {
+                return java_import(context, self, arg, block);
+            }
+        } else if (arg instanceof RubyModule) {
+            if (((RubyModule) arg).getJavaProxy() && !(arg instanceof JavaPackage)) {
+                return java_import(context, self, arg, block);
+            }
+        }
+        return include_package(context, self, arg);
+    }
+
+    @JRubyMethod(required = 1, visibility = PRIVATE)
+    public static IRubyObject java_import(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
+        if (arg instanceof RubyArray) {
+            return java_import(context, self, ((RubyArray) arg).toJavaArrayMaybeUnsafe(), block);
+        }
+        return context.runtime.newArray( javaImport(context, (RubyModule) self, arg, block) );
+    }
+
+    @JRubyMethod(rest = true, visibility = PRIVATE)
+    public static IRubyObject java_import(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        final Ruby runtime = context.runtime;
+        IRubyObject[] classes = ((RubyArray) RubyArray.newArrayNoCopy(runtime, args).flatten(context)).toJavaArrayMaybeUnsafe();
+        for (int i = 0; i < classes.length; i++) {
+            classes[i] = javaImport(context, (RubyModule) self, classes[i], block);
+        }
+        return runtime.newArray(classes);
+    }
+
+    private static IRubyObject javaImport(ThreadContext context, RubyModule target, IRubyObject klass, Block block) {
+        final Ruby runtime = context.runtime;
+
+        Class<?> javaClass; RubyModule proxyClass;
+        if (klass instanceof RubyString) {
+            final String className = klass.asJavaString();
+            if (!JavaUtilities.validJavaIdentifier(className)) {
+                throw runtime.newArgumentError("not a valid Java identifier: " + className);
+            }
+            if (className.contains("::")) {
+                throw runtime.newArgumentError("must use Java style name: " + className);
+            }
+            javaClass = Java.getJavaClass(runtime, className, false); // raises NameError if not found
+        } else if (klass instanceof JavaPackage) {
+            throw runtime.newArgumentError("java_import does not work for Java packages (try include_package instead)");
+        } else if (klass instanceof RubyModule) {
+            javaClass = JavaClass.getJavaClassIfProxy(context, (RubyModule) klass);
+            if (javaClass == null) {
+                throw runtime.newArgumentError("not a Java class or interface: " + klass.inspect());
+            }
+        } else {
+            throw runtime.newArgumentError("invalid Java class or interface: " + klass.inspect() + " (of type " + klass.getType() + ")");
+        }
+
+        String constant;
+        if (block.isGiven()) {
+            int i = javaClass.getName().lastIndexOf('.');
+            String packageName = i != -1 ? javaClass.getName().substring(0, i) : "";
+            String className = javaClass.getSimpleName();
+            IRubyObject ret = block.yieldSpecific(context, runtime.newString(packageName), runtime.newString(className));
+            constant = ret.convertToString().asJavaString();
+        } else {
+            constant = javaClass.getSimpleName();
+        }
+
+        proxyClass = Java.getProxyClass(runtime, javaClass);
+
+        try {
+            if (!target.const_defined_p(context, runtime.newSymbol(constant)).isTrue() ||
+                    !target.getConstant(constant).equals(proxyClass)) {
+                target.setConstant(constant, proxyClass);
+            }
+        } catch (NameError e) {
+            String message = "cannot import Java class " + javaClass.getName() + " as `" + constant + "' : " + e.getException().getMessage();
+            throw (RaiseException) runtime.newNameError(message, constant).initCause(e);
+        }
+
+        return proxyClass;
+    }
+
     @JRubyMethod(required = 2, visibility = PRIVATE)
     public static IRubyObject java_alias(final ThreadContext context, final IRubyObject self, IRubyObject new_id, IRubyObject old_id) {
         final IncludedPackages includedPackages = getIncludedPackages(context, (RubyModule) self);
-        if (!(new_id instanceof RubySymbol)) {
-            throw context.runtime.newTypeError(new_id, "Symbol");
-        }
-        if (!(old_id instanceof RubySymbol)) {
-            throw context.runtime.newTypeError(old_id, "Symbol");
-        }
+        if (!(new_id instanceof RubySymbol)) new_id = new_id.convertToString().intern();
+        if (!(old_id instanceof RubySymbol)) old_id = old_id.convertToString().intern();
 
-        includedPackages.javaAliases.put((RubySymbol) new_id, (RubySymbol) old_id);
+        includedPackages.javaAliases.put(((RubySymbol) new_id).idString(), ((RubySymbol) old_id).idString());
         return old_id;
     }
 
@@ -104,7 +189,7 @@ public class Module {
     private static class IncludedPackages {
 
         final Collection<String> packages;
-        final Map<RubySymbol, RubySymbol> javaAliases;
+        final Map<String, String> javaAliases;
 
         IncludedPackages() {
             packages = new LinkedHashSet<>(8);
@@ -123,10 +208,12 @@ public class Module {
         }
 
         @Override
-        public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz,
+        public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule klass,
                                 final String name, final IRubyObject constant) {
             final Ruby runtime = context.runtime;
-            final String realName = includedPackages.javaAliases.getOrDefault(constant, (RubySymbol) constant).idString();
+
+            final String constName = ((RubySymbol) constant).idString();
+            final String realName = includedPackages.javaAliases.getOrDefault(constName, constName);
 
             Class<?> foundClass = null;
             for (String packageName : includedPackages.packages) {
@@ -140,12 +227,12 @@ public class Module {
 
             if (foundClass == null) {
                 try {
-                    return Helpers.invokeSuper(context, self, constant, Block.NULL_BLOCK);
+                    return Helpers.invokeSuper(context, self, klass, "const_missing", constant, Block.NULL_BLOCK);
                 } catch (NameError e) { // super didn't find anything either, raise a (new) NameError
                     throw runtime.newNameError(constant + " not found in packages: " + includedPackages.packages.stream().collect(Collectors.joining(", ")), constant);
                 }
             }
-            return Java.setProxyClass(runtime, (RubyModule) self, realName, foundClass);
+            return Java.setProxyClass(runtime, (RubyModule) self, constName, foundClass);
         }
 
     }

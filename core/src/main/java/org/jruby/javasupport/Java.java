@@ -228,6 +228,7 @@ public class Java implements Library {
         }
     }
 
+    @Deprecated
     public static IRubyObject create_proxy_class(
             IRubyObject self,
             IRubyObject name,
@@ -952,8 +953,12 @@ public class Java implements Library {
     }
 
     public static Class getJavaClass(final Ruby runtime, final String className) throws RaiseException {
+        return getJavaClass(runtime, className, true);
+    }
+
+    public static Class getJavaClass(final Ruby runtime, final String className, boolean initialize) throws RaiseException {
         try {
-            return loadJavaClass(runtime, className);
+            return loadJavaClass(runtime, className, initialize);
         } catch (ClassNotFoundException ex) {
             throw initCause(runtime.newNameError("Java class " + className + " not found", className, ex), ex);
         }
