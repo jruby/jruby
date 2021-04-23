@@ -67,7 +67,6 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.RubyParser;
-import org.jruby.parser.Table;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.SafeDoubleParser;

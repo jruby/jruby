@@ -38,7 +38,10 @@ package org.jruby.parser;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
@@ -1542,24 +1545,24 @@ public class ParserSupport {
         return INTERNAL_ID.toString();
     }
 
-    public Table push_pvtbl() {
+    public Set push_pvtbl() {
         // FIXME: IMPL
         return null;
     }
 
-    public Table pop_pvtbl(Table arg) {
-        // FIXME: IMPL
-        return null;
+    public void pop_pvtbl(Set arg) {
     }
 
-    public Table push_pktbl() {
-        // FIXME: IMPL
-        return null;
+    public Set<ByteList> push_pktbl() {
+        Set<ByteList> currentTable = keyTable;
+
+        keyTable = new HashSet<>();
+
+        return currentTable;
     }
 
-    public Table pop_pktbl(Table arg) {
-        // FIXME: IMPL
-        return null;
+    public void pop_pktbl(Set<ByteList> table) {
+        keyTable = table;
     }
 
     public Node newIn(int line, Node expression, Node body, Node nextCase) {
@@ -1639,8 +1642,16 @@ public class ParserSupport {
                 postArgs);
     }
 
+    private Set<ByteList> keyTable;
+
     public void error_duplicate_pattern_key(ByteList one) {
-        // FIXME: IMPL
+        if (keyTable == null) {
+            keyTable = new HashSet<>();
+        } else if (keyTable.contains(one)) {
+            yyerror("duplicated key name");
+        }
+
+        keyTable.add(one);
     }
 
     public void error_duplicate_pattern_variable(ByteList one) {

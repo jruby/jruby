@@ -31,6 +31,7 @@
 package org.jruby.parser;
 
 import java.io.IOException;
+import java.util.Set;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.ArgsNode;
@@ -648,7 +649,7 @@ expr            : command_call
                 } {
                     $$ = support.push_pvtbl();
                 } p_expr {
-                    support.pop_pvtbl($<Table>4);
+                    support.pop_pvtbl($<Set>4);
                 } {
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<LexContext>3.in_kwarg;
@@ -666,7 +667,7 @@ expr            : command_call
                 {
                     $$ = support.push_pvtbl();
                 } p_expr {
-                    support.pop_pvtbl($<Table>4);
+                    support.pop_pvtbl($<Set>4);
                 }
                 {
                     LexContext ctxt = lexer.getLexContext();
@@ -2271,8 +2272,8 @@ p_case_body     : keyword_in {
                 } {
                     $$ = support.push_pktbl();
                 } p_top_expr then {
-                    support.pop_pktbl($<Table>3);
-                    support.pop_pvtbl($<Table>2);
+                    support.pop_pktbl($<Set>3);
+                    support.pop_pvtbl($<Set>2);
                     lexer.getLexContext().in_kwarg = $<LexContext>1.in_kwarg;
                 } compstmt p_cases {
                     $$ = support.newIn(@1.startLine(), $4, $7, $8);
@@ -2334,17 +2335,17 @@ p_lbracket      : '[' {
 
 p_expr_basic    : p_value
                 | p_const p_lparen p_args rparen {
-                    support.pop_pktbl($<Table>2);
+                    support.pop_pktbl($<Set>2);
                     $$ = support.new_array_pattern(@1.startLine(), $1, null, $3);
                     support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_const p_lparen p_find rparen {
-                     support.pop_pktbl($<Table>2);
+                     support.pop_pktbl($<Set>2);
                      $$ = support.new_find_pattern($1, $3);
                      support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_const p_lparen p_kwargs rparen {
-                     support.pop_pktbl($<Table>2);
+                     support.pop_pktbl($<Set>2);
                      $$ = support.new_hash_pattern($1, $3);
                      support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
@@ -2353,17 +2354,17 @@ p_expr_basic    : p_value
                                                     support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
                 }
                 | p_const p_lbracket p_args rbracket {
-                     support.pop_pktbl($<Table>2);
+                     support.pop_pktbl($<Set>2);
                      $$ = support.new_array_pattern(@1.startLine(), $1, null, $3);
                      support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_const p_lbracket p_find rbracket {
-                    support.pop_pktbl($<Table>2);
+                    support.pop_pktbl($<Set>2);
                     $$ = support.new_find_pattern($1, $3);
                     support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
                 | p_const p_lbracket p_kwargs rbracket {
-                    support.pop_pktbl($<Table>2);
+                    support.pop_pktbl($<Set>2);
                     $$ = support.new_hash_pattern($1, $3);
                     support.nd_set_first_loc($<Node>$, @1.startLine());
                 }
@@ -2387,7 +2388,7 @@ p_expr_basic    : p_value
                     $1 = ctxt;
                     ctxt.in_kwarg = false;
                 } p_kwargs rbrace {
-                    support.pop_pktbl($<Table>2);
+                    support.pop_pktbl($<Set>2);
                     lexer.getLexContext().in_kwarg = $<LexContext>1.in_kwarg;
                     $$ = support.new_hash_pattern(null, $3);
                 }
@@ -2397,7 +2398,7 @@ p_expr_basic    : p_value
                 | tLPAREN {
                     $$ = support.push_pktbl();
                  } p_expr rparen {
-                    support.pop_pktbl($<Table>2);
+                    support.pop_pktbl($<Set>2);
                     $$ = $3;
                 }
 

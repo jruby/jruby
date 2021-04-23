@@ -9,6 +9,7 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.ModuleNode;
+import org.jruby.ast.NilRestArgNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
@@ -110,6 +111,11 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      */
     @Override
     public Void visitModuleNode(ModuleNode iVisited) {
+        return null;
+    }
+
+    @Override
+    public Void visitNilRestArgNode(NilRestArgNode iVisited) {
         return null;
     }
 

@@ -400,6 +400,11 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
+    public T visitNilRestArgNode(NilRestArgNode node) {
+        return defaultVisit(node);
+    }
+
+    @Override
     public T visitNextNode(NextNode node) {
         return defaultVisit(node);
     }
