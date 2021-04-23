@@ -1541,7 +1541,7 @@ public class IRBuilder {
             InNode inNode = (InNode) aCase;
             Label bodyLabel = getNewLabel();
 
-            Variable eqqResult = createTemporaryVariable();
+            Variable eqqResult = addResultInstr(new CopyInstr(temp(), tru()));
             labels.add(bodyLabel);
             buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false);
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
