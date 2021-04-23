@@ -14,7 +14,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class BIntInstr extends TwoOperandBranchInstr implements FixedArityInstr {
     public enum Op {
-        LT, GT, LTE, GTE, EQ, NEQ;
+        LT("<"), GT(">"), LTE("<="), GTE(">="), EQ("=="), NEQ("!=");
+
+        private final String label;
+
+        Op(String label) {
+            this.label = label;
+        }
+
+        public String toString() {
+            return label;
+        }
 
         public static Op fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
@@ -78,5 +88,10 @@ public class BIntInstr extends TwoOperandBranchInstr implements FixedArityInstr 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.BGTEInstr(this);
+    }
+
+    @Override
+    public String[] toStringNonOperandArgs() {
+        return new String[] { op.toString() };
     }
 }
