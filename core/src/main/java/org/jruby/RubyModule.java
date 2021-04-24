@@ -3712,7 +3712,7 @@ public class RubyModule extends RubyObject {
             RubySymbol sym = (RubySymbol) name;
 
             if (!sym.validConstantName()) {
-                throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, sym)), sym);
+                throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, sym)), sym);
             }
 
             String id = sym.idString();
@@ -3813,7 +3813,7 @@ public class RubyModule extends RubyObject {
         int sep = name.indexOf("::");
         // symbol form does not allow ::
         if (symbol instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", fullName);
+            throw runtime.newNameError("wrong constant name ", fullName);
         }
 
         RubyModule mod = this;
