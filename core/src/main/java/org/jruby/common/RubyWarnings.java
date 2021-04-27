@@ -142,6 +142,14 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         writeWarningDyncall(runtime.getCurrentContext(), errorString);
     }
 
+    public void warnExperimental(String filename, int line, String message) {
+        if (categories.contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
+    }
+
+    public void warnDeprecated(String name) {
+        if (categories.contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
+    }
+
     public void warnOnce(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
         if (oncelers.contains(id)) return;

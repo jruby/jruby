@@ -2446,11 +2446,7 @@ p_args_tail     : p_rest {
 // FindPatternNode - [!null]
 p_find          : p_rest ',' p_args_post ',' p_rest {
                      $$ = support.new_find_pattern_tail(@1.startLine(), $1, $3, $5);
-
-                     /* FIXME: impl
-                     if (rb_warning_category_enabled_p(RB_WARN_CATEGORY_EXPERIMENTAL)) {
-                         rb_warn0L_experimental(@1.startLine(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
-                         }*/
+                     support.warn_experimental(@1.startLine(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
                 }
 
 // ByteList

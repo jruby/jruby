@@ -4368,11 +4368,7 @@ states[544] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[545] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
                      yyVal = support.new_find_pattern_tail(yyVals[yyTop - count + 1].startLine(), ((ByteList)yyVals[-4+yyTop].value), ((ListNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
-
-                     /* FIXME: impl
-                     if (rb_warning_category_enabled_p(RB_WARN_CATEGORY_EXPERIMENTAL)) {
-                         rb_warn0L_experimental(yyVals[yyTop - count + 1].startLine(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
-                         }*/
+                     support.warn_experimental(yyVals[yyTop - count + 1].startLine(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
   return yyVal;
 };
 states[546] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {
@@ -5459,7 +5455,7 @@ states[803] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 }
-					// line 3463 "RubyParser.y"
+					// line 3459 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5474,4 +5470,4 @@ states[803] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
         return support.getResult();
     }
 }
-					// line 12853 "-"
+					// line 12849 "-"

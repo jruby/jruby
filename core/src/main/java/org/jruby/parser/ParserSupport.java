@@ -55,6 +55,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.runtime.DynamicScope;
@@ -1631,8 +1632,12 @@ public class ParserSupport {
     public void warn_one_line_pattern_matching(int line, Node pattern, boolean rightAssign) {
         // FIXME: Prune out on warning categories once it is more wired in.
         if (!(rightAssign && (pattern instanceof LocalAsgnNode || pattern instanceof DAsgnNode))) {
-            warn(ID.MISCELLANEOUS, line, "One-line pattern matching is experimental, and the behavior may change in future versions of Ruby!");
+            warn_experimental(line, "One-line pattern matching is experimental, and the behavior may change in future versions of Ruby!");
         }
+    }
+
+    public void warn_experimental(int line, String message) {
+        ((RubyWarnings) warnings).warnExperimental(lexer.getFile(), line, message);
     }
 
     public Node rescued_expr(int line, Node arg, Node rescue) {

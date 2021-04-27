@@ -45,6 +45,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -72,6 +73,7 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
+import static org.jruby.common.RubyWarnings.Category.DEPRECATED;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
@@ -199,9 +201,9 @@ public class RubyGlobal {
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()), GLOBAL);
 
         if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
-            runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
+            runtime.defineVariable(new DeprecatedStringOrRegexpGlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
         } else {
-            runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
+            runtime.defineVariable(new DeprecatedStringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
         }
 
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
@@ -955,6 +957,21 @@ public class RubyGlobal {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
             }
             return super.set(value);
+        }
+    }
+
+    public static class DeprecatedStringOrRegexpGlobalVariable extends StringOrRegexpGlobalVariable {
+        public DeprecatedStringOrRegexpGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            IRubyObject result = super.set(value);
+
+            if (!result.isNil()) runtime.getWarnings().warnDeprecated(name);
+
+            return result;
         }
     }
 
