@@ -1628,8 +1628,11 @@ public class ParserSupport {
         return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
     }
 
-    public void warn_one_line_pattern_matching(Object one,Node two ,boolean three) {
-        // FIXME: IMPL
+    public void warn_one_line_pattern_matching(int line, Node pattern, boolean rightAssign) {
+        // FIXME: Prune out on warning categories once it is more wired in.
+        if (!(rightAssign && (pattern instanceof LocalAsgnNode || pattern instanceof DAsgnNode))) {
+            warn(ID.MISCELLANEOUS, line, "One-line pattern matching is experimental, and the behavior may change in future versions of Ruby!");
+        }
     }
 
     public Node rescued_expr(int line, Node arg, Node rescue) {

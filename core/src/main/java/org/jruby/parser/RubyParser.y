@@ -654,7 +654,7 @@ expr            : command_call
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<LexContext>3.in_kwarg;
                     $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, null, null));
-                    support.warn_one_line_pattern_matching($$, $5, true);
+                    support.warn_one_line_pattern_matching(@1.startLine(), $5, true);
                 }
                 | arg keyword_in {
                     support.value_expr(lexer, $1);
@@ -673,7 +673,7 @@ expr            : command_call
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<LexContext>3.in_kwarg;
                     $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
-                    support.warn_one_line_pattern_matching($$, $5, false);
+                    support.warn_one_line_pattern_matching(@1.startLine(), $5, false);
                 }
 		| arg %prec tLBRACE_ARG
 
@@ -1946,7 +1946,7 @@ if_tail         : opt_else
 
 opt_else        : none
                 | k_else compstmt {
-                    $$ = $2;
+                    $$ = $2 == null ? NilImplicitNode.NIL : $2;
                 }
 
 // [!null]
@@ -2290,7 +2290,7 @@ p_top_expr      : p_top_expr_body
                     support.fixpos($<Node>$, $3);
                 }
                 | p_top_expr_body modifier_unless expr_value {
-                    $$ = support.new_if(@1.startLine(), support.remove_begin($1), $3, null);
+                    $$ = support.new_if(@1.startLine(), $3, null, support.remove_begin($1));
                     support.fixpos($<Node>$, $3);
                 }
 
