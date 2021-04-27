@@ -219,6 +219,8 @@ import java.util.stream.Collectors;
 import static java.lang.invoke.MethodHandles.explicitCastArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
+import static org.jruby.RubyBoolean.FALSE_BYTES;
+import static org.jruby.RubyBoolean.TRUE_BYTES;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -389,6 +391,13 @@ public final class Ruby implements Constantizable {
         comparableModule = RubyComparable.createComparable(this);
         enumerableModule = RubyEnumerable.createEnumerableModule(this);
         stringClass = RubyString.createStringClass(this);
+
+        falseString = newString(FALSE_BYTES);
+        falseString.setFrozen(true);
+        nilString = RubyString.newEmptyString(this);
+        nilString.setFrozen(true);
+        trueString = newString(TRUE_BYTES);
+        trueString.setFrozen(true);
 
         encodingService = new EncodingService(this);
 
@@ -2033,11 +2042,24 @@ public final class Ruby implements Constantizable {
         return trueObject;
     }
 
+    public RubyString getTrueString() {
+        return trueString;
+    }
+
+    public RubyString getNilString() {
+        return nilString;
+    }
+
+
     /** Returns the "false" instance from the instance pool.
      * @return The "false" instance.
      */
     public RubyBoolean getFalse() {
         return falseObject;
+    }
+
+    public RubyString getFalseString() {
+        return falseString;
     }
 
     /** Returns the "nil" singleton instance.
@@ -5296,6 +5318,9 @@ public final class Ruby implements Constantizable {
     private final IRubyObject[] singleNilArray;
     private final RubyBoolean trueObject;
     private final RubyBoolean falseObject;
+    private final RubyString trueString;
+    private final RubyString falseString;
+    private final RubyString nilString;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
 

@@ -137,7 +137,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public static RubyString to_s(ThreadContext context, IRubyObject recv) {
-        return RubyString.newEmptyString(context.runtime);
+        return context.runtime.getNilString();
     }
     
     /** nil_to_a
