@@ -74,9 +74,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.intervalStepSize;
-import static org.jruby.runtime.Helpers.invokedynamic;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -88,6 +86,7 @@ public class RubyRange extends RubyObject {
 
     private IRubyObject begin;
     private IRubyObject end;
+    private boolean isBeginless;
     private boolean isExclusive;
     private boolean isEndless;
     private boolean isInited = false;
@@ -266,7 +265,7 @@ public class RubyRange extends RubyObject {
     }
 
     private void init(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
-        if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum) && !end.isNil()) {
+        if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum) && !end.isNil() && !begin.isNil()) {
             IRubyObject result = invokedynamic(context, begin, MethodNames.OP_CMP, end);
             if (result.isNil()) {
                 throw context.runtime.newArgumentError("bad value for range");
@@ -277,6 +276,7 @@ public class RubyRange extends RubyObject {
         this.end = end;
         this.isExclusive = isExclusive;
         this.isEndless = end.isNil();
+        this.isBeginless = begin.isNil();
         this.isInited = true;
     }
 
@@ -518,6 +518,15 @@ public class RubyRange extends RubyObject {
                 v = v.callMethod(context, "succ");
             }
         }
+    }
+
+    private boolean coverRangeP(ThreadContext context, IRubyObject val) {
+        if (begin.isNil() || rangeLess(context, begin, val) <= 0) {
+            int excl = isExclusive ? 1 : 0;
+            return end.isNil() || rangeLess(context, end, val) <= -excl;
+        }
+
+        return false;
     }
 
     private boolean coverRange(ThreadContext context, RubyRange val) {
@@ -938,7 +947,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject max(ThreadContext context, Block block) {
         boolean isNumeric = end instanceof RubyNumeric;
 
-        if (isEndless) throw context.runtime.newRangeError("cannot get the maximum element of endless range");
+        if (isEndless) throw context.runtime.newRangeError("cannot get the maximum of endless range");
 
         if (block.isGiven() || (isExclusive && !isNumeric)) {
             return Helpers.invokeSuper(context, this, block);
@@ -1022,6 +1031,20 @@ public class RubyRange extends RubyObject {
         } catch (JumpException.SpecialJump sj) {
         }
         return result;
+    }
+
+    @JRubyMethod
+    public IRubyObject count(ThreadContext context, Block block) {
+        if (isBeginless || isEndless) return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
+
+        return RubyEnumerable.count(context, this, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject minmax(ThreadContext context, Block block) {
+        if (block.isGiven()) return RubyEnumerable.minmax(context, this, block);
+
+        return RubyArray.newArray(context.runtime, callMethod("min"), callMethod("max"));
     }
 
     @JRubyMethod
