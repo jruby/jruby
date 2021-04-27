@@ -1254,7 +1254,7 @@ public class IRBuilder {
 
         if (pattern.hasConstant()) {
             Operand constant = build(pattern.getConstant());
-            addInstr(new EQQInstr(scope, result, constant, obj, false, false));
+            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
             cond_ne(testEnd, result, tru());
         }
 
@@ -1281,8 +1281,9 @@ public class IRBuilder {
         });
 
         ListNode preArgs = pattern.getPreArgs();
-        if (preArgs != null) {
-            for (int i = 0; i < preArgs.size(); i++) {
+        int preArgsSize = preArgs == null ? 0 : preArgs.size();
+        if (preArgsSize > 0) {
+            for (int i = 0; i < preArgsSize; i++) {
                 Variable elt = call(temp(), deconstructed, "[]", fix(i));
                 Node arg = preArgs.get(i);
 
@@ -1296,7 +1297,7 @@ public class IRBuilder {
             addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
 
             if (pattern.isNamedRestArg()) {
-                Variable min = addResultInstr(new CopyInstr(temp(), fix(preArgs.size())));
+                Variable min = addResultInstr(new CopyInstr(temp(), fix(preArgsSize)));
                 Variable max = addResultInstr(new AsFixnumInstr(temp(), restNum));
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
                 Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
@@ -1309,7 +1310,7 @@ public class IRBuilder {
         if (postArgs != null) {
             for (int i = 0; i < postArgs.size(); i++) {
                 Label matchElementCheck = getNewLabel();
-                Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + pattern.getPreArgs().size()), restNum));
+                Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
                 Variable k = addResultInstr(new AsFixnumInstr(temp(), j));
                 Variable elt = addResultInstr(CallInstr.create(scope, temp(), symbol("[]"), deconstructed, new Operand[]{k}, NullBlock.INSTANCE));
                 Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
@@ -1339,7 +1340,7 @@ public class IRBuilder {
 
         if (pattern.getConstant() != null) {
             Operand constant = build(pattern.getConstant());
-            addInstr(new EQQInstr(scope, result, constant, obj, false, false));
+            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
             cond_ne(testEnd, result, tru());
         }
 
@@ -1354,7 +1355,7 @@ public class IRBuilder {
         Variable d = deconstructHashPatternKeys(testEnd, pattern, result, obj);
 
         label(endHashCheck -> {
-            addInstr(new EQQInstr(scope, result, manager.getHashClass(), d, false, false));
+            addInstr(new EQQInstr(scope, result, manager.getHashClass(), d, false, true));
             cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
         });
 
@@ -1488,11 +1489,22 @@ public class IRBuilder {
         } else if (exprNodes instanceof IfNode) {
             IfNode ifNode = (IfNode) exprNodes;
 
-            buildPatternMatch(result, deconstructed, ifNode.getThenBody(), value, inAlternation);
+            boolean unless; // position of body is how we detect between if/unless
+            if (ifNode.getThenBody() != null) { // if
+                unless = false;
+                buildPatternMatch(result, deconstructed, ifNode.getThenBody(), value, inAlternation);
+            } else {
+                unless = true;
+                buildPatternMatch(result, deconstructed, ifNode.getElseBody(), value, inAlternation);
+            }
             label(conditionalEnd -> {
                 cond_ne(conditionalEnd, result, tru());
                 Operand ifResult = build(ifNode.getCondition());
-                addInstr(new CopyInstr(result, ifResult));
+                if (unless) {
+                    call(result, ifResult, "!"); // FIXME: need non-dynamic dispatch to reverse result
+                } else {
+                    addInstr(new CopyInstr(result, ifResult));
+                }
             });
         } else if (exprNodes instanceof LocalAsgnNode) {
             LocalAsgnNode localAsgnNode = (LocalAsgnNode) exprNodes;
