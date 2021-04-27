@@ -43,6 +43,8 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.util.RubyStringBuilder.str;
+
 /**
  *
  */
@@ -56,6 +58,9 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public static RubyModule createWarningModule(Ruby runtime) {
+        categories.add(Category.EXPERIMENTAL);
+        categories.remove(Category.DEPRECATED);
+
         RubyModule warning = runtime.defineModule("Warning");
 
         warning.defineAnnotatedMethods(RubyWarnings.class);
@@ -191,11 +196,14 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @JRubyMethod(name = "[]")
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
+        Ruby runtime = context.runtime;
+        TypeConverter.checkType(context, arg, runtime.getSymbol());
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
-        return context.runtime.newBoolean(category != null && categories.contains(category));
+        if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
+
+        return runtime.newBoolean(category != null && categories.contains(category));
     }
 
     @JRubyMethod(name = "[]=")
@@ -210,6 +218,8 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
             } else {
                 categories.remove(category);
             }
+        } else {
+            throw context.runtime.newArgumentError(str(context.runtime, "unknown category: ", arg));
         }
 
         return flag;
