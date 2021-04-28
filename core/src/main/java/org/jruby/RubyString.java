@@ -4885,7 +4885,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_str_end_with, loop body
-    private boolean endWith(IRubyObject tmp) {
+    protected boolean endWith(IRubyObject tmp) {
         int p, s, e;
         Encoding enc;
 
