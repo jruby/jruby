@@ -5109,7 +5109,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         res.setRealSize(p);
 
-        RubyString result = new RubyString(runtime, metaClass, res);
+        RubyString result = newString(runtime, res);
         if (result.strLength() > strLength()) result.infectBy(this);
         result.associateEncoding(enc);
         return result;
