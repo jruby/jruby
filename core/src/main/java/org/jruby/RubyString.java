@@ -5301,14 +5301,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "chomp")
     public RubyString chomp19(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.chomp_bang19(context);
         return str;
     }
 
     @JRubyMethod(name = "chomp")
     public RubyString chomp19(ThreadContext context, IRubyObject arg0) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.chomp_bang19(context, arg0);
         return str;
     }
