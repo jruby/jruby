@@ -4918,18 +4918,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject delete_prefix(ThreadContext context, IRubyObject prefix) {
         int prefixlen = deletedPrefixLength(prefix);
 
-        if (prefixlen <= 0) return strDup(context.runtime);
+        if (prefixlen <= 0) return strDup(context.runtime, context.runtime.getString());
 
-        return makeShared(context.runtime, prefixlen, size() - prefixlen);
+        return makeSharedString(context.runtime, prefixlen, size() - prefixlen);
     }
 
     @JRubyMethod(name = "delete_suffix")
     public IRubyObject delete_suffix(ThreadContext context, IRubyObject suffix) {
         int suffixlen = deletedSuffixLength(suffix);
 
-        if (suffixlen <= 0) return strDup(context.runtime);
+        if (suffixlen <= 0) return strDup(context.runtime, context.runtime.getString());
 
-        return makeShared(context.runtime, 0, size() - suffixlen);
+        return makeSharedString(context.runtime, 0, size() - suffixlen);
     }
 
     @JRubyMethod(name = "delete_prefix!")
@@ -5654,14 +5654,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "delete")
     public IRubyObject delete(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.delete_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "delete", required = 1, rest = true)
     public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.delete_bang(context, args);
         return str;
     }
