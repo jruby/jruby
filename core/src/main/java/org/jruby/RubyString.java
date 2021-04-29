@@ -1896,21 +1896,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "downcase")
     public RubyString downcase(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.downcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "downcase")
     public RubyString downcase(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.downcase_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "downcase")
     public RubyString downcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.downcase_bang(context, arg0, arg1);
         return str;
     }
