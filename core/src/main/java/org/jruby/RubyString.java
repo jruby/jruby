@@ -2087,10 +2087,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "dump")
     public IRubyObject dump() {
-        final RubyClass metaClass = this.metaClass;
-        ByteList outBytes = StringSupport.dumpCommon(metaClass.runtime, value);
+        Ruby runtime = this.metaClass.runtime;
+        ByteList outBytes = StringSupport.dumpCommon(runtime, value);
 
-        final RubyString result = new RubyString(metaClass.runtime, metaClass, outBytes);
+        final RubyString result = newString(runtime, outBytes);
         Encoding enc = value.getEncoding();
 
         if (!enc.isAsciiCompatible()) {
@@ -2120,6 +2120,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         boolean[] binary = {false};
         int w;
 
+        if (!getEncoding().isAsciiCompatible()) {
+            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding().getCharsetName());
+        }
         scanForCodeRange();
         if (!isAsciiOnly()) {
             throw runtime.newRuntimeError("non-ASCII character detected");
