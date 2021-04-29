@@ -5255,8 +5255,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "chop")
     public IRubyObject chop(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return newEmptyString(runtime, metaClass, value.getEncoding()).infectBy(this);
-        return makeShared(runtime, 0, StringSupport.choppedLength(this));
+        if (value.getRealSize() == 0) return newEmptyString(runtime, runtime.getString(), value.getEncoding()).infectBy(this);
+        return makeSharedString(runtime, 0, StringSupport.choppedLength(this));
     }
 
     @JRubyMethod(name = "chop!")
