@@ -3391,7 +3391,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (repl != null) {     // string given
                 val = RubyRegexp.regsub(context, repl, this, pattern, matcher);
             } else {
-                final RubyString substr = makeShared(runtime, begz, endz - begz);
+                final RubyString substr = makeSharedString(runtime, begz, endz - begz);
                 if (hash != null) { // hash given
                     val = objAsString(context, hash.op_aref(context, substr));
                 } else {            // block given
@@ -3716,7 +3716,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (p == -1) return runtime.getNil();
                 while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1) {} // nothing
                 if (p == -1) return runtime.getNil();
-                return makeShared(runtime, p - s, e - p);
+                return makeSharedString(runtime, p - s, e - p);
             } else {
                 beg += StringSupport.strLengthFromRubyString(this, enc);
                 if (beg < 0) return runtime.getNil();
