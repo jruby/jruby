@@ -6026,6 +6026,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return StringSupport.rbStrEnumerateLines(this, context, "lines", arg, block, true);
     }
 
+    @JRubyMethod(name = "lines")
+    public IRubyObject lines(ThreadContext context, IRubyObject arg, IRubyObject opts, Block block) {
+        return StringSupport.rbStrEnumerateLines(this, context, "lines", arg, opts, block, true);
+    }
+
     /**
      * rb_str_each_byte
      */
