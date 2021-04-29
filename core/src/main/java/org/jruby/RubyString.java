@@ -3627,7 +3627,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         int end = Math.min(length, beg + len);
-        return makeShared(runtime, beg, end - beg);
+        return makeSharedString(runtime, beg, end - beg);
     }
 
     /* str_byte_substr */
@@ -3646,7 +3646,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             len = 0;
         }
 
-        return makeShared(runtime, beg, len);
+        return makeSharedString(runtime, beg, len);
     }
 
     /* str_byte_aref */
