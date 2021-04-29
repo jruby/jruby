@@ -1969,21 +1969,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "swapcase")
     public RubyString swapcase(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.swapcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "swapcase")
     public RubyString swapcase(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.swapcase_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "swapcase")
     public RubyString swapcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.swapcase_bang(context, arg0, arg1);
         return str;
     }
