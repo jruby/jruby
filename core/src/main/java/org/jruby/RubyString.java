@@ -1238,7 +1238,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             System.arraycopy(bytes.getUnsafeBytes(), 0, bytes.getUnsafeBytes(), n, len - n);
         }
-        RubyString result = new RubyString(context.runtime, metaClass, bytes);
+        RubyString result = newString(context.runtime, bytes);
         result.infectBy(this);
         return result;
     }
