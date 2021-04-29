@@ -3283,7 +3283,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         int offset = 0; int cp = spBeg; //int n = 0;
-        RubyString dest = new RubyString(runtime, metaClass, new ByteList(spLen + 30));
+        RubyString dest = newString(runtime, new ByteList(spLen + 30));
         final Encoding str_enc = value.getEncoding();
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
@@ -3374,7 +3374,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         int offset = 0; int cp = spBeg; //int n = 0;
-        RubyString dest = new RubyString(runtime, metaClass, new ByteList(spLen + 30));
+        RubyString dest = newString(runtime, new ByteList(spLen + 30));
         final Encoding str_enc = value.getEncoding();
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
