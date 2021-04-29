@@ -1465,7 +1465,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return object.convertToString().getByteList().toString();
     }
 
-    private static final class SymbolProcBody extends ContextAwareBlockBody {
+    public static final class SymbolProcBody extends ContextAwareBlockBody {
         private final CallSite site;
 
         public SymbolProcBody(Ruby runtime, String symbol) {
