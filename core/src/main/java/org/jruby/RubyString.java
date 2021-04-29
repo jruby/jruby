@@ -4022,10 +4022,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
         final RubyString str;
         if (value.getRealSize() > 0) {
-            str = new RubyString(runtime, metaClass, StringSupport.succCommon(runtime, value));
+            str = new RubyString(runtime, runtime.getString(), StringSupport.succCommon(runtime, value));
             // TODO: rescan code range ?
         } else {
-            str = newEmptyString(runtime, getType(), value.getEncoding());
+            str = newEmptyString(runtime, runtime.getString(), value.getEncoding());
         }
         return str.infectBy(this);
     }
