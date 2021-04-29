@@ -605,7 +605,7 @@ public class RubyStruct extends RubyObject {
         return context.safeRecurse(EqlRecursive.INSTANCE, other, this, "eql?", true);
     }
 
-    private static final byte[] STRUCT_BEG = { '#','<','S','t','r','u','c','t',' ' };
+    private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
     private static final byte[] STRUCT_END = { ':','.','.','.','>' };
 
     /** inspect_struct
