@@ -5891,7 +5891,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "tr")
     public IRubyObject tr19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.trTrans19(context, src, repl, false);
         return str;
     }
@@ -5926,7 +5926,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "tr_s")
     public IRubyObject tr_s19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.trTrans19(context, src, repl, true);
         return str;
     }
