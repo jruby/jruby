@@ -3690,7 +3690,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             if (beg + len > length) len = length - beg;
             if (len <= 0) len = beg = 0;
-            return makeShared(runtime, beg, len);
+            return makeSharedString(runtime, beg, len);
         } else {
             if (beg + len > length) len = length - beg;
             return multibyteSubstr19(runtime, enc, len, beg, length);
@@ -3742,7 +3742,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         } else {
             len = StringSupport.offset(enc, bytes, p, end, len);
         }
-        return makeShared(runtime, p - s, len);
+        return makeSharedString(runtime, p - s, len);
     }
 
     private char multibyteCharAt(Encoding enc, int beg, int length) {
@@ -3800,7 +3800,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return subpat(context, (RubyRegexp) arg);
         } else if (arg instanceof RubyString) {
             RubyString str = (RubyString)arg;
-            return StringSupport.index(this, str, 0, this.checkEncoding(str)) != -1 ? str.strDup(runtime) : context.nil;
+            return StringSupport.index(this, str, 0, this.checkEncoding(str)) != -1 ? str.strDup(runtime, context.runtime.getString()) : context.nil;
         } else if (arg instanceof RubyRange) {
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);

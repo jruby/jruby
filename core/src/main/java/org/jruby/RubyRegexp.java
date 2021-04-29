@@ -1597,7 +1597,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (start == -1) return match.getRuntime().getNil();
 
-        RubyString str = match.str.makeShared(match.metaClass.runtime, start, end - start);
+        RubyString str = match.str.makeSharedString(match.metaClass.runtime, start, end - start);
         str.infectBy(match);
         return str;
     }
