@@ -5747,21 +5747,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "squeeze")
     public IRubyObject squeeze(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.squeeze_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "squeeze")
     public IRubyObject squeeze(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.squeeze_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "squeeze", required = 1, rest = true)
     public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.squeeze_bang(context, args);
         return str;
     }
