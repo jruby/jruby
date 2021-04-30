@@ -142,7 +142,7 @@ public class RubyRange extends RubyObject {
     }
 
     final boolean checkBegin(long length) {
-        long beg = RubyNumeric.num2long(this.begin);
+        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
         if (beg < 0) {
             beg += length;
             if (beg < 0) {
@@ -155,7 +155,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long[] begLen(long len, int err) {
-        long beg = RubyNumeric.num2long(this.begin);
+        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
         long end = isEndless ? -1: RubyNumeric.num2long(this.end);
 
         if (beg < 0) {
@@ -195,7 +195,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long begLen0(long len) {
-        long beg = RubyNumeric.num2long(this.begin);
+        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
 
         if (beg < 0) {
             beg += len;
@@ -224,8 +224,9 @@ public class RubyRange extends RubyObject {
         return len;
     }
 
+    // MRI: rb_range_component_beg_len
     final int[] begLenInt(int len, final int err) {
-        int beg = RubyNumeric.num2int(this.begin);
+        int beg = isBeginless ? 0 : RubyNumeric.num2int(this.begin);
         int end = isEndless ? -1 : RubyNumeric.num2int(this.end);
 
         if (beg < 0) {

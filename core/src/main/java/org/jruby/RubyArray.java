@@ -1268,7 +1268,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public IRubyObject subseq(long beg, long len) {
-        return subseq(metaClass, beg, len, true);
+        return subseq(getRuntime().getArray(), beg, len, true);
     }
 
     /** rb_ary_subseq
@@ -3095,7 +3095,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         unpack();
 
-        RubyArray result = makeShared(begin + pos, len, metaClass);
+        RubyArray result = makeShared(begin + pos, len, runtime.getArray());
         splice(runtime, pos, len, null, 0);
 
         return result;
