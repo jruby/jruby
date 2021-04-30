@@ -950,10 +950,13 @@ public class RubyRange extends RubyObject {
         if (isEndless) throw context.runtime.newRangeError("cannot get the maximum of endless range");
 
         if (block.isGiven() || (isExclusive && !isNumeric)) {
+            if (isBeginless) {
+                throw context.runtime.newRangeError("cannot get the maximum of beginless range with custom comparison method");
+            }
             return Helpers.invokeSuper(context, this, block);
         }
 
-        int cmp = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+        int cmp = isBeginless ? -1 : RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
         if (cmp > 0) {
             return context.nil;
         }
@@ -969,6 +972,7 @@ public class RubyRange extends RubyObject {
             if (!(begin instanceof RubyInteger)) {
                 throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
             }
+
             if (end instanceof RubyFixnum) {
                 return RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
             }
