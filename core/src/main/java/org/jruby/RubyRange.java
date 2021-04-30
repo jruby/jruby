@@ -911,9 +911,9 @@ public class RubyRange extends RubyObject {
 
     // MRI: r_cover_p
     private boolean rangeIncludes(ThreadContext context, IRubyObject val) {
-        if (rangeLess(context, begin, val) <= 0) {
+        if (isBeginless || rangeLess(context, begin, val) <= 0) {
             int excl = isExclusive ? 1 : 0;
-            if (end.isNil() || rangeLess(context, val, end) <= -excl) {
+            if (isEndless || rangeLess(context, val, end) <= -excl) {
                 return true;
             }
         }
