@@ -1687,12 +1687,12 @@ public class ParserSupport {
 
     public boolean local_id(ByteList value) {
         // FIXME: local_id_ref is more complicated and we just blanket look for a scope var of the same name.
-        return currentScope.isDefined(symbolID(value).idString()) > 0;
+        return currentScope.isDefined(symbolID(value).idString()) >= 0;
     }
 
     public boolean check_forwarding_args() {
         if (local_id(FWD_REST) &&
-//                local_id(FWD_KWREST) &&
+                local_id(FWD_KWREST) &&
                 local_id(FWD_BLOCK)) return true;
 
         compile_error("unexpected ...");
@@ -1701,7 +1701,7 @@ public class ParserSupport {
 
     public void add_forwarding_args() {
         arg_var(FWD_REST);
-        //arg_var(FWD_KWREST);
+        arg_var(FWD_KWREST);
         arg_var(FWD_BLOCK);
     }
 
@@ -1709,14 +1709,14 @@ public class ParserSupport {
         RubySymbol splatName = symbolID(FWD_REST);
         int splatLoc = getCurrentScope().exists(splatName.idString());
         Node splatNode = new SplatNode(line, new LocalVarNode(line, splatLoc, splatName));
-//        RubySymbol kwRestName = symbolID(FWD_KWREST);
-//        int kwRestLoc = getCurrentScope().exists(kwRestName.idString());
-//        Node restNode = list_append(new ArrayNode(line), new LocalVarNode(line, kwRestLoc, kwRestName));
+        RubySymbol kwRestName = symbolID(FWD_KWREST);
+        int kwRestLoc = getCurrentScope().exists(kwRestName.idString());
+        Node restNode = new LocalVarNode(line, kwRestLoc, kwRestName);
         RubySymbol blockName = symbolID(FWD_BLOCK);
         int blockLoc = getCurrentScope().exists(blockName.idString());
         BlockPassNode block = new BlockPassNode(line, new LocalVarNode(line, blockLoc, blockName));
         Node args = leadingArgs != null ? rest_arg_append(leadingArgs, splatNode) : splatNode;
-        //arg_append(splatNode, ) // This logic in MRI ignore leading so it cannot be ifdefd (unless it was fixed post 3.0.0.
+        args = arg_append(args, new HashNode(line, new KeyValuePair<>(null, restNode)));
         return arg_blk_pass(args, block);
     }
 
@@ -1724,7 +1724,7 @@ public class ParserSupport {
         BlockArgNode blockArg = new BlockArgNode(arg_var(FWD_BLOCK));
         ArgsTailHolder tail = new_args_tail(line, null, FWD_KWREST, blockArg);
         RestArgNode forwordRestArg  = new RestArgNode(arg_var(FWD_REST));
-        return new_args(leading.getLine(), leading, null, forwordRestArg, null, tail);
+        return new_args(line, leading, null, forwordRestArg, null, tail);
     }
 
     public void check_literal_when(Node one) {
