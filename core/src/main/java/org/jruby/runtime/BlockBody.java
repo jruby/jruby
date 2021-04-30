@@ -256,6 +256,13 @@ public abstract class BlockBody {
      */
     public abstract int getLine();
 
+    /**
+     * Is this block represented by Ruby code?
+     */
+    public boolean isRubyBlock() {
+        return false;
+    }
+
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         if (type == Block.Type.LAMBDA) {
             signature.checkArity(context.runtime, args);

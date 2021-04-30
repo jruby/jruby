@@ -19,4 +19,5 @@ public interface IRMethodArgs {
      */
     public ArgumentDescriptor[] getArgumentDescriptors();
 
+    void setRuby2Keywords();
 }

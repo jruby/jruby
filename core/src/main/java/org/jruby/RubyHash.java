@@ -117,6 +117,7 @@ public class RubyHash extends RubyObject implements Map {
     public static final int DEFAULT_INSPECT_STR_SIZE = 20;
 
     public static final int COMPARE_BY_IDENTITY_F = ObjectFlags.COMPARE_BY_IDENTITY_F;
+    public static final int RUBY2_KEYWORD_F = ObjectFlags.RUBY2_KEYWORD_F;
 
     public static RubyClass createHashClass(Ruby runtime) {
         RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), RubyHash::new);
@@ -2342,6 +2343,23 @@ public class RubyHash extends RubyObject implements Map {
         return RubyProc.newProc(context.runtime, block, Block.Type.PROC);
     }
 
+    @JRubyMethod(module = true)
+    public static IRubyObject ruby2_keywords_hash(ThreadContext context, IRubyObject _self, IRubyObject arg) {
+        TypeConverter.checkType(context, arg, context.runtime.getHash());
+
+        RubyHash hash = (RubyHash) arg.dup();
+        hash.setRuby2KeywordHash(true);
+
+        return hash;
+    }
+
+    @JRubyMethod(module = true, name = "ruby2_keywords_hash?")
+    public static IRubyObject ruby2_keywords_hash_p(ThreadContext context, IRubyObject _self, IRubyObject arg) {
+        TypeConverter.checkType(context, arg, context.runtime.getHash());
+
+        return context.runtime.newBoolean(((RubyHash) arg).isRuby2KeywordHash());
+    }
+
     private static class VisitorIOException extends RuntimeException {
         VisitorIOException(Throwable cause) {
             super(cause);
@@ -2513,6 +2531,19 @@ public class RubyHash extends RubyObject implements Map {
             flags &= ~COMPARE_BY_IDENTITY_F;
         }
     }
+
+    protected boolean isRuby2KeywordHash() {
+        return (flags & RUBY2_KEYWORD_F) != 0;
+    }
+
+    public void setRuby2KeywordHash(boolean value) {
+        if (value) {
+            flags |= RUBY2_KEYWORD_F;
+        } else {
+            flags &= ~RUBY2_KEYWORD_F;
+        }
+    }
+
 
     private class BaseSet extends AbstractSet {
         final EntryView view;

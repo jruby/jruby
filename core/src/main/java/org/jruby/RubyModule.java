@@ -68,6 +68,7 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
@@ -79,6 +80,7 @@ import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
@@ -95,6 +97,7 @@ import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
@@ -103,6 +106,7 @@ import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -2420,6 +2424,8 @@ public class RubyModule extends RubyObject {
         // a normal block passed to define_method changes to do arity checking; make it a lambda
         RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
 
+        proc.setFromMethod();
+
         // various instructions can tell this scope is not an ordinary block but a block representing
         // a method definition.
         block.getBody().getStaticScope().makeArgumentScope();
@@ -2803,6 +2809,46 @@ public class RubyModule extends RubyObject {
         }
 
         return attr_reader(context, args);
+    }
+
+    @JRubyMethod(rest = true)
+    public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        checkFrozen();
+
+        for (IRubyObject name: args) {
+            String id = RubySymbol.checkID(name);
+
+            // FIXME: id == null or bad symbol error missing
+
+            DynamicMethod method = searchMethod(id);
+            if (method.isUndefined() && isModule()) {
+                method = getRuntime().getObject().searchMethod(id);
+            }
+
+            if (method.isUndefined()) {
+                throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), name);
+            }
+
+
+            // FIXME: missing origin_class module
+            if (method.getDefinedClass() == this) {
+                if (!method.isNative()) {
+                    Signature signature = method.getSignature();
+                    if (signature.hasRest() && !signature.hasKwargs()) {
+                        ((IRMethodArgs) method).setRuby2Keywords();
+                    } else {
+                        context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                    }
+                } else {
+                    context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                }
+            } else {
+                context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
+            }
+        }
+        return context.nil;
     }
 
     @Deprecated

@@ -32,4 +32,5 @@ public interface ObjectFlags {
 
     int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
     int PROCDEFAULT_HASH_F = registry.newFlag(RubyHash.class);
+    int RUBY2_KEYWORD_F = registry.newFlag(RubyHash.class);
 }

@@ -68,6 +68,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
 import org.jruby.util.SymbolNameType;
+import org.jruby.util.TypeConverter;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -1463,6 +1464,23 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return ((RubyString) object).getByteList().toString();
         }
         return object.convertToString().getByteList().toString();
+    }
+
+    // MRI: rb_check_id
+    public static String checkID(IRubyObject object) {
+        if (object instanceof RubySymbol) return ((RubySymbol) object).idString();
+
+        if (!(object instanceof RubyString)) {
+            IRubyObject tmp = TypeConverter.checkStringType(object.getRuntime(), object);
+
+            if (tmp.isNil()) {
+                throw object.getRuntime().newTypeError(str(object.getRuntime(), "", object, " is not a symbol nor a string"));
+            }
+
+            object = tmp;
+        }
+
+        return ((RubyString) object).getByteList().toString();
     }
 
     public static final class SymbolProcBody extends ContextAwareBlockBody {

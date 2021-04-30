@@ -169,4 +169,11 @@ public class ProfilingDynamicMethod extends DelegatingDynamicMethod implements I
         return delegate instanceof IRMethodArgs ?
                 ((IRMethodArgs) delegate).getArgumentDescriptors() : Helpers.methodToArgumentDescriptors(delegate);
     }
+
+    @Override
+    public void setRuby2Keywords() {
+        if (delegate instanceof IRMethodArgs) {
+            ((IRMethodArgs) delegate).setRuby2Keywords();
+        }
+    }
 }

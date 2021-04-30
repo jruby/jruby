@@ -37,6 +37,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -45,13 +46,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
-import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.RubyStringBuilder.types;
 
 /**
@@ -63,6 +64,7 @@ public class RubyProc extends RubyObject implements DataType {
     private final Block.Type type;
     private String file = null;
     private int line = -1;
+    private boolean fromMethod;
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
@@ -249,6 +251,30 @@ public class RubyProc extends RubyObject implements DataType {
         return string;
     }
 
+    @JRubyMethod
+    public IRubyObject ruby2_keywords(ThreadContext context) {
+        checkFrozen();
+
+        if (fromMethod) {
+            context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc created from method)");
+            return this;
+        }
+
+        BlockBody body = block.getBody();
+        if (body.isRubyBlock()) {
+            Signature signature = body.getSignature();
+            if (signature.hasRest() && !signature.hasKwargs()) {
+                ((IRBlockBody) body).setRuby2Keywords();
+            } else {
+                context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
+            }
+
+        } else {
+            context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc not defined in Ruby)");
+        }
+        return this;
+    }
+
     @JRubyMethod(name = "binding")
     public IRubyObject binding() {
         return getRuntime().newBinding(block.getBinding());
@@ -416,4 +442,7 @@ public class RubyProc extends RubyObject implements DataType {
         return block.call(context, args, passedBlock);
     }
 
+    public void setFromMethod() {
+        fromMethod = true;
+    }
 }
