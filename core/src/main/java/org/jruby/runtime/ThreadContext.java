@@ -445,7 +445,7 @@ public final class ThreadContext {
         // if this is a fiber, search prev for tag
         ThreadFiber fiber = getFiber();
         ThreadFiber prev;
-        if (fiber != null && (prev = fiber.getData().getPrev()) != null) {
+        if (fiber != null && (prev = fiber.getData().getPrev()) != null && prev != fiber) {
             return prev.getThread().getContext().getActiveCatch(tag);
         }
 
