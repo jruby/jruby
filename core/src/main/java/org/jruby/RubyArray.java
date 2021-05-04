@@ -543,7 +543,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         // TODO: (CON) Some calls to makeShared could create packed array almost as efficiently
         unpack();
 
-        return makeShared(begin, realLength, metaClass);
+        return makeShared(begin, realLength, getRuntime().getArray());
     }
 
     private RubyArray makeShared(int beg, int len, RubyClass klass) {
@@ -3493,11 +3493,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public IRubyObject uniq(ThreadContext context) {
-        RubyHash hash = makeHash(context.runtime);
+        Ruby runtime = context.runtime;
+        RubyHash hash = makeHash(runtime);
         final int newLength = hash.size;
         if (realLength == newLength) return makeShared();
 
-        RubyArray result = newBlankArrayInternal(context.runtime, metaClass, newLength);
+        RubyArray result = newBlankArrayInternal(runtime, runtime.getArray(), newLength);
         result.setValuesFrom(context, hash);
         result.realLength = newLength;
         return result;
@@ -3505,12 +3506,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "uniq")
     public IRubyObject uniq(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
         if (!block.isGiven()) return uniq(context);
         RubyHash hash = makeHash(context, block);
         final int newLength = hash.size;
         if (realLength == newLength) return makeShared();
 
-        RubyArray result = newBlankArrayInternal(context.runtime, metaClass, newLength);
+        RubyArray result = newBlankArrayInternal(runtime, runtime.getArray(), newLength);
         result.setValuesFrom(context, hash);
         result.realLength = newLength;
         return result;
