@@ -3259,7 +3259,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject flatten(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        RubyArray result = new RubyArray(runtime, getType(), realLength);
+        RubyArray result = new RubyArray(runtime, runtime.getArray(), realLength);
         flatten(context, -1, result);
         result.infectBy(this);
         return result;
@@ -3271,7 +3271,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int level = RubyNumeric.num2int(arg);
         if (level == 0) return makeShared();
 
-        RubyArray result = new RubyArray(runtime, getType(), realLength);
+        RubyArray result = new RubyArray(runtime, runtime.getArray(), realLength);
         flatten(context, level, result);
         result.infectBy(this);
         return result;
