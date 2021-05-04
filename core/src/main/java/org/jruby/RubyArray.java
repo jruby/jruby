@@ -3583,7 +3583,19 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return diff;
     }
 
-    /** rb_ary_and
+    @JRubyMethod(rest = true)
+    public IRubyObject intersection(ThreadContext context, IRubyObject[] args) {
+        RubyArray result = aryDup();
+
+        for (IRubyObject arg: args) {
+            result = (RubyArray) result.op_and(arg);
+        }
+
+        return result;
+    }
+
+
+    /** MRI: rb_ary_and
      *
      */
     @JRubyMethod(name = "&", required = 1)
