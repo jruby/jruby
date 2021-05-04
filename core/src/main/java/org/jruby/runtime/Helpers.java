@@ -8,6 +8,9 @@ import java.lang.reflect.Array;
 import java.net.BindException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NonReadableChannelException;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -23,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.Errno;
@@ -261,6 +265,13 @@ public class Helpers {
             return errnoFromMessage(dnee);
         } catch (BindException be) {
             return errnoFromMessage(be);
+        } catch (NotYetConnectedException nyce) {
+            return Errno.ENOTCONN;
+        } catch (NonReadableChannelException | NonWritableChannelException nrce) {
+            // raised by NIO for invalid combinations of file options (read + truncate, for example)
+            return Errno.EINVAL;
+        } catch (IllegalArgumentException nrce) {
+            return Errno.EINVAL;
         } catch (IOException ioe) {
             String message = ioe.getMessage();
             // Raised on Windows for process launch with missing file
@@ -306,6 +317,7 @@ public class Helpers {
                 case "Address already in use":
                     return Errno.EADDRINUSE;
                 case "Cannot assign requested address":
+                case "Can't assign requested address":
                     return Errno.EADDRNOTAVAIL;
                 case "No space left on device":
                     return Errno.ENOSPC;
@@ -329,18 +341,76 @@ public class Helpers {
     }
 
     /**
-     * Java does not give us enough information for specific error conditions
-     * so we are reduced to divining them through string matches...
+     * Construct an appropriate error (which may ultimately not be an IOError) for a given IOException.
      *
-     * TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
-     * TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
+     * If this method is used on an exception which can't be translated to a Ruby error using {@link #newErrorFromException(Ruby, Throwable)}
+     * then a RuntimeError will be returned, due to the unhandled exception type.
+     *
+     * @param runtime the current runtime
+     * @param ex the exception to translate into a Ruby error
+     * @return a RaiseException subtype instance appropriate for the given exception
      */
     public static RaiseException newIOErrorFromException(Ruby runtime, IOException ex) {
-        Errno errno = errnoFromException(ex);
+        return (RaiseException) newErrorFromException(runtime, ex, (t) -> runtime.newRuntimeError("unexpected Java exception: " + ex.toString()));
+    }
 
-        if (errno == null) throw runtime.newIOError(ex.getLocalizedMessage());
+    /**
+     * Return a Ruby-friendly Throwable for a given Throwable.
+     *
+     * The following translations will be attempted in order:
+     *
+     * <ul>
+     *     <li>if the Throwable is already a Ruby exception type, return it as-is</li>
+     *     <li>convert to a Ruby Errno exception via {@link #errnoFromException(Throwable)}</li>
+     *     <li>convert to a Ruby IOError if the exception is a java.io.IOException</li>
+     *     <li>using the provided function as a fallback transformation</li>
+     * </ul>
+     *
+     * @param runtime the current runtime
+     * @param t the exception to translate into a Ruby error
+     * @param els a fallback function if the exception cannot be translated
+     * @return a RaiseException subtype instance appropriate for the given exception
+     */
+    public static Throwable newErrorFromException(Ruby runtime, Throwable t, Function<Throwable, Throwable> els) {
+        if (t instanceof RaiseException) {
+            // already a Ruby-friendly Throwable
+            return t;
+        }
 
-        throw runtime.newErrnoFromErrno(errno, ex.getLocalizedMessage());
+        Errno errno = errnoFromException(t);
+
+        if (errno != null) {
+            return runtime.newErrnoFromErrno(errno, t.getLocalizedMessage());
+        } else if (t instanceof IOException) {
+            return runtime.newIOError(t.getLocalizedMessage());
+        }
+
+        return els.apply(t);
+    }
+
+    /**
+     * Simplified form of Ruby#newErrorFromException with no default function.
+     *
+     * @param runtime the current runtime
+     * @param t the exception to translate into a Ruby error
+     * @return a RaiseException subtype instance appropriate for the given exception
+     */
+    public static Throwable newErrorFromException(Ruby runtime, Throwable t) {
+        return newErrorFromException(runtime, t, t0 -> t0);
+    }
+
+    /**
+     * Throw an appropriate Ruby-friendly error or exception for a given Java exception.
+     *
+     * This method will first attempt to translate the exception into a Ruby error using {@link #newErrorFromException(Ruby, Throwable, Function)}.
+     *
+     * Failing that, it will raise the original Java exception as-is.
+     *
+     * @param runtime the current runtime
+     * @param t the exception to raise as an error, if appropriate, or as itself otherwise
+     */
+    public static void throwErrorFromException(Ruby runtime, Throwable t) {
+        throwException(newErrorFromException(runtime, t));
     }
 
     public static RubyModule getNthScopeModule(StaticScope scope, int depth) {

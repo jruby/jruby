@@ -41,6 +41,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -70,7 +71,6 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
-import org.jruby.runtime.Helpers;
 
 /**
  * Socket class methods for addresses, structures, and so on.
@@ -80,12 +80,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getLocalHost().getHostName());
+            return RubyString.newString(context.runtime, InetAddress.getLocalHost().getHostName());
 
         } catch(UnknownHostException e) {
 
             try {
-                return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
+                return RubyString.newString(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
 
             } catch(UnknownHostException e2) {
                 throw sockerr(runtime, "gethostname: name or service not known");
@@ -403,7 +403,7 @@ public class SocketUtils {
 
         }
 
-        jnr.netdb.Service serv = jnr.netdb.Service.getServiceByPort(Integer.parseInt(port), null);
+        Service serv = Service.getServiceByPort(Integer.parseInt(port), null);
 
         if (serv != null) {
 
@@ -428,8 +428,8 @@ public class SocketUtils {
             RubyArray list = RubyArray.newArray(runtime);
             RubyClass addrInfoCls = runtime.getClass("Addrinfo");
 
-            for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces() ; networkIfcs.hasMoreElements() ; ) {
-                for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses() ; addresses.hasMoreElements() ; ) {
+            for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces(); networkIfcs.hasMoreElements() ; ) {
+                for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses(); addresses.hasMoreElements() ; ) {
                     list.append(new Addrinfo(runtime, addrInfoCls, addresses.nextElement()));
                 }
             }
@@ -447,7 +447,7 @@ public class SocketUtils {
         String addressString = Helpers.byteListToString(address);
         return getRubyInetAddresses(addressString);
     }
-    
+
     public static InetAddress[] getRubyInetAddresses(String addressString) throws UnknownHostException {
         InetAddress specialAddress = specialAddress(addressString);
         if (specialAddress != null) {
@@ -456,17 +456,20 @@ public class SocketUtils {
             return InetAddress.getAllByName(addressString);
         }
     }
-    
+
     public static InetAddress getRubyInetAddress(String addressString) throws UnknownHostException {
         InetAddress specialAddress = specialAddress(addressString);
         if (specialAddress != null) {
             return specialAddress;
         } else {
             return InetAddress.getByName(addressString);
-
         }
     }
-    
+
+    public static InetAddress getRubyInetAddress(byte[] addressBytes) throws UnknownHostException {
+        return InetAddress.getByAddress(addressBytes);
+    }
+
     private static InetAddress specialAddress(String addressString) throws UnknownHostException {
         if (addressString.equals(BROADCAST)) {
             return InetAddress.getByAddress(INADDR_BROADCAST);
@@ -676,7 +679,7 @@ public class SocketUtils {
         IRubyObject maybeStr = TypeConverter.checkStringType(runtime, port);
         if (!maybeStr.isNil()) {
             RubyString portStr = maybeStr.convertToString();
-            jnr.netdb.Service serv = jnr.netdb.Service.getServiceByName(portStr.toString(), null);
+            Service serv = Service.getServiceByName(portStr.toString(), null);
 
             if (serv != null) return serv.getPort();
 

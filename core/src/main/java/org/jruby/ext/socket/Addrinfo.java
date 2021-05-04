@@ -1,27 +1,28 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.AddressFamily;
-import static jnr.constants.platform.AddressFamily.*;
-
 import jnr.constants.platform.NameInfo;
 import jnr.constants.platform.ProtocolFamily;
-import static jnr.constants.platform.ProtocolFamily.*;
 import jnr.constants.platform.Sock;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyInteger;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
+import org.jruby.util.TypeConverter;
+import org.jruby.util.io.Sockaddr;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -34,10 +35,15 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
-import org.jruby.util.StringSupport;
 
-import org.jruby.util.TypeConverter;
-import org.jruby.util.io.Sockaddr;
+import static jnr.constants.platform.AddressFamily.AF_INET;
+import static jnr.constants.platform.AddressFamily.AF_INET6;
+import static jnr.constants.platform.AddressFamily.AF_UNIX;
+import static jnr.constants.platform.AddressFamily.AF_UNSPEC;
+import static jnr.constants.platform.ProtocolFamily.PF_INET;
+import static jnr.constants.platform.ProtocolFamily.PF_INET6;
+import static jnr.constants.platform.ProtocolFamily.PF_UNIX;
+import static jnr.constants.platform.ProtocolFamily.PF_UNSPEC;
 
 public class Addrinfo extends RubyObject {
 
@@ -51,11 +57,7 @@ public class Addrinfo extends RubyObject {
         RubyClass addrinfo = runtime.defineClass(
                 "Addrinfo",
                 runtime.getData(),
-                new ObjectAllocator() {
-                    public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                        return new Addrinfo(runtime, klazz);
-                    }
-                });
+                Addrinfo::new);
 
         addrinfo.defineAnnotatedMethods(Addrinfo.class);
     }
@@ -667,6 +669,23 @@ public class Addrinfo extends RubyObject {
 
     private static InetAddress getRubyInetAddress(IRubyObject node) {
         try {
+            if (node instanceof RubyInteger) {
+                byte[] bytes;
+                if (node instanceof RubyBignum) {
+                    // IP6 addresses will be 16 bytes wide
+                    bytes = ((RubyBignum) node).getBigIntegerValue().toByteArray();
+                } else {
+                    long i = node.convertToInteger().getIntValue() & 0xFFFFL;
+
+                    bytes = new byte[]{
+                            (byte) ((i >> 24) & 0xFF),
+                            (byte) ((i >> 16) & 0xFF),
+                            (byte) ((i >> 8) & 0xFF),
+                            (byte) (i & 0xFF),
+                    };
+                }
+                return SocketUtils.getRubyInetAddress(bytes);
+            }
             return SocketUtils.getRubyInetAddress(node.convertToString().toString());
         } catch (UnknownHostException uhe) {
             return null;
