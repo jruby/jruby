@@ -357,7 +357,7 @@ public class Helpers {
     /**
      * Construct an appropriate error (which may ultimately not be an IOError) for a given IOException.
      *
-     * If this method is used on an exception which can't be translated to a Ruby error using {@link #newErrorFromException(Ruby, Exception)}
+     * If this method is used on an exception which can't be translated to a Ruby error using {@link #newErrorFromException(Ruby, Throwable)}
      * then a RuntimeError will be returned, due to the unhandled exception type.
      *
      * @param runtime the current runtime
