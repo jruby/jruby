@@ -104,6 +104,10 @@ public class ArgsNode extends Node {
         this.keyRest = keyRest;
     }
 
+    public boolean isEmpty() {
+        return args.length == 0;
+    }
+
     public Node[] getArgs() {
         return args;
     }

@@ -682,6 +682,8 @@ expr            : command_call
 def_name        : fname {
                     support.pushLocalScope();
                     LexContext ctxt = lexer.getLexContext();
+                    RubySymbol name = support.symbolID($1);
+                    support.numparam_name(name);
                     $$ = new DefHolder(support.symbolID($1), lexer.getCurrentArg(), (LexContext) ctxt.clone());
                     ctxt.in_def = true;
                     lexer.setCurrentArg(null);
@@ -2080,10 +2082,12 @@ opt_block_param : none {
 
 block_param_def : '|' opt_bv_decl '|' {
                     lexer.setCurrentArg(null);
+                    support.ordinalMaxNumParam();
                     $$ = support.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | '|' block_param opt_bv_decl '|' {
                     lexer.setCurrentArg(null);
+                    support.ordinalMaxNumParam();
                     $$ = $2;
                 }
 
@@ -2114,21 +2118,32 @@ lambda          : tLAMBDA {
                     support.pushBlockScope();
                     $$ = lexer.getLeftParenBegin();
                     lexer.setLeftParenBegin(lexer.incrementParenNest());
+                } {
+                    $$ = support.resetMaxNumParam();
+                } {
+                    $$ = support.numparam_push();
                 } f_larglist {
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
                     lexer.getCmdArgumentState().reset();
                 } lambda_body {
-                    lexer.getCmdArgumentState().reset($<Long>4.longValue());
+                    int max_numparam = support.restoreMaxNumParam($<Integer>3);
+                    ArgsNode args = support.args_with_numbered($5, max_numparam);
+                    lexer.getCmdArgumentState().reset($<Long>6.longValue());
                     lexer.getCmdArgumentState().restart();
-                    $$ = new LambdaNode(@1.startLine(), $3, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new LambdaNode(@1.startLine(), args, $7, support.getCurrentScope(), lexer.getRubySourceline());
                     lexer.setLeftParenBegin($<Integer>2);
+                    support.numparam_pop($<Node>4);
                     support.popCurrentScope();
                 }
 
 f_larglist      : '(' f_args opt_bv_decl ')' {
                     $$ = $2;
+                    support.ordinalMaxNumParam();
                 }
                 | f_args {
+                    if (!support.isArgsInfoEmpty($1)) {
+                        support.ordinalMaxNumParam();
+                    }
                     $$ = $1;
                 }
 
@@ -2216,27 +2231,37 @@ brace_block     : '{' brace_body '}' {
                 }
 
 brace_body      : {
-                    $$ = lexer.getRubySourceline();
-                } {
                     support.pushBlockScope();
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
                     lexer.getCmdArgumentState().reset();
+                } {
+                    $$ = support.resetMaxNumParam();
+                } {
+                    $$ = support.numparam_push();
                 } opt_block_param compstmt {
-                    $$ = new IterNode($<Integer>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
+                    int max_numparam = support.restoreMaxNumParam($<Integer>2);
+                    ArgsNode args = support.args_with_numbered($4, max_numparam);
+                    $$ = new IterNode(@1.startLine(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    support.numparam_pop($<Node>3);
                     support.popCurrentScope();
-                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
+                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
                 }
 
 do_body 	: {
-                    $$ = lexer.getRubySourceline();
-                } {
                     support.pushBlockScope();
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
                     lexer.getCmdArgumentState().reset();
+                } {
+                    $$ = support.resetMaxNumParam();
+                } {
+                    $$ = support.numparam_push();
                 } opt_block_param bodystmt {
-                    $$ = new IterNode($<Integer>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
+                    int max_numparam = support.restoreMaxNumParam($<Integer>2);
+                    ArgsNode args = support.args_with_numbered($4, max_numparam);
+                    $$ = new IterNode(@1.startLine(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    support.numparam_pop($<Node>3);
                     support.popCurrentScope();
-                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
+                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
                 }
 
 case_args	: arg_value {
@@ -3171,6 +3196,7 @@ f_norm_arg      : f_bad_arg {
                 }
                 | tIDENTIFIER {
                     $$ = support.formal_argument($1);
+                    support.ordinalMaxNumParam();
                 }
 
 f_arg_asgn      : f_norm_arg {
@@ -3198,6 +3224,7 @@ f_arg           : f_arg_item {
 f_label 	: tLABEL {
                     support.arg_var(support.formal_argument($1));
                     lexer.setCurrentArg($1);
+                    support.ordinalMaxNumParam();
                     $$ = $1;
                 }
 

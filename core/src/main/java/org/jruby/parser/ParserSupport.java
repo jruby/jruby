@@ -99,6 +99,11 @@ public class ParserSupport {
     private Set<ByteList> keyTable;
     private Set<ByteList> variableTable;
 
+    private int maxNumParam = 0;
+    private Node numParamCurrent = null;
+    private Node numParamInner = null;
+    private Node numParamOuter = null;
+
     public void reset() {
         lexer.getLexContext().reset();
     }
@@ -138,6 +143,75 @@ public class ParserSupport {
         lexer.getCmdArgumentState().reset(0);
         lexer.getConditionState().reset(0);
     }
+
+    public Node numparam_push() {
+        Node inner = numParamInner;
+
+        if (numParamOuter == null) numParamOuter = numParamCurrent;
+
+        numParamInner = null;
+        numParamCurrent = null;
+
+        return inner;
+    }
+
+    public void numparam_pop(Node previousInner) {
+        if (previousInner != null) {
+            numParamInner = previousInner;
+        } else if (numParamCurrent != null) {
+            numParamInner = numParamCurrent;
+        }
+
+        if (maxNumParam > 0) {
+            numParamCurrent = numParamOuter;
+            numParamOuter = null;
+        } else {
+            numParamCurrent = null;
+        }
+
+    }
+
+    public ArgsNode args_with_numbered(ArgsNode args, int paramCount) {
+        if (paramCount > 0) {
+            if (args == null) { // FIXME: I think this is not possible.
+                ListNode pre = makePreNumArgs(paramCount);
+                args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+            } else if (args.getArgs().length == 0) {
+                ListNode pre = makePreNumArgs(paramCount);
+                args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+            } else {
+                // FIXME: not sure where errors are printed in all this but could be here.
+            }
+            // FIXME: it just sets pre-value here but what existing args node would work here?
+        }
+        return args;
+    }
+
+    private ListNode makePreNumArgs(int paramCount) {
+        ListNode list = new ArrayNode(lexer.getRubySourceline());
+
+        for (int i = 1; i <= paramCount; i++) {
+            list.add(arg_var(new ByteList(("_" + i).getBytes())));
+        }
+
+        return list;
+    }
+
+    public int resetMaxNumParam() {
+        return restoreMaxNumParam(0);
+    }
+
+    public int restoreMaxNumParam(int maxNum) {
+        int temp = maxNumParam;
+
+        maxNumParam = maxNum;
+
+        return temp;
+    }
+
+    public void ordinalMaxNumParam() {
+        maxNumParam = -1;
+    }
     
     public static Node arg_concat(Node node1, Node node2) {
         return node2 == null ? node1 : new ArgsCatNode(node1.getLine(), node1, node2);
@@ -164,15 +238,46 @@ public class ParserSupport {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
             RubySymbol name = ((INameNode) node).getName();
-            if (name.getBytes().equals(lexer.getCurrentArg())) {
-                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
-            }
-            Node newNode = currentScope.declare(node.getLine(), name);
+            StaticScope.Type type = currentScope.getType();
 
-            if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
-                scopedParserState.markUsedVariable(name, ((IScopedNode) node).getDepth());
+            String id = name.idString();
+            int slot = currentScope.isDefined(id);
+            if (type == StaticScope.Type.BLOCK && slot != -1) {
+                if (isNumParamId(id) && isNumParamNested()) return null;
+                if (name.getBytes().equals(lexer.getCurrentArg())) {
+                    warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
+                }
+
+                Node newNode = new DVarNode(node.getLine(), slot, name);
+
+                if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
+                    scopedParserState.markUsedVariable(name, ((IScopedNode) node).getDepth());
+                }
+                return newNode;
             }
-            return newNode;
+            if (type == StaticScope.Type.LOCAL) {
+                if (name.getBytes().equals(lexer.getCurrentArg())) {
+                    warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
+                }
+
+                Node newNode = new LocalVarNode(node.getLine(), slot, name);
+
+                if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
+                    scopedParserState.markUsedVariable(name, ((IScopedNode) node).getDepth());
+                }
+
+                return newNode;
+            }
+            if (type == StaticScope.Type.BLOCK && isNumParamId(id) && numberedParam(id)) {
+                if (isNumParamNested()) return null;
+
+                Node newNode = new DVarNode(node.getLine(), slot, name);
+                if (numParamCurrent == null) numParamCurrent = newNode;
+                return newNode;
+            }
+            if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+
+            return new VCallNode(node.getLine(), name);
         case CONSTDECLNODE: // CONSTANT
             return new ConstNode(node.getLine(), ((INameNode) node).getName());
         case INSTASGNNODE: // INSTANCE VARIABLE
@@ -188,6 +293,46 @@ public class ParserSupport {
         return null;
     }
 
+    private boolean numberedParam(String id) {
+        int n = Integer.parseInt(id.substring(1));
+        if (scopedParserState.getEnclosingScope() == null) return false;
+
+        if (maxNumParam == -1) {
+            compile_error("ordinary parameter is defined");
+            return false;
+        }
+
+        // if we have proc { _3 } then we need to up to 3 even though we never reference _1 or _2.
+        if (maxNumParam < n) maxNumParam = n;
+
+        // MRI adds to their vtable here but we do it in makePreNumArgs.  We are just
+        // making them like legit params and IRBuilder will be none the wiser.
+
+        return true;
+    }
+
+    private boolean isNumParamNested() {
+        if (numParamOuter == null && numParamInner == null) return false;
+
+        Node used = numParamOuter != null ? numParamOuter : numParamInner;
+        compile_error("numbered parameter is already used in\n" + lexer.getFile() + ":" + used.getLine() + ": " +
+                (numParamOuter != null ? "outer" : "inner") + " block here");
+        // FIXME: Show error line
+        return true;
+    }
+
+    private boolean isNumParamId(String id) {
+        if (id.length() != 2 || id.charAt(0) != '_') return false;
+
+        char one = id.charAt(1);
+        return one != '0' && Character.isDigit(one); // _1..._9
+    }
+
+    public void numparam_name(RubySymbol name) {
+        String id = name.idString();
+        if (isNumParamId(id)) compile_error(id + " is reserved for numbered parameter");
+    }
+
     public Node declareIdentifier(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
         if (byteName.equals(lexer.getCurrentArg())) {
@@ -195,17 +340,38 @@ public class ParserSupport {
                     str(getConfiguration().getRuntime(), "circular argument reference - ", name));
         }
 
-        int slot = currentScope.isDefined(name.idString());
-        Node node = currentScope.declare(lexer.tokline, name);
+        String id = name.idString();
+        boolean isNumParam = isNumParamId(id);
+
+        Node node;
+        int slot;
+        if (isNumParam && numberedParam(id)) {
+            if (isNumParamNested()) return null;
+
+            slot = currentScope.addVariable(id);
+            node = currentScope.isBlockScope() ?
+                    new DVarNode(lexer.tokline, slot, name) :
+                    new LocalVarNode(lexer.tokline, slot, name);
+            if (numParamCurrent == null) numParamCurrent = node;
+        }  else {
+            node = currentScope.declare(lexer.tokline, name);
+            slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
+        }
 
         if (warnOnUnusedVariables && node instanceof IScopedNode) addOrMarkVariable(name, slot);
 
         return node;
     }
 
+    public boolean isArgsInfoEmpty(ArgsNode argsNode) {
+        return argsNode.isEmpty();
+    }
+
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
         RubySymbol name = symbolID(byteName);
+
+        if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
 
@@ -1331,6 +1497,8 @@ public class ParserSupport {
 
     public ArgumentNode arg_var(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
+
+        if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
 
         if (warnOnUnusedVariables) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
