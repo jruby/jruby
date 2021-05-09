@@ -218,7 +218,7 @@ public class RubyNameError extends RubyStandardError {
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        RubyHash options = RubyHash.newHash(getRuntime());
+        RubyHash options = null;
 
         if (args.length > 0) {
             if ((args[args.length - 1] != null) && (args[args.length - 1] instanceof RubyHash)) {
@@ -237,9 +237,11 @@ public class RubyNameError extends RubyStandardError {
         if (message instanceof RubyNameErrorMessage) this.receiver = ((RubyNameErrorMessage) message).object;
         this.name = args.length > 1 ? args[1] : getRuntime().getNil();
 
-        IRubyObject [] values = ArgsUtil.extractKeywordArgs(getRuntime().getCurrentContext(), options, keywords);
-        if ((values != null) && (values.length == 1) && (values[0] != null)) {
-            this.receiver = values[0];
+        if (options != null) {
+            IRubyObject [] values = ArgsUtil.extractKeywordArgs(getRuntime().getCurrentContext(), options, keywords);
+            if ((values != null) && (values.length == 1) && (values[0] != null)) {
+                this.receiver = values[0];
+            }
         }
         return super.initialize(NULL_ARRAY, block); // message already set
     }
