@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
@@ -37,6 +38,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
 
@@ -216,9 +218,29 @@ public class RubyNameError extends RubyStandardError {
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
+        RubyHash options = RubyHash.newHash(getRuntime());
+
+        if (args.length > 0) {
+            if ((args[args.length - 1] != null) && (args[args.length - 1] instanceof RubyHash)) {
+                options = (RubyHash)args[args.length - 1];
+                args = ArraySupport.newCopy(args, args.length - 1);
+            }
+        }
+        
+        return initializeOptions(args, options, block);
+    }
+
+    public IRubyObject initializeOptions(IRubyObject[] args, RubyHash options, Block block) {
+        String [] keywords = {"receiver"};
+ 
         if (args.length > 0) this.message = args[0];
         if (message instanceof RubyNameErrorMessage) this.receiver = ((RubyNameErrorMessage) message).object;
         this.name = args.length > 1 ? args[1] : getRuntime().getNil();
+
+        IRubyObject [] values = ArgsUtil.extractKeywordArgs(getRuntime().getCurrentContext(), options, keywords);
+        if ((values != null) && (values.length == 1) && (values[0] != null)) {
+            this.receiver = values[0];
+        }
         return super.initialize(NULL_ARRAY, block); // message already set
     }
 
