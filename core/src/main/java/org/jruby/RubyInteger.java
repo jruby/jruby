@@ -888,9 +888,9 @@ public abstract class RubyInteger extends RubyNumeric {
         return ((RubyInteger) num).op_and(context, mask);
     }
 
-    private IRubyObject generateMask(ThreadContext context, IRubyObject length) {
+    RubyInteger generateMask(ThreadContext context, IRubyObject length) {
         RubyFixnum one = context.runtime.newFixnum(1);
-        return ((RubyInteger) one.op_lshift(context, length)).op_minus(context, one);
+        return (RubyInteger) ((RubyInteger) one.op_lshift(context, length)).op_minus(context, one);
     }
 
     @JRubyMethod(name = "<<")
