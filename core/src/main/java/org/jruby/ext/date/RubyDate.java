@@ -585,12 +585,16 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "valid_jd?", meta = true)
     public static IRubyObject valid_jd_p(ThreadContext context, IRubyObject self, IRubyObject jd) {
-        return jd == context.nil ? context.fals : context.tru; // @see _valid_jd_p
+        return validJDArg(context, jd) ? context.tru : context.fals; // @see _valid_jd_p
     }
 
     @JRubyMethod(name = "valid_jd?", meta = true)
     public static IRubyObject valid_jd_p(ThreadContext context, IRubyObject self, IRubyObject jd, IRubyObject sg) {
-        return jd == context.nil ? context.fals : context.tru; // @see _valid_jd_p
+        return validJDArg(context, jd) ? context.tru : context.fals; // @see _valid_jd_p
+    }
+
+    private static boolean validJDArg(ThreadContext context, IRubyObject jd) {
+        return jd != context.nil && jd != context.fals && !(jd instanceof RubySymbol);
     }
 
     // Is +jd+ a valid Julian Day Number?
