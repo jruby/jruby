@@ -2817,22 +2817,6 @@ public class RubyModule extends RubyObject {
         addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, false, true);
     }
 
-    /** rb_mod_attr
-     *
-     */
-    @JRubyMethod(name = "attr", rest = true, reads = VISIBILITY)
-    public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        if (args.length == 2 && (args[1] == runtime.getTrue() || args[1] == runtime.getFalse())) {
-            runtime.getWarnings().warning(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
-            addAccessor(context, TypeConverter.checkID(args[0]), context.getCurrentVisibility(), args[0].isTrue(), args[1].isTrue());
-            return runtime.getNil();
-        }
-
-        return attr_reader(context, args);
-    }
-
     @JRubyMethod(rest = true)
     public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -2873,6 +2857,34 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
+    /** rb_mod_attr
+     *
+     */
+    @JRubyMethod(name = "attr", rest = true, reads = VISIBILITY)
+    public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        if (args.length == 2 && (args[1] == runtime.getTrue() || args[1] == runtime.getFalse())) {
+            runtime.getWarnings().warning(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
+            boolean writeable = args[1].isTrue();
+            RubySymbol sym = TypeConverter.checkID(args[0]);
+            addAccessor(context, sym, context.getCurrentVisibility(), args[0].isTrue(), writeable);
+
+            RubyArray result;
+            if (writeable) {
+                ByteList writer = sym.getBytes().dup();
+                writer.append('=');
+                result = RubyArray.newArray(runtime, sym, runtime.newSymbol(writer));
+            } else {
+                result = RubyArray.newArray(runtime, sym);
+            }
+
+            return result;
+        }
+
+        return attr_reader(context, args);
+    }
+
     @Deprecated
     public IRubyObject attr19(ThreadContext context, IRubyObject[] args) {
         return attr(context, args);
@@ -2890,12 +2902,16 @@ public class RubyModule extends RubyObject {
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
+        IRubyObject[] result = new IRubyObject[args.length];
 
         for (int i = 0; i < args.length; i++) {
-            addAccessor(context, TypeConverter.checkID(args[i]), visibility, true, false);
+            RubySymbol sym = TypeConverter.checkID(args[i]);
+            result[i] = sym;
+
+            addAccessor(context, sym, visibility, true, false);
         }
 
-        return context.nil;
+        return context.runtime.newArray(result);
     }
 
     /** rb_mod_attr_writer
@@ -2905,12 +2921,18 @@ public class RubyModule extends RubyObject {
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
+        IRubyObject[] result = new IRubyObject[args.length];
 
         for (int i = 0; i < args.length; i++) {
-            addAccessor(context, TypeConverter.checkID(args[i]), visibility, false, true);
+            RubySymbol sym = TypeConverter.checkID(args[i]);
+            ByteList writer = sym.getBytes().dup();
+            writer.append('=');
+            result[i] = context.runtime.newSymbol(writer);
+
+            addAccessor(context, sym, visibility, false, true);
         }
 
-        return context.nil;
+        return context.runtime.newArray(result);
     }
 
 
@@ -2927,15 +2949,25 @@ public class RubyModule extends RubyObject {
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
+        IRubyObject[] result = new IRubyObject[2 * args.length];
 
         for (int i = 0; i < args.length; i++) {
+            RubySymbol sym = TypeConverter.checkID(args[i]);
+
+            ByteList reader = sym.getBytes().shallowDup();
+            result[i*2] = context.runtime.newSymbol(reader);
+
+            ByteList writer = sym.getBytes().dup();
+            writer.append('=');
+            result[i*2+1] = context.runtime.newSymbol(writer);
+
             // This is almost always already interned, since it will be called with a symbol in most cases
             // but when created from Java code, we might getService an argument that needs to be interned.
             // addAccessor has as a precondition that the string MUST be interned
-            addAccessor(context, TypeConverter.checkID(args[i]), visibility, true, true);
+            addAccessor(context, sym, visibility, true, true);
         }
 
-        return context.nil;
+        return context.runtime.newArray(result);
     }
 
     /**
