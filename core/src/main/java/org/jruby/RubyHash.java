@@ -164,10 +164,7 @@ public class RubyHash extends RubyObject implements Map {
                     IRubyObject key;
                     IRubyObject val = nil;
                     if (v == nil) {
-                        runtime.getWarnings().warn("wrong element type " + e.getMetaClass() + " at " + i + " (expected array)");
-                        runtime.getWarnings().warn("ignoring wrong elements is deprecated, remove them explicitly");
-                        runtime.getWarnings().warn("this causes ArgumentError in the next release");
-                        continue;
+                        throw runtime.newArgumentError("wrong element type " + e.getMetaClass() + " at " + i + " (expected array)");
                     }
                     switch (((RubyArray) v).getLength()) {
                     default:
