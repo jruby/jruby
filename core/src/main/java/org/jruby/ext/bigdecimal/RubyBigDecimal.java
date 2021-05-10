@@ -2153,13 +2153,13 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyString toStringImpl(final Ruby runtime, String arg) {
-        if ( isNaN() ) return runtime.newString("NaN");
-        if ( isInfinity() ) return runtime.newString(infinityString(infinitySign));
-        if ( isZero() ) return runtime.newString(zeroSign < 0 ? "-0.0" : "0.0");
+        if ( isNaN() ) return RubyString.newUSASCIIString(runtime, "NaN");
+        if ( isInfinity() ) return RubyString.newUSASCIIString(runtime, infinityString(infinitySign));
+        if ( isZero() ) return RubyString.newUSASCIIString(runtime, zeroSign < 0 ? "-0.0" : "0.0");
 
         boolean asEngineering = arg == null || ! formatHasFloatingPointNotation(arg);
 
-        return RubyString.newString(runtime, ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) ));
+        return RubyString.newUSASCIIString(runtime, ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) ).toString());
     }
 
     @Override
