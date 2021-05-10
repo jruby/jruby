@@ -1522,7 +1522,7 @@ public class IRRuntimeHelpers {
             throw context.runtime.newTypeError("no outer class/module");
         }
 
-        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(id);
+        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(id, scope.getFile(), context.getLine() + 1);
         scope.setModule(newRubyModule);
 
         if (maybeRefined) scope.captureParentRefinements(context);
@@ -1553,7 +1553,8 @@ public class IRRuntimeHelpers {
             sc = (RubyClass) superClass;
         }
 
-        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc);
+        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc,
+                scope.getFile(), runtime.getCurrentContext().getLine() + 1);
 
         scope.setModule(newRubyClass);
 
@@ -2277,7 +2278,7 @@ public class IRRuntimeHelpers {
     public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
         warnSetConstInRefinement(context, self);
 
-        module.setConstant(id, value);
+        module.setConstant(id, value, context.getFile(), context.getLine() + 1);
     }
 
     @JIT

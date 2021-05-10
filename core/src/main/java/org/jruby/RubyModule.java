@@ -97,7 +97,6 @@ import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
@@ -166,6 +165,8 @@ public class RubyModule extends RubyObject {
     public static final int IS_OVERLAID_F = ObjectFlags.IS_OVERLAID_F;
     public static final int OMOD_SHARED = ObjectFlags.OMOD_SHARED;
     public static final int INCLUDED_INTO_REFINEMENT = ObjectFlags.INCLUDED_INTO_REFINEMENT;
+
+    public static final String BUILTIN_CONSTANT = "";
 
     public static final ObjectAllocator MODULE_ALLOCATOR = RubyModule::new;
 
@@ -252,7 +253,7 @@ public class RubyModule extends RubyObject {
                 // autoload has been completed
                 if (autoload.getValue() != null) return context.nil;
 
-                file = autoload.getFile();
+                file = autoload.getPath();
 
                 // autoload is in progress on another thread
                 if (autoload.ctx != null && !autoload.isSelf(context)) return file;
@@ -422,6 +423,14 @@ public class RubyModule extends RubyObject {
     /** rb_module_new/rb_define_module_id/rb_name_class/rb_set_class_path
      *
      */
+    public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent, String file, int line) {
+        RubyModule module = newModule(runtime);
+        module.setBaseName(name);
+        if (setParent) module.setParent(parent);
+        parent.setConstant(name, module, file, line);
+        return module;
+    }
+
     public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent) {
         RubyModule module = newModule(runtime);
         module.setBaseName(name);
@@ -2061,7 +2070,16 @@ public class RubyModule extends RubyObject {
         return defineOrGetClassUnder(name, superClazz, null);
     }
 
+    public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, String file, int line) {
+        return defineOrGetClassUnder(name, superClazz, null, file, line);
+    }
+
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
+        return defineOrGetClassUnder(name, superClazz, allocator, null, -1);
+    }
+
+    public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator,
+                                           String file, int line) {
         // This method is intended only for defining new classes in Ruby code,
         // so it uses the allocator of the specified superclass or default to
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
@@ -2100,7 +2118,7 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            clazz = RubyClass.newClass(runtime, superClazz, name, allocator, this, true);
+            clazz = RubyClass.newClass(runtime, superClazz, name, allocator, this, true, file, line);
         }
 
         return clazz;
@@ -2121,6 +2139,10 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyModule defineOrGetModuleUnder(String name) {
+        return defineOrGetModuleUnder(name, null, -1);
+    }
+
+    public RubyModule defineOrGetModuleUnder(String name, String file, int line) {
         // This method is intended only for defining new modules in Ruby code
         Ruby runtime = getRuntime();
         IRubyObject moduleObj = getConstantAtSpecial(name);
@@ -2131,7 +2153,7 @@ public class RubyModule extends RubyObject {
         } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
         } else {
-            module = RubyModule.newModule(runtime, name, this, true);
+            module = RubyModule.newModule(runtime, name, this, true, file, line);
         }
         return module;
     }
@@ -3888,6 +3910,61 @@ public class RubyModule extends RubyObject {
         return mod.getConstant(validateConstant(name, symbol), inherit, inherit);
     }
 
+    @JRubyMethod(required = 1, optional = 1)
+    public IRubyObject const_source_location(ThreadContext context, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
+        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+
+        final IRubyObject symbol = args[0];
+        String name;
+        if (symbol instanceof RubySymbol) {
+            RubySymbol fullName = TypeConverter.checkID(symbol);
+            name = fullName.idString();
+        } else {
+            name = symbol.convertToString().asJavaString();
+        }
+
+        int sep = name.indexOf("::");
+        // symbol form does not allow ::
+        if (symbol instanceof RubySymbol && sep != -1) {
+            throw runtime.newNameError("wrong constant name", symbol);
+        }
+
+        RubyModule mod = this;
+
+        if (sep == 0) { // ::Foo::Bar
+            mod = runtime.getObject();
+            name = name.substring(2);
+        }
+
+        // Bare ::
+        if (name.length() == 0) {
+            throw runtime.newNameError("wrong constant name ", symbol);
+        }
+
+        while ( ( sep = name.indexOf("::") ) != -1 ) {
+            final String segment = name.substring(0, sep);
+            IRubyObject obj = mod.getConstant(validateConstant(segment, symbol), inherit, inherit);
+            if (obj instanceof RubyModule) {
+                mod = (RubyModule) obj;
+            } else {
+                throw runtime.newTypeError(segment + " does not refer to class/module");
+            }
+            name = name.substring(sep + 2);
+        }
+
+        SourceLocation location = mod.getConstantSourceLocation(validateConstant(name, symbol), inherit, inherit);
+
+        if (location != null && location.getFile() != null) {
+            if (location.getFile().equals(BUILTIN_CONSTANT)) {
+                return RubyArray.newEmptyArray(context.runtime);
+            }
+            return RubyArray.newArray(context.runtime, runtime.newString(location.getFile()), runtime.newFixnum(location.getLine()));
+        }
+
+        return context.nil;
+    }
+
     /** rb_mod_const_set
      *
      */
@@ -4116,7 +4193,7 @@ public class RubyModule extends RubyObject {
             throw runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
         }
 
-        storeConstant(name, entry.value, hidden);
+        storeConstant(name, entry.value, hidden, entry.getFile(), entry.getLine());
     }
 
     //
@@ -4287,6 +4364,16 @@ public class RubyModule extends RubyObject {
         return getConstant(name, inherit, true);
     }
 
+    public SourceLocation getConstantSourceLocation(String name, boolean inherit, boolean includeObject) {
+        SourceLocation location = iterateConstantEntryNoConstMissing(name, this, inherit);
+
+        if (location == null && !isClass() && includeObject) {
+            location = iterateConstantEntryNoConstMissing(name, getRuntime().getObject(), inherit);
+        }
+
+        return location;
+    }
+
     public IRubyObject getConstant(String name, boolean inherit, boolean includeObject) {
         assert name != null : "null name";
         //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
@@ -4346,6 +4433,23 @@ public class RubyModule extends RubyObject {
         }
 
         return constant;
+    }
+
+    private static SourceLocation iterateConstantEntryNoConstMissing(String name, RubyModule init, boolean inherit) {
+        for (RubyModule mod = init; mod != null; mod = mod.getSuperClass()) {
+            ConstantEntry entry = mod.constantEntryFetch(name);
+
+            // Either undef'd or it happens to be an autoload.
+            if (entry != null) {
+                IRubyObject value = entry.value;
+                if (value == UNDEF) return mod.getAutoloadMap().get(name);
+                return entry;
+            }
+
+            if (!inherit) break;
+        }
+
+        return null;
     }
 
     private static IRubyObject iterateConstantNoConstMissing(String name,
@@ -4464,7 +4568,7 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstantQuiet(String name, IRubyObject value) {
-        return setConstantCommon(name, value, false, false);
+        return setConstantCommon(name, value, false, false, null, -1);
     }
 
     /**
@@ -4476,11 +4580,15 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstant(String name, IRubyObject value) {
-        return setConstantCommon(name, value, false, true);
+        return setConstantCommon(name, value, false, true, null, -1);
+    }
+
+    public IRubyObject setConstant(String name, IRubyObject value, String file, int line) {
+        return setConstantCommon(name, value, false, true, file, line);
     }
 
     public IRubyObject setConstant(String name, IRubyObject value, boolean hidden) {
-        return setConstantCommon(name, value, hidden, true);
+        return setConstantCommon(name, value, hidden, true, null, -1);
     }
 
     /**
@@ -4491,14 +4599,14 @@ public class RubyModule extends RubyObject {
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
      * @return The result of setting the variable.
      */
-    private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn) {
+    private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn, String file, int line) {
         IRubyObject oldValue = fetchConstant(name);
 
         setParentForModule(name, value);
 
         if (oldValue != null) {
             boolean notAutoload = oldValue != UNDEF;
-            if (notAutoload || !setAutoloadConstant(name, value)) {
+            if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
                     if (this.equals(getRuntime().getObject())) {
                         getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
@@ -4506,14 +4614,11 @@ public class RubyModule extends RubyObject {
                         getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
                     }
                 }
-                // might just call storeConstant(name, value, hidden) but to maintain
-                // backwards compatibility with calling #storeConstant overrides
-                if (hidden) storeConstant(name, value, true);
-                else storeConstant(name, value);
+
+                storeConstant(name, value, hidden, file, line);
             }
         } else {
-            if (hidden) storeConstant(name, value, true);
-            else storeConstant(name, value);
+            storeConstant(name, value, hidden, file, line);
         }
 
         invalidateConstantCache(name);
@@ -4649,7 +4754,7 @@ public class RubyModule extends RubyObject {
         // autoload has been evacuated
         if (autoload == null) return null;
 
-        RubyString file = autoload.getFile();
+        RubyString file = autoload.getPath();
 
         // autoload filename is empty
         if (file.length() == 0) {
@@ -4936,6 +5041,13 @@ public class RubyModule extends RubyObject {
         return constantTableStore(name, value);
     }
 
+    public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden, String file, int line) {
+        assert value != null : "value is null";
+
+        ensureConstantsSettable();
+        return constantTableStore(name, value, hidden, false, file, line);
+    }
+
     public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden) {
         assert value != null : "value is null";
 
@@ -5071,7 +5183,9 @@ public class RubyModule extends RubyObject {
         boolean hidden = false;
 
         ConstantEntry entry = constMap.get(name);
-        if (entry != null) hidden = entry.hidden;
+        if (entry != null && entry.value != UNDEF) {
+            hidden = entry.hidden;
+        }
 
         constMap.put(name, new ConstantEntry(value, hidden));
         return value;
@@ -5079,6 +5193,20 @@ public class RubyModule extends RubyObject {
 
     protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
         return constantTableStore(name, value, hidden, false);
+    }
+
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden, boolean deprecated,
+                                             String file, int line) {
+        Map<String, ConstantEntry> constMap = getConstantMapForWrite();
+        ConstantEntry entry = new ConstantEntry(value, hidden, deprecated);
+
+        if (file != null) {
+            entry.file = file;
+            entry.line = line;
+        }
+
+        constMap.put(name, entry);
+        return value;
     }
 
     protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden, boolean deprecated) {
@@ -5100,7 +5228,8 @@ public class RubyModule extends RubyObject {
         final Autoload existingAutoload = getAutoloadMap().get(symbol);
         if (existingAutoload == null || existingAutoload.getValue() == null) {
             storeConstant(symbol, RubyObject.UNDEF);
-            getAutoloadMapForWrite().put(symbol, new Autoload(symbol, path));
+            ThreadContext context = path.getRuntime().getCurrentContext();
+            getAutoloadMapForWrite().put(symbol, new Autoload(symbol, path, context.getFile(), context.getLine() + 1));
         }
     }
 
@@ -5113,7 +5242,7 @@ public class RubyModule extends RubyObject {
         final IRubyObject value = autoload.getValue();
 
         if (value != null && value != UNDEF) {
-            storeConstant(name, value);
+            storeConstant(name, value, false, autoload.getFile(), autoload.getLine());
             invalidateConstantCache(name);
         }
 
@@ -5141,10 +5270,10 @@ public class RubyModule extends RubyObject {
     /**
      * Set an Object as a defined constant in autoloading.
      */
-    private boolean setAutoloadConstant(String name, IRubyObject value) {
+    private boolean setAutoloadConstant(String name, IRubyObject value, String file, int line) {
         final Autoload autoload = getAutoloadMap().get(name);
         if ( autoload != null ) {
-            boolean set = autoload.setConstant(getRuntime().getCurrentContext(), value);
+            boolean set = autoload.setConstant(getRuntime().getCurrentContext(), value, file, line);
             if ( ! set ) removeAutoload(name);
             return set;
         }
@@ -5160,7 +5289,7 @@ public class RubyModule extends RubyObject {
 
     protected RubyString getAutoloadFile(String name) {
         final Autoload autoload = getAutoloadMap().get(name);
-        return autoload == null ? null : autoload.getFile();
+        return autoload == null ? null : autoload.getPath();
     }
 
     private static void define(RubyModule module, JavaMethodDescriptor desc, final String simpleName, DynamicMethod dynamicMethod) {
@@ -5257,13 +5386,20 @@ public class RubyModule extends RubyObject {
     @SuppressWarnings("unchecked")
     private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;
 
+    public interface SourceLocation {
+        String getFile();
+        int getLine();
+    }
+
     /**
      * Represents a constant value, possibly hidden (private).
      */
-    public static class ConstantEntry {
+    public static class ConstantEntry implements SourceLocation {
         public final IRubyObject value;
         public final boolean hidden;
         final boolean deprecated;
+        private String file;
+        private int line;
 
         public ConstantEntry(IRubyObject value, boolean hidden) {
             this.value = value;
@@ -5275,6 +5411,22 @@ public class RubyModule extends RubyObject {
             this.value = value;
             this.hidden = hidden;
             this.deprecated = deprecated;
+        }
+
+        ConstantEntry(IRubyObject value, boolean hidden, boolean deprecated, String file, int line) {
+            this.value = value;
+            this.hidden = hidden;
+            this.deprecated = deprecated;
+            this.file = file;
+            this.line = line;
+        }
+
+        public String getFile() {
+            return file;
+        }
+
+        public int getLine() {
+            return line;
         }
 
         public ConstantEntry dup() {
@@ -5294,7 +5446,7 @@ public class RubyModule extends RubyObject {
      * 'Module#autoload' creates this object and stores it in autoloadMap.
      * This object can be shared with multiple threads so take care to change volatile and synchronized definitions.
      */
-    public final class Autoload {
+    public final class Autoload implements SourceLocation {
         // A ThreadContext which is executing autoload.
         private volatile ThreadContext ctx;
         // An object defined for the constant while autoloading.
@@ -5303,12 +5455,24 @@ public class RubyModule extends RubyObject {
         private final String symbol;
         // The Ruby string representing the path to load
         private final RubyString path;
+        public String file;
+        public int line;
 
-        Autoload(String symbol, RubyString path) {
+        Autoload(String symbol, RubyString path, String file, int line) {
             this.ctx = null;
             this.value = null;
             this.symbol = symbol;
             this.path = path;
+            this.file = file;
+            this.line = line;
+        }
+
+        public String getFile() {
+            return file;
+        }
+
+        public int getLine() {
+            return line;
         }
 
         // Returns an object for the constant if the caller is the autoloading thread.
@@ -5334,10 +5498,15 @@ public class RubyModule extends RubyObject {
         }
 
         // Update an object for the constant if the caller is the autoloading thread.
-        synchronized boolean setConstant(ThreadContext ctx, IRubyObject newValue) {
+        synchronized boolean setConstant(ThreadContext ctx, IRubyObject newValue, String file, int line) {
             boolean isSelf = isSelf(ctx);
 
-            if (isSelf) value = newValue;
+            if (isSelf) {
+                value = newValue;
+                // Note: we replace undef location with constant location as the autoload resolution is in flight.
+                this.file = file;
+                this.line = line;
+            }
 
             return isSelf;
         }
@@ -5358,7 +5527,7 @@ public class RubyModule extends RubyObject {
         }
 
         // Returns the assigned feature.
-        RubyString getFile() {
+        RubyString getPath() {
             return path;
         }
 
