@@ -3217,6 +3217,8 @@ public class RubyModule extends RubyObject {
             // Note: we change current frames visibility here because the methods which call
             // this method are all "fast" (e.g. they do not created their own frame).
             context.setCurrentVisibility(visibility);
+        } else if (args.length == 1 && args[0] instanceof RubyArray) {
+            setMethodVisibility(((RubyArray) args[0]).toJavaArray(), visibility);
         } else {
             setMethodVisibility(args, visibility);
         }
