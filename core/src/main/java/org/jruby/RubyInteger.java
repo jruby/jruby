@@ -879,7 +879,19 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject op_xor(ThreadContext context, IRubyObject other);
 
     @JRubyMethod(name = "[]")
-    public abstract IRubyObject op_aref(ThreadContext context, IRubyObject other);
+    public abstract IRubyObject op_aref(ThreadContext context, IRubyObject index);
+
+    @JRubyMethod(name = "[]")
+    public IRubyObject op_aref(ThreadContext context, IRubyObject index, IRubyObject length) {
+        IRubyObject num = op_rshift(context, index);
+        IRubyObject mask = generateMask(context, length);
+        return ((RubyInteger) num).op_and(context, mask);
+    }
+
+    private IRubyObject generateMask(ThreadContext context, IRubyObject length) {
+        RubyFixnum one = context.runtime.newFixnum(1);
+        return ((RubyInteger) one.op_lshift(context, length)).op_minus(context, one);
+    }
 
     @JRubyMethod(name = "<<")
     public abstract IRubyObject op_lshift(ThreadContext context, IRubyObject other);
