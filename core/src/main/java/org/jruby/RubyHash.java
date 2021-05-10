@@ -2355,7 +2355,7 @@ public class RubyHash extends RubyObject implements Map {
                 },
                 context);
 
-        return RubyProc.newProc(context.runtime, block, Block.Type.PROC);
+        return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
     }
 
     @JRubyMethod(module = true)
