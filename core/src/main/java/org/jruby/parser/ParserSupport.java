@@ -238,11 +238,10 @@ public class ParserSupport {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
             RubySymbol name = ((INameNode) node).getName();
-            StaticScope.Type type = currentScope.getType();
-
             String id = name.idString();
             int slot = currentScope.isDefined(id);
-            if (type == StaticScope.Type.BLOCK && slot != -1) {
+
+            if (currentScope.isBlockScope() && slot != -1) {
                 if (isNumParamId(id) && isNumParamNested()) return null;
                 if (name.getBytes().equals(lexer.getCurrentArg())) {
                     warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
@@ -255,6 +254,8 @@ public class ParserSupport {
                 }
                 return newNode;
             }
+
+            StaticScope.Type type = currentScope.getType();
             if (type == StaticScope.Type.LOCAL) {
                 if (name.getBytes().equals(lexer.getCurrentArg())) {
                     warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
