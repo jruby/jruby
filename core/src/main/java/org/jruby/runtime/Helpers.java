@@ -36,6 +36,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
@@ -415,6 +416,31 @@ public class Helpers {
             newLength = MAX_ARRAY_SIZE;
         }
         return newLength;
+    }
+
+    /**
+     * Calculate a buffer length based on a base size and a multiplier. If the resulting size exceeds MAX_ARRAY_SIZE,
+     * an {@link ArgumentError} will be thrown, similar to when asking the JVM to allocate a too-large array.
+     *
+     * @param base the base size
+     * @param multiplier the multiplier
+     * @return the multiplied size, if valid
+     * @throws ArgumentError if the requested length is greated than the max array size
+     */
+    public static int multiplyBufferLength(Ruby runtime, int base, int multiplier) {
+        try {
+            int newSize = Math.multiplyExact(base, multiplier);
+
+            if (newSize <= MAX_ARRAY_SIZE) {
+                return newSize;
+            }
+
+            // fall through to error below
+        } catch (ArithmeticException e) {
+            // fall through to error below
+        }
+
+        throw runtime.newArgumentError("argument too big");
     }
 
     public static class MethodMissingMethod extends DynamicMethod {
