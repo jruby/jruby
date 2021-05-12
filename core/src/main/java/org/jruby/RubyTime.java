@@ -587,7 +587,7 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) == 0);
+            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
         }
         if (other == context.nil) {
             return context.fals;
@@ -599,7 +599,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = ">=", required = 1)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) >= 0);
+            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) >= 0);
         }
 
         return RubyComparable.op_ge(context, this, other);
@@ -608,7 +608,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = ">", required = 1)
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) > 0);
+            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) > 0);
         }
 
         return RubyComparable.op_gt(context, this, other);
@@ -617,7 +617,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) <= 0);
+            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) <= 0);
         }
 
         return RubyComparable.op_le(context, this, other);
@@ -626,7 +626,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) < 0);
+            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) < 0);
         }
 
         return RubyComparable.op_lt(context, this, other);
