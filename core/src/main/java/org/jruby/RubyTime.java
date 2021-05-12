@@ -51,12 +51,14 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites.TimeSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
@@ -587,7 +589,7 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
+            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) == 0);
         }
         if (other == context.nil) {
             return context.fals;
@@ -596,10 +598,21 @@ public class RubyTime extends RubyObject {
         return RubyComparable.op_equal(context, this, other);
     }
 
+    private static int safeCmp(ThreadContext context, RubyTime self, IRubyObject other) {
+        int cmpResult;
+        CachingCallSite cmp = sites(context).cmp;
+        if (cmp.isBuiltin(self)) {
+            cmpResult = self.cmp((RubyTime) other);
+        } else {
+            cmpResult = RubyNumeric.fix2int(cmp.call(context, self, self, other));
+        }
+        return cmpResult;
+    }
+
     @JRubyMethod(name = ">=", required = 1)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) >= 0);
+            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) >= 0);
         }
 
         return RubyComparable.op_ge(context, this, other);
@@ -608,7 +621,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = ">", required = 1)
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) > 0);
+            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) > 0);
         }
 
         return RubyComparable.op_gt(context, this, other);
@@ -617,7 +630,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) <= 0);
+            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) <= 0);
         }
 
         return RubyComparable.op_le(context, this, other);
@@ -626,7 +639,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) < 0);
+            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) < 0);
         }
 
         return RubyComparable.op_lt(context, this, other);
