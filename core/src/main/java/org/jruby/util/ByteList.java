@@ -336,13 +336,21 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     /**
      * Ensure that the bytelist is at least length bytes long.  Otherwise grow the backing store
-     * so that it is length bytes long
+     * so that it is at least length bytes long, but grow to 1.5 * length, if we're able
+     * to, to avoid thrashing.
      *
      * @param length to use to make sure ByteList is long enough
      */
     public void ensure(int length) {
         if (begin + length > bytes.length) {
-            byte[] tmp = new byte[Math.min(Integer.MAX_VALUE, length + (length >>> 1))];
+            int newLength;
+            try {
+                // Try to allocate 1.5 * length but that might take us outside the range of int
+                newLength = Math.addExact(length, length >>> 1);
+            } catch (ArithmeticException e) {
+                newLength = Integer.MAX_VALUE;
+            }
+            byte[] tmp = new byte[newLength];
             System.arraycopy(bytes, begin, tmp, 0, realSize);
             bytes = tmp;
             begin = 0;
