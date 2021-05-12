@@ -44,6 +44,7 @@ import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyEncoding;
+import org.jruby.runtime.Helpers;
 
 /**
  * ByteList is simple a collection of bytes in the same way a Java String is a collection
@@ -343,14 +344,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public void ensure(int length) {
         if (begin + length > bytes.length) {
-            int newLength;
-            try {
-                // Try to allocate 1.5 * length but that might take us outside the range of int
-                newLength = Math.addExact(length, length >>> 1);
-            } catch (ArithmeticException e) {
-                newLength = Integer.MAX_VALUE;
-            }
-            byte[] tmp = new byte[newLength];
+            byte[] tmp = new byte[Helpers.calculateBufferLength(length)];
             System.arraycopy(bytes, begin, tmp, 0, realSize);
             bytes = tmp;
             begin = 0;

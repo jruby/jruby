@@ -85,6 +85,7 @@ import org.jruby.util.io.EncodingUtils;
 public class Helpers {
 
     public static final Pattern SEMICOLON_PATTERN = Pattern.compile(";");
+    public static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 2; // effective max for new byte[], see GH-6670
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -394,6 +395,26 @@ public class Helpers {
         default:
             throw new RuntimeException("unsupported arity: " + args);
         }
+    }
+
+    /**
+     * Calculate a buffer length based on the required length, expanding by 1.5x or to the maximum array size.
+     *
+     * @param length the required length
+     * @return a larger buffer length with extra room for growth, or else the max array size
+     * @throws OutOfMemoryError if the requested length is greated than the max array size
+     */
+    public static int calculateBufferLength(int length) {
+        if (length > MAX_ARRAY_SIZE) throw new OutOfMemoryError("Requested array size exceeds VM limit");
+
+        int newLength;
+        try {
+            // Try to allocate 1.5 * length but that might take us outside the range of int
+            newLength = Math.addExact(length, length >>> 1);
+        } catch (ArithmeticException e) {
+            newLength = MAX_ARRAY_SIZE;
+        }
+        return newLength;
     }
 
     public static class MethodMissingMethod extends DynamicMethod {
