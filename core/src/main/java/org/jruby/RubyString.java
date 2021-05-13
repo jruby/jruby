@@ -1201,15 +1201,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+
         int len = RubyNumeric.num2int(arg);
-        if (len < 0) throw context.runtime.newArgumentError("negative argument");
+        if (len < 0) throw runtime.newArgumentError("negative argument");
 
         // we limit to int because ByteBuffer can only allocate int sizes
-        if (len > 0 && Integer.MAX_VALUE / len < value.getRealSize()) {
-            throw context.runtime.newArgumentError("argument too big");
-        }
+        len = Helpers.multiplyBufferLength(runtime, value.getRealSize(), len);
 
-        ByteList bytes = new ByteList(len *= value.getRealSize());
+        ByteList bytes = new ByteList(len);
         if (len > 0) {
             bytes.setRealSize(len);
             int n = value.getRealSize();
@@ -1220,7 +1220,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             System.arraycopy(bytes.getUnsafeBytes(), 0, bytes.getUnsafeBytes(), n, len - n);
         }
-        RubyString result = new RubyString(context.runtime, metaClass, bytes);
+        RubyString result = new RubyString(runtime, metaClass, bytes);
         result.infectBy(this);
         return result;
     }
