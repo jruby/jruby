@@ -63,6 +63,7 @@ import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.SocketMessage;
 import jnr.constants.platform.TCP;
 import jnr.netdb.Protocol;
+import jnr.unixsocket.UnixDatagramChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 
@@ -412,6 +413,11 @@ public class RubySocket extends RubyBasicSocket {
             soType = Sock.SOCK_STREAM;
             soProtocolFamily = ProtocolFamily.PF_UNIX;
 
+        } else if (mainChannel instanceof UnixDatagramChannel) {
+            soDomain = AddressFamily.AF_UNIX;
+            soType = Sock.SOCK_DGRAM;
+            soProtocolFamily = ProtocolFamily.PF_UNIX;
+
         } else if (mainChannel instanceof DatagramChannel) {
             // datagram, set accordingly
             // again, AF_INET
@@ -450,21 +456,34 @@ public class RubySocket extends RubyBasicSocket {
             Channel channel;
             switch (soType) {
                 case SOCK_STREAM:
-                    if ( soProtocolFamily == ProtocolFamily.PF_UNIX ||
-                         soProtocolFamily == ProtocolFamily.PF_LOCAL ) {
-                        channel = UnixSocketChannel.open();
-                    }
-                    else if ( soProtocolFamily == ProtocolFamily.PF_INET ||
-                              soProtocolFamily == ProtocolFamily.PF_INET6 ||
-                              soProtocolFamily == ProtocolFamily.PF_UNSPEC ) {
-                        channel = SocketChannel.open();
-                    }
-                    else {
-                        throw runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
+                    switch (soProtocolFamily) {
+                        case PF_UNIX:
+                        case PF_LOCAL:
+                            channel = UnixSocketChannel.open();
+                            break;
+                        case PF_INET:
+                        case PF_INET6:
+                        case PF_UNSPEC:
+                            channel = SocketChannel.open();
+                            break;
+                        default:
+                            throw runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
                     }
                     break;
                 case SOCK_DGRAM:
-                    channel = DatagramChannel.open();
+                    switch (soProtocolFamily) {
+                        case PF_UNIX:
+                        case PF_LOCAL:
+                            channel = UnixDatagramChannel.open();
+                            break;
+                        case PF_INET:
+                        case PF_INET6:
+                        case PF_UNSPEC:
+                            channel = DatagramChannel.open();
+                            break;
+                        default:
+                            throw runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
+                    }
                     break;
                 default:
                     throw runtime.newArgumentError("unsupported socket type `" + soType + "'");
@@ -554,6 +573,10 @@ public class RubySocket extends RubyBasicSocket {
                 result = ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
 
             }
+            else if (channel instanceof UnixDatagramChannel) {
+                ((UnixDatagramChannel) channel).connect((UnixSocketAddress) addr);
+
+            }
             else if (channel instanceof DatagramChannel) {
                 ((DatagramChannel)channel).connect(addr);
             }
@@ -604,6 +627,9 @@ public class RubySocket extends RubyBasicSocket {
             }
             else if (channel instanceof UnixSocketChannel) {
                 // do nothing
+            }
+            else if (channel instanceof UnixDatagramChannel) {
+                ((UnixDatagramChannel) channel).bind(iaddr);
             }
             else if (channel instanceof DatagramChannel) {
                 DatagramSocket socket = ((DatagramChannel) channel).socket();

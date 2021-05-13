@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.Errno;
+import jnr.enxio.channels.NativeException;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
@@ -263,6 +264,8 @@ public class Helpers {
             return errnoFromMessage(dnee);
         } catch (BindException be) {
             return errnoFromMessage(be);
+        } catch (NativeException ne) {
+            return ((NativeException) ne).getErrno();
         } catch (IOException ioe) {
             String message = ioe.getMessage();
             // Raised on Windows for process launch with missing file
