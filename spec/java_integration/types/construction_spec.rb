@@ -12,23 +12,23 @@ describe "A Java primitive Array of type" do
   describe "boolean" do 
     it "should be possible to create empty array" do 
       arr = Java::boolean[0].new
-      expect(arr.java_class.to_s).to eq("[Z")
+      expect(arr.java_class.name).to eq("[Z")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::boolean[10].new
-      expect(arr.java_class.to_s).to eq("[Z")
+      expect(arr.java_class.name).to eq("[Z")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::boolean[10,10].new
-      expect(arr.java_class.to_s).to eq("[[Z")
+      expect(arr.java_class.name).to eq("[[Z")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = [true, false].to_java :boolean
-      expect(arr.java_class.to_s).to eq("[Z")
+      expect(arr.java_class.name).to eq("[Z")
 
       expect(arr.length).to eq(2)
 
@@ -38,7 +38,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = [true, false].to_java Java::boolean
-      expect(arr.java_class.to_s).to eq("[Z")
+      expect(arr.java_class.name).to eq("[Z")
 
       expect(arr.length).to eq(2)
 
@@ -74,23 +74,23 @@ describe "A Java primitive Array of type" do
   describe "byte" do 
     it "should be possible to create empty array" do 
       arr = Java::byte[0].new
-      expect(arr.java_class.to_s).to eq("[B")
+      expect(arr.java_class.name).to eq("[B")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::byte[10].new
-      expect(arr.java_class.to_s).to eq("[B")
+      expect(arr.java_class.name).to eq("[B")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::byte[10,10].new
-      expect(arr.java_class.to_s).to eq("[[B")
+      expect(arr.java_class.name).to eq("[[B")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = [1,2].to_java :byte
-      expect(arr.java_class.to_s).to eq("[B")
+      expect(arr.java_class.name).to eq("[B")
 
       expect(arr.length).to eq(2)
 
@@ -100,7 +100,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = [1,2].to_java Java::byte
-      expect(arr.java_class.to_s).to eq("[B")
+      expect(arr.java_class.name).to eq("[B")
 
       expect(arr.length).to eq(2)
 
@@ -138,23 +138,23 @@ describe "A Java primitive Array of type" do
   describe "char" do 
     it "should be possible to create empty array" do 
       arr = Java::char[0].new
-      expect(arr.java_class.to_s).to eq("[C")
+      expect(arr.java_class.name).to eq("[C")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::char[10].new
-      expect(arr.java_class.to_s).to eq("[C")
+      expect(arr.java_class.name).to eq("[C")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::char[10,10].new
-      expect(arr.java_class.to_s).to eq("[[C")
+      expect(arr.java_class.name).to eq("[[C")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = [1,2].to_java :char
-      expect(arr.java_class.to_s).to eq("[C")
+      expect(arr.java_class.name).to eq("[C")
 
       expect(arr.length).to eq(2)
 
@@ -164,7 +164,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = [1,2].to_java Java::char
-      expect(arr.java_class.to_s).to eq("[C")
+      expect(arr.java_class.name).to eq("[C")
 
       expect(arr.length).to eq(2)
 
@@ -202,23 +202,23 @@ describe "A Java primitive Array of type" do
   describe "double" do 
     it "should be possible to create empty array" do 
       arr = Java::double[0].new
-      expect(arr.java_class.to_s).to eq("[D")
+      expect(arr.java_class.name).to eq("[D")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::double[10].new
-      expect(arr.java_class.to_s).to eq("[D")
+      expect(arr.java_class.name).to eq("[D")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::double[10,10].new
-      expect(arr.java_class.to_s).to eq("[[D")
+      expect(arr.java_class.name).to eq("[[D")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = [1.2,2.3].to_java :double
-      expect(arr.java_class.to_s).to eq("[D")
+      expect(arr.java_class.name).to eq("[D")
 
       expect(arr.length).to eq(2)
 
@@ -228,7 +228,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = [1.2,2.3].to_java Java::double
-      expect(arr.java_class.to_s).to eq("[D")
+      expect(arr.java_class.name).to eq("[D")
 
       expect(arr.length).to eq(2)
 
@@ -266,23 +266,23 @@ describe "A Java primitive Array of type" do
   describe "float" do 
     it "should be possible to create empty array" do 
       arr = Java::float[0].new
-      expect(arr.java_class.to_s).to eq("[F")
+      expect(arr.java_class.name).to eq("[F")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::float[10].new
-      expect(arr.java_class.to_s).to eq("[F")
+      expect(arr.java_class.name).to eq("[F")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::float[10,10].new
-      expect(arr.java_class.to_s).to eq("[[F")
+      expect(arr.java_class.name).to eq("[[F")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = [1.2,2.3].to_java :float
-      expect(arr.java_class.to_s).to eq("[F")
+      expect(arr.java_class.name).to eq("[F")
 
       expect(arr.length).to eq(2)
 
@@ -292,7 +292,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = [1.2,2.3].to_java Java::float
-      expect(arr.java_class.to_s).to eq("[F")
+      expect(arr.java_class.name).to eq("[F")
 
       expect(arr.length).to eq(2)
 
@@ -334,23 +334,23 @@ describe "A Java primitive Array of type" do
   describe "int" do 
     it "should be possible to create empty array" do 
       arr = Java::int[0].new
-      expect(arr.java_class.to_s).to eq("[I")
+      expect(arr.java_class.name).to eq("[I")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::int[10].new
-      expect(arr.java_class.to_s).to eq("[I")
+      expect(arr.java_class.name).to eq("[I")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::int[10,10].new
-      expect(arr.java_class.to_s).to eq("[[I")
+      expect(arr.java_class.name).to eq("[[I")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = [1,2].to_java :int
-      expect(arr.java_class.to_s).to eq("[I")
+      expect(arr.java_class.name).to eq("[I")
 
       expect(arr.length).to eq(2)
 
@@ -360,7 +360,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = [1,2].to_java Java::int
-      expect(arr.java_class.to_s).to eq("[I")
+      expect(arr.java_class.name).to eq("[I")
 
       expect(arr.length).to eq(2)
 
@@ -398,23 +398,23 @@ describe "A Java primitive Array of type" do
   describe "long" do 
     it "should be possible to create empty array" do 
       arr = Java::long[0].new
-      expect(arr.java_class.to_s).to eq("[J")
+      expect(arr.java_class.name).to eq("[J")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::long[10].new
-      expect(arr.java_class.to_s).to eq("[J")
+      expect(arr.java_class.name).to eq("[J")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::long[10,10].new
-      expect(arr.java_class.to_s).to eq("[[J")
+      expect(arr.java_class.name).to eq("[[J")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = [1,2].to_java :long
-      expect(arr.java_class.to_s).to eq("[J")
+      expect(arr.java_class.name).to eq("[J")
 
       expect(arr.length).to eq(2)
 
@@ -424,7 +424,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = [1,2].to_java Java::long
-      expect(arr.java_class.to_s).to eq("[J")
+      expect(arr.java_class.name).to eq("[J")
 
       expect(arr.length).to eq(2)
 
@@ -462,23 +462,23 @@ describe "A Java primitive Array of type" do
   describe "short" do 
     it "should be possible to create empty array" do 
       arr = Java::short[0].new
-      expect(arr.java_class.to_s).to eq("[S")
+      expect(arr.java_class.name).to eq("[S")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::short[10].new
-      expect(arr.java_class.to_s).to eq("[S")
+      expect(arr.java_class.name).to eq("[S")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::short[10,10].new
-      expect(arr.java_class.to_s).to eq("[[S")
+      expect(arr.java_class.name).to eq("[[S")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = [1,2].to_java :short
-      expect(arr.java_class.to_s).to eq("[S")
+      expect(arr.java_class.name).to eq("[S")
 
       expect(arr.length).to eq(2)
 
@@ -488,7 +488,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = [1,2].to_java Java::short
-      expect(arr.java_class.to_s).to eq("[S")
+      expect(arr.java_class.name).to eq("[S")
 
       expect(arr.length).to eq(2)
 
@@ -526,23 +526,23 @@ describe "A Java primitive Array of type" do
   describe "string" do 
     it "should be possible to create empty array" do 
       arr = java.lang.String[0].new
-      expect(arr.java_class.to_s).to eq("[Ljava.lang.String;")
+      expect(arr.java_class.name).to eq("[Ljava.lang.String;")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = java.lang.String[10].new
-      expect(arr.java_class.to_s).to eq("[Ljava.lang.String;")
+      expect(arr.java_class.name).to eq("[Ljava.lang.String;")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = java.lang.String[10,10].new
-      expect(arr.java_class.to_s).to eq("[[Ljava.lang.String;")
+      expect(arr.java_class.name).to eq("[[Ljava.lang.String;")
     end
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
       arr = ["foo","bar"].to_java :string
-      expect(arr.java_class.to_s).to eq("[Ljava.lang.String;")
+      expect(arr.java_class.name).to eq("[Ljava.lang.String;")
 
       expect(arr.length).to eq(2)
 
@@ -552,7 +552,7 @@ describe "A Java primitive Array of type" do
 
       # Check with type
       arr = ["foo","bar"].to_java java.lang.String
-      expect(arr.java_class.to_s).to eq("[Ljava.lang.String;")
+      expect(arr.java_class.name).to eq("[Ljava.lang.String;")
 
       expect(arr.length).to eq(2)
 
@@ -590,17 +590,17 @@ describe "A Java primitive Array of type" do
   describe "Object ref" do 
     it "should be possible to create empty array" do 
       arr = java.util.HashMap[0].new
-      expect(arr.java_class.to_s).to eq("[Ljava.util.HashMap;")
+      expect(arr.java_class.name).to eq("[Ljava.util.HashMap;")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = java.util.HashMap[10].new
-      expect(arr.java_class.to_s).to eq("[Ljava.util.HashMap;")
+      expect(arr.java_class.name).to eq("[Ljava.util.HashMap;")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = java.util.HashMap[10,10].new
-      expect(arr.java_class.to_s).to eq("[[Ljava.util.HashMap;")
+      expect(arr.java_class.name).to eq("[[Ljava.util.HashMap;")
     end
 
     it "should be possible to create primitive array from Ruby array" do
@@ -611,7 +611,7 @@ describe "A Java primitive Array of type" do
       h2["max"] = "foo"
 
       arr = [h1, h2].to_java java.util.HashMap
-      expect(arr.java_class.to_s).to eq("[Ljava.util.HashMap;")
+      expect(arr.java_class.name).to eq("[Ljava.util.HashMap;")
 
       expect(arr.length).to eq(2)
 
@@ -676,17 +676,17 @@ describe "A Java primitive Array of type" do
   describe "Class ref" do 
     it "should be possible to create empty array" do 
       arr = java.lang.Class[0].new
-      expect(arr.java_class.to_s).to eq("[Ljava.lang.Class;")
+      expect(arr.java_class.name).to eq("[Ljava.lang.Class;")
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = java.lang.Class[10].new
-      expect(arr.java_class.to_s).to eq("[Ljava.lang.Class;")
+      expect(arr.java_class.name).to eq("[Ljava.lang.Class;")
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = java.lang.Class[10,10].new
-      expect(arr.java_class.to_s).to eq("[[Ljava.lang.Class;")
+      expect(arr.java_class.name).to eq("[[Ljava.lang.Class;")
     end
 
     it "should be possible to create primitive array from Ruby array" do
@@ -694,7 +694,7 @@ describe "A Java primitive Array of type" do
         h2 = java.util.HashMap.java_class
 
         arr = [h1, h2].to_java java.lang.Class
-        expect(arr.java_class.to_s).to eq("[Ljava.lang.Class;")
+        expect(arr.java_class.name).to eq("[Ljava.lang.Class;")
 
         expect(arr.length).to eq(2)
 

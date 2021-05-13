@@ -67,6 +67,7 @@ lib/ruby/stdlib/fileutils.rb
 lib/ruby/stdlib/forwardable*
 lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/hoe*
+lib/ruby/stdlib/io/console*
 lib/ruby/stdlib/ipaddr*
 lib/ruby/stdlib/irb*
 lib/ruby/stdlib/jar*
@@ -93,6 +94,7 @@ lib/ruby/stdlib/readline*
 lib/ruby/stdlib/rexml*
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rss*
+lib/ruby/stdlib/rubygems*
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
 lib/ruby/stdlib/scanf.rb
 lib/ruby/stdlib/shell*
@@ -110,10 +112,6 @@ test/pom.xml
 test/prawn
 test/rails
 test/jruby/testapp/testapp
-tool/nailgun/Makefile
-tool/nailgun/config.log
-tool/nailgun/config.status
-tool/nailgun/ng
 reference.txt
 rubyspec_temp
 .polyglot.pom.rb

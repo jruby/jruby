@@ -31,12 +31,17 @@ import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.lang.reflect.Field;
+import java.util.Set;
 
 /**
  * @author kares
@@ -48,15 +53,11 @@ public abstract class ClassJavaAddons {
     public static IRubyObject java_class(ThreadContext context, final IRubyObject self) {
         Class<?> reifiedClass = RubyClass.nearestReifiedClass((RubyClass) self);
         if ( reifiedClass == null ) return context.nil;
-        // TODO: java_class is used for different things with Java proxy modules/classes
         return asJavaClass(context.runtime, reifiedClass);
     }
 
-    private static IRubyObject asJavaClass(final Ruby runtime, final Class<?> reifiedClass) {
-        // TODO: java_class is used for different things with Java proxy modules/classes
-        // returning a JavaClass here would break stuff - simply needs to get through ...
-        // return JavaClass.get(context.runtime, reifiedClass);
-        return Java.getInstance(runtime, reifiedClass);
+    private static JavaProxy asJavaClass(final Ruby runtime, final Class<?> reifiedClass) {
+        return (JavaProxy) Java.getInstance(runtime, reifiedClass);
     }
 
     @JRubyMethod(name = "become_java!", required = 0)

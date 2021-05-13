@@ -109,6 +109,10 @@ public class Hash extends Operand {
         return new Hash(newPairs, isKWArgsHash);
     }
 
+    public boolean isKeywordRest() {
+        return isKWArgsHash && pairs.length > 0 && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY);
+    }
+
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         Ruby runtime = context.runtime;
@@ -116,7 +120,7 @@ public class Hash extends Operand {
         KeyValuePair<Operand, Operand>[] pairs = this.pairs;
         int index = 0;
 
-        if (isKWArgsHash && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
+        if (isKeywordRest()) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
             hash = ((RubyHash) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
             // Skip the first pair

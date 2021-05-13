@@ -44,6 +44,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyContinuation;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
@@ -164,6 +165,8 @@ public final class ThreadContext {
     private RubyModule privateConstantReference;
 
     public final JavaSites sites;
+
+    private RubyMatchData matchData;
 
     @SuppressWarnings("deprecation")
     public SecureRandom getSecureRandom() {
@@ -561,12 +564,40 @@ public final class ThreadContext {
     }
 
     /**
-     * Set the $~ (backref) "global" to the given value.
+     * Set the $~ (backref) "global" to nil.
+     *
+     * @return nil
+     */
+    public IRubyObject clearBackRef() {
+        return getCurrentFrame().setBackRef(nil);
+    }
+
+    /**
+     * Update the current frame's backref using the current thread-local match, or clear it if that match is null.
+     *
+     * @return The current match, or nil
+     */
+    public IRubyObject updateBackref() {
+        RubyMatchData match = matchData;
+
+        if (match == null) {
+            return clearBackRef();
+        }
+
+        match.use();
+
+        return getCurrentFrame().setBackRef(match);
+    }
+
+    /**
+     * Set the $~ (backref) "global" to the given RubyMatchData value. The value will be marked as "in use" since it
+     * can now be seen across threads that share the current frame.
      *
      * @param match the value to set
      * @return the value passed in
      */
-    public IRubyObject setBackRef(IRubyObject match) {
+    public IRubyObject setBackRef(RubyMatchData match) {
+        match.use();
         return getCurrentFrame().setBackRef(match);
     }
 
@@ -910,17 +941,6 @@ public final class ThreadContext {
         pushFrame();
         getCurrentFrame().setSelf(self);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
-    }
-
-    public void preBsfApply(String[] names) {
-        // FIXME: I think we need these pushed somewhere?
-        StaticScope staticScope = runtime.getStaticScopeFactory().newLocalScope(null);
-        staticScope.setVariables(names);
-        pushFrame();
-    }
-
-    public void postBsfApply() {
-        popFrame();
     }
 
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block,
@@ -1380,5 +1400,54 @@ public final class ThreadContext {
     public Encoding[] encodingHolder() {
         if (encodingHolder == null) encodingHolder = new Encoding[1];
         return encodingHolder;
+    }
+
+    /**
+     * Set the thread-local MatchData specific to this context. This is different from the frame backref since frames
+     * may be shared by several executing contexts at once (see jruby/jruby#4868).
+     *
+     * @param localMatch the new thread-local MatchData or null
+     */
+    public void setLocalMatch(RubyMatchData localMatch) {
+        matchData = localMatch;
+    }
+
+    /**
+     * Set the thread-local MatchData specific to this context to null.
+     *
+     * @see #setLocalMatch(RubyMatchData)
+     */
+    public void clearLocalMatch() {
+        matchData = null;
+    }
+
+    /**
+     * Get the thread-local MatchData specific to this context. This is different from the frame backref since frames
+     * may be shared by several executing contexts at once (see jruby/jruby#4868).
+     *
+     * @return the current thread-local MatchData, or null if none
+     */
+    public RubyMatchData getLocalMatch() {
+        return matchData;
+    }
+
+    /**
+     * Get the thread-local MatchData specific to this context or nil if none.
+     *
+     * @see #getLocalMatch()
+     *
+     * @return the current thread-local MatchData, or nil if none
+     */
+    public IRubyObject getLocalMatchOrNil() {
+        RubyMatchData matchData = this.matchData;
+        if (matchData != null) return matchData;
+        return nil;
+    }
+
+    @Deprecated
+    public IRubyObject setBackRef(IRubyObject match) {
+        if (match.isNil()) return clearBackRef();
+
+        return setBackRef((RubyMatchData) match);
     }
 }

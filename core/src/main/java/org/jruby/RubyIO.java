@@ -106,6 +106,7 @@ import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -1735,7 +1736,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /** Print some objects to the stream.
      *
      */
-    @JRubyMethod(rest = true, reads = FrameField.LASTLINE)
+    @JRubyMethod(rest = true, reads = LASTLINE)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         return print(context, this, args);
     }
@@ -2449,25 +2450,25 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      */
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE)
     public IRubyObject gets(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context));
     }
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject arg) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), arg);
     }
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg);
     }
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg, IRubyObject opt) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, opt);
     }
@@ -2815,7 +2816,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "readline", writes = LASTLINE)
     public IRubyObject readline(ThreadContext context) {
         IRubyObject line = gets(context);
 
@@ -2824,7 +2825,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return line;
     }
 
-    @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "readline", writes = LASTLINE)
     public IRubyObject readline(ThreadContext context, IRubyObject separator) {
         IRubyObject line = gets(context, separator);
 
@@ -3673,14 +3674,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // rb_io_s_foreach
     private static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         RubyIO io = openKeyArgs(context, recv, args, opt);
-        if (io == context.nil) return io;
+        IRubyObject nil = context.nil;
+
+        if (io == nil) return io;
 
         // replace arg with coerced opts
-        if (opt != context.nil) args[args.length - 1] = opt;
+        if (opt != nil) args[args.length - 1] = opt;
 
         // io_s_foreach, roughly
         try {
@@ -3700,14 +3701,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         } finally {
             io.close();
-            context.setLastLine(context.nil);
-            runtime.getGlobalVariables().clear("$_");
+            context.setLastLine(nil);
         }
 
-        return context.nil;
+        return nil;
     }
 
-    @JRubyMethod(name = "foreach", required = 1, optional = 3, meta = true)
+    @JRubyMethod(name = "foreach", required = 1, optional = 3, meta = true, writes = LASTLINE)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 

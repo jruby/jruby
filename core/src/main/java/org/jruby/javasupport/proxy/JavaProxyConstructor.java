@@ -180,7 +180,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     @JRubyMethod
     public final RubyArray argument_types() {
-        return toRubyArray(getParameterTypes());
+        return toClassArray(getRuntime(), getParameterTypes());
     }
 
     @JRubyMethod(rest = true)

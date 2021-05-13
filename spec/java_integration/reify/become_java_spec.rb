@@ -16,7 +16,8 @@ describe "JRuby class reification" do
       add_method_signature("run", [java.lang.Void::TYPE])
     end
     java_class = RubyRunnable.become_java!
-    expect(java_class.interfaces).to include(java.lang.Runnable.java_class)
+    interfaces = java_class.interfaces
+    expect( interfaces ).to include(java.lang.Runnable.java_class)
   end
 
   it "uses the nesting of the class for its package name" do

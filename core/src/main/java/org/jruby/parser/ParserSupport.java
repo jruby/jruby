@@ -56,6 +56,7 @@ import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
@@ -1236,14 +1237,20 @@ public class ParserSupport {
 
         for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
             Node key = pair.getKey();
-            if (key == null) continue;
+            if (key == null || !(key instanceof LiteralValue)) continue;
             int index = encounteredKeys.indexOf(key);
             if (index >= 0) {
-                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), "key " + key +
-                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1));
+                Ruby runtime = getConfiguration().getRuntime();
+                IRubyObject value = ((LiteralValue) key).literalValue(runtime);
+                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
+                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1)));
             } else {
                 encounteredKeys.add(key);
             }
+        }
+
+        for (Node key: encounteredKeys) {
+            hash.getPairs().remove(key);
         }
 
         return hash;
@@ -1291,13 +1298,13 @@ public class ParserSupport {
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
-    public boolean is_local_id(ByteList name) {
-        return lexer.isIdentifierChar(name.charAt(0));
+    public static boolean is_local_id(ByteList name) {
+        return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
     @Deprecated
     public boolean is_local_id(String name) {
-        return lexer.isIdentifierChar(name.charAt(0));
+        return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
     // 1.9
@@ -1332,9 +1339,16 @@ public class ParserSupport {
         return shadowing_lvar(identifier);
     }
 
+    public static boolean is_private_local_id(ByteList name) {
+        if (name.realSize() == 1 && name.charAt(0) == '_') return true;
+        if (!is_local_id(name)) return false;
+
+        return name.charAt(0) == '_';
+    }
+
     // 1.9
     public ByteList shadowing_lvar(ByteList nameBytes) {
-        if (nameBytes.realSize() == 1 && nameBytes.charAt(0) == '_') return nameBytes;
+        if (is_private_local_id(nameBytes)) return nameBytes;
 
         RubySymbol name = symbolID(nameBytes);
         String id = name.idString();

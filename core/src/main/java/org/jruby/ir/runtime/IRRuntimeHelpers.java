@@ -496,33 +496,32 @@ public class IRRuntimeHelpers {
         return blk.yieldValues(context, args);
     }
 
-    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value,
-                                                         org.jruby.runtime.Signature signature, boolean argIsArray) {
-        assert !argIsArray || (argIsArray && value instanceof RubyArray);
-
+    // .call for PROC
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, org.jruby.runtime.Signature signature) {
         switch (signature.arityValue()) {
-            case -1 :
-                return argIsArray || (signature.opt() > 1 && value instanceof RubyArray) ?
-                        ((RubyArray) value).toJavaArray() : new IRubyObject[] { value };
-            case  0 : return new IRubyObject[] { value };
-            case  1 : {
-               if (argIsArray) {
-                   if (((RubyArray) value).size() == 0) {
-                       value = RubyArray.newEmptyArray(context.runtime);
-                   }
-               }
-               return new IRubyObject[] { value };
-            }
-            default :
-                if (argIsArray) {
-                    RubyArray valArray = (RubyArray) value;
-                    if (valArray.size() == 1) value = valArray.eltInternal(0);
-                    value = Helpers.aryToAry(context, value);
-                    return (value instanceof RubyArray) ? ((RubyArray) value).toJavaArray() : new IRubyObject[] { value };
-                } else {
-                    return IRBlockBody.toAry(context, value);
-                }
+            case -1:
+                return signature.opt() > 1 && value instanceof RubyArray ?
+                        ((RubyArray) value).toJavaArray() :
+                        new IRubyObject[] { value };
+            case  0:
+            case  1:
+                return new IRubyObject[] { value };
         }
+
+        return IRBlockBody.toAry(context, value);
+    }
+
+    // NORMAL yield paths passed through yieldSpecific and call (for when block is passed through -- some internal weirdness on our part).
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, RubyArray array, org.jruby.runtime.Signature signature) {
+        switch (signature.arityValue()) {
+            case -1:
+                return array.toJavaArray();
+            case 0:
+            case 1:
+                return new IRubyObject[] { array };
+        }
+
+        return singleBlockArgToArray(Helpers.aryToAry(context, array.size() == 1 ? array.eltInternal(0) : array));
     }
 
     @JIT
@@ -659,6 +658,11 @@ public class IRRuntimeHelpers {
         if (data.isCoverageEnabled()) {
             data.coverLine(filename, line);
         }
+    }
+
+    public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hashArg) {
+        return hashArg instanceof RubyHash && ((RubyHash) hashArg).size() == 0 ?
+                context.tru : context.fals;
     }
 
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
@@ -1933,7 +1937,7 @@ public class IRRuntimeHelpers {
         if (args.length != 1) return args;
 
         // Potentially expand single value if it is an array depending on what we are calling.
-        return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], b.getBody().getSignature(), false);
+        return IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], b.getBody().getSignature());
     }
 
     private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
@@ -2147,13 +2151,9 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject[] singleBlockArgToArray(IRubyObject value) {
-        IRubyObject[] args;
-        if (value instanceof RubyArray) {
-            args = value.convertToArray().toJavaArray();
-        } else {
-            args = new IRubyObject[] { value };
-        }
-        return args;
+        return value instanceof RubyArray ?
+                ((RubyArray) value).toJavaArray() :
+                new IRubyObject[] { value };
     }
 
     @JIT

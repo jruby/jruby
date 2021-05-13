@@ -140,6 +140,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
     private static final byte[] FORCE_ENCODING_BYTES = ".force_encoding(\"".getBytes();
 
+    public static RubyString[] NULL_ARRAY = {};
+
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
     private ByteList value;
@@ -1675,7 +1677,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
 
-    @JRubyMethod(name = "=~", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "=~", writes = BACKREF)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
@@ -1694,14 +1696,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return match19(context, pattern, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "match", required = 1, reads = BACKREF)
+    @JRubyMethod(name = "match", required = 1, writes = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this);
         return block.isGiven() && result != context.nil ? block.yield(context, result) : result;
     }
 
-    @JRubyMethod(name = "match", reads = BACKREF)
+    @JRubyMethod(name = "match", writes = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, IRubyObject pos, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this, pos);
@@ -2911,21 +2913,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
 
-    @JRubyMethod(name = "sub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub", writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, Block block) {
         RubyString str = strDup(context.runtime);
         str.sub_bang(context, arg0, block);
         return str;
     }
 
-    @JRubyMethod(name = "sub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub", writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyString str = strDup(context.runtime);
         str.sub_bang(context, arg0, arg1, block);
         return str;
     }
 
-    @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         Ruby runtime = context.runtime;
         frozenCheck();
@@ -2934,7 +2936,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         throw runtime.newArgumentError(1, 2);
     }
 
-    @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
@@ -2971,7 +2973,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             final int mLen = pattern.size();
             final int mEnd = mBeg + mLen;
             final RubyMatchData match = new RubyMatchData(runtime);
+
             match.initMatchData(this, mBeg, pattern);
+
+            // set backref for user
             context.setBackRef(match);
 
             IRubyObject subStr = makeShared(runtime, mBeg, mLen);
@@ -2987,7 +2992,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
         }
-        return context.setBackRef(context.nil);
+
+        // set backref for user
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangIter(ThreadContext context, RubyRegexp regexp, RubyHash hash, Block block) {
@@ -3004,6 +3011,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (RubyRegexp.matcherSearch(context, matcher, begin, range, Option.NONE) >= 0) {
             RubyMatchData match = RubyRegexp.createMatchData(context, this, matcher, pattern);
             match.regexp = regexp;
+
+            // set backref for user
             context.setBackRef(match);
 
             final int mBeg = matcher.getBegin(), mEnd = matcher.getEnd();
@@ -3022,7 +3031,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
         }
-        return context.setBackRef(context.nil);
+
+        // set backref for user
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangNoIter(ThreadContext context, IRubyObject arg0, RubyString repl) {
@@ -3038,24 +3049,34 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (mBeg > -1) {
             final int mEnd = mBeg + pattern.size();
             final RubyMatchData match = new RubyMatchData(context.runtime);
+
             match.initMatchData(this, mBeg, pattern);
+
+            // set backref for user
             context.setBackRef(match);
+
             repl = RubyRegexp.regsub(context, repl, this, REPL_MOCK_REGEX, null, mBeg, mEnd);
 
             return subBangCommon(context, mBeg, mEnd, repl, repl.flags);
         }
-        return context.setBackRef(context.nil);
+
+        // set backref for user
+        return context.clearBackRef();
     }
 
     private IRubyObject subBangNoIter(ThreadContext context, RubyRegexp regexp, RubyString repl) {
         RubyMatchData match = subBangMatch(context, regexp, repl);
         if (match != null) {
             repl = RubyRegexp.regsub(context, repl, this, regexp.pattern, match.regs, match.begin, match.end);
+
+            // set backref for user
             context.setBackRef(match);
 
             return subBangCommon(context, match.begin, match.end, repl, repl.flags);
         }
-        return context.setBackRef(context.nil);
+
+        // set backref for user
+        return context.clearBackRef();
     }
 
     /**
@@ -3168,7 +3189,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return gsub_bang(context, arg0, arg1, block);
     }
 
-    @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub", writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "gsub", arg0);
 
@@ -3176,12 +3197,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     }
 
-    @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub", writes = BACKREF)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return gsubImpl(context, arg0, arg1, block, false);
     }
 
-    @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub!", writes = BACKREF)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         checkFrozen();
 
@@ -3190,7 +3211,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return gsubCommon(context, block, null, null, arg0, true, 0);
     }
 
-    @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub!", writes = BACKREF)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         checkFrozen();
 
@@ -3255,7 +3276,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int beg = StringSupport.index(getByteList(), pattern.getByteList(), 0, patternEnc);
         int begz;
         if (beg < 0) {
-            if (useBackref) context.setBackRef(context.nil);
+            // set backref for user
+            if (useBackref) context.clearBackRef();
+
             return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
@@ -3280,7 +3303,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     match = new RubyMatchData(runtime);
                     match.initMatchData(this, begz, pattern);
 
+                    // set backref for user
                     if (useBackref) context.setBackRef(match);
+
                     val = objAsString(context, block.yield(context, pattern.strDup(runtime)));
                 }
                 modifyCheck(spBytes, spLen, str_enc);
@@ -3308,10 +3333,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (useBackref) {
             if (match != null) { // block given
+                // set backref for user
                 context.setBackRef(match);
             } else {
                 match = new RubyMatchData(runtime);
+
                 match.initMatchData(this, begz, pattern);
+
+                // set backref for user
                 context.setBackRef(match);
             }
         }
@@ -3338,7 +3367,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int beg = RubyRegexp.matcherSearch(context, matcher, spBeg, spBeg + spLen, Option.NONE);
         if (beg < 0) {
-            if (useBackref) context.setBackRef(context.nil);
+            // set backref for user
+            if (useBackref) context.clearBackRef();
+
             return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
@@ -3363,7 +3394,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 } else {            // block given
                     match = RubyRegexp.createMatchData(context, this, matcher, pattern);
                     match.regexp = regexp;
+
+                    // set backref for user
                     if (useBackref) context.setBackRef(match);
+
                     val = objAsString(context, block.yield(context, substr));
                 }
                 modifyCheck(spBytes, spLen, str_enc);
@@ -3390,11 +3424,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (spLen > offset) dest.cat(spBytes, cp, spLen - offset, str_enc);
 
         if (useBackref) {
+            // set backref for user
             if (match != null) { // block given
                 context.setBackRef(match);
             } else {
                 match = RubyRegexp.createMatchData(context, this, matcher, pattern);
+
                 match.regexp = regexp;
+
                 context.setBackRef(match);
             }
         }
@@ -3410,18 +3447,20 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_index_m
      *
      */
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
         return indexCommon19(context, arg0, 0);
     }
 
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         if (pos < 0) {
             pos += strLength();
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) context.setBackRef(context.nil);
+                // set backref for user
+                if (arg0 instanceof RubyRegexp) context.clearBackRef();
+
                 return context.nil;
             }
         }
@@ -3520,19 +3559,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_rindex_m
      *
      */
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
         return rindexCommon(context, arg0, strLength());
     }
 
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         int length = strLength();
         if (pos < 0) {
             pos += length;
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) context.setBackRef(context.nil);
+                // set backref for user
+                if (arg0 instanceof RubyRegexp) context.clearBackRef();
+
                 return context.nil;
             }
         }
@@ -3750,7 +3791,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = {"[]", "slice"}, writes = BACKREF)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         if (arg instanceof RubyFixnum) {
@@ -3777,7 +3818,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return op_aref(runtime, RubyNumeric.num2int(arg));
     }
 
-    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = {"[]", "slice"}, writes = BACKREF)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
         if (arg1 instanceof RubyRegexp) return subpat(context, (RubyRegexp) arg1, arg2);
@@ -3814,12 +3855,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private void subpatSet(ThreadContext context, RubyRegexp regexp, IRubyObject backref, IRubyObject repl) {
         Ruby runtime = context.runtime;
 
-        int result = regexp.search(context, this, 0, false);
+        int result = regexp.searchString(context, this, 0, false);
 
         if (result < 0) throw runtime.newIndexError("regexp not matched");
 
         // this cast should be ok, since nil matchdata will be < 0 above
-        RubyMatchData match = (RubyMatchData)context.getBackRef();
+        RubyMatchData match = context.getLocalMatch();
 
         int nth = backref == null ? 0 : subpatSetCheck(runtime, match.backrefNumber(context.runtime, backref), match.regs);
 
@@ -3837,25 +3878,42 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         // TODO: keep cr
         replaceInternal(start, end - start, replStr); // TODO: rb_str_splice_0
         associateEncoding(enc);
+
+        // set backref for user
+        context.setBackRef(match);
     }
 
     private IRubyObject subpat(ThreadContext context, RubyRegexp regex, IRubyObject backref) {
-        int result = regex.search(context, this, 0, false);
+        int result = regex.searchString(context, this, 0, false);
 
         if (result >= 0) {
-            RubyMatchData match = (RubyMatchData)context.getBackRef();
+            RubyMatchData match = context.getLocalMatch();
+
+            // set backref for user
+            context.setBackRef(match);
+
             return RubyRegexp.nth_match(match.backrefNumber(context.runtime, backref), match);
         }
+
+        context.clearBackRef();
 
         return context.nil;
     }
 
     private IRubyObject subpat(ThreadContext context, RubyRegexp regex) {
-        int result = regex.search(context, this, 0, false);
+        int result = regex.searchString(context, this, 0, false);
 
         if (result >= 0) {
-            return RubyRegexp.nth_match(0, context.getBackRef());
+            RubyMatchData match = context.getLocalMatch();
+
+            // set backref for user
+            context.setBackRef(match);
+
+            return RubyRegexp.nth_match(0, match);
         }
+
+        // set backref for user
+        context.clearBackRef();
 
         return context.nil;
     }
@@ -3863,7 +3921,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_aset, rb_str_aset_m
      *
      */
-    @JRubyMethod(name = "[]=", reads = BACKREF)
+    @JRubyMethod(name = "[]=", writes = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyFixnum) {
             return op_aset(context, RubyNumeric.fix2int((RubyFixnum)arg0), arg1);
@@ -3900,7 +3958,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return arg1;
     }
 
-    @JRubyMethod(name = "[]=", reads = BACKREF)
+    @JRubyMethod(name = "[]=", writes = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
             subpatSet(context, (RubyRegexp)arg0, arg1, arg2);
@@ -3927,7 +3985,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_slice_bang
      *
      */
-    @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "slice!", writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
         IRubyObject result = op_aref19(context, arg0);
         if (result.isNil()) {
@@ -3938,7 +3996,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "slice!", writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject result = op_aref(context, arg0, arg1);
         if (result.isNil()) {
@@ -4455,24 +4513,26 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    // MRI: rb_str_split_m, when split_type = regexp
+    /**
+     * Call regexpSplit using a thread-local backref holder to avoid cross-thread pollution.
+     */
     private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
         Ruby runtime = context.runtime;
+
+        RubyArray result = runtime.newArray();
 
         int ptr = value.getBegin();
         int len = value.getRealSize();
         byte[] bytes = value.getUnsafeBytes();
-
-        RubyArray result = runtime.newArray();
         Encoding enc = value.getEncoding();
+
         boolean captures = pattern.getPattern().numberOfCaptures() != 0;
 
         int end, beg = 0;
         boolean lastNull = false;
         int start = beg;
-        IRubyObject[] holder = useBackref ? null : new IRubyObject[] { context.nil };
-        while ((end = pattern.search(context, this, start, false, holder)) >= 0) {
-            RubyMatchData match = (RubyMatchData) (useBackref ? context.getBackRef() : holder[0]);
+        while ((end = pattern.searchString(context, this, start, false)) >= 0) {
+            RubyMatchData match = context.getLocalMatch();
             if (start == end && match.begin(0) == match.end(0)) {
                 if (len == 0) {
                     result.append(newEmptyString(runtime, metaClass).infectBy(this));
@@ -4500,14 +4560,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (limit && lim <= ++i) break;
         }
 
-        // only this case affects backrefs
-        if (useBackref) {
-            context.setBackRef(context.nil);
-        } else {
-            holder[0] = context.nil;
-        }
-
         if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
+
+        // set backref for user
+        if (useBackref) context.clearBackRef();
+
         return result;
     }
 
@@ -4659,7 +4716,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_scan
      *
      */
-    @JRubyMethod(name = "scan", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "scan", writes = BACKREF)
     public IRubyObject scan(ThreadContext context, IRubyObject pat, Block block) {
         final RubyString str = this;
 
@@ -4677,7 +4734,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (ary == null) ary = context.runtime.newArray(4);
                 ary.append(result);
             }
-            if (last >= 0) patternSearch(context, pat, str, last, true);
+            if (last >= 0) patternSearch(context, pat, str, last);
             return ary == null ? context.runtime.newEmptyArray() : ary;
         }
 
@@ -4690,7 +4747,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             block.yieldSpecific(context, result);
             str.modifyCheck(pBytes, len);
         }
-        if (last >= 0) patternSearch(context, pat, str, last, true);
+        if (last >= 0) patternSearch(context, pat, str, last);
         return this;
     }
 
@@ -4703,8 +4760,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // MRI: scan_once
     private static IRubyObject scanOnce(ThreadContext context, RubyString str, IRubyObject pat, int[] startp) {
-        if (patternSearch(context, pat, str, startp[0], true) >= 0) {
-            final RubyMatchData match = (RubyMatchData) context.getBackRef();
+        if (patternSearch(context, pat, str, startp[0]) >= 0) {
+            final RubyMatchData match = context.getLocalMatch();
             final int matchEnd = match.end(0);
             if (match.begin(0) == matchEnd) {
                 Encoding enc = str.getEncoding();
@@ -4738,36 +4795,41 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_pat_search
-    private static int patternSearch(ThreadContext context,
-        final IRubyObject pattern, RubyString str, final int pos,
-        final boolean setBackrefStr) {
+    private static int patternSearch(ThreadContext context, final IRubyObject pattern, RubyString str, final int pos) {
         if (pattern instanceof RubyString) {
             final RubyString strPattern = (RubyString) pattern;
             final int beg = str.strseqIndex(strPattern, pos, true);
-            if (setBackrefStr) {
-                if (beg >= 0) {
-                    setBackRefString(context, str, beg, strPattern).infectBy(pattern);
-                }
-                else {
-                    context.setBackRef(context.nil);
-                }
+            if (beg >= 0) {
+                context.setLocalMatch(setBackRefString(context, str, beg, strPattern));
+            } else {
+                context.clearLocalMatch();
+
+                // set backref for user
+                context.clearBackRef();
             }
             return beg;
         }
-        return ((RubyRegexp) pattern).search(context, str, pos, false);
+
+        int result = ((RubyRegexp) pattern).searchString(context, str, pos, false);
+
+        // set backref for user
+        if (result >= 0) {
+            context.setBackRef(context.getLocalMatch());
+        } else {
+            context.clearBackRef();
+        }
+
+        return result;
     }
 
     // MRI: rb_backref_set_string
     private static RubyMatchData setBackRefString(ThreadContext context, RubyString str, int pos, RubyString pattern) {
-        final IRubyObject m = context.getBackRef();
-        final RubyMatchData match;
-        if (m.isNil() || ((RubyMatchData) m).used()) {
-            match = new RubyMatchData(context.runtime);
-        } else {
-            match = (RubyMatchData) m;
-        }
-        match.initMatchData(str, pos, pattern); // MRI: match_set_string
+        final RubyMatchData match = RubyRegexp.createMatchData(context, str, pos, pattern);
+
+        match.infectBy(pattern);
+
         context.setBackRef(match);
+
         return match;
     }
 
@@ -5150,7 +5212,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return RubyArray.newArrayMayCopy(runtime, this.strDup(runtime), newEmptyString(runtime, enc), newEmptyString(runtime, enc));
     }
 
-    @JRubyMethod(name = "rpartition", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rpartition", writes = BACKREF)
     public IRubyObject rpartition(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         final int pos;
@@ -5159,7 +5221,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             IRubyObject tmp = rindex(context, arg);
             if (tmp.isNil()) return rpartitionMismatch(runtime);
             pos = tmp.convertToInteger().getIntValue();
-            sep = (RubyString) RubyRegexp.nth_match(0, (RubyMatchData) context.getBackRef());
+            sep = (RubyString)RubyRegexp.nth_match(0, context.getLocalMatchOrNil());
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");

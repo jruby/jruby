@@ -1,2 +1,0 @@
-fails:A method assigns local variables from method parameters for definition 'def m() end'
-fails:A method assigns local variables from method parameters for definition 'def m(*a) a end'

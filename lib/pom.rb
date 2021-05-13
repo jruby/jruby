@@ -15,7 +15,10 @@ def log(message=nil)
 end
 
 default_gems = [
-    ['bundler', '1.17.3'],
+    # treat RGs update special:
+    # - we do not want bin/update_rubygems or bin/gem overrides
+    ['rubygems-update', '3.2.14', { bin: false }],
+    ['bundler', '2.2.14'],
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],
     ['e2mmap', '0.1.0'],
@@ -24,10 +27,11 @@ default_gems = [
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
     ['irb', '1.0.0'],
-    ['jar-dependencies', '${jar-dependencies.version}'],
+    ['io-console', '0.5.9'],
+    ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.5'],
-    ['json', '${json.version}'],
+    ['json', '2.5.1'],
     ['logger', '1.3.0'],
     ['matrix', '0.3.0'],
     ['mutex_m', '0.1.0'],
@@ -36,7 +40,7 @@ default_gems = [
     ['psych', '3.2.0'],
     ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
-    ['rdoc', '${rdoc.version}'],
+    ['rdoc', '6.1.2'],
     ['rexml', '3.1.9'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
@@ -49,11 +53,11 @@ default_gems = [
 
 bundled_gems = [
     ['did_you_mean', '1.2.1'],
-    ['minitest', '${minitest.version}'],
+    ['minitest', '5.11.3'],
     ['net-telnet', '0.1.1'],
-    ['power_assert', '${power_assert.version}'],
+    ['power_assert', '1.1.3'],
     ['rake', '${rake.version}'],
-    ['test-unit', '${test-unit.version}'],
+    ['test-unit', '3.2.9'],
     ['xmlrpc', '0.3.0'],
 ]
 
@@ -108,6 +112,7 @@ project 'JRuby Lib Setup' do
   end
 
   default_gemnames = default_gems.collect(&:first)
+  all_gems     = default_gems + bundled_gems
 
   plugin :dependency,
     :useRepositoryLayout => true,
@@ -128,11 +133,11 @@ project 'JRuby Lib Setup' do
     specs = File.join( gem_home, 'specifications' )
     cache = File.join( gem_home, 'cache' )
     jruby_gems = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared' )
-    jruby_bin = File.join( ctx.project.basedir.to_pathname, '../bin')
-    default_specs = File.join( jruby_gems, 'specifications', 'default' )
     bin_stubs = File.join( jruby_gems, 'gems' )
+    default_specs = File.join( jruby_gems, 'specifications', 'default' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
     stdlib_dir = File.join( ruby_dir, 'stdlib' )
+    jruby_home = ctx.project.parent.basedir.to_pathname
 
     FileUtils.mkdir_p( default_specs )
 
@@ -167,17 +172,30 @@ project 'JRuby Lib Setup' do
                                         wrappers: true,
                                         ignore_dependencies: true,
                                         install_dir: ghome,
-                                        bin_dir: jruby_bin,
                                         env_shebang: true )
         def installer.ensure_required_ruby_version_met; end
         installer.install
       end
     end
 
-    default_gems.each do |name, version|
-      version = ctx.project.properties.get(version[2..-2]) || version
+    copy_gem_executables = lambda do |name, version, gem_home|
+      spec = Gem::Package.new( Dir[ File.join( gem_home, 'cache', "#{name}-#{version}*.gem" ) ].first ).spec
+      if !spec.executables.empty?
+        bin_source = Gem.bindir(gem_home) # Gem::Installer generated bin scripts here
+        spec.executables.each do |file|
+          source = File.expand_path(file, bin_source)
+          target = File.join(jruby_home, 'bin') # JRUBY_HOME/bin binstubs
+          log "copy executable #{source} to #{target}"
+          FileUtils.cp(source, target)
+        end
+      end
+    end
+
+    default_gems.each do |name, version, options|
+      version = ctx.project.properties.get(version[2..-2]) || version # resolve ${xyz.version} declarations
       version = version.sub( /-SNAPSHOT/, '' )
       gem_name = "#{name}-#{version}"
+      options = { bin: true, spec: true }.merge(options || {})
 
       # install the gem unless already installed
       if Dir[ File.join( default_specs, "#{gem_name}*.gemspec" ) ].empty?
@@ -218,27 +236,32 @@ project 'JRuby Lib Setup' do
           raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
         end
 
-        specname = File.basename( specfile )
-        log "copy to specifications/default: #{specname}"
-
-        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
-
         # copy bin files if the gem has any
-        Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir || 'bin' )) do |bin|
-          if File.exists?(bin)
-            Dir[ File.join( bin, '*' ) ].each do |f|
-              log "copy to bin: #{File.basename( f )}"
-              target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
-              FileUtils.mkdir_p( File.dirname( target ) )
-              FileUtils.cp_r( f, target )
-            end
+        copy_gem_executables.call(name, version, gem_home) if options[:bin]
+        # TODO: try avoiding these binstub of gems - should use a full gem location
+        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
+        spec.executables.each do |f|
+          bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
+          source = File.join( bin, f )
+          target = File.join( bin_stubs, source.sub( /#{gems}/, '' ) )
+          log "copy #{f} to #{target}"
+          FileUtils.mkdir_p( File.dirname( target ) )
+          FileUtils.cp_r( source, target )
+        end
+
+        if options[:spec]
+          specname = File.basename( specfile )
+          log "copy to specifications/default: #{specname}"
+          File.open( File.join( default_specs, specname ), 'w' ) do |f|
+            f.print( spec.to_ruby )
           end
         end
-
-        File.open( File.join( default_specs, specname ), 'w' ) do |f|
-          f.print( spec.to_ruby )
-        end
       end
+    end
+
+    bundled_gems.each do |name, version| # copy bin files for bundled gems (e.g. rake) as well
+      version = ctx.project.properties.get(version[2..-2]) || version # e.g. resolve '${rake.version}' from properties
+      copy_gem_executables.call(name, version, jruby_gems)
     end
 
     # patch jruby-openssl - remove file which should be only inside gem
@@ -259,17 +282,8 @@ project 'JRuby Lib Setup' do
   execute( 'fix shebang on gem bin files and add *.bat files',
            'generate-resources' ) do |ctx|
 
-    log 'fix the gem stub files'
-    jruby_home = ctx.project.basedir.to_pathname + '/../'
-    bindir = File.join( jruby_home, 'lib', 'ruby', 'gems', 'shared', 'bin' )
-    Dir[ File.join( bindir, '*' ) ].each do |f|
-      content = File.read( f )
-      new_content = content.sub( /#!.*/, "#!/usr/bin/env jruby
-" )
-      File.open( f, "w" ) { |file| file.print( new_content ) }
-    end
-
     log 'generating missing .bat files'
+    jruby_home = ctx.project.parent.basedir.to_pathname
     Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
       next unless File.file?(fn)
       next if fn =~ /.bat$/
@@ -310,28 +324,19 @@ project 'JRuby Lib Setup' do
   build do
     resource do
       directory '${gem.home}'
-      # assume all dependencies are met with this gems + the default gems
-      incl = (default_gems + bundled_gems).collect do |name, version|
-        [
-          "cache/#{name}*#{version}.gem",
-          "gems/#{name}*#{version}/**",
-          "specifications/#{name}*#{version}.gemspec"
-        ]
-      end.flatten
-      includes incl
-      target_path '${jruby.complete.gems}'
-    end
-
-    resource do
-      directory '${gem.home}'
-      includes 'specifications/default/*.gemspec'
+      includes [
+                   'specifications/default/*',
+                   *all_gems.map {|name,version| "specifications/#{name}-#{version}*"},
+                   *all_gems.map {|name,version| "gems/#{name}-#{version}*/**/*"},
+                   *all_gems.map {|name,version| "cache/#{name}-#{version}*"},
+               ]
       target_path '${jruby.complete.gems}'
     end
 
     resource do
       directory '${basedir}/..'
-      includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/include/**', 'lib/ruby/stdlib/**'
-      excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*',
+      includes 'bin/*', 'lib/ruby/include/**', 'lib/ruby/stdlib/**'
+      excludes 'bin/ruby', 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*',
         'lib/ruby/stdlib/rubygems/defaults/jruby_native.rb',
         'lib/ruby/stdlib/gauntlet*.rb' # gauntlet_rdoc.rb, gauntlet_rubygems.rb
       target_path '${jruby.complete.home}'

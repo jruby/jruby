@@ -48,6 +48,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.JavaUtilities;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
@@ -64,15 +65,17 @@ public class JavaInterfaceTemplate {
         RubyModule JavaInterfaceTemplate = runtime.defineModule("JavaInterfaceTemplate");
 
         RubyClass singleton = JavaInterfaceTemplate.getSingletonClass();
-        singleton.addReadAttribute(context, "java_class");
         singleton.defineAnnotatedMethods(JavaInterfaceTemplate.class);
-
         JavaInterfaceTemplate.defineAnnotatedMethods(JavaProxy.ClassMethods.class);
 
         return JavaInterfaceTemplate;
     }
 
-    //?
+    @JRubyMethod
+    public static IRubyObject java_class(final IRubyObject self) {
+        return JavaProxy.getJavaClass((RubyModule) self);
+    }
+
     @Deprecated // not used - should go away in >= 9.2
     // not intended to be called directly by users (private)
     // OLD TODO from Ruby code:
@@ -86,9 +89,9 @@ public class JavaInterfaceTemplate {
         }
 
         final RubyModule targetModule = (RubyModule) clazz;
-        final JavaClass javaClass = getJavaClassForInterface(self);
-
-        final Method[] javaInstanceMethods = javaClass.javaClass().getMethods();
+        final IRubyObject javaClass = JavaProxy.getJavaClass((RubyModule) self);
+        Class<?> klass = JavaUtil.unwrapJavaObject(javaClass);
+        final Method[] javaInstanceMethods = klass.getMethods();
         final DynamicMethod dummyMethodImpl = new DummyMethodImpl(targetModule);
 
         for (int i = 0; i < javaInstanceMethods.length; i++) {
@@ -134,7 +137,7 @@ public class JavaInterfaceTemplate {
         final Ruby runtime = context.runtime;
         checkAlreadyReified(clazz, runtime);
 
-        final JavaClass javaClass = getJavaClassForInterface(self);
+        final IRubyObject javaClass = JavaProxy.getJavaClass((RubyModule) self);
         RubyArray javaInterfaces;
         if ( ! clazz.hasInstanceVariable("@java_interfaces") ) {
             javaInterfaces = RubyArray.newArray(runtime, javaClass);
@@ -181,7 +184,7 @@ public class JavaInterfaceTemplate {
             // list of interfaces we implement
             singleton.addReadAttribute(context, "java_interfaces");
 
-            if ( ( ! Java.NEW_STYLE_EXTENSION && clazz.getSuperClass().getRealClass().hasInstanceVariable("@java_class") )
+            if ( ( ! Java.NEW_STYLE_EXTENSION && JavaProxy.getJavaClass(clazz.getSuperClass().getRealClass()) != null )
                 || RubyInstanceConfig.INTERFACES_USE_PROXY ) {
                 // superclass is a Java class...use old style impl for now
 
@@ -279,7 +282,7 @@ public class JavaInterfaceTemplate {
             else {
                 javaClass = self.getClass(); // NOTE what is this for?
             }
-            return JavaClass.get(context.runtime, javaClass);
+            return Java.getInstance(context.runtime, javaClass);
         }
 
     }
@@ -540,9 +543,6 @@ public class JavaInterfaceTemplate {
 
     }
 
-    private static JavaClass getJavaClassForInterface(final IRubyObject module) {
-        return (JavaClass) module.getInstanceVariables().getInstanceVariable("@java_class");
-    }
 
     private static RubyArray getJavaInterfaces(final IRubyObject clazz) {
         return (RubyArray) clazz.getInstanceVariables().getInstanceVariable("@java_interfaces");

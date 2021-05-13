@@ -43,14 +43,14 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Java::JavaField")
+@Deprecated
+// @JRubyClass(name="Java::JavaField")
 public class JavaField extends JavaAccessibleObject {
 
     private final Field field;
@@ -83,33 +83,34 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     @JRubyMethod
-    public RubyString value_type() {
-        return getRuntime().newString(field.getType().getName());
+    public RubyString value_type(ThreadContext context) {
+        return context.runtime.newString(field.getType().getName());
     }
 
     @JRubyMethod(name = "public?")
-    public RubyBoolean public_p() {
-        return getRuntime().newBoolean(Modifier.isPublic(field.getModifiers()));
+    public RubyBoolean public_p(ThreadContext context) {
+        return context.runtime.newBoolean(Modifier.isPublic(field.getModifiers()));
     }
 
     @JRubyMethod(name = "static?")
-    public RubyBoolean static_p() {
-        return getRuntime().newBoolean(Modifier.isStatic(field.getModifiers()));
+    public RubyBoolean static_p(ThreadContext context) {
+        return context.runtime.newBoolean(Modifier.isStatic(field.getModifiers()));
     }
 
     @JRubyMethod(name = "enum_constant?")
-    public RubyBoolean enum_constant_p() {
-        return getRuntime().newBoolean(field.isEnumConstant());
+    public RubyBoolean enum_constant_p(ThreadContext context) {
+        return context.runtime.newBoolean(field.isEnumConstant());
     }
 
     @JRubyMethod
-    public RubyString to_generic_string() {
-        return getRuntime().newString(field.toGenericString());
+    public RubyString to_generic_string(ThreadContext context) {
+        return context.runtime.newString(field.toGenericString());
     }
 
     @JRubyMethod(name = "type")
-    public IRubyObject field_type() {
-        return JavaClass.get(getRuntime(), field.getType());
+    @SuppressWarnings("deprecation")
+    public IRubyObject field_type(ThreadContext context) {
+        return JavaClass.get(context.runtime, field.getType());
     }
 
     @JRubyMethod
@@ -118,7 +119,7 @@ public class JavaField extends JavaAccessibleObject {
 
         final Object javaObject;
         if ( ! Modifier.isStatic( field.getModifiers() ) ) {
-            javaObject = unwrapJavaObject(object);
+            javaObject = unwrapJavaObject(context, object);
         }
         else {
             javaObject = null;
@@ -133,10 +134,10 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     @JRubyMethod
-    public IRubyObject set_value(IRubyObject object, IRubyObject value) {
+    public IRubyObject set_value(ThreadContext context, IRubyObject object, IRubyObject value) {
         final Object javaObject;
         if ( ! Modifier.isStatic( field.getModifiers() ) ) {
-            javaObject = unwrapJavaObject(object);
+            javaObject = unwrapJavaObject(context, object);
         }
         else {
             javaObject = null;
@@ -147,53 +148,53 @@ public class JavaField extends JavaAccessibleObject {
             field.set(javaObject, javaValue);
         }
         catch (IllegalAccessException iae) {
-            throw getRuntime().newTypeError("illegal access on setting variable: " + iae.getMessage());
+            throw context.runtime.newTypeError("illegal access on setting variable: " + iae.getMessage());
         }
         catch (IllegalArgumentException iae) {
-            throw getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
+            throw context.runtime.newTypeError("wrong type for " + field.getType().getName() + ": " +
                     ( javaValue == null ? null : javaValue.getClass().getName() ) );
         }
         return value;
     }
 
     @JRubyMethod(name = "final?")
-    public RubyBoolean final_p() {
-        return getRuntime().newBoolean(Modifier.isFinal(field.getModifiers()));
+    public RubyBoolean final_p(ThreadContext context) {
+        return context.runtime.newBoolean(Modifier.isFinal(field.getModifiers()));
     }
 
     @JRubyMethod
-    public IRubyObject static_value() {
+    public IRubyObject static_value(ThreadContext context) {
         try {
-            return convertToRuby( getRuntime(), field.get(null) );
+            return convertToRuby( context.runtime, field.get(null) );
         }
         catch (IllegalAccessException iae) {
-            throw getRuntime().newTypeError("illegal static value access: " + iae.getMessage());
+            throw context.runtime.newTypeError("illegal static value access: " + iae.getMessage());
         }
     }
 
     @JRubyMethod
-    public IRubyObject set_static_value(IRubyObject value) {
+    public IRubyObject set_static_value(ThreadContext context, IRubyObject value) {
         if ( ! ( value instanceof JavaObject ) ) {
-            throw getRuntime().newTypeError("not a java object:" + value);
+            throw context.runtime.newTypeError("not a java object:" + value);
         }
         final Object javaValue = convertValueToJava(value);
         try {
             field.set(null, javaValue);
         }
         catch (IllegalAccessException iae) {
-            throw getRuntime().newTypeError(
+            throw context.runtime.newTypeError(
                                 "illegal access on setting static variable: " + iae.getMessage());
         }
         catch (IllegalArgumentException iae) {
-            throw getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
+            throw context.runtime.newTypeError("wrong type for " + field.getType().getName() + ": " +
                     ( javaValue == null ? null : javaValue.getClass().getName() ) );
         }
         return value;
     }
 
     @JRubyMethod
-    public RubyString name() {
-        return getRuntime().newString(field.getName());
+    public RubyString name(ThreadContext context) {
+        return context.runtime.newString(field.getName());
     }
 
     @Override
@@ -201,10 +202,10 @@ public class JavaField extends JavaAccessibleObject {
         return field;
     }
 
-    private Object unwrapJavaObject(final IRubyObject object) throws RaiseException {
+    private Object unwrapJavaObject(ThreadContext context, final IRubyObject object) throws RaiseException {
         Object javaObject = JavaUtil.unwrapJavaValue(object);
         if ( javaObject == null ) {
-            throw getRuntime().newTypeError("not a java object: " + object);
+            throw context.runtime.newTypeError("not a java object: " + object);
         }
         return javaObject;
     }

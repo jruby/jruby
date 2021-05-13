@@ -41,6 +41,7 @@
 package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.FrameField;
 import org.jruby.anno.TypePopulator;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
@@ -72,6 +73,7 @@ import org.jruby.management.Caches;
 import org.jruby.management.InlineStats;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.JavaNameMangler;
@@ -576,6 +578,7 @@ public final class Ruby implements Constantizable {
 
     private void initKernelGsub(RubyModule kernel) {
         if (this.config.getKernelGsubDefined()) {
+            MethodIndex.addMethodReadFields("gsub", FrameField.LASTLINE, FrameField.BACKREF);
             kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, "gsub") {
 
                 @Override

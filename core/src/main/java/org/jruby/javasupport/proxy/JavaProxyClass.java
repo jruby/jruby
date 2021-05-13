@@ -65,6 +65,7 @@ import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy.*;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -313,7 +314,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         @JRubyMethod
         public RubyArray argument_types() {
-            return toRubyArray(getParameterTypes());
+            return toClassArray(getRuntime(), getParameterTypes());
         }
 
         @JRubyMethod(name = "super?")
@@ -572,8 +573,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     @JRubyMethod
-    public RubyObject superclass() {
-        return JavaClass.get(getRuntime(), getSuperclass());
+    public IRubyObject superclass() {
+        return Java.getInstance(getRuntime(), getSuperclass());
     }
 
     @JRubyMethod
@@ -583,12 +584,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     @JRubyMethod
     public RubyArray interfaces() {
-        return toRubyArray(getInterfaces());
+        return toClassArray(getRuntime(), getInterfaces());
     }
 
     @JRubyMethod
     public final RubyArray constructors() {
-        return toRubyArray( getConstructors() );
+        return toRubyArray(getConstructors());
     }
 
     public final String nameOnInspection() {

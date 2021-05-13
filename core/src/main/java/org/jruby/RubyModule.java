@@ -5379,8 +5379,8 @@ public class RubyModule extends RubyObject {
     public <T> T toJava(Class<T> target) {
         if (target == Class.class) { // try java_class for proxy modules
             final ThreadContext context = metaClass.runtime.getCurrentContext();
-            IRubyObject javaClass = JavaClass.java_class(context, this);
-            if ( ! javaClass.isNil() ) return javaClass.toJava(target);
+            Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, this);
+            if (javaClass != null) return (T) javaClass;
         }
 
         return super.toJava(target);
