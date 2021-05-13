@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require_relative 'utils'
 
 if defined?(OpenSSL) && defined?(OpenSSL::PKey::DH)
@@ -72,6 +72,13 @@ class OpenSSL::TestPKeyDH < OpenSSL::PKeyTestCase
     dh2.set_pqg(dh2.p + 1, nil, dh2.g)
     assert_not_equal dh2.p, dh.p
     assert_equal dh2.g, dh.g
+  end
+
+  def test_marshal
+    dh = Fixtures.pkey("dh1024")
+    deserialized = Marshal.load(Marshal.dump(dh))
+
+    assert_equal dh.to_der, deserialized.to_der
   end
 
   private

@@ -49,6 +49,7 @@
 require 'socket'
 require 'io/wait'
 require 'weakref'
+require 'monitor'
 require_relative 'eq'
 
 #
@@ -160,8 +161,6 @@ require_relative 'eq'
 #   # The object that handles requests on the server
 #   FRONT_OBJECT=TimeServer.new
 #
-#   $SAFE = 1   # disable eval() and friends
-#
 #   DRb.start_service(URI, FRONT_OBJECT)
 #   # Wait for the drb server thread to finish before exiting.
 #   DRb.thread.join
@@ -235,7 +234,7 @@ require_relative 'eq'
 #       def get_logger(name)
 #           if !@loggers.has_key? name
 #               # make the filename safe, then declare it to be so
-#               fname = name.gsub(/[.\/\\\:]/, "_").untaint
+#               fname = name.gsub(/[.\/\\\:]/, "_")
 #               @loggers[name] = Logger.new(name, @basedir + "/" + fname)
 #           end
 #           return @loggers[name]
@@ -244,8 +243,6 @@ require_relative 'eq'
 #   end
 #
 #   FRONT_OBJECT=LoggerFactory.new("/tmp/dlog")
-#
-#   $SAFE = 1   # disable eval() and friends
 #
 #   DRb.start_service(URI, FRONT_OBJECT)
 #   DRb.thread.join
@@ -286,10 +283,7 @@ require_relative 'eq'
 #    ro.instance_eval("`rm -rf *`")
 #
 # The dangers posed by instance_eval and friends are such that a
-# DRbServer should generally be run with $SAFE set to at least
-# level 1.  This will disable eval() and related calls on strings
-# passed across the wire.  The sample usage code given above follows
-# this practice.
+# DRbServer should only be used when clients are trusted.
 #
 # A DRbServer can be configured with an access control list to
 # selectively allow or deny access from specified IP addresses.  The
@@ -375,9 +369,6 @@ module DRb
   # here to localize the performance hit to only those objects being
   # tracked for DRb purposes.
   class DRbIdConv
-    def initialize
-      @id2ref = {}
-    end
 
     # Convert an object reference id to an object.
     #
@@ -392,9 +383,13 @@ module DRb
     # This implementation returns the object's __id__ in the local
     # object space.
     def to_id(obj)
-      obj.nil? ? nil : _put(obj)
+      case obj
+      when Object
+        obj.nil? ? nil : _put(obj)
+      when BasicObject
+        _put(obj)
+      end
     end
-
     def _clean
       dead = []
       @id2ref.each {|id,weakref| dead << id unless weakref.weakref_alive?}
@@ -601,7 +596,14 @@ module DRb
     end
 
     def dump(obj, error=false)  # :nodoc:
-      obj = make_proxy(obj, error) if obj.kind_of? DRbUndumped
+      case obj
+      when DRbUndumped
+        obj = make_proxy(obj, error)
+      when Object
+        # nothing
+      else
+        obj = make_proxy(obj, error)
+      end
       begin
         str = Marshal::dump(obj)
       rescue
@@ -629,16 +631,9 @@ module DRb
       raise(DRbConnError, 'premature marshal format(can\'t read)') if str.size < sz
       DRb.mutex.synchronize do
         begin
-          save = Thread.current[:drb_untaint]
-          Thread.current[:drb_untaint] = []
           Marshal::load(str)
         rescue NameError, ArgumentError
           DRbUnknown.new($!, str)
-        ensure
-          Thread.current[:drb_untaint].each do |x|
-            x.untaint
-          end
-          Thread.current[:drb_untaint] = save
         end
       end
     end
@@ -878,8 +873,6 @@ module DRb
     # URI protocols.
     def self.open(uri, config)
       host, port, = parse_uri(uri)
-      host.untaint
-      port.untaint
       soc = TCPSocket.open(host, port)
       self.new(uri, soc, config)
     end
@@ -1052,6 +1045,8 @@ module DRb
 
     def set_sockopt(soc) # :nodoc:
       soc.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
+    rescue IOError, Errno::ECONNRESET, Errno::EINVAL
+      # closed/shutdown socket, ignore error
     end
   end
 
@@ -1094,9 +1089,6 @@ module DRb
 
       if DRb.here?(uri)
         obj = DRb.to_obj(ref)
-        if ((! obj.tainted?) && Thread.current[:drb_untaint])
-          Thread.current[:drb_untaint].push(obj)
-        end
         return obj
       end
 
@@ -1133,7 +1125,14 @@ module DRb
     def initialize(obj, uri=nil)
       @uri = nil
       @ref = nil
-      if obj.nil?
+      case obj
+      when Object
+        is_nil = obj.nil?
+      when BasicObject
+        is_nil = false
+      end
+
+      if is_nil
         return if uri.nil?
         @uri, option = DRbProtocol.uri_option(uri, DRb.config)
         @ref = DRbURIOption.new(option) unless option.nil?
@@ -1169,7 +1168,7 @@ module DRb
     end
 
     # Routes method calls to the referenced remote object.
-    def method_missing(msg_id, *a, &b)
+    ruby2_keywords def method_missing(msg_id, *a, &b)
       if DRb.here?(@uri)
         obj = DRb.to_obj(@ref)
         DRb.current_server.check_insecure_method(obj, msg_id)
@@ -1233,6 +1232,54 @@ module DRb
     end
   end
 
+  class ThreadObject
+    include MonitorMixin
+
+    def initialize(&blk)
+      super()
+      @wait_ev = new_cond
+      @req_ev = new_cond
+      @res_ev = new_cond
+      @status = :wait
+      @req = nil
+      @res = nil
+      @thread = Thread.new(self, &blk)
+    end
+
+    def alive?
+      @thread.alive?
+    end
+
+    def kill
+      @thread.kill
+      @thread.join
+    end
+
+    def method_missing(msg, *arg, &blk)
+      synchronize do
+        @wait_ev.wait_until { @status == :wait }
+        @req = [msg] + arg
+        @status = :req
+        @req_ev.broadcast
+        @res_ev.wait_until { @status == :res }
+        value = @res
+        @req = @res = nil
+        @status = :wait
+        @wait_ev.broadcast
+        return value
+      end
+    end
+
+    def _execute()
+      synchronize do
+        @req_ev.wait_until { @status == :req }
+        @res = yield(@req)
+        @status = :res
+        @res_ev.signal
+      end
+    end
+  end
+
   # Class handling the connection between a DRbObject and the
   # server the real object lives on.
   #
@@ -1244,26 +1291,50 @@ module DRb
   # not normally need to deal with it directly.
   class DRbConn
     POOL_SIZE = 16  # :nodoc:
-    @mutex = Thread::Mutex.new
-    @pool = []
+
+    def self.make_pool
+      ThreadObject.new do |queue|
+        pool = []
+        while true
+          queue._execute do |message|
+            case(message[0])
+            when :take then
+              remote_uri = message[1]
+              conn = nil
+              new_pool = []
+              pool.each do |c|
+                if conn.nil? and c.uri == remote_uri
+                  conn = c if c.alive?
+                else
+                  new_pool.push c
+                end
+              end
+              pool = new_pool
+              conn
+            when :store then
+              conn = message[1]
+              pool.unshift(conn)
+              pool.pop.close while pool.size > POOL_SIZE
+              conn
+            else
+              nil
+            end
+          end
+        end
+      end
+    end
+    @pool_proxy = nil
+
+    def self.stop_pool
+      @pool_proxy&.kill
+      @pool_proxy = nil
+    end
 
     def self.open(remote_uri)  # :nodoc:
       begin
-        conn = nil
+        @pool_proxy = make_pool unless @pool_proxy&.alive?
 
-        @mutex.synchronize do
-          #FIXME
-          new_pool = []
-          @pool.each do |c|
-            if conn.nil? and c.uri == remote_uri
-              conn = c if c.alive?
-            else
-              new_pool.push c
-            end
-          end
-          @pool = new_pool
-        end
-
+        conn = @pool_proxy.take(remote_uri)
         conn = self.new(remote_uri) unless conn
         succ, result = yield(conn)
         return succ, result
@@ -1271,10 +1342,7 @@ module DRb
       ensure
         if conn
           if succ
-            @mutex.synchronize do
-              @pool.unshift(conn)
-              @pool.pop.close while @pool.size > POOL_SIZE
-            end
+            @pool_proxy.store(conn)
           else
             conn.close
           end
@@ -1320,9 +1388,8 @@ module DRb
     @@idconv = DRbIdConv.new
     @@secondary_server = nil
     @@argc_limit = 256
-    @@load_limit = 256 * 102400
+    @@load_limit = 0xffffffff
     @@verbose = false
-    @@safe_level = 0
 
     # Set the default value for the :argc_limit option.
     #
@@ -1352,13 +1419,6 @@ module DRb
       @@idconv = idconv
     end
 
-    # Set the default safe level to +level+.  The default safe level is 0
-    #
-    # See #new for more information.
-    def self.default_safe_level(level)
-      @@safe_level = level
-    end
-
     # Set the default value of the :verbose option.
     #
     # See #new().  The initial default value is false.
@@ -1378,7 +1438,6 @@ module DRb
         :tcp_acl => @@acl,
         :load_limit => @@load_limit,
         :argc_limit => @@argc_limit,
-        :safe_level => @@safe_level
       }
       default_config.update(hash)
     end
@@ -1412,10 +1471,6 @@ module DRb
     # :argc_limit :: the maximum number of arguments to a remote
     #                method accepted by the server.  Defaults to
     #                256.
-    # :safe_level :: The safe level of the DRbServer.  The attribute
-    #                sets $SAFE for methods performed in the main_loop.
-    #                Defaults to 0.
-    #
     # The default values of these options can be modified on
     # a class-wide basis by the class methods #default_argc_limit,
     # #default_load_limit, #default_acl, #default_id_conv,
@@ -1447,7 +1502,6 @@ module DRb
 
       @front = front
       @idconv = @config[:idconv]
-      @safe_level = @config[:safe_level]
 
       @grp = ThreadGroup.new
       @thread = run
@@ -1473,12 +1527,6 @@ module DRb
 
     # The configuration of this DRbServer
     attr_reader :config
-
-    # The safe level for this server.  This is a number corresponding to
-    # $SAFE.
-    #
-    # The default safe_level is 0
-    attr_reader :safe_level
 
     # Set whether to operate in verbose mode.
     #
@@ -1566,9 +1614,9 @@ module DRb
     # Coerce an object to a string, providing our own representation if
     # to_s is not defined for the object.
     def any_to_s(obj)
-      obj.to_s + ":#{obj.class}"
+      "#{obj}:#{obj.class}"
     rescue
-      sprintf("#<%s:0x%lx>", obj.class, obj.__id__)
+      Kernel.instance_method(:to_s).bind_call(obj)
     end
 
     # Check that a method is callable via dRuby.
@@ -1584,14 +1632,27 @@ module DRb
       raise(ArgumentError, "#{any_to_s(msg_id)} is not a symbol") unless Symbol == msg_id.class
       raise(SecurityError, "insecure method `#{msg_id}'") if insecure_method?(msg_id)
 
-      if obj.private_methods.include?(msg_id)
-        desc = any_to_s(obj)
-        raise NoMethodError, "private method `#{msg_id}' called for #{desc}"
-      elsif obj.protected_methods.include?(msg_id)
-        desc = any_to_s(obj)
-        raise NoMethodError, "protected method `#{msg_id}' called for #{desc}"
+      case obj
+      when Object
+        if obj.private_methods.include?(msg_id)
+          desc = any_to_s(obj)
+          raise NoMethodError, "private method `#{msg_id}' called for #{desc}"
+        elsif obj.protected_methods.include?(msg_id)
+          desc = any_to_s(obj)
+          raise NoMethodError, "protected method `#{msg_id}' called for #{desc}"
+        else
+          true
+        end
       else
-        true
+        if Kernel.instance_method(:private_methods).bind(obj).call.include?(msg_id)
+          desc = any_to_s(obj)
+          raise NoMethodError, "private method `#{msg_id}' called for #{desc}"
+        elsif Kernel.instance_method(:protected_methods).bind(obj).call.include?(msg_id)
+          desc = any_to_s(obj)
+          raise NoMethodError, "protected method `#{msg_id}' called for #{desc}"
+        else
+          true
+        end
       end
     end
     public :check_insecure_method
@@ -1599,7 +1660,6 @@ module DRb
     class InvokeMethod  # :nodoc:
       def initialize(drb_server, client)
         @drb_server = drb_server
-        @safe_level = drb_server.safe_level
         @client = client
       end
 
@@ -1608,40 +1668,22 @@ module DRb
         @succ = false
         setup_message
 
-        if $SAFE < @safe_level
-          info = Thread.current['DRb']
-          if @block
-            @result = Thread.new do
-              Thread.current['DRb'] = info
-              prev_safe_level = $SAFE
-              $SAFE = @safe_level
-              perform_with_block
-            ensure
-              $SAFE = prev_safe_level
-            end.value
-          else
-            @result = Thread.new do
-              Thread.current['DRb'] = info
-              prev_safe_level = $SAFE
-              $SAFE = @safe_level
-              perform_without_block
-            ensure
-              $SAFE = prev_safe_level
-            end.value
-          end
+        if @block
+          @result = perform_with_block
         else
-          if @block
-            @result = perform_with_block
-          else
-            @result = perform_without_block
-          end
+          @result = perform_without_block
         end
         @succ = true
-        if @msg_id == :to_ary && @result.class == Array
-          @result = DRbArray.new(@result)
+        case @result
+        when Array
+          if @msg_id == :to_ary
+            @result = DRbArray.new(@result)
+          end
         end
         return @succ, @result
-      rescue StandardError, ScriptError, Interrupt
+      rescue NoMemoryError, SystemExit, SystemStackError, SecurityError
+        raise
+      rescue Exception
         @result = $!
         return @succ, @result
       end
@@ -1719,7 +1761,9 @@ module DRb
             invoke_method = InvokeMethod.new(self, client)
             succ, result = invoke_method.perform
             error_print(result) if !succ && verbose
-            client.send_reply(succ, result)
+            unless DRbConnError === result && result.message == 'connection closed'
+              client.send_reply(succ, result)
+            end
           rescue Exception => e
             error_print(e) if verbose
           ensure

@@ -3,18 +3,15 @@ require 'rubygems/test_case'
 require 'rubygems/config_file'
 
 class TestGemConfigFile < Gem::TestCase
-
   def setup
     super
+
+    credential_setup
 
     @temp_conf = File.join @tempdir, '.gemrc'
 
     @cfg_args = %W[--config-file #{@temp_conf}]
 
-    @orig_SYSTEM_WIDE_CONFIG_FILE = Gem::ConfigFile::SYSTEM_WIDE_CONFIG_FILE
-    Gem::ConfigFile.send :remove_const, :SYSTEM_WIDE_CONFIG_FILE
-    Gem::ConfigFile.send :const_set, :SYSTEM_WIDE_CONFIG_FILE,
-                         File.join(@tempdir, 'system-gemrc')
     Gem::ConfigFile::OPERATING_SYSTEM_DEFAULTS.clear
     Gem::ConfigFile::PLATFORM_DEFAULTS.clear
 
@@ -27,11 +24,10 @@ class TestGemConfigFile < Gem::TestCase
   def teardown
     Gem::ConfigFile::OPERATING_SYSTEM_DEFAULTS.clear
     Gem::ConfigFile::PLATFORM_DEFAULTS.clear
-    Gem::ConfigFile.send :remove_const, :SYSTEM_WIDE_CONFIG_FILE
-    Gem::ConfigFile.send :const_set, :SYSTEM_WIDE_CONFIG_FILE,
-                         @orig_SYSTEM_WIDE_CONFIG_FILE
 
     ENV['GEMRC'] = @env_gemrc
+
+    credential_teardown
 
     super
   end
@@ -45,6 +41,7 @@ class TestGemConfigFile < Gem::TestCase
     assert_equal true, @cfg.verbose
     assert_equal [@gem_repo], Gem.sources
     assert_equal 365, @cfg.cert_expiration_length_days
+    assert_equal false, @cfg.ipv4_fallback_enabled
 
     File.open @temp_conf, 'w' do |fp|
       fp.puts ":backtrace: true"
@@ -60,6 +57,7 @@ class TestGemConfigFile < Gem::TestCase
       fp.puts ":ssl_verify_mode: 0"
       fp.puts ":ssl_ca_cert: /etc/ssl/certs"
       fp.puts ":cert_expiration_length_days: 28"
+      fp.puts ":ipv4_fallback_enabled: true"
     end
 
     util_config_file
@@ -74,6 +72,14 @@ class TestGemConfigFile < Gem::TestCase
     assert_equal 0, @cfg.ssl_verify_mode
     assert_equal '/etc/ssl/certs', @cfg.ssl_ca_cert
     assert_equal 28, @cfg.cert_expiration_length_days
+    assert_equal true, @cfg.ipv4_fallback_enabled
+  end
+
+  def test_initialize_ipv4_fallback_enabled_env
+    ENV['IPV4_FALLBACK_ENABLED'] = 'true'
+    util_config_file %W[--config-file #{@temp_conf}]
+
+    assert_equal true, @cfg.ipv4_fallback_enabled
   end
 
   def test_initialize_handle_arguments_config_file
@@ -157,8 +163,8 @@ class TestGemConfigFile < Gem::TestCase
     File.open conf3, 'w' do |fp|
       fp.puts ':verbose: :loud'
     end
-
-    ENV['GEMRC'] = conf1 + ':' + conf2 + ';' + conf3
+    ps = File::PATH_SEPARATOR
+    ENV['GEMRC'] = conf1 + ps + conf2 + ps + conf3
 
     util_config_file
 
@@ -167,11 +173,17 @@ class TestGemConfigFile < Gem::TestCase
     assert_equal 2048, @cfg.bulk_threshold
   end
 
+  def test_set_config_file_name_from_environment_variable
+    ENV['GEMRC'] = "/tmp/.gemrc"
+    cfg = Gem::ConfigFile.new([])
+    assert_equal cfg.config_file_name, "/tmp/.gemrc"
+  end
+
   def test_api_keys
     assert_nil @cfg.instance_variable_get :@api_keys
 
     temp_cred = File.join Gem.user_home, '.gem', 'credentials'
-    FileUtils.mkdir File.dirname(temp_cred)
+    FileUtils.mkdir_p File.dirname(temp_cred)
     File.open temp_cred, 'w', 0600 do |fp|
       fp.puts ':rubygems_api_key: 701229f217cdf23b1344c7b4b54ca97'
     end
@@ -297,7 +309,7 @@ if you believe they were disclosed to a third party.
 
   def test_load_api_keys
     temp_cred = File.join Gem.user_home, '.gem', 'credentials'
-    FileUtils.mkdir File.dirname(temp_cred)
+    FileUtils.mkdir_p File.dirname(temp_cred)
     File.open temp_cred, 'w', 0600 do |fp|
       fp.puts ":rubygems_api_key: 701229f217cdf23b1344c7b4b54ca97"
       fp.puts ":other: a5fdbb6ba150cbb83aad2bb2fede64c"
@@ -386,7 +398,7 @@ if you believe they were disclosed to a third party.
     util_config_file
 
     # These should not be written out to the config file.
-    assert_equal false, @cfg.backtrace,     'backtrace'
+    assert_equal false, @cfg.backtrace, 'backtrace'
     assert_equal Gem::ConfigFile::DEFAULT_BULK_THRESHOLD, @cfg.bulk_threshold,
                  'bulk_threshold'
     assert_equal true, @cfg.update_sources, 'update_sources'

@@ -185,12 +185,15 @@ class TC_OpenStruct < Test::Unit::TestCase
   end
 
   def test_does_not_redefine
+    $VERBOSE, verbose_bak = nil, $VERBOSE
     os = OpenStruct.new(foo: 42)
     def os.foo
       43
     end
     os.foo = 44
     assert_equal(43, os.foo)
+  ensure
+    $VERBOSE = verbose_bak
   end
 
   def test_allocate_subclass
@@ -240,13 +243,13 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert_nil os.foo
   end
 
-  def test_overriden_private_methods
+  def test_overridden_private_methods
     os = OpenStruct.new(puts: :foo, format: :bar)
     assert_equal(:foo, os.puts)
     assert_equal(:bar, os.format)
   end
 
-  def test_overriden_public_methods
+  def test_overridden_public_methods
     os = OpenStruct.new(method: :foo, class: :bar)
     assert_equal(:foo, os.method)
     assert_equal(:bar, os.class)
@@ -298,15 +301,17 @@ class TC_OpenStruct < Test::Unit::TestCase
   end
 
   def test_ractor
-    obj1 = OpenStruct.new(a: 42, b: 42)
-    obj1.c = 42
-    obj1.freeze
+    assert_ractor(<<~RUBY, require: 'ostruct')
+      obj1 = OpenStruct.new(a: 42, b: 42)
+      obj1.c = 42
+      obj1.freeze
 
-    obj2 = Ractor.new obj1 do |obj|
-      obj
-    end.take
-    assert obj1.object_id == obj2.object_id
-  end if defined?(Ractor)
+      obj2 = Ractor.new obj1 do |obj|
+        obj
+      end.take
+      assert obj1.object_id == obj2.object_id
+    RUBY
+  end
 
   def test_legacy_yaml
     s = "--- !ruby/object:OpenStruct\ntable:\n  :foo: 42\n"
@@ -326,5 +331,11 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert_equal os1, os2
     assert_equal true, os1.eql?(os2)
     assert_equal 300.42, os2.pension
+  end
+
+  def test_marshal
+    o = OpenStruct.new(name: "John Smith", age: 70, pension: 300.42)
+    o2 = Marshal.load(Marshal.dump(o))
+    assert_equal o, o2
   end
 end

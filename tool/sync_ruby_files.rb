@@ -14,7 +14,6 @@ STDLIB_FILES = %w[
   erb.rb
   find.rb
   getoptlong.rb
-  monitor.rb
   net
   observer.rb
   open-uri.rb
@@ -25,8 +24,6 @@ STDLIB_FILES = %w[
   ostruct.rb
   pp.rb
   prettyprint.rb
-  profile.rb
-  profiler.rb
   pstore.rb
   resolv-replace.rb
   resolv.rb

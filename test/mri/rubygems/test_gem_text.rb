@@ -22,7 +22,7 @@ class TestGemText < Gem::TestCase
   end
 
   def test_format_text_no_space
-    assert_equal "texttowr\nap",     format_text("texttowrap", 8)
+    assert_equal "texttowr\nap", format_text("texttowrap", 8)
   end
 
   def test_format_text_trailing # for two spaces after .
@@ -93,5 +93,4 @@ Without the wrapping, the text might not look good in the RSS feed.
   def test_clean_text
     assert_equal ".]2;nyan.", clean_text("\e]2;nyan\a")
   end
-
 end

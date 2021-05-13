@@ -14,71 +14,131 @@ require 'ripper/core'
 class Ripper
 
   # Tokenizes the Ruby program and returns an array of strings.
+  # The +filename+ and +lineno+ arguments are mostly ignored, since the
+  # return value is just the tokenized input.
+  # By default, this method does not handle syntax errors in +src+,
+  # use the +raise_errors+ keyword to raise a SyntaxError for an error in +src+.
   #
   #   p Ripper.tokenize("def m(a) nil end")
   #      # => ["def", " ", "m", "(", "a", ")", " ", "nil", " ", "end"]
   #
-  def Ripper.tokenize(src, filename = '-', lineno = 1)
-    Lexer.new(src, filename, lineno).tokenize
+  def Ripper.tokenize(src, filename = '-', lineno = 1, **kw)
+    Lexer.new(src, filename, lineno).tokenize(**kw)
   end
 
   # Tokenizes the Ruby program and returns an array of an array,
   # which is formatted like
   # <code>[[lineno, column], type, token, state]</code>.
+  # The +filename+ argument is mostly ignored.
+  # By default, this method does not handle syntax errors in +src+,
+  # use the +raise_errors+ keyword to raise a SyntaxError for an error in +src+.
   #
   #   require 'ripper'
   #   require 'pp'
   #
   #   pp Ripper.lex("def m(a) nil end")
-  #   #=> [[[1,  0], :on_kw,     "def", Ripper::EXPR_FNAME                   ],
-  #        [[1,  3], :on_sp,     " ",   Ripper::EXPR_FNAME                   ],
-  #        [[1,  4], :on_ident,  "m",   Ripper::EXPR_ENDFN                   ],
-  #        [[1,  5], :on_lparen, "(",   Ripper::EXPR_LABEL | Ripper::EXPR_BEG],
-  #        [[1,  6], :on_ident,  "a",   Ripper::EXPR_ARG                     ],
-  #        [[1,  7], :on_rparen, ")",   Ripper::EXPR_ENDFN                   ],
-  #        [[1,  8], :on_sp,     " ",   Ripper::EXPR_BEG                     ],
-  #        [[1,  9], :on_kw,     "nil", Ripper::EXPR_END                     ],
-  #        [[1, 12], :on_sp,     " ",   Ripper::EXPR_END                     ],
-  #        [[1, 13], :on_kw,     "end", Ripper::EXPR_END                     ]]
+  #   #=> [[[1,  0], :on_kw,     "def", FNAME    ],
+  #        [[1,  3], :on_sp,     " ",   FNAME    ],
+  #        [[1,  4], :on_ident,  "m",   ENDFN    ],
+  #        [[1,  5], :on_lparen, "(",   BEG|LABEL],
+  #        [[1,  6], :on_ident,  "a",   ARG      ],
+  #        [[1,  7], :on_rparen, ")",   ENDFN    ],
+  #        [[1,  8], :on_sp,     " ",   BEG      ],
+  #        [[1,  9], :on_kw,     "nil", END      ],
+  #        [[1, 12], :on_sp,     " ",   END      ],
+  #        [[1, 13], :on_kw,     "end", END      ]]
   #
-  def Ripper.lex(src, filename = '-', lineno = 1)
-    Lexer.new(src, filename, lineno).lex
+  def Ripper.lex(src, filename = '-', lineno = 1, **kw)
+    Lexer.new(src, filename, lineno).lex(**kw)
   end
 
   class Lexer < ::Ripper   #:nodoc: internal use only
     State = Struct.new(:to_int, :to_s) do
       alias to_i to_int
       def initialize(i) super(i, Ripper.lex_state_name(i)).freeze end
-      def inspect; "#<#{self.class}: #{self}>" end
+      # def inspect; "#<#{self.class}: #{self}>" end
+      alias inspect to_s
       def pretty_print(q) q.text(to_s) end
       def ==(i) super or to_int == i end
       def &(i) self.class.new(to_int & i) end
-      def |(i) self.class.new(to_int & i) end
+      def |(i) self.class.new(to_int | i) end
       def allbits?(i) to_int.allbits?(i) end
       def anybits?(i) to_int.anybits?(i) end
       def nobits?(i) to_int.nobits?(i) end
     end
 
-    Elem = Struct.new(:pos, :event, :tok, :state) do
-      def initialize(pos, event, tok, state)
-        super(pos, event, tok, State.new(state))
+    Elem = Struct.new(:pos, :event, :tok, :state, :message) do
+      def initialize(pos, event, tok, state, message = nil)
+        super(pos, event, tok, State.new(state), message)
+      end
+
+      def inspect
+        "#<#{self.class}: #{event}@#{pos[0]}:#{pos[1]}:#{state}: #{tok.inspect}#{": " if message}#{message}>"
+      end
+
+      def pretty_print(q)
+        q.group(2, "#<#{self.class}:", ">") {
+          q.breakable
+          q.text("#{event}@#{pos[0]}:#{pos[1]}")
+          q.breakable
+          q.text(state)
+          q.breakable
+          q.text("token: ")
+          tok.pretty_print(q)
+          if message
+            q.breakable
+            q.text("message: ")
+            q.text(message)
+          end
+        }
+      end
+
+      def to_a
+        a = super
+        a.pop unless a.last
+        a
       end
     end
 
-    def tokenize
-      parse().sort_by(&:pos).map(&:tok)
+    attr_reader :errors
+
+    def tokenize(**kw)
+      parse(**kw).sort_by(&:pos).map(&:tok)
     end
 
-    def lex
-      parse().sort_by(&:pos).map(&:to_a)
+    def lex(**kw)
+      parse(**kw).sort_by(&:pos).map(&:to_a)
     end
 
-    def parse
+    # parse the code and returns elements including errors.
+    def scan(**kw)
+      result = (parse(**kw) + errors + @stack.flatten).uniq.sort_by {|e| [*e.pos, (e.message ? -1 : 0)]}
+      result.each_with_index do |e, i|
+        if e.event == :on_parse_error and e.tok.empty? and (pre = result[i-1]) and
+          pre.pos[0] == e.pos[0] and (pre.pos[1] + pre.tok.size) == e.pos[1]
+          e.tok = pre.tok
+          e.pos[1] = pre.pos[1]
+          result[i-1] = e
+          result[i] = pre
+        end
+      end
+      result
+    end
+
+    def parse(raise_errors: false)
+      @errors = []
       @buf = []
       @stack = []
-      super
+      super()
+      @buf = @stack.pop unless @stack.empty?
+      if raise_errors and !@errors.empty?
+        raise SyntaxError, @errors.map(&:message).join(' ;')
+      end
       @buf.flatten!
-      @buf
+      unless (result = @buf).empty?
+        result.concat(@buf) until (@buf = []; super(); @buf.flatten!; @buf.empty?)
+      end
+      result
     end
 
     private
@@ -115,7 +175,7 @@ class Ripper
     def on_heredoc_beg(tok)
       @stack.push @buf
       buf = []
-      @buf << buf
+      @buf.push buf
       @buf = buf
       @buf.push Elem.new([lineno(), column()], __callee__, tok, state())
     end
@@ -126,8 +186,23 @@ class Ripper
     end
 
     def _push_token(tok)
-      @buf.push Elem.new([lineno(), column()], __callee__, tok, state())
+      e = Elem.new([lineno(), column()], __callee__, tok, state())
+      @buf.push(e)
+      e
     end
+
+    def on_error1(mesg)
+      @errors.push Elem.new([lineno(), column()], __callee__, token(), state(), mesg)
+    end
+
+    def on_error2(mesg, elem)
+      @errors.push Elem.new(elem.pos, __callee__, elem.tok, elem.state, mesg)
+    end
+    PARSER_EVENTS.grep(/_error\z/) do |e|
+      arity = PARSER_EVENT_TABLE.fetch(e)
+      alias_method "on_#{e}", "on_error#{arity}"
+    end
+    alias compile_error on_error1
 
     (SCANNER_EVENTS.map {|event|:"on_#{event}"} - private_instance_methods(false)).each do |event|
       # FIXME: Our callee impl is broken and returns same result as __method__

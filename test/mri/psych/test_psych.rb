@@ -125,6 +125,19 @@ class TestPsych < Psych::TestCase
     assert_equal %w{ foo bar }, docs
   end
 
+  def test_load_stream_freeze
+    docs = Psych.load_stream("--- foo\n...\n--- bar\n...", freeze: true)
+    assert_equal %w{ foo bar }, docs
+    docs.each do |string|
+      assert_predicate string, :frozen?
+    end
+  end
+
+  def test_load_stream_symbolize_names
+    docs = Psych.load_stream("---\nfoo: bar", symbolize_names: true)
+    assert_equal [{foo: 'bar'}], docs
+  end
+
   def test_load_stream_default_fallback
     assert_equal [], Psych.load_stream("")
   end
@@ -242,6 +255,27 @@ class TestPsych < Psych::TestCase
     }
   end
 
+  def test_load_file_freeze
+    Tempfile.create(['yikes', 'yml']) {|t|
+      t.binmode
+      t.write('--- hello world')
+      t.close
+
+      object = Psych.load_file(t.path, freeze: true)
+      assert_predicate object, :frozen?
+    }
+  end
+
+  def test_load_file_symbolize_names
+    Tempfile.create(['yikes', 'yml']) {|t|
+      t.binmode
+      t.write("---\nfoo: bar")
+      t.close
+
+      assert_equal({foo: 'bar'}, Psych.load_file(t.path, symbolize_names: true))
+    }
+  end
+
   def test_load_file_default_fallback
     Tempfile.create(['empty', 'yml']) {|t|
       assert_equal false, Psych.load_file(t.path)
@@ -282,6 +316,18 @@ class TestPsych < Psych::TestCase
       t.write('--- false')
       t.close
       assert_equal false, Psych.load_file(t.path, fallback: 42)
+    }
+  end
+
+  def test_safe_load_file_with_permitted_classe
+    Tempfile.create(['false', 'yml']) {|t|
+      t.binmode
+      t.write("--- !ruby/range\nbegin: 0\nend: 42\nexcl: false\n")
+      t.close
+      assert_equal 0..42, Psych.safe_load_file(t.path, permitted_classes: [Range])
+      assert_raises(Psych::DisallowedClass) {
+        Psych.safe_load_file(t.path)
+      }
     }
   end
 
