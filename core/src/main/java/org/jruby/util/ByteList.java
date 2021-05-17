@@ -45,6 +45,7 @@ import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyEncoding;
+import org.jruby.runtime.Helpers;
 
 /**
  * ByteList is simple a collection of bytes in the same way a Java String is a collection
@@ -358,14 +359,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public void ensure(int length) {
         if (begin + length > bytes.length) {
-            int newLength;
-            try {
-                // Try to allocate 1.5 * length but that might take us outside the range of int
-                newLength = Math.addExact(length, length >>> 1);
-            } catch (ArithmeticException e) {
-                newLength = Integer.MAX_VALUE;
-            }
-            byte[] tmp = new byte[newLength];
+            byte[] tmp = new byte[Helpers.calculateBufferLength(length)];
             System.arraycopy(bytes, begin, tmp, 0, realSize);
             bytes = tmp;
             begin = 0;
@@ -1124,13 +1118,17 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     private void grow(int increaseRequested) {
         // new available size
-        int newSize = realSize + increaseRequested; // increase <= 0 -> no-op
-        // only recopy if bytes does not have enough room *after* the begin index
-        if (newSize > bytes.length - begin) {
-            byte[] newBytes = new byte[newSize + (newSize >> 1)];
-            if (bytes.length != 0) System.arraycopy(bytes, begin, newBytes, 0, realSize);
-            bytes = newBytes;
-            begin = 0;
+        try {
+            int newSize = Math.addExact(realSize, increaseRequested); // increase <= 0 -> no-op
+            // only recopy if bytes does not have enough room *after* the begin index
+            if (newSize > bytes.length - begin) {
+                byte[] newBytes = new byte[Helpers.calculateBufferLength(newSize)];
+                if (bytes.length != 0) System.arraycopy(bytes, begin, newBytes, 0, realSize);
+                bytes = newBytes;
+                begin = 0;
+            }
+        } catch (ArithmeticException ae) {
+            throw new OutOfMemoryError("Requested array size exceeds VM limit");
         }
     }
 
