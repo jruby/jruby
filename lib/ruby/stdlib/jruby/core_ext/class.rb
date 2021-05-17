@@ -203,16 +203,32 @@ class Class
   end
   
   ##
+  # A way to configure how become_java! classes are generated
   # Valid options:
-  # call_init: true/false
-  # generate: :all/:explicit
-  #    configure_java_class methods: :explicit/:all, call_init: true/false, java_constructable: true/false, ctors: :all/:minimal
-  # TODO: doc
-  # TODO: test?
+  #  call_init: bool (default true)
+  #  methods: :all/:explicit Only generate explicitly marked methods, or all methods on the proxy (default :all)
+  #  ctors: :all/:explicit Only generate explicitly marked methods, or all methods on the proxy (default :all)
+  #  java_constructable: bool Ensure the class is constructable from java (default true)
+  #  ruby_constructable: bool Ensure the class is constructable from ruby (default true)
+  #  ctor_name: Symbol method name of the java ctor. (default :initialize)
+  #  proxy_dispatches: {Symbol (Java method) => Symbol (Ruby method)} Dispatches the keys to the values from the java proxy (default empty/identity)
+  #  includes: List<Symbol> methods that would otherwise be excluded that you want to generate on the java proxy
+  #  excludes: List<Symbol> methods that would otherwise be included that you do not want to generate on the java proxy
+  #
+  # Optional block arg methods:
+  #  include (alias for :includes key)
+  #  exclude (alias for :excludes key)
+  #  dispatch (alias for :proxy_dispatches key)
+  #
+  # :call-seq:
+  #   configure_java_class methods: :all
+  #   configure_java_class methods: :explicit
+  #   configure_java_class ctor_name: :my_java_init
+  #   configure_java_class {|c| c.dispatch {initialize: :java_intialize} }
+  #   configure_java_class proxy_dispatches: {initialize: :java_intialize}
   def configure_java_class(**kwargs, &blk)
     self_r = JRuby.reference0(self)
     config = self_r.class_config
-    puts "version2"
     r_config = JavaConfig.new(config)
     kwargs.each do |k, v|
       case k.to_sym
@@ -227,7 +243,6 @@ class Class
       when :ruby_constructable then config.rubyConstructable = !!v
       when :ctor_name then
           config.javaCtorMethodName = v.to_s
-          puts "set to #{v.to_s}"
       when :proxy_dispatches then r_config.dispatch(v)
       when :includes then r_config.include(*v)
       when :excludes then r_config.exclude(*v)
