@@ -253,6 +253,7 @@ matrix:
   allow_failures:
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - name: concurrent ruby # temporary, see ruby-concurrency/concurrent-ruby#862
+    - name: deploy snapshots # failing to push jruby-jars gem snapshot for some reason
 
 script: tool/travis-script.sh
 
