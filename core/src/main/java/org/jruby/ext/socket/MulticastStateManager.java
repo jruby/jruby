@@ -31,10 +31,9 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.IP;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.net.InetAddress;
-
 import java.util.ArrayList;
 
 

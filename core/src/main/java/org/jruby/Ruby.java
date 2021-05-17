@@ -4357,17 +4357,31 @@ public final class Ruby implements Constantizable {
         return checkpointInvalidator;
     }
 
-    public <E extends Enum<E>> void loadConstantSet(RubyModule module, Class<E> enumClass) {
-        for (E e : EnumSet.allOf(enumClass)) {
-            Constant c = (Constant) e;
-            if (Character.isUpperCase(c.name().charAt(0))) {
-                module.setConstant(c.name(), newFixnum(c.intValue()));
-            }
+    /**
+     * Define all constants from the given jnr-constants enum which are defined on the current platform.
+     *
+     * @param module the module in which we want to define the constants
+     * @param enumClass the enum class of the constants to define
+     * @param <C> the enum type, which must implement {@link Constant}.
+     */
+    public <C extends Enum<C> & Constant> void loadConstantSet(RubyModule module, Class<C> enumClass) {
+        for (C constant : EnumSet.allOf(enumClass)) {
+            String name = constant.name();
+            if (constant.defined() && Character.isUpperCase(name.charAt(0))) {
+                    module.setConstant(name, newFixnum(constant.intValue()));
+                }
         }
     }
+
+    /**
+     * Define all constants from the named jnr-constants set which are defined on the current platform.
+     *
+     * @param module the module in which we want to define the constants
+     * @param constantSetName the name of the constant set from which to get the constants
+     */
     public void loadConstantSet(RubyModule module, String constantSetName) {
         for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
-            if (Character.isUpperCase(c.name().charAt(0))) {
+            if (c.defined() && Character.isUpperCase(c.name().charAt(0))) {
                 module.setConstant(c.name(), newFixnum(c.intValue()));
             }
         }

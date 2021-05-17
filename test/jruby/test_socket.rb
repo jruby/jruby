@@ -30,13 +30,50 @@ class SocketTest < Test::Unit::TestCase
   def test_tcp_socket_allows_nil_for_hostname
     assert_nothing_raised do
       server = TCPServer.new(nil, 7789)
-      t = Thread.new do
-        s = server.accept
-        s.close
+      begin
+        t = Thread.new do
+          s = server.accept
+          s.close
+        end
+        client = TCPSocket.new(nil, 7789)
+        client.write ""
+        t.join
+      ensure
+        server.close if server && !server.closed?
       end
-      client = TCPSocket.new(nil, 7789)
-      client.write ""
-      t.join
+    end
+  end
+
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_tcp_info
+      assert_nothing_raised do
+        server = TCPServer.new(nil, 7789)
+        begin
+          t = Thread.new do
+            s = server.accept
+            s.close
+          end
+          client = TCPSocket.new(nil, 7789)
+          t.join
+          tcp_info = client.getsockopt(Socket::IPPROTO_TCP, Socket::TCP_INFO)
+          state = tcp_info.unpack("C")[0]
+          assert_equal(8, state) # CLOSE_WAIT
+        ensure
+          server.close if server && !server.closed?
+        end
+      end
+    end
+  end
+
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_not_available_constant
+      assert !Socket.const_defined?(:TCP_KEEPALIVE)
+    end
+  end
+
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_not_available_constant
+      assert !Socket.const_defined?(:TCP_KEEPALIVE)
     end
   end
 
@@ -143,6 +180,50 @@ class SocketTest < Test::Unit::TestCase
     error = defined?(JRUBY_VERSION) ? SocketError : Errno::ECONNREFUSED
     [ 2**16, 2**16 + 1, 2**17, 2**30 - 1 ].each do |p|
       assert_raises(error) { TCPSocket.new('localhost', p) }
+    end
+  end
+
+  if RbConfig::CONFIG['target_os'] == 'linux'
+    def test_tcp_socket_get_keep_idle
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPIDLE).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_get_keep_intvl
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPINTVL).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_get_keep_cnt
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_instance_of(Integer, socket.getsockopt(Socket::SOL_TCP, Socket::TCP_KEEPCNT).int)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_idle
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPIDLE, 1)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_intvl
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPINTVL, 1)
+    ensure
+      socket.close
+    end
+
+    def test_tcp_socket_set_keep_cnt
+      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+      assert_equal 0, socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPCNT, 1)
+    ensure
+      socket.close
     end
   end
 
