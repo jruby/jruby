@@ -787,14 +787,27 @@ public class RubyStruct extends RubyObject {
         return result;
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
-    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
-        return dig(context, args, 0);
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0) {
+        return arefImpl( arg0, true );
     }
 
-    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
-        final IRubyObject val = arefImpl( args[idx++], true );
-        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        final IRubyObject val = arefImpl( arg0, true );
+        return RubyObject.dig1(context, val, arg1);
+    }
+
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        final IRubyObject val = arefImpl( arg0, true );
+        return RubyObject.dig2(context, val, arg1, arg2);
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        final IRubyObject val = arefImpl( args[0], true );
+        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {

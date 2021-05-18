@@ -39,7 +39,6 @@ describe "Enumerable#chunk" do
     e = EnumerableSpecs::Numerous.new([1, 2])
     result = e.chunk { |*x| x.should == [[1,2]] }.to_a
   end
-  
 
   it "does not return elements for which the block returns :_separator" do
     e = EnumerableSpecs::Numerous.new(1, 2, 3, 3, 2, 1)

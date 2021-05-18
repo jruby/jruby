@@ -24,6 +24,8 @@ declare -a ruby_args
 JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class="$JAVA_CLASS_JRUBY_MAIN"
 
+# Force OpenJDK-based JVMs to use /dev/urandom for random number generation
+# See https://github.com/jruby/jruby/issues/4685 among others.
 # OpenJDK tries really hard to prevent you from using urandom.
 # See https://bugs.openjdk.java.net/browse/JDK-6202721
 # Non-file URL causes fallback to slow threaded SeedGenerator.
@@ -62,22 +64,27 @@ process_java_opts() {
   fi
 }
 
-# ----- Determine JRUBY_HOME based on this executable's path ------------------
-
-# get the absolute path of the executable
-BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
-SELF_PATH="$BASE_DIR/$(basename -- "$BASH_SOURCE")"
-
-# resolve symlinks
-while [ -h "$SELF_PATH" ]; do
+# Resolve all symlinks in a chain
+resolve_symlinks() {
+  cur_path="$1"
+  while [ -h "$cur_path" ]; do
     # 1) cd to directory of the symlink
     # 2) cd to the directory of where the symlink points
     # 3) get the physical pwd
     # 4) append the basename
-    SYM="$(readlink "$SELF_PATH")"
-    BASE_SYM="$(cd -P -- "$(dirname -- "$SELF_PATH")" >/dev/null && pwd -P)"
-    SELF_PATH="$(cd "$BASE_SYM" && cd "$(dirname -- "$SYM")" && pwd -P)/$(basename -- "$SYM")"
-done
+    sym="$(readlink "$cur_path")"
+    sym_base="$(cd -P -- "$(dirname -- "$cur_path")" >/dev/null && pwd -P)"
+    cur_path="$(cd "$sym_base" && cd "$(dirname -- "$sym")" && pwd -P)/$(basename -- "$sym")"
+  done
+  result="$cur_path"
+}
+
+# ----- Determine JRUBY_HOME based on this executable's path ------------------
+
+# get the absolute path of the executable
+BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
+resolve_symlinks "$BASE_DIR/$(basename -- "$BASH_SOURCE")"
+SELF_PATH="$result"
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
 
@@ -124,8 +131,11 @@ esac
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
-    JAVACMD='java'
-    JAVA_HOME="$(dirname "$(dirname "$(command -v java)")")"
+    resolve_symlinks "$(command -v java)"
+    JAVACMD="$result"
+
+    # export separately from command execution
+    JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
   else
     if $cygwin; then
       JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
@@ -134,14 +144,15 @@ if [ -z "$JAVACMD" ] ; then
     fi
   fi
 else
-  expanded_javacmd="$(command -v "$JAVACMD")"
+  resolve_symlinks "$(command -v "$JAVACMD")"
+  expanded_javacmd="$result"
   if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ] ; then
     JAVA_HOME="$(dirname "$(dirname "$expanded_javacmd")")"
   fi
 fi
 
 # Detect modularized Java
-if [ -f ${JAVA_HOME}/lib/modules ] || [ -f ${JAVA_HOME}/release ] && grep -q ^MODULES ${JAVA_HOME}/release; then
+if [ -f "$JAVA_HOME"/lib/modules ] || [ -f "$JAVA_HOME"/release ] && grep -q ^MODULES "$JAVA_HOME"/release; then
   use_modules=1
 fi
 

@@ -28,26 +28,15 @@
 
 package org.jruby.ext.socket;
 
-import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import jnr.ffi.byref.IntByReference;
-import java.nio.channels.Channel;
-import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectableChannel;
-
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.IPProto;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
-
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
+import jnr.ffi.byref.IntByReference;
 import jnr.posix.Timeval;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
@@ -69,17 +58,26 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
-
-import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
+import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.Channel;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectableChannel;
+
 import static jnr.constants.platform.TCP.TCP_INFO;
+import static jnr.constants.platform.TCP.TCP_KEEPCNT;
 import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
 import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
-import static jnr.constants.platform.TCP.TCP_KEEPCNT;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
@@ -216,7 +214,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject recv(ThreadContext context, IRubyObject length,
-        RubyString str, IRubyObject flags) {
+                             RubyString str, IRubyObject flags) {
         // TODO: implement flags
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
@@ -914,10 +912,10 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private static int asNumber(ThreadContext context, IRubyObject val) {
-        if ( val instanceof RubyNumeric ) {
+        if ( val instanceof RubyNumeric) {
             return RubyNumeric.fix2int(val);
         }
-        if ( val instanceof RubyBoolean ) {
+        if ( val instanceof RubyBoolean) {
             return val.isTrue() ? 1 : 0;
         }
         return stringAsNumber(context, val);
@@ -932,10 +930,10 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected boolean asBoolean(ThreadContext context, IRubyObject val) {
-        if ( val instanceof RubyString ) {
+        if ( val instanceof RubyString) {
             return stringAsNumber(context, val) != 0;
         }
-        if ( val instanceof RubyNumeric ) {
+        if ( val instanceof RubyNumeric) {
             return RubyNumeric.fix2int(val) != 0;
         }
         return val.isTrue();

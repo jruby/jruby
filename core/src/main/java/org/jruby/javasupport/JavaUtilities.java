@@ -1,5 +1,6 @@
 package org.jruby.javasupport;
 
+import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -46,7 +47,9 @@ public class JavaUtilities {
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject get_java_class(IRubyObject recv, IRubyObject arg0) {
-        return Java.get_java_class(recv, arg0);
+        final Ruby runtime = recv.getRuntime();
+        Class<?> javaClass = Java.getJavaClass(runtime, arg0.asJavaString());
+        return Java.getInstance(runtime, javaClass);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)

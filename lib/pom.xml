@@ -6,7 +6,7 @@ DO NOT MODIFIY - GENERATED CODE
 
 
 -->
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -33,8 +33,21 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>rubygems-update</artifactId>
+      <version>3.2.14</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>bundler</artifactId>
-      <version>1.17.3</version>
+      <version>2.2.14</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -150,8 +163,21 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>io-console</artifactId>
+      <version>0.5.9</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>jar-dependencies</artifactId>
-      <version>${jar-dependencies.version}</version>
+      <version>0.4.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -190,7 +216,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>json</artifactId>
-      <version>${json.version}</version>
+      <version>2.5.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -242,7 +268,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>ostruct</artifactId>
-      <version>0.3.0</version>
+      <version>0.3.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -307,7 +333,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rdoc</artifactId>
-      <version>${rdoc.version}</version>
+      <version>6.1.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -437,7 +463,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
-      <version>${minitest.version}</version>
+      <version>5.11.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -463,7 +489,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>power_assert</artifactId>
-      <version>${power_assert.version}</version>
+      <version>1.1.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -489,7 +515,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>test-unit</artifactId>
-      <version>${test-unit.version}</version>
+      <version>3.2.9</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -533,7 +559,8 @@ DO NOT MODIFIY - GENERATED CODE
         <directory>${gem.home}</directory>
         <includes>
           <include>specifications/default/*</include>
-          <include>specifications/bundler-1.17.3*</include>
+          <include>specifications/rubygems-update-3.2.14*</include>
+          <include>specifications/bundler-2.2.14*</include>
           <include>specifications/cmath-1.0.0*</include>
           <include>specifications/csv-3.1.2*</include>
           <include>specifications/e2mmap-0.1.0*</include>
@@ -542,19 +569,20 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/forwardable-1.2.0*</include>
           <include>specifications/ipaddr-1.2.2*</include>
           <include>specifications/irb-1.0.0*</include>
-          <include>specifications/jar-dependencies-${jar-dependencies.version}*</include>
+          <include>specifications/io-console-0.5.9*</include>
+          <include>specifications/jar-dependencies-0.4.1*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
           <include>specifications/jruby-openssl-0.10.5*</include>
-          <include>specifications/json-${json.version}*</include>
+          <include>specifications/json-2.5.1*</include>
           <include>specifications/logger-1.3.0*</include>
           <include>specifications/matrix-0.3.0*</include>
           <include>specifications/mutex_m-0.1.0*</include>
-          <include>specifications/ostruct-0.3.0*</include>
+          <include>specifications/ostruct-0.3.3*</include>
           <include>specifications/prime-0.1.0*</include>
           <include>specifications/psych-3.2.0*</include>
           <include>specifications/racc-1.5.2*</include>
           <include>specifications/rake-ant-1.0.4*</include>
-          <include>specifications/rdoc-${rdoc.version}*</include>
+          <include>specifications/rdoc-6.1.2*</include>
           <include>specifications/rexml-3.1.9*</include>
           <include>specifications/rss-0.2.7*</include>
           <include>specifications/scanf-1.0.0*</include>
@@ -564,13 +592,14 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/tracer-0.1.0*</include>
           <include>specifications/webrick-1.6.1*</include>
           <include>specifications/did_you_mean-1.2.1*</include>
-          <include>specifications/minitest-${minitest.version}*</include>
+          <include>specifications/minitest-5.11.3*</include>
           <include>specifications/net-telnet-0.1.1*</include>
-          <include>specifications/power_assert-${power_assert.version}*</include>
+          <include>specifications/power_assert-1.1.3*</include>
           <include>specifications/rake-${rake.version}*</include>
-          <include>specifications/test-unit-${test-unit.version}*</include>
+          <include>specifications/test-unit-3.2.9*</include>
           <include>specifications/xmlrpc-0.3.0*</include>
-          <include>gems/bundler-1.17.3*/**/*</include>
+          <include>gems/rubygems-update-3.2.14*/**/*</include>
+          <include>gems/bundler-2.2.14*/**/*</include>
           <include>gems/cmath-1.0.0*/**/*</include>
           <include>gems/csv-3.1.2*/**/*</include>
           <include>gems/e2mmap-0.1.0*/**/*</include>
@@ -579,19 +608,20 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/forwardable-1.2.0*/**/*</include>
           <include>gems/ipaddr-1.2.2*/**/*</include>
           <include>gems/irb-1.0.0*/**/*</include>
-          <include>gems/jar-dependencies-${jar-dependencies.version}*/**/*</include>
+          <include>gems/io-console-0.5.9*/**/*</include>
+          <include>gems/jar-dependencies-0.4.1*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
           <include>gems/jruby-openssl-0.10.5*/**/*</include>
-          <include>gems/json-${json.version}*/**/*</include>
+          <include>gems/json-2.5.1*/**/*</include>
           <include>gems/logger-1.3.0*/**/*</include>
           <include>gems/matrix-0.3.0*/**/*</include>
           <include>gems/mutex_m-0.1.0*/**/*</include>
-          <include>gems/ostruct-0.3.0*/**/*</include>
+          <include>gems/ostruct-0.3.3*/**/*</include>
           <include>gems/prime-0.1.0*/**/*</include>
           <include>gems/psych-3.2.0*/**/*</include>
           <include>gems/racc-1.5.2*/**/*</include>
           <include>gems/rake-ant-1.0.4*/**/*</include>
-          <include>gems/rdoc-${rdoc.version}*/**/*</include>
+          <include>gems/rdoc-6.1.2*/**/*</include>
           <include>gems/rexml-3.1.9*/**/*</include>
           <include>gems/rss-0.2.7*/**/*</include>
           <include>gems/scanf-1.0.0*/**/*</include>
@@ -601,13 +631,14 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/tracer-0.1.0*/**/*</include>
           <include>gems/webrick-1.6.1*/**/*</include>
           <include>gems/did_you_mean-1.2.1*/**/*</include>
-          <include>gems/minitest-${minitest.version}*/**/*</include>
+          <include>gems/minitest-5.11.3*/**/*</include>
           <include>gems/net-telnet-0.1.1*/**/*</include>
-          <include>gems/power_assert-${power_assert.version}*/**/*</include>
+          <include>gems/power_assert-1.1.3*/**/*</include>
           <include>gems/rake-${rake.version}*/**/*</include>
-          <include>gems/test-unit-${test-unit.version}*/**/*</include>
+          <include>gems/test-unit-3.2.9*/**/*</include>
           <include>gems/xmlrpc-0.3.0*/**/*</include>
-          <include>cache/bundler-1.17.3*</include>
+          <include>cache/rubygems-update-3.2.14*</include>
+          <include>cache/bundler-2.2.14*</include>
           <include>cache/cmath-1.0.0*</include>
           <include>cache/csv-3.1.2*</include>
           <include>cache/e2mmap-0.1.0*</include>
@@ -616,19 +647,20 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/forwardable-1.2.0*</include>
           <include>cache/ipaddr-1.2.2*</include>
           <include>cache/irb-1.0.0*</include>
-          <include>cache/jar-dependencies-${jar-dependencies.version}*</include>
+          <include>cache/io-console-0.5.9*</include>
+          <include>cache/jar-dependencies-0.4.1*</include>
           <include>cache/jruby-readline-1.3.7*</include>
           <include>cache/jruby-openssl-0.10.5*</include>
-          <include>cache/json-${json.version}*</include>
+          <include>cache/json-2.5.1*</include>
           <include>cache/logger-1.3.0*</include>
           <include>cache/matrix-0.3.0*</include>
           <include>cache/mutex_m-0.1.0*</include>
-          <include>cache/ostruct-0.3.0*</include>
+          <include>cache/ostruct-0.3.3*</include>
           <include>cache/prime-0.1.0*</include>
           <include>cache/psych-3.2.0*</include>
           <include>cache/racc-1.5.2*</include>
           <include>cache/rake-ant-1.0.4*</include>
-          <include>cache/rdoc-${rdoc.version}*</include>
+          <include>cache/rdoc-6.1.2*</include>
           <include>cache/rexml-3.1.9*</include>
           <include>cache/rss-0.2.7*</include>
           <include>cache/scanf-1.0.0*</include>
@@ -638,11 +670,11 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/tracer-0.1.0*</include>
           <include>cache/webrick-1.6.1*</include>
           <include>cache/did_you_mean-1.2.1*</include>
-          <include>cache/minitest-${minitest.version}*</include>
+          <include>cache/minitest-5.11.3*</include>
           <include>cache/net-telnet-0.1.1*</include>
-          <include>cache/power_assert-${power_assert.version}*</include>
+          <include>cache/power_assert-1.1.3*</include>
           <include>cache/rake-${rake.version}*</include>
-          <include>cache/test-unit-${test-unit.version}*</include>
+          <include>cache/test-unit-3.2.9*</include>
           <include>cache/xmlrpc-0.3.0*</include>
         </includes>
       </resource>
