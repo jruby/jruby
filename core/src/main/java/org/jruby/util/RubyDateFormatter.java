@@ -427,6 +427,7 @@ public class RubyDateFormatter {
         return runtime.newString(formatToByteList(compiledPattern, JodaConverters.javaToJodaDateTime(zdt), nsec, sub_millis));
     }
 
+    @Deprecated
     private ByteList formatToByteList(Token[] compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
         final ByteList output = new ByteList(27, patternEncoding); // Typical length produced by logger by default

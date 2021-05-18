@@ -313,6 +313,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return getRuntime().getNil();
     }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod(name = "mtime=", required = 1)
     public IRubyObject set_mtime(IRubyObject arg) {
         if (arg instanceof RubyTime) {
