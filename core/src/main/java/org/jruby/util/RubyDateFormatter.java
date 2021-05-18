@@ -409,6 +409,7 @@ public class RubyDateFormatter {
         return format(compiledPattern, JodaConverters.javaToJodaDateTime(zdt), nsec, sub_millis);
     }
 
+    @Deprecated
     private ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
         final ByteList toAppendTo = new ByteList(24);

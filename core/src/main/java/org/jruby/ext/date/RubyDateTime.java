@@ -92,6 +92,7 @@ public class RubyDateTime extends RubyDate {
         this(runtime, JodaConverters.javaToJodaDateTime(zdt));
     }
 
+    @Deprecated
     public RubyDateTime(Ruby runtime, long millis, Chronology chronology) {
         super(runtime, getDateTime(runtime), new DateTime(millis, chronology));
     }
@@ -104,6 +105,7 @@ public class RubyDateTime extends RubyDate {
         super(context, klass, ajd, rest, off, start);
     }
 
+    @Deprecated
     private RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off) {
         super(runtime, klass);
 
@@ -111,6 +113,7 @@ public class RubyDateTime extends RubyDate {
         this.off = off;
     }
 
+    @Deprecated
     RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, long start) {
         super(runtime, klass);
 
@@ -118,6 +121,7 @@ public class RubyDateTime extends RubyDate {
         this.off = off; this.start = start;
     }
 
+    @Deprecated
     RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, long start, long subMillisNum, long subMillisDen) {
         super(runtime, klass);
 
@@ -126,6 +130,7 @@ public class RubyDateTime extends RubyDate {
         this.subMillisNum = subMillisNum; this.subMillisDen = subMillisDen;
     }
 
+    @Deprecated
     RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, Chronology chronology, int off) {
         super(context, klass, ajd, chronology, off);
     }
@@ -169,6 +174,7 @@ public class RubyDateTime extends RubyDate {
         return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year, month), 0);
     }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 8)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // year=-4712, month=1, mday=1,
@@ -424,7 +430,7 @@ public class RubyDateTime extends RubyDate {
      #
      # +sg+ specifies the Day of Calendar Reform.
      **/
-
+    @SuppressWarnings("deprecation")
     @JRubyMethod(meta = true)
     public static RubyDateTime now(ThreadContext context, IRubyObject self) { // sg=ITALY
         final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
@@ -436,6 +442,7 @@ public class RubyDateTime extends RubyDate {
         return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, ITALY);
     }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod(meta = true)
     public static RubyDateTime now(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final long start = val2sg(context, sg);
@@ -495,6 +502,7 @@ public class RubyDateTime extends RubyDate {
     @JRubyMethod
     public RubyDateTime to_datetime() { return this; }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod // Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))
     public RubyTime to_time(ThreadContext context) {
         final Ruby runtime = context.runtime;

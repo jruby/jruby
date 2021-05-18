@@ -276,6 +276,7 @@ public class RubyDate extends RubyObject {
     /**
      * @deprecated internal Date.new!
      */
+    @Deprecated
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self) {
         if (self == getDateTime(context.runtime)) {
@@ -287,6 +288,7 @@ public class RubyDate extends RubyObject {
     /**
      * @deprecated internal Date.new!
      */
+    @Deprecated
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd) {
         if (ajd instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
@@ -700,6 +702,7 @@ public class RubyDate extends RubyObject {
         return new RubyDate(context.runtime, (RubyClass) self, todayDate(context, chrono), 0, start);
     }
 
+    @Deprecated
     private static DateTime todayDate(final ThreadContext context, final Chronology chrono) {
         org.joda.time.LocalDate today = new org.joda.time.LocalDate(RubyTime.getLocalTimeZone(context.runtime));
         return new DateTime(today.getYear(), today.getMonthOfYear(), today.getDayOfMonth(), 0, 0, chrono);
@@ -1471,6 +1474,7 @@ public class RubyDate extends RubyObject {
         return jd_to_ajd(context, jd, fr, of_sec);
     }
 
+    @Deprecated
     public static Chronology getChronology(ThreadContext context, final long sg, final int off) {
         final DateTimeZone zone;
         if (off == 0) {
@@ -1489,6 +1493,7 @@ public class RubyDate extends RubyObject {
         return getChronology(context, sg, zone);
     }
 
+    @Deprecated
     static Chronology getChronology(ThreadContext context, final long sg, final DateTimeZone zone) {
         if (sg == ITALY) return GJChronology.getInstance(zone);
         if (sg == JULIAN) return JulianChronology.getInstance(zone);
@@ -1606,11 +1611,13 @@ public class RubyDate extends RubyObject {
     @JRubyMethod
     public RubyDate to_date() { return this; }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod
     public RubyDateTime to_datetime(ThreadContext context) {
         return new RubyDateTime(context.runtime, getDateTime(context.runtime), dt.withTimeAtStartOfDay(), off, start);
     }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod // Time.local(year, mon, mday)
     public RubyTime to_time(ThreadContext context) {
         final Ruby runtime = context.runtime;
@@ -1630,6 +1637,7 @@ public class RubyDate extends RubyObject {
         return strftime(context, RubyString.newStringLight(context.runtime, DEFAULT_FORMAT_BYTES));
     }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod // alias_method :format, :strftime
     public RubyString strftime(ThreadContext context, IRubyObject fmt) {
         RubyRational subMillis = this.subMillisNum == 0 ? null :
