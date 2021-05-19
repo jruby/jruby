@@ -448,6 +448,12 @@ public class RubyGlobal {
 
         private static final ByteList ENV = new ByteList(new byte[] {'E','N','V'}, USASCIIEncoding.INSTANCE, false);
 
+        @JRubyMethod
+        public IRubyObject freeze(ThreadContext context) {
+            // FIXME: So far I can see this is only used by ENV so I put it here but perhaps we need to differentiate case
+            throw context.runtime.newTypeError("cannot freeze ENV");
+        }
+
         @JRubyMethod(name = "assoc")
         public IRubyObject assoc(final ThreadContext context, IRubyObject obj) {
             return super.assoc(context, verifyStringLike(context, obj).convertToString());
