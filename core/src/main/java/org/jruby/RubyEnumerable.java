@@ -831,6 +831,45 @@ public class RubyEnumerable {
         }
     }
 
+    @JRubyMethod
+    public static IRubyObject filter_map(ThreadContext context, IRubyObject self, Block block) {
+        Ruby runtime = context.runtime;
+
+        if (block.isGiven()) {
+            RubyArray result = runtime.newArray();
+
+            eachSite(context).call(context, self, self, CallBlock19.newCallClosure(self, runtime.getEnumerable(), block.getSignature(), new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    final IRubyObject larg; boolean ary = false;
+                    switch (largs.length) {
+                        case 0:  larg = ctx.nil; break;
+                        case 1:  larg = largs[0]; break;
+                        default: larg = RubyArray.newArrayMayCopy(ctx.runtime, largs); ary = true;
+                    }
+                    IRubyObject val = ary ? block.yieldArray(ctx, larg, null) : block.yield(ctx, larg);
+
+                    if (val.isTrue()) {
+                        synchronized (result) { result.append(val); }
+                    }
+                    return ctx.nil;
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
+                    IRubyObject val = block.yield(ctx, larg);
+
+                    if (val.isTrue()) {
+                        synchronized (result) { result.append(val); }
+                    }
+                    return ctx.nil;
+                }
+            }, context));
+
+            return result;
+        } else {
+            return enumeratorizeWithSize(context, self, "filter_map", (SizeFn) RubyEnumerable::size);
+        }
+    }
+
     @JRubyMethod(name = "flat_map")
     public static IRubyObject flat_map(ThreadContext context, IRubyObject self, final Block block) {
         return flatMapCommon(context, self, block, "flat_map");
