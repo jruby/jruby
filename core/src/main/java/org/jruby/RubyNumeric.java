@@ -771,7 +771,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "<=>")
-    public IRubyObject op_cmp(IRubyObject other) {
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (this == other) { // won't hurt fixnums
             return RubyFixnum.zero(metaClass.runtime);
         }
