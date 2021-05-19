@@ -334,17 +334,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             @Override
             public void write(int b) throws IOException {
-                RubyIO.this.write(runtime.getCurrentContext(), b);
+                RubyIO.this.syswrite(runtime.getCurrentContext(), b);
             }
 
             @Override
             public void write(byte[] b) throws IOException {
-                RubyIO.this.write(runtime.getCurrentContext(), b, 0, b.length, ASCIIEncoding.INSTANCE);
+                RubyIO.this.syswrite(runtime.getCurrentContext(), b, 0, b.length);
             }
 
             @Override
             public void write(byte[] b, int off, int len) throws IOException {
-                RubyIO.this.write(runtime.getCurrentContext(), b, off, len, ASCIIEncoding.INSTANCE);
+                RubyIO.this.syswrite(runtime.getCurrentContext(), b, off, len);
             }
 
             @Override
@@ -362,10 +362,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public InputStream getInStream() {
         return new InputStream() {
             final Ruby runtime = getRuntime();
+            final byte[] onebuf = {0};
 
             @Override
             public int read() throws IOException {
-                return getByte(runtime.getCurrentContext());
+                read(onebuf, 0, 1);
+
+                return onebuf[0] & 0xFF;
             }
 
             @Override
@@ -375,7 +378,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             @Override
             public int read(byte[] b, int off, int len) throws IOException {
-                return RubyIO.this.read(runtime.getCurrentContext(), b, off, len);
+                int read = RubyIO.this.sysread(runtime.getCurrentContext(), b, off, len);
+
+                // Java convention
+                if (read == 0) return -1;
+
+                return read;
             }
 
             @Override
@@ -1344,6 +1352,55 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         return runtime.newFixnum(n);
+    }
+
+    /**
+     * Write a single byte directly to this IO object's underlying channel. This skips buffering and encoding logic but
+     * does not skip the locking of the IO. Writes to an IO with unwritten buffered data will warn.
+     *
+     * @param context the current context
+     * @param b the byte to write
+     * @return the count of bytes written, which will be {@code 1} if there is no error
+     */
+    public long syswrite(ThreadContext context, int b) {
+        ByteList ch = RubyInteger.singleCharByteList((byte) b);
+        return syswrite(context, ch.unsafeBytes(), ch.begin(), ch.realSize());
+    }
+
+    /**
+     * Write a single byte directly to this IO object's underlying channel. This skips buffering and encoding logic but
+     * does not skip the locking of the IO. Writes to an IO with unwritten buffered data will warn.
+     *
+     * @param context the current context
+     * @param bytes the bytes to write
+     * @param begin the index at which to start writing bytes
+     * @param len the length of bytes to write
+     * @return the count of bytes written, which will be {@code len} if there is no error
+     */
+    public long syswrite(ThreadContext context, byte[] bytes, int begin, int len) {
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+        long n;
+
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFileChecked();
+
+        boolean locked = fptr.lock();
+        try {
+            fptr.checkWritable(context);
+
+            if (fptr.wbuf.len != 0) {
+                runtime.getWarnings().warn("syswrite for buffered IO");
+            }
+
+            n = OpenFile.writeInternal(context, fptr, bytes, begin, len);
+
+            if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+        } finally {
+            if (locked) fptr.unlock();
+        }
+
+        return n;
     }
 
     // MRI: rb_io_write_nonblock
@@ -3123,9 +3180,38 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         RubyString str = EncodingUtils.setStrBuf(runtime, args.length >= 2 ? args[1] : context.nil, length);
         if (length == 0) return str;
 
+        ByteList strByteList = str.getByteList();
+
         final OpenFile fptr = getOpenFileChecked();
 
-        final int n;
+        final int n = sysread(context, strByteList.unsafeBytes(), strByteList.begin(), length);
+
+        if (n == -1) {
+            throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+        }
+
+        if (n == 0 && length > 0) throw runtime.newEOFError();
+
+        str.setReadLength(n);
+        str.setTaint(true);
+        return str;
+    }
+
+    /**
+     * Perform a direct read from the Channel underlying this IO. Buffering and encoding logic will be skipped but IO
+     * locking will still be performed.
+     *
+     * @param context the current context
+     * @param bytes the buffer into which to read
+     * @param begin the offset at which to write into the buffer
+     * @param len how many bytes to read
+     * @return the number of bytes actually read
+     */
+    public int sysread(ThreadContext context, byte[] bytes, int begin, int len) {
+        final Ruby runtime = context.runtime;
+
+        final OpenFile fptr = getOpenFileChecked();
+
         boolean locked = fptr.lock();
         try {
             fptr.checkByteReadable(context);
@@ -3134,34 +3220,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 throw runtime.newIOError("sysread for buffered IO");
             }
 
-            /*
-             * MRI COMMENT:
-             * FIXME: removing rb_thread_wait_fd() here changes sysread semantics
-             * on non-blocking IOs.  However, it's still currently possible
-             * for sysread to raise Errno::EAGAIN if another thread read()s
-             * the IO after we return from rb_thread_wait_fd() but before
-             * we call read()
-             */
             context.getThread().select(fptr.channel(), fptr, SelectionKey.OP_READ);
 
             fptr.checkClosed();
 
-            ByteList strByteList = str.getByteList();
-            n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), length);
+            len = OpenFile.readInternal(context, fptr, fptr.fd(), bytes, begin, len);
 
-            if (n == -1) {
-                throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
-            }
+            return len;
         }
         finally {
             if (locked) fptr.unlock();
         }
-
-        if (n == 0 && length > 0) throw runtime.newEOFError();
-
-        str.setReadLength(n);
-        str.setTaint(true);
-        return str;
     }
 
     // io_read
