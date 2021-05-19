@@ -33,6 +33,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -48,6 +49,7 @@ import org.jruby.runtime.marshal.DataType;
  * @see RubyMethod
  * @see RubyUnboundMethod
  */
+@JRubyClass(name = {"Method", "UnboundMethod"}, overrides = {RubyMethod.class, RubyUnboundMethod.class})
 public abstract class AbstractRubyMethod extends RubyObject implements DataType {
     protected RubyModule implementationModule;
     protected String methodName;

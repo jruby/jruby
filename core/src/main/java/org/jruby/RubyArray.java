@@ -82,6 +82,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.StringArraySet;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -105,7 +106,8 @@ import static org.jruby.util.RubyStringBuilder.types;
  * all users must synchronize externally with writers.
  *
  */
-@JRubyClass(name="Array", include = { "Enumerable" })
+@JRubyClass(name="Array", include = { "Enumerable" },
+        overrides = {RubyArrayOneObject.class, RubyArrayTwoObject.class, StringArraySet.class})
 public class RubyArray<T extends IRubyObject> extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
 
