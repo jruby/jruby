@@ -306,6 +306,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case LAMBDA: return BuildLambdaInstr.decode(this);
             case LEXICAL_SEARCH_CONST: return LexicalSearchConstInstr.decode(this);
             case LOAD_FRAME_CLOSURE: return LoadFrameClosureInstr.decode(this);
+            case LOAD_BLOCK_IMPLICIT_CLOSURE: return LoadBlockImplicitClosureInstr.decode(this);
             case LOAD_IMPLICIT_CLOSURE: return LoadImplicitClosureInstr.decode(this);
             case LINE_NUM: return LineNumberInstr.decode(this);
             case MASGN_OPT: return OptArgMultipleAsgnInstr.decode(this);

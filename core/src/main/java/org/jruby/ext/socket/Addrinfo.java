@@ -1,11 +1,8 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.AddressFamily;
-import static jnr.constants.platform.AddressFamily.*;
-
 import jnr.constants.platform.NameInfo;
 import jnr.constants.platform.ProtocolFamily;
-import static jnr.constants.platform.ProtocolFamily.*;
 import jnr.constants.platform.Sock;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
@@ -19,11 +16,13 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
+import org.jruby.util.TypeConverter;
+import org.jruby.util.io.Sockaddr;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -36,10 +35,15 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
-import org.jruby.util.StringSupport;
 
-import org.jruby.util.TypeConverter;
-import org.jruby.util.io.Sockaddr;
+import static jnr.constants.platform.AddressFamily.AF_INET;
+import static jnr.constants.platform.AddressFamily.AF_INET6;
+import static jnr.constants.platform.AddressFamily.AF_UNIX;
+import static jnr.constants.platform.AddressFamily.AF_UNSPEC;
+import static jnr.constants.platform.ProtocolFamily.PF_INET;
+import static jnr.constants.platform.ProtocolFamily.PF_INET6;
+import static jnr.constants.platform.ProtocolFamily.PF_UNIX;
+import static jnr.constants.platform.ProtocolFamily.PF_UNSPEC;
 
 public class Addrinfo extends RubyObject {
 

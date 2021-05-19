@@ -54,6 +54,7 @@ import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -204,7 +205,7 @@ public class RubyEnumerable {
      */
     private static IRubyObject cycleCommon(ThreadContext context, IRubyObject self, long nv, final Block block) {
         final Ruby runtime = context.runtime;
-        final RubyArray result = runtime.newArray();
+        final List<IRubyObject> result = new ArrayList<>();
 
         each(context, eachSite(context), self, new JavaInternalBlockBody(runtime, Signature.OPTIONAL) {
             @Override
@@ -212,9 +213,9 @@ public class RubyEnumerable {
                 return doYield(context1, null, packEnumValues(context1, args));
             }
             @Override
-            public IRubyObject doYield(ThreadContext context1, Block unused, IRubyObject value) {
-                synchronized (result) { result.append(value); }
-                block.yield(context1, value);
+            public IRubyObject doYield(ThreadContext context1, Block unused, IRubyObject args) {
+                synchronized (result) { result.add(args); }
+                block.yield(context1, args);
                 return context1.nil;
             }
         });
@@ -224,7 +225,7 @@ public class RubyEnumerable {
 
         while (nv < 0 || 0 < --nv) {
             for (int i = 0; i < length; i++) {
-                block.yield(context, result.eltInternal(i));
+                block.yield(context, result.get(i));
             }
         }
 

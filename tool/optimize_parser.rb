@@ -54,20 +54,16 @@ class PostProcessor
   end
 
   def generate_ripper_action_body_method(state, code_body)
-    @out.puts "states[#{state}] = new RipperParserState() {"
-    @out.puts "  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {"
+    @out.puts "states[#{state}] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {" 
     code_body.each { |line| @out.puts line }
-    @out.puts "    return yyVal;"
-    @out.puts "  }"
+    @out.puts "  return yyVal;"
     @out.puts "};"
   end
 
   def generate_action_body_method(state, code_body)
-    @out.puts "states[#{state}] = new ParserState() {"
-    @out.puts "  @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) {"
+    @out.puts "states[#{state}] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count) -> {" 
     code_body.each { |line| @out.puts frob_yyVals(line) }
-    @out.puts "    return yyVal;"
-    @out.puts "  }"
+    @out.puts "  return yyVal;"
     @out.puts "};"
   end
 

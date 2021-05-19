@@ -56,6 +56,7 @@ public enum Operation {
     /** Instruction to reify an passed-in block to a Proc for def foo(&b) */
     REIFY_CLOSURE(0),
     LOAD_FRAME_CLOSURE(0),
+    LOAD_BLOCK_IMPLICIT_CLOSURE(0),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is,

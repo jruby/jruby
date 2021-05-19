@@ -531,6 +531,10 @@ public class InterpreterEngine {
 
             case LOAD_FRAME_CLOSURE:
                 setResult(temp, currDynScope, instr, context.getFrameBlock());
+                break;
+
+            case LOAD_BLOCK_IMPLICIT_CLOSURE:
+                setResult(temp, currDynScope, instr, Helpers.getImplicitBlockFromBlockBinding(block));
                 return;
 
             // ---------- All the rest ---------

@@ -7,6 +7,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ArrayJavaProxy;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -47,7 +48,7 @@ public class ArrayUtils {
 
     public static ArrayJavaProxy newProxiedArray(Ruby runtime, Class<?> componentType, JavaUtil.JavaConverter converter, int size) {
         final Object array = Array.newInstance(componentType, size);
-        RubyClass proxyClass = JavaClass.get(runtime, array.getClass()).getProxyClass();
+        RubyClass proxyClass = (RubyClass) Java.getProxyClass(runtime, array.getClass());
         return new ArrayJavaProxy(runtime, proxyClass, array, converter);
     }
 

@@ -34,15 +34,19 @@
 package org.jruby.ast;
 
 import java.util.List;
+import java.util.Objects;
+
+import org.jruby.Ruby;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
 /** 
  * Representing a simple String literal.
  */
-public class StrNode extends Node implements ILiteralNode, SideEffectFree {
+public class StrNode extends Node implements ILiteralNode, LiteralValue, SideEffectFree {
     private final ByteList value;
     private final int codeRange;
     private boolean frozen;
@@ -85,6 +89,19 @@ public class StrNode extends Node implements ILiteralNode, SideEffectFree {
         return iVisitor.visitStrNode(this);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StrNode strNode = (StrNode) o;
+        return value.equals(strNode.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
+
     /**
      * Gets the value.
      * @return Returns a String
@@ -112,5 +129,10 @@ public class StrNode extends Node implements ILiteralNode, SideEffectFree {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return runtime.newString(value);
     }
 }

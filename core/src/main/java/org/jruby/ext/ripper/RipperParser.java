@@ -1631,750 +1631,523 @@ public class RipperParser extends RipperParserBase {
 
 static RipperParserState[] states = new RipperParserState[651];
 static {
-states[1] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[1] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   p.setState(EXPR_BEG);
                   p.pushLocalScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[2] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[2] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = p.dispatch("on_program", ((IRubyObject)yyVals[0+yyTop]));
                   p.popCurrentScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[3] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[3] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[4] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[4] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), p.dispatch("on_void_stmt"));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[5] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[5] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[6] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[6] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = p.dispatch("on_stmts_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[7] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[7] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[9] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[9] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   if (p.isInDef()) {
                       p.yyerror("BEGIN in method");
                   }
-    return yyVal;
-  }
+  return yyVal;
 };
-states[10] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[10] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = p.dispatch("on_BEGIN", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[11] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[11] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = p.dispatch("on_bodystmt", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[12] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[12] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[13] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[13] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), p.dispatch("on_void_stmt"));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[14] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[14] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[15] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[15] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_stmts_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[16] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[16] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[17] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[17] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[18] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[18] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("BEGIN is permitted only at toplevel");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[19] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[19] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_BEGIN", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[20] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[20] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setState(EXPR_FNAME|EXPR_FITEM);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[21] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[21] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_alias", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[22] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[22] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_alias", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[23] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[23] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_alias", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[24] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[24] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_alias_error", p.dispatch("on_var_alias", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop])));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[25] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[25] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_undef", ((RubyArray)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[26] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[26] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_if_mod", ((IRubyObject)yyVals[0+yyTop]), ((IRubyObject)yyVals[-2+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[27] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[27] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unless_mod", ((IRubyObject)yyVals[0+yyTop]), ((IRubyObject)yyVals[-2+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[28] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[28] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_while_mod", ((IRubyObject)yyVals[0+yyTop]), ((IRubyObject)yyVals[-2+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[29] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[29] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_until_mod", ((IRubyObject)yyVals[0+yyTop]), ((IRubyObject)yyVals[-2+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[30] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[30] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_rescue_mod", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[31] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[31] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     if (p.isInDef()) {
                         p.warn("END in method; use at_exit");
                     }
                     yyVal = p.dispatch("on_END", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[33] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[33] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_massign", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[34] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[34] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[35] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[35] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_massign", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[37] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[37] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[38] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[38] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[39] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[39] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_aref_field", ((IRubyObject)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop])),
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[40] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[40] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop])), 
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[41] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[41] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_field",((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop])),
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[42] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[42] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop])), 
                                     ((IRubyObject)yyVals[-1+yyTop]),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[43] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[43] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", ((IRubyObject)yyVals[-4+yyTop]), p.intern("::"), ((IRubyObject)yyVals[-2+yyTop])), 
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[44] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[44] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error", 
                                     p.dispatch("on_assign", 
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[-2+yyTop])), 
                                     ((IRubyObject)yyVals[0+yyTop])));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[45] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[45] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[46] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[46] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_rescue_mod", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[49] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[49] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("and"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[50] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[50] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("or"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[51] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[51] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("not"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[52] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[52] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("!"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[54] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[54] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[58] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[58] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_arg", 
                                     p.dispatch("on_call", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[59] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[59] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[61] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[61] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_command", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[62] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[62] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_block",
                                     p.dispatch("on_command", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[63] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[63] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_command_call", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[64] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[64] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_block",
                                     p.dispatch("on_command_call", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop])); 
-    return yyVal;
-  }
+  return yyVal;
 };
-states[65] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[65] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_command_call", ((IRubyObject)yyVals[-3+yyTop]), p.intern("::"), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[66] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[66] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_block",
                                     p.dispatch("on_command_call", ((IRubyObject)yyVals[-4+yyTop]), p.intern("::"), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[67] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[67] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_super", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[68] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[68] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_yield", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[69] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[69] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_return", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[70] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[70] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_break", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[71] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[71] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_next", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[73] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[73] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[75] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[75] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[76] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[76] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[77] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[77] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[78] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[78] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[79] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[79] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[80] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[80] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-1+yyTop]), null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[81] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[81] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-3+yyTop]), null),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[82] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[82] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[83] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[83] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), ((IRubyObject)yyVals[-2+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[84] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[84] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[85] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[85] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[87] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[87] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[88] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[88] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add", p.dispatch("on_mlhs_new"), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[89] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[89] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[90] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[90] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add", p.dispatch("on_mlhs_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[91] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[91] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[92] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[92] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.assignableIdentifier(p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[93] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[93] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[94] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[94] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[95] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[95] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.assignableConstant(p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[96] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[96] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[97] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[97] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[98] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[98] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[99] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[99] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[100] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[100] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[101] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[101] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[102] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[102] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[103] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[103] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("Can't assign to __ENCODING__");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[104] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[104] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_aref_field", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[105] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[105] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
                     
-    return yyVal;
-  }
+  return yyVal;
 };
-states[106] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[106] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[107] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[107] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
 		    yyVal = p.dispatch("on_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[108] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[108] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
                     if (p.isInDef()) {
                         yyVal = p.dispatch("on_assign_error", ((IRubyObject)yyVal));
                         p.error();
                     }
-    return yyVal;
-  }
+  return yyVal;
 };
-states[109] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[109] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_top_const_field", ((IRubyObject)yyVals[0+yyTop]));
 
                     if (p.isInDef()) {
                         yyVal = p.dispatch("on_assign_error", ((IRubyObject)yyVal));
                         p.error();
                     }
-    return yyVal;
-  }
+  return yyVal;
 };
-states[110] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[110] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error", p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[111] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[111] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", p.assignableIdentifier(((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[112] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[112] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[113] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[113] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[114] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[114] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.assignableConstant(p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[115] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[115] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[116] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[116] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[117] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[117] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[118] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[118] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[119] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[119] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[120] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[120] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[121] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[121] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[122] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[122] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[123] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[123] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_aref_field", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[124] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[124] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[125] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[125] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_field", ((IRubyObject)yyVals[-2+yyTop]), p.intern("::"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[126] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[126] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[127] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[127] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     IRubyObject val = p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
                     if (p.isInDef()) {
@@ -2383,11 +2156,9 @@ states[127] = new RipperParserState() {
                     }
 
                     yyVal = val;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[128] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[128] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     IRubyObject val = p.dispatch("on_top_const_field", ((IRubyObject)yyVals[0+yyTop]));
 
                     if (p.isInDef()) {
@@ -2396,1736 +2167,1208 @@ states[128] = new RipperParserState() {
                     }
 
                     yyVal = val;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[129] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[129] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error",
                                     p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[130] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[130] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_class_name_error", ((IRubyObject)yyVals[0+yyTop]));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[132] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[132] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_top_const_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[133] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[133] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_const_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[134] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[134] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_const_path_ref", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[138] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[138] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    p.setState(EXPR_ENDFN);
                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[139] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[139] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    p.setState(EXPR_ENDFN);
                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[140] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[140] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[141] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[141] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[142] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[142] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.dispatch("on_symbol_literal", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[143] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[143] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[144] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[144] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[145] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[145] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setState(EXPR_FNAME|EXPR_FITEM);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[146] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[146] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-3+yyTop]).append(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[222] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[222] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[223] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[223] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[224] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[224] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_aref_field", ((IRubyObject)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop])),
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[225] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[225] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop])),
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[226] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[226] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop])),
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[227] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[227] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", ((IRubyObject)yyVals[-4+yyTop]), p.intern("::"), ((IRubyObject)yyVals[-2+yyTop])),
                                     ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[228] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[228] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign", 
                                                p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop])),
                                                ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[229] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[229] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign", 
                                                p.dispatch("on_top_const_field", ((IRubyObject)yyVals[-2+yyTop])),
                                                ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[230] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[230] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign",
                                                p.dispatch("on_var_field", ((IRubyObject)yyVals[-2+yyTop])),
                                                ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop])));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[231] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[231] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_dot2", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[232] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[232] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_dot3", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[233] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_dot2", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+states[233] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
+                    yyVal = p.dispatch("on_dot2", ((IRubyObject)yyVals[-1+yyTop]), p.new_nil_at());
+  return yyVal;
 };
-states[234] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_dot3", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+states[234] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
+                    yyVal = p.dispatch("on_dot3", ((IRubyObject)yyVals[-1+yyTop]), p.new_nil_at());
+  return yyVal;
 };
-states[235] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[235] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("+"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[236] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[236] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("-"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[237] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[237] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("*"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[238] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[238] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("/"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[239] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[239] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("%"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[240] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[240] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("**"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[241] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[241] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", 
                                     p.intern("-@"), 
                                     p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("**"), ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[242] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[242] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("+@"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[243] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[243] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("-@"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[244] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[244] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("|"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[245] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[245] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("^"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[246] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[246] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("&"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[247] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[247] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("<=>"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[248] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[248] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[249] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[249] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("=="), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[250] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[250] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("==="), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[251] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[251] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("!="), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[252] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[252] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("=~"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[253] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[253] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("!~"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[254] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[254] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("!"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[255] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[255] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("~"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[256] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[256] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("<<"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[257] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[257] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern(">>"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[258] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[258] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("&&"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[259] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[259] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern("||"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[260] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[260] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_defined", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[261] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[261] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_ifop", ((IRubyObject)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[262] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[262] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[263] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[263] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.intern(">");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[264] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[264] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.intern("<");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[265] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[265] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.intern(">=");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[266] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[266] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.intern("<=");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[267] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[267] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
-    return yyVal;
-  }
+  return yyVal;
 };
-states[268] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[268] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      p.warning("comparison '" + ((IRubyObject)yyVals[-1+yyTop]) + "' after comparison");
                      yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[269] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[269] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[271] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[271] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[272] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[272] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add", 
                                     ((IRubyObject)yyVals[-3+yyTop]),
                                     p.dispatch("on_bare_assoc_hash", ((RubyArray)yyVals[-1+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[273] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[273] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add", 
                                     p.dispatch("on_args_new"),
                                     p.dispatch("on_bare_assoc_hash", ((RubyArray)yyVals[-1+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[274] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[274] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[275] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[275] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_rescue_mod", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[276] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[276] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_arg_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[281] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[281] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[282] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[282] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add", ((IRubyObject)yyVals[-3+yyTop]), p.dispatch("on_bare_assoc_hash", ((RubyArray)yyVals[-1+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[283] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[283] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add", 
                                     p.dispatch("on_args_new"),
                                     p.dispatch("on_bare_assoc_hash", ((RubyArray)yyVals[-1+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[284] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[284] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add", p.dispatch("on_args_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[285] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[285] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.arg_add_optblock(((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[286] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[286] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal =  p.arg_add_optblock(p.dispatch("on_args_add", 
                                                         p.dispatch("on_args_new"),
                                                         p.dispatch("on_bare_assoc_hash", ((RubyArray)yyVals[-1+yyTop]))),
                                              ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[287] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[287] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.arg_add_optblock(p.dispatch("on_args_add", 
                                             ((IRubyObject)yyVals[-3+yyTop]),
                                             p.dispatch("on_bare_assoc_hash", ((RubyArray)yyVals[-1+yyTop]))),
                                             ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[288] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[288] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add_block", p.dispatch("on_args_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[289] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[289] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
                     p.getCmdArgumentState().begin();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[290] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[290] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.getCmdArgumentState().reset(((Long)yyVals[-1+yyTop]).longValue());
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[291] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[291] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[292] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[292] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[294] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[294] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add", p.dispatch("on_args_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[295] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[295] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add_star", p.dispatch("on_args_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[296] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[296] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[297] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[297] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_args_add_star", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[298] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[298] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[299] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[299] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[300] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[300] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mrhs_add", 
                                     p.dispatch("on_mrhs_new_from_args", ((IRubyObject)yyVals[-2+yyTop])), 
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[301] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[301] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mrhs_add_star",
                                     p.dispatch("on_mrhs_new_from_args", ((IRubyObject)yyVals[-3+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[302] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[302] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mrhs_add_star", p.dispatch("on_mrhs_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[309] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[309] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      yyVal = ((IRubyObject)yyVals[0+yyTop]); /* FIXME: Why complaining without $$ = $1;*/
-    return yyVal;
-  }
+  return yyVal;
 };
-states[310] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[310] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      yyVal = ((IRubyObject)yyVals[0+yyTop]); /* FIXME: Why complaining without $$ = $1;*/
-    return yyVal;
-  }
+  return yyVal;
 };
-states[313] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[313] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_arg", p.dispatch("on_fcall", ((IRubyObject)yyVals[0+yyTop])), p.dispatch("on_args_new"));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[314] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[314] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.getCmdArgumentState().getStack();
                     p.getCmdArgumentState().reset();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[315] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[315] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.getCmdArgumentState().reset(((Long)yyVals[-2+yyTop]).longValue());
                     yyVal = p.dispatch("on_begin", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[316] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[316] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setState(EXPR_ENDARG);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[317] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[317] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_paren", null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[318] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[318] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.getCmdArgumentState().getStack();
                     p.getCmdArgumentState().reset();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[319] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[319] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setState(EXPR_ENDARG); 
-    return yyVal;
-  }
+  return yyVal;
 };
-states[320] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[320] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
                     p.warning("(...) interpreted as grouped expression");
                     yyVal = p.dispatch("on_paren", ((IRubyObject)yyVals[-2+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[321] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[321] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[322] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[322] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_const_path_ref", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[323] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[323] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_top_const_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[324] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[324] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_array", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[325] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[325] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_hash", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[326] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[326] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_return0");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[327] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[327] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_yield", p.dispatch("on_paren", ((IRubyObject)yyVals[-1+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[328] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[328] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_yield", p.dispatch("on_paren", p.dispatch("on_args_new")));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[329] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[329] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_yield0");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[330] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[330] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_defined", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[331] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[331] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("not"), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[332] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[332] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("not"), null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[333] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[333] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_block",
                                     p.dispatch("on_method_add_arg", 
                                                p.dispatch("on_fcall", ((IRubyObject)yyVals[-1+yyTop])), 
                                                p.dispatch("on_args_new")), 
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[335] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[335] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_block", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[336] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[336] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[337] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[337] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_if", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[338] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[338] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unless", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[339] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[339] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.getConditionState().begin();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[340] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[340] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.getConditionState().end();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[341] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[341] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_while", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[342] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[342] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   p.getConditionState().begin();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[343] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[343] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   p.getConditionState().end();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[344] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[344] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_until", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[345] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[345] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_case", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[346] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[346] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_case", null, ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[347] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[347] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.getConditionState().begin();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[348] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[348] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.getConditionState().end();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[349] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[349] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_for", ((IRubyObject)yyVals[-7+yyTop]), ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[350] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[350] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     if (p.isInDef()) {
                         p.yyerror("class definition in method body");
                     }
                     p.pushLocalScope();
                     yyVal = p.isInClass(); /* MRI reuses $1 but we use the value for position.*/
                     p.setIsInClass(true);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[351] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[351] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_class", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
                     p.popCurrentScope();
                     p.setIsInClass(((Boolean)yyVals[-2+yyTop]).booleanValue());
-    return yyVal;
-  }
+  return yyVal;
 };
-states[352] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[352] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = new Integer((p.isInClass() ? 0b10 : 0) |
                                      (p.isInDef()   ? 0b01 : 0));
                     p.setInDef(false);
                     p.setIsInClass(false);
                     p.pushLocalScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[353] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[353] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_sclass", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
 
                     p.popCurrentScope();
                     p.setInDef(((((Integer)yyVals[-3+yyTop]).intValue())     & 0b01) != 0);
                     p.setIsInClass(((((Integer)yyVals[-3+yyTop]).intValue()) & 0b10) != 0);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[354] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[354] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     if (p.isInDef()) { 
                         p.yyerror("module definition in method body");
                     }
                     yyVal = p.isInClass();
                     p.setIsInClass(true);
                     p.pushLocalScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[355] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[355] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_module", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
                     p.popCurrentScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[356] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[356] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setInDef(true);
                     p.pushLocalScope();
                     yyVal = p.getCurrentArg();
                     p.setCurrentArg(null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[357] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[357] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_def", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
 
                     p.popCurrentScope();
                     p.setInDef(false);
                     p.setCurrentArg(((IRubyObject)yyVals[-3+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[358] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[358] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setState(EXPR_FNAME);
                     yyVal = p.isInDef();
                     p.setInDef(true);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[359] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[359] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.pushLocalScope();
                     p.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                     yyVal = p.getCurrentArg();
                     p.setCurrentArg(null);                    
-    return yyVal;
-  }
+  return yyVal;
 };
-states[360] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[360] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_defs", ((IRubyObject)yyVals[-7+yyTop]), ((IRubyObject)yyVals[-6+yyTop]), ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
 
                     p.popCurrentScope();
                     p.setInDef(((Boolean)yyVals[-5+yyTop]).booleanValue());
                     p.setCurrentArg(((IRubyObject)yyVals[-3+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[361] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[361] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_break", p.dispatch("on_args_new"));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[362] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[362] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_next", p.dispatch("on_args_new"));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[363] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[363] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_redo");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[364] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[364] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_retry");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[365] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[365] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[366] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[366] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = null;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[368] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[368] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[369] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[369] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = null;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[372] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[372] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_elsif", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[374] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[374] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_else", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[376] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-    return yyVal;
-  }
+states[376] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
+  return yyVal;
 };
-states[377] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[377] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[378] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[378] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[379] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[379] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add", p.dispatch("on_mlhs_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[380] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[380] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[381] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[381] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[382] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[382] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[383] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[383] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_post", 
                                     p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-2+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[384] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[384] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-2+yyTop]), null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[385] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[385] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_post", 
                                     p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-4+yyTop]), null),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[386] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[386] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_star",
                                     p.dispatch("on_mlhs_new"),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[387] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[387] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_post", 
                                     p.dispatch("on_mlhs_add_star",
                                                p.dispatch("on_mlhs_new"),
                                                ((IRubyObject)yyVals[-2+yyTop])),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[388] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[388] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_star",
                                     p.dispatch("on_mlhs_new"),
                                     null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[389] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[389] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_add_post", 
                                     p.dispatch("on_mlhs_add_star",
                                                p.dispatch("on_mlhs_new"),
                                                null),
                                     ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[390] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[390] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[391] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[391] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(((RubyArray)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[392] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[392] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(null, ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[393] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[393] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(null, null, ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[394] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[394] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((ArgsTailHolder)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[395] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[395] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(null, null, null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[396] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[396] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[397] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[397] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-7+yyTop]), ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[398] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[398] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), null, null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[399] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[399] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[400] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[400] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-3+yyTop]), null, ((IRubyObject)yyVals[-1+yyTop]), null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[401] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[401] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_excessed_comma", 
                                     p.new_args(((RubyArray)yyVals[-1+yyTop]), null, null, null, null));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[402] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[402] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-5+yyTop]), null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[403] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[403] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-1+yyTop]), null, null, null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[404] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[404] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[405] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[405] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[406] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[406] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, ((RubyArray)yyVals[-1+yyTop]), null, null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[407] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[407] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[408] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[408] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, null, ((IRubyObject)yyVals[-1+yyTop]), null, ((ArgsTailHolder)yyVals[0+yyTop]));     
-    return yyVal;
-  }
+  return yyVal;
 };
-states[409] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[409] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[410] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[410] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, null, null, null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[412] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[412] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCommandStart(true);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[413] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[413] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCurrentArg(null);  
                     yyVal = p.dispatch("on_block_var", 
                                     p.new_args(null, null, null, null, null), 
                                     ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[414] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[414] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_block_var", 
                                     p.new_args(null, null, null, null, null), 
                                     null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[415] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[415] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCurrentArg(null);
                     yyVal = p.dispatch("on_block_var", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[416] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[416] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.getContext().getRuntime().getFalse();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[417] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[417] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[418] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[418] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[419] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[419] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-2+yyTop]).append(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[420] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[420] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_bv(((IRubyObject)yyVals[0+yyTop]));
 
-    return yyVal;
-  }
+  return yyVal;
 };
-states[421] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[421] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = null;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[422] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[422] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.pushBlockScope();
                     yyVal = p.getLeftParenBegin();
                     p.setLeftParenBegin(p.incrementParenNest());
-    return yyVal;
-  }
+  return yyVal;
 };
-states[423] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[423] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
                     p.getCmdArgumentState().reset();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[424] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[424] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.getCmdArgumentState().reset(((Long)yyVals[-1+yyTop]).longValue());
                     p.getCmdArgumentState().restart();
                     yyVal = p.dispatch("on_lambda", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
                     p.setLeftParenBegin(((Integer)yyVals[-3+yyTop]));
                     p.popCurrentScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[425] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[425] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_paren", ((IRubyObject)yyVals[-2+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[426] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[426] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[427] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[427] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[428] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[428] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[429] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[429] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);  
-    return yyVal;
-  }
+  return yyVal;
 };
-states[430] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[430] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_block", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[431] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[431] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.method_optarg(p.dispatch("on_call", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[432] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[432] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.method_add_block(p.dispatch("on_command_call", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[433] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[433] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.method_add_block(p.dispatch("on_command_call", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[434] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[434] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_method_add_arg", p.dispatch("on_fcall", ((IRubyObject)yyVals[-1+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[435] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[435] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.method_optarg(p.dispatch("on_call", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[436] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[436] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.method_optarg(p.dispatch("on_call", ((IRubyObject)yyVals[-3+yyTop]), p.intern("::"), ((IRubyObject)yyVals[-1+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[437] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[437] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_call", ((IRubyObject)yyVals[-2+yyTop]), p.intern("::"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[438] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[438] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.method_optarg(p.dispatch("on_call", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), p.intern("call")), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[439] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[439] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.method_optarg(p.dispatch("on_call", ((IRubyObject)yyVals[-2+yyTop]), p.intern("::"), p.intern("call")), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[440] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[440] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_super", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[441] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[441] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_zsuper");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[442] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[442] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_aref", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[443] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[443] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[444] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[444] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.pushBlockScope();
                     yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
                     p.getCmdArgumentState().reset();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[445] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[445] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_do_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
                     p.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
                     p.popCurrentScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[446] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[446] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.pushBlockScope();
                     yyVal = Long.valueOf(p.getCmdArgumentState().getStack()) >> 1;
                     p.getCmdArgumentState().reset();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[447] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[447] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_brace_block", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
                     p.getCmdArgumentState().reset(((Long)yyVals[-2+yyTop]).longValue());
                     p.popCurrentScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[448] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[448] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.pushBlockScope();
                     yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
                     p.getCmdArgumentState().reset();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[449] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[449] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_do_block", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
                     p.getCmdArgumentState().reset(((Long)yyVals[-2+yyTop]).longValue());
                     p.popCurrentScope();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[450] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[450] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_when", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
-    return yyVal;
-  }
+  return yyVal;
 };
-states[453] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[453] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_rescue", ((IRubyObject)yyVals[-4+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[454] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[454] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = null;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[455] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[455] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[456] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[456] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[458] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[458] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[460] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[460] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_ensure", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[463] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[463] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_symbol_literal", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[465] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[465] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[466] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[466] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[467] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[467] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[468] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[468] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_string_concat", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[469] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[469] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.heredoc_dedent(((IRubyObject)yyVals[-1+yyTop]));
                     p.setHeredocIndent(0);
                     yyVal = p.dispatch("on_string_literal", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[470] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[470] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.heredoc_dedent(((IRubyObject)yyVals[-1+yyTop]));
                     p.setHeredocIndent(0);
                     yyVal = p.dispatch("on_xstring_literal", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[471] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[471] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_regexp_literal", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[472] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[472] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_array", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[473] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[473] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_words_new");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[474] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[474] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_words_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[475] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[475] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_word_add", p.dispatch("on_word_new"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[476] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[476] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_word_add", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[477] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[477] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_array", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[478] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[478] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_symbols_new");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[479] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[479] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_symbols_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[480] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[480] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_array", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[481] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[481] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_array", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[482] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[482] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_qwords_new");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[483] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[483] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_qwords_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[484] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[484] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_qsymbols_new");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[485] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[485] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_qsymbols_add", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[486] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[486] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_string_content");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[487] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[487] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_string_add", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[488] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[488] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_xstring_new");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[489] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[489] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_xstring_add", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[490] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[490] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_regexp_new");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[491] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[491] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_regexp_add", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[493] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[493] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.getStrTerm();
                     p.setStrTerm(null);
                     p.setState(EXPR_BEG);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[494] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[494] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setStrTerm(((StrTerm)yyVals[-1+yyTop]));
                     yyVal = p.dispatch("on_string_dvar", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[495] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[495] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.getStrTerm();
                    p.setStrTerm(null);
                    p.getConditionState().stop();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[496] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[496] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.getCmdArgumentState().getStack();
                    p.getCmdArgumentState().reset();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[497] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[497] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.getState();
                    p.setState(EXPR_BEG);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[498] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[498] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.getBraceNest();
                    p.setBraceNest(0);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[499] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[499] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.getHeredocIndent();
                    p.setHeredocIndent(0);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[500] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[500] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    p.getConditionState().restart();
                    p.setStrTerm(((StrTerm)yyVals[-6+yyTop]));
                    p.getCmdArgumentState().reset(((Long)yyVals[-5+yyTop]).longValue());
@@ -4133,734 +3376,501 @@ states[500] = new RipperParserState() {
                    p.setBraceNest(((Integer)yyVals[-3+yyTop]));
                    p.setHeredocIndent(((Integer)yyVals[-2+yyTop]));
                    yyVal = p.dispatch("on_string_embexpr", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[501] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[501] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[502] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[502] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[503] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[503] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[505] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[505] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      p.setState(EXPR_END|EXPR_ENDARG);
                      yyVal = p.dispatch("on_symbol", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[510] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[510] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      p.setState(EXPR_END|EXPR_ENDARG);
                      yyVal = p.dispatch("on_dyna_symbol", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[511] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[511] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[512] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[512] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_unary", p.intern("-@"), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[513] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[513] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[514] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[514] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[515] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[515] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[516] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[516] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                      yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[517] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[517] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     if (p.is_id_var()) {
                         yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
                     } else {
                         yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop]));
                     }
-    return yyVal;
-  }
+  return yyVal;
 };
-states[518] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[518] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[519] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[519] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[520] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[520] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[521] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[521] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[522] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[522] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[523] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[523] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[524] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[524] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[525] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[525] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[526] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[526] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[527] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[527] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[528] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[528] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[529] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[529] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", p.assignableIdentifier(((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[530] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[530] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[531] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[531] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[532] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[532] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.assignableConstant(p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[533] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[533] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[534] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[534] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("Can't assign to nil");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[535] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[535] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("Can't change the value of self");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[536] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[536] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("Can't assign to true");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[537] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[537] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("Can't assign to false");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[538] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[538] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("Can't assign to __FILE__");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[539] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[539] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("Can't assign to __LINE__");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[540] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[540] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.yyerror("Can't assign to __ENCODING__");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[543] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[543] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    p.setState(EXPR_BEG);
                    p.setCommandStart(true);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[544] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[544] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[545] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[545] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = null;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[546] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[546] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setState(EXPR_BEG);
                     p.setCommandStart(true);
                     yyVal = p.dispatch("on_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[547] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[547] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
   /* $$ = lexer.inKwarg;*/
                    /*                   p.inKwarg = true;*/
                    p.setState(p.getState() | EXPR_LABEL);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[548] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[548] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
   /* p.inKwarg = $<Boolean>1;*/
                     yyVal = ((IRubyObject)yyVals[-1+yyTop]);
                     p.setState(EXPR_BEG);
                     p.setCommandStart(true);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[549] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[549] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[550] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[550] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(((RubyArray)yyVals[-1+yyTop]), null, ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[551] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[551] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(null, ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[552] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[552] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(null, null, ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[553] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[553] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((ArgsTailHolder)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[554] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[554] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args_tail(null, null, null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[555] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[555] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[556] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[556] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-7+yyTop]), ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[557] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[557] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), null, null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[558] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[558] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-5+yyTop]), ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[559] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[559] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-3+yyTop]), null, ((IRubyObject)yyVals[-1+yyTop]), null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[560] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[560] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-5+yyTop]), null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[561] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[561] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(((RubyArray)yyVals[-1+yyTop]), null, null, null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[562] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[562] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, ((RubyArray)yyVals[-3+yyTop]), ((IRubyObject)yyVals[-1+yyTop]), null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[563] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[563] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, ((RubyArray)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[564] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[564] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, ((RubyArray)yyVals[-1+yyTop]), null, null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[565] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[565] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, ((RubyArray)yyVals[-3+yyTop]), null, ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[566] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[566] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, null, ((IRubyObject)yyVals[-1+yyTop]), null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[567] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[567] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, null, ((IRubyObject)yyVals[-3+yyTop]), ((RubyArray)yyVals[-1+yyTop]), ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[568] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[568] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, null, null, null, ((ArgsTailHolder)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[569] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[569] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_args(null, null, null, null, null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[570] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[570] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_param_error", ((IRubyObject)yyVals[0+yyTop]));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[571] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[571] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_param_error", ((IRubyObject)yyVals[0+yyTop]));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[572] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[572] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_param_error", ((IRubyObject)yyVals[0+yyTop]));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[573] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[573] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_param_error", ((IRubyObject)yyVals[0+yyTop]));
                     p.error();
-    return yyVal;
-  }
+  return yyVal;
 };
-states[575] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[575] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.arg_var(p.formal_argument(((IRubyObject)yyVals[0+yyTop])));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[576] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[576] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCurrentArg(((IRubyObject)yyVals[0+yyTop]));
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[577] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[577] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCurrentArg(null);
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[578] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[578] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_mlhs_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[579] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[579] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[580] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[580] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-2+yyTop]).append(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[581] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[581] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.arg_var(p.formal_argument(((IRubyObject)yyVals[0+yyTop])));
                     p.setCurrentArg(((IRubyObject)yyVals[0+yyTop]));
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[582] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[582] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCurrentArg(null);
                     yyVal = p.keyword_arg(((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[583] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[583] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCurrentArg(null);
                     yyVal = p.keyword_arg(((IRubyObject)yyVals[0+yyTop]), p.getContext().getRuntime().getFalse());
-    return yyVal;
-  }
+  return yyVal;
 };
-states[584] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[584] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.keyword_arg(((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[585] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[585] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.keyword_arg(((IRubyObject)yyVals[0+yyTop]), p.getContext().getRuntime().getFalse());
-    return yyVal;
-  }
+  return yyVal;
 };
-states[586] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[586] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[587] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[587] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-2+yyTop]).append(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[588] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[588] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[589] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[589] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-2+yyTop]).append(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[590] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[590] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[591] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[591] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[592] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[592] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop]));
                     yyVal = p.dispatch("on_kwrest_param", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[593] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[593] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_kwrest_param", null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[594] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[594] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCurrentArg(null);
                     yyVal = p.new_assoc(((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
-    return yyVal;
-  }
+  return yyVal;
 };
-states[595] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[595] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setCurrentArg(null);
                     yyVal = p.new_assoc(((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[596] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[596] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[597] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[597] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-2+yyTop]).append(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[598] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[598] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[599] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[599] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-2+yyTop]).append(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[602] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[602] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.arg_var(p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop])));
                     yyVal = p.dispatch("on_rest_param", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[603] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[603] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_rest_param", null);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[606] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[606] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.arg_var(p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop])));
                     yyVal = p.dispatch("on_blockarg", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[607] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[607] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[608] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[608] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = null;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[609] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[609] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[610] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[610] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     p.setState(EXPR_BEG);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[611] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[611] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_paren", ((IRubyObject)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[613] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[613] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assoclist_from_args", ((RubyArray)yyVals[-1+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[614] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[614] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.new_array(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[615] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[615] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((RubyArray)yyVals[-2+yyTop]).append(((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[616] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[616] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assoc_new", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[617] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[617] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assoc_new", ((IRubyObject)yyVals[-1+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[618] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[618] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assoc_new", p.dispatch("on_dyna_symbol", ((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[619] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[619] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.dispatch("on_assoc_splat", ((IRubyObject)yyVals[0+yyTop]));
-    return yyVal;
-  }
+  return yyVal;
 };
-states[630] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[630] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[631] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[631] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[632] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[632] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.intern(".");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[633] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[633] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = p.intern("&.");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[634] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[634] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[635] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[635] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                    yyVal = p.intern("::");
-    return yyVal;
-  }
+  return yyVal;
 };
-states[640] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[640] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[641] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[641] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                     yyVal = ((IRubyObject)yyVals[0+yyTop]);
-    return yyVal;
-  }
+  return yyVal;
 };
-states[649] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[649] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                       yyVal = null;
-    return yyVal;
-  }
+  return yyVal;
 };
-states[650] = new RipperParserState() {
-  @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+states[650] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop) -> {
                   yyVal = null;
-    return yyVal;
-  }
+  return yyVal;
 };
 }
 					// line 2250 "RipperParser.y"

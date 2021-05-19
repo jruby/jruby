@@ -111,6 +111,10 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
+        // The three valid types of execution here are PROC/LAMBDA/THREAD.  NORMAL should not normally
+        // be passed but when it is we just assume it will be a PROC.
+        if (type == Block.Type.NORMAL) type = Block.Type.PROC;
+
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type);
         proc.setup(block);
 
@@ -206,9 +210,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
-    	RubyProc newProc = newProc(getRuntime(), block, type, file, line);
-    	// TODO: CLONE_SETUP here
-    	return newProc;
+    	return newProc(getRuntime(), block, type, file, line);
     }
 
     @JRubyMethod(name = "dup")
@@ -243,22 +245,17 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     /**
-     * For Type.LAMBDA, ensures that the args have the correct arity.
-     *
-     * For others, transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
+     * For non-lambdas transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
      * arity of one, etc.)
+     *
+     * Note: nothing should be calling this any more.
      */
+    @Deprecated
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
-        if (type == Block.Type.LAMBDA) {
-            blockBody.getSignature().checkArity(context.runtime, args);
-            return args;
-        }
+        if (type == Block.Type.LAMBDA) return args;
 
-        // FIXME: weirdly nearly identical logic exists in prepareBlockArgsInternal but only for lambdas.
-        // for procs and blocks, single array passed to multi-arg must be spread
         int arityValue = blockBody.getSignature().arityValue();
         if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
-
         return args;
     }
 
@@ -272,10 +269,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
-        return block.call(
-                context,
-                prepareArgs(context, type, block.getBody(), args),
-                blockCallArg);
+        return block.call(context, args, blockCallArg);
     }
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
@@ -288,10 +282,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
     public final IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockCallArg) {
-        return block.call(
-                context,
-                prepareArgs(context, type, block.getBody(), arrayOf(arg0)),
-                blockCallArg);
+        return block.call(context, new IRubyObject[] { arg0 }, blockCallArg);
     }
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)

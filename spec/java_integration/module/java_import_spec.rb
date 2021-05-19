@@ -7,7 +7,7 @@ describe "java_import" do
       Module.new do
         java_import('does.not.Exist')
       end
-    end.to raise_error(NameError, /cannot load Java class.*?does.not.Exist.*?/)
+    end.to raise_error(NameError, /Java class .?does.not.Exist.? not found/)
   end
 
   it "should receive an array with the imported classes" do

@@ -64,6 +64,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import jnr.posix.util.Platform;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -668,10 +669,22 @@ public class ShellLauncher {
         Field pid = null;
         try {
             up = Class.forName("java.lang.UNIXProcess");
-            pid = up.getDeclaredField("pid");
-            Java.trySetAccessible(pid);
-        } catch (Exception e) {
-            // ignore and try windows version
+        } catch (ClassNotFoundException e) {
+            try {
+                // Renamed in 11 (or earlier)
+                up = Class.forName("java.lang.ProcessImpl");
+            } catch (ClassNotFoundException e2) {
+                // ignore and try windows version
+            }
+        }
+
+        if (up != null) {
+            try {
+                pid = up.getDeclaredField("pid");
+                Java.trySetAccessible(pid);
+            } catch (NoSuchFieldException | SecurityException e) {
+                // ignore and try windows version
+            }
         }
         UNIXProcess = up;
         UNIXProcess_pid = pid;
@@ -1302,7 +1315,26 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) throws IOException {
-        return run(runtime, rawArgs, doExecutableSearch, false);
+        RubyHash env = null;
+        RubyHash opts = null;
+        String dir = runtime.getCurrentDirectory();
+
+        if (rawArgs.length > 0 && rawArgs[0] instanceof RubyHash) {
+            // peel off env hash
+            env = (RubyHash) rawArgs[0];
+            rawArgs = Arrays.copyOfRange(rawArgs, 1, rawArgs.length);
+        }
+
+        if (rawArgs.length > 0 && rawArgs[rawArgs.length - 1] instanceof RubyHash) {
+            // use opts hash for chdir
+            opts = (RubyHash) rawArgs[rawArgs.length - 1];
+            rawArgs = Arrays.copyOfRange(rawArgs, 0, rawArgs.length - 1);
+
+            IRubyObject chdir = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), "chdir", opts);
+            if (!chdir.isNil()) dir = chdir.asJavaString();
+        }
+
+        return run(runtime, env, dir, rawArgs, doExecutableSearch, false);
     }
 
     private static boolean hasGlobCharacter(String word) {
@@ -1332,16 +1364,19 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
+        return run(runtime, Collections.EMPTY_MAP, runtime.getCurrentDirectory(), rawArgs, doExecutableSearch, forceExternalProcess);
+    }
+
+    public static Process run(Ruby runtime, Map env, String dir, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
         Process aProcess;
-        String virtualCWD = runtime.getCurrentDirectory();
-        File pwd = new File(virtualCWD);
+        File pwd = new File(dir);
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
         try {
             if (!forceExternalProcess && cfg.shouldRunInProcess()) {
                 log(runtime, "Launching in-process");
                 ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime,
-                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime), pwd);
+                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime, env), pwd);
                 ipScript.start();
                 return ipScript;
             } else {
@@ -1355,7 +1390,7 @@ public class ShellLauncher {
                     cfg.verifyExecutableForDirect();
                 }
                 String[] args = cfg.getExecArgs();
-                if (virtualCWD.startsWith("uri:classloader:")) {
+                if (dir.startsWith("uri:classloader:")) {
                     // system commands can't run with a URI for the current dir, so the best we can use is user.dir
                     pwd = new File(System.getProperty("user.dir"));
 
@@ -1363,10 +1398,10 @@ public class ShellLauncher {
                     // change to the current directory inside the jar
                     if (args[args.length - 1].contains("org.jruby.Main")) {
                         args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
-                                "org.jruby.Main -C " + virtualCWD);
+                                "org.jruby.Main -C " + dir);
                     }
                 }
-                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime), pwd);
+                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
             }
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());

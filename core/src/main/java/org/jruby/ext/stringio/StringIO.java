@@ -1365,7 +1365,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             return self;
         }
 
-        @JRubyMethod(name = "print", rest = true)
+        @JRubyMethod(name = "print", rest = true, writes = FrameField.LASTLINE)
         public static IRubyObject print(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return RubyIO.print(context, self, args);
         }

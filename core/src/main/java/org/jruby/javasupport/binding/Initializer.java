@@ -3,6 +3,7 @@ package org.jruby.javasupport.binding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -72,7 +73,7 @@ public abstract class Initializer {
     }
 
     private static void setJavaClassFor(final Class<?> javaClass, final RubyModule proxy) {
-        proxy.setInstanceVariable("@java_class", proxy.getRuntime().getJavaSupport().getJavaClassFromCache(javaClass));
+        JavaProxy.setJavaClass(proxy, javaClass);
         proxy.dataWrapStruct(javaClass);
     }
 

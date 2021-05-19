@@ -34,33 +34,93 @@
 
 package org.jruby.javasupport;
 
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.javasupport.binding.AssignedName;
+import org.jruby.javasupport.ext.JavaExtensions;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
+import org.jruby.util.collections.ClassValueCalculator;
 
 import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class JavaSupport {
-    public abstract Class loadJavaClass(String className) throws ClassNotFoundException;
 
+    protected final Ruby runtime;
+
+    private final ClassValue<JavaClass> javaClassCache;
+    private final ClassValue<RubyModule> proxyClassCache;
+
+    static final class UnfinishedProxy extends ReentrantLock {
+        final RubyModule proxy;
+        UnfinishedProxy(RubyModule proxy) {
+            this.proxy = proxy;
+        }
+    }
+
+    private final Map<Class, UnfinishedProxy> unfinishedProxies;
+
+    protected JavaSupport(final Ruby runtime) {
+        this.runtime = runtime;
+
+        this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
+
+        this.proxyClassCache = ClassValue.newInstance(new ClassValueCalculator<RubyModule>() {
+            /**
+             * Because of the complexity of processing a given class and all its dependencies,
+             * we opt to synchronize this logic. Creation of all proxies goes through here,
+             * allowing us to skip some threading work downstream.
+             */
+            @Override
+            public synchronized RubyModule computeValue(Class<?> klass) {
+                RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
+                JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
+                return proxyKlass;
+            }
+        });
+        // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
+        this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
+    }
+
+    public Class<?> loadJavaClass(String className) throws ClassNotFoundException {
+        return loadJavaClass(className, true);
+    }
+
+    public Class<?> loadJavaClass(String className, boolean initialize) throws ClassNotFoundException {
+        Class<?> primitiveClass;
+        if ((primitiveClass = JavaUtil.getPrimitiveClass(className)) == null) {
+            if (!Ruby.isSecurityRestricted()) {
+                for (Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
+                    try {
+                        return loader.loadClass(className);
+                    } catch (ClassNotFoundException ignored) { /* continue */ }
+                }
+                return Class.forName(className, initialize, runtime.getJRubyClassLoader());
+            }
+            return Class.forName(className, initialize, JavaSupport.class.getClassLoader());
+        }
+        return primitiveClass;
+    }
+
+    @Deprecated
     public abstract Class loadJavaClassVerbose(String className);
 
+    @Deprecated
     public abstract Class loadJavaClassQuiet(String className);
-
-    public abstract JavaClass getJavaClassFromCache(Class clazz);
-
-    public abstract RubyModule getProxyClassFromCache(Class clazz);
 
     public abstract void handleNativeException(Throwable exception, Member target);
 
     public abstract ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache();
 
+    @Deprecated
     public abstract Map<String, JavaClass> getNameClassMap();
 
     @Deprecated
@@ -77,8 +137,10 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getJavaObjectClass();
 
+    @Deprecated
     public abstract JavaClass getObjectJavaClass();
 
+    @Deprecated
     public abstract void setObjectJavaClass(JavaClass objectJavaClass);
 
     public abstract RubyClass getJavaArrayClass();
@@ -102,10 +164,13 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getArrayProxyClass();
 
+    @Deprecated
     public abstract RubyClass getJavaFieldClass();
 
+    @Deprecated
     public abstract RubyClass getJavaMethodClass();
 
+    @Deprecated
     public abstract RubyClass getJavaConstructorClass();
 
     public abstract RubyClass getJavaProxyConstructorClass();
@@ -186,18 +251,34 @@ public abstract class JavaSupport {
         }
     }
 
-    /**
-     * @deprecated Internal API that should not be accessible.
-     */
-    public abstract void beginProxy(Class cls, RubyModule proxy);
+    // Internal API
+
+    final void beginProxy(Class clazz, RubyModule proxy) {
+        UnfinishedProxy up = new UnfinishedProxy(proxy);
+        up.lock();
+        unfinishedProxies.put(clazz, up);
+    }
+
+    final void endProxy(Class clazz) {
+        UnfinishedProxy up = unfinishedProxies.remove(clazz);
+        up.unlock();
+    }
+
+    final RubyModule getUnfinishedProxy(Class clazz) {
+        UnfinishedProxy up = unfinishedProxies.get(clazz);
+        if (up != null && up.isHeldByCurrentThread()) return up.proxy;
+        return null;
+    }
+
+    RubyModule getProxyClassFromCache(Class clazz) {
+        return proxyClassCache.get(clazz);
+    }
 
     /**
-     * @deprecated Internal API that should not be accessible.
+     * @deprecated Internal API - no longer used
      */
-    public abstract void endProxy(Class cls);
+    public JavaClass getJavaClassFromCache(Class clazz) {
+        return javaClassCache.get(clazz);
+    }
 
-    /**
-     * @deprecated Internal API that should not be accessible.
-     */
-    public abstract RubyModule getUnfinishedProxy(Class cls);
 }

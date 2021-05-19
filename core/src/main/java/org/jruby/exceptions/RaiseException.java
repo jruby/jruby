@@ -45,7 +45,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyStandardError;
 import org.jruby.RubyString;
-import org.jruby.runtime.Helpers;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
@@ -168,6 +168,24 @@ public class RaiseException extends JumpException {
             providedMessage = '(' + exception.getMetaClass().getBaseName() + ") " + exception.message(exception.getRuntime().getCurrentContext()).asJavaString();
         }
         return providedMessage;
+    }
+
+    @Override
+    public Throwable getCause() {
+        Throwable cause = super.getCause();
+        if (cause == null && exception != null) {
+            Object rubyCause = exception.getCause(); // an IRubyObject
+            // check for a Ruby Exception cause or a Java (proxy) Throwable
+            if (rubyCause instanceof RubyException) {
+                cause = ((RubyException) rubyCause).toThrowable();
+            } else if (rubyCause instanceof IRubyObject) {
+                rubyCause = JavaUtil.unwrapIfJavaObject((IRubyObject) rubyCause);
+                if (rubyCause instanceof Throwable) {
+                    cause = (Throwable) rubyCause;
+                }
+            }
+        }
+        return cause;
     }
 
     /**

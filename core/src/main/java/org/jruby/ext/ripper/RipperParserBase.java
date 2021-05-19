@@ -154,6 +154,10 @@ public class RipperParserBase {
     public IRubyObject escape(IRubyObject arg) {
         return arg == null ? context.nil : arg;
     }
+
+    IRubyObject new_nil_at() {
+        return context.nil;
+    }
     
     public IRubyObject formal_argument(IRubyObject identifier) {
         return shadowing_lvar(identifier);

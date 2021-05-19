@@ -1,1 +1,2 @@
 critical(terminates):rescuing Interrupt raises an Interrupt when sent a signal SIGINT
+fails:Interrupt is raised on the main Thread by the default SIGINT handler

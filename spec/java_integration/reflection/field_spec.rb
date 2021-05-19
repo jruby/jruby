@@ -13,13 +13,6 @@ describe "A JavaClass" do
     expect(PublicField.java_class.declared_field(:strField)).not_to eq(nil)
     expect(PackageField.java_class.declared_field(:strField)).not_to eq(nil)
   end
-
-  it "should provide a look up for a fields using a Ruby formatted name" do
-    expect(PrivateField.java_class.declared_field(:str_field)).not_to eq(nil)
-    expect(ProtectedField.java_class.declared_field(:str_field)).not_to eq(nil)
-    expect(PublicField.java_class.declared_field(:str_field)).not_to eq(nil)
-    expect(PackageField.java_class.declared_field(:str_field)).not_to eq(nil)
-  end
 end
 
 describe "A JavaField" do
@@ -125,6 +118,11 @@ describe "A JavaField" do
 
         @field.set_value @obj.java_object, nil
         expect(@field.value(@obj.java_object)).to be_nil
+      end
+
+      it "should set/get value directly" do
+        @field.set_value @obj, "aaa"
+        expect( @field.value(@obj) ).to eq("aaa")
       end
     end
   end

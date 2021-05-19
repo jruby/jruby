@@ -7,22 +7,19 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 import org.jruby.util.TypeConverter;
 
 import java.nio.ByteBuffer;
-import java.text.NumberFormat;
 import java.util.Locale;
 
 public class Option extends RubyObject {
