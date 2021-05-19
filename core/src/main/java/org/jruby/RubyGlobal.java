@@ -172,7 +172,7 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
 
         // needs to be a fixnum, but our revision is a sha1 hash from git
-        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY_REVISION));
+        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newString(Constants.REVISION));
         runtime.defineGlobalConstant("RUBY_ENGINE", engine);
         runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
 
