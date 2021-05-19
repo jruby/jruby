@@ -1042,7 +1042,7 @@ module Net   #:nodoc:
           s.session = @ssl_session
         end
         ssl_socket_connect(s, @open_timeout)
-        if (@ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE) && @ssl_context.verify_hostname
+        if (@ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE) # && @ssl_context.verify_hostname
           s.post_connection_check(@address)
         end
         D "SSL established, protocol: #{s.ssl_version}, cipher: #{s.cipher[0]}"
