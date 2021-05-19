@@ -875,6 +875,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return expandPathInternal(context, args, false, false);
     }
 
+    @JRubyMethod(name = "absolute_path?", required = 1, meta = true)
+    public static IRubyObject absolute_path_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        RubyString file = get_path(context, arg);
+
+        // asJavaString should be ok here since windows drive shares will be charset representable and otherwise we look for "/" at front.
+        return context.runtime.newBoolean(isAbsolutePath(file.asJavaString()));
+    }
+
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return expandPathInternal(context, args, false, true);
