@@ -175,7 +175,7 @@ public class RubyTime extends RubyObject {
         ZoneId cachedZone = runtime.getZoneIdCache().get(zone);
         if (cachedZone != null) return cachedZone;
 
-        ZoneId dtz = JodaConverters.jodaToJavaTimeZone(parseTZString(runtime, zone));
+        ZoneId dtz = JodaConverters.jodaToJavaTimeZone(getTimeZoneFromTZString(runtime, zone));
         runtime.getZoneIdCache().put(zone, dtz);
         return dtz;
     }
@@ -359,7 +359,11 @@ public class RubyTime extends RubyObject {
         ZoneId cachedZone = runtime.getZoneIdCache().get(strOffset);
         if (cachedZone != null) return cachedZone;
 
-        ZoneId zone = JodaConverters.jodaToJavaTimeZone(getTimeZoneFromUtcOffset(context, arg));
+        DateTimeZone dtz = getTimeZoneFromUtcOffset(context, arg);
+
+        if (dtz == null) return null;
+
+        ZoneId zone = JodaConverters.jodaToJavaTimeZone(dtz);
 
         runtime.getZoneIdCache().put(strOffset, zone);
 
