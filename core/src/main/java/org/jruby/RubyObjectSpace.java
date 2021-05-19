@@ -220,6 +220,11 @@ public class RubyObjectSpace {
             return RubyBoolean.newBoolean(context, map.get(key) != null);
         }
 
+        @JRubyMethod
+        public IRubyObject size(ThreadContext context) {
+            return context.runtime.newFixnum(map.size());
+        }
+
         private final WeakValuedIdentityMap<IRubyObject, IRubyObject> map = new WeakValuedIdentityMap<IRubyObject, IRubyObject>();
     }
 }
