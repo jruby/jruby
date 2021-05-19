@@ -768,7 +768,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         return RubyProc.newProc(context.runtime,
                                 new Block(body, Block.NULL_BLOCK.getBinding()),
-                                Block.Type.PROC);
+                                Block.Type.LAMBDA);
     }
 
     public IRubyObject toRefinedProc(ThreadContext context, StaticScope scope) {
@@ -776,7 +776,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         return RubyProc.newProc(context.runtime,
                 new Block(body, Block.NULL_BLOCK.getBinding()),
-                Block.Type.PROC);
+                Block.Type.LAMBDA);
     }
 
     private static boolean isIdentStart(char c) {
