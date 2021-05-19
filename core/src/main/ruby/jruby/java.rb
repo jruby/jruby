@@ -33,6 +33,8 @@
 # the terms of any one of the EPL, the GPL or the LGPL.
 ###### END LICENSE BLOCK ######
 
+# Extensions to Ruby classes
+
 # These are loads so they don't pollute LOADED_FEATURES
-load 'jruby/java/core_ext.rb'
-load 'jruby/java/java_ext.rb'
+load 'jruby/java/core_ext/module.rb'
+load 'jruby/java/core_ext/object.rb'

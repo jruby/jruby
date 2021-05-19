@@ -165,6 +165,21 @@ project 'JRuby Base' do
                      'executable' =>  'java',
                      'classpathScope' =>  'compile' )
     end
+
+    plugin 'org.codehaus.mojo:exec-maven-plugin' do
+      execute_goals( :exec,
+                     id: 'condense-kernel-files',
+                     arguments: [ '-classpath',
+                                      xml( '<classpath/>' ),
+                                      'org.jruby.anno.LoadInliner',
+                                      'src/main/ruby',
+                                      '${project.build.outputDirectory}',
+                                      'jruby/kernel.rb',
+                                      'jruby/preludes.rb',
+                                      'jruby/java.rb'],
+                     executable: 'java',
+                     classpathScope: 'compile' )
+    end
   end
 
   plugin( :compiler,
