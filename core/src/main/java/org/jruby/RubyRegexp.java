@@ -91,6 +91,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static final int ARG_ENCODING_NONE      =   ReOptions.RE_NONE;
 
     public void setLiteral() {
+        setFrozen(true);
         options.setLiteral(true);
     }
 
