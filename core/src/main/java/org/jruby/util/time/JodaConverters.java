@@ -1,5 +1,9 @@
 package org.jruby.util.time;
 
+import org.joda.time.tz.FixedDateTimeZone;
+
+import java.time.ZoneId;
+
 /**
  * The JodaConverters class contains static methods for org.joda.time.* and java.time.* conversion.
  *
@@ -194,7 +198,9 @@ public class JodaConverters {
 	 * @return Java 8 ZoneId
 	 */
 	public static java.time.ZoneId jodaToJavaTimeZone( org.joda.time.DateTimeZone timeZone ) {
-		return java.time.ZoneId.of( timeZone.getID() );
+		return timeZone.isFixed() ?
+				java.time.ZoneOffset.ofTotalSeconds(timeZone.toTimeZone().getRawOffset() / 1000) :
+				java.time.ZoneId.of( timeZone.getID(), ZoneId.SHORT_IDS );
 	}
 
 	/**
