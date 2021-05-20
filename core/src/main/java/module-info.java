@@ -14,11 +14,11 @@ module org.jruby.base {
     requires org.jnrproject.netdb;
     requires org.jnrproject.posix;
     requires org.jnrproject.unixsocket;
+    requires org.jnrproject.jffi;
     requires org.jnrproject.jffi.nativelibs;
     requires jdk.unsupported;
     requires org.joda.time;
     requires java.management;
-    requires jffi;
     requires org.jruby.dirgra;
     requires static java.xml.ws.annotation;
     requires jzlib;
