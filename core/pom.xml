@@ -219,7 +219,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>me.qmx.jitescript</groupId>
       <artifactId>jitescript</artifactId>
-      <version>0.4.1</version>
+      <version>0.4.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.ow2.asm</groupId>

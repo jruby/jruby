@@ -72,7 +72,7 @@ project 'JRuby Base' do
   jar 'org.slf4j:slf4j-api:1.7.12', :scope => 'provided', :optional => true
   jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
 
-  jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
+  jar 'me.qmx.jitescript:jitescript:0.4.2', :exclusions => ['org.ow2.asm:asm-all']
 
   jar 'com.headius:backport9:1.13'
 

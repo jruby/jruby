@@ -25,7 +25,7 @@ module org.jruby.base {
     requires static java.scripting;
     requires static java.sql;
     requires static java.compiler;
-    requires jitescript;
+    requires me.qmx.jitescript;
     requires ant;
     requires static slf4j.api;
     requires static org.osgi.core;
