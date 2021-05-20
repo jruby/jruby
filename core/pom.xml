@@ -468,8 +468,7 @@ DO NOT MODIFY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
-              <debug>false</debug>
-              <fork>true</fork>
+              <debug>true</debug>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
@@ -478,6 +477,7 @@ DO NOT MODIFY - GENERATED CODE
               </compilerArgs>
               <includes>
                 <include>org/jruby/gen/**/*.java</include>
+                <include>module-info.java</include>
               </includes>
             </configuration>
           </execution>
