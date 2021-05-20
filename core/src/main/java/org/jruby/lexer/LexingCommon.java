@@ -286,7 +286,7 @@ public abstract class LexingCommon {
         return Encoding.isMbcAscii((byte) lexb.get(lex_p - 1));
     }
 
-    public boolean isASCII(int c) {
+    public static boolean isASCII(int c) {
         return Encoding.isMbcAscii((byte) c);
     }
 
@@ -380,7 +380,7 @@ public abstract class LexingCommon {
      *
      * mri: is_identchar
      */
-    public boolean isIdentifierChar(int c) {
+    public static boolean isIdentifierChar(int c) {
         return c != EOF && (Character.isLetterOrDigit(c) || c == '_' || !isASCII(c));
     }
 

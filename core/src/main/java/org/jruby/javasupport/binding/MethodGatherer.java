@@ -348,7 +348,7 @@ public class MethodGatherer {
                 continue;
             }
 
-            final RubyModule innerProxy = Java.getProxyClass(runtime, JavaClass.get(runtime, clazz));
+            final RubyModule innerProxy = Java.getProxyClass(runtime, clazz);
 
             if ( IdUtil.isConstant(simpleName) ) {
                 if (proxy.getConstantAt(simpleName) == null) {

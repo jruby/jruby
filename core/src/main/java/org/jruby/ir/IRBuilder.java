@@ -42,6 +42,8 @@ import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 import static org.jruby.ir.operands.ScopeModule.*;
+import static org.jruby.runtime.CallType.FUNCTIONAL;
+import static org.jruby.runtime.CallType.NORMAL;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -312,6 +314,7 @@ public class IRBuilder {
     protected int coverageMode;
     private boolean executesOnce = true;
     private int temporaryVariableIndex = -1;
+    private boolean needsYieldBlock = false;
 
     // This variable is an out-of-band passing mechanism to pass the method name to the block the
     // method is attached to.  call/fcall will set this and iter building will pass it into the iter
@@ -563,7 +566,8 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildLambdaInner(LambdaNode node) {
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        prepareClosureImplicitState();
+
         addCurrentModule();                                        // %current_module
 
         receiveBlockArgs(node);
@@ -573,10 +577,18 @@ public class IRBuilder {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
+        preloadBlockImplicitClosure();
+
         handleBreakAndReturnsInLambdas();
 
         computeScopeFlagsFrom(instructions);
         return scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
+    }
+
+    private void preloadBlockImplicitClosure() {
+        if (needsYieldBlock) {
+            addInstrAtBeginning(new LoadBlockImplicitClosureInstr(getYieldClosureVariable()));
+        }
     }
 
     public Operand buildLambda(LambdaNode node) {
@@ -1088,14 +1100,13 @@ public class IRBuilder {
 
     // Wrap call in a rescue handler that catches the IRBreakJump
     private void receiveBreakException(Operand block, final CallInstr callInstr) {
-        receiveBreakException(block, new CodeBlock() { public Operand run() { addInstr(callInstr); return callInstr.getResult(); } });
+        receiveBreakException(block, () -> addResultInstr(callInstr));
     }
 
-    public Operand buildCall(Variable result, CallNode callNode, Label lazyLabel, Label endLabel) {
-        Node receiverNode = callNode.getReceiverNode();
-        RubySymbol name = callNode.getName();
+    public Operand buildCall(Variable aResult, CallNode callNode, Label lazyLabel, Label endLabel) {
+        RubySymbol name = methodName = callNode.getName();
 
-        methodName = name;
+        Node receiverNode = callNode.getReceiverNode();
 
         // Frozen string optimization: check for "string".freeze
         String id = name.idString(); // ID Str ok here since it is 7bit check.
@@ -1122,7 +1133,7 @@ public class IRBuilder {
             receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
         }
 
-        if (result == null) result = createTemporaryVariable();
+        final Variable result = aResult == null ? createTemporaryVariable() : aResult;
 
         // obj["string"] optimization for Hash
         ArrayNode argsAry;
@@ -1139,28 +1150,43 @@ public class IRBuilder {
             return result;
         }
 
-        if (callNode.isLazy()) {
-            addInstr(new BNilInstr(lazyLabel, receiver));
-        }
+        if (callNode.isLazy()) addInstr(new BNilInstr(lazyLabel, receiver));
 
         HashNode keywordArgs = getPossibleKeywordArgument(callNode.getArgsNode());
-
-        CallInstr callInstr;
-        Operand block;
         if (keywordArgs != null) {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
-            List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
-            block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, name, receiver, args, block, kwargs);
+
+            if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
+                Variable splatValue = buildRestKeywordArgs(keywordArgs);
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
+                Operand block = setupCallClosure(callNode.getIterNode());
+
+                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+                if_else(test, manager.getTrue(),
+                        () -> receiveBreakException(block,
+                                determineIfProcNew(receiverNode,
+                                        CallInstr.create(scope, NORMAL, result, name, receiver, args, block))),
+                        () -> receiveBreakException(block,
+                                determineIfProcNew(receiverNode,
+                                        CallInstr.create(scope, NORMAL, result, name, receiver, addArg(args, splatValue), block))));
+            } else {  // {a: 1, b: 2}
+                List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
+                Operand block = setupCallClosure(callNode.getIterNode());
+
+                determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+                receiveBreakException(block,
+                        determineIfProcNew(receiverNode,
+                                CallInstr.createWithKwargs(scope, NORMAL, result, name, receiver, args, block, kwargs)));
+            }
         } else {
             Operand[] args = setupCallArgs(callNode.getArgsNode());
-            block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.create(scope, result, name, receiver, args, block);
-        }
+            Operand block = setupCallClosure(callNode.getIterNode());
 
-        determineIfWeNeedLineNumber(callNode);
-        determineIfProcNew(receiverNode, name, callInstr);
-        receiveBreakException(block, callInstr);
+            determineIfWeNeedLineNumber(callNode);
+            receiveBreakException(block,
+                    determineIfProcNew(receiverNode,
+                            CallInstr.create(scope, result, name, receiver, args, block)));
+        }
 
         if (compileLazyLabel) {
             addInstr(new JumpInstr(endLabel));
@@ -1175,17 +1201,19 @@ public class IRBuilder {
     private List<KeyValuePair<Operand, Operand>> buildKeywordArguments(HashNode keywordArgs) {
         List<KeyValuePair<Operand, Operand>> kwargs = new ArrayList<>();
         for (KeyValuePair<Node, Node> pair: keywordArgs.getPairs()) {
-            kwargs.add(new KeyValuePair<Operand, Operand>((Symbol) build(pair.getKey()), build(pair.getValue())));
+            kwargs.add(new KeyValuePair<>(build(pair.getKey()), build(pair.getValue())));
         }
         return kwargs;
     }
 
-    private void determineIfProcNew(Node receiverNode, RubySymbol name, CallInstr callInstr) {
+    private CallInstr determineIfProcNew(Node receiverNode, CallInstr callInstr) {
         // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (CommonByteLists.NEW_METHOD.equals(name.getBytes()) &&
+        if (CommonByteLists.NEW_METHOD.equals(callInstr.getName().getBytes()) &&
                 receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().idString().equals("Proc")) {
             callInstr.setProcNew(true);
         }
+
+        return callInstr;
     }
 
     /*
@@ -1207,7 +1235,7 @@ public class IRBuilder {
 
             if (lastNode instanceof HashNode) {
                 HashNode hash = (HashNode) lastNode;
-                if (hash.hasOnlySymbolKeys() && !hash.isEmpty()) return (HashNode) lastNode;
+                if (hash.isMaybeKwargs()) return (HashNode) lastNode;
             }
         }
 
@@ -1643,7 +1671,11 @@ public class IRBuilder {
     }
 
     interface CodeBlock {
-        public Operand run();
+        Operand run();
+    }
+
+    interface VoidCodeBlock {
+        void run();
     }
 
     private Operand protectCodeWithRescue(CodeBlock protectedCode, CodeBlock rescueBlock) {
@@ -2382,6 +2414,15 @@ public class IRBuilder {
     }
 
     /**
+     * Prepare closure runtime state. This includes the implicit self variable and setting up a variable to hold any
+     * frame closure if it is needed later.
+     */
+    private void prepareClosureImplicitState() {
+        // Receive self
+        addInstr(manager.getReceiveSelfInstr());
+    }
+
+    /**
      * Process all arguments specified for this scope. This includes pre args (required args
      * at the beginning of the argument list), opt args (arguments with a default value),
      * a rest arg (catch-all for argument list overflow), post args (required arguments after
@@ -2692,7 +2733,7 @@ public class IRBuilder {
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
         addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
 
-        return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
+        return addResultInstr(CallInstr.create(scope, FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
     }
 
     /* ****************************************************************
@@ -2824,26 +2865,67 @@ public class IRBuilder {
         return manager.getFalse();
     }
 
-    public Operand buildFCall(Variable result, FCallNode fcallNode) {
-        Node      callArgsNode = fcallNode.getArgsNode();
+    /**
+     * Generate if testVariable NEQ testValue { ifBlock } else { elseBlock }.
+     *
+     * @param testVariable what we will test against testValue
+     * @param testValue what we want to testVariable to NOT be equal to.
+     * @param ifBlock the code if test values do NOT match
+     * @param elseBlock the code to execute otherwise.
+     */
+    private void if_else(Operand testVariable, Operand testValue, VoidCodeBlock ifBlock, VoidCodeBlock elseBlock) {
+        Label elseLabel = getNewLabel();
+        Label endLabel = getNewLabel();
 
-        methodName = fcallNode.getName();
+        addInstr(BNEInstr.create(elseLabel, testVariable, testValue));
+        ifBlock.run();
+        addInstr(new JumpInstr(endLabel));
 
-        if (result == null) result = createTemporaryVariable();
+        addInstr(new LabelInstr(elseLabel));
+        elseBlock.run();
+        addInstr(new LabelInstr(endLabel));
+    }
+
+    private Variable buildRestKeywordArgs(HashNode keywordArgs) {
+        Variable splatValue = copyAndReturnValue(new Hash(new ArrayList<>()));
+        for (KeyValuePair<Node, Node> pair: keywordArgs.getPairs()) {
+            Operand splat = buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment());
+            addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat }));
+        }
+
+        return splatValue;
+    }
+
+    public Operand buildFCall(Variable aResult, FCallNode fcallNode) {
+        RubySymbol name = methodName = fcallNode.getName();
+
+        Node callArgsNode = fcallNode.getArgsNode();
+        final Variable result = aResult == null ? createTemporaryVariable() : aResult;
 
         HashNode keywordArgs = getPossibleKeywordArgument(fcallNode.getArgsNode());
-
-        CallInstr callInstr;
-        Operand block;
         if (keywordArgs != null) {
             Operand[] args = buildCallArgsExcept(fcallNode.getArgsNode(), keywordArgs);
-            List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
-            block = setupCallClosure(fcallNode.getIterNode());
-            callInstr = CallInstr.createWithKwargs(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block, kwargs);
+
+            if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
+                Variable splatValue = buildRestKeywordArgs(keywordArgs);
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
+                Operand block = setupCallClosure(fcallNode.getIterNode());
+
+                determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+                if_else(test, manager.getTrue(),
+                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block)),
+                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), addArg(args, splatValue), block)));
+            } else {  // {a: 1, b: 2}
+                List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
+                Operand block = setupCallClosure(fcallNode.getIterNode());
+
+                determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+                receiveBreakException(block, CallInstr.createWithKwargs(scope, FUNCTIONAL, result, name, buildSelf(), args, block, kwargs));
+            }
         } else {
             Operand[] args = setupCallArgs(callArgsNode);
             determineIfMaybeRefined(fcallNode.getName(), args);
-            block = setupCallClosure(fcallNode.getIterNode());
+            Operand block = setupCallClosure(fcallNode.getIterNode());
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
@@ -2857,11 +2939,9 @@ public class IRBuilder {
                 }
             }
 
-            callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
+            determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
+            receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block));
         }
-
-        determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-        receiveBreakException(block, callInstr);
 
         return result;
     }
@@ -3064,7 +3144,7 @@ public class IRBuilder {
         this.methodName = methodName;
 
         boolean forNode = iterNode instanceof ForNode;
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        prepareClosureImplicitState();                                    // recv_self, add frame block, etc)
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
@@ -3088,6 +3168,8 @@ public class IRBuilder {
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
+
+        preloadBlockImplicitClosure();
 
         // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
         // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
@@ -3275,7 +3357,7 @@ public class IRBuilder {
         Variable readerValue = createTemporaryVariable();
         Variable writerValue = createTemporaryVariable();
         Node receiver = opAsgnNode.getReceiverNode();
-        CallType callType = receiver instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
+        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode());
@@ -3455,7 +3537,7 @@ public class IRBuilder {
 
     private Operand buildOpElementAsgnWith(OpElementAsgnNode opElementAsgnNode, Boolean truthy) {
         Node receiver = opElementAsgnNode.getReceiverNode();
-        CallType callType = receiver instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
+        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
         Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Label endLabel = getNewLabel();
         Variable elt = createTemporaryVariable();
@@ -3476,7 +3558,7 @@ public class IRBuilder {
     // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
     public Operand buildOpElementAsgnWithMethod(OpElementAsgnNode opElementAsgnNode) {
         Node receiver = opElementAsgnNode.getReceiverNode();
-        CallType callType = receiver instanceof SelfNode ? CallType.FUNCTIONAL : CallType.NORMAL;
+        CallType callType = receiver instanceof SelfNode ? FUNCTIONAL : CallType.NORMAL;
         Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         Operand block = setupCallClosure(opElementAsgnNode.getBlockNode());
@@ -4067,7 +4149,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, createTemporaryVariable(),
+        return addResultInstr(CallInstr.create(scope, FUNCTIONAL, createTemporaryVariable(),
                 manager.getRuntime().newSymbol("`"), Self.SELF,
                 new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()) }, null));
     }
@@ -4085,6 +4167,7 @@ public class IRBuilder {
 
         Variable ret = result == null ? createTemporaryVariable() : result;
         Operand value = argNode instanceof ArrayNode && unwrap ?  buildArray((ArrayNode)argNode, true) : build(argNode);
+
         addInstr(new YieldInstr(ret, getYieldClosureVariable(), value, unwrap));
 
         return ret;
@@ -4351,6 +4434,9 @@ public class IRBuilder {
      * Get the variable for accessing the "yieldable" closure in this scope.
      */
     public TemporaryVariable getYieldClosureVariable() {
+        // make sure we prepare yield block for this scope, since it is now needed
+        needsYieldBlock = true;
+
         if (yieldClosureVariable == null) {
             return yieldClosureVariable = createTemporaryVariable();
         }

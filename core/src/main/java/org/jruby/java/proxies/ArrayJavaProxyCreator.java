@@ -37,8 +37,8 @@ public class ArrayJavaProxyCreator extends RubyObject {
         return arrayJavaProxyCreator;
     }
 
-    ArrayJavaProxyCreator(final ThreadContext context, JavaClass elementType, final IRubyObject[] sizes) {
-        this(context.runtime, elementType.javaClass());
+    ArrayJavaProxyCreator(final ThreadContext context, Class<?> elementType, final IRubyObject[] sizes) {
+        this(context.runtime, elementType);
         assert sizes.length > 0;
         aggregateDimensions(sizes);
     }

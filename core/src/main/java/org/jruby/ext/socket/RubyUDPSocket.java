@@ -29,29 +29,6 @@
 
 package org.jruby.ext.socket;
 
-import java.io.IOException;
-import java.net.BindException;
-import java.net.ConnectException;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NoRouteToHostException;
-import java.net.PortUnreachableException;
-import java.net.ProtocolFamily;
-import java.net.SocketException;
-import java.net.MulticastSocket;
-import java.net.StandardProtocolFamily;
-import java.net.UnknownHostException;
-import java.net.DatagramPacket;
-import java.nio.ByteBuffer;
-import java.nio.channels.AlreadyBoundException;
-import java.nio.channels.Channel;
-import java.nio.channels.DatagramChannel;
-import java.nio.channels.IllegalBlockingModeException;
-import java.nio.channels.NotYetConnectedException;
-import java.nio.channels.UnsupportedAddressTypeException;
-
 import jnr.constants.platform.AddressFamily;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
@@ -72,6 +49,29 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.Sockaddr;
+
+import java.io.IOException;
+import java.net.BindException;
+import java.net.ConnectException;
+import java.net.DatagramPacket;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
+import java.net.NoRouteToHostException;
+import java.net.PortUnreachableException;
+import java.net.ProtocolFamily;
+import java.net.SocketException;
+import java.net.StandardProtocolFamily;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.Channel;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.UnsupportedAddressTypeException;
 
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
@@ -288,7 +288,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
-        IRubyObject length, IRubyObject flags, IRubyObject str, boolean exception) {
+                                                 IRubyObject length, IRubyObject flags, IRubyObject str, boolean exception) {
         final Ruby runtime = context.runtime;
 
         try {
@@ -575,12 +575,12 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     private static IRubyObject doReceive(RubyBasicSocket socket, final Ruby runtime, final boolean non_block,
-        int length) throws IOException {
+                                         int length) throws IOException {
         return doReceive(socket, runtime, non_block, length, null);
     }
 
     protected static IRubyObject doReceive(RubyBasicSocket socket, final Ruby runtime, final boolean non_block,
-        int length, ReceiveTuple tuple) throws IOException {
+                                           int length, ReceiveTuple tuple) throws IOException {
         DatagramChannel channel = (DatagramChannel) socket.getChannel();
 
         ByteBuffer buf = ByteBuffer.allocate(length);
@@ -609,7 +609,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     private static IRubyObject doReceiveMulticast(RubyBasicSocket socket, final Ruby runtime, final boolean non_block,
-        int length, ReceiveTuple tuple) throws IOException {
+                                                  int length, ReceiveTuple tuple) throws IOException {
         DatagramPacket recv = new DatagramPacket(new byte[length], length);
 
         try {

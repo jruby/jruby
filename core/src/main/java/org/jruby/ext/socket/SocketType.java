@@ -28,7 +28,6 @@ package org.jruby.ext.socket;
 
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketOption;
-import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 

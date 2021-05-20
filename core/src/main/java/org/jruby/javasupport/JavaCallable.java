@@ -60,7 +60,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
 
     private static final boolean REWRITE_JAVA_TRACE = Options.REWRITE_JAVA_TRACE.load();
 
-    public JavaCallable(Ruby runtime, RubyClass rubyClass, Class<?>[] parameterTypes) {
+    protected JavaCallable(Ruby runtime, RubyClass rubyClass, Class<?>[] parameterTypes) {
         super(runtime, rubyClass);
         this.parameterTypes = parameterTypes;
     }
@@ -83,59 +83,56 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     public abstract boolean isVarArgs();
     public abstract String toGenericString();
 
-    /**
-     * @return the name used in the head of the string returned from inspect()
-     */
-    protected abstract String nameOnInspection();
-
     @JRubyMethod
-    public final RubyFixnum arity() {
-        return getRuntime().newFixnum(getArity());
+    public final RubyFixnum arity(ThreadContext context) {
+        return context.runtime.newFixnum(getArity());
     }
 
     @JRubyMethod(name = { "argument_types", "parameter_types" })
-    public final RubyArray parameter_types() {
-        return toRubyArray(getRuntime(), getParameterTypes());
+    @SuppressWarnings("deprecation")
+    public final RubyArray parameter_types(ThreadContext context) {
+        return toRubyArray(context.runtime, getParameterTypes());
     }
 
     @JRubyMethod
-    public RubyArray exception_types() {
-        return toRubyArray(getRuntime(), getExceptionTypes());
+    @SuppressWarnings("deprecation")
+    public RubyArray exception_types(ThreadContext context) {
+        return toRubyArray(context.runtime, getExceptionTypes());
     }
 
     @JRubyMethod
-    public IRubyObject generic_parameter_types() {
-        return Java.getInstance(getRuntime(), getGenericParameterTypes());
+    public IRubyObject generic_parameter_types(ThreadContext context) {
+        return Java.getInstance(context.runtime, getGenericParameterTypes());
     }
 
     @JRubyMethod
-    public IRubyObject generic_exception_types() {
-        return Java.getInstance(getRuntime(), getGenericExceptionTypes());
+    public IRubyObject generic_exception_types(ThreadContext context) {
+        return Java.getInstance(context.runtime, getGenericExceptionTypes());
     }
 
     @JRubyMethod
-    public IRubyObject parameter_annotations() {
-        return Java.getInstance(getRuntime(), getParameterAnnotations());
+    public IRubyObject parameter_annotations(ThreadContext context) {
+        return Java.getInstance(context.runtime, getParameterAnnotations());
     }
 
     @JRubyMethod(name = "varargs?")
-    public RubyBoolean varargs_p() {
-        return getRuntime().newBoolean(isVarArgs());
+    public RubyBoolean varargs_p(ThreadContext context) {
+        return context.runtime.newBoolean(isVarArgs());
     }
 
     @JRubyMethod
-    public RubyString to_generic_string() {
-        return getRuntime().newString(toGenericString());
+    public RubyString to_generic_string(ThreadContext context) {
+        return context.runtime.newString(toGenericString());
     }
 
     @JRubyMethod(name = "public?")
-    public RubyBoolean public_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(getModifiers()));
+    public RubyBoolean public_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context.runtime, Modifier.isPublic(getModifiers()));
     }
 
-    protected final void checkArity(final int length) {
+    protected final void checkArity(ThreadContext context, final int length) {
         if ( length != getArity() ) {
-            throw getRuntime().newArgumentError(length, getArity());
+            throw context.runtime.newArgumentError(length, getArity());
         }
     }
 
@@ -163,32 +160,32 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     protected final IRubyObject handleInvocationTargetEx(ThreadContext context, InvocationTargetException ex) {
-        return handleThrowable(context, ex.getTargetException());
+        return handleThrowable(context, ex.getTargetException()); // NOTE: we no longer unwrap
     }
 
-    final IRubyObject handleIllegalAccessEx(final IllegalAccessException ex, Member target) throws RaiseException {
-        throw getRuntime().newTypeError("illegal access on '" + target.getName() + "': " + ex.getMessage());
+    final IRubyObject handleIllegalAccessEx(ThreadContext context, final IllegalAccessException ex, Member target) throws RaiseException {
+        throw context.runtime.newTypeError("illegal access on '" + target.getName() + "': " + ex.getMessage());
     }
 
-    final IRubyObject handleIllegalAccessEx(final IllegalAccessException ex, Constructor target)  throws RaiseException {
-        throw getRuntime().newTypeError("illegal access on constructor for type '" + target.getDeclaringClass().getSimpleName() + "': " + ex.getMessage());
+    final IRubyObject handleIllegalAccessEx(ThreadContext context, final IllegalAccessException ex, Constructor target)  throws RaiseException {
+        throw context.runtime.newTypeError("illegal access on constructor for type '" + target.getDeclaringClass().getSimpleName() + "': " + ex.getMessage());
     }
 
-    final IRubyObject handlelIllegalArgumentEx(final IllegalArgumentException ex, Method target, Object... arguments) throws RaiseException {
+    final IRubyObject handlelIllegalArgumentEx(ThreadContext context, final IllegalArgumentException ex, Method target, Object... arguments) throws RaiseException {
         final StringBuilder msg = new StringBuilder(64);
         msg.append("for method ").append( target.getDeclaringClass().getSimpleName() )
            .append('.').append( target.getName() );
         msg.append(" expected "); dumpParameterTypes(msg);
         msg.append("; got: "); dumpArgTypes(arguments, msg);
         msg.append("; error: ").append( ex.getMessage() );
-        throw getRuntime().newTypeError( msg.toString() );
+        throw context.runtime.newTypeError( msg.toString() );
     }
 
-    final IRubyObject handlelIllegalArgumentEx(final IllegalArgumentException ex, Constructor target, Object... arguments) throws RaiseException {
-        return handlelIllegalArgumentEx(ex, target, true, arguments);
+    final IRubyObject handlelIllegalArgumentEx(ThreadContext context, final IllegalArgumentException ex, Constructor target, Object... arguments) throws RaiseException {
+        return handlelIllegalArgumentEx(context, ex, target, true, arguments);
     }
 
-    final IRubyObject handlelIllegalArgumentEx(final IllegalArgumentException ex, Constructor target, final boolean targetInfo, Object... arguments) throws RaiseException {
+    final IRubyObject handlelIllegalArgumentEx(ThreadContext context, final IllegalArgumentException ex, Constructor target, final boolean targetInfo, Object... arguments) throws RaiseException {
         final StringBuilder msg = new StringBuilder(64);
         if ( targetInfo ) {
             msg.append("for constructor of type ").append( target.getDeclaringClass().getSimpleName() );
@@ -196,7 +193,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         msg.append(" expected "); dumpParameterTypes(msg);
         msg.append("; got: "); dumpArgTypes(arguments, msg);
         msg.append("; error: ").append( ex.getMessage() );
-        throw getRuntime().newTypeError( msg.toString() );
+        throw context.runtime.newTypeError( msg.toString() );
     }
 
     private void dumpParameterTypes(final StringBuilder str) {

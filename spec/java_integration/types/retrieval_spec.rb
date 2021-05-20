@@ -16,19 +16,25 @@ describe "Kernel\#java_import" do
 end
 
 describe "Java::JavaClass.for_name" do
+  # NOTE: 'breaking compatibility' used to work for JavaClass, we could make it
+  # work for java.lang.Class by patching for_name but it's counter-intuitive.
   it "should return primitive classes for Java primitive type names" do
-    expect(Java::JavaClass.for_name("byte")).to eq(Java::byte.java_class)
-    expect(Java::JavaClass.for_name("boolean")).to eq(Java::boolean.java_class)
-    expect(Java::JavaClass.for_name("short")).to eq(Java::short.java_class)
-    expect(Java::JavaClass.for_name("char")).to eq(Java::char.java_class)
-    expect(Java::JavaClass.for_name("int")).to eq(Java::int.java_class)
-    expect(Java::JavaClass.for_name("long")).to eq(Java::long.java_class)
-    expect(Java::JavaClass.for_name("float")).to eq(Java::float.java_class)
-    expect(Java::JavaClass.for_name("double")).to eq(Java::double.java_class)
+    class_for_name = -> (name) { JRuby.load_java_class(name) } # Java::JavaClass.for_name 'replacement'
+    expect(class_for_name.("byte")).to eq(Java::byte.java_class)
+    expect(class_for_name.("boolean")).to eq(Java::boolean.java_class)
+    expect(class_for_name.("short")).to eq(Java::short.java_class)
+    expect(class_for_name.("char")).to eq(Java::char.java_class)
+    expect(class_for_name.("int")).to eq(Java::int.java_class)
+    expect(class_for_name.("long")).to eq(Java::long.java_class)
+    expect(class_for_name.("float")).to eq(Java::float.java_class)
+    expect(class_for_name.("double")).to eq(Java::double.java_class)
   end
 
+  # NOTE: breaking change in 9.3 with JavaClass being deprecated
   it "should return Java class from JRuby class-path" do
-    expect(Java::JavaClass.for_name('java_integration.fixtures.Reflector')).to_not be nil
+    # Java::JavaClass.for_name('java_integration.fixtures.Reflector') is now a :
+    # java.lang.Class.forName invocation
+    expect(JRuby.load_java_class('java_integration.fixtures.Reflector')).to_not be nil
   end
 
   it "should also accept Java string argument" do
@@ -55,7 +61,8 @@ end
 describe "A JavaClass wrapper around a java.lang.Class" do
   it "provides a nice String output for inspect" do
     myclass = java.lang.String.java_class
-    expect(myclass.inspect).to eq("class java.lang.String")
+    expect( myclass ).to be_a java.lang.Class
+    expect(myclass.to_s).to eq("java.lang.String")
   end
 end
 

@@ -44,12 +44,9 @@ import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.java.addons.ClassJavaAddons;
-import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.util.ArrayUtils;
@@ -72,7 +69,7 @@ import java.lang.reflect.Modifier;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.util.RubyStringBuilder.ids;
 
-@JRubyClass(name="Java::JavaClass", parent="Java::JavaObject", include = "Comparable")
+// @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject", include = "Comparable")
 public class JavaClass extends JavaObject {
 
     public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
@@ -104,20 +101,26 @@ public class JavaClass extends JavaObject {
         return (RubyClass) Java.getProxyClass(getRuntime(), javaClass());
     }
 
-    private IRubyObject addProxyExtender(final ThreadContext context, final IRubyObject extender) {
+    private static IRubyObject addProxyExtender(final ThreadContext context, final Class<?> klass, final IRubyObject extender) {
         if ( ! extender.respondsTo("extend_proxy") ) {
             throw context.runtime.newTypeError("proxy extender must have an extend_proxy method");
         }
-        RubyModule proxy = Java.getProxyClass(context.runtime, javaClass());
+        RubyModule proxy = Java.getProxyClass(context.runtime, klass);
         return extender.callMethod(context, "extend_proxy", proxy);
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject extend_proxy(final ThreadContext context, IRubyObject extender) {
-        addProxyExtender(context, extender);
+    public static IRubyObject extend_proxy(final ThreadContext context, IRubyObject self, IRubyObject extender) {
+        if (self instanceof JavaClass) {
+            addProxyExtender(context, ((JavaClass) self).javaClass(), extender);
+        } else {
+            // NOTE: used by java.lang.Class as a JavaClass compatiblity layer
+            addProxyExtender(context, Java.unwrapClassProxy(self), extender);
+        }
         return context.nil;
     }
 
+    @Deprecated
     public static JavaClass get(final Ruby runtime, final Class<?> klass) {
         return runtime.getJavaSupport().getJavaClassFromCache(klass);
     }
@@ -127,16 +130,13 @@ public class JavaClass extends JavaObject {
         return toRubyArray(runtime, classes);
     }
 
+    @Deprecated
     public static RubyArray toRubyArray(final Ruby runtime, final Class<?>[] classes) {
         IRubyObject[] javaClasses = new IRubyObject[classes.length];
         for ( int i = classes.length; --i >= 0; ) {
             javaClasses[i] = get(runtime, classes[i]);
         }
         return RubyArray.newArrayMayCopy(runtime, javaClasses);
-    }
-
-    public static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java) {
-        return createJavaClassClass(runtime, Java, Java.getClass("JavaObject"));
     }
 
     static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java, final RubyClass JavaObject) {
@@ -168,6 +168,7 @@ public class JavaClass extends JavaObject {
      * @param proxy
      * @return class
      */
+    // NOTE: API still used, need a better place for it after whole class is deprecated
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
         return getJavaClassIfProxy(context, proxy);
     }
@@ -175,27 +176,36 @@ public class JavaClass extends JavaObject {
     /**
      * Retieve a JavaClass if the passed module/class is a Java proxy.
      * @param context
-     * @param proxy
+     * @param type
      * @return class or null if not a Java proxy
      *
      * @note Class objects have a java_class method but they're not considered Java proxies!
      */
-    public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule proxy) {
-        JavaClass javaClass = getJavaClassIfProxyImpl(context, proxy);
-        return javaClass == null ? null : javaClass.javaClass();
-    }
+    // NOTE: API still used, need a better place for it after whole class is deprecated
+    public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule type) {
+        if (type.getJavaProxy()) return (Class) type.dataGetStruct();
 
-    private static JavaClass getJavaClassIfProxyImpl(final ThreadContext context, final RubyModule proxy) {
-        final IRubyObject java_class = java_class(context, proxy);
-        return ( java_class instanceof JavaClass ) ? (JavaClass) java_class : null;
+        Object java_class = JavaProxy.getJavaClass(type);
+        if (java_class instanceof JavaProxy) {
+            return (Class<?>) ((JavaProxy) java_class).getObject();
+        }
+
+        if (java_class == null) { // NOTE: old java_class(context, proxy) impl
+            if (type.respondsTo("java_class")) { // NOTE: quite bad since built-in Ruby classes will return
+                // a Ruby Java proxy for java.lang.Class while Java proxies will return a JavaClass instance !
+                java_class = Helpers.invoke(context, type, "java_class");
+            }
+            if (java_class instanceof JavaClass) { // legacy
+                return ((JavaClass) java_class).javaClass();
+            }
+        }
+
+        return null;
     }
 
     // expected to handle Java proxy (Ruby) sub-classes as well
     public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
-        return getJavaClassIfProxyImpl(context, proxy) != null;
-        //IRubyObject java_class = proxy.getInstanceVariable("@java_class");
-        //return (java_class != null && java_class.isTrue()) ||
-        //        proxy.respondsTo("java_class"); // not all proxy types have @java_class set
+        return getJavaClassIfProxy(context, proxy) != null;
     }
 
     /**
@@ -204,7 +214,8 @@ public class JavaClass extends JavaObject {
      * @param type
      * @return Java proxy class, Java reified class or nil
      */
-    public static IRubyObject java_class(final ThreadContext context, final RubyModule type) {
+    @Deprecated
+    public static IRubyObject java_class(final ThreadContext context, final RubyModule type) { // TODO avoid callers!
         IRubyObject java_class = type.getInstanceVariable("@java_class");
         if ( java_class == null ) { // || java_class.isNil()
             if ( type.respondsTo("java_class") ) { // NOTE: quite bad since built-in Ruby classes will return
@@ -216,13 +227,6 @@ public class JavaClass extends JavaObject {
         return java_class;
     }
 
-    /*
-    public static Class<?> getJavaClass(final ThreadContext context, final RubyModule type) {
-        IRubyObject java_class = java_class(context, type);
-        if ( java_class == context.nil ) return null;
-        return resolveClassType(context, java_class).javaClass();
-    } */
-
     /**
      * Resolves a Java class from a passed type parameter.
      *
@@ -231,43 +235,15 @@ public class JavaClass extends JavaObject {
      * @param type
      * @return resolved type or null if resolution failed
      */
+    @Deprecated
     public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
-        if (type instanceof RubyString || type instanceof RubySymbol) {
-            final Ruby runtime = context.runtime;
-            final String className = type.toString();
-            JavaClass targetType = runtime.getJavaSupport().getNameClassMap().get(className);
-            if ( targetType == null ) targetType = JavaClass.forNameVerbose(runtime, className);
-            return targetType;
-        }
-        return resolveClassType(context, type);
+        RubyModule proxyClass = Java.resolveType(context.runtime, type);
+        return proxyClass == null ? null : get(context.runtime, getJavaClass(context, proxyClass));
     }
 
-    // this should handle the type returned from Class#java_class
-    private static JavaClass resolveClassType(final ThreadContext context, final IRubyObject type) {
-        if (type instanceof JavaProxy) { // due Class#java_class wrapping
-            final Object wrapped = ((JavaProxy) type).getObject();
-            if ( wrapped instanceof Class ) return JavaClass.get(context.runtime, (Class) wrapped);
-            return null;
-        }
-        if (type instanceof JavaClass) {
-            return (JavaClass) type;
-        }
-        if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
-            return getJavaClassIfProxyImpl(context, (RubyModule) type);
-        }
-        return null;
-    }
-
-    static boolean isPrimitiveName(final String name) {
-        return JavaUtil.getPrimitiveClass(name) != null;
-    }
-
+    @Deprecated
     public static JavaClass forNameVerbose(Ruby runtime, String className) {
-        Class<?> klass = null; // "boolean".length() == 7
-        if (className.length() < 8 && Character.isLowerCase(className.charAt(0))) {
-            // one word type name that starts lower-case...it may be a primitive type
-            klass = JavaUtil.getPrimitiveClass(className);
-        }
+        Class<?> klass = null;
         synchronized (JavaClass.class) {
             if (klass == null) {
                 klass = runtime.getJavaSupport().loadJavaClassVerbose(className);
@@ -276,6 +252,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
+    @Deprecated // no longer used
     public static JavaClass forNameQuiet(Ruby runtime, String className) {
         synchronized (JavaClass.class) {
             Class<?> klass = runtime.getJavaSupport().loadJavaClassQuiet(className);
@@ -491,7 +468,7 @@ public class JavaClass extends JavaObject {
     public IRubyObject enclosing_constructor() {
         Constructor<?> ctor = javaClass().getEnclosingConstructor();
         if (ctor != null) {
-            return new JavaConstructor(getRuntime(), ctor);
+            return Java.getInstance(getRuntime(), ctor);
         }
         return getRuntime().getNil();
     }
@@ -500,7 +477,7 @@ public class JavaClass extends JavaObject {
     public IRubyObject enclosing_method() {
         Method meth = javaClass().getEnclosingMethod();
         if (meth != null) {
-            return new JavaMethod(getRuntime(), meth);
+            return Java.getInstance(getRuntime(), meth);
         }
         return getRuntime().getNil();
     }
@@ -621,20 +598,20 @@ public class JavaClass extends JavaObject {
         for ( int i = 0; i < methods.length; i++ ) {
             final Method method = methods[i];
             if ( isStatic == Modifier.isStatic(method.getModifiers()) ) {
-                result.append( new JavaMethod(runtime, method) );
+                result.append(Java.getInstance(runtime, method));
             }
         }
         return result;
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaMethod java_method(IRubyObject[] args) {
+    public JavaMethod java_method(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
 
         final String methodName = args[0].asJavaString();
         try {
-            Class<?>[] argumentTypes = getArgumentTypes(runtime, args, 1);
+            Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
             @SuppressWarnings("unchecked")
             final Method method = javaClass().getMethod(methodName, argumentTypes);
             return new JavaMethod(runtime, method);
@@ -645,13 +622,13 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaMethod declared_method(final IRubyObject[] args) {
+    public JavaMethod declared_method(ThreadContext context, final IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
 
         final String methodName = args[0].asJavaString();
         try {
-            Class<?>[] argumentTypes = getArgumentTypes(runtime, args, 1);
+            Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
             @SuppressWarnings("unchecked")
             final Method method = javaClass().getDeclaredMethod(methodName, argumentTypes);
             return new JavaMethod(runtime, method);
@@ -662,13 +639,13 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaCallable declared_method_smart(final IRubyObject[] args) {
+    public JavaCallable declared_method_smart(ThreadContext context, final IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
 
         final String methodName = args[0].asJavaString();
 
-        Class<?>[] argumentTypes = getArgumentTypes(runtime, args, 1);
+        Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
 
         JavaCallable callable = getMatchingCallable(runtime, javaClass(), methodName, argumentTypes);
 
@@ -686,21 +663,13 @@ public class JavaClass extends JavaObject {
         return JavaMethod.getMatchingDeclaredMethod(runtime, javaClass, methodName, argumentTypes);
     }
 
-    private static Class<?>[] getArgumentTypes(final Ruby runtime, final IRubyObject[] args, final int offset) {
+    public static Class<?>[] getArgumentTypes(final ThreadContext context, final IRubyObject[] args, final int offset) {
         final int length = args.length; // offset == 0 || 1
         if ( length == offset ) return EMPTY_CLASS_ARRAY;
         final Class<?>[] argumentTypes = new Class[length - offset];
         for ( int i = offset; i < length; i++ ) {
             final IRubyObject arg = args[i];
-            final JavaClass type;
-            if ( arg instanceof JavaClass ) {
-                type = (JavaClass) arg;
-            } else if ( arg.respondsTo("java_class") ) {
-                type = (JavaClass) arg.callMethod(runtime.getCurrentContext(), "java_class");
-            } else {
-                type = forNameVerbose(runtime, arg.asJavaString());
-            }
-            argumentTypes[ i - offset ] = type.javaClass();
+            argumentTypes[ i - offset ] = Java.resolveClassType(context, args[i]);
         }
         return argumentTypes;
     }
@@ -716,6 +685,7 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod
+    @SuppressWarnings("deprecation")
     public RubyArray classes() {
         return toRubyArray(getRuntime(), javaClass().getClasses());
     }
@@ -763,16 +733,16 @@ public class JavaClass extends JavaObject {
     private static RubyArray buildConstructors(final Ruby runtime, Constructor<?>[] constructors) {
         RubyArray result = RubyArray.newArray(runtime, constructors.length);
         for ( int i = 0; i < constructors.length; i++ ) {
-            result.append( new JavaConstructor(runtime, constructors[i]) );
+            result.append(Java.getInstance(runtime, constructors[i]));
         }
         return result;
     }
 
     @JRubyMethod(rest = true)
-    public JavaConstructor constructor(IRubyObject[] args) {
+    public JavaConstructor constructor(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         try {
-            Class<?>[] parameterTypes = getArgumentTypes(runtime, args, 0);
+            Class<?>[] parameterTypes = getArgumentTypes(context, args, 0);
             @SuppressWarnings("unchecked")
             Constructor<?> constructor = javaClass().getConstructor(parameterTypes);
             return new JavaConstructor(runtime, constructor);
@@ -783,10 +753,10 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(rest = true)
-    public JavaConstructor declared_constructor(IRubyObject[] args) {
+    public JavaConstructor declared_constructor(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = getRuntime();
         try {
-            Class<?>[] parameterTypes = getArgumentTypes(runtime, args, 0);
+            Class<?>[] parameterTypes = getArgumentTypes(context, args, 0);
             @SuppressWarnings("unchecked")
             Constructor<?> constructor = javaClass().getDeclaredConstructor(parameterTypes);
             return new JavaConstructor(runtime, constructor);
@@ -836,10 +806,6 @@ public class JavaClass extends JavaObject {
         return ArrayUtils.emptyJavaArrayDirect(context, javaClass());
     }
 
-    public IRubyObject javaArraySubarray(ThreadContext context, JavaArray fromArray, int index, int size) {
-        return ArrayUtils.javaArraySubarrayDirect(context, getValue(), index, size);
-    }
-
     /**
      * Contatenate two Java arrays into a new one. The component type of the
      * additional array must be assignable to the component type of the
@@ -866,62 +832,6 @@ public class JavaClass extends JavaObject {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional);
     }
 
-    @Deprecated // no-longer-used
-    public IRubyObject javaArrayFromRubyArray(ThreadContext context, IRubyObject fromArray) {
-        if ( ! ( fromArray instanceof RubyArray ) ) {
-            final Ruby runtime = context.runtime;
-            throw runtime.newTypeError(fromArray, runtime.getArray());
-        }
-        return javaArrayFromRubyArray(context, (RubyArray) fromArray);
-    }
-
-    public final IRubyObject javaArrayFromRubyArray(ThreadContext context, RubyArray fromArray) {
-        final Ruby runtime = context.runtime;
-
-        Object newArray = javaArrayFromRubyArrayDirect(context, fromArray);
-
-        return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, newArray), newArray, JavaUtil.getJavaConverter(javaClass()));
-    }
-
-    public final Object javaArrayFromRubyArrayDirect(ThreadContext context, RubyArray fromArray) {
-        final Ruby runtime = context.runtime;
-        final Class<?> type = javaClass();
-
-        final Object newArray = Array.newInstance(type, fromArray.size());
-
-        if ( type.isArray() ) {
-            // if it's an array of arrays, recurse with the component type
-            for ( int i = 0; i < fromArray.size(); i++ ) {
-                final Class<?> nestedType = type.getComponentType();
-                final IRubyObject element = fromArray.eltInternal(i);
-                final Object nestedArray;
-                if ( element instanceof RubyArray ) { // recurse
-                    JavaClass componentType = JavaClass.get(runtime, nestedType);
-                    nestedArray = componentType.javaArrayFromRubyArrayDirect(context, element);
-                }
-                else if ( type.isInstance(element) ) {
-                    nestedArray = element;
-                }
-                else { // still try (nested) toJava conversion :
-                    nestedArray = element.toJava(type);
-                }
-                ArrayUtils.setWithExceptionHandlingDirect(runtime, newArray, i, nestedArray);
-            }
-        } else {
-            ArrayUtils.copyDataToJavaArrayDirect(fromArray, newArray);
-        }
-
-        return newArray;
-    }
-
-    public final Object javaArrayFromRubyArrayDirect(ThreadContext context, IRubyObject fromArray) {
-        if ( ! ( fromArray instanceof RubyArray ) ) {
-            final Ruby runtime = context.runtime;
-            throw runtime.newTypeError(fromArray, runtime.getArray());
-        }
-        return javaArrayFromRubyArrayDirect(context, (RubyArray) fromArray);
-    }
-
     @JRubyMethod
     public RubyArray fields() {
         return buildFieldResults(getRuntime(), javaClass().getFields());
@@ -935,7 +845,7 @@ public class JavaClass extends JavaObject {
     private static RubyArray buildFieldResults(final Ruby runtime, Field[] fields) {
         RubyArray result = runtime.newArray( fields.length );
         for ( int i = 0; i < fields.length; i++ ) {
-            result.append( new JavaField(runtime, fields[i]) );
+            result.append(Java.getInstance(runtime, fields[i]));
         }
         return result;
     }
@@ -983,6 +893,7 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod
+    @SuppressWarnings("deprecation")
     public RubyArray interfaces() {
         return toRubyArray(getRuntime(), javaClass().getInterfaces());
     }

@@ -441,10 +441,24 @@ class OpenSSL::TestX509Name < OpenSSL::TestCase
     name0 = OpenSSL::X509::Name.new([["DC", "org"], ["DC", "ruby-lang"], ["CN", "bar.ruby-lang.org"]])
     name1 = OpenSSL::X509::Name.new([["DC", "org"], ["DC", "ruby-lang"], ["CN", "bar.ruby-lang.org"]])
     name2 = OpenSSL::X509::Name.new([["DC", "org"], ["DC", "ruby-lang"], ["CN", "baz.ruby-lang.org"]])
+    name3 = OpenSSL::X509::Name.new([["DC", "org"], ["DC", "ruby-lang"], ["CN", "bar.ruby-langg.org"]])
+    name4 = OpenSSL::X509::Name.new([["DC", "org"], ["DC", "ruby-lang"], ["CN", "bbz.ruby-lang.org"]])
     assert_equal true, name0 == name1
     assert_equal true, name0.eql?(name1)
+    assert_equal true, name1 == name0
+    assert_equal true, name1.eql?(name0)
     assert_equal false, name0 == name2
     assert_equal false, name0.eql?(name2)
+    assert_equal false, name2 == name0
+    assert_equal false, name2.eql?(name0)
+    assert_equal false, name0 == name3
+    assert_equal false, name0.eql?(name3)
+    assert_equal false, name3 == name0
+    assert_equal false, name3.eql?(name0)
+    assert_equal false, name0 == name4
+    assert_equal false, name0.eql?(name4)
+    assert_equal false, name4 == name0
+    assert_equal false, name4.eql?(name0)
   end
 
   def test_dup

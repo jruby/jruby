@@ -206,6 +206,14 @@ matrix:
         - bundle install
         - jruby -S rake spec:ji
 
+    - name: JI specs indy
+      script:
+        - mvn clean package -Pbootstrap
+        - gem install bundler
+        - bundle install
+        - jruby -S rake spec:ji
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
     - name: Compiler specs
       script:
         - mvn clean package -Pbootstrap

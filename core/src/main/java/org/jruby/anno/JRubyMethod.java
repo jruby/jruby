@@ -101,6 +101,11 @@ public @interface JRubyMethod {
      */
     boolean notImplemented() default false;
 
+    /**
+     * A list of classes that implement an abstract JRubyMethod, for backtrace purposes.
+     */
+    Class[] implementers() default {};
+
     @Deprecated
     boolean scope() default false;
 

@@ -114,5 +114,11 @@ public class AnnotationHelper {
             }
         }
     }
+
+    public static void addSubclassNames(List<String> classAndSubs, JRubyClass classAnno) {
+        for (int i = 0; i < classAnno.overrides().length; i++) {
+            classAndSubs.add(classAnno.overrides()[i].getCanonicalName());
+        }
+    }
 }
 

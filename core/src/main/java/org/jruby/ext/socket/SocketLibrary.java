@@ -1,9 +1,10 @@
 package org.jruby.ext.socket;
 
-import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.load.Library;
+
+import java.io.IOException;
 
 /**
  *

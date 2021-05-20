@@ -66,7 +66,7 @@ import static org.jruby.util.Numeric.f_lcm;
  *
  * @author  jpetersen
  */
-@JRubyClass(name="Integer", parent="Numeric")
+@JRubyClass(name="Integer", parent="Numeric", overrides = {RubyFixnum.class, RubyBignum.class})
 public abstract class RubyInteger extends RubyNumeric {
 
     public static RubyClass createIntegerClass(Ruby runtime) {

@@ -35,15 +35,19 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.util.RubyStringBuilder.ids;
 
 /**
  * Represents a symbol (:symbol_name).
  */
-public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
+public class SymbolNode extends Node implements ILiteralNode, INameNode, LiteralValue, SideEffectFree {
     private final RubySymbol name;
 
     public SymbolNode(int line, RubySymbol value) {
@@ -76,5 +80,10 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+
+    @Override
+    public IRubyObject literalValue(Ruby runtime) {
+        return name;
     }
 }

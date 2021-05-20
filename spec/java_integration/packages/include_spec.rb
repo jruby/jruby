@@ -9,7 +9,7 @@ describe "jar with dependecies" do
 
       Fixtures::ThrowExceptionOnCreate.new
     rescue
-      expect($!.message).to match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate, probable missing dependency: junit.framework.Test/)
+      expect($!.message).to match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate .?java.lang.NoClassDefFoundError: junit.framework.Test.?/)
     end
   end
 
@@ -21,7 +21,7 @@ describe "jar with dependecies" do
 
       Fixtures::ThrowExceptionOnCreate.new
     rescue
-      expect($!.message).to match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate, probable missing dependency: junit.framework.Test/)
+      expect($!.message).to match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate .?java.lang.NoClassDefFoundError: junit.framework.Test.?/)
     end
   end
 end

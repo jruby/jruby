@@ -41,6 +41,7 @@
 package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.FrameField;
 import org.jruby.anno.TypePopulator;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
@@ -72,6 +73,7 @@ import org.jruby.management.Caches;
 import org.jruby.management.InlineStats;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.JavaNameMangler;
@@ -577,6 +579,7 @@ public final class Ruby implements Constantizable {
 
     private void initKernelGsub(RubyModule kernel) {
         if (this.config.getKernelGsubDefined()) {
+            MethodIndex.addMethodReadFields("gsub", FrameField.LASTLINE, FrameField.BACKREF);
             kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, "gsub") {
 
                 @Override
@@ -2950,16 +2953,31 @@ public final class Ruby implements Constantizable {
     }
 
     public void addBoundMethod(String className, String methodName, String rubyName) {
-        Map<String, String> javaToRuby = boundMethods.get(className);
-        if (javaToRuby == null) boundMethods.put(className, javaToRuby = new HashMap<>());
-        javaToRuby.put(methodName, rubyName);
+        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new HashMap<>());
+        javaToRuby.putIfAbsent(methodName, rubyName);
     }
 
     public void addBoundMethods(String className, String... tuples) {
-        Map<String, String> javaToRuby = boundMethods.get(className);
-        if (javaToRuby == null) boundMethods.put(className, javaToRuby = new HashMap<>(tuples.length / 2 + 1, 1));
+        Map<String, String> javaToRuby = boundMethods.computeIfAbsent(className, s -> new HashMap<>());
         for (int i = 0; i < tuples.length; i += 2) {
-            javaToRuby.put(tuples[i], tuples[i+1]);
+            javaToRuby.putIfAbsent(tuples[i], tuples[i+1]);
+        }
+    }
+
+    // Used by generated populators
+    public void addBoundMethods(int tuplesIndex, String... classNamesAndTuples) {
+        Map<String, String> javaToRuby = new HashMap<>((classNamesAndTuples.length - tuplesIndex) / 2 + 1, 1);
+        for (int i = tuplesIndex; i < classNamesAndTuples.length; i += 2) {
+            javaToRuby.put(classNamesAndTuples[i], classNamesAndTuples[i+1]);
+        }
+
+        for (int i = 0; i < tuplesIndex; i++) {
+            String className = classNamesAndTuples[i];
+            if (boundMethods.containsKey(className)) {
+                boundMethods.get(className).putAll(javaToRuby);
+            } else {
+                boundMethods.put(className, new HashMap<>(javaToRuby));
+            }
         }
     }
 
