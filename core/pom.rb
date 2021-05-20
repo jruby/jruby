@@ -53,7 +53,7 @@ project 'JRuby Base' do
 
   jar 'org.jruby.joni:joni:2.1.40'
   jar 'org.jruby.jcodings:jcodings:1.0.55'
-  jar 'org.jruby:dirgra:0.3'
+  jar 'org.jruby:dirgra:0.4'
 
   jar 'com.headius:invokebinder:1.12'
   jar 'com.headius:options:1.6'

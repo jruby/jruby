@@ -18,8 +18,8 @@ module org.jruby.base {
     requires jdk.unsupported;
     requires org.joda.time;
     requires java.management;
-    requires dirgra;
     requires jffi;
+    requires org.jruby.dirgra;
     requires static java.xml.ws.annotation;
     requires jzlib;
     requires static java.scripting;
