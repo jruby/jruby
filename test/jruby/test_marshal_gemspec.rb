@@ -6,7 +6,7 @@ require 'yaml'
 class TestMarshalGemspec < Test::Unit::TestCase
   def setup
     require 'yaml'
-    @gemspec = YAML::load <<-YAML
+    @gemspec = YAML::unsafe_load <<-YAML
 --- !ruby/object:Gem::Specification 
 name: activerecord-jdbcderby-adapter
 version: !ruby/object:Gem::Version 
