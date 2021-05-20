@@ -458,12 +458,6 @@ DO NOT MODIFIY - GENERATED CODE
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
-              <excludes>
-                <exclude>org/jruby/Main.java</exclude>
-                <exclude>org/jruby/main/**</exclude>
-                <exclude>org/jruby/runtime/CallSite.java</exclude>
-                <exclude>org/jruby/runtime/callsite/**</exclude>
-              </excludes>
             </configuration>
           </execution>
           <execution>
@@ -482,6 +476,7 @@ DO NOT MODIFIY - GENERATED CODE
               </compilerArgs>
               <includes>
                 <include>org/jruby/gen/**/*.java</include>
+                <include>module-info.java</include>
               </includes>
             </configuration>
           </execution>

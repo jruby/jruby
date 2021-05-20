@@ -207,7 +207,8 @@ project 'JRuby Base' do
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
                                        '-J-Xmx${jruby.compile.memory}' ],
-                   'includes' => [ 'org/jruby/gen/**/*.java' ] )
+                   'includes' => [ 'org/jruby/gen/**/*.java',
+                                   'module-info.java' ] )
     execute_goals( 'compile',
                    :id => 'eclipse-hack',
                    :phase => 'process-classes',
