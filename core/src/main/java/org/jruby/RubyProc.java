@@ -47,6 +47,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
+import org.jruby.runtime.MethodBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -280,6 +281,19 @@ public class RubyProc extends RubyObject implements DataType {
         return getRuntime().newBinding(block.getBinding());
     }
 
+    @JRubyMethod(name = {"==", "eql?" })
+    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
+        if (getMetaClass() != obj.getMetaClass()) return context.fals;
+
+        RubyProc other = (RubyProc) obj;
+
+        if (isFromMethod() != other.isFromMethod() && isLambda() != other.isLambda()) return context.fals;
+
+        if (type != other.type) return context.fals;
+
+        return context.runtime.newBoolean(getBlock().equals(other.block));
+    }
+
     /**
      * For non-lambdas transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
      * arity of one, etc.)
@@ -417,6 +431,10 @@ public class RubyProc extends RubyObject implements DataType {
 
     private boolean isLambda() {
         return type.equals(Block.Type.LAMBDA);
+    }
+
+    private boolean isFromMethod() {
+        return getBlock().getBody() instanceof MethodBlockBody;
     }
 
     //private boolean isProc() {

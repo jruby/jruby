@@ -278,7 +278,7 @@ public class RubyComparable {
             int c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, max);
             if (c > 0) return max;
         }
-        
+
         return recv;
     }
 
