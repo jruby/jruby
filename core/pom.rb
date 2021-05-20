@@ -207,11 +207,13 @@ project 'JRuby Base' do
     execute_goals( 'compile',
                    :id => 'populators',
                    :phase => 'process-classes',
-                   'debug' => 'false',
-                   'fork' => 'true',
-                   'compilerArgs' => fork_compiler_args,
-                   'includes' => [ 'org/jruby/gen/**/*.java' ] )
-
+                   'debug' => 'true',
+                   'compilerArgs' => [ '-XDignore.symbol.file=true',
+                                       '-J-Duser.language=en',
+                                       '-J-Dfile.encoding=UTF-8',
+                                       '-J-Xmx${jruby.compile.memory}' ],
+                   'includes' => [ 'org/jruby/gen/**/*.java',
+                                   'module-info.java' ] )
     execute_goals( 'compile',
                    :id => 'eclipse-hack',
                    :phase => 'process-classes',
