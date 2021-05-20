@@ -1865,7 +1865,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void exceptionRaised(Throwable throwable) {
         // if unrescuable (internal exceptions) just re-raise and let it be handled by thread handler
-        if (throwable instanceof Unrescuable) {
+        if (throwable instanceof Error || throwable instanceof Unrescuable) {
             Helpers.throwException(throwable);
         }
 
