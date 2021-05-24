@@ -1,1 +1,0 @@
-fails:ObjectSpace::WeakMap#keys is correct
