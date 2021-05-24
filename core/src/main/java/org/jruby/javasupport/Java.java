@@ -109,6 +109,7 @@ public class Java implements Library {
         JavaPackage.createJavaPackageClass(runtime, Java);
 
         org.jruby.javasupport.ext.Kernel.define(runtime);
+        org.jruby.javasupport.ext.Module.define(runtime);
 
         org.jruby.javasupport.ext.JavaLang.define(runtime);
         org.jruby.javasupport.ext.JavaLangReflect.define(runtime);
@@ -227,6 +228,7 @@ public class Java implements Library {
         }
     }
 
+    @Deprecated
     public static IRubyObject create_proxy_class(
             IRubyObject self,
             IRubyObject name,
@@ -238,15 +240,19 @@ public class Java implements Library {
             throw runtime.newTypeError(module, runtime.getModule());
         }
 
-        final RubyModule proxyClass = get_proxy_class(self, javaClass);
-        final String constName = name.asJavaString();
-        IRubyObject existing = ((RubyModule) module).getConstantNoConstMissing(constName);
+        return setProxyClass(runtime, (RubyModule) module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
+    }
+
+    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target,
+                                           final String constName, final Class<?> javaClass) {
+        final RubyModule proxyClass = getProxyClass(runtime, javaClass);
+        IRubyObject existing = target.getConstantNoConstMissing(constName);
 
         if ( existing != null && existing != RubyBasicObject.UNDEF && existing != proxyClass ) {
-            runtime.getWarnings().warn("replacing " + existing + " with " + proxyClass + " in constant '" + constName + " on class/module " + module);
+            runtime.getWarnings().warn("replacing " + existing + " with " + proxyClass + " in constant '" + constName + " on class/module " + target);
         }
 
-        ((RubyModule) module).setConstantQuiet(name.asJavaString(), proxyClass);
+        target.setConstantQuiet(constName, proxyClass);
         return proxyClass;
     }
 
@@ -947,8 +953,12 @@ public class Java implements Library {
     }
 
     public static Class getJavaClass(final Ruby runtime, final String className) throws RaiseException {
+        return getJavaClass(runtime, className, true);
+    }
+
+    public static Class getJavaClass(final Ruby runtime, final String className, boolean initialize) throws RaiseException {
         try {
-            return loadJavaClass(runtime, className);
+            return loadJavaClass(runtime, className, initialize);
         } catch (ClassNotFoundException ex) {
             throw initCause(runtime.newNameError("Java class " + className + " not found", className, ex), ex);
         }
