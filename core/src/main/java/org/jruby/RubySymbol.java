@@ -1487,12 +1487,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         private final CallSite site;
 
         public SymbolProcBody(Ruby runtime, String symbol) {
-            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
+            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.ONE_REQUIRED);
             this.site = MethodIndex.getFunctionalCallSite(symbol);
         }
 
         public SymbolProcBody(Ruby runtime, String symbol, StaticScope scope) {
-            super(scope, Signature.OPTIONAL);
+            super(scope, Signature.ONE_REQUIRED);
             this.site = new RefinedCachingCallSite(symbol, scope, CallType.FUNCTIONAL);
         }
 
@@ -1545,7 +1545,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         public String getFile() {
-            return site.methodName;
+            return null;
         }
 
         @Override
@@ -1555,7 +1555,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         public ArgumentDescriptor[] getArgumentDescriptors() {
-            return ArgumentDescriptor.ANON_REST;
+            return ArgumentDescriptor.SYMBOL_PROC;
         }
     }
 }
