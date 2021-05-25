@@ -63,7 +63,7 @@ module Open3
       env = {}
     end
 
-    if cmd.size == 1 && ShellLauncher.shouldUseShell(cmd[0])
+    if cmd.size == 1 && (cmd[0] =~ / / || ShellLauncher.shouldUseShell(cmd[0]))
       cmd = [RbConfig::CONFIG['SHELL'], JRuby::Util::ON_WINDOWS ? '/c' : '-c', cmd[0]]
     end
 
