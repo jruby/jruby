@@ -1174,8 +1174,6 @@ public class RipperLexer extends LexingCommon {
                     dispatchScanEvent(tSP);
                     continue;
                 }
-                if (c == ' ') return tSP;
-                if (Character.isWhitespace(c)) return c;
                 pushback(c);
                 return '\\';
             case '%':
@@ -2318,7 +2316,7 @@ public class RipperLexer extends LexingCommon {
     private int setNumberLiteral(int type, int suffix) {
         if ((suffix & SUFFIX_I) != 0) type = RipperParser.tIMAGINARY;
 
-        setState(EXPR_END);
+        setState(EXPR_END|EXPR_ENDARG);
         return type;
     }
 

@@ -618,7 +618,7 @@ public class RubyLexer extends LexingCommon {
             type = RubyParser.tIMAGINARY;
         }
 
-        setState(EXPR_END);
+        setState(EXPR_END|EXPR_ENDARG);
         return type;
     }
 
