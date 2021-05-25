@@ -84,7 +84,7 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_REGEXP) != 0) {
             RegexpOptions options = lexer.parseRegexpFlags();
             ByteList regexpBytelist = ByteList.create("");
-            lexer.setState(EXPR_END | EXPR_ENDARG);
+            lexer.setState(EXPR_END);
             lexer.setValue(new RegexpNode(lexer.getRubySourceline(), regexpBytelist, options));
             return RubyParser.tREGEXP_END;
         }
@@ -95,7 +95,7 @@ public class StringTerm extends StrTerm {
             return RubyParser.tLABEL_END;
         }
 
-        lexer.setState(EXPR_END | EXPR_ENDARG);
+        lexer.setState(EXPR_END);
         lexer.setValue(String.valueOf(end));
         return RubyParser.tSTRING_END;
     }
@@ -106,7 +106,7 @@ public class StringTerm extends StrTerm {
 
         if ((flags & STR_FUNC_TERM) != 0) {
             if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
-            lexer.setState(EXPR_END|EXPR_ENDARG);
+            lexer.setState(EXPR_END);
             lexer.setValue(String.valueOf(end));
             lexer.setStrTerm(null);
             return ((flags & STR_FUNC_REGEXP) != 0) ? RubyParser.tREGEXP_END : RubyParser.tSTRING_END;
@@ -268,7 +268,7 @@ public class StringTerm extends StrTerm {
                         c = lexer.readEscape();
                     } else if (qwords && Character.isWhitespace(c)) {
                         /* ignore backslashed spaces in %w */
-                    } else if (c != end && !(begin != '\0' && c == begin)) {
+                    } else if (c != end && !(begin != '\0' && c == begin)) { // when begin/end are different (e.g. '(', ')' and you happen to see '\)'.
                         buffer.append('\\');
                         lexer.pushback(c);
                         continue;
