@@ -24,25 +24,33 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.runtime;
+package org.jruby.internal.runtime.methods;
 
-/**
- * Simple no-pojo methods for Position of a method (in truth we could use
- * this anywhere).  Simpler string and int does not require using
- * ISourcePosition, which is nicer for the
- */
-public interface PositionAware {
-    /**
-     * Get the filename for the method.
-     * 
-     * @return the filename for the method
-     */
-    public String getFile();
-    
-    /**
-     * Get the line number for the method. 0-based (ie. line 1 returns a 0)
-     * 
-     * @return the line number for the method
-     */
-    public int getLine();
+import org.jruby.RubyModule;
+import org.jruby.internal.runtime.InternalSplitState;
+import org.jruby.ir.interpreter.ExitableInterpreterContext;
+import org.jruby.ir.interpreter.ExitableInterpreterEngineState;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+class MethodSplitState implements InternalSplitState {
+    public final ExitableInterpreterContext eic;
+    public final ExitableInterpreterEngineState state;
+    public final ThreadContext context;
+    public final DynamicScope scope;
+    public final RubyModule implClass;
+    public final IRubyObject self;
+    public final String name;
+
+    public MethodSplitState(ThreadContext context, ExitableInterpreterContext ic, RubyModule clazz, IRubyObject self,
+            String name) {
+        this.context = context;
+        this.eic = ic;
+        this.state = ic.getEngineState();
+        this.scope = DynamicScope.newDynamicScope(ic.getStaticScope());
+        this.implClass = clazz;
+        this.self = self;
+        this.name = name;
+    }
 }

@@ -132,6 +132,7 @@ public abstract class IRScope implements ParseResult {
     private boolean canCaptureCallersBinding;
     private boolean canReceiveBreaks;  // may receive a break during execution (from itself of child scope).
     private boolean canReceiveNonLocalReturns;
+    private boolean usesSuper;
     private boolean usesZSuper;
     private boolean needsCodeCoverage;
     private boolean usesEval;
@@ -491,6 +492,14 @@ public abstract class IRScope implements ParseResult {
 
     public void setUsesZSuper() {
         usesZSuper = true;
+    }
+
+    public void setUsesSuper() {
+        usesSuper = true;
+    }
+
+    public boolean usesSuper() {
+        return usesSuper;
     }
 
     public boolean usesZSuper() {

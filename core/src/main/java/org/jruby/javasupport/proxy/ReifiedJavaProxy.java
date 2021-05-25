@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,20 +28,25 @@
 
 package org.jruby.javasupport.proxy;
 
+import org.jruby.RubyClass;
+import org.jruby.java.codegen.Reified;
+import org.jruby.runtime.builtin.IRubyObject;
+
 /**
- * Contains methods that are only called from generated code
- * 
- * @author krab
+ * Interface is implemented by proxies generated from a JavaProxyClass.
+ *
+ * @see RubyClass.ConcreteJavaReifier
  */
-public class InternalJavaProxyHelper {
+public interface ReifiedJavaProxy extends Reified {
 
-    public static JavaProxyClass initProxyClass(Class proxy) {
-        return new JavaProxyClass(proxy);
-    }
+    /**
+     * @return the corresponding JavaProxyClass
+     */
+    JavaProxyClass ___jruby$proxyClass();
 
-    public static JavaProxyMethod initProxyMethod(JavaProxyClass proxyClass,
-            String name, String desc, boolean hasSuper) {
-        return proxyClass.initMethod(name, desc, hasSuper);
-    }
+    /**
+     * @return the ruby object associated with this java object
+     */
+    IRubyObject ___jruby$rubyObject();
 
 }

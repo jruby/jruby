@@ -259,7 +259,7 @@ public class InterpreterContext {
 
         for (int i = 0; i < length; i++) {
             if (i > 0) b.append("\n");
-            b.append("  ").append(i).append('\t').append(instructions[i]);
+            b.append(String.format("%6d",i)).append('\t').append(instructions[i]);
         }
 
         /* ENEBO: I this this is too much output espectially for ic and not fic

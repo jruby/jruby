@@ -50,6 +50,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -81,6 +83,7 @@ import org.jruby.java.addons.KernelJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.dispatch.CallableSelector;
+import org.jruby.java.dispatch.CallableSelector.CallableCache;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ArrayJavaProxyCreator;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -90,7 +93,6 @@ import org.jruby.java.proxies.JavaInterfaceTemplate;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.java.util.SystemPropertiesMap;
-import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
@@ -134,7 +136,6 @@ public class Java implements Library {
 
         RubyClassPathVariable.createClassPathVariable(runtime);
 
-        runtime.setJavaProxyClassFactory(JavaProxyClassFactory.createFactory());
 
         // (legacy) JavaClass compatibility:
         Java.setConstant("JavaClass", getProxyClass(runtime, java.lang.Class.class));
@@ -604,8 +605,36 @@ public class Java implements Library {
                 return context.nil;
             }
         });
+        ///TODO: investigate this, should jcreate! still exist?
 
         subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
+    }
+
+    /**
+     * Used for concrete reified classes. Constructed in generated code (RubyClass)
+     */
+    public static class JCtorCache implements CallableSelector.CallableCache<ParameterTypes> {
+
+        private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
+        public final JavaConstructor[] constructors;
+        private final List<JavaConstructor> constructorList;
+
+        public JCtorCache(JavaConstructor[] constructors) {
+            this.constructors = constructors;
+            constructorList = Arrays.asList(constructors);
+        }
+
+        public int indexOf(JavaConstructor ctor) {
+            return constructorList.indexOf(ctor);
+        }
+
+        public final ParameterTypes getSignature(int signatureCode) {
+            return cache.get(signatureCode);
+        }
+
+        public final void putSignature(int signatureCode, ParameterTypes callable) {
+            cache.put(signatureCode, callable);
+        }
     }
 
     public static class JCreateMethod extends JavaMethodN implements CallableSelector.CallableCache<JavaProxyConstructor> {
@@ -614,6 +643,24 @@ public class Java implements Library {
 
         JCreateMethod(RubyModule cls) {
             super(cls, PUBLIC, "__jcreate!");
+        }
+
+        /**
+         * Disambiguate which ctor index to call from the given cache
+         * @param argarray argument list for the ctors
+         * @param cache cache of ctors
+         * @param runtime
+         * @return Index of ctor in cache to call, or throws a new exception
+         */
+        public static int forTypes(IRubyObject[] args, JCtorCache cache, Ruby runtime) {
+            JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache,
+                    args.length, args);
+            int index = cache.indexOf(ctor);
+            if (index < 0) {
+                // use our error otherwise
+                throw runtime.newArgumentError("index error finding superconstructor");
+            }
+            return index;
         }
 
         private static JavaProxyClass getProxyClass(final IRubyObject self) {
@@ -640,11 +687,13 @@ public class Java implements Library {
                 case 1: matching = matchConstructor0ArityOne(context, constructors, arg0); break;
                 default: matching = matchConstructorArityOne(context, constructors, arg0);
             }
-
+            if (self instanceof JavaProxy) {
+                return context.nil;
+            }
             JavaObject newObject = matching.newInstance(self, arg0);
-            return JavaUtilities.set_java_object(self, self, newObject);
+            return newObject;
         }
-
+        
         @Override
         public final IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             final int arity = args.length;
@@ -656,11 +705,22 @@ public class Java implements Library {
                 default: matching = matchConstructor(context, constructors, arity, args);
             }
 
+            if (self instanceof JavaProxy)
+            {
+                //TODO: ensure this isn't being hit in any tests
+            	System.err.println("Failed nil Init for JavaProxy: " + self.anyToString());
+            	new RuntimeException("Backtrace").printStackTrace();
+            	context.runtime.newArgumentError("ahck").printStackTrace();
+            	return context.nil; 
+            }
             JavaObject newObject = matching.newInstance(self, args);
-            return JavaUtilities.set_java_object(self, self, newObject);
+            if (self instanceof JavaProxy) { // TODO: ^?
+                JavaUtilities.set_java_object(self, self, newObject);
+            }
+            return newObject;
         }
 
-        // assumes only 1 constructor exists!
+        // assumes only 1 *Ruby* constructor exists! (Filters out nonruby)
         private JavaProxyConstructor matchConstructor0ArityOne(final ThreadContext context,
             final JavaProxyConstructor[] constructors, final IRubyObject arg0) {
             JavaProxyConstructor forArity = checkCallableForArity(1, constructors, 0);
@@ -717,14 +777,13 @@ public class Java implements Library {
         }
 
         // generic (slowest) path
-        private JavaProxyConstructor matchConstructor(final ThreadContext context,
+        public JavaProxyConstructor matchConstructor(final ThreadContext context,
             final JavaProxyConstructor[] constructors, final int arity, final IRubyObject... args) {
             ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(arity, constructors);
 
             if ( forArity.size() == 0 ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
             }
-
             final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
                 context.runtime, this, forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
             );
@@ -733,6 +792,24 @@ public class Java implements Library {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
             }
             return matching;
+        }
+
+        // generic (slowest) path
+        public static <T extends ParameterTypes> T matchConstructorIndex(final ThreadContext context,
+            final T[] constructors, final CallableCache<ParameterTypes> cache, final int arity, final IRubyObject... args) {
+            ArrayList<T> forArity = findCallablesForArity(arity, constructors);
+
+            if ( forArity.size() == 0 ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+            final ParameterTypes matching = CallableSelector.matchingCallableArityN(
+                context.runtime, cache, forArity.toArray(new ParameterTypes[forArity.size()]), args
+            );
+
+            if ( matching == null ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+            return (T) matching;
         }
 
         public final JavaProxyConstructor getSignature(int signatureCode) {
@@ -1504,6 +1581,7 @@ public class Java implements Library {
 
     }
 
+    //TODO: what is this doing?
     @SuppressWarnings("unchecked")
     public static Class generateRealClass(final RubyClass clazz) {
         final Ruby runtime = clazz.getRuntime();
@@ -1528,7 +1606,8 @@ public class Java implements Library {
         }
         catch (ClassNotFoundException ex) {
             // try to use super's reified class; otherwise, RubyObject (for now)
-            Class<? extends IRubyObject> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
+        	//TODO: test java reified?
+            Class<?> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
             if ( superClass == null ) superClass = RubyObject.class;
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
 
@@ -1555,7 +1634,7 @@ public class Java implements Library {
 
     }
 
-    public static Constructor getRealClassConstructor(final Ruby runtime, Class<?> proxyImplClass) {
+    public static Constructor<? extends IRubyObject> getRealClassConstructor(final Ruby runtime, Class<? extends IRubyObject> proxyImplClass) {
         try {
             return proxyImplClass.getConstructor(Ruby.class, RubyClass.class);
         }
@@ -1564,9 +1643,9 @@ public class Java implements Library {
         }
     }
 
-    public static IRubyObject constructProxy(Ruby runtime, Constructor proxyConstructor, RubyClass clazz) {
+    public static IRubyObject constructProxy(Ruby runtime, Constructor<? extends IRubyObject> proxyConstructor, RubyClass clazz) {
         try {
-            return (IRubyObject) proxyConstructor.newInstance(runtime, clazz);
+            return proxyConstructor.newInstance(runtime, clazz);
         }
         catch (InvocationTargetException e) {
             throw mapGeneratedProxyException(runtime, e);

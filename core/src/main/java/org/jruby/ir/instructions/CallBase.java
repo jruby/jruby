@@ -549,7 +549,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return callSite.call(context, self, object, values, preparedBlock);
     }
 
-    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
+    public IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
         return splatMap != null ?
                 prepareArgumentsComplex(context, self, currScope, dynamicScope, temp) :
                 prepareArgumentsSimple(context, self, currScope, dynamicScope, temp);

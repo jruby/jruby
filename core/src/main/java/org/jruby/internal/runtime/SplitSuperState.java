@@ -24,25 +24,20 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.runtime;
+package org.jruby.internal.runtime;
 
-/**
- * Simple no-pojo methods for Position of a method (in truth we could use
- * this anywhere).  Simpler string and int does not require using
- * ISourcePosition, which is nicer for the
- */
-public interface PositionAware {
-    /**
-     * Get the filename for the method.
-     * 
-     * @return the filename for the method
-     */
-    public String getFile();
-    
-    /**
-     * Get the line number for the method. 0-based (ie. line 1 returns a 0)
-     * 
-     * @return the line number for the method
-     */
-    public int getLine();
+import org.jruby.RubyArray;
+import org.jruby.internal.runtime.methods.ExitableReturn;
+import org.jruby.runtime.Block;
+
+public class SplitSuperState<T extends InternalSplitState> {
+    public final RubyArray<?> callArrayArgs;
+    public final Block callBlockArgs;
+    public final T state;
+
+    public SplitSuperState(ExitableReturn result, T state) {
+        callArrayArgs = result.getArguments();
+        callBlockArgs = result.getBlock();
+        this.state = state;
+    }
 }

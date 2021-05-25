@@ -11,8 +11,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
- *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -26,27 +24,33 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.javasupport.proxy;
+package org.jruby.ir.interpreter;
 
-/**
- * Interface is implemented by proxies generated from a JavaProxyClass.
- *
- * @see JavaProxyClassFactory
- */
-public interface InternalJavaProxy {
+public class ExitableInterpreterEngineState {
+    // What IC this is executing.
+    private ExitableInterpreterContext interpreterContext;
 
-    /**
-     * @return the corresponding JavaProxyClass
-     */
-    JavaProxyClass ___getProxyClass();
+    // The current index of the instruction we are executing.
+    private int ipc = 0;
+    private Object[] temporaryVariables = null;
 
-    /**
-     * @return the invocation handler
-     */
-    JavaProxyInvocationHandler ___getInvocationHandler();
+    public ExitableInterpreterEngineState(ExitableInterpreterContext interpreterContext) {
+        this.interpreterContext = interpreterContext;
+    }
 
-    // NOTE: used in JavaProxyClassFactory indirectly
-    // ... getStatic(JAVA_PROXY_TYPE, "NO_ARGS", ...)
-    static final Object[] NO_ARGS = new Object[0];
+    public Object[] getTemporaryVariables() {
+        if (temporaryVariables == null) {
+            temporaryVariables = interpreterContext.allocateTemporaryVariables();
+        }
 
+        return temporaryVariables;
+    }
+
+    public int getIPC() {
+        return ipc;
+    }
+
+    public void setIPC(int ipc) {
+        this.ipc = ipc;
+    }
 }
