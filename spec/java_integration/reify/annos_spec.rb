@@ -57,7 +57,7 @@ describe "JRuby annotation processing:" do
         "astr=\"Hello\", abyte=0xde, ashort=0xEF_FF, anint=0xFFff_EeeE, along=0xFFFF_EEEE_0000_9999,"+
         "afloat=3.5, adouble=1024.1024, abool=true, anbool=false, achar='?',"+
         "anenum=java.lang.annotation.RetentionPolicy.RUNTIME, aClass=java.lang.String.java_class,"+
-        "Darray={@javax.annotation.Resource(description=\"first\"), @javax.annotation.Resource(description=\"second\")})"+
+        "Darray={@jakarta.annotation.Resource(description=\"first\"), @jakarta.annotation.Resource(description=\"second\")})"+
         " void foo()")
       def foo; end
   
