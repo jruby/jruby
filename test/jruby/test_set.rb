@@ -66,11 +66,11 @@ class TestSet < Test::Unit::TestCase
   def test_yaml_dump; require 'yaml'
     str = YAML.dump(Set.new)
     assert_equal "--- !ruby/object:Set\nhash: {}\n", str
-    set = YAML.load(str)
+    set = YAML.unsafe_load(str)
     assert_equal Set.new([]), set
 
     str = YAML.dump(SortedSet.new([2, 3, 1]))
-    set = YAML.load(str)
+    set = YAML.unsafe_load(str)
     assert_equal SortedSet.new([1, 2, 3]), set
   end
 
