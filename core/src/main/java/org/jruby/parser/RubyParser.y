@@ -114,6 +114,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.RubyLexer;
+import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
@@ -1377,10 +1378,26 @@ call_args       : command {
 
 // [!null] - ArgsCatNode, SplatNode, ArrayNode, HashNode, BlockPassNode
 command_args    : /* none */ {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
-                    lexer.getCmdArgumentState().begin();
+                    boolean lookahead = false;
+                    switch (yychar) {
+                    case tLPAREN2: case tLPAREN: case tLPAREN_ARG: case '[': case tLBRACK:
+                       lookahead = true;
+                    }
+                    StackState cmdarg = lexer.getCmdArgumentState();
+                    if (lookahead) cmdarg.end();
+                    cmdarg.begin();
+                    if (lookahead) cmdarg.stop();
                 } call_args {
-                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                    StackState cmdarg = lexer.getCmdArgumentState();
+                    boolean lookahead = false;
+                    switch (yychar) {
+                    case tLBRACE_ARG:
+                       lookahead = true;
+                    }
+                      
+                    if (lookahead) cmdarg.end();
+                    cmdarg.end();
+                    if (lookahead) cmdarg.stop();
                     $$ = $2;
                 }
 
@@ -1471,10 +1488,9 @@ primary         : literal
                      $$ = support.new_fcall($1);
                 }
                 | keyword_begin {
-                    $$ = lexer.getCmdArgumentState().getStack();
-                    lexer.getCmdArgumentState().reset();
+                    lexer.getCmdArgumentState().stop();
                 } bodystmt keyword_end {
-                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
+                    lexer.getCmdArgumentState().end();
                     $$ = new BeginNode($1, support.makeNullNil($3));
                 }
                 | tLPAREN_ARG {
@@ -1894,11 +1910,9 @@ lambda          : /* none */  {
                     $$ = lexer.getLeftParenBegin();
                     lexer.setLeftParenBegin(lexer.incrementParenNest());
                 } f_larglist {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
-                    lexer.getCmdArgumentState().reset();
+                    lexer.getCmdArgumentState().stop();
                 } lambda_body {
-                    lexer.getCmdArgumentState().reset($<Long>3.longValue());
-                    lexer.getCmdArgumentState().restart();
+                    lexer.getCmdArgumentState().end();
                     $$ = new LambdaNode($2.getLine(), $2, $4, support.getCurrentScope(), lexer.getRubySourceline());
                     lexer.setLeftParenBegin($<Integer>1);
                     support.popCurrentScope();
@@ -2010,12 +2024,11 @@ do_body 	: {
                     $$ = lexer.getRubySourceline();
                 } {
                     support.pushBlockScope();
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
-                    lexer.getCmdArgumentState().reset();
+                    lexer.getCmdArgumentState().stop();
                 } opt_block_param bodystmt {
                     $$ = new IterNode($<Integer>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
                     support.popCurrentScope();
-                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
+                    lexer.getCmdArgumentState().end();
                 }
  
 case_body       : keyword_when args then compstmt cases {
@@ -2215,8 +2228,7 @@ string_content  : tSTRING_CONTENT {
                    lexer.setStrTerm(null);
                    lexer.getConditionState().stop();
                 } {
-                   $$ = lexer.getCmdArgumentState().getStack();
-                   lexer.getCmdArgumentState().reset();
+                   lexer.getCmdArgumentState().stop();
                 } {
                    $$ = lexer.getState();
                    lexer.setState(EXPR_BEG);
@@ -2229,7 +2241,7 @@ string_content  : tSTRING_CONTENT {
                 } compstmt tSTRING_DEND {
                    lexer.getConditionState().restart();
                    lexer.setStrTerm($<StrTerm>2);
-                   lexer.getCmdArgumentState().reset($<Long>3.longValue());
+                   lexer.getCmdArgumentState().stop();
                    lexer.setState($<Integer>4);
                    lexer.setBraceNest($<Integer>5);
                    lexer.setHeredocIndent($<Integer>6);
@@ -2252,7 +2264,7 @@ string_dvar     : tGVAR {
 
 // ByteList:symbol
 symbol          : tSYMBEG sym {
-                     lexer.setState(EXPR_END|EXPR_ENDARG);
+                     lexer.setState(EXPR_END);
                      $$ = $2;
                 }
 
@@ -2269,7 +2281,7 @@ sym             : fname
                 }
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
-                     lexer.setState(EXPR_END|EXPR_ENDARG);
+                     lexer.setState(EXPR_END);
 
                      // DStrNode: :"some text #{some expression}"
                      // StrNode: :"some text"

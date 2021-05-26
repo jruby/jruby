@@ -218,7 +218,7 @@ t          yydebug.reduce(yyState, yyStates[yyV-1], yyN, yyRule[yyN], yyLen[yyN]
 .        if (state == null) {
 .            yyVal = yyDefault(yyV > yyTop ? null : yyVals[yyV]);
 .        } else {
-.            yyVal = state.execute(this, yyVal, yyVals, yyTop);
+.            yyVal = state.execute(this, yyVal, yyVals, yyTop, yyToken);
 .        }
 .//        switch (yyN) {
 .// ACTIONS_BEGIN
