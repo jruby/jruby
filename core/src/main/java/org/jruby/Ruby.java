@@ -1234,7 +1234,7 @@ public final class Ruby implements Constantizable {
     private ScriptAndCode tryCompile(RootNode root, ClassDefiningClassLoader classLoader) {
         try {
             return Compiler.getInstance().execute(this, root, classLoader);
-        } catch (NotCompilableException e) {
+        } catch (NotCompilableException | VerifyError e) {
             if (Options.JIT_LOGGING.load()) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
                     LOG.error("failed to compile target script: " + root.getFile(), e);
