@@ -9,7 +9,7 @@ public class TestRubyThread extends Base {
     public void testExceptionDoesNotPropagate() throws InterruptedException {
         runtime.evalScriptlet("$run_thread = false");
         RubyThread thread = (RubyThread) runtime.evalScriptlet(
-            "Thread.start { sleep(0.01) unless $run_thread; raise java.lang.RuntimeException.new('TEST') }"
+            "Thread.start { sleep(0.01) until $run_thread; raise java.lang.RuntimeException.new('TEST') }"
         );
         assertNull(thread.getExitingException());
         thread.setReportOnException(false);
@@ -20,12 +20,14 @@ public class TestRubyThread extends Base {
 
         assertNotNull(thread.getExitingException());
         assertSame(RuntimeException.class, thread.getExitingException().getClass());
+
+        assertSame(runtime.getNil(), thread.status(runtime.getCurrentContext()));
     }
 
     public void testJavaErrorDoesPropagate() throws InterruptedException {
         runtime.evalScriptlet("$run_thread = false");
         RubyThread thread = (RubyThread) runtime.evalScriptlet(
-            "Thread.start { sleep(0.01) unless $run_thread; raise java.lang.AssertionError.new(42) }"
+            "Thread.start { sleep(0.01) until $run_thread; raise java.lang.AssertionError.new(42) }"
         );
         assertNull(thread.getExitingException());
         thread.setReportOnException(false);
@@ -40,9 +42,12 @@ public class TestRubyThread extends Base {
 
         Thread.sleep(100);
 
-        assertNull(thread.getExitingException()); // bubble out to handler :
+        assertTrue(thread.getExitingException() instanceof AssertionError);
+        // but bubbles out to Java handler :
         assertNotNull(exception.get());
         assertEquals("java.lang.AssertionError: 42", exception.get().toString());
+
+        assertSame(runtime.getNil(), thread.status(runtime.getCurrentContext()));
     }
 
 }

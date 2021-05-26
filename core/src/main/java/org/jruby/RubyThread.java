@@ -1898,17 +1898,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param throwable
      */
     public void exceptionRaised(Throwable throwable) {
+        assert isCurrent();
+
+        final Ruby runtime = getRuntime();
+
+        exitingException = throwable;
+
         // if unrescuable (internal exceptions) just re-raise and let it be handled by thread handler
         if (throwable instanceof Error || throwable instanceof Unrescuable) {
             Helpers.throwException(throwable);
         }
 
-        final Ruby runtime = getRuntime();
-
-        assert isCurrent();
-
-        IRubyObject rubyException;
-
+        final IRubyObject rubyException;
         if (throwable instanceof RaiseException) {
             RaiseException exception = (RaiseException) throwable;
             rubyException = exception.getException();
@@ -1930,8 +1931,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         } else if (runtime.isDebug()) {
             runtime.printError(throwable);
         }
-
-        exitingException = throwable;
     }
 
     private boolean abortOnException(Ruby runtime) {
