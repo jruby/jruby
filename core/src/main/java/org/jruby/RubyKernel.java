@@ -1481,7 +1481,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
-        // If we encounter a amp'd proc we leave it a proc for some reason.
+        // existing procs remain procs vs becoming lambdas.
         Block.Type type = block.type == Block.Type.PROC ? block.type : Block.Type.LAMBDA;
 
         return context.runtime.newProc(type, block);
@@ -1726,7 +1726,7 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject    system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
@@ -1749,12 +1749,6 @@ public class RubyKernel {
             return executor.systemInternal(context, args, null);
         }
 
-        // else old JDK logic
-        if (args[0] instanceof RubyHash) {
-            runtime.getENV().merge_bang(context, new IRubyObject[]{args[0]}, Block.NULL_BLOCK);
-            // drop the first element for calling systemCommon()
-            args = ArraySupport.newCopy(args, 1, args.length - 1);
-        }
         int resultCode = systemCommon(context, recv, args);
         switch (resultCode) {
             case 0: return runtime.getTrue();
@@ -1956,7 +1950,7 @@ public class RubyKernel {
         }
 
         if (block.isGiven()) {
-            sizeFn = (ctx, recv, args1) -> block.call(ctx, args1);
+            sizeFn = (ctx, recv, args1) -> block.yieldValues(ctx, args1);
         }
 
         return enumeratorizeWithSize(context, self, method, args, sizeFn);
@@ -2268,8 +2262,8 @@ public class RubyKernel {
         return ((RubyBasicObject) self).nil_p(context);
     }
 
-    // Reads and writes backref due to decendant calls ending up in Regexp#=~
-    @JRubyMethod(name = "=~", reads = FrameField.BACKREF, writes = FrameField.BACKREF)
+    // Writes backref due to decendant calls ending up in Regexp#=~
+    @JRubyMethod(name = "=~", writes = FrameField.BACKREF)
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
             "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
@@ -2277,8 +2271,8 @@ public class RubyKernel {
         return ((RubyBasicObject) self).op_match(context, arg);
     }
 
-    // Reads and writes backref due to decendant calls ending up in Regexp#=~
-    @JRubyMethod(name = "!~", reads = FrameField.BACKREF, writes = FrameField.BACKREF)
+    // Writes backref due to decendant calls ending up in Regexp#=~
+    @JRubyMethod(name = "!~", writes = FrameField.BACKREF)
     public static IRubyObject op_not_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return ((RubyBasicObject) self).op_not_match(context, arg);
     }

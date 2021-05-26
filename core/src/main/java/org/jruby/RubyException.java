@@ -163,7 +163,7 @@ public class RubyException extends RubyObject {
         return exceptionClass;
     }
 
-    public static final ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
+    public static final ObjectAllocator EXCEPTION_ALLOCATOR = RubyException::new;
 
     private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
@@ -344,7 +344,7 @@ public class RubyException extends RubyObject {
      */
     @Override
     public <T> T toJava(Class<T> target) {
-        if (target != Object.class && target.isAssignableFrom(RaiseException.class)) {
+        if (target.isAssignableFrom(RaiseException.class)) {
             return target.cast(toThrowable());
         }
         return super.toJava(target);

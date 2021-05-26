@@ -28,17 +28,6 @@
 
 package org.jruby.ext.socket;
 
-import java.io.IOException;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.net.SocketException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -47,13 +36,22 @@ import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorFactory;
+
+import java.io.IOException;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
 /**
@@ -63,18 +61,12 @@ import java.nio.channels.spi.SelectorProvider;
 public class RubyTCPServer extends RubyTCPSocket {
     static void createTCPServer(Ruby runtime) {
         RubyClass rb_cTCPServer = runtime.defineClass(
-                "TCPServer", runtime.getClass("TCPSocket"), TCPSERVER_ALLOCATOR);
+                "TCPServer", runtime.getClass("TCPSocket"), RubyTCPServer::new);
 
         rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class);
 
         runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
     }
-
-    private static final ObjectAllocator TCPSERVER_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyTCPServer(runtime, klass);
-        }
-    };
 
     public RubyTCPServer(Ruby runtime, RubyClass type) {
         super(runtime, type);

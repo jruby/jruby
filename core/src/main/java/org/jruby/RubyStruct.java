@@ -226,7 +226,7 @@ public class RubyStruct extends RubyObject {
 
         if (name == null || nilName) {
             newStruct = RubyClass.newClass(runtime, superClass);
-            newStruct.setAllocator(STRUCT_INSTANCE_ALLOCATOR);
+            newStruct.setAllocator(RubyStruct::new);
             newStruct.makeMetaClass(superClass.metaClass);
             newStruct.inherit(superClass);
         } else {
@@ -236,7 +236,7 @@ public class RubyStruct extends RubyObject {
                 runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
                 superClass.deleteConstant(name);
             }
-            newStruct = superClass.defineClassUnder(name, superClass, STRUCT_INSTANCE_ALLOCATOR);
+            newStruct = superClass.defineClassUnder(name, superClass, RubyStruct::new);
         }
 
         // set reified class to RubyStruct, for Java subclasses to use
@@ -787,14 +787,27 @@ public class RubyStruct extends RubyObject {
         return result;
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
-    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
-        return dig(context, args, 0);
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0) {
+        return arefImpl( arg0, true );
     }
 
-    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
-        final IRubyObject val = arefImpl( args[idx++], true );
-        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        final IRubyObject val = arefImpl( arg0, true );
+        return RubyObject.dig1(context, val, arg1);
+    }
+
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        final IRubyObject val = arefImpl( arg0, true );
+        return RubyObject.dig2(context, val, arg1, arg2);
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        final IRubyObject val = arefImpl( args[0], true );
+        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
@@ -846,15 +859,6 @@ public class RubyStruct extends RubyObject {
         // or if it's a module.
         return (RubyClass) runtime.getClassFromPath(path);
     }
-
-    private static final ObjectAllocator STRUCT_INSTANCE_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public RubyStruct allocate(Ruby runtime, RubyClass klass) {
-            RubyStruct instance = new RubyStruct(runtime, klass);
-            instance.setMetaClass(klass);
-            return instance;
-        }
-    };
 
     @Override
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)

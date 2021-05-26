@@ -70,10 +70,10 @@ public class JRubyLibrary implements Library {
         JRuby.defineAnnotatedMethods(JRubyLibrary.class);
         JRuby.defineAnnotatedMethods(JRubyUtilLibrary.class);
 
-        JRuby.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR)
+        JRuby.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal::new)
              .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
-        JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR)
+        JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal::new)
              .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
         RubyModule CONFIG = JRuby.defineModuleUnder("CONFIG");

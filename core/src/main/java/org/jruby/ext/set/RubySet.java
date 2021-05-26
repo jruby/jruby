@@ -59,7 +59,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 public class RubySet extends RubyObject implements Set {
 
     static RubyClass createSetClass(final Ruby runtime) {
-        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), ALLOCATOR);
+        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), RubySet::new);
 
         Set.setReifiedClass(RubySet.class);
 
@@ -98,12 +98,6 @@ public class RubySet extends RubyObject implements Set {
         this.hash = (RubyHash) getInstanceVariable("@hash");
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public RubySet allocate(Ruby runtime, RubyClass klass) {
-            return new RubySet(runtime, klass);
-        }
-    };
-
     RubyHash hash; // @hash
 
     protected RubySet(Ruby runtime, RubyClass klass) {
@@ -132,13 +126,40 @@ public class RubySet extends RubyObject implements Set {
         setInstanceVariable("@hash", hash); // MRI compat with set.rb
     }
 
-    RubySet newSet(final Ruby runtime) {
-        RubySet set = new RubySet(runtime, getMetaClass());
+    /**
+     * Construct a new Set with the same class as this one.
+     *
+     * @param runtime the current runtime
+     * @return a new Set
+     */
+    RubySet newSetFast(final Ruby runtime) {
+        return newSet(runtime, getMetaClass());
+    }
+
+    /**
+     * Construct a new Set. The Set class will be retrieved from the global namespace.
+     *
+     * @param runtime the current runtime
+     * @return a new Set
+     */
+    public static RubySet newSet(final Ruby runtime) {
+        return newSet(runtime, (RubyClass) runtime.getClassFromPath("Set"));
+    }
+
+    /**
+     * Construct a new Set.
+     *
+     * @param runtime the current runtime
+     * @param metaclass the class to assign to the new set
+     * @return a new Set
+     */
+    public static RubySet newSet(final Ruby runtime, final RubyClass metaclass) {
+        RubySet set = new RubySet(runtime, metaclass);
         set.allocHash(runtime);
         return set;
     }
 
-    private RubySet newSet(final ThreadContext context, final RubyClass metaClass, final RubyArray elements) {
+    private static RubySet newSet(final ThreadContext context, final RubyClass metaClass, final RubyArray elements) {
         final RubySet set = new RubySet(context.runtime, metaClass);
         return set.initSet(context, elements.toJavaArrayMaybeUnsafe(), 0, elements.size());
     }
@@ -464,7 +485,7 @@ public class RubySet extends RubyObject implements Set {
     // Returns a new set that is a copy of the set, flattening each containing set recursively.
     @JRubyMethod
     public RubySet flatten(final ThreadContext context) {
-        return newSet(context.runtime).flatten_merge(context, this);
+        return newSetFast(context.runtime).flatten_merge(context, this);
     }
 
     @JRubyMethod(name = "flatten!")
@@ -932,7 +953,7 @@ public class RubySet extends RubyObject implements Set {
             final IRubyObject key = block.yield(context, i);
             IRubyObject set;
             if ( ( set = h.fastARef(key) ) == null ) {
-                h.fastASet(key, set = newSet(runtime));
+                h.fastASet(key, set = newSetFast(runtime));
             }
             ((RubySet) set).invokeAdd(context, i);
         }
@@ -1019,7 +1040,7 @@ public class RubySet extends RubyObject implements Set {
                 @Override
                 protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject css) {
                     // set.add( self.class.new(css) ) :
-                    set.addImpl(runtime, RubySet.this.newSet(context, Set, (RubyArray) css));
+                    set.addImpl(runtime, newSet(context, Set, (RubyArray) css));
                     return context.nil;
                 }
             })

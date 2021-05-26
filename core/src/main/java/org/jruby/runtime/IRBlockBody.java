@@ -82,21 +82,21 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         IRubyObject[] args;
         if (canCallDirect()) {
             if (arg0 instanceof RubyArray) { // Unwrap the array arg
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, (RubyArray) arg0, signature);
             } else {
                 args = new IRubyObject[] { arg0 };
             }
             return yieldDirect(context, block, args, null);
         } else {
             if (arg0 instanceof RubyArray) { // Unwrap the array arg
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, (RubyArray) arg0, signature);
 
                 // FIXME: arity error is against new args but actual error shows arity of original args.
                 if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
 
                 return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
             } else {
-                return this.yield(context, block, arg0);
+                return doYield(context, block, arg0);
             }
         }
     }
@@ -158,12 +158,10 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
         if (block.type == Block.Type.LAMBDA) return doYieldLambda(context, block, value);
 
-        int blockArity = signature.arityValue();
-
         IRubyObject[] args;
         if (value == null) { // no args case from BlockBody.yieldSpecific
             args = IRubyObject.NULL_ARRAY;
-        } else if (!signature.hasKwargs() && blockArity >= -1 && blockArity <= 1) {
+        } else if (!signature.hasKwargs() && !signature.isSpreadable()) {
             args = new IRubyObject[] { value };
         } else {
             args = toAry(context, value);

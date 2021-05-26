@@ -97,7 +97,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static RubyClass createFileClass(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
 
-        RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), FILE_ALLOCATOR);
+        RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), RubyFile::new);
 
         fileClass.defineAnnotatedMethods(RubyFile.class);
 
@@ -239,13 +239,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         return fileClass;
     }
-
-    private static final ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyFile(runtime, klass);
-        }
-    };
 
     private static String getNullDevice() {
         // FIXME: MRI defines special null device for Amiga and VMS, but currently

@@ -32,14 +32,11 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SignalException;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubySignal;
 import org.jruby.util.TypeConverter;
 
 /**
@@ -49,9 +46,6 @@ import org.jruby.util.TypeConverter;
  */
 @JRubyClass(name="SignalException", parent="Exception")
 public class RubySignalException extends RubyException {
-    private static final ObjectAllocator SIGNAL_EXCEPTION_ALLOCATOR =
-            (runtime, klass) -> new RubySignalException(runtime, klass);
-
     protected RubySignalException(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }
@@ -62,7 +56,7 @@ public class RubySignalException extends RubyException {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass signalExceptionClass = runtime.defineClass("SignalException", exceptionClass, SIGNAL_EXCEPTION_ALLOCATOR);
+        RubyClass signalExceptionClass = runtime.defineClass("SignalException", exceptionClass, RubySignalException::new);
         signalExceptionClass.defineAnnotatedMethods(RubySignalException.class);
 
         return signalExceptionClass;

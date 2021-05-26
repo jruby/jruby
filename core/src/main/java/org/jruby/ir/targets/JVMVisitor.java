@@ -1704,6 +1704,13 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void LoadBlockImplicitClosure(LoadBlockImplicitClosureInstr loadblockimplicitclosureinstr) {
+        jvmMethod().loadSelfBlock();
+        jvmMethod().invokeHelper("getImplicitBlockFromBlockBinding", Block.class, Block.class);
+        jvmStoreLocal(loadblockimplicitclosureinstr.getResult());
+    }
+
+    @Override
     public void MatchInstr(MatchInstr matchInstr) {
         compileCallCommon(jvmMethod(), matchInstr);
     }
@@ -2237,6 +2244,12 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "mergeKeywordArguments", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
+            case IS_HASH_EMPTY:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isHashEmpty", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             default:
                 throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }
@@ -2562,9 +2575,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Hash(Hash hash) {
+        boolean kwargs = hash.isKeywordRest();
         List<KeyValuePair<Operand, Operand>> pairs = hash.getPairs();
         Iterator<KeyValuePair<Operand, Operand>> iter = pairs.iterator();
-        boolean kwargs = hash.isKWArgsHash && pairs.get(0).getKey() == Symbol.KW_REST_ARG_DUMMY;
 
         jvmMethod().loadContext();
         if (kwargs) {

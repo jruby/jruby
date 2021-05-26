@@ -96,6 +96,10 @@ public class JavaPackage extends RubyModule {
         this.packageName = packageName.toString();
     }
 
+    public String getPackageName() {
+        return packageName;
+    }
+
     // NOTE: name is Ruby name not pkg.name ~ maybe it should be just like with JavaClass?
 
     @JRubyMethod(name = "package_name", alias = "to_s")
@@ -187,8 +191,7 @@ public class JavaPackage extends RubyModule {
 
     RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
         final String fullName = packageRelativeName( name.toString() ).toString();
-        final JavaClass javaClass = JavaClass.forNameVerbose(runtime, fullName);
-        return Java.getProxyClass(runtime, javaClass);
+        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName));
     }
 
     @JRubyMethod(name = "respond_to?")
@@ -306,7 +309,7 @@ public class JavaPackage extends RubyModule {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
             final Ruby runtime = pkg.getRuntime();
-            JavaClass javaClass = JavaClass.forNameVerbose(runtime, subPackageName);
+            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
             return (RubyClass) Java.getProxyClass(runtime, javaClass);
         }
 
@@ -314,7 +317,7 @@ public class JavaPackage extends RubyModule {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
             final Ruby runtime = pkg.getRuntime();
-            JavaClass javaClass = JavaClass.forNameVerbose(runtime, subPackageName);
+            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
             return Java.getInterfaceModule(runtime, javaClass);
         }
 

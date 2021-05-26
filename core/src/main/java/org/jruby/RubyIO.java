@@ -80,7 +80,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IOSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -107,6 +106,7 @@ import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -297,13 +297,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return openFile;
     }
 
-    private static final ObjectAllocator IO_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyIO(runtime, klass);
-        }
-    };
-
     /*
      * We use FILE versus IO to match T_FILE in MRI.
      */
@@ -313,7 +306,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     public static RubyClass createIOClass(Ruby runtime) {
-        RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);
+        RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), RubyIO::new);
 
         ioClass.setClassIndex(ClassIndex.IO);
         ioClass.setReifiedClass(RubyIO.class);
@@ -1743,7 +1736,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /** Print some objects to the stream.
      *
      */
-    @JRubyMethod(rest = true, reads = FrameField.LASTLINE)
+    @JRubyMethod(rest = true, reads = LASTLINE)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         return print(context, this, args);
     }
@@ -2457,25 +2450,25 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      */
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE)
     public IRubyObject gets(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context));
     }
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject arg) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), arg);
     }
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg);
     }
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg, IRubyObject opt) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, opt);
     }
@@ -2823,7 +2816,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "readline", writes = LASTLINE)
     public IRubyObject readline(ThreadContext context) {
         IRubyObject line = gets(context);
 
@@ -2832,7 +2825,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return line;
     }
 
-    @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "readline", writes = LASTLINE)
     public IRubyObject readline(ThreadContext context, IRubyObject separator) {
         IRubyObject line = gets(context, separator);
 
@@ -3681,14 +3674,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // rb_io_s_foreach
     private static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         RubyIO io = openKeyArgs(context, recv, args, opt);
-        if (io == context.nil) return io;
+        IRubyObject nil = context.nil;
+
+        if (io == nil) return io;
 
         // replace arg with coerced opts
-        if (opt != context.nil) args[args.length - 1] = opt;
+        if (opt != nil) args[args.length - 1] = opt;
 
         // io_s_foreach, roughly
         try {
@@ -3708,14 +3701,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         } finally {
             io.close();
-            context.setLastLine(context.nil);
-            runtime.getGlobalVariables().clear("$_");
+            context.setLastLine(nil);
         }
 
-        return context.nil;
+        return nil;
     }
 
-    @JRubyMethod(name = "foreach", required = 1, optional = 3, meta = true)
+    @JRubyMethod(name = "foreach", required = 1, optional = 3, meta = true, writes = LASTLINE)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 
@@ -3906,17 +3898,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             throw runtime.newErrnoENOENTError();
         }
 
-        boolean warn = recv == runtime.getFile();
-        if ((warn || recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
+        if ((recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
             if (PopenExecutor.nativePopenAvailable(runtime)) {
-                if (recv != runtime.getIO()) {
-                    // FIXME: use actual called name instead of "open" as in MRI
-                    String message = "IO.open called on " + recv + " to invoke external command";
-                    if (warn) {
-                        runtime.getWarnings().warn(message);
-                    }
-                }
-
                 return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
             } else {
                 throw runtime.newArgumentError("pipe open is not supported without native subprocess logic");

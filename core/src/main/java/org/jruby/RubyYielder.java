@@ -32,7 +32,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -43,7 +42,7 @@ public class RubyYielder extends RubyObject {
     private Block block;
 
     public static RubyClass createYielderClass(Ruby runtime) {
-        RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), YIELDER_ALLOCATOR, runtime.getEnumerator());
+        RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), RubyYielder::new, runtime.getEnumerator());
 
         yielderc.setClassIndex(ClassIndex.YIELDER);
         yielderc.kindOf = new RubyModule.JavaClassKindOf(RubyYielder.class);
@@ -52,13 +51,6 @@ public class RubyYielder extends RubyObject {
 
         return yielderc;
     }
-
-    private static final ObjectAllocator YIELDER_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyYielder(runtime, klass);
-        }
-    };
 
     public RubyYielder(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -71,11 +63,16 @@ public class RubyYielder extends RubyObject {
     public static RubyYielder newYielder(ThreadContext context, final Block block) {
         Ruby runtime = context.runtime;
         RubyYielder yielder = new RubyYielder(runtime, runtime.getYielder());
+
+        if (!block.isGiven()) {
+            throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.nil, "yield called out of block");
+        }
+
         yielder.initialize(context, CallBlock19.newCallClosure(
                 yielder,
                 yielder.metaClass,
                 Signature.NO_ARGUMENTS,
-                new BlockCallbackImpl(block),
+                new BlockCallbackImpl(RubyProc.newProc(context.runtime, block, block.type == Block.Type.NORMAL ? Block.Type.PROC : block.type)),
                 context));
 
         return yielder;
@@ -83,19 +80,19 @@ public class RubyYielder extends RubyObject {
 
     private static class BlockCallbackImpl implements BlockCallback {
 
-        private final Block block;
+        private final RubyProc proc;
 
-        BlockCallbackImpl(Block block) {
-            this.block = block;
+        BlockCallbackImpl(RubyProc proc) {
+            this.proc = proc;
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block inner) {
-            return block.call(context, args, inner);
+            return proc.call(context, args, inner);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject arg, Block inner) {
-            return block.call(context, arg, inner);
+            return proc.call(context, arg, inner);
         }
 
     }
@@ -115,7 +112,7 @@ public class RubyYielder extends RubyObject {
     @JRubyMethod(rest = true)
     public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
         checkInit();
-        return block.call(context, args);
+        return block.yieldValues(context, args);
     }
 
     @JRubyMethod(name = "<<", rest = true)

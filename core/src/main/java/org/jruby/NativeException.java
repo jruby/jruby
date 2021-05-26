@@ -29,18 +29,11 @@
 package org.jruby;
 
 import java.lang.reflect.Member;
-import java.util.Arrays;
 
-import com.headius.backport9.stack.StackWalker;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @Deprecated
@@ -71,11 +64,9 @@ public class NativeException extends RubyException {
         this.cause = new Throwable();
         this.messageAsJavaString = null;
     }
-    
-    private static final ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = (runtime, klazz) -> new NativeException(runtime, klazz);
 
     public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
-        RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, NATIVE_EXCEPTION_ALLOCATOR);
+        RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, NativeException::new);
         runtime.getObject().deprecateConstant(runtime, CLASS_NAME);
 
         exceptionClass.defineAnnotatedMethods(NativeException.class);

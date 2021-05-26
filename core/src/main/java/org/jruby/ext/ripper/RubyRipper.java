@@ -52,12 +52,7 @@ import static org.jruby.lexer.LexingCommon.*;
 
 public class RubyRipper extends RubyObject {
     public static void initRipper(Ruby runtime) {
-        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new RubyRipper(runtime, klazz);
-            }
-        });
+        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), RubyRipper::new);
         
         ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime, ripper));
         ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime, ripper));

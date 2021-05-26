@@ -52,7 +52,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         return arrayJavaProxy;
     }
 
-    static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
+    public static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
         final Object array;
         try {
             array = Array.newInstance(elementType, dimensions);
@@ -490,8 +490,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "component_type")
     public IRubyObject component_type(ThreadContext context) {
         Class<?> componentType = getObject().getClass().getComponentType();
-        final JavaClass javaClass = JavaClass.get(context.runtime, componentType);
-        return Java.getProxyClass(context.runtime, javaClass);
+        return Java.getProxyClass(context.runtime, componentType);
     }
 
     private static final byte[] END_BRACKET_COLON_SPACE = new byte[] { ']', ':', ' ' };

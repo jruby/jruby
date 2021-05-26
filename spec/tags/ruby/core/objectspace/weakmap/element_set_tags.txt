@@ -1,1 +1,0 @@
-fails:ObjectSpace::WeakMap#[]= does not accept primitive or frozen keys or values

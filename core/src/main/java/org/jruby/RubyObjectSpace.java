@@ -36,14 +36,17 @@ import java.util.ArrayList;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 import java.util.Iterator;
+import java.util.Map;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
+import static org.jruby.util.Inspector.inspectPrefix;
+
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Inspector;
 import org.jruby.util.Numeric;
 import org.jruby.util.collections.WeakValuedIdentityMap;
 
@@ -193,11 +196,7 @@ public class RubyObjectSpace {
 
     public static class WeakMap extends RubyObject {
         static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
-            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                    return new WeakMap(runtime, klazz);
-                }
-            });
+            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), WeakMap::new);
 
             weakMap.defineAnnotatedMethods(WeakMap.class);
         }
@@ -215,13 +214,112 @@ public class RubyObjectSpace {
 
         @JRubyMethod(name = "[]=")
         public IRubyObject op_aref(ThreadContext context, IRubyObject key, IRubyObject value) {
+            Ruby runtime = context.runtime;
+
+            if (key.isImmediate() || value.isImmediate()) {
+                throw runtime.newArgumentError("cannot store immediate values in WeakMap");
+            }
+            if (key.isFrozen() || value.isFrozen()) {
+                throw runtime.newFrozenError("cannot store frozen values in WeakMap");
+            }
+
             map.put(key, value);
-            return context.runtime.newFixnum(System.identityHashCode(value));
+
+            return runtime.newFixnum(System.identityHashCode(value));
         }
 
         @JRubyMethod(name = "key?")
         public IRubyObject key_p(ThreadContext context, IRubyObject key) {
             return RubyBoolean.newBoolean(context, map.get(key) != null);
+        }
+
+        @JRubyMethod(name = "keys")
+        public IRubyObject keys(ThreadContext context) {
+            return context.runtime.newArrayNoCopy(
+                    map.entrySet()
+                            .stream()
+                            .filter(entry -> entry.getValue() != null)
+                            .map(entry -> entry.getKey())
+                            .toArray(IRubyObject[]::new));
+        }
+
+        @JRubyMethod(name = "values")
+        public IRubyObject values(ThreadContext context) {
+            return context.runtime.newArrayNoCopy(
+                    map.values()
+                            .stream()
+                            .filter(ref -> ref != null)
+                            .toArray(IRubyObject[]::new));
+        }
+
+        @JRubyMethod(name = {"length", "size"})
+        public IRubyObject size(ThreadContext context) {
+            return context.runtime.newFixnum(map.size());
+        }
+
+        @JRubyMethod(name = {"include?", "member?"})
+        public IRubyObject member_p(ThreadContext context, IRubyObject key) {
+            return RubyBoolean.newBoolean(context, map.containsKey(key));
+        }
+
+        @JRubyMethod(name = {"each", "each_pair"})
+        public IRubyObject each(ThreadContext context, Block block) {
+            map.forEach((key, value) -> {
+                if (value != null) {
+                    block.yieldSpecific(context, key, value);
+                }
+            });
+
+            return this;
+        }
+
+        @JRubyMethod(name = "each_key")
+        public IRubyObject each_key(ThreadContext context, Block block) {
+            for (Map.Entry<IRubyObject, IRubyObject> entry : map.entrySet()) {
+                if (entry.getValue() != null) {
+                    block.yieldSpecific(context, entry.getKey());
+                }
+            }
+
+            return this;
+        }
+
+        @JRubyMethod(name = "each_value")
+        public IRubyObject each_value(ThreadContext context, Block block) {
+            for (Map.Entry<IRubyObject, IRubyObject> entry : map.entrySet()) {
+                IRubyObject value = entry.getValue();
+                if (value != null) {
+                    block.yieldSpecific(context, value);
+                }
+            }
+
+            return this;
+        }
+
+        @JRubyMethod(name = "inspect")
+        public IRubyObject inspect(ThreadContext context) {
+            Ruby runtime = context.runtime;
+
+            RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
+            int base = part.length();
+
+            map.entrySet().forEach(entry -> {
+                if (entry.getValue() != null) {
+                    if (part.length() == base) {
+                        part.cat(Inspector.COLON_SPACE);
+                    } else {
+                        part.cat(Inspector.COMMA_SPACE);
+                    }
+
+                    part.cat(entry.getKey().inspect().convertToString());
+                    part.cat(Inspector.SPACE_HASHROCKET_SPACE);
+                    part.cat(entry.getValue().inspect().convertToString());
+                }
+            });
+
+            part.cat(Inspector.GT);
+
+            return part;
         }
 
         private final WeakValuedIdentityMap<IRubyObject, IRubyObject> map = new WeakValuedIdentityMap<IRubyObject, IRubyObject>();

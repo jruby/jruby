@@ -73,17 +73,19 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     private final ClassVisitor cv;
     private final Label start;
     private final Label end;
+    private final String signature;
 
     private MethodVisitor method;
     private Printer printer;
 
-    public SkinnyMethodAdapter(ClassVisitor cv, int flags, String name, String signature, String something, String[] exceptions) {
+    public SkinnyMethodAdapter(ClassVisitor cv, int flags, String name, String signature, String genericTypeInformation, String[] exceptions) {
         super(ASM4);
-        setMethodVisitor(cv.visitMethod(flags, name, signature, something, exceptions));
+        setMethodVisitor(cv.visitMethod(flags, name, signature, genericTypeInformation, exceptions));
         this.cv = cv;
         this.name = name;
         this.start = new Label();
         this.end = new Label();
+        this.signature = signature;
     }
 
     public ClassVisitor getClassVisitor() {
@@ -101,6 +103,10 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         } else {
             this.method = mv;
         }
+    }
+    
+    public String getSignature() {
+    	return signature;
     }
 
     /**

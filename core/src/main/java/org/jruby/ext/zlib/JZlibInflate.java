@@ -50,14 +50,8 @@ public class JZlibInflate extends ZStream {
     private int collectedIdx;
     private ByteList input;
     private com.jcraft.jzlib.Inflater flater = null;
-    protected static final ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
 
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new JZlibInflate(runtime, klass);
-        }
-    };
-
-    public JZlibInflate(Ruby runtime, RubyClass type) {
+     public JZlibInflate(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
@@ -67,14 +61,12 @@ public class JZlibInflate extends ZStream {
         JZlibInflate inflate = (JZlibInflate) klass.allocate();
         inflate.init(JZlib.DEF_WBITS);
 
-        IRubyObject result;
         try {
-            inflate.append(string.convertToString().getByteList());
+            return inflate.inflate(context, string, Block.NULL_BLOCK);
         } finally {
-            result = inflate.finish(context, Block.NULL_BLOCK);
+            inflate.finish(context, Block.NULL_BLOCK);
             inflate.close();
         }
-        return result;
     }
 
     @JRubyMethod(name = "initialize", optional = 1, visibility = PRIVATE)

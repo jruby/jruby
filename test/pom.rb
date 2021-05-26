@@ -25,14 +25,13 @@ project 'JRuby Integration Tests' do
 
   scope :test do
     jar 'junit:junit:4.11'
-    jar 'javax.annotation:javax.annotation-api:1.3.2'
+    jar 'jakarta.annotation:jakarta.annotation-api:2.0.0'
     jar 'commons-logging:commons-logging:1.1.3'
     jar 'org.livetribe:livetribe-jsr223:2.0.7'
     jar 'org.jruby:jruby-core', '${project.version}'
   end
   scope :provided do
     jar 'org.apache.ant:ant:${ant.version}'
-    jar 'bsf:bsf:2.4.0'
   end
   jar( 'org.jruby:requireTest:1.0',
        :scope => 'system',
@@ -85,9 +84,9 @@ project 'JRuby Integration Tests' do
                                           'overWrite' =>  'false',
                                           'outputDirectory' =>  'target',
                                           'destFileName' =>  'junit.jar' },
-                                        { 'groupId' =>  'javax.annotation',
-                                          'artifactId' =>  'javax.annotation-api',
-                                          'version' =>  '1.3.2',
+                                        { 'groupId' =>  'jakarta.annotation',
+                                          'artifactId' =>  'jakarta.annotation-api',
+                                          'version' =>  '2.0.0',
                                           'type' =>  'jar',
                                           'overWrite' =>  'false',
                                           'outputDirectory' =>  'target',
@@ -98,14 +97,7 @@ project 'JRuby Integration Tests' do
                                           'type' =>  'jar',
                                           'overWrite' =>  'false',
                                           'outputDirectory' =>  'target',
-                                          'destFileName' =>  'jarjar.jar' },
-                                        { 'groupId' =>  'bsf',
-                                          'artifactId' =>  'bsf',
-                                          'version' =>  '2.4.0',
-                                          'type' =>  'jar',
-                                          'overWrite' =>  'false',
-                                          'outputDirectory' =>  'target',
-                                          'destFileName' =>  'bsf.jar' } ] )
+                                          'destFileName' =>  'jarjar.jar' } ] )
   end
 
   plugin( :deploy,

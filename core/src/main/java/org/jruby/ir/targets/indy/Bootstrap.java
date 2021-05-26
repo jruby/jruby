@@ -1,3 +1,29 @@
+/***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v20.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
+
 package org.jruby.ir.targets.indy;
 
 import com.headius.invokebinder.Binder;
@@ -15,7 +41,7 @@ import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -54,6 +80,7 @@ import java.math.BigInteger;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
+import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findStatic;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findVirtual;
 import static org.jruby.util.CodegenUtils.p;
@@ -71,6 +98,7 @@ public class Bootstrap {
             "emptyString",
             sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class),
             false);
+    private static final String[] GENERIC_CALL_PERMUTE = {"context", "self", "arg.*"};
 
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
         return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, bytelist(value, encodingName), cr));
@@ -597,7 +625,7 @@ public class Bootstrap {
                         if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
 
                         mh = SmartBinder.from(lookup(), siteToDyncall)
-                                .collect("args", "arg.*")
+                                .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity))
                                 .invoke(mh)
                                 .handle();
                     }
@@ -630,13 +658,16 @@ public class Bootstrap {
         SmartBinder binder;
         DynamicMethod method = entry.method;
 
-        binder = SmartBinder.from(site.signature)
-                .permute("context", "self", "arg.*", "block")
+        binder = SmartBinder.from(site.signature);
+
+        binder = permuteForGenericCall(binder, method, GENERIC_CALL_PERMUTE);
+
+        binder = binder
                 .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, entry.sourceModule, site.name())
                 .insert(0, "method", DynamicMethod.class, method);
 
         if (site.arity > 3) {
-            binder = binder.collect("args", "arg.*");
+            binder = binder.collect("args", "arg.*", constructObjectArrayHandle(site.arity));
         }
 
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
@@ -646,13 +677,40 @@ public class Bootstrap {
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
     }
 
+    private static SmartBinder permuteForGenericCall(SmartBinder binder, DynamicMethod method, String... basePermutes) {
+        if (methodWantsBlock(method)) {
+            binder = binder.permute(arrayOf(basePermutes, "block", String[]::new));
+        } else {
+            binder = binder.permute(basePermutes);
+        }
+        return binder;
+    }
+
+    private static boolean methodWantsBlock(DynamicMethod method) {
+        // only include block if native signature receives block, whatever its arity
+        boolean wantsBlock = true;
+        if (method instanceof NativeCallMethod) {
+            DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
+            if (nativeCall != null) {
+                Class[] nativeSignature = nativeCall.getNativeSignature();
+
+                // no args or last arg not a block, do no pass block
+                if (nativeSignature.length == 0 || nativeSignature[nativeSignature.length - 1] != Block.class) {
+                    wantsBlock = false;
+                }
+            }
+        }
+        return wantsBlock;
+    }
+
     static MethodHandle buildMethodMissingHandle(InvokeSite site, CacheEntry entry, IRubyObject self) {
         SmartBinder binder;
         DynamicMethod method = entry.method;
 
         if (site.arity >= 0) {
-            binder = SmartBinder.from(site.signature)
-                    .permute("context", "self", "arg.*", "block")
+            binder = SmartBinder.from(site.signature);
+
+            binder = permuteForGenericCall(binder, method, GENERIC_CALL_PERMUTE)
                     .insert(2,
                             new String[]{"rubyClass", "name", "argName"}
                             , new Class[]{RubyModule.class, String.class, IRubyObject.class},
@@ -660,7 +718,7 @@ public class Bootstrap {
                             site.name(),
                             self.getRuntime().newSymbol(site.methodName))
                     .insert(0, "method", DynamicMethod.class, method)
-                    .collect("args", "arg.*");
+                    .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity + 1));
         } else {
             SmartHandle fold = SmartBinder.from(
                     site.signature
@@ -670,10 +728,11 @@ public class Bootstrap {
                     .insert(0, "argName", IRubyObject.class, self.getRuntime().newSymbol(site.methodName))
                     .invokeStaticQuiet(LOOKUP, Helpers.class, "arrayOf");
 
-            binder = SmartBinder.from(site.signature)
-                    .permute("context", "self", "args", "block")
-                    .fold("args2", fold)
-                    .permute("context", "self", "args2", "block")
+            binder = SmartBinder.from(site.signature);
+
+            binder = permuteForGenericCall(binder, method, "context", "self", "args")
+                    .fold("args2", fold);
+            binder = permuteForGenericCall(binder, method, "context", "self", "args2")
                     .insert(2,
                             new String[]{"rubyClass", "name"}
                             , new Class[]{RubyModule.class, String.class},
@@ -837,7 +896,7 @@ public class Bootstrap {
                     mh = specific;
                 } else {
                     mh = (MethodHandle) compiledIRMethod.getHandle();
-                    binder = binder.collect("args", "arg.*");
+                    binder = binder.collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity));
                 }
             }
 
@@ -898,7 +957,7 @@ public class Bootstrap {
                     } else {
                         // 1 or more args, collect into []
                         binder = SmartBinder.from(lookup(), site.signature)
-                                .collect("args", "arg.*");
+                                .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity));
                     }
                 }
 
@@ -1191,7 +1250,7 @@ public class Bootstrap {
     }
 
     public static boolean subclassProxyTest(Object target) {
-        return target instanceof InternalJavaProxy;
+        return target instanceof ReifiedJavaProxy;
     }
 
     private static final MethodHandle IS_JAVA_SUBCLASS = findStatic(Bootstrap.class, "subclassProxyTest", methodType(boolean.class, Object.class));

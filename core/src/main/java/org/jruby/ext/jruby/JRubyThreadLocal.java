@@ -37,12 +37,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "JRuby::ThreadLocal")
 public final class JRubyThreadLocal extends JRubyExecutionContextLocal {
-    static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass type) {
-            return new JRubyThreadLocal(runtime, type);
-        }
-    };
-
     public JRubyThreadLocal(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }

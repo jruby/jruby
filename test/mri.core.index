@@ -98,6 +98,7 @@ ruby/test_trace.rb
 ruby/test_undef.rb
 #ruby/test_unicode_escape.rb
 ruby/test_variable.rb
+ruby/test_weakmap.rb
 ruby/test_whileuntil.rb
 ruby/test_yield.rb
 ruby/test_not.rb

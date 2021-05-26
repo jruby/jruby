@@ -34,7 +34,6 @@ import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
-import org.jruby.runtime.Signature;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
@@ -66,7 +65,6 @@ import static org.jruby.anno.FrameField.*;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
@@ -194,12 +192,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @see org.jruby.runtime.ObjectAllocator
      */
-    public static final ObjectAllocator BASICOBJECT_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyBasicObject(runtime, klass);
-        }
-    };
+    public static final ObjectAllocator BASICOBJECT_ALLOCATOR = RubyBasicObject::new;
 
     /**
      * Will create the Ruby class Object in the runtime
@@ -1139,16 +1132,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return to_s();
     }
 
-    private static final byte[] INSPECT_SPACE_DOT_DOT_DOT_GT = " ...>".getBytes();
-    private static final byte[] INSPECT_EQUALS = "=".getBytes();
-
     public final IRubyObject hashyInspect() {
         final Ruby runtime = getRuntime();
 
         RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
 
         if (runtime.isInspecting(this)) {
-            encStrBufCat(runtime, part, INSPECT_SPACE_DOT_DOT_DOT_GT);
+            encStrBufCat(runtime, part, SPACE_DOT_DOT_DOT_GT);
             return part;
         }
         try {
@@ -1209,7 +1199,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             encStrBufCat(runtime, part, SPACE);
             // FIXME: bytelist_love: EPICLY wrong but something in MRI gets around identifiers of arbitrary encoding.
             encStrBufCat(runtime, part, symbol.asString().encode(context, runtime.getEncodingService().convertEncodingToRubyEncoding(part.getEncoding())).asString().getByteList());
-            encStrBufCat(runtime, part, INSPECT_EQUALS);
+            encStrBufCat(runtime, part, EQUALS);
             encStrBufCat(runtime, part, sites(context).inspect.call(context, obj, obj).convertToString().getByteList());
 
             first = false;

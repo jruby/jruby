@@ -55,10 +55,8 @@ import org.jcodings.Encoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.*;
@@ -89,15 +87,8 @@ public class RubyDir extends RubyObject implements Closeable {
         super(runtime, type);
     }
 
-    private static final ObjectAllocator DIR_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyDir(runtime, klass);
-        }
-    };
-
     public static RubyClass createDirClass(Ruby runtime) {
-        RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject(), DIR_ALLOCATOR);
+        RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject(), RubyDir::new);
 
         dirClass.setClassIndex(ClassIndex.DIR);
         dirClass.setReifiedClass(RubyDir.class);

@@ -30,17 +30,13 @@
 package org.jruby.ext.socket;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.Sockaddr;
 
 import java.net.InetSocketAddress;
@@ -51,19 +47,11 @@ import java.net.InetSocketAddress;
 @JRubyClass(name="IPSocket", parent="BasicSocket")
 public class RubyIPSocket extends RubyBasicSocket {
     static void createIPSocket(Ruby runtime) {
-        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), IPSOCKET_ALLOCATOR);
+        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), RubyIPSocket::new);
 
         rb_cIPSocket.defineAnnotatedMethods(RubyIPSocket.class);
         rb_cIPSocket.undefineMethod("initialize");
-
-        runtime.getObject().setConstant("IPsocket",rb_cIPSocket);
     }
-
-    private static final ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyIPSocket(runtime, klass);
-        }
-    };
 
     public RubyIPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);

@@ -42,7 +42,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -74,15 +73,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         super(runtime, klazz, map);
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        public MapJavaProxy allocate(Ruby runtime, RubyClass klazz) {
-            return new MapJavaProxy(runtime, klazz);
-        }
-    };
-
     public static RubyClass createMapJavaProxy(final Ruby runtime) {
         RubyClass MapJavaProxy = runtime.defineClass(
-            "MapJavaProxy", runtime.getJavaSupport().getConcreteProxyClass(), ALLOCATOR
+            "MapJavaProxy", runtime.getJavaSupport().getConcreteProxyClass(), MapJavaProxy::new
         );
         // this is done while proxy class is created.
         // See org.jruby.javasuppoer.java.createProxyClass()

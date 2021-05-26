@@ -42,7 +42,6 @@ import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
@@ -80,15 +79,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private static final int STRIO_WRITABLE = ObjectFlags.STRIO_WRITABLE;
     private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
 
-    private static final ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new StringIO(runtime, klass);
-        }
-    };
-
     public static RubyClass createStringIOClass(final Ruby runtime) {
         RubyClass stringIOClass = runtime.defineClass(
-                "StringIO", runtime.getData(), STRINGIO_ALLOCATOR);
+                "StringIO", runtime.getData(), StringIO::new);
 
         stringIOClass.defineAnnotatedMethods(StringIO.class);
         stringIOClass.includeModule(runtime.getEnumerable());
@@ -1372,7 +1365,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             return self;
         }
 
-        @JRubyMethod(name = "print", rest = true)
+        @JRubyMethod(name = "print", rest = true, writes = FrameField.LASTLINE)
         public static IRubyObject print(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return RubyIO.print(context, self, args);
         }

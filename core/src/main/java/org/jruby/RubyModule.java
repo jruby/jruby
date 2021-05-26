@@ -163,12 +163,7 @@ public class RubyModule extends RubyObject {
     public static final int OMOD_SHARED = ObjectFlags.OMOD_SHARED;
     public static final int INCLUDED_INTO_REFINEMENT = ObjectFlags.INCLUDED_INTO_REFINEMENT;
 
-    public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyModule(runtime, klass);
-        }
-    };
+    public static final ObjectAllocator MODULE_ALLOCATOR = RubyModule::new;
 
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
         moduleClass.setClassIndex(ClassIndex.MODULE);
@@ -1817,6 +1812,25 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
+    /**
+     * Searches for a method up until the superclass, but include modules. This is
+     * for Concrete java ctor initialization
+     * TODO: add a cache?
+     */
+    public DynamicMethod searchMethodLateral(String id) {
+       // int token = generation;
+        // This flattens some of the recursion that would be otherwise be necessary.
+        // Used to recurse up the class hierarchy which got messy with prepend.
+        for (RubyModule module = this; module != null && (module == this || (module instanceof IncludedModuleWrapper)); module = module.getSuperClass()) {
+            // Only recurs if module is an IncludedModuleWrapper.
+            // This way only the recursion needs to be handled differently on
+            // IncludedModuleWrapper.
+            DynamicMethod method = module.searchMethodCommon(id);
+            if (method != null) return method.isNull() ? null : method;
+        }
+        return null;
+    }
+
     // MRI: resolve_refined_method
     public CacheEntry resolveRefinedMethod(Map<RubyModule, RubyModule> refinements, CacheEntry entry, String id, boolean cacheUndef) {
         if (entry != null && entry.method.isRefined()) {
@@ -2487,6 +2501,8 @@ public class RubyModule extends RubyObject {
         syncConstants(originalModule);
 
         originalModule.cloneMethods(this);
+        
+        this.javaProxy = originalModule.javaProxy; 
 
         return this;
     }
@@ -3717,7 +3733,7 @@ public class RubyModule extends RubyObject {
             RubySymbol sym = (RubySymbol) name;
 
             if (!sym.validConstantName()) {
-                throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, sym)), sym);
+                throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, sym)), sym);
             }
 
             String id = sym.idString();
@@ -3818,7 +3834,7 @@ public class RubyModule extends RubyObject {
         int sep = name.indexOf("::");
         // symbol form does not allow ::
         if (symbol instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", fullName);
+            throw runtime.newNameError("wrong constant name ", fullName);
         }
 
         RubyModule mod = this;
@@ -5363,8 +5379,8 @@ public class RubyModule extends RubyObject {
     public <T> T toJava(Class<T> target) {
         if (target == Class.class) { // try java_class for proxy modules
             final ThreadContext context = metaClass.runtime.getCurrentContext();
-            IRubyObject javaClass = JavaClass.java_class(context, this);
-            if ( ! javaClass.isNil() ) return javaClass.toJava(target);
+            Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, this);
+            if (javaClass != null) return (T) javaClass;
         }
 
         return super.toJava(target);

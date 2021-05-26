@@ -33,52 +33,45 @@ import jnr.constants.platform.OpenFlags;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.ffi.LastError;
+import jnr.posix.CmsgHdr;
+import jnr.posix.MsgHdr;
+import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocket;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
-import jnr.posix.CmsgHdr;
-import jnr.posix.MsgHdr;
-import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.RubyIO;
-import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.FilenoUtil;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.Channel;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
-    private static final ObjectAllocator UNIXSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyUNIXSocket(runtime, klass);
-        }
-    };
-
     static void createUNIXSocket(Ruby runtime) {
-        RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.getClass("BasicSocket"), UNIXSOCKET_ALLOCATOR);
+        RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.getClass("BasicSocket"), RubyUNIXSocket::new);
         runtime.getObject().setConstant("UNIXsocket", rb_cUNIXSocket);
 
         rb_cUNIXSocket.defineAnnotatedMethods(RubyUNIXSocket.class);

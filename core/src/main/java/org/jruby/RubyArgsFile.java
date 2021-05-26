@@ -40,6 +40,7 @@ import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 import org.jruby.anno.FrameField;
@@ -50,7 +51,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -63,7 +63,7 @@ public class RubyArgsFile extends RubyObject {
     }
 
     public static void initArgsFile(final Ruby runtime) {
-        RubyClass argfClass = runtime.defineClass("ARGFClass", runtime.getObject(), ARGF_ALLOCATOR);
+        RubyClass argfClass = runtime.defineClass("ARGFClass", runtime.getObject(), RubyArgsFile::new);
         argfClass.includeModule(runtime.getEnumerable());
 
         argfClass.defineAnnotatedMethods(RubyArgsFile.class);
@@ -90,13 +90,6 @@ public class RubyArgsFile extends RubyObject {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
-
-    private static final ObjectAllocator ARGF_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyArgsFile(runtime, klass);
-        }
-    };
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
@@ -333,7 +326,7 @@ public class RubyArgsFile extends RubyObject {
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", optional = 1, writes = LASTLINE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return context.setLastLine(argf_getline(context, recv, args));
     }
@@ -341,7 +334,7 @@ public class RubyArgsFile extends RubyObject {
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", optional = 1)
+    @JRubyMethod(name = "readline", optional = 1, writes = LASTLINE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 

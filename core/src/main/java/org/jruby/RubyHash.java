@@ -51,7 +51,6 @@ import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.HashSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -120,7 +119,7 @@ public class RubyHash extends RubyObject implements Map {
     public static final int COMPARE_BY_IDENTITY_F = ObjectFlags.COMPARE_BY_IDENTITY_F;
 
     public static RubyClass createHashClass(Ruby runtime) {
-        RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
+        RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), RubyHash::new);
 
         hashc.setClassIndex(ClassIndex.HASH);
         hashc.setReifiedClass(RubyHash.class);
@@ -133,13 +132,6 @@ public class RubyHash extends RubyObject implements Map {
 
         return hashc;
     }
-
-    private final static ObjectAllocator HASH_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyHash(runtime, klass);
-        }
-    };
 
     @Override
     public ClassIndex getNativeClassIndex() {
@@ -2307,14 +2299,27 @@ public class RubyHash extends RubyObject implements Map {
         return ifNone;
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
-    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
-        return dig(context, args, 0);
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0) {
+        return op_aref( context, arg0 );
     }
 
-    final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
-        final IRubyObject val = op_aref( context, args[idx++] );
-        return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        final IRubyObject val = op_aref( context, arg0 );
+        return RubyObject.dig1(context, val, arg1);
+    }
+
+    @JRubyMethod(name = "dig")
+    public IRubyObject dig(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        final IRubyObject val = op_aref( context, arg0 );
+        return RubyObject.dig2(context, val, arg1, arg2);
+    }
+
+    @JRubyMethod(name = "dig", required = 1, rest = true)
+    public IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        final IRubyObject val = op_aref(context, args[0] );
+        return args.length == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
     @JRubyMethod

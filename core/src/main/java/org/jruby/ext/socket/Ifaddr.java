@@ -1,5 +1,12 @@
 package org.jruby.ext.socket;
 
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyObject;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -7,14 +14,6 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyObject;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -40,11 +39,7 @@ public class Ifaddr extends RubyObject {
         RubyClass ifaddr = runtime.getClass("Socket").defineClassUnder(
                 "Ifaddr",
                 runtime.getData(),
-                new ObjectAllocator() {
-                    public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                        return new Ifaddr(runtime, klazz);
-                    }
-                });
+                Ifaddr::new);
         ifaddr.defineAnnotatedMethods(Ifaddr.class);
     }
 

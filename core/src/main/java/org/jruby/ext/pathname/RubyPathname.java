@@ -51,7 +51,7 @@ public class RubyPathname extends RubyObject {
     
     static void createPathnameClass(Ruby runtime) {
         RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
-                PATHNAME_ALLOCATOR);
+                RubyPathname::new);
 
         cPathname.defineAnnotatedMethods(RubyPathname.class);
 
@@ -165,13 +165,6 @@ public class RubyPathname extends RubyObject {
             return RubyPathname.newInstance(recv.getRuntime().getCurrentContext(), path);
         }
     }
-
-    private static final ObjectAllocator PATHNAME_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyPathname(runtime, klass);
-        }
-    };
 
     public RubyPathname(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
@@ -301,7 +294,7 @@ public class RubyPathname extends RubyObject {
         return context.runtime.newString("#<Pathname:" + getPath() + ">");
     }
 
-    @JRubyMethod(required = 1, optional = 1, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(required = 1, optional = 1, writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject result = sites(context).sub.call(context, this, getPath(), args, block);
         return newInstance(context, result);

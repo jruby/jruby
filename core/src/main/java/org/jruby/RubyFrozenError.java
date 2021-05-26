@@ -42,7 +42,7 @@ public class RubyFrozenError extends RubyRuntimeError {
     }
 
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass frozenErrorClass = runtime.defineClass("FrozenError", exceptionClass, (r, klass) -> new RubyFrozenError(runtime, klass));
+        RubyClass frozenErrorClass = runtime.defineClass("FrozenError", exceptionClass, RubyFrozenError::new);
 
         return frozenErrorClass;
     }

@@ -16,17 +16,20 @@ public class Inspector {
     public static final ByteList EMPTY_HASH_BL = new ByteList(new byte[] { '{','}' }, USASCIIEncoding.INSTANCE, false);
     public static final ByteList RECURSIVE_HASH_BL = new ByteList(new byte[] { '{','.','.','.','}' }, USASCIIEncoding.INSTANCE, false);
 
-    private static final byte[] COLON_ZERO_X = new byte[] { ':', '0', 'x' };
-    public static final byte[] COLON = new byte[] { ':' };
-    public static final byte[] SPACE = new byte[] { ' ' };
-    public static final byte[] SLASH = new byte[] { '/' };
-    public static final byte[] COLON_SPACE = new byte[] { ':', ' ' };
-    public static final byte[] GT = new byte[] { '>' };
-    public static final byte[] COMMA = new byte[] { ',' };
-    public static final byte[] COMMA_SPACE = new byte[] { ',', ' ' };
-    public static final byte[] BEG_BRACKET = new byte[] { '[' };
-    public static final byte[] END_BRACKET = new byte[] { ']' };
-    public static final byte[] END_BRACKET_GT = new byte[] { ']', '>' };
+    private static final byte[] COLON_ZERO_X = { ':', '0', 'x' };
+    public static final byte[] COLON = { ':' };
+    public static final byte[] SPACE = { ' ' };
+    public static final byte[] SLASH = { '/' };
+    public static final byte[] COLON_SPACE = { ':', ' ' };
+    public static final byte[] GT = { '>' };
+    public static final byte[] COMMA = { ',' };
+    public static final byte[] COMMA_SPACE = { ',', ' ' };
+    public static final byte[] BEG_BRACKET = { '[' };
+    public static final byte[] END_BRACKET = { ']' };
+    public static final byte[] END_BRACKET_GT = { ']', '>' };
+    public static final byte[] SPACE_HASHROCKET_SPACE = {' ', '=', '>', ' '};
+    public static final byte[] SPACE_DOT_DOT_DOT_GT = " ...>".getBytes();
+    public static final byte[] EQUALS = "=".getBytes();
 
     // e.g.: #<Object:0x5a1c0542
     public static RubyString inspectPrefix(final ThreadContext context, final RubyModule type, final int hash) {

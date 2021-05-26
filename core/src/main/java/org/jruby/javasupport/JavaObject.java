@@ -75,6 +75,10 @@ public class JavaObject extends RubyObject {
         dataWrapStruct(value);
     }
 
+    private JavaObject(Ruby runtime, RubyClass klazz) {
+        this(runtime, klazz, null);
+    }
+
     @Override
     public final Object dataGetStruct() {
         return objectAccessor.get(this);
@@ -236,9 +240,14 @@ public class JavaObject extends RubyObject {
         return getRuntime().newString(getJavaClass().getName());
     }
 
-    @JRubyMethod
+    @Deprecated
     public JavaClass java_class() {
         return JavaClass.get(getRuntime(), getJavaClass());
+    }
+
+    @JRubyMethod
+    public IRubyObject get_java_class() {
+        return Java.getInstance(getRuntime(), getJavaClass());
     }
 
     @JRubyMethod
@@ -312,10 +321,6 @@ public class JavaObject extends RubyObject {
         return super.toJava(target);
     }
 
-    private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = new ObjectAllocator() {
-        public JavaObject allocate(Ruby runtime, RubyClass klazz) {
-            return new JavaObject(runtime, klazz, null);
-        }
-    };
+    private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = JavaObject::new;
 
 }

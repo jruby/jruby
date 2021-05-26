@@ -9,7 +9,7 @@ end
 
 class TestHigherJavasupport < Test::Unit::TestCase
   include TestHelper
-  TestHelper = org.jruby.test.TestHelper
+
   JArray = ArrayList = java.util.ArrayList
   FinalMethodBaseTest = org.jruby.test.FinalMethodBaseTest
   Annotation = java.lang.annotation.Annotation
@@ -49,26 +49,31 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_passing_a_java_class_auto_reifies
     assert_nil Klass2.to_java.getReifiedClass
     # previously TestHelper.getClassName(Klass2) returned 'org.jruby.RubyObject'
-    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', TestHelper.getClassName(Klass2)
+    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', org.jruby.test.TestHelper.getClassName(Klass2)
     assert_not_nil Klass2.to_java.getReifiedClass
     assert_not_nil Klass1.to_java.getReifiedClass
   end
 
   def test_java_passing_class
-    assert_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))
+    assert_equal("java.util.ArrayList", org.jruby.test.TestHelper.getClassName(ArrayList))
   end
 
-  @@include_java_lang = Proc.new {
+  class IncludePackageTest < Test::Unit::TestCase
+
+    @@include_java_lang = Proc.new {
       include_package "java.lang"
       java_alias :JavaInteger, :Integer
-  }
+    }
 
-  def test_java_class_loading_and_class_name_collisions
-    assert_raises(NameError) { System }
-    @@include_java_lang.call
-    assert_nothing_raised { System }
-    assert_equal(10, JavaInteger.new(10).intValue)
-    assert_raises(NoMethodError) { Integer.new(10) }
+    def test_java_class_loading_and_class_name_collisions
+      assert_raises(NameError) { VirtualMachineError }
+      @@include_java_lang.call
+      assert_nothing_raised { VirtualMachineError }
+      assert_equal(10, JavaInteger.new(10).intValue)
+      assert_nothing_raised { Integer.to_s }
+      assert_raises(NoMethodError) { Integer.new(10) }
+    end
+
   end
 
   def test_java_alias_prior_to_import
@@ -110,7 +115,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_dispatching_on_nil
-    sb = TestHelper.getInterfacedInstance()
+    sb = org.jruby.test.TestHelper.getInterfacedInstance()
     assert_equal(nil, sb.dispatchObject(nil))
   end
 
@@ -680,17 +685,16 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_support_of_other_class_loaders
-    assert_helper_class = Java::JavaClass.for_name("org.jruby.test.TestHelper")
-    assert_helper_class2 = Java::JavaClass.for_name("org.jruby.test.TestHelper")
-    assert(assert_helper_class.java_class == assert_helper_class2.java_class, "Successive calls return the same class")
-    method = assert_helper_class.java_method('loadAlternateClass')
-    alt_assert_helper_class = method.invoke_static()
+    loaded_class = JRuby::Util.load_java_class("org.jruby.test.AlternativelyLoaded")
+    assert_equal loaded_class, java.lang.Class.forName("org.jruby.test.AlternativelyLoaded")
+    method = loaded_class.java_method('loadAlternateClass')
+    alt_loaded_class = method.invoke_static() # loaded with a different class loader
+    assert_not_equal loaded_class, alt_loaded_class
 
-    constructor = alt_assert_helper_class.constructor();
-    alt_assert_helper = constructor.new_instance();
-    identityMethod = alt_assert_helper_class.java_method('identityTest')
-    identity = identityMethod.invoke(alt_assert_helper)
-    assert_equal("ABCDEFGH",  identity)
+    method = loaded_class.java_method('invokeIdentifyTest', java.lang.Class)
+    assert_equal"Original", method.invoke_static(loaded_class)
+
+    assert_equal"ABCDEFGH", method.invoke_static(alt_loaded_class)
   end
 
   module Foo
@@ -709,7 +713,17 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_high_level_java_should_only_deal_with_proxies_and_not_low_level_java_class
     a = JString.new
-    assert(a.getClass().class != "Java::JavaClass")
+    assert_equal Java::JavaLang::Class, a.getClass().class
+    assert Java::JavaLang::Class.equal? a.getClass().class
+    assert_equal java.lang.Class.object_id, Java::JavaLang::Class.object_id
+  end
+
+  def test_proxy_class_initialized_once
+    assert_equal java.lang.Class.object_id, Java::JavaLang::Class.object_id
+    assert_equal java.lang.String.object_id, Java::JavaLang::String.object_id
+    assert_equal Java::JavaIo::Serializable.object_id, java.io.Serializable.object_id
+    assert Java::JavaLang::Object.equal? java.lang.Object.new.class
+    assert Java::JavaLang::Object.equal? java.lang.Object
   end
 
   # We had a problem with accessing singleton class versus class earlier. Sanity check
@@ -918,11 +932,12 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_open_reflected_field
-    java_fields = Java::JavaClass.for_name('java_integration.fixtures.JavaFields')
+    java_fields = java.lang.Class.forName('java_integration.fixtures.JavaFields')
     begin
       java_fields.field('privateIntField')
       fail('value field is not public!')
-    rescue NameError => e
+    rescue java.lang.NoSuchFieldException => e
+      # in JRuby 9.2 (JavaClass) used to map this to NameError
       assert e
     end
     value_field = java_fields.declared_field('privateIntField')
@@ -938,12 +953,12 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_reflected_field
     skip if JAVA_9
 
-    j_integer = Java::JavaClass.for_name('java.lang.Integer')
+    j_integer = java.lang.Class.for_name('java.lang.Integer')
     begin
       j_integer.field('value')
       fail('value field is not public!')
-    rescue NameError => e
-      assert e
+    rescue java.lang.NoSuchFieldException => e
+      # in JRuby 9.2 (JavaClass) used to map this to NameError
     end
     value_field = j_integer.declared_field('value')
     assert_equal false, value_field.static?
@@ -954,7 +969,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 123456789, value_field.value( 123456789.to_java(:int) )
     assert_equal 'int', value_field.value_type
 
-    value1_field = Java::JavaClass.for_name('java.lang.reflect.Method').field(:DECLARED)
+    value1_field = java.lang.reflect.Method.java_class.field(:DECLARED)
     value2_field = Java::JavaLangReflect::Constructor.java_class.field('DECLARED')
 
     assert_equal value1_field, value2_field
@@ -966,24 +981,24 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_reflected_callable_to_s_and_inspect
-    java_class = Java::JavaClass.for_name('java.util.ArrayList')
+    java_class = java.lang.Class.for_name('java.util.ArrayList')
     constructors = java_class.constructors
     c = constructors.find { |constructor| constructor.parameter_types == [ Java::int.java_class ] }
-    assert_equal '#<Java::JavaConstructor(int)>', c.inspect
+    assert_equal '#<Java::JavaLangReflect::Constructor: public java.util.ArrayList(int)>', c.inspect
     assert_equal 'public java.util.ArrayList(int)', c.to_s
     c = constructors.find { |constructor| constructor.parameter_types == [] }
-    assert_equal '#<Java::JavaConstructor()>', c.inspect
+    assert_equal '#<Java::JavaLangReflect::Constructor: public java.util.ArrayList()>', c.inspect
 
     m = java_class.java_instance_methods.find { |method| method.name == 'get' }
-    assert_equal '#<Java::JavaMethod/get(int)>', m.inspect
+    assert_equal '#<Java::JavaLangReflect::Method: public java.lang.Object java.util.ArrayList.get(int)>', m.inspect
     assert_equal 'public java.lang.Object java.util.ArrayList.get(int)', m.to_s
 
     m = java_class.java_instance_methods.find { |method| method.name == 'set' }
-    assert_equal '#<Java::JavaMethod/set(int,java.lang.Object)>', m.inspect
+    assert_equal '#<Java::JavaLangReflect::Method: public java.lang.Object java.util.ArrayList.set(int,java.lang.Object)>', m.inspect
   end
 
   def test_java_class_callable_methods
-    java_class = Java::JavaClass.for_name('java.util.ArrayList')
+    java_class = java.lang.Class.for_name('java.util.ArrayList')
     assert java_class.declared_constructor
     assert java_class.constructor Java::int
 
@@ -992,23 +1007,23 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert java_class.declared_method 'size'
     assert java_class.declared_method 'indexOf', java.lang.Object.java_class
     begin
-      java_class.declared_method 'indexOf'
-      fail('not failed')
-    rescue NameError => e
-      assert e.message.index "undefined method `indexOf'"
+      method = java_class.declared_method 'indexOf'
+      fail("expected to not find method: #{method}")
+    rescue java.lang.NoSuchMethodException => e
+      # in JRuby 9.2 (JavaClass) used to map this to NameError
     end
   end
 
-  def test_exposed_java_proxy_types
-    Java::JavaProxyClass
-    Java::JavaProxyMethod
-    Java::JavaProxyConstructor
-  end
+  # def test_exposed_java_proxy_types
+  #   Java::JavaProxyClass
+  #   Java::JavaProxyMethod
+  #   Java::JavaProxyConstructor
+  # end
 
-#  def test_java_class_equality
-#    long_class = java.lang.Long
-#    assert_equal long_class, Java::DefaultPackageClass.returnLongClass
-#  end
+  def test_java_class_equality
+    long_class = java.lang.Long.java_class
+    assert_equal long_class, Java::DefaultPackageClass.returnLongClass
+  end
 
   Properties = Java::java.util.Properties
 
@@ -1018,13 +1033,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal("b", p.getProperty("a"))
   end
 
-  if java.awt.event.ActionListener.instance_of?(Module)
-    class MyBadActionListener
-      include java.awt.event.ActionListener
-    end
-  else
-    class MyBadActionListener < java.awt.event.ActionListener
-    end
+  class MyBadActionListener
+    include java.awt.event.ActionListener
   end
 
   def test_expected_missing_interface_method
@@ -1596,7 +1606,7 @@ CLASSDEF
     java.util.ArrayList.__persistent__ = true
     x = java.util.ArrayList.new
     def x.foo; end
-    assert(x.java_class.kind_of?Java::JavaClass)
+    assert x.java_class.kind_of?(java.lang.Class)
   end
 
   java_import 'org.jruby.javasupport.test.name.Sample'

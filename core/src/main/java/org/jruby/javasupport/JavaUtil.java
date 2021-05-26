@@ -86,7 +86,7 @@ import org.jruby.RubyTime;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -233,7 +233,7 @@ public class JavaUtil {
         RubyClass procClass = rubyObject.getMetaClass();
 
         // Extend the interfaces into the proc's class. This creates a singleton class to connect up the Java proxy.
-        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, JavaClass.get(runtime, targetType));
+        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, targetType);
         if ( ! ifaceModule.isInstance(rubyObject) ) {
             ifaceModule.callMethod(context, "extend_object", rubyObject);
             ifaceModule.callMethod(context, "extended", rubyObject);
@@ -646,9 +646,9 @@ public class JavaUtil {
             return ((RubyObjectHolderProxy) object).__ruby_object();
         }
 
-        if ( object instanceof InternalJavaProxy ) {
-            final InternalJavaProxy internalJavaProxy = (InternalJavaProxy) object;
-            IRubyObject orig = internalJavaProxy.___getInvocationHandler().getOrig();
+        if ( object instanceof ReifiedJavaProxy ) {
+            final ReifiedJavaProxy internalJavaProxy = (ReifiedJavaProxy) object;
+            IRubyObject orig = internalJavaProxy.___jruby$rubyObject();
             if (orig != null) return orig;
         }
 
