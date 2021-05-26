@@ -1664,7 +1664,7 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject    system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
