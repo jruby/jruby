@@ -75,6 +75,7 @@ public class InstanceSuperInstr extends CallInstr {
 
     @Override
     public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
         scope.setUsesSuper();
 
         return true;
