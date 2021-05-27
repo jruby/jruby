@@ -32,6 +32,7 @@ package org.jruby.ext.ripper;
 
 import org.jruby.RubyArray;
 import org.jruby.lexer.LexerSource;
+import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
@@ -182,7 +183,7 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> mrhs_arg
 %type <IRubyObject> compstmt bodystmt stmts stmt expr arg primary command
 %type <IRubyObject> stmt_or_begin
-%type <IRubyObject> expr_value primary_value opt_else cases if_tail exc_var rel_expr
+%type <IRubyObject> expr_value expr_value_do primary_value opt_else cases if_tail exc_var rel_expr
 %type <IRubyObject> call_args opt_ensure paren_args superclass
 %type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
 %type <IRubyObject> command_rhs arg_rhs
@@ -450,6 +451,14 @@ expr            : command_call
 
 expr_value      : expr {
                     $$ = $1;
+                }
+
+expr_value_do   : {
+                    p.getConditionState().push1();
+                } expr_value do {
+                    p.getConditionState().pop();
+                } {
+                    $$ = $2;
                 }
 
 // Node:command - call with or with block on end [!null]
@@ -1049,10 +1058,27 @@ call_args       : command {
                 }
 
 command_args    : /* none */ {
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().begin();
+                    boolean lookahead = false;
+                    switch (yychar) {
+                    case tLPAREN2: case tLPAREN: case tLPAREN_ARG: case '[': case tLBRACK:
+                       lookahead = true;
+                    }
+                    StackState cmdarg = p.getCmdArgumentState();
+                    if (lookahead) cmdarg.pop();
+                    cmdarg.push1();
+                    if (lookahead) cmdarg.push0();
                 } call_args {
-                    p.getCmdArgumentState().reset($<Long>1.longValue());
+                    StackState cmdarg = p.getCmdArgumentState();
+
+                    boolean lookahead = false;
+                    switch (yychar) {
+                    case tLBRACE_ARG:
+                       lookahead = true;
+                    }
+
+                    if (lookahead) cmdarg.pop();
+                    cmdarg.pop();
+                    if (lookahead) cmdarg.push0();
                     $$ = $2;
                 }
 
@@ -1118,10 +1144,9 @@ primary         : literal
                     $$ = p.dispatch("on_method_add_arg", p.dispatch("on_fcall", $1), p.dispatch("on_args_new"));
                 }
                 | keyword_begin {
-                    $$ = p.getCmdArgumentState().getStack();
-                    p.getCmdArgumentState().reset();
+                    p.getCmdArgumentState().push0();
                 } bodystmt keyword_end {
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
+                    p.getCmdArgumentState().pop();
                     $$ = p.dispatch("on_begin", $3);
                 }
                 | tLPAREN_ARG {
@@ -1130,12 +1155,11 @@ primary         : literal
                     $$ = p.dispatch("on_paren", null);
                 }
                 | tLPAREN_ARG {
-                    $$ = p.getCmdArgumentState().getStack();
-                    p.getCmdArgumentState().reset();
+                    p.getCmdArgumentState().push0();
                 } stmt {
                     p.setState(EXPR_ENDARG); 
                 } rparen {
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
+                    p.getCmdArgumentState().pop();
                     p.warning("(...) interpreted as grouped expression");
                     $$ = p.dispatch("on_paren", $3);
                 }
@@ -1196,18 +1220,18 @@ primary         : literal
                     $$ = p.dispatch("on_unless", $2, $4, $5);
                 }
                 | keyword_while {
-                    p.getConditionState().begin();
-                } expr_value do {
-                    p.getConditionState().end();
+                    p.getConditionState().push1();
+                } expr_value_do {
+                    p.getConditionState().pop();
                 } compstmt keyword_end {
-                    $$ = p.dispatch("on_while", $3, $6);
+                    $$ = p.dispatch("on_while", $3, $5);
                 }
                 | keyword_until {
-                  p.getConditionState().begin();
-                } expr_value do {
-                  p.getConditionState().end();
+                  p.getConditionState().push1();
+                } expr_value_do {
+                  p.getConditionState().pop();
                 } compstmt keyword_end {
-                    $$ = p.dispatch("on_until", $3, $6);
+                    $$ = p.dispatch("on_until", $3, $5);
                 }
                 | keyword_case expr_value opt_terms case_body keyword_end {
                     $$ = p.dispatch("on_case", $2, $4);
@@ -1216,11 +1240,11 @@ primary         : literal
                     $$ = p.dispatch("on_case", null, $3);
                 }
                 | keyword_for for_var keyword_in {
-                    p.getConditionState().begin();
-                } expr_value do {
-                    p.getConditionState().end();
+                    p.getConditionState().push1();
+                } expr_value_do {
+                    p.getConditionState().pop();
                 } compstmt keyword_end {
-                    $$ = p.dispatch("on_for", $2, $5, $8);
+                    $$ = p.dispatch("on_for", $2, $5, $7);
                 }
                 | keyword_class cpath superclass {
                     if (p.isInDef()) {
@@ -1508,11 +1532,9 @@ lambda          : /* none */  {
                     $$ = p.getLeftParenBegin();
                     p.setLeftParenBegin(p.incrementParenNest());
                 } f_larglist {
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
+                    p.getCmdArgumentState().push0();
                 } lambda_body {
-                    p.getCmdArgumentState().reset($<Long>3.longValue());
-                    p.getCmdArgumentState().restart();
+                    p.getCmdArgumentState().pop();
                     $$ = p.dispatch("on_lambda", $2, $4);
                     p.setLeftParenBegin($<Integer>1);
                     p.popCurrentScope();
@@ -1583,31 +1605,24 @@ brace_block     : tLCURLY brace_body tRCURLY {
                 }
                 | keyword_do {
                     p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt keyword_end {
                     $$ = p.dispatch("on_do_block", $3, $4);
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.popCurrentScope();
                 }
 
 brace_body      : {
                     p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack()) >> 1;
-                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt  {
                     $$ = p.dispatch("on_brace_block", $2, $3);
-                    p.getCmdArgumentState().reset($<Long>1.longValue());
                     p.popCurrentScope();
                 }
 
 do_body 	: {
                     p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
+                    p.getCmdArgumentState().push0();
                 } opt_block_param bodystmt {
                     $$ = p.dispatch("on_do_block", $2, $3);
-                    p.getCmdArgumentState().reset($<Long>1.longValue());
+                    p.getCmdArgumentState().pop();
                     p.popCurrentScope();
                 }
 
@@ -1764,10 +1779,8 @@ string_content  : tSTRING_CONTENT
                 | tSTRING_DBEG {
                    $$ = p.getStrTerm();
                    p.setStrTerm(null);
-                   p.getConditionState().stop();
-                } {
-                   $$ = p.getCmdArgumentState().getStack();
-                   p.getCmdArgumentState().reset();
+                   p.getConditionState().push0();
+                   p.getCmdArgumentState().push0();
                 } {
                    $$ = p.getState();
                    p.setState(EXPR_BEG);
@@ -1778,13 +1791,13 @@ string_content  : tSTRING_CONTENT
                    $$ = p.getHeredocIndent();
                    p.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
-                   p.getConditionState().restart();
+                   p.getConditionState().pop();
+                   p.getCmdArgumentState().pop();
                    p.setStrTerm($<StrTerm>2);
-                   p.getCmdArgumentState().reset($<Long>3.longValue());
-                   p.setState($<Integer>4);
-                   p.setBraceNest($<Integer>5);
-                   p.setHeredocIndent($<Integer>6);
-                   $$ = p.dispatch("on_string_embexpr", $7);
+                   p.setState($<Integer>3);
+                   p.setBraceNest($<Integer>4);
+                   p.setHeredocIndent($<Integer>5);
+                   $$ = p.dispatch("on_string_embexpr", $6);
                 }
 
 string_dvar     : tGVAR {

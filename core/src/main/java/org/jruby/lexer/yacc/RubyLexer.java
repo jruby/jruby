@@ -618,7 +618,7 @@ public class RubyLexer extends LexingCommon {
             type = RubyParser.tIMAGINARY;
         }
 
-        setState(EXPR_END|EXPR_ENDARG);
+        setState(EXPR_END);
         return type;
     }
 
@@ -1410,12 +1410,9 @@ public class RubyLexer extends LexingCommon {
             return RubyParser.keyword_do_lambda;
         }
 
-        if (conditionState.isInState()) return RubyParser.keyword_do_cond;
+        if (conditionState.set_p()) return RubyParser.keyword_do_cond;
 
-        if (cmdArgumentState.isInState() && !isLexState(state, EXPR_CMDARG)) {
-            return RubyParser.keyword_do_block;
-        }
-        if (isLexState(state,  EXPR_BEG|EXPR_ENDARG)) {
+        if (cmdArgumentState.set_p() && !isLexState(state, EXPR_CMDARG)) {
             return RubyParser.keyword_do_block;
         }
         return RubyParser.keyword_do;
@@ -1696,8 +1693,8 @@ public class RubyLexer extends LexingCommon {
         }
 
         setState(EXPR_BEG|EXPR_LABEL);
-        conditionState.stop();
-        cmdArgumentState.stop();
+        conditionState.push0();
+        cmdArgumentState.push0();
         yaccValue = LBRACKET;
         return c;
     }
@@ -1709,8 +1706,8 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_BEG);
             setLeftParenBegin(0);
             parenNest--;
-            conditionState.stop();
-            cmdArgumentState.stop();
+            conditionState.push0();
+            cmdArgumentState.push0();
             yaccValue = LCURLY;
             return RubyParser.tLAMBEG;
         }
@@ -1726,8 +1723,8 @@ public class RubyLexer extends LexingCommon {
             c = RubyParser.tLBRACE;
         }
 
-        conditionState.stop();
-        cmdArgumentState.stop();
+        conditionState.push0();
+        cmdArgumentState.push0();
         setState(c == RubyParser.tLBRACE_ARG ? EXPR_BEG : EXPR_BEG|EXPR_LABEL);
         if (c != RubyParser.tLBRACE) commandStart = true;
         yaccValue = ruby_sourceline;
@@ -1749,8 +1746,8 @@ public class RubyLexer extends LexingCommon {
         }
 
         parenNest++;
-        conditionState.stop();
-        cmdArgumentState.stop();
+        conditionState.push0();
+        cmdArgumentState.push0();
         setState(EXPR_BEG|EXPR_LABEL);
         
         yaccValue = ruby_sourceline;
@@ -2017,27 +2014,29 @@ public class RubyLexer extends LexingCommon {
     
     private int rightBracket() {
         parenNest--;
-        conditionState.restart();
-        cmdArgumentState.restart();
+        conditionState.pop();
+        cmdArgumentState.pop();
         setState(EXPR_END);
         yaccValue = RBRACKET;
         return RubyParser.tRBRACK;
     }
 
     private int rightCurly() {
-        conditionState.restart();
-        cmdArgumentState.restart();
-        setState(EXPR_END);
         yaccValue = RCURLY;
-        int tok = braceNest == 0 ? RubyParser.tSTRING_DEND : RubyParser.tRCURLY;
+        if (braceNest <= 0) {
+            return RubyParser.tSTRING_DEND;
+        }
         braceNest--;
-        return tok;
+        conditionState.pop();
+        cmdArgumentState.pop();
+        setState(EXPR_END);
+        return RubyParser.tRCURLY;
     }
 
     private int rightParen() {
         parenNest--;
-        conditionState.restart();
-        cmdArgumentState.restart();
+        conditionState.pop();
+        cmdArgumentState.pop();
         setState(EXPR_ENDFN);
         yaccValue = RPAREN;
         return RubyParser.tRPAREN;
