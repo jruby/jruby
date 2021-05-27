@@ -107,8 +107,8 @@ public class ParserSupport {
     
     public void popCurrentScope() {
         if (!currentScope.isBlockScope()) { // blocks are soft scopes. All others are roots of lvars we are leaving.
-            lexer.getCmdArgumentState().end();
-            lexer.getConditionState().end();
+            lexer.getCmdArgumentState().pop();
+            lexer.getConditionState().pop();
         }
 
         if (warnOnUnusedVariables) {
@@ -129,8 +129,8 @@ public class ParserSupport {
         warnOnUnusedVariables = warnings.isVerbose();
         currentScope = configuration.getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState, lexer.getCmdArgumentState().getStack(), lexer.getConditionState().getStack());
-        lexer.getCmdArgumentState().stop();
-        lexer.getConditionState().stop();
+        lexer.getCmdArgumentState().push0();
+        lexer.getConditionState().push0();
     }
     
     public static Node arg_concat(Node node1, Node node2) {

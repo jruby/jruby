@@ -237,6 +237,10 @@ public class RipperParserBase {
     }
     
     public void popCurrentScope() {
+        if (!currentScope.isBlockScope()) {
+            getCmdArgumentState().pop();
+            getConditionState().pop();
+        }
         currentScope = currentScope.getEnclosingScope();
     }
     
@@ -246,7 +250,8 @@ public class RipperParserBase {
     
     public void pushLocalScope() {
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
-        getCmdArgumentState().reset();
+        getCmdArgumentState().push0();
+        getConditionState().push0();
     }
 
     public int getHeredocIndent() {

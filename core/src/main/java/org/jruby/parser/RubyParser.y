@@ -292,7 +292,7 @@ public class RubyParser {
 %type <Node> mrhs_arg
 %type <Node> compstmt bodystmt stmts stmt expr arg primary command 
 %type <Node> stmt_or_begin
-%type <Node> expr_value primary_value opt_else cases if_tail exc_var rel_expr
+%type <Node> expr_value expr_value_do primary_value opt_else cases if_tail exc_var rel_expr
 %type <Node> call_args opt_ensure paren_args superclass
 %type <Node> command_args var_ref opt_paren_args block_call block_command
 %type <Node> command_rhs arg_rhs
@@ -578,6 +578,14 @@ expr            : command_call
 
 expr_value      : expr {
                     support.value_expr(lexer, $1);
+                }
+
+expr_value_do   : {
+                    lexer.getConditionState().push1();
+                } expr_value do {
+                    lexer.getConditionState().pop();
+                } {
+                    $$ = $2;
                 }
 
 // Node:command - call with or with block on end [!null]
@@ -1384,9 +1392,9 @@ command_args    : /* none */ {
                        lookahead = true;
                     }
                     StackState cmdarg = lexer.getCmdArgumentState();
-                    if (lookahead) cmdarg.end();
-                    cmdarg.begin();
-                    if (lookahead) cmdarg.stop();
+                    if (lookahead) cmdarg.pop();
+                    cmdarg.push1();
+                    if (lookahead) cmdarg.push0();
                 } call_args {
                     StackState cmdarg = lexer.getCmdArgumentState();
                     boolean lookahead = false;
@@ -1395,9 +1403,9 @@ command_args    : /* none */ {
                        lookahead = true;
                     }
                       
-                    if (lookahead) cmdarg.end();
-                    cmdarg.end();
-                    if (lookahead) cmdarg.stop();
+                    if (lookahead) cmdarg.pop();
+                    cmdarg.pop();
+                    if (lookahead) cmdarg.push0();
                     $$ = $2;
                 }
 
@@ -1488,9 +1496,9 @@ primary         : literal
                      $$ = support.new_fcall($1);
                 }
                 | keyword_begin {
-                    lexer.getCmdArgumentState().stop();
+                    lexer.getCmdArgumentState().push0();
                 } bodystmt keyword_end {
-                    lexer.getCmdArgumentState().end();
+                    lexer.getCmdArgumentState().pop();
                     $$ = new BeginNode($1, support.makeNullNil($3));
                 }
                 | tLPAREN_ARG {
@@ -1498,14 +1506,10 @@ primary         : literal
                 } rparen {
                     $$ = null; //FIXME: Should be implicit nil?
                 }
-                | tLPAREN_ARG {
-                    $$ = lexer.getCmdArgumentState().getStack();
-                    lexer.getCmdArgumentState().reset();
-                } stmt {
+                | tLPAREN_ARG stmt {
                     lexer.setState(EXPR_ENDARG); 
                 } rparen {
-                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
-                    $$ = $3;
+                    $$ = $2;
                 }
                 | tLPAREN compstmt tRPAREN {
                     if ($2 != null) {
@@ -1577,19 +1581,19 @@ primary         : literal
                     $$ = support.new_if($1, support.cond($2), $5, $4);
                 }
                 | keyword_while {
-                    lexer.getConditionState().begin();
-                } expr_value do {
-                    lexer.getConditionState().end();
+                    lexer.getConditionState().push1();
+                } expr_value_do {
+                    lexer.getConditionState().pop();
                 } compstmt keyword_end {
-                    Node body = support.makeNullNil($6);
+                    Node body = support.makeNullNil($5);
                     $$ = new WhileNode($1, support.cond($3), body);
                 }
                 | keyword_until {
-                  lexer.getConditionState().begin();
-                } expr_value do {
-                  lexer.getConditionState().end();
+                  lexer.getConditionState().push1();
+                } expr_value_do {
+                  lexer.getConditionState().pop();
                 } compstmt keyword_end {
-                    Node body = support.makeNullNil($6);
+                    Node body = support.makeNullNil($5);
                     $$ = new UntilNode($1, support.cond($3), body);
                 }
                 | keyword_case expr_value opt_terms case_body keyword_end {
@@ -1600,12 +1604,12 @@ primary         : literal
                     $$ = support.newCaseNode($1, null, $3);
                 }
                 | keyword_for for_var keyword_in {
-                    lexer.getConditionState().begin();
-                } expr_value do {
-                    lexer.getConditionState().end();
+                    lexer.getConditionState().push1();
+                } expr_value_do {
+                    lexer.getConditionState().pop();
                 } compstmt keyword_end {
                       // ENEBO: Lots of optz in 1.9 parser here
-                    $$ = new ForNode($1, $2, $8, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new ForNode($1, $2, $7, $5, support.getCurrentScope(), lexer.getRubySourceline());
                 }
                 | k_class cpath superclass {
                     if (support.isInDef()) {
@@ -1910,9 +1914,9 @@ lambda          : /* none */  {
                     $$ = lexer.getLeftParenBegin();
                     lexer.setLeftParenBegin(lexer.incrementParenNest());
                 } f_larglist {
-                    lexer.getCmdArgumentState().stop();
+                    lexer.getCmdArgumentState().push0();
                 } lambda_body {
-                    lexer.getCmdArgumentState().end();
+                    lexer.getCmdArgumentState().pop();
                     $$ = new LambdaNode($2.getLine(), $2, $4, support.getCurrentScope(), lexer.getRubySourceline());
                     lexer.setLeftParenBegin($<Integer>1);
                     support.popCurrentScope();
@@ -2012,23 +2016,20 @@ brace_body      : {
                     $$ = lexer.getRubySourceline();
                 } {
                     support.pushBlockScope();
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
-                    lexer.getCmdArgumentState().reset();
                 } opt_block_param compstmt {
                     $$ = new IterNode($<Integer>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
                     support.popCurrentScope();
-                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
                 }
 
 do_body 	: {
                     $$ = lexer.getRubySourceline();
                 } {
                     support.pushBlockScope();
-                    lexer.getCmdArgumentState().stop();
+                    lexer.getCmdArgumentState().push0();
                 } opt_block_param bodystmt {
                     $$ = new IterNode($<Integer>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
+                    lexer.getCmdArgumentState().pop();
                     support.popCurrentScope();
-                    lexer.getCmdArgumentState().end();
                 }
  
 case_body       : keyword_when args then compstmt cases {
@@ -2226,9 +2227,8 @@ string_content  : tSTRING_CONTENT {
                 | tSTRING_DBEG {
                    $$ = lexer.getStrTerm();
                    lexer.setStrTerm(null);
-                   lexer.getConditionState().stop();
-                } {
-                   lexer.getCmdArgumentState().stop();
+                   lexer.getConditionState().push0();
+                   lexer.getCmdArgumentState().push0();
                 } {
                    $$ = lexer.getState();
                    lexer.setState(EXPR_BEG);
@@ -2239,16 +2239,16 @@ string_content  : tSTRING_CONTENT {
                    $$ = lexer.getHeredocIndent();
                    lexer.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
-                   lexer.getConditionState().restart();
+                   lexer.getConditionState().pop();
+                   lexer.getCmdArgumentState().pop();
                    lexer.setStrTerm($<StrTerm>2);
-                   lexer.getCmdArgumentState().stop();
-                   lexer.setState($<Integer>4);
-                   lexer.setBraceNest($<Integer>5);
-                   lexer.setHeredocIndent($<Integer>6);
+                   lexer.setState($<Integer>3);
+                   lexer.setBraceNest($<Integer>4);
+                   lexer.setHeredocIndent($<Integer>5);
                    lexer.setHeredocLineIndent(-1);
 
-                   if ($7 != null) $7.unsetNewline();
-                   $$ = support.newEvStrNode(support.getPosition($7), $7);
+                   if ($6 != null) $6.unsetNewline();
+                   $$ = support.newEvStrNode(support.getPosition($6), $6);
                 }
 
 string_dvar     : tGVAR {
