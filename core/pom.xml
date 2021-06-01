@@ -238,7 +238,7 @@ DO NOT MODIFIY - GENERATED CODE
       <groupId>jakarta.annotation</groupId>
       <artifactId>jakarta.annotation-api</artifactId>
       <version>2.0.0</version>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>

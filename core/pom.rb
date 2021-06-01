@@ -75,7 +75,7 @@ project 'JRuby Base' do
 
   jar 'com.headius:backport9:1.10'
 
-  jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'compile'
+  jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
