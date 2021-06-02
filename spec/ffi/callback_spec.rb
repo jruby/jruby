@@ -49,6 +49,8 @@ module CallbackSpecs
       callback :cbVrU32, [ ], :uint
       callback :cbVrL, [ ], :long
       callback :cbVrUL, [ ], :ulong
+      callback :cbVrF, [ ], :float
+      callback :cbVrD, [ ], :double
       callback :cbVrS64, [ ], :long_long
       callback :cbVrU64, [ ], :ulong_long
       callback :cbVrP, [], :pointer
@@ -70,6 +72,8 @@ module CallbackSpecs
       attach_function :testCallbackVrU16, :testClosureVrS, [ :cbVrU16 ], :ushort
       attach_function :testCallbackVrS32, :testClosureVrI, [ :cbVrS32 ], :int
       attach_function :testCallbackVrU32, :testClosureVrI, [ :cbVrU32 ], :uint
+      attach_function :testCallbackVrF, :testClosureVrF, [ :cbVrF ], :float
+      attach_function :testCallbackVrD, :testClosureVrD, [ :cbVrD ], :double
       attach_function :testCallbackVrL, :testClosureVrL, [ :cbVrL ], :long
       attach_function :testCallbackVrZ, :testClosureVrZ, [ :cbVrZ ], :bool
       attach_function :testCallbackVrUL, :testClosureVrL, [ :cbVrUL ], :ulong
@@ -86,7 +90,6 @@ module CallbackSpecs
       attach_variable :pVrS8, :gvar_pointer, :pointer
       attach_function :testGVarCallbackVrS8, :testClosureVrB, [ :pointer ], :char
       attach_function :testOptionalCallbackCrV, :testOptionalClosureBrV, [ :cbCrV, :char ], :void
-
     end
 
     it "returning :char (0)" do
@@ -259,6 +262,14 @@ module CallbackSpecs
 
     it "returning bool" do
       expect(LibTest.testCallbackVrZ { true }).to be true
+    end
+
+    it "returning float" do
+      expect(LibTest.testCallbackVrF { 1.234567890123456789 }).to be_within(1E-7).of(1.234567890123456789)
+    end
+
+    it "returning double" do
+      expect(LibTest.testCallbackVrD { 1.234567890123456789 }).to be_within(1E-15).of(1.234567890123456789)
     end
 
     it "returning :pointer (nil)" do

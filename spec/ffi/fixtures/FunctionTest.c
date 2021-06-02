@@ -6,6 +6,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <process.h>
 #endif
 
 #ifndef _WIN32
@@ -115,17 +116,26 @@ static void* asyncThreadCall(void *data)
     return NULL;
 }
 
+#ifdef _WIN32
+static void
+asyncThreadCall_win32(void *arg)
+{
+    asyncThreadCall(arg);
+}
+#endif
+
 void testAsyncCallback(void (*fn)(int), int value)
 {
-#ifndef _WIN32
-    pthread_t t;
     struct async_data d;
     d.fn = fn;
     d.value = value;
+#ifndef _WIN32
+    pthread_t t;
     pthread_create(&t, NULL, asyncThreadCall, &d);
     pthread_join(t, NULL);
 #else
-    (*fn)(value);
+    HANDLE hThread = (HANDLE) _beginthread(asyncThreadCall_win32, 0, &d);
+    WaitForSingleObject(hThread, INFINITE);
 #endif
 }
 
