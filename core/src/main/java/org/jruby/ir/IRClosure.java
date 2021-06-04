@@ -61,6 +61,7 @@ public class IRClosure extends IRScope {
         this.body = null;
     }
 
+    // Used by IREvalScript
     protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, int closureId, ByteList fullName) {
         super(manager, lexicalParent, null, lineNumber, staticScope);
 
