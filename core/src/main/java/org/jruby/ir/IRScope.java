@@ -92,7 +92,7 @@ public abstract class IRScope implements ParseResult {
     private List<IRClosure> nestedClosures;
 
     // Index values to guarantee we don't assign same internal index twice
-    private int nextClosureIndex;
+    protected int nextClosureIndex;
 
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
