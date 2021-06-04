@@ -5,15 +5,15 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class TemporaryClosureVariable extends TemporaryLocalVariable {
-    private final int closureId;
+    private final long closureId;
 
-    public TemporaryClosureVariable(int closureId, int offset) {
+    public TemporaryClosureVariable(long closureId, int offset) {
         super(offset);  // Do not save name to prevent constructing string
 
         this.closureId = closureId;
     }
 
-    public int getClosureId() {
+    public long getClosureId() {
         return closureId;
     }
 

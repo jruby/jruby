@@ -92,7 +92,7 @@ public abstract class IRScope implements ParseResult {
     private List<IRClosure> nestedClosures;
 
     // Index values to guarantee we don't assign same internal index twice
-    private int nextClosureIndex;
+    private long nextClosureIndex;
 
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
@@ -820,7 +820,7 @@ public abstract class IRScope implements ParseResult {
         manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
     }
 
-    public int getNextClosureId() {
+    public long getNextClosureId() {
         nextClosureIndex++;
 
         return nextClosureIndex;

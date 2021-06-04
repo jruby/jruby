@@ -31,7 +31,7 @@ import org.objectweb.asm.Handle;
 // Their parents are always execution scopes.
 
 public class IRClosure extends IRScope {
-    public final int closureId;    // Unique id for this closure within the nearest ancestor method.
+    public final long closureId;    // Unique id for this closure within the nearest ancestor method.
 
     private boolean isEND;         // Does this represent and END { } closure?
 
@@ -56,14 +56,14 @@ public class IRClosure extends IRScope {
 
         this.closureId = lexicalParent.getNextClosureId();
         ByteList name = prefix.dup();
-        name.append(Integer.toString(closureId).getBytes());
+        name.append(Long.toString(closureId).getBytes());
         setByteName(name);
         this.body = null;
     }
 
     /** Used by cloning code for inlining */
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
-    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {
+    protected IRClosure(IRClosure c, IRScope lexicalParent, long closureId, ByteList fullName) {
         super(c, lexicalParent);
         this.closureId = closureId;
         super.setByteName(fullName);
@@ -147,7 +147,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public int getNextClosureId() {
+    public long getNextClosureId() {
         return getLexicalParent().getNextClosureId();
     }
 
@@ -329,11 +329,11 @@ public class IRClosure extends IRScope {
         if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo) ii).isEnsureBlockCloneMode()) {
             clonedClosure = new IRClosure(this, lexicalParent, closureId, getByteName());
         } else {
-            int id = lexicalParent.getNextClosureId();
+            long id = lexicalParent.getNextClosureId();
             ByteList fullName = lexicalParent.getByteName();
             fullName = fullName != null ? fullName.dup() : new ByteList();
             fullName.append(CLOSURE_CLONE);
-            fullName.append(Integer.toString(id).getBytes());
+            fullName.append(Long.toString(id).getBytes());
             clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
         }
 

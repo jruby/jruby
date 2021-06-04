@@ -23,7 +23,7 @@ public class IRFor extends IRClosure {
     }
 
     /** Used by cloning code for inlining */
-    private IRFor(IRClosure c, IRScope lexicalParent, int id, ByteList fullName) {
+    private IRFor(IRClosure c, IRScope lexicalParent, long id, ByteList fullName) {
         super(c, lexicalParent, id, fullName);
     }
 
@@ -42,10 +42,10 @@ public class IRFor extends IRClosure {
         if (ii instanceof SimpleCloneInfo) {
             clonedClosure = new IRFor(this, lexicalParent, closureId, getByteName());
         } else {
-            int id = lexicalParent.getNextClosureId();
+            long id = lexicalParent.getNextClosureId();
             ByteList fullName = lexicalParent.getName().getBytes().dup();
             fullName.append(FOR_LOOP_CLONE);
-            fullName.append(Integer.toString(id).getBytes());
+            fullName.append(Long.toString(id).getBytes());
             clonedClosure = new IRFor(this, lexicalParent, id, fullName);
         }
 
