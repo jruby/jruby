@@ -4,7 +4,7 @@ set -v -e
 # set up JRuby
 mvn clean package
 export PATH=`pwd`/bin:$PATH
-gem install bundler
+gem install bundler --no-document
 
 # prep for test
 git clone --depth=10 https://github.com/ruby-concurrency/concurrent-ruby.git
