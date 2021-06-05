@@ -1,2 +1,0 @@
-fails:Set#initialize uses #each_entry on the provided Enumerable
-fails:Set#initialize uses #each on the provided Enumerable if it does not respond to #each_entry
