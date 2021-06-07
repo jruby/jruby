@@ -62,6 +62,14 @@ public class IRClosure extends IRScope {
         this(manager, lexicalParent, lineNumber, staticScope, prefix, CoverageData.NONE);
     }
 
+    // Used by IREvalScript
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, int closureId, ByteList fullName) {
+        super(manager, lexicalParent, null, lineNumber, staticScope);
+
+        this.closureId = closureId;
+        super.setByteName(fullName);
+    }
+
     /** Used by cloning code for inlining */
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
     protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {

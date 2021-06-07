@@ -899,12 +899,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (len == 0) {
             shared = newEmptyString(runtime, meta, enc);
         } else if (len == 1) {
-            // as with the 1.8 makeShared, don't bother sharing for substrings that are a single byte
-            // to get a good speed boost in a number of common scenarios (note though that unlike 1.8,
-            // we can't take advantage of SINGLE_CHAR_BYTELISTS since our encoding may not be ascii, but the
-            // single byte copy is pretty much negligible)
-            ByteList bytes = new ByteList(new byte[] { (byte) value.get(index) }, enc);
-            shared = new RubyString(runtime, meta, bytes, enc);
+            byte b = (byte) value.get(index);
+
+            // only use cache for low ASCII bytes
+            if ((b & 0xFF) < 0x80) {
+                shared = RubyInteger.singleCharString(runtime, b, meta, enc);
+            } else {
+                ByteList bytes = new ByteList(new byte[]{(byte) value.get(index)}, enc);
+                shared = new RubyString(runtime, meta, bytes);
+            }
         } else {
             if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
             shared = new RubyString(runtime, meta, value.makeShared(index, len));
@@ -3742,6 +3745,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         } else {
             len = StringSupport.offset(enc, bytes, p, end, len);
         }
+
         return makeShared(runtime, p - s, len);
     }
 
