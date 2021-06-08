@@ -280,7 +280,7 @@ public class RubySet extends RubyObject implements Set {
     private static abstract class EachBody extends JavaInternalBlockBody {
 
         EachBody(final Ruby runtime) {
-            super(runtime, Signature.ONE_REQUIRED);
+            super(runtime, Signature.ONE_ARGUMENT);
         }
 
         @Override
