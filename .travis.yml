@@ -12,18 +12,20 @@ cache:
     - $HOME/.m2
 
 before_install:
-  - unset _JAVA_OPTIONS
+  - unset _JAVA_OPTIONS JRUBY_OPTS
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
   - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:CompressedClassSpaceSize=96M"
   - export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=96M"
+  - export JRUBY_OPTS="$WITH_JRUBY_OPTS"
 
 before_script:
-  - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
+  - unset GEM_PATH GEM_HOME IRBRC
   - unset _JAVA_OPTIONS # travis/travis#8408
   - export PATH="`pwd`/bin:$PATH"
   - echo $HOME
   - echo $JAVA_OPTS
+  - echo $JRUBY_OPTS
   - echo $MAVEN_OPTS
 
 jdk:
@@ -49,14 +51,14 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake test:mri:core:int
-      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+      env: WITH_JRUBY_OPTS=-J-Xmx1G
 
     - name: MRI core jit
       script:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake test:mri:core:fullint
-      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+      env: WITH_JRUBY_OPTS=-J-Xmx1G
 
     - name: MRI core jit jdk11
       jdk: openjdk11
@@ -77,14 +79,14 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake test:mri:extra
-      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+      env: WITH_JRUBY_OPTS=-J-Xmx1G
 
     - name: MRI stdlib
       script:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake test:mri:stdlib
-      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+      env: WITH_JRUBY_OPTS=-J-Xmx1G
 
     - name: spec/ruby fast
       script:
@@ -138,7 +140,7 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake test:jruby
-      env: JRUBY_OPTS=-Xcompile.invokedynamic
+      env: WITH_JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: JRuby tests jit indy jdk14
       jdk: openjdk14
@@ -146,14 +148,21 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake test:jruby
-      env: JRUBY_OPTS=-Xcompile.invokedynamic
+      env: WITH_JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: JRuby tests jit indy
       script:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake test:jruby
-      env: JRUBY_OPTS=-Xcompile.invokedynamic
+      env: WITH_JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - name: JRuby tests dev
+      script:
+        - mvn clean package -Pbootstrap
+        - bundle install
+        - jruby -S rake test:jruby
+      env: WITH_JRUBY_OPTS=--dev
 
     - name: JRuby tests aot
       script:
@@ -192,7 +201,7 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake spec:ji
-      env: JRUBY_OPTS=-Xcompile.invokedynamic
+      env: WITH_JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: Compiler specs
       script:
@@ -205,7 +214,7 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake spec:compiler
-      env: JRUBY_OPTS=-Xcompile.invokedynamic
+      env: WITH_JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: Compiler specs indy jdk11
       jdk: openjdk11
@@ -213,7 +222,7 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake spec:compiler
-      env: JRUBY_OPTS=-Xcompile.invokedynamic
+      env: WITH_JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: Compiler specs indy jdk14
       jdk: openjdk14
@@ -221,7 +230,7 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake spec:compiler
-      env: JRUBY_OPTS=-Xcompile.invokedynamic
+      env: WITH_JRUBY_OPTS=-Xcompile.invokedynamic
 
     - name: FFI specs
       script:
@@ -247,7 +256,7 @@ matrix:
         - mvn clean package -Pbootstrap
         - bundle install
         - jruby -S rake spec:regression
-      env: JRUBY_OPTS=-Xjit.threshold=0
+      env: WITH_JRUBY_OPTS=-Xjit.threshold=0
 
     - name: JRuby specs
       script:
