@@ -439,7 +439,7 @@ public class RubyTime extends RubyObject {
     public static RubyTime newTimeFromNanoseconds(Ruby runtime, long nanoseconds) {
         long milliseconds = nanoseconds / 1000000;
         long extraNanoseconds = nanoseconds % 1000000;
-        return RubyTime.newTime(runtime, new DateTime(milliseconds), extraNanoseconds);
+        return RubyTime.newTime(runtime, new DateTime(milliseconds, getLocalTimeZone(runtime)), extraNanoseconds);
     }
 
     public static RubyTime newTime(Ruby runtime, DateTime dt) {
