@@ -52,6 +52,8 @@ class TestIO < Test::Unit::TestCase
     # out from under g) and thus make g try the ops and fail
     f = File.open(@file)
     @to_close << g = IO.new(f.fileno)
+    puts "fileno"
+    puts f.fileno
     f.close
     assert_raises(Errno::EBADF) { g.readchar }
     assert_raises(Errno::EBADF) { g.readline }
@@ -64,6 +66,8 @@ class TestIO < Test::Unit::TestCase
 
     f = File.open(@file, "w")
     @to_close << g = IO.new(f.fileno)
+    puts "fileno2"
+    puts f.fileno
     f.close
     assert_nothing_raised { g.print "" }
     assert_nothing_raised { g.write "" }
