@@ -427,7 +427,7 @@ public class RubyBasicSocket extends RubyIO {
                             ByteBuffer buf = ByteBuffer.allocate(256);
                             IntByReference len = new IntByReference(4);
                             
-                            int ret = SOCKOPT.getsockoptInt(fd.realFileno, intLevel, intOpt, buf, len);
+                            int ret = SOCKOPT.getsockopt(fd.realFileno, intLevel, intOpt, buf, len);
 
                             if (ret != 0) {
                                 throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
@@ -498,7 +498,11 @@ public class RubyBasicSocket extends RubyIO {
                             socketType.setTcpNoDelay(channel, asBoolean(context, val));
                         } else if (Platform.IS_LINUX && validTcpSockOpt(intOpt) &&
                                 fd.realFileno > 0 && SOCKOPT != null) {
-                            int ret = SOCKOPT.setsockoptInt(fd.realFileno, intLevel, intOpt, val.convertToInteger().getIntValue());
+
+                            ByteBuffer buf = ByteBuffer.allocate(4);
+                            buf.order(ByteOrder.nativeOrder());
+                            buf.putInt(val.convertToInteger().getIntValue()).flip();
+                            int ret = SOCKOPT.setsockopt(fd.realFileno, intLevel, intOpt, buf, buf.remaining());
 
                             if (ret != 0) {
                                 throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
@@ -540,15 +544,6 @@ public class RubyBasicSocket extends RubyIO {
         int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntByReference optlen);
         int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
         int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
-        default int setsockoptInt(int s, int level, int optname, int value) {
-            ByteBuffer buf = ByteBuffer.allocate(4);
-            buf.order(ByteOrder.nativeOrder());
-            buf.putInt(value).flip();
-            return SOCKOPT.setsockopt(s, level, optname, buf, buf.remaining());
-        }
-        default int getsockoptInt(int s, int level, int optname, ByteBuffer buf, IntByReference len) {
-            return SOCKOPT.getsockopt(s, level, optname, buf, len);
-        }
         String strerror(int error);
     }
 
