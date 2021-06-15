@@ -4,6 +4,7 @@ namespace :graph do
   end
 
   task :viz do
+    require 'ant'
     require 'tempfile'
     ant_import # load build.xml if not already loaded
     f = Tempfile.open "build_graph"

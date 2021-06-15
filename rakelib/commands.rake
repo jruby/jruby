@@ -1,15 +1,8 @@
 # -*- coding: iso-8859-1 -*-
-begin
-  require 'ant'
-rescue Exception => ex
-  warn "could not load ant: #{ex.inspect}"
-end
 require 'rbconfig'
 
-def initialize_paths
-  ant.path(:id => "jruby.execute.classpath") do
-    pathelement :path => "lib/jruby.jar"
-  end
+def jruby(java_options = {}, &code)
+  require 'ant'
 
   ant.path(:id => "test.class.path") do
     pathelement :path => File.join(BUILD_LIB_DIR, 'junit.jar')
@@ -23,10 +16,6 @@ def initialize_paths
     pathelement :path => File.join(TEST_DIR, 'jruby', 'requireTest.jar')
     pathelement :location => TEST_DIR
   end
-end
-
-def jruby(java_options = {}, &code)
-  initialize_paths
 
   java_options[:fork] ||= 'true'
   java_options[:failonerror] ||= 'true'
@@ -39,15 +28,6 @@ def jruby(java_options = {}, &code)
     classpath :path => 'lib/jruby.jar'
     sysproperty :key => "jruby.home", :value => BASE_DIR
     instance_eval(&code) if block_given?
-  end
-end
-
-def jrake(dir, targets, java_options = {}, &code)
-  java_options[:dir] = dir
-  jruby(java_options) do
-    classpath :refid => "test.class.path"
-    instance_eval(&code) if block_given?
-    arg :line => "-S rake #{targets}"
   end
 end
 

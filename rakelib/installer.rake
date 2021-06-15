@@ -1,4 +1,3 @@
-require 'erb'
 require 'fileutils'
 require 'rbconfig'
 
