@@ -1,6 +1,6 @@
 language: java
 
-dist: trusty
+dist: focal
 
 # don't need more than a few levels for our builds
 git:
@@ -34,6 +34,8 @@ os:
 arch:
   #- arm64 # has AdoptOpenJDK 11 installed
   - arm64-graviton2
+
+virt: lxd
 
 #env:
 #  global:
