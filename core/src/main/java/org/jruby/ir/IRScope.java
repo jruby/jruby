@@ -358,6 +358,16 @@ public abstract class IRScope implements ParseResult {
         return lineNumber;
     }
 
+    public int countForLoops() {
+        int count = 0;
+        
+        for (IRScope current = this; current != null && !current.isTopLocalVariableScope(); current = current.getLexicalParent()) {
+            if (current instanceof IRFor) count++;
+        }
+
+        return count;
+    }
+
     /**
      * Returns the top level scope
      */

@@ -23,6 +23,7 @@ import java.util.EnumSet;
  * input the the encoder which writes the file.
  */
 public interface IRWriterEncoder {
+    IRScope getCurrentScope();
 
     public void encode(ByteList bytelist);
     public void encode(Encoding encoding);

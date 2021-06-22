@@ -32,6 +32,12 @@ describe "JRuby::Compiler.compile_argv" do
     expect { DoubleRescue.re_raise }.to raise_error LoadError
   end
 
+  it "loads for.class" do
+    load File.join(FILES_DIR, 'for.class')
+    expect( $for_result ).to eql 3
+    expect( $for_nested_result ).to eql 28
+  end
+
   it "loads sample_block.class" do
     load File.join(FILES_DIR, 'sample_block.class')
 
