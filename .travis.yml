@@ -178,11 +178,11 @@ matrix:
 #        - bundle install
 #        - jruby -S rake test:slow_suites
 
-    - name: JI specs
-      script:
-        - ./mvnw clean package -Pbootstrap
-        - bin/jruby -S bundle install
-        - bin/jruby -S rake spec:ji
+#    - name: JI specs
+#      script:
+#        - ./mvnw clean package -Pbootstrap
+#        - bin/jruby -S bundle install
+#        - bin/jruby -S rake spec:ji
 
 #    - name: JI specs jdk11
 #      jdk: openjdk11
