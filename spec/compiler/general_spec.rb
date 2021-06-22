@@ -670,9 +670,8 @@ modes.each do |mode|
 
     it "executes for loops properly" do
       # for loops
-# FIXME: materializing variables in for loops expect some magic missing when I stopped persisting them on master (which is a new bug from jit_irscope_removal since we were not testing all the things on master)      
-#      run("a = []; for b in [1, 2, 3]; a << b * 2; end; a") {|result| expect(result).to eq([2, 4, 6]) }
-#      run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort") {|result| expect(result).to eq([1, 2, 3]) }
+      run("a = []; for b in [1, 2, 3]; a << b * 2; end; a") {|result| expect(result).to eq([2, 4, 6]) }
+      run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort") {|result| expect(result).to eq([1, 2, 3]) }
     end
 
     it "fires ensure blocks after normal or early block termination" do
