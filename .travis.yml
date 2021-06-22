@@ -32,7 +32,7 @@ os:
   - linux
 
 arch:
-  - arm64 # has AdoptOpenJDK 11 installed
+  #- arm64 # has AdoptOpenJDK 11 installed
   - arm64-graviton2
 
 #env:
