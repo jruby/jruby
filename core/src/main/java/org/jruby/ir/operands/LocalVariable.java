@@ -121,7 +121,9 @@ public class LocalVariable extends Variable implements DepthCloneable {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getName());
-        e.encode(getScopeDepth());
+
+        int forCount = e.getCurrentScope().countForLoops();
+        e.encode(getScopeDepth() - forCount);
         // We do not encode location because we rebuild lvars from IRScope when being rebuilt
     }
 
