@@ -1,6 +1,7 @@
 language: java
 
-dist: focal
+# dist: focal with virt: lxd (arm64-graviton2) - CI jobs do not start
+dist: trusty
 
 # don't need more than a few levels for our builds
 git:
