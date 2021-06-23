@@ -744,7 +744,7 @@ describe "Class#to_java" do
     it "returns reified class for reified used classes" do
       rubycls = Class.new; require 'jruby/core_ext'
       rubycls.become_java!
-      expect(rubycls.to_java(cls)).to be JRuby.reference(rubycls).getReifiedClass
+      expect(rubycls.to_java(cls)).to be JRuby.reference(rubycls).getReifiedRubyClass
     end
 
     it "converts Java proxy classes to their JavaClass/java.lang.Class equivalent" do

@@ -16,12 +16,15 @@ import org.jruby.javasupport.Java;
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.channels.spi.AbstractInterruptibleChannel;
 
 /**
  * Helper that attempts to improve Channels' static helpers.
@@ -57,8 +60,30 @@ public abstract class ChannelHelper {
         return Channels.newChannel(inputStream);
     }
 
-    public static WritableByteChannel writableChannel(final OutputStream ouputStream) {
-        return Channels.newChannel(ouputStream);
+    public static WritableByteChannel writableChannel(final OutputStream outputStream) {
+        return new SyncOutputStreamChannel(outputStream);
+    }
+    
+    private static class SyncOutputStreamChannel extends AbstractInterruptibleChannel implements WritableByteChannel {
+        private final OutputStream output;
+        
+        SyncOutputStreamChannel(OutputStream output) {
+            this.output = output;
+            this.out = Channels.newChannel(output);
+        }
+        @Override
+        protected void implCloseChannel() throws IOException {
+            out.close();
+        }
+
+        final WritableByteChannel out;
+
+        @Override
+        public int write(ByteBuffer src) throws IOException {
+            int written = out.write(src);
+            output.flush();
+            return written;
+        }
     }
 
     /**

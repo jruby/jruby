@@ -138,7 +138,7 @@ public class Options {
     public static final Option<Boolean> MANAGEMENT_ENABLED = bool(MISCELLANEOUS, "management.enabled", false, "Set whether JMX management is enabled.");
     public static final Option<Boolean> JUMP_BACKTRACE = bool(MISCELLANEOUS, "jump.backtrace", false, "Make non-local flow jumps generate backtraces.");
     public static final Option<Boolean> PROCESS_NOUNWRAP = bool(MISCELLANEOUS, "process.noUnwrap", false, "Do not unwrap process streams (issue on some recent JVMs).");
-    public static final Option<Boolean> REIFY_CLASSES = bool(MISCELLANEOUS, "reify.classes", false, "Before instantiation, stand up a real Java class for every Ruby class.");
+    public static final Option<Boolean> REIFY_CLASSES = bool(MISCELLANEOUS, "reify.classes", false, "Generate a real Java class and methods for every Ruby class.");
     public static final Option<Boolean> REIFY_FFI = bool(MISCELLANEOUS, "reify.ffi", false, "Reify FFI memory structures.");
     public static final Option<Boolean> REIFY_LOGERRORS = bool(MISCELLANEOUS, "reify.logErrors", false, "Log errors during reification (reify.classes=true).");
     public static final Option<Boolean> BACKTRACE_COLOR = bool(MISCELLANEOUS, "backtrace.color", false, "Enable colorized backtraces.");
@@ -147,7 +147,7 @@ public class Options {
     public static final Option<Boolean> NATIVE_EXEC = bool(MISCELLANEOUS, "native.exec", true, "Do a true process-obliterating native exec for Kernel#exec.");
     public static final Option<Boolean> CONSISTENT_HASHING = bool(MISCELLANEOUS, "consistent.hashing", false, "Generate consistent object hashes across JVMs");
     public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", false, "Always ensure volatile semantics for instance variables.");
-    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", !(REIFY_CLASSES.load() || VOLATILE_VARIABLES.load()), "Attempt to expand instance vars into Java fields");
+    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", !(REIFY_CLASSES.load() || VOLATILE_VARIABLES.load()), "Expand instance vars into Java fields");
     public static final Option<Integer> REIFY_VARIABLES_MAX = integer(MISCELLANEOUS, "reify.variables.max", 50, "Maximum number of reified instance variable fields");
     public static final Option<Boolean> REIFY_VARIABLES_NAME = bool(MISCELLANEOUS, "reify.variables.name", false, "Reify variables into a class named after the Ruby class");
     public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Set the preferred JDK-supported random number generator to use.");

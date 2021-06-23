@@ -48,6 +48,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
@@ -59,7 +60,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.JavaSites.HelpersSites;
@@ -79,7 +80,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
-import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -101,6 +101,7 @@ import org.jruby.util.io.EncodingUtils;
 public class Helpers {
 
     public static final Pattern SEMICOLON_PATTERN = Pattern.compile(";");
+    public static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8; // safe max for new byte[], see GH-6671
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
@@ -357,7 +358,7 @@ public class Helpers {
     /**
      * Construct an appropriate error (which may ultimately not be an IOError) for a given IOException.
      *
-     * If this method is used on an exception which can't be translated to a Ruby error using {@link #newErrorFromException(Ruby, Exception)}
+     * If this method is used on an exception which can't be translated to a Ruby error using {@link #newErrorFromException(Ruby, Throwable)}
      * then a RuntimeError will be returned, due to the unhandled exception type.
      *
      * @param runtime the current runtime
@@ -478,6 +479,111 @@ public class Helpers {
         default:
             throw new RuntimeException("unsupported arity: " + args);
         }
+    }
+
+    /**
+     * Calculate a buffer length based on the required length, expanding by 1.5x or to the maximum array size.
+     *
+     * @param length the required length
+     * @return a larger buffer length with extra room for growth, or else the max array size
+     * @throws OutOfMemoryError if the requested length is greated than the max array size
+     */
+    public static int calculateBufferLength(int length) {
+        if (length > MAX_ARRAY_SIZE) throw new OutOfMemoryError("Requested array size exceeds VM limit");
+
+        int newLength;
+        try {
+            // Try to allocate 1.5 * length but that might take us outside the range of int
+            newLength = Math.addExact(length, length >>> 1);
+        } catch (ArithmeticException e) {
+            newLength = MAX_ARRAY_SIZE;
+        }
+        return newLength;
+    }
+
+    /**
+     * Same as {@link #calculateBufferLength(int)} but raises a Ruby ArgumentError.
+     */
+    public static int calculateBufferLength(Ruby runtime, int length) {
+        if (length > MAX_ARRAY_SIZE) throw runtime.newArgumentError("argument too big");
+
+        int newLength;
+        try {
+            // Try to allocate 1.5 * length but that might take us outside the range of int
+            newLength = Math.addExact(length, length >>> 1);
+        } catch (ArithmeticException e) {
+            newLength = MAX_ARRAY_SIZE;
+        }
+        return newLength;
+    }
+
+    /**
+     * Calculate a buffer length based on a base size and a multiplier. If the resulting size exceeds MAX_ARRAY_SIZE,
+     * an {@link ArgumentError} will be thrown, similar to when asking the JVM to allocate a too-large array.
+     *
+     * @param base the base size
+     * @param multiplier the multiplier
+     * @return the multiplied size, if valid
+     * @throws ArgumentError if the requested length is greated than the max array size
+     */
+    public static int multiplyBufferLength(Ruby runtime, int base, int multiplier) {
+        try {
+            int newSize = Math.multiplyExact(base, multiplier);
+
+            if (newSize <= MAX_ARRAY_SIZE) {
+                return newSize;
+            }
+
+            // fall through to error below
+        } catch (ArithmeticException e) {
+            // fall through to error below
+        }
+
+        throw runtime.newArgumentError("argument too big");
+    }
+
+    /**
+     * Calculate a buffer length based on a base size and a extra size. If the resulting size exceeds MAX_ARRAY_SIZE
+     * and the extra size is nonzero, use the MAX_ARRAY_SIZE as the buffer length.
+     *
+     * @param runtime the runtime
+     * @param base the base size
+     * @param extra the extra buffer size
+     * @return the combined buffer size, or MAX_ARRAY_SIZE
+     * @throws ArgumentError if the original or combined size cannot be accommodated by MAX_ARRAY_SIZE
+     */
+    public static int addBufferLength(Ruby runtime, int base, int extra) {
+        try {
+            int newSize = Math.addExact(base, extra);
+
+            if (newSize <= MAX_ARRAY_SIZE) {
+                return newSize;
+            }
+
+            // can't accommodate all of extra buffer size, but do as much as we can
+            if (extra > 0) {
+                return MAX_ARRAY_SIZE;
+            }
+
+            // fall through to error below
+        } catch (ArithmeticException e) {
+            // fall through to error below
+        }
+
+        throw runtime.newArgumentError("argument too big");
+    }
+
+    /**
+     * Check that the buffer length requested is within the valid range of 0 to MAX_ARRAY_SIZE, or raise an argument
+     * error.
+     */
+    public static int validateBufferLength(Ruby runtime, int length) {
+        if (length < 0) {
+            throw runtime.newArgumentError("negative argument");
+        } else if (length > MAX_ARRAY_SIZE) {
+            throw runtime.newArgumentError("argument too big");
+        }
+        return length;
     }
 
     public static class MethodMissingMethod extends DynamicMethod {
@@ -958,8 +1064,8 @@ public class Helpers {
         }
 
         if (catchable instanceof RubyClass && JavaClass.isProxyType(context, (RubyClass) catchable)) {
-            if ( ex instanceof InternalJavaProxy ) { // Ruby sub-class of a Java exception type
-                final IRubyObject target = ((InternalJavaProxy) ex).___getInvocationHandler().getOrig();
+            if ( ex instanceof ReifiedJavaProxy ) { // Ruby sub-class of a Java exception type
+                final IRubyObject target = ((ReifiedJavaProxy) ex).___jruby$rubyObject();
                 if ( target != null ) return ((RubyClass) catchable).isInstance(target);
             }
             return ((RubyClass) catchable).isInstance(wrappedEx);
@@ -1976,23 +2082,30 @@ public class Helpers {
     }
 
     public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz,
-                                                                             RubySymbol symbol, Visibility visibility) throws RaiseException {
-        String name = symbol.asJavaString(); // We just assume simple ascii string since that is all we are examining.
+                                                                             RubySymbol symbol, Visibility visibility, boolean checkSingleton) throws RaiseException {
+        String methodName = symbol.asJavaString(); // We just assume simple ascii string since that is all we are examining.
 
         if (clazz == runtime.getDummy()) {
             throw runtime.newTypeError("no class/module to add method");
         }
 
-        if (clazz == runtime.getObject() && "initialize".equals(name)) {
+        if (clazz == runtime.getObject() && "initialize".equals(methodName)) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
         }
 
-        if ("__id__".equals(name) || "__send__".equals(name)) {
+        if ("__id__".equals(methodName) || "__send__".equals(methodName)) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(runtime, "redefining `", ids(runtime, symbol), "' may cause serious problem"));
         }
 
-        if ("initialize".equals(name) || "initialize_copy".equals(name) || name.equals("initialize_dup") || name.equals("initialize_clone") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
-            visibility = Visibility.PRIVATE;
+        if ("initialize".equals(methodName) || "initialize_copy".equals(methodName) || methodName.equals("initialize_dup") || methodName.equals("initialize_clone") || methodName.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
+            if(checkSingleton) {
+                if(!clazz.isSingleton()){
+                    visibility = Visibility.PRIVATE;
+                }
+            } else {
+                visibility = Visibility.PRIVATE;
+            }
+
         }
 
         return visibility;

@@ -96,6 +96,10 @@ public class JavaPackage extends RubyModule {
         this.packageName = packageName.toString();
     }
 
+    public String getPackageName() {
+        return packageName;
+    }
+
     // NOTE: name is Ruby name not pkg.name ~ maybe it should be just like with JavaClass?
 
     @JRubyMethod(name = "package_name", alias = "to_s")

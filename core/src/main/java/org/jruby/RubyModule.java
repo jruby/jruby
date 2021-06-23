@@ -1825,6 +1825,25 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
+    /**
+     * Searches for a method up until the superclass, but include modules. This is
+     * for Concrete java ctor initialization
+     * TODO: add a cache?
+     */
+    public DynamicMethod searchMethodLateral(String id) {
+       // int token = generation;
+        // This flattens some of the recursion that would be otherwise be necessary.
+        // Used to recurse up the class hierarchy which got messy with prepend.
+        for (RubyModule module = this; module != null && (module == this || (module instanceof IncludedModuleWrapper)); module = module.getSuperClass()) {
+            // Only recurs if module is an IncludedModuleWrapper.
+            // This way only the recursion needs to be handled differently on
+            // IncludedModuleWrapper.
+            DynamicMethod method = module.searchMethodCommon(id);
+            if (method != null) return method.isNull() ? null : method;
+        }
+        return null;
+    }
+
     // MRI: resolve_refined_method
     public CacheEntry resolveRefinedMethod(Map<RubyModule, RubyModule> refinements, CacheEntry entry, String id, boolean cacheUndef) {
         if (entry != null && entry.method.isRefined()) {
@@ -2377,15 +2396,18 @@ public class RubyModule extends RubyObject {
                 IRMethod method = closure.convertToMethod(name.getBytes());
                 if (method != null) {
                     newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+                    Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, runtime.newSymbol(newMethod.getName()), newMethod.getVisibility(), false);
+                    newMethod.setVisibility(newVisibility);
+                    Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
                     return name;
                 }
             }
         }
 
         newMethod = createProcMethod(runtime, name.idString(), visibility, block);
-
-        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, runtime.newSymbol(newMethod.getName()), newMethod.getVisibility(), false);
+        newMethod.setVisibility(newVisibility);
+        Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
 
         return name;
     }
@@ -2402,11 +2424,13 @@ public class RubyModule extends RubyObject {
         RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, name, visibility, false);
+
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
 
-            newMethod = createProcMethod(runtime, name.idString(), visibility, proc.getBlock());
+            newMethod = createProcMethod(runtime, name.idString(), newVisibility, proc.getBlock());
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
@@ -2414,12 +2438,12 @@ public class RubyModule extends RubyObject {
 
             newMethod = method.getMethod().dup();
             newMethod.setImplementationClass(this);
-            newMethod.setVisibility(visibility);
+            newMethod.setVisibility(newVisibility);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
 
-        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+        Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
 
         return name;
     }
@@ -2510,6 +2534,8 @@ public class RubyModule extends RubyObject {
         syncConstants(originalModule);
 
         originalModule.cloneMethods(this);
+        
+        this.javaProxy = originalModule.javaProxy; 
 
         return this;
     }
@@ -3814,7 +3840,7 @@ public class RubyModule extends RubyObject {
             RubySymbol sym = (RubySymbol) name;
 
             if (!sym.validConstantName()) {
-                throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, sym)), sym);
+                throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, sym)), sym);
             }
 
             String id = sym.idString();
@@ -3915,7 +3941,7 @@ public class RubyModule extends RubyObject {
         int sep = name.indexOf("::");
         // symbol form does not allow ::
         if (symbol instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", fullName);
+            throw runtime.newNameError("wrong constant name ", fullName);
         }
 
         RubyModule mod = this;

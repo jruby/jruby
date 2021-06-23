@@ -40,11 +40,13 @@ public class JavaUtilities {
         return Java.get_proxy_class(recv, arg0);
     }
 
+    @Deprecated // no longer used
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject create_proxy_class(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return Java.create_proxy_class(recv, arg0, arg1, arg2);
     }
 
+    @Deprecated // no longer used
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject get_java_class(IRubyObject recv, IRubyObject arg0) {
         final Ruby runtime = recv.getRuntime();
@@ -68,7 +70,7 @@ public class JavaUtilities {
         return RubyBoolean.newBoolean(context, validJavaIdentifier(javaName));
     }
 
-    private static boolean validJavaIdentifier(final String javaName) {
+    public static boolean validJavaIdentifier(final String javaName) {
         for (String frag : StringSupport.split(javaName, '.')) {
             if (frag.length() == 0) return false;
             if (!Character.isJavaIdentifierStart(frag.codePointAt(0))) return false;

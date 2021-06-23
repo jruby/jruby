@@ -38,6 +38,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -66,7 +67,7 @@ import static org.jruby.util.Numeric.f_lcm;
  *
  * @author  jpetersen
  */
-@JRubyClass(name="Integer", parent="Numeric")
+@JRubyClass(name="Integer", parent="Numeric", overrides = {RubyFixnum.class, RubyBignum.class})
 public abstract class RubyInteger extends RubyNumeric {
 
     public static RubyClass createIntegerClass(Ruby runtime) {
@@ -384,6 +385,51 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public static ByteList singleCharByteList(final byte index) {
         return SINGLE_CHAR_BYTELISTS[index & 0xFF];
+    }
+
+    static final ByteList[] SINGLE_CHAR_UTF8_BYTELISTS;
+    static {
+        SINGLE_CHAR_UTF8_BYTELISTS = new ByteList[128];
+        for (int i = 0; i < 128; i++) {
+            ByteList bytes = new ByteList(new byte[] { (byte) i }, false);
+            SINGLE_CHAR_UTF8_BYTELISTS[i] = bytes;
+            bytes.setEncoding(UTF8Encoding.INSTANCE);
+        }
+    }
+
+    /**
+     * Return a low ASCII single-character bytelist with UTF-8 encoding, using cached values.
+     *
+     * The resulting ByteList should not be modified.
+     *
+     * @param index the byte
+     * @return a cached single-character ByteList
+     */
+    public static ByteList singleCharUTF8ByteList(final byte index) {
+        return SINGLE_CHAR_UTF8_BYTELISTS[index & 0xFF];
+    }
+
+    /**
+     * Return a single-character ByteList, possibly cached, corresponding to the given byte and encoding.
+     *
+     * Note this will return high ASCII non-UTF8 characters as ASCII-8BIT, rather than US-ASCII.
+     *
+     * @param b the byte
+     * @param enc the encoding
+     * @return a new single-character RubyString
+     */
+    public static RubyString singleCharString(Ruby runtime, byte b, RubyClass meta, Encoding enc) {
+        ByteList bytes;
+        if (enc == USASCIIEncoding.INSTANCE) {
+            bytes = singleCharByteList(b);
+        } else if ((b & 0xFF) < 0x80 && enc == RubyString.UTF8) {
+            bytes = singleCharUTF8ByteList(b);
+        } else {
+            return new RubyString(runtime, meta, new ByteList(new byte[]{b}, enc));
+        }
+
+        // use shared for cached bytelists
+        return RubyString.newStringShared(runtime, meta, bytes);
     }
 
     /** int_chr

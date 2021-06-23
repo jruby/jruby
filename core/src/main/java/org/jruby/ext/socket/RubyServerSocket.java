@@ -70,7 +70,7 @@ public class RubyServerSocket extends RubySocket {
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
         context.runtime.getWarnings().warnOnce(
                 IRubyWarnings.ID.LISTEN_SERVER_SOCKET,
-                "pass backlog to #bind instead of #listen (http://wiki.jruby.org/ServerSocket)");
+                "pass backlog to #bind instead of #listen (https://github.com/jruby/jruby/wiki/ServerSocket)");
 
         return context.runtime.newFixnum(0);
     }

@@ -83,7 +83,7 @@ public class JRubyUtilLibrary implements Library {
         final Ruby runtime = recv.getRuntime();
         boolean enabled = arg.isTrue();
         if (enabled) {
-            runtime.getWarnings().warn("ObjectSpace impacts performance. See http://wiki.jruby.org/PerformanceTuning#dont-enable-objectspace");
+            runtime.getWarnings().warn("ObjectSpace impacts performance. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");
         }
         runtime.setObjectSpaceEnabled(enabled);
         return runtime.newBoolean(enabled);

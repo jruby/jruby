@@ -28,6 +28,39 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.AddressInfo;
+import jnr.constants.platform.Errno;
+import jnr.constants.platform.INAddr;
+import jnr.constants.platform.IP;
+import jnr.constants.platform.IPProto;
+import jnr.constants.platform.NameInfo;
+import jnr.constants.platform.ProtocolFamily;
+import jnr.constants.platform.Shutdown;
+import jnr.constants.platform.Sock;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketMessage;
+import jnr.constants.platform.SocketOption;
+import jnr.constants.platform.TCP;
+import jnr.netdb.Protocol;
+import jnr.unixsocket.UnixSocketAddress;
+import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.ChannelFD;
+import org.jruby.util.io.Sockaddr;
+
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
@@ -47,42 +80,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
-
-import jnr.constants.platform.AddressFamily;
-import jnr.constants.platform.AddressInfo;
-import jnr.constants.platform.Errno;
-import jnr.constants.platform.INAddr;
-import jnr.constants.platform.IP;
-import jnr.constants.platform.IPProto;
-import jnr.constants.platform.NameInfo;
-import jnr.constants.platform.ProtocolFamily;
-import jnr.constants.platform.Shutdown;
-import jnr.constants.platform.Sock;
-import jnr.constants.platform.SocketLevel;
-import jnr.constants.platform.SocketOption;
-import jnr.constants.platform.SocketMessage;
-import jnr.constants.platform.TCP;
-import jnr.netdb.Protocol;
-import jnr.unixsocket.UnixSocketAddress;
-import jnr.unixsocket.UnixSocketChannel;
-
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.Sockaddr;
-
-import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -280,8 +277,8 @@ public class RubySocket extends RubyBasicSocket {
                 }
             }
         }
-        catch (SocketException|RuntimeException ex) {
-            if ( ex instanceof RaiseException ) throw (RaiseException) ex;
+        catch (SocketException | RuntimeException ex) {
+            if ( ex instanceof RaiseException) throw (RaiseException) ex;
             throw SocketUtils.sockerr_with_trace(context.runtime, "getifaddrs: " + ex.toString(), ex.getStackTrace());
         }
         return list;
@@ -619,7 +616,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     static RaiseException buildSocketException(final Ruby runtime, final SocketException ex,
-        final String caller, final SocketAddress addr) {
+                                               final String caller, final SocketAddress addr) {
 
         final Errno errno = Helpers.errnoFromException(ex);
         final String callerWithAddr = caller + " for " + formatAddress(addr);
@@ -718,5 +715,5 @@ public class RubySocket extends RubyBasicSocket {
     protected Protocol soProtocol = Protocol.getProtocolByNumber(0);
 
     private static final String JRUBY_SERVER_SOCKET_ERROR =
-            "use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
+            "use ServerSocket for servers (https://github.com/jruby/jruby/wiki/ServerSocket)";
 }// RubySocket

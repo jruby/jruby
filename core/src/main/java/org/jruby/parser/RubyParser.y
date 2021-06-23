@@ -123,6 +123,7 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.RubyLexer;
+import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
@@ -404,7 +405,6 @@ public class RubyParser {
 %token <ByteList> tQSYMBOLS_BEG         /* {{verbatim symbol list}} */
 %token <ByteList> tSTRING_DEND          /* {{'}'}} */
 %token <ByteList> tSTRING_DBEG tSTRING_DVAR tLAMBEG tLABEL_END
-
 
 
 /*
@@ -710,10 +710,10 @@ expr_value      : expr {
                 }
 
 expr_value_do   : {
-                  lexer.getConditionState().begin();
+                    lexer.getConditionState().push1();
                 } expr_value do {
-                   lexer.getConditionState().end();
-                   $$ = $2;
+                    lexer.getConditionState().pop();
+                    $$ = $2;
                 }
 
 // Node:command - call with or with block on end [!null]
@@ -1558,10 +1558,26 @@ call_args       : command {
 
 // [!null] - ArgsCatNode, SplatNode, ArrayNode, HashNode, BlockPassNode
 command_args    : /* none */ {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
-                    lexer.getCmdArgumentState().begin();
+                    boolean lookahead = false;
+                    switch (yychar) {
+                    case '(': case tLPAREN: case tLPAREN_ARG: case '[': case tLBRACK:
+                       lookahead = true;
+                    }
+                    StackState cmdarg = lexer.getCmdArgumentState();
+                    if (lookahead) cmdarg.pop();
+                    cmdarg.push1();
+                    if (lookahead) cmdarg.push0();
                 } call_args {
-                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                    StackState cmdarg = lexer.getCmdArgumentState();
+                    boolean lookahead = false;
+                    switch (yychar) {
+                    case tLBRACE_ARG:
+                       lookahead = true;
+                    }
+                      
+                    if (lookahead) cmdarg.pop();
+                    cmdarg.pop();
+                    if (lookahead) cmdarg.push0();
                     $$ = $2;
                 }
 
@@ -1656,10 +1672,9 @@ primary         : literal
                      $$ = support.new_fcall($1);
                 }
                 | k_begin {
-                    $$ = lexer.getCmdArgumentState().getStack();
-                    lexer.getCmdArgumentState().reset();
+                    lexer.getCmdArgumentState().push0();
                 } bodystmt k_end {
-                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
+                    lexer.getCmdArgumentState().pop();
                     $$ = new BeginNode($1, support.makeNullNil($3));
                 }
                 | tLPAREN_ARG {
@@ -1667,14 +1682,10 @@ primary         : literal
                 } rparen {
                     $$ = null; //FIXME: Should be implicit nil?
                 }
-                | tLPAREN_ARG {
-                    $$ = lexer.getCmdArgumentState().getStack();
-                    lexer.getCmdArgumentState().reset();
-                } stmt {
+                | tLPAREN_ARG stmt {
                     lexer.setState(EXPR_ENDARG); 
                 } rparen {
-                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
-                    $$ = $3;
+                    $$ = $2;
                 }
                 | tLPAREN compstmt ')' {
                     if ($2 != null) {
@@ -2123,15 +2134,13 @@ lambda          : tLAMBDA {
                 } {
                     $$ = support.numparam_push();
                 } f_larglist {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
-                    lexer.getCmdArgumentState().reset();
+                    lexer.getCmdArgumentState().push0();
                 } lambda_body {
                     int max_numparam = support.restoreMaxNumParam($<Integer>3);
                     ArgsNode args = support.args_with_numbered($5, max_numparam);
-                    lexer.getCmdArgumentState().reset($<Long>6.longValue());
-                    lexer.getCmdArgumentState().restart();
+                    lexer.getCmdArgumentState().pop();
                     $$ = new LambdaNode(@1.startLine(), args, $7, support.getCurrentScope(), lexer.getRubySourceline());
-                    lexer.setLeftParenBegin($<Integer>2);
+                    lexer.setLeftParenBegin($<Integer>1);
                     support.numparam_pop($<Node>4);
                     support.popCurrentScope();
                 }
@@ -2232,8 +2241,6 @@ brace_block     : '{' brace_body '}' {
 
 brace_body      : {
                     support.pushBlockScope();
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
-                    lexer.getCmdArgumentState().reset();
                 } {
                     $$ = support.resetMaxNumParam();
                 } {
@@ -2244,24 +2251,22 @@ brace_body      : {
                     $$ = new IterNode(@1.startLine(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
                     support.numparam_pop($<Node>3);
                     support.popCurrentScope();
-                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
                 }
 
 do_body 	: {
                     support.pushBlockScope();
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
-                    lexer.getCmdArgumentState().reset();
                 } {
                     $$ = support.resetMaxNumParam();
                 } {
                     $$ = support.numparam_push();
+                    lexer.getCmdArgumentState().push0();
                 } opt_block_param bodystmt {
                     int max_numparam = support.restoreMaxNumParam($<Integer>2);
                     ArgsNode args = support.args_with_numbered($4, max_numparam);
                     $$ = new IterNode(@1.startLine(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    lexer.getCmdArgumentState().pop();
                     support.numparam_pop($<Node>3);
                     support.popCurrentScope();
-                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
                 }
 
 case_args	: arg_value {
@@ -2861,10 +2866,8 @@ string_content  : tSTRING_CONTENT {
                 | tSTRING_DBEG {
                    $$ = lexer.getStrTerm();
                    lexer.setStrTerm(null);
-                   lexer.getConditionState().stop();
-                } {
-                   $$ = lexer.getCmdArgumentState().getStack();
-                   lexer.getCmdArgumentState().reset();
+                   lexer.getConditionState().push0();
+                   lexer.getCmdArgumentState().push0();
                 } {
                    $$ = lexer.getState();
                    lexer.setState(EXPR_BEG);
@@ -2875,16 +2878,16 @@ string_content  : tSTRING_CONTENT {
                    $$ = lexer.getHeredocIndent();
                    lexer.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
-                   lexer.getConditionState().restart();
+                   lexer.getConditionState().pop();
+                   lexer.getCmdArgumentState().pop();
                    lexer.setStrTerm($<StrTerm>2);
-                   lexer.getCmdArgumentState().reset($<Long>3.longValue());
-                   lexer.setState($<Integer>4);
-                   lexer.setBraceNest($<Integer>5);
-                   lexer.setHeredocIndent($<Integer>6);
+                   lexer.setState($<Integer>3);
+                   lexer.setBraceNest($<Integer>4);
+                   lexer.setHeredocIndent($<Integer>5);
                    lexer.setHeredocLineIndent(-1);
 
-                   if ($7 != null) $7.unsetNewline();
-                   $$ = support.newEvStrNode(support.getPosition($7), $7);
+                   if ($6 != null) $6.unsetNewline();
+                   $$ = support.newEvStrNode(support.getPosition($6), $6);
                 }
 
 string_dvar     : tGVAR {

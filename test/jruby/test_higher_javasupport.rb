@@ -58,17 +58,22 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal("java.util.ArrayList", org.jruby.test.TestHelper.getClassName(ArrayList))
   end
 
-  @@include_java_lang = Proc.new {
+  class IncludePackageTest < Test::Unit::TestCase
+
+    @@include_java_lang = Proc.new {
       include_package "java.lang"
       java_alias :JavaInteger, :Integer
-  }
+    }
 
-  def test_java_class_loading_and_class_name_collisions
-    assert_raises(NameError) { System }
-    @@include_java_lang.call
-    assert_nothing_raised { System }
-    assert_equal(10, JavaInteger.new(10).intValue)
-    assert_raises(NoMethodError) { Integer.new(10) }
+    def test_java_class_loading_and_class_name_collisions
+      assert_raises(NameError) { VirtualMachineError }
+      @@include_java_lang.call
+      assert_nothing_raised { VirtualMachineError }
+      assert_equal(10, JavaInteger.new(10).intValue)
+      assert_nothing_raised { Integer.to_s }
+      assert_raises(NoMethodError) { Integer.new(10) }
+    end
+
   end
 
   def test_java_alias_prior_to_import

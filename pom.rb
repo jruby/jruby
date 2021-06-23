@@ -71,7 +71,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
               'asm.version' => '9.1',
-              'jffi.version' => '1.3.1',
+              'jffi.version' => '1.3.3',
               'joda.time.version' => '2.10.10' )
 
   plugin_management do
@@ -261,6 +261,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
     plugin(:javadoc) do
       execute_goals('jar', :id => 'attach-javadocs')
+      configuration(doclint: 'none')
     end
   end
 

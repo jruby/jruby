@@ -3898,17 +3898,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             throw runtime.newErrnoENOENTError();
         }
 
-        boolean warn = recv == runtime.getFile();
-        if ((warn || recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
+        if ((recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
             if (PopenExecutor.nativePopenAvailable(runtime)) {
-                if (recv != runtime.getIO()) {
-                    // FIXME: use actual called name instead of "open" as in MRI
-                    String message = "IO.open called on " + recv + " to invoke external command";
-                    if (warn) {
-                        runtime.getWarnings().warn(message);
-                    }
-                }
-
                 return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
             } else {
                 throw runtime.newArgumentError("pipe open is not supported without native subprocess logic");

@@ -34,6 +34,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     @Override
     public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         super.computeScopeFlags(scope, flags);
+        scope.setUsesSuper();
         scope.setUsesZSuper();
         return true;
     }

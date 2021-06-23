@@ -1727,7 +1727,7 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject    system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
@@ -1750,12 +1750,6 @@ public class RubyKernel {
             return executor.systemInternal(context, args, null);
         }
 
-        // else old JDK logic
-        if (args[0] instanceof RubyHash) {
-            runtime.getENV().merge_bang(context, new IRubyObject[]{args[0]}, Block.NULL_BLOCK);
-            // drop the first element for calling systemCommon()
-            args = ArraySupport.newCopy(args, 1, args.length - 1);
-        }
         int resultCode = systemCommon(context, recv, args);
         switch (resultCode) {
             case 0: return runtime.getTrue();
