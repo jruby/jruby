@@ -2140,7 +2140,7 @@ lambda          : tLAMBDA {
                     ArgsNode args = support.args_with_numbered($5, max_numparam);
                     lexer.getCmdArgumentState().pop();
                     $$ = new LambdaNode(@1.startLine(), args, $7, support.getCurrentScope(), lexer.getRubySourceline());
-                    lexer.setLeftParenBegin($<Integer>1);
+                    lexer.setLeftParenBegin($<Integer>2);
                     support.numparam_pop($<Node>4);
                     support.popCurrentScope();
                 }

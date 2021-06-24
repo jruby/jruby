@@ -4024,7 +4024,7 @@ states[461] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     ArgsNode args = support.args_with_numbered(((ArgsNode)yyVals[-2+yyTop].value), max_numparam);
                     lexer.getCmdArgumentState().pop();
                     yyVal = new LambdaNode(yyVals[yyTop - count + 1].startLine(), args, ((Node)yyVals[0+yyTop].value), support.getCurrentScope(), lexer.getRubySourceline());
-                    lexer.setLeftParenBegin(((Integer)yyVals[-6+yyTop].value));
+                    lexer.setLeftParenBegin(((Integer)yyVals[-5+yyTop].value));
                     support.numparam_pop(((Node)yyVals[-3+yyTop].value));
                     support.popCurrentScope();
   return yyVal;
