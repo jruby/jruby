@@ -41,11 +41,12 @@ class JarCache {
 
         private final Map<String, String[]> cachedDirEntries;
         private final JarFile jar;
-        private final long snapshotCalculated;
+        private final long lastModified;
+        private Long lastModifiedExpiration;
 
         JarIndex(String jarPath) throws IOException {
             this.jar = new JarFile(jarPath);
-            this.snapshotCalculated = new File(jarPath).lastModified();
+            this.lastModified = getLastModified(jarPath);
 
             Map<String, HashSet<String>> mutableCache = new HashMap<>();
 
@@ -86,6 +87,15 @@ class JarCache {
             this.cachedDirEntries = Collections.unmodifiableMap(cachedDirEntries);
         }
 
+        private long getLastModified(String jarPath) {
+            long currentTimeMillis = System.currentTimeMillis();
+            if (lastModifiedExpiration != null && currentTimeMillis < lastModifiedExpiration) {
+                return lastModified;
+            }
+            this.lastModifiedExpiration = currentTimeMillis + 500;
+            return new File(jarPath).lastModified();
+        }
+
         public JarEntry getJarEntry(String entryPath) {
             return jar.getJarEntry(canonicalJarPath(entryPath));
         }
@@ -105,7 +115,7 @@ class JarCache {
         }
 
         public boolean isValid() {
-            return new File(jar.getName()).lastModified() <= snapshotCalculated;
+            return getLastModified(jar.getName()) <= lastModified;
         }
 
         private static String canonicalJarPath(String path) {
