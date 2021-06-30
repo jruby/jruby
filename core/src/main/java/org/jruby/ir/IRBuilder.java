@@ -1308,7 +1308,6 @@ public class IRBuilder {
         if (!hasExplicitElse) {                           // build implicit else
             addInstr(new LabelInstr(elseLabel));
             addInstr(new CopyInstr(result, manager.getNil()));
-            addInstr(new JumpInstr(endLabel));
         }
 
         addInstr(new LabelInstr(endLabel));
