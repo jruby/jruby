@@ -30,16 +30,18 @@
 package org.jruby.embed.jsr223;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceLoader;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
-import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
 /**
@@ -54,51 +56,46 @@ import javax.script.SimpleBindings;
  */
 public class JRubyScriptEngineManager {
 
-    static final String SERVICE = "META-INF/services/javax.script.ScriptEngineFactory";
-
-    private final Collection<ScriptEngineFactory> factories;
+    private final ScriptEngineFactory[] factories;
     private final Map<String, ScriptEngineFactory> nameMap;
     private final Map<String, ScriptEngineFactory> extensionMap;
     private final Map<String, ScriptEngineFactory> mimetypeMap;
     private Bindings globalMap;
 
-    public JRubyScriptEngineManager() throws ScriptException {
+    public JRubyScriptEngineManager() {
         this(null);
     }
 
-    public JRubyScriptEngineManager(ClassLoader loader) throws ScriptException {
-        nameMap = new HashMap<String, ScriptEngineFactory>();
-        extensionMap = new HashMap<String, ScriptEngineFactory>();
-        mimetypeMap = new HashMap<String, ScriptEngineFactory>();
+    public JRubyScriptEngineManager(ClassLoader loader) {
+        nameMap = new HashMap<>();
+        extensionMap = new HashMap<>();
+        mimetypeMap = new HashMap<>();
         globalMap = new SimpleBindings();
-        try {
-            factories = new ServiceFinder<ScriptEngineFactory>(SERVICE, loader).getServices();
-            if ( factories.isEmpty() ) {
-                System.err.println("no factory"); // TODO this is fatal, right?
-            }
-            prepareMaps();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            throw new ScriptException(e);
-        }
-    }
 
-    private void prepareMaps() {
-        for (ScriptEngineFactory factory : factories) {
-            List<String> names = factory.getNames();
-            for (String name : names) {
+        ArrayList<ScriptEngineFactory> factories = new ArrayList<>();
+        // lookup from: META-INF/services/javax.script.ScriptEngineFactory
+        Iterator<ScriptEngineFactory> i = ServiceLoader.load(javax.script.ScriptEngineFactory.class, loader).iterator();
+        while (i.hasNext()) {
+            ScriptEngineFactory factory = i.next();
+
+            for (String name : factory.getNames()) {
                 nameMap.put(name, factory);
             }
-            List<String> extensions = factory.getExtensions();
-            for (String extension : extensions) {
+            for (String extension : factory.getExtensions()) {
                 extensionMap.put(extension, factory);
             }
-            List<String> mimeTypes = factory.getMimeTypes();
-            for (String mimeType : mimeTypes) {
+            for (String mimeType : factory.getMimeTypes()) {
                 mimetypeMap.put(mimeType, factory);
             }
+
+            factories.add(factory);
         }
+
+        if (factories.isEmpty()) {
+            throw new IllegalStateException("no javax.script.ScriptEngineFactory service");
+        }
+
+        this.factories = factories.toArray(new ScriptEngineFactory[factories.size()]);
     }
 
     public void setBindings(final Bindings bindings) {
@@ -122,7 +119,7 @@ public class JRubyScriptEngineManager {
 
     public ScriptEngine getEngineByName(String shortName) {
         if (shortName == null) {
-            throw new NullPointerException("Null symbolicName");
+            throw new NullPointerException("Null name");
         }
         ScriptEngineFactory factory = nameMap.get(shortName);
         if (factory == null) {
@@ -160,27 +157,24 @@ public class JRubyScriptEngineManager {
     }
 
     public List<ScriptEngineFactory> getEngineFactories() {
-        return Collections.unmodifiableList(new ArrayList<ScriptEngineFactory>(factories));
+        return Collections.unmodifiableList(Arrays.asList(factories));
     }
 
     public void registerEngineName(String name, ScriptEngineFactory factory) {
-        if (name == null || factory == null) {
-            throw new NullPointerException("name and/or factory is null.");
-        }
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(factory, "factory");
         nameMap.put(name, factory);
     }
 
     public void registerEngineMimeType(String type, ScriptEngineFactory factory) {
-        if (type == null || factory == null) {
-            throw new NullPointerException("type and/or factory is null.");
-        }
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(factory, "factory");
         mimetypeMap.put(type, factory);
     }
 
     public void registerEngineExtension(String extension, ScriptEngineFactory factory) {
-        if (extension == null || factory == null) {
-            throw new NullPointerException("extension and/or factory is null.");
-        }
+        Objects.requireNonNull(extension, "extension");
+        Objects.requireNonNull(factory, "factory");
         extensionMap.put(extension, factory);
     }
 }

@@ -37,7 +37,6 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.KeyValuePair;
 
 /**
@@ -46,16 +45,19 @@ import org.jruby.util.KeyValuePair;
  */
 public class HashNode extends Node implements ILiteralNode {
     private final List<KeyValuePair<Node,Node>> pairs;
+    // contains only symbols.  Presence of kwrest will make this false.
     private boolean hasOnlySymbolKeys = true;
+    // contains at least one **k {a: 1, **k}, {**{}, **{}}
+    private boolean hasRestKwarg = false;
 
-    public HashNode(ISourcePosition position) {
-        super(position, false);
+    public HashNode(int line) {
+        super(line, false);
 
-        pairs = new ArrayList<KeyValuePair<Node,Node>>();
+        pairs = new ArrayList<>();
     }
     
-    public HashNode(ISourcePosition position, KeyValuePair<Node,Node> pair) {
-        this(position);
+    public HashNode(int line, KeyValuePair<Node,Node> pair) {
+        this(line);
 
         add(pair);
     }
@@ -67,17 +69,60 @@ public class HashNode extends Node implements ILiteralNode {
         return hasOnlySymbolKeys;
     }
 
+    /**
+     * Is this hash looking like a keyword argument hash?
+     * Technically we do not know at the callsite
+     *
+     * @return true is it looks like one.
+     */
+    public boolean isMaybeKwargs() {
+        return hasOnlySymbolKeys() || hasOnlyRestKwargs();
+    }
+
+    /**
+     * Detect presence of a rest kwarg (**kw).
+     *
+     * @return true if it contains at least one rest kwarg.
+     */
+    public boolean hasRestKwarg() {
+       return hasRestKwarg;
+    }
+
+    /**
+     * Detect whether only rest kwargs make up this hash.  Common
+     * case is **a which is HashNode{[(null, a)]}.  Less common is
+     * **a, **b which is HashNode{[(null, a), (null, b)].}
+     *
+     * @return true is only rest kwargs
+     */
+    public boolean hasOnlyRestKwargs() {
+        if (!hasRestKwarg) return false;
+
+        for (KeyValuePair pair: pairs) {
+            if (pair.getKey() != null) return false;
+        }
+
+        return true;
+    }
+
     public NodeType getNodeType() {
         return NodeType.HASHNODE;
     }
 
     public HashNode add(KeyValuePair<Node,Node> pair) {
-        if (pair.getKey() != null && pair.getKey().containsVariableAssignment() ||
+        Node key = pair.getKey();
+
+        if (key != null && key.containsVariableAssignment() ||
                 pair.getValue() != null && pair.getValue().containsVariableAssignment()) {
             containsVariableAssignment = true;
         }
 
-        if (!(pair.getKey() instanceof SymbolNode) || pair.getKey() == null) hasOnlySymbolKeys = false;
+        if (key == null) {
+            hasRestKwarg = true;
+            hasOnlySymbolKeys = false;
+        } else if (!(pair.getKey() instanceof SymbolNode)) {
+            hasOnlySymbolKeys = false;
+        }
 
         pairs.add(pair);
 
@@ -101,7 +146,7 @@ public class HashNode extends Node implements ILiteralNode {
     }
 
     public List<Node> childNodes() {
-        List<Node> children = new ArrayList<Node>();
+        List<Node> children = new ArrayList<>();
 
         for (KeyValuePair<Node,Node> pair: pairs) {
             children.add(pair.getKey());

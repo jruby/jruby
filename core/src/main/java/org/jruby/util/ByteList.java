@@ -37,6 +37,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -44,6 +45,7 @@ import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyEncoding;
+import org.jruby.runtime.Helpers;
 
 /**
  * ByteList is simple a collection of bytes in the same way a Java String is a collection
@@ -57,7 +59,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public static final byte[] NULL_ARRAY = new byte[0];
     public static final ByteList EMPTY_BYTELIST = new ByteList(NULL_ARRAY, false);
 
-    private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
+    private static final Charset ISO_LATIN_1 = StandardCharsets.ISO_8859_1;
 
     // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
     // until there's new releases we shall keep them public and maybe review other exts using BL's API
@@ -92,6 +94,20 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList(int size) {
         bytes = new byte[size];
         realSize = 0;
+    }
+
+    /**
+     * Creates a new instance of Bytelist with a pre-allocated size and specified encoding.
+     *
+     * See {@link #ByteList(int)}
+     *
+     * @param size to preallocate the bytelist to
+     * @param enc encoding to set
+     */
+    public ByteList(int size, Encoding enc) {
+        bytes = new byte[size];
+        realSize = 0;
+        encoding = safeEncoding(enc);
     }
 
     /**
@@ -336,13 +352,14 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     /**
      * Ensure that the bytelist is at least length bytes long.  Otherwise grow the backing store
-     * so that it is length bytes long
+     * so that it is at least length bytes long, but grow to 1.5 * length, if we're able
+     * to, to avoid thrashing.
      *
      * @param length to use to make sure ByteList is long enough
      */
     public void ensure(int length) {
         if (begin + length > bytes.length) {
-            byte[] tmp = new byte[Math.min(Integer.MAX_VALUE, length + (length >>> 1))];
+            byte[] tmp = new byte[Helpers.calculateBufferLength(length)];
             System.arraycopy(bytes, begin, tmp, 0, realSize);
             bytes = tmp;
             begin = 0;
@@ -443,9 +460,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Append a single int to the ByteList
+     * Append a single byte to the ByteList by truncating the given int
      *
-     * @param b the int to be added
+     * @param b the int to truncated and added
      * @return this instance
      */
     public ByteList append(int b) {
@@ -1101,13 +1118,17 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     private void grow(int increaseRequested) {
         // new available size
-        int newSize = realSize + increaseRequested; // increase <= 0 -> no-op
-        // only recopy if bytes does not have enough room *after* the begin index
-        if (newSize > bytes.length - begin) {
-            byte[] newBytes = new byte[newSize + (newSize >> 1)];
-            if (bytes.length != 0) System.arraycopy(bytes, begin, newBytes, 0, realSize);
-            bytes = newBytes;
-            begin = 0;
+        try {
+            int newSize = Math.addExact(realSize, increaseRequested); // increase <= 0 -> no-op
+            // only recopy if bytes does not have enough room *after* the begin index
+            if (newSize > bytes.length - begin) {
+                byte[] newBytes = new byte[Helpers.calculateBufferLength(newSize)];
+                if (bytes.length != 0) System.arraycopy(bytes, begin, newBytes, 0, realSize);
+                bytes = newBytes;
+                begin = 0;
+            }
+        } catch (ArithmeticException ae) {
+            throw new OutOfMemoryError("Requested array size exceeds VM limit");
         }
     }
 

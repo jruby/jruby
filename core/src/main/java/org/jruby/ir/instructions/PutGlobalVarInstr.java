@@ -15,6 +15,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInstr {
     public PutGlobalVarInstr(RubySymbol varName, Operand value) {
         this(new GlobalVariable(varName), value);
@@ -25,18 +27,18 @@ public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInst
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        String name = getTarget().getId();
-
-        if (name.equals("$_") || name.equals("$LAST_READ_LINE")) {
-            scope.getFlags().add(IRFlags.REQUIRES_LASTLINE);
-        } else if (name.equals("$~") || name.equals("$`") || name.equals("$'") ||
-                name.equals("$+") || name.equals("$LAST_MATCH_INFO") ||
-                name.equals("$PREMATCH") || name.equals("$POSTMATCH") || name.equals("$LAST_PAREN_MATCH")) {
-            scope.getFlags().add(IRFlags.REQUIRES_BACKREF);
-            return true;
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        switch (getTarget().getId()) {
+            case "$_" : case "$LAST_READ_LINE" :
+                flags.add(IRFlags.REQUIRES_LASTLINE);
+                break;
+            case "$~" : case "$LAST_MATCH_INFO" :
+            case "$`" : case "$PREMATCH" :
+            case "$'" : case "$POSTMATCH" :
+            case "$+" : case "$LAST_PAREN_MATCH" :
+                flags.add(IRFlags.REQUIRES_BACKREF);
+                return true;
         }
-
         return false;
     }
 

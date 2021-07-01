@@ -38,11 +38,13 @@ public class BeanManagerFactory {
         public void register(ParserStatsMBean parserStats) {}
         public void register(CachesMBean methodCache) {}
         public void register(Runtime runtime) {}
+        public void register(InlineStats stats) {}
         public void unregisterCompiler() {}
         public void unregisterConfig() {}
         public void unregisterMethodCache() {}
         public void unregisterParserStats() {}
         public void unregisterRuntime() {}
+        public void unregisterInlineStats() {}
         public boolean tryShutdownAgent() {return false;}
         public boolean tryRestartAgent() {return false;}
     }

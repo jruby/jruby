@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 // FIXME: Consider making argument error a single more generic instruction and combining with RaiseArgumentError
 public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements FixedArityInstr {
-    private RubySymbol name;
+    private final RubySymbol name;
 
     public RaiseRequiredKeywordArgumentError(RubySymbol name) {
         super(Operation.RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR);

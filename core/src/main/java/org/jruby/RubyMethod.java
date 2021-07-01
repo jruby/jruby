@@ -75,7 +75,6 @@ public class RubyMethod extends AbstractRubyMethod {
     public static RubyClass createMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setMethod(methodClass);
 
         methodClass.setClassIndex(ClassIndex.METHOD);
         methodClass.setReifiedClass(RubyMethod.class);
@@ -138,14 +137,7 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public RubyFixnum arity() {
-        int value;
-        if (method instanceof IRMethodArgs) {
-            value = ((IRMethodArgs) method).getSignature().arityValue();
-        } else {
-            value = method.getArity().getValue();
-        }
-
-        return getRuntime().newFixnum(value);
+        return getRuntime().newFixnum(method.getSignature().arityValue());
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -156,7 +148,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @Override
     @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean( equals(other) );
+        return RubyBoolean.newBoolean(context,  equals(other) );
     }
 
     @Override
@@ -221,13 +213,11 @@ public class RubyMethod extends AbstractRubyMethod {
         Ruby runtime = context.runtime;
 
         MethodBlockBody body;
-        Signature signature;
+        Signature signature = method.getSignature();
         ArgumentDescriptor[] argsDesc;
         if (method instanceof IRMethodArgs) {
-            signature = ((IRMethodArgs) method).getSignature();
             argsDesc = ((IRMethodArgs) method).getArgumentDescriptors();
         } else {
-            signature = Signature.from(method.getArity());
             argsDesc = Helpers.methodToArgumentDescriptors(method);
         }
 

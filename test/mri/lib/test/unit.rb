@@ -136,8 +136,9 @@ module Test
 
       def non_options(files, options)
         @jobserver = nil
+        makeflags = ENV.delete("MAKEFLAGS")
         if !options[:parallel] and
-          /(?:\A|\s)--jobserver-(?:auth|fds)=(\d+),(\d+)/ =~ ENV["MAKEFLAGS"]
+          /(?:\A|\s)--jobserver-(?:auth|fds)=(\d+),(\d+)/ =~ makeflags
           begin
             r = IO.for_fd($1.to_i(10), "rb", autoclose: false)
             w = IO.for_fd($2.to_i(10), "wb", autoclose: false)
@@ -145,6 +146,8 @@ module Test
             r.close if r
             nil
           else
+            r.close_on_exec = true
+            w.close_on_exec = true
             @jobserver = [r, w]
             options[:parallel] ||= 1
           end
@@ -191,8 +194,10 @@ module Test
 
       class Worker
         def self.launch(ruby,args=[])
+          scale = EnvUtil.subprocess_timeout_scale
           io = IO.popen([*ruby, "-W1",
                         "#{File.dirname(__FILE__)}/unit/parallel.rb",
+                        *("--subprocess-timeout-scale=#{scale}" if scale),
                         *args], "rb+")
           new(io, io.pid, :waiting)
         end
@@ -400,7 +405,7 @@ module Test
           end
           if @options[:separate] and not bang
             worker.quit
-            worker = add_worker
+            worker = launch_worker
           end
           worker.run(task, type)
           @test_count += 1
@@ -579,7 +584,6 @@ module Test
         end
       end
 
-      private
       def _run_suites(suites, type)
         result = super
         report.reject!{|r| r.start_with? "Skipped:" } if @options[:hide_skip]
@@ -889,10 +893,15 @@ module Test
               next if f.empty?
               path = f
             end
-            if !(match = (Dir["#{path}/**/#{@@testfile_prefix}_*.rb"] + Dir["#{path}/**/*_#{@@testfile_suffix}.rb"]).uniq).empty?
+            if f.end_with?(File::SEPARATOR) or !f.include?(File::SEPARATOR) or File.directory?(path)
+              match = (Dir["#{path}/**/#{@@testfile_prefix}_*.rb"] + Dir["#{path}/**/*_#{@@testfile_suffix}.rb"]).uniq
+            else
+              match = Dir[path]
+            end
+            if !match.empty?
               if reject
                 match.reject! {|n|
-                  n[(prefix.length+1)..-1] if prefix
+                  n = n[(prefix.length+1)..-1] if prefix
                   reject_pat =~ n
                 }
               end
@@ -1045,10 +1054,14 @@ module Test
           raise OptionParser::InvalidArgument, "timeout scale must be positive" unless scale > 0
           options[:timeout_scale] = scale
         end
+      end
+
+      def non_options(files, options)
         if scale = options[:timeout_scale] or
           (scale = ENV["RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE"] and (scale = scale.to_f) > 0)
           EnvUtil.subprocess_timeout_scale = scale
         end
+        super
       end
     end
 

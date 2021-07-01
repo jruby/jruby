@@ -3,7 +3,6 @@ package org.jruby.runtime;
 import java.io.ByteArrayOutputStream;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
@@ -19,18 +18,20 @@ import org.jruby.util.log.LoggerFactory;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
-    protected boolean pushScope;
-    protected boolean reuseParentScope;
+    protected final boolean pushScope;
+    protected final boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private int callCount = 0;
     private long time;
     private InterpreterContext interpreterContext;
     private InterpreterContext fullInterpreterContext;
+    private final IRClosure closure;
 
     public InterpretedIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
         this.pushScope = true;
         this.reuseParentScope = false;
+        this.closure = closure;
 
         // -1 jit.threshold is way of having interpreter not promote full builds
         // regardless of compile mode (even when OFF full-builds are promoted)
@@ -80,7 +81,6 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
             ic = closure.getInterpreterContext();
             interpreterContext = ic;
-            fullInterpreterContext = interpreterContext;
         }
         return ic;
     }
@@ -97,19 +97,19 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     @Override
     public boolean canCallDirect() {
-        return interpreterContext != null && interpreterContext.hasExplicitCallProtocol();
+        return fullInterpreterContext != null && fullInterpreterContext.hasExplicitCallProtocol();
     }
 
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, null, ic, args, block.getBinding().getMethod(), blockArg);
+        ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, null, fullInterpreterContext, args, block.getBinding().getMethod(), blockArg);
     }
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+        ensureInstrsReady(); // so we get debugging output
+        return Interpreter.INTERPRET_BLOCK(context, block, self, fullInterpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }
 
     @Override
@@ -117,11 +117,6 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();
-
-        // Update interpreter context for next time this block is executed
-        // This ensures that if we had determined canCallDirect() is false
-        // based on the old IC, we continue to execute with it.
-        interpreterContext = fullInterpreterContext;
 
         Binding binding = block.getBinding();
         Visibility oldVis = binding.getFrame().getVisibility();
@@ -178,7 +173,12 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     }
 
     public RubyModule getImplementationClass() {
-        return null;
+        return closure.getStaticScope().getModule();
+    }
+
+    @Override
+    public IRClosure getScope() {
+        return closure;
     }
 
 }

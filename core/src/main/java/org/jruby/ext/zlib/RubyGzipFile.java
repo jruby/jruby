@@ -96,14 +96,6 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
         return wrapBlock(context, instance, block);
     }
-    
-    protected static final ObjectAllocator GZIPFILE_ALLOCATOR = new ObjectAllocator() {
-
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyGzipFile(runtime, klass);
-        }
-    };
 
     @JRubyMethod(name = "new", meta = true)
     public static RubyGzipFile newInstance(IRubyObject recv, Block block) {
@@ -313,7 +305,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     protected boolean closed = false;
     protected boolean finished = false;
     protected boolean hasBOM;
-    protected byte osCode = Zlib.OS_UNKNOWN;
+    protected final byte osCode = Zlib.OS_UNKNOWN;
     protected int level = -1;
     protected RubyString nullFreeOrigName;
     protected RubyString nullFreeComment;

@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -46,15 +45,15 @@ public class IterNode extends Node implements DefNode {
     private final Node bodyNode;
     
     // What static scoping relationship exists when it comes into being.
-    private StaticScope scope;
-    private int endLine;
+    private final StaticScope scope;
+    private final int endLine;
 
     /**
      *  Used by ForNode only.
      * This is to support 1.8-style assignments which only 'for' expressions use.
      */
-    public IterNode(ISourcePosition position, Node args, StaticScope scope, Node body, int endLine) {
-        super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
+    public IterNode(int line, Node args, StaticScope scope, Node body, int endLine) {
+        super(line, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
         this.scope = scope;
@@ -65,8 +64,8 @@ public class IterNode extends Node implements DefNode {
     /**
      * Used for all non-for types of blocks.
      */
-    public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope, int endLine) {
-        super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
+    public IterNode(int line, ArgsNode args, Node body, StaticScope scope, int endLine) {
+        super(line, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
         this.bodyNode = body == null ? NilImplicitNode.NIL : body;

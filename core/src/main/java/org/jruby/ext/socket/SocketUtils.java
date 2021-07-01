@@ -33,6 +33,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -41,6 +42,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -70,7 +72,6 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
-import org.jruby.runtime.Helpers;
 
 /**
  * Socket class methods for addresses, structures, and so on.
@@ -80,12 +81,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getLocalHost().getHostName());
+            return RubyString.newString(context.runtime, InetAddress.getLocalHost().getHostName());
 
         } catch(UnknownHostException e) {
 
             try {
-                return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
+                return RubyString.newString(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
 
             } catch(UnknownHostException e2) {
                 throw sockerr(runtime, "gethostname: name or service not known");
@@ -152,12 +153,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            InetAddress addr = getRubyInetAddresses(hostname.convertToString().getByteList())[0];
+            InetAddress addr = getRubyInetAddress(hostname.convertToString().toString());
             IRubyObject ret0, ret1, ret2, ret3;
 
             ret0 = runtime.newString(addr.getCanonicalHostName());
             ret1 = runtime.newArray();
-            ret2 = runtime.newFixnum(2); // AF_INET
+            ret2 = runtime.newFixnum(AF_INET);
             ret3 = runtime.newString(new ByteList(addr.getAddress()));
             return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
 
@@ -403,7 +404,7 @@ public class SocketUtils {
 
         }
 
-        jnr.netdb.Service serv = jnr.netdb.Service.getServiceByPort(Integer.parseInt(port), null);
+        Service serv = Service.getServiceByPort(Integer.parseInt(port), null);
 
         if (serv != null) {
 
@@ -428,8 +429,8 @@ public class SocketUtils {
             RubyArray list = RubyArray.newArray(runtime);
             RubyClass addrInfoCls = runtime.getClass("Addrinfo");
 
-            for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces() ; networkIfcs.hasMoreElements() ; ) {
-                for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses() ; addresses.hasMoreElements() ; ) {
+            for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces(); networkIfcs.hasMoreElements() ; ) {
+                for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses(); addresses.hasMoreElements() ; ) {
                     list.append(new Addrinfo(runtime, addrInfoCls, addresses.nextElement()));
                 }
             }
@@ -440,20 +441,43 @@ public class SocketUtils {
         }
     }
 
+    @Deprecated
     public static InetAddress[] getRubyInetAddresses(ByteList address) throws UnknownHostException {
         // switched to String because the ByteLists were not comparing properly in 1.9 mode (encoding?
         // FIXME: Need to properly decode this string (see Helpers.decodeByteList)
         String addressString = Helpers.byteListToString(address);
+        return getRubyInetAddresses(addressString);
+    }
 
-        if (addressString.equals(BROADCAST)) {
-            return new InetAddress[] {InetAddress.getByAddress(INADDR_BROADCAST)};
-
-        } else if (addressString.equals(ANY)) {
-            return new InetAddress[] {InetAddress.getByAddress(INADDR_ANY)};
-
+    public static InetAddress[] getRubyInetAddresses(String addressString) throws UnknownHostException {
+        InetAddress specialAddress = specialAddress(addressString);
+        if (specialAddress != null) {
+            return new InetAddress[] {specialAddress};
         } else {
             return InetAddress.getAllByName(addressString);
+        }
+    }
 
+    public static InetAddress getRubyInetAddress(String addressString) throws UnknownHostException {
+        InetAddress specialAddress = specialAddress(addressString);
+        if (specialAddress != null) {
+            return specialAddress;
+        } else {
+            return InetAddress.getByName(addressString);
+        }
+    }
+
+    public static InetAddress getRubyInetAddress(byte[] addressBytes) throws UnknownHostException {
+        return InetAddress.getByAddress(addressBytes);
+    }
+
+    private static InetAddress specialAddress(String addressString) throws UnknownHostException {
+        if (addressString.equals(BROADCAST)) {
+            return InetAddress.getByAddress(INADDR_BROADCAST);
+        } else if (addressString.equals(ANY)) {
+            return InetAddress.getByAddress(INADDR_ANY);
+        } else {
+            return null;
         }
     }
 
@@ -656,7 +680,7 @@ public class SocketUtils {
         IRubyObject maybeStr = TypeConverter.checkStringType(runtime, port);
         if (!maybeStr.isNil()) {
             RubyString portStr = maybeStr.convertToString();
-            jnr.netdb.Service serv = jnr.netdb.Service.getServiceByName(portStr.toString(), null);
+            Service serv = Service.getServiceByName(portStr.toString(), null);
 
             if (serv != null) return serv.getPort();
 

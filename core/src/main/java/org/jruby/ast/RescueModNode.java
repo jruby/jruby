@@ -1,12 +1,10 @@
 package org.jruby.ast;
 
-import org.jruby.lexer.yacc.ISourcePosition;
-
 /**
  * f rescue nil
  */
 public class RescueModNode extends RescueNode {
-    public RescueModNode(ISourcePosition position, Node bodyNode, RescueBodyNode rescueNode) {
-        super(position, bodyNode, rescueNode, null /* else */);
+    public RescueModNode(int line, Node bodyNode, RescueBodyNode rescueNode) {
+        super(line, bodyNode, rescueNode, null /* else */);
     }
 }

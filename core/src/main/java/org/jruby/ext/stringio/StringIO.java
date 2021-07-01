@@ -42,7 +42,6 @@ import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
@@ -80,15 +79,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private static final int STRIO_WRITABLE = ObjectFlags.STRIO_WRITABLE;
     private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
 
-    private static ObjectAllocator STRINGIO_ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new StringIO(runtime, klass);
-        }
-    };
-
     public static RubyClass createStringIOClass(final Ruby runtime) {
         RubyClass stringIOClass = runtime.defineClass(
-                "StringIO", runtime.getData(), STRINGIO_ALLOCATOR);
+                "StringIO", runtime.getData(), StringIO::new);
 
         stringIOClass.defineAnnotatedMethods(StringIO.class);
         stringIOClass.includeModule(runtime.getEnumerable());
@@ -458,9 +451,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = {"eof", "eof?"})
     public IRubyObject eof(ThreadContext context) {
         checkReadable();
-        Ruby runtime = context.runtime;
-        if (ptr.pos < ptr.string.size()) return runtime.getFalse();
-        return runtime.getTrue();
+        if (ptr.pos < ptr.string.size()) return context.fals;
+        return context.tru;
     }
 
     private boolean isEndOfString() {
@@ -1154,8 +1146,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         checkModifiable();
 
-        if (arg instanceof RubyFixnum) {
-            ungetbyteCommon(RubyNumeric.fix2int(arg));
+        if (arg instanceof RubyInteger) {
+            ungetbyteCommon(((RubyInteger) ((RubyInteger) arg).op_mod(context, 256)).getIntValue());
         } else {
             ungetbyteCommon(arg.convertToString());
         }
@@ -1206,13 +1198,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 ptr.pos = olen;
             }
             if (ptr.pos == olen) {
-                EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
+                    EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                    ptr.string.infectBy(str);
+                } else {
+                    ptr.string.cat19(str);
+                }
             } else {
                 strioExtend(ptr.pos, len);
                 ByteList ptrByteList = ptr.string.getByteList();
                 System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + ptr.pos, len);
+                ptr.string.infectBy(str);
             }
-            ptr.string.infectBy(str);
             ptr.string.infectBy(this);
             ptr.pos += len;
         }
@@ -1344,10 +1341,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
             boolean exception = true;
             IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
-
             if (opts != context.nil) {
                 args = ArraySupport.newCopy(args, args.length - 1);
-                exception = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "exception") != context.fals;
+                exception = Helpers.extractExceptionOnlyArg(context, (RubyHash) opts);
             }
 
             IRubyObject val = self.callMethod(context, "read", args);
@@ -1369,7 +1365,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             return self;
         }
 
-        @JRubyMethod(name = "print", rest = true)
+        @JRubyMethod(name = "print", rest = true, writes = FrameField.LASTLINE)
         public static IRubyObject print(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return RubyIO.print(context, self, args);
         }

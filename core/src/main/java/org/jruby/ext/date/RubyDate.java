@@ -99,17 +99,13 @@ public class RubyDate extends RubyObject {
     static final int REFORM_BEGIN_YEAR = 1582;
     static final int REFORM_END_YEAR = 1930;
 
-    protected RubyDate(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
-    }
-
     DateTime dt;
     int off; // @of (in seconds)
     long start = ITALY; // @sg
     long subMillisNum = 0, subMillisDen = 1; // @sub_millis
 
     static RubyClass createDateClass(Ruby runtime) {
-        RubyClass Date = runtime.defineClass("Date", runtime.getObject(), ALLOCATOR);
+        RubyClass Date = runtime.defineClass("Date", runtime.getObject(), RubyDate::new);
         Date.setReifiedClass(RubyDate.class);
         Date.includeModule(runtime.getComparable());
         Date.defineAnnotatedMethods(RubyDate.class);
@@ -121,19 +117,16 @@ public class RubyDate extends RubyObject {
     // Julian Day Number day 0 ... `def self.civil(y=-4712, m=1, d=1, sg=ITALY)`
     static final DateTime defaultDateTime = new DateTime(-4712 - 1, 1, 1, 0, 0, CHRONO_ITALY_UTC);
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyDate(runtime, klass, defaultDateTime);
-        }
-    };
-
     static RubyClass getDate(final Ruby runtime) {
         return (RubyClass) runtime.getObject().getConstantAt("Date");
     }
 
     static RubyClass getDateTime(final Ruby runtime) {
         return (RubyClass) runtime.getObject().getConstantAt("DateTime");
+    }
+
+    protected RubyDate(Ruby runtime, RubyClass klass) {
+        this(runtime, klass, defaultDateTime);
     }
 
     public RubyDate(Ruby runtime, RubyClass klass, DateTime dt) {
@@ -798,9 +791,11 @@ public class RubyDate extends RubyObject {
 
     private IRubyObject fallback_eqq(ThreadContext context, IRubyObject other) {
         RubyArray res;
+        final IRubyObject $ex = context.getErrorInfo();
         try {
             res = (RubyArray) other.callMethod(context, "coerce", this);
         } catch (RaiseException ex) {
+            context.setErrorInfo($ex);
             if (ex.getException() instanceof RubyNoMethodError) return context.nil;
             throw ex;
         }
@@ -854,9 +849,11 @@ public class RubyDate extends RubyObject {
 
     private IRubyObject fallback_cmp(ThreadContext context, IRubyObject other) {
         RubyArray res;
+        final IRubyObject $ex = context.getErrorInfo();
         try {
             res = (RubyArray) other.callMethod(context, "coerce", this);
         } catch (RaiseException ex) {
+            context.setErrorInfo($ex);
             if (ex.getException() instanceof RubyNoMethodError) return context.nil;
             throw ex;
         }
@@ -893,12 +890,12 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "julian?")
     public RubyBoolean julian_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context.runtime, isJulian());
+        return RubyBoolean.newBoolean(context, isJulian());
     }
 
     @JRubyMethod(name = "gregorian?")
     public RubyBoolean gregorian_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context.runtime, ! isJulian());
+        return RubyBoolean.newBoolean(context, ! isJulian());
     }
 
     public final boolean isJulian() {
@@ -1161,13 +1158,13 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "julian_leap?", meta = true)
     public static IRubyObject julian_leap_p(ThreadContext context, IRubyObject self, IRubyObject year) {
         final RubyInteger y = year.convertToInteger();
-        return context.runtime.newBoolean(isJulianLeap(y.getLongValue()));
+        return RubyBoolean.newBoolean(context, isJulianLeap(y.getLongValue()));
     }
 
     @JRubyMethod(name = "gregorian_leap?", alias = "leap?", meta = true)
     public static IRubyObject gregorian_leap_p(ThreadContext context, IRubyObject self, IRubyObject year) {
         final RubyInteger y = year.convertToInteger();
-        return context.runtime.newBoolean(isGregorianLeap(y.getLongValue()));
+        return RubyBoolean.newBoolean(context, isGregorianLeap(y.getLongValue()));
     }
 
     // All years divisible by 4 are leap years in the Julian calendar.
@@ -1178,13 +1175,20 @@ public class RubyDate extends RubyObject {
     // All years divisible by 4 are leap years in the Gregorian calendar,
     // except for years divisible by 100 and not by 400.
     private static boolean isGregorianLeap(final long year) {
-        return year % 4 == 0 && year % 100 != 0 || year % 400 == 0;
+        long uy = (year >= 0) ? year : -year;
+        if ((uy & 3) != 0)
+            return false;
+
+        long century = uy / 100;
+        if (uy != century * 100)
+            return true;
+        return (century & 3) == 0;
     }
 
     @JRubyMethod(name = "leap?")
     public IRubyObject leap_p(ThreadContext context) {
         final long year = dt.getYear();
-        return context.runtime.newBoolean( isJulian() ? isJulianLeap(year) : isGregorianLeap(year) );
+        return RubyBoolean.newBoolean(context,  isJulian() ? isJulianLeap(year) : isGregorianLeap(year) );
     }
 
     //
@@ -1388,7 +1392,7 @@ public class RubyDate extends RubyObject {
         final Ruby runtime = context.runtime;
         return context.runtime.newArrayNoCopy(new IRubyObject[] {
                 ajd(context),
-                RubyFixnum.newFixnum(runtime, off),
+                RubyRational.newRationalCanonicalize(context, off, DAY_IN_SECONDS),
                 RubyFixnum.newFixnum(runtime, start)
         });
     }
@@ -1674,7 +1678,8 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string, IRubyObject format) {
-        format = TypeConverter.checkStringType(context.runtime, format);
+        string = string.convertToString();
+        format = format.convertToString();
         return parse(context, string, ((RubyString) format).decodeString());
     }
 
@@ -2427,7 +2432,7 @@ public class RubyDate extends RubyObject {
             set_hash(context, hash, "mday", cstr2num(context.runtime, d, bp, ep));
         }
 
-        if (comp != null) set_hash(context, hash, "_comp", context.runtime.newBoolean(comp));
+        if (comp != null) set_hash(context, hash, "_comp", RubyBoolean.newBoolean(context, comp));
 
         return hash;
     }

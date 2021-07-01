@@ -30,6 +30,12 @@
 
 package org.jruby.util;
 
+import org.jcodings.Config;
+import org.jcodings.Encoding;
+import org.jcodings.IntHolder;
+import org.jcodings.unicode.UnicodeCodeRange;
+import org.jruby.Ruby;
+
 public final class IdUtil {
     /**
      * rb_is_const_id and is_const_id
@@ -65,7 +71,8 @@ public final class IdUtil {
     
     /**
      * rb_is_local_id and is_local_id
-     */    
+     */
+    @Deprecated
     public static boolean isLocal(String id) {
         return !isGlobal(id) && !isClassVariable(id) && !isInstanceVariable(id) && !isConstant(id) && !isPredicate(id) && !isSpecial(id);
     }
@@ -138,6 +145,39 @@ public final class IdUtil {
         return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
     }
 
+    // MRI: rb_sym_constant_char_p
+    public static boolean isConstantInitial(ByteList byteList) {
+        int c, len;
+        int nlen = byteList.realSize();
+        Encoding enc = byteList.getEncoding();
+
+        if (nlen < 1) return false;
+        int byte0 = byteList.get(0);
+        if (byte0 < 128) return enc.isUpper(byte0);
+
+        byte[] bytes = byteList.getUnsafeBytes();
+        int begin = byteList.begin();
+        int end = begin + nlen;
+        c = StringSupport.preciseLength(enc, bytes, begin, end);
+        if (!StringSupport.MBCLEN_CHARFOUND_P(c)) return false;
+        len = StringSupport.MBCLEN_CHARFOUND_LEN(c);
+        c = StringSupport.codePoint(enc, bytes, begin, end);
+        if (enc.isUnicode()) {
+            if (enc.isUpper(c)) return true;
+            if (enc.isLower(c)) return false;
+            if (enc.isCodeCType(c, UnicodeCodeRange.TITLECASELETTER.getCType())) return true;
+        } else {
+            /* fallback to case-folding */
+            IntHolder holder = new IntHolder();
+            holder.value = begin;
+            byte[] fold = new byte[Config.ENC_GET_CASE_FOLD_CODES_MAX_NUM];
+            int r = enc.mbcCaseFold(Config.CASE_FOLD, bytes, holder, end, fold);
+            if (r > 0 && (r != len || ByteList.memcmp(fold, 0, bytes, begin, r) != 0))
+                return true;
+        }
+        return false;
+    }
+
     @Deprecated
     public static boolean isValidConstantName19(String id) {
         return isValidConstantName(id);
@@ -153,4 +193,177 @@ public final class IdUtil {
         return isNameString(id, start, limit);
     }
 
+    // mri: rb_enc_symname_type (minus support for allowed_attrset).
+    public static SymbolNameType determineSymbolNameType(Ruby runtime, ByteList data) {
+        Encoding encoding = data.getEncoding();
+
+        if (!encoding.isAsciiCompatible()) return SymbolNameType.OTHER;
+        if (data.isEmpty()) return SymbolNameType.OTHER;
+        int length = data.length();
+        SymbolNameType type = SymbolNameType.OTHER;
+        boolean idCheck = false;
+        int m = 0;
+        int e = length - 1; // last available index (MRI is \0)
+
+        switch ((byte) data.get(m)) {
+            case 0:
+                return SymbolNameType.OTHER;
+            case '$':
+                type = SymbolNameType.GLOBAL;
+                m++;
+
+                if (m < e && isSpecialGlobalName((byte) data.get(m))) return type;
+
+                idCheck = true;
+                break;
+            case '@':
+                type = SymbolNameType.INSTANCE;
+
+                m++;
+                if (m < e && data.get(m) == '@') {
+                    m++;
+                    type = SymbolNameType.CLASS;
+                }
+
+                idCheck = true;
+                break;
+            case '<':
+                m++;
+                if (m < e) {
+                    switch (data.get(m)) {
+                        case '<':
+                            m++;
+                            break;
+                        case '=':
+                            m++;
+                            if (m < e && data.get(m) == '>') m++;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                break;
+            case '>':
+                m++;
+                if (m < e) {
+                    switch (data.get(m)) {
+                        case '>':
+                        case '=':
+                            m++;
+                            break;
+                    }
+                }
+                break;
+            case '=':
+                m++;
+                if (m < e) {
+                    switch (data.get(m)) {
+                        case '~':
+                            m++;
+                            break;
+                        case '=':
+                            m++;
+                            if (m < e && data.get(m + 1) == '=') m++;
+                            break;
+                        default:
+                            return SymbolNameType.OTHER;
+                    }
+                }
+                break;
+            case '*':
+                m++;
+                if (m < e && data.get(m + 1) == '*') m++;
+                break;
+            case '+':
+            case '-':
+                m++;
+                if (m < e && data.get(m + 1) == '@') m++;
+                break;
+            case '|':
+            case '^':
+            case '&':
+            case '/':
+            case '%':
+            case '~':
+            case '`':
+                m++;
+                break;
+            case '[':
+                m++;
+                if (m < e && data.get(m) != ']') {    // wtf
+                    idCheck = true;
+                    break;
+                }
+                m++;                                                     // []
+                if (m < e && data.get(m + 1) != '=') m++; // []=
+                break;
+            case '!':
+                m++;
+                if (length == 1) return SymbolNameType.JUNK;
+                switch (data.get(m)) {
+                    case '=':
+                    case '~':
+                        m++;
+                        break;
+                    default:
+                        return SymbolNameType.OTHER;
+                }
+                break;
+            default:
+                type = isConstantInitial(data) ? SymbolNameType.CONST : SymbolNameType.LOCAL;
+                idCheck = true;
+                break;
+        }
+
+        if (idCheck) {
+            // single byte is ok here for isAlpha because we verify it is proper ascii byte.
+            if (m > e || (data.get(m) != '_' && encoding.isMbcAscii((byte) data.get(m)) && !encoding.isAlpha(data.get(m)))) {
+                if (length > 1 && data.get(length - 1) == '=') {
+                    ByteList chopped = new ByteList(data.unsafeBytes(), data.begin(), length - 1, data.getEncoding(), false);
+                    type = determineSymbolNameType(runtime, chopped);
+                    if (type != SymbolNameType.ATTRSET) return SymbolNameType.ATTRSET;
+                }
+                return SymbolNameType.OTHER;
+            }
+            m = ByteListHelper.eachCodePointWhile(runtime, data, m, (index, codepoint, enc) ->
+                    enc.isAlnum(codepoint) || codepoint == '_' || !Encoding.isAscii(codepoint));
+
+            if (m > e) return type;
+            switch (data.get(m)) {
+                case '!':
+                case '?':
+                    if (type == SymbolNameType.GLOBAL || type == SymbolNameType.CLASS || type == SymbolNameType.INSTANCE) return SymbolNameType.OTHER;
+
+                    type = SymbolNameType.JUNK;
+                    m++;
+                    if (m + 1 < e || (m < e && data.get(m) != '=')) break;
+                    // fall through
+                case '=':
+                    return SymbolNameType.OTHER;
+            }
+        }
+
+        return m == e + 1 ? type : SymbolNameType.OTHER;
+    }
+
+    private static int BIT(int c, int index) {
+        return c / 31 - 1 == index ? 1 << (c % 32) : 0;
+    }
+    private static int globalPunctuationBits[] = new int[((0x7e - 0x20) + 31) / 32];
+    private static int SPECIAL_PUNCT(int idx){
+        return BIT('~', idx) | BIT('*', idx) | BIT('$', idx) | BIT('?', idx) |
+                BIT('!', idx) | BIT('@', idx) | BIT('/', idx) | BIT('\\', idx) |
+                BIT(';', idx) | BIT(',', idx) | BIT('.', idx) | BIT('=', idx) |
+                BIT(':', idx) | BIT('<', idx) | BIT('>', idx) | BIT('\"', idx) |
+                BIT('&', idx) | BIT('`', idx) | BIT('\'', idx) | BIT('+', idx) |
+                BIT('0', idx);
+    }
+
+    private static final int[] globalNamePunctuationBits = new int[] {SPECIAL_PUNCT(0), SPECIAL_PUNCT(1), SPECIAL_PUNCT(2)};
+
+    private static boolean isSpecialGlobalName(byte c) {
+        if (c <= 0x20 || 0x72 < c) return false;
+
+        return (globalNamePunctuationBits[(c - 0x20) / 32] >> (c % 32) & 1) != 0;
+    }
 }

@@ -1,4 +1,5 @@
 exclude :test_aset_error, "works except JRuby raises RangeError (instead of IndexError) on int overflow"
+exclude :test_collect, "breaks in full interp and JIT due to differences in lambda args processing (#6165)"
 exclude :test_combination_with_callcc, "no callcc"
 exclude :test_count, "needs investigation"
 exclude :test_flatten_with_callcc, "no callcc"

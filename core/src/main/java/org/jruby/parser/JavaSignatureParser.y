@@ -27,12 +27,14 @@ import org.jruby.ast.java_signature.AnnotationExpression;
 import org.jruby.ast.java_signature.AnnotationParameter;
 import org.jruby.ast.java_signature.ArrayAnnotationExpression;
 import org.jruby.ast.java_signature.ArrayTypeNode;
+import org.jruby.ast.java_signature.BoolLiteral;
 import org.jruby.ast.java_signature.CharacterLiteral;
 import org.jruby.ast.java_signature.ConstructorSignatureNode;
 import org.jruby.ast.java_signature.DefaultAnnotationParameter;
 import org.jruby.ast.java_signature.MethodSignatureNode;
 import org.jruby.ast.java_signature.Literal;
 import org.jruby.ast.java_signature.Modifier;
+import org.jruby.ast.java_signature.NumberLiteral;
 import org.jruby.ast.java_signature.ParameterNode;
 import org.jruby.ast.java_signature.PrimitiveTypeNode;
 import org.jruby.ast.java_signature.ReferenceTypeNode;
@@ -99,6 +101,10 @@ public class JavaSignatureParser {
 %token <String> Q // "'"
 %token <String> CHARACTER_LITERAL
 %token <String> STRING_LITERAL
+%token <String> TRUE_LITERAL
+%token <String> FALSE_LITERAL
+%token <String> NUM_LITERAL
+%token <String> HEXNUM_LITERAL
 
 %type <MethodSignatureNode> method_declarator, method_header
 %type <ConstructorSignatureNode> constructor_declarator, constructor_declaration
@@ -569,10 +575,10 @@ annotation_params : annotation_param {
 annotation_value : annotation {
                      $$ = $<AnnotationExpression>1;
                  }
-                 | type {
+                 | literal {
                      $$ = $<AnnotationExpression>1;
                  }
-                 | literal {
+                 | type {
                      $$ = $<AnnotationExpression>1;
                  }
                  | LCURLY annotation_array_values RCURLY {
@@ -602,6 +608,18 @@ literal : STRING_LITERAL {
         }
         | CHARACTER_LITERAL {
            $$ = new CharacterLiteral($1);
+        }
+        | TRUE_LITERAL {
+           $$ = new BoolLiteral(true);
+        }
+        | FALSE_LITERAL {
+           $$ = new BoolLiteral(false);
+        }
+        | NUM_LITERAL {
+           $$ = new NumberLiteral($1);
+        }
+        | HEXNUM_LITERAL {
+           $$ = new NumberLiteral($1);
         }
 
 %%

@@ -111,14 +111,12 @@ public final class Frame {
      * when needed.
      */
     private Frame(Frame frame) {
-        Block block = frame.block;
-
-        block.getClass(); // null check
+        assert frame.block != null;
 
         this.self = frame.self;
         this.name = frame.name;
         this.klazz = frame.klazz;
-        this.block = block;
+        this.block = frame.block;
         this.visibility = frame.visibility;
     }
 

@@ -36,6 +36,8 @@ package org.jruby.javasupport;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -60,6 +62,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.headius.backport9.modules.Modules;
+import org.jcodings.Encoding;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -82,7 +86,7 @@ import org.jruby.RubyTime;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -229,7 +233,7 @@ public class JavaUtil {
         RubyClass procClass = rubyObject.getMetaClass();
 
         // Extend the interfaces into the proc's class. This creates a singleton class to connect up the Java proxy.
-        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, JavaClass.get(runtime, targetType));
+        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, targetType);
         if ( ! ifaceModule.isInstance(rubyObject) ) {
             ifaceModule.callMethod(context, "extend_object", rubyObject);
             ifaceModule.callMethod(context, "extended", rubyObject);
@@ -320,6 +324,13 @@ public class JavaUtil {
             return unwrapJavaValue(runtime, (IRubyObject) unwrap, errorMessage);
         }
         throw runtime.newTypeError(errorMessage);
+    }
+
+    public static RubyString inspectObject(ThreadContext context, Object obj) {
+        if (!(obj instanceof IRubyObject)) {
+            obj = Java.getInstance(context.runtime, obj);
+        }
+        return RubyObject.inspect(context, (IRubyObject) obj);
     }
 
     /**
@@ -577,6 +588,42 @@ public class JavaUtil {
         }
     }
 
+    public static MethodHandle getHandleSafe(Method method, Class caller, MethodHandles.Lookup lookup) {
+        try {
+            if (Modules.trySetAccessible(method, caller)) {
+                return lookup.unreflect(method);
+            }
+        } catch (Exception iae2) {
+            // ignore, return null below
+        }
+
+        return null;
+    }
+
+    public static MethodHandle getGetterSafe(Field field, Class caller, MethodHandles.Lookup lookup) {
+        try {
+            if (Modules.trySetAccessible(field, caller)) {
+                return lookup.unreflectGetter(field);
+            }
+        } catch (Exception iae2) {
+            // ignore, return null below
+        }
+
+        return null;
+    }
+
+    public static MethodHandle getSetterSafe(Field field, Class caller, MethodHandles.Lookup lookup) {
+        try {
+            if (Modules.trySetAccessible(field, caller)) {
+                return lookup.unreflectSetter(field);
+            }
+        } catch (Exception iae2) {
+            // ignore, return null below
+        }
+
+        return null;
+    }
+
     public static abstract class JavaConverter {
         private final Class type;
         public JavaConverter(Class type) {this.type = type;}
@@ -599,9 +646,9 @@ public class JavaUtil {
             return ((RubyObjectHolderProxy) object).__ruby_object();
         }
 
-        if ( object instanceof InternalJavaProxy ) {
-            final InternalJavaProxy internalJavaProxy = (InternalJavaProxy) object;
-            IRubyObject orig = internalJavaProxy.___getInvocationHandler().getOrig();
+        if ( object instanceof ReifiedJavaProxy ) {
+            final ReifiedJavaProxy internalJavaProxy = (ReifiedJavaProxy) object;
+            IRubyObject orig = internalJavaProxy.___jruby$rubyObject();
             if (orig != null) return orig;
         }
 
@@ -830,13 +877,25 @@ public class JavaUtil {
     };
 
     public static class StringConverter extends JavaConverter {
+        private final Encoding encoding;
+
         public StringConverter() {
+            this(null);
+        }
+        
+        public StringConverter(Encoding encoding) {
             super(String.class);
+            this.encoding = encoding;
         }
 
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
-            return RubyString.newUnicodeString(runtime, (String)object);
+            if (encoding == null) {
+            	return RubyString.newUnicodeString(runtime, (String)object);
+            }
+            else {
+            	return RubyString.newString(runtime, (String)object, encoding);
+            }
         }
 
         public IRubyObject get(Ruby runtime, Object array, int i) {

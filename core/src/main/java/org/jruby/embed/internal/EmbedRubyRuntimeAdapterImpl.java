@@ -1,4 +1,4 @@
-/**
+/*
  * **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.Objects;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
@@ -60,10 +61,13 @@ import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+
+import static org.jruby.embed.internal.EmbedEvalUnitImpl.isSharingVariables;
 
 /**
  *
@@ -73,9 +77,15 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
 
     private final RubyRuntimeAdapter adapter = JavaEmbedUtils.newRuntimeAdapter();
     private final ScriptingContainer container;
+    private final boolean wrapExceptions;
 
     public EmbedRubyRuntimeAdapterImpl(ScriptingContainer container) {
+        this(container, false);
+    }
+
+    public EmbedRubyRuntimeAdapterImpl(ScriptingContainer container, boolean wrapExceptions) {
         this.container = container;
+        this.wrapExceptions = wrapExceptions;
     }
 
     public EmbedEvalUnit parse(String script, int... lines) {
@@ -84,7 +94,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         }
         boolean unicode_escape = false;
         Object obj = container.getAttribute(AttributeName.UNICODE_ESCAPE);
-        if (obj != null && obj instanceof Boolean) {
+        if (obj instanceof Boolean) {
             unicode_escape = (Boolean)obj;
         }
         if (unicode_escape) {
@@ -96,21 +106,17 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     }
 
     public EmbedEvalUnit parse(Reader reader, String filename, int... lines) {
-        if (reader != null) {
-            InputStream istream = new ReaderInputStream(reader);
-            return runParser(istream, filename, lines);
-        } else {
-            return null;
-        }
+        Objects.requireNonNull(reader, "reader");
+
+        InputStream istream = new ReaderInputStream(reader);
+        return runParser(istream, filename, lines);
     }
 
     public EmbedEvalUnit parse(PathType type, String filename, int... lines) {
-        if (filename == null) {
-            return null;
-        }
-        if (type == null) {
-            type = PathType.ABSOLUTE;
-        }
+        Objects.requireNonNull(filename, "filename");
+
+        if (type == null) type = PathType.ABSOLUTE;
+
         InputStream istream = null;
         try {
             switch (type) {
@@ -127,9 +133,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                     break;
                 case CLASSPATH:
                     URL loc = container.getProvider().getRuntime().getJRubyClassLoader().getResource(filename);
-                    if (loc == null) {
-                        istream = null; // as in ClassLoader.getResourceAsStream
-                    } else {
+                    if (loc != null) {
                         filename = LoadService.classpathFilenameFromURL(filename, loc, true);
                         try {
                             istream = loc.openStream();
@@ -141,10 +145,12 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             return parse(istream, filename, lines);
         } catch (FileNotFoundException e) {
-            throw new ParseFailedException(e);
+            if (wrapExceptions) throw new ParseFailedException(e);
+            // NOTE: we do not declare throws IOException due source
+            Helpers.throwException(e); return null;
         } finally {
             if (istream != null) {
-                try {istream.close();} catch (IOException ioe) {}
+                try { istream.close(); } catch (IOException ioe) {}
             }
         }
     }
@@ -158,9 +164,6 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     }
 
     private EmbedEvalUnit runParser(Object input, String filename, int... lines) {
-        if (input == null) {
-            return null;
-        }
         if (filename == null || filename.length() == 0) {
             filename = container.getScriptFilename();
         }
@@ -173,68 +176,32 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         if (lines != null && lines.length > 0) {
             line = lines[0];
         }
+
+        DynamicScope scope = null;
+        if (isSharingVariables(container)) {
+            scope = createLocalVarScope(runtime, container.getVarMap().getLocalVarNames());
+        }
         try {
-            ManyVarsDynamicScope scope  = null;
-            boolean sharing_variables = true;
-            Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
-            if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
-                sharing_variables = false;
-            }
-            if (sharing_variables) {
-                scope = getManyVarsDynamicScope(container, 0);
-            }
             final Node node;
             if (input instanceof String) {
-                node = runtime.parseEval((String)input, filename, scope, line);
+                node = runtime.parseEval((String) input, filename, scope, line);
             } else {
-                node = runtime.parseFile((InputStream)input, filename, scope, line);
+                node = runtime.parseFile((InputStream) input, filename, scope, line);
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
             if (compileMode == CompileMode.FORCE) {
                 // CON FIXME: We may need to force heap variables here so the compiled script uses our provided scope
                 Script script = runtime.tryCompile(node);
-                if (script != null) {
-                    return new EmbedEvalUnitImpl(container, node, scope, script);
-                } else {
-                    return new EmbedEvalUnitImpl(container, node, scope);
-                }
+                return new EmbedEvalUnitImpl(container, node, scope, script, wrapExceptions);
             }
-            return new EmbedEvalUnitImpl(container, node, scope);
+            return new EmbedEvalUnitImpl(container, node, scope, null, wrapExceptions);
         } catch (RaiseException e) {
-            runtime.printError(e.getException());
-            throw new ParseFailedException(e.getMessage(), e);
-        } catch (Throwable e) {
-            throw new ParseFailedException(e);
-        } finally {
-            try {
-                if (input instanceof FileInputStream) {
-                    ((InputStream)input).close();
-                }
-            } catch (IOException ex) {
-                throw new ParseFailedException(ex);
-            }
+            if (wrapExceptions) throw new ParseFailedException(e.getMessage(), e);
+            throw e;
+        } catch (RuntimeException e) {
+            if (wrapExceptions) throw new ParseFailedException(e);
+            throw e;
         }
-    }
-
-    static ManyVarsDynamicScope getManyVarsDynamicScope(ScriptingContainer container, int depth) {
-        ManyVarsDynamicScope scope;
-        StaticScopeFactory scopeFactory = container.getProvider().getRuntime().getStaticScopeFactory();
-
-        // root our parsing scope with a dummy scope
-        StaticScope topStaticScope = scopeFactory.newLocalScope(null);
-        topStaticScope.setModule(container.getProvider().getRuntime().getObject());
-
-        DynamicScope currentScope = new ManyVarsDynamicScope(topStaticScope, null);
-        String[] names4Injection = container.getVarMap().getLocalVarNames();
-        StaticScope evalScope = names4Injection == null || names4Injection.length == 0 ?
-                scopeFactory.newEvalScope(currentScope.getStaticScope()) :
-                scopeFactory.newEvalScope(currentScope.getStaticScope(), names4Injection);
-        scope = new ManyVarsDynamicScope(evalScope, currentScope);
-
-        // JRUBY-5501: ensure we've set up a cref for the scope too
-        scope.getStaticScope().determineModule();
-
-        return scope;
     }
 
     public IRubyObject eval(Ruby runtime, String script) {
@@ -248,4 +215,23 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     public EvalUnit parse(Ruby runtime, InputStream istream, String filename, int lineNumber) {
         return adapter.parse(runtime, istream, filename, lineNumber);
     }
+
+    static DynamicScope createLocalVarScope(Ruby runtime, final String[] varNames) {
+        ManyVarsDynamicScope scope;
+        StaticScopeFactory scopeFactory = runtime.getStaticScopeFactory();
+
+        // root our parsing scope with a dummy scope
+        StaticScope topStaticScope = scopeFactory.newLocalScope(null);
+        topStaticScope.setModule(runtime.getObject());
+
+        DynamicScope currentScope = new ManyVarsDynamicScope(topStaticScope, null);
+        StaticScope evalScope = scopeFactory.newEvalScope(currentScope.getStaticScope(), varNames);
+        scope = new ManyVarsDynamicScope(evalScope, currentScope);
+
+        // JRUBY-5501: ensure we've set up a cref for the scope too
+        scope.getStaticScope().determineModule();
+
+        return scope;
+    }
+
 }

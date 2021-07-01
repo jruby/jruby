@@ -1,16 +1,18 @@
 version = ENV['JRUBY_VERSION'] ||
   File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
-project 'JRuby Core' do
+# note: we keep the legacy name since a lot of tests depends on it but
+#       rename artifact
+project 'JRuby Base' do
 
   model_version '4.0.0'
   inherit 'org.jruby:jruby-parent', version
-  id 'org.jruby:jruby-core'
+  id 'org.jruby:jruby-base'
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
 
-              'tzdata.version' => '2013d',
+              'tzdata.version' => '2019c',
               'tzdata.scope' => 'provided',
 
               'maven.build.timestamp.format' => 'yyyy-MM-dd',
@@ -40,25 +42,23 @@ project 'JRuby Core' do
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
-  jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.22', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.23', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.50', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.12', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.10'
+  jar 'com.github.jnr:jnr-netdb:1.2.0', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.32.6', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.38.8', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.1.7', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.10.2', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.2.4'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.29'
-  jar 'org.jruby.jcodings:jcodings:1.0.45'
+  jar 'org.jruby.joni:joni:2.1.40'
+  jar 'org.jruby.jcodings:jcodings:1.0.55'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.11'
-  jar 'com.headius:options:1.4'
+  jar 'com.headius:invokebinder:1.12'
+  jar 'com.headius:options:1.5'
 
-  jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
-  jar 'com.martiansoftware:nailgun-server:0.9.1'
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
@@ -73,9 +73,9 @@ project 'JRuby Core' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.3'
+  jar 'com.headius:backport9:1.10'
 
-  jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
+  jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -132,7 +132,7 @@ project 'JRuby Core' do
     execute_goals( 'create',
                    :id => 'jruby-revision',
                    :phase => 'generate-sources',
-                   'shortRevisionLength' =>  '7',
+                   'shortRevisionLength' =>  '10',
                    'buildNumberPropertyName' =>  'jruby.revision' )
   end
 
@@ -170,7 +170,7 @@ project 'JRuby Core' do
   plugin( :compiler,
           'encoding' => 'utf-8',
           'debug' => 'true',
-          'verbose' => 'true',
+          'verbose' => 'false',
           'fork' => 'true',
           'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',
@@ -235,10 +235,12 @@ project 'JRuby Core' do
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
-          'includes' => [ 'org/jruby/test/MainTestSuite.java',
-                          'org/jruby/embed/**/*Test*.java',
-                          'org/jruby/util/**/*Test*.java',
-                          'org/jruby/runtime/**/*Test*.java' ],
+          'environmentVariables' => {
+              'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
+          },
+          includes: [
+              'org/jruby/test/TestAdoptedThreading.java',
+          ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   plugin(:jar,
@@ -257,64 +259,24 @@ project 'JRuby Core' do
       includes 'META-INF/**/*'
     end
 
-    resource do
-      directory '${project.basedir}/src/main/resources'
-      includes '${Constants.java}'
-      target_path '${project.build.sourceDirectory}'
-      filtering 'true'
-    end
-
-    resource do
-      directory '${project.basedir}/..'
-      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
-      target_path '${project.build.outputDirectory}/META-INF/'
-    end
   end
 
-
-  plugin :shade do
-    execute_goals( 'shade',
-                   :id => 'create lib/jruby.jar',
-                   :phase => 'package',
-                   relocations: [
-                       {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
-                   ],
-                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main',
-                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.dist'}}],
-                   'createSourcesJar' => '${create.sources.jar}'
-    )
-  end
-
-  [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
-    profile name do
-      # we shade in all dependencies which use the asm classes and relocate
-      # the asm package-name. with all jruby artifacts behave the same
-      # regarding asm: lib/jruby, jruby-core and jruby-complete via maven
-      plugin :shade do
-        execute_goals( 'shade',
-                       :id => 'shade the asm classes',
-                       :phase => 'package',
-                       'artifactSet' => {
-                         # IMPORTANT these needs to match exclusions in
-                         # maven/jruby-complete/pom.rb
-                         'includes' => [ 'com.github.jnr:jnr-ffi',
-                                         'me.qmx.jitescript:jitescript',
-                                         'org.ow2.asm:*' ]
-                       },
-                       relocations: [
-                           {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
-                           {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
-                       ],
-                       transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main',
-                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.core'}}],
-                       filters:
-                           {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
-        )
-      end
-    end
+  plugin :resources do
+    execute_goals('copy-resources', phase: 'process-resources',
+                  outputDirectory: '${basedir}',
+                  resources: [
+                    {
+                      directory: 'src/main/resources',
+                      includes: '${Constants.java}',
+                      target_path: '${project.build.sourceDirectory}',
+                      filtering: 'true'
+                    },
+                    {
+                      directory: '..',
+                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ],
+                      target_path: '${project.build.sourceDirectory}/META-INF/'
+                    }
+                  ])
   end
 
   copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby']]
@@ -423,8 +385,8 @@ project 'JRuby Core' do
 
     plugin :source do
       execute_goals( 'jar-no-fork',
-                     :id => 'pack core sources',
-                     :phase => 'prepare-package' ) # Needs to run before the shade plugin
+                     id: 'pack core sources',
+                     phase: 'prepare-package') # Needs to run before the shade plugin
     end
   end
 end

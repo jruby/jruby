@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import org.jruby.Ruby;
 import org.jruby.RubyBinding;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
@@ -23,12 +24,7 @@ import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
     public static void createTracePointClass(Ruby runtime) {
-        RubyClass tracePoint = runtime.defineClass("TracePoint", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new TracePoint(runtime, klazz);
-            }
-        });
+        RubyClass tracePoint = runtime.defineClass("TracePoint", runtime.getObject(), TracePoint::new);
         
         tracePoint.defineAnnotatedMethods(TracePoint.class);
     }
@@ -162,7 +158,7 @@ public class TracePoint extends RubyObject {
     
     @JRubyMethod(name = "enabled?")
     public IRubyObject enabled_p(ThreadContext context) {
-        return context.runtime.newBoolean(enabled);
+        return RubyBoolean.newBoolean(context, enabled);
     }
     
     @JRubyMethod
@@ -263,7 +259,7 @@ public class TracePoint extends RubyObject {
             }
         }
         
-        IRubyObject old = context.runtime.newBoolean(enabled);
+        IRubyObject old = RubyBoolean.newBoolean(context, enabled);
         updateEnabled(context, toggle);
         
         return old;

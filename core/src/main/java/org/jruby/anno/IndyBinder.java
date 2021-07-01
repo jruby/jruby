@@ -39,7 +39,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -56,6 +56,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -319,7 +320,7 @@ public class IndyBinder extends AbstractProcessor {
     }
 
     public void processMethodDeclaration(ExecutableElement method) {
-        processMethodDeclarationMulti(Arrays.asList(method));
+        processMethodDeclarationMulti(Collections.singletonList(method));
     }
 
     public static long getEncodedSignature(JRubyMethod anno) {

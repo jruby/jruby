@@ -37,6 +37,8 @@ import static org.jruby.RubyFile.fileResource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import jnr.posix.FileStat;
 import org.jruby.anno.JRubyMethod;
@@ -53,7 +55,6 @@ public class RubyFileTest {
 
     public static RubyModule createFileTestModule(Ruby runtime) {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
-        runtime.setFileTest(fileTestModule);
 
         fileTestModule.defineAnnotatedMethods(RubyFileTest.class);
 
@@ -93,7 +94,7 @@ public class RubyFileTest {
             filename = TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
         }
 
-        return context.runtime.newBoolean(fileResource(context, filename).isDirectory());
+        return RubyBoolean.newBoolean(context, fileResource(context, filename).isDirectory());
     }
 
     @JRubyMethod(name = "executable?", required = 1, module = true)
@@ -121,7 +122,7 @@ public class RubyFileTest {
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         // We get_path here to prevent doing it both existsOnClasspath and fileResource (Only call to_path once).
-        return context.runtime.newBoolean(exist(context, get_path(context, filename)));
+        return RubyBoolean.newBoolean(context, exist(context, get_path(context, filename)));
     }
 
     static boolean exist(ThreadContext context, RubyString path) {
@@ -139,7 +140,7 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "file?", required = 1, module = true)
     public static RubyBoolean file_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        return context.runtime.newBoolean(fileResource(filename).isFile());
+        return RubyBoolean.newBoolean(context, fileResource(filename).isFile());
     }
 
     @JRubyMethod(name = "grpowned?", required = 1, module = true)
@@ -159,21 +160,20 @@ public class RubyFileTest {
         FileResource file1 = fileResource(filename1);
         FileResource file2 = fileResource(filename2);
 
-        if (Platform.IS_WINDOWS || !runtime.getPosix().isNative()) {
-            // posix stat uses inodes to determine indentity, and windows has no inodes
-            // (they are always zero), so we use canonical paths instead. (JRUBY-5726)
-            // If we can't load a native POSIX, use this same logic. (JRUBY-6982)
-            if (file1.exists() && file2.exists()) {
-                try {
-                    String canon1 = new File(file1.absolutePath()).getCanonicalPath();
-                    String canon2 = new File(file2.absolutePath()).getCanonicalPath();
-                    return runtime.newBoolean(canon1.equals(canon2));
-                } catch (IOException canonicalizationError) {
-                    return runtime.getFalse();
-                }
-            } else {
-                return runtime.getFalse();
+        // try NIO2 first to support more platforms
+        if (file1.exists() && file2.exists()) {
+            try {
+                Path canon1 = new File(file1.absolutePath()).getCanonicalFile().toPath();
+                Path canon2 = new File(file2.absolutePath()).getCanonicalFile().toPath();
+                return runtime.newBoolean(Files.isSameFile(canon1, canon2));
+            } catch (IOException canonicalizationError) {
+                // fall through to native logic
             }
+        }
+
+        // if we can't use NIO2 and we're on Windows or don't have native posix, just return false?
+        if (Platform.IS_WINDOWS || !runtime.getPosix().isNative()) {
+            return runtime.getFalse();
         }
 
         FileStat stat1 = file1.stat();
@@ -303,21 +303,19 @@ public class RubyFileTest {
 
     @JRubyMethod(name = {"empty?", "zero?"}, required = 1, module = true)
     public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.runtime;
-
         FileResource resource = fileResource(context, filename);
 
         // FIXME: Ultimately we should return a valid stat() from this but without massive NUL coverage
         // this is less risky.
-        if (resource.isNull()) return runtime.newBoolean(true);
+        if (resource.isNull()) return RubyBoolean.newBoolean(context, true);
 
         FileStat stat = resource.stat();
 
-        if (stat == null) return runtime.getFalse();
+        if (stat == null) return context.fals;
         // MRI behavior, enforced by RubySpecs.
-        if (stat.isDirectory()) return runtime.newBoolean(Platform.IS_WINDOWS);
+        if (stat.isDirectory()) return RubyBoolean.newBoolean(context, Platform.IS_WINDOWS);
 
-        return runtime.newBoolean(stat.st_size() == 0L);
+        return RubyBoolean.newBoolean(context, stat.st_size() == 0L);
     }
 
     @JRubyMethod(name = "world_readable?", required = 1, module = true)

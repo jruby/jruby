@@ -38,17 +38,16 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * RubyMethod call without any arguments
  *
  */
 public class VCallNode extends Node implements INameNode {
-    private RubySymbol name;
+    private final RubySymbol name;
 
-    public VCallNode(ISourcePosition position, RubySymbol name) {
-        super(position, false);
+    public VCallNode(int line, RubySymbol name) {
+        super(line, false);
 
         this.name = name;
         setNewline();

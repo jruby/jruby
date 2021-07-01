@@ -16,7 +16,7 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
 
     @Override
     protected final JavaCallable createCallable(Ruby runtime, Member member) {
-        return new JavaMethod(runtime, (Method) member);
+        return JavaMethod.create(runtime, (Method) member);
     }
 
     @Override

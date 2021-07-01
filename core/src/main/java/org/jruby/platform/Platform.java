@@ -40,7 +40,6 @@ import org.jruby.runtime.Helpers;
  * Platform specific constants.
  */
 public abstract class Platform {
-    private static final Platform INSTANCE = initPlatform();
     public static Platform getPlatform() {
         return INSTANCE;
     }
@@ -131,6 +130,8 @@ public abstract class Platform {
     public static final boolean IS_GCJ = JVM.equals(GCJ);
     public static final boolean IS_J9 = JVM.equals(OPENJ9) || JVM.equals(IBM);
     public static final boolean IS_IBM = IS_J9;
+
+    private static final Platform INSTANCE = initPlatform();
 
     private static Platform initPlatform(){
         try {

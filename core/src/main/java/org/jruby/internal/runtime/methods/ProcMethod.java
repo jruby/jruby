@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class ProcMethod extends DynamicMethod implements PositionAware, IRMethodArgs {
-    private RubyProc proc;
+    private final RubyProc proc;
 
     /**
      * Constructor for ProcMethod.
@@ -74,10 +74,10 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
 
         return ((ProcMethod) method).proc == proc;
     }
-    
-    @Override
+
+    @Deprecated @Override
     public Arity getArity() {
-        return proc.getBlock().getSignature().arity();
+        return getSignature().arity();
     }
 
     public String getFile() {

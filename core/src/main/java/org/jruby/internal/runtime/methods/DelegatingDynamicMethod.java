@@ -33,10 +33,13 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
+
+import java.util.Collection;
 
 public abstract class DelegatingDynamicMethod extends DynamicMethod {
     protected final DynamicMethod delegate;
@@ -159,9 +162,14 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
         return delegate.isImplementedBy(other);
     }
 
-    @Override
+    @Deprecated @Override
     public Arity getArity() {
         return delegate.getArity();
+    }
+
+    @Override
+    public Signature getSignature() {
+        return delegate.getSignature();
     }
 
     @Override
@@ -185,6 +193,11 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
+    public Collection<String> getInstanceVariableNames() {
+        return delegate.getInstanceVariableNames();
+    }
+
+    @Override
     public void setHandle(Object handle) {
         delegate.setHandle(handle);    //To change body of overridden methods use File | Settings | File Templates.
     }
@@ -192,6 +205,11 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     @Override
     public Object getHandle() {
         return delegate.getHandle();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean isRefined() {
+        return delegate.isRefined();
     }
 
     @Override

@@ -28,8 +28,40 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.AddressInfo;
+import jnr.constants.platform.Errno;
+import jnr.constants.platform.INAddr;
+import jnr.constants.platform.IP;
+import jnr.constants.platform.IPProto;
+import jnr.constants.platform.NameInfo;
+import jnr.constants.platform.ProtocolFamily;
+import jnr.constants.platform.Shutdown;
+import jnr.constants.platform.Sock;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketMessage;
+import jnr.constants.platform.SocketOption;
+import jnr.constants.platform.TCP;
+import jnr.netdb.Protocol;
+import jnr.unixsocket.UnixSocketAddress;
+import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.ChannelFD;
+import org.jruby.util.io.Sockaddr;
+
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
@@ -44,43 +76,10 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
-
-import jnr.constants.platform.AddressFamily;
-import jnr.constants.platform.Errno;
-import jnr.constants.platform.INAddr;
-import jnr.constants.platform.IPProto;
-import jnr.constants.platform.NameInfo;
-import jnr.constants.platform.ProtocolFamily;
-import jnr.constants.platform.Shutdown;
-import jnr.constants.platform.Sock;
-import jnr.constants.platform.SocketLevel;
-import jnr.constants.platform.SocketOption;
-import jnr.constants.platform.TCP;
-import jnr.netdb.Protocol;
-import jnr.unixsocket.UnixSocketAddress;
-import jnr.unixsocket.UnixSocketChannel;
-
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.Sockaddr;
-
-import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -88,7 +87,7 @@ import static org.jruby.runtime.Helpers.arrayOf;
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubySocket extends RubyBasicSocket {
     static void createSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), SOCKET_ALLOCATOR);
+        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), RubySocket::new);
 
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
@@ -103,49 +102,41 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, Shutdown.class);
         runtime.loadConstantSet(rb_mConstants, TCP.class);
         runtime.loadConstantSet(rb_mConstants, NameInfo.class);
+        runtime.loadConstantSet(rb_mConstants, SocketMessage.class);
 
         // this value seems to be hardcoded in MRI to 5 when not defined, but
         // it is 128 on OS X. We use 128 for now until we can get it added to
         // jnr-constants.
         rb_mConstants.setConstant("SOMAXCONN", RubyFixnum.newFixnum(runtime, 128));
+        
+        // for all platforms
+        rb_mConstants.setConstant("IPPORT_RESERVED", RubyFixnum.newFixnum(runtime, 1024));
+        rb_mConstants.setConstant("IPPORT_USERRESERVED", RubyFixnum.newFixnum(runtime, 5000));
 
-        // mandatory constants we haven't implemented
-        rb_mConstants.setConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
-        rb_mConstants.setConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
-        rb_mConstants.setConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
-        rb_mConstants.setConstant("MSG_WAITALL", runtime.newFixnum(MSG_WAITALL));
+        rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(AddressInfo.AI_PASSIVE));
+        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(AddressInfo.AI_CANONNAME));
+        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(AddressInfo.AI_NUMERICHOST));
+        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(AddressInfo.AI_ALL));
+        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(AddressInfo.AI_V4MAPPED_CFG));
+        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(AddressInfo.AI_ADDRCONFIG));
+        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(AddressInfo.AI_V4MAPPED));
+        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(AddressInfo.AI_NUMERICSERV));
 
-        rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
-        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(2));
-        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(4));
-        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(256));
-        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(512));
-        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(1024));
-        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(2048));
-        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(4096));
-
-        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(1536));
-        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(5127));
+        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(AddressInfo.AI_DEFAULT));
+        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(AddressInfo.AI_MASK));
 
         // More constants needed by specs
-        rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
-        rb_mConstants.setConstant("IP_MULTICAST_LOOP", runtime.newFixnum(11));
-        rb_mConstants.setConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(12));
-        rb_mConstants.setConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(20));
-        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(1));
-        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(1));
+        rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(IP.IP_MULTICAST_TTL.value()));
+        rb_mConstants.setConstant("IP_MULTICAST_LOOP", runtime.newFixnum(IP.IP_MULTICAST_LOOP.value()));
+        rb_mConstants.setConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(IP.IP_ADD_MEMBERSHIP.value()));
+        rb_mConstants.setConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(IP.IP_MAX_MEMBERSHIPS.value()));
+        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(IP.IP_DEFAULT_MULTICAST_LOOP));
+        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(IP.IP_DEFAULT_MULTICAST_TTL));
 
         rb_cSocket.includeModule(rb_mConstants);
 
         rb_cSocket.defineAnnotatedMethods(RubySocket.class);
     }
-
-    private static ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubySocket(runtime, klass);
-        }
-    };
 
     public RubySocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -286,8 +277,8 @@ public class RubySocket extends RubyBasicSocket {
                 }
             }
         }
-        catch (SocketException|RuntimeException ex) {
-            if ( ex instanceof RaiseException ) throw (RaiseException) ex;
+        catch (SocketException | RuntimeException ex) {
+            if ( ex instanceof RaiseException) throw (RaiseException) ex;
             throw SocketUtils.sockerr_with_trace(context.runtime, "getifaddrs: " + ex.toString(), ex.getStackTrace());
         }
         return list;
@@ -503,91 +494,90 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private IRubyObject doConnectNonblock(ThreadContext context, SocketAddress addr, boolean ex) {
+        Ruby runtime = context.runtime;
+
         Channel channel = getChannel();
 
         if ( ! (channel instanceof SelectableChannel) ) {
-            throw context.runtime.newErrnoENOPROTOOPTError();
+            throw runtime.newErrnoENOPROTOOPTError();
         }
 
-        SelectableChannel selectable = (SelectableChannel) channel;
-        synchronized (selectable.blockingLock()) {
-            boolean oldBlocking = selectable.isBlocking();
-            try {
-                selectable.configureBlocking(false);
+        boolean result = tryConnect(context, runtime, channel, addr, ex, false);
 
-                try {
-                    return doConnect(context, addr, ex);
-
-                } finally {
-                    selectable.configureBlocking(oldBlocking);
-                }
-
-            }
-            catch (ClosedChannelException e) {
-                throw context.runtime.newErrnoECONNREFUSEDError();
-            }
-            catch (IOException e) {
-                throw sockerr(context.runtime, "connect(2): name or service not known", e);
-            }
+        if ( !result ) {
+            if (!ex) return runtime.newSymbol("wait_writable");
+            throw runtime.newErrnoEINPROGRESSWritableError();
         }
+
+        return runtime.newFixnum(0);
     }
 
     protected IRubyObject doConnect(ThreadContext context, SocketAddress addr, boolean ex) {
         Ruby runtime = context.runtime;
         Channel channel = getChannel();
 
-        try {
-            boolean result = true;
-            if (channel instanceof SocketChannel) {
-                SocketChannel socket = (SocketChannel) channel;
+        tryConnect(context, runtime, channel, addr, ex, true);
 
-                if (socket.isConnectionPending()) {
-                    // connection initiated but not finished
-                    result = socket.finishConnect();
-                } else {
-                    result = socket.connect(addr);
+        return runtime.newFixnum(0);
+    }
+
+    private boolean tryConnect(ThreadContext context, Ruby runtime, Channel channel, SocketAddress addr, boolean ex, boolean blocking) {
+        SelectableChannel selectable = (SelectableChannel) channel;
+        try {
+            synchronized (selectable.blockingLock()) {
+                boolean oldBlocking = selectable.isBlocking();
+                try {
+                    selectable.configureBlocking(false);
+
+                    while (true) {
+                        boolean result = true;
+                        if (channel instanceof SocketChannel) {
+                            SocketChannel socket = (SocketChannel) channel;
+
+                            if (socket.isConnectionPending()) {
+                                // connection initiated but not finished
+                                result = socket.finishConnect();
+                            } else {
+                                result = socket.connect(addr);
+                            }
+                        } else if (channel instanceof UnixSocketChannel) {
+                            result = ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
+
+                        } else if (channel instanceof DatagramChannel) {
+                            ((DatagramChannel) channel).connect(addr);
+                        } else {
+                            throw runtime.newErrnoENOPROTOOPTError();
+                        }
+
+                        if (!blocking || result) return result;
+
+                        while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
+                            context.pollThreadEvents();
+                        }
+                    }
+                } finally {
+                    selectable.configureBlocking(oldBlocking);
                 }
             }
-            else if (channel instanceof UnixSocketChannel) {
-                result = ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
-
-            }
-            else if (channel instanceof DatagramChannel) {
-                ((DatagramChannel)channel).connect(addr);
-            }
-            else {
-                throw runtime.newErrnoENOPROTOOPTError();
-            }
-
-            if ( ! result ) {
-                if (!ex) return runtime.newSymbol("wait_writable");
-                throw runtime.newErrnoEINPROGRESSWritableError();
-            }
-        }
-        catch (AlreadyConnectedException e) {
-            if (!ex) return runtime.newFixnum(0);
+        } catch (ClosedChannelException e) {
+            throw context.runtime.newErrnoECONNREFUSEDError();
+        } catch (AlreadyConnectedException e) {
+            if (!ex) return false;
             throw runtime.newErrnoEISCONNError();
-        }
-        catch (ConnectionPendingException e) {
+        } catch (ConnectionPendingException e) {
             throw runtime.newErrnoEINPROGRESSWritableError();
-        }
-        catch (UnknownHostException e) {
+        } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
-        }
-        catch (SocketException e) {
+        } catch (SocketException e) {
             // Subclasses of SocketException all indicate failure to connect, which leaves the channel closed.
             // At this point the socket channel is no longer usable, so we clean up.
             getOpenFile().cleanup(runtime, true);
             throw buildSocketException(runtime, e, "connect(2)", addr);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw sockerr(runtime, "connect(2): name or service not known", e);
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             throw sockerr(runtime, e.getMessage(), e);
         }
-
-        return runtime.newFixnum(0);
     }
 
     protected void doBind(ThreadContext context, SocketAddress iaddr) {
@@ -626,7 +616,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     static RaiseException buildSocketException(final Ruby runtime, final SocketException ex,
-        final String caller, final SocketAddress addr) {
+                                               final String caller, final SocketAddress addr) {
 
         final Errno errno = Helpers.errnoFromException(ex);
         final String callerWithAddr = caller + " for " + formatAddress(addr);
@@ -719,16 +709,11 @@ public class RubySocket extends RubyBasicSocket {
     private static final Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
     //private static final Pattern PERM_DENIED_PATTERN = Pattern.compile("[Pp]ermission.*denied");
 
-    public static final int MSG_OOB = 0x1;
-    public static final int MSG_PEEK = 0x2;
-    public static final int MSG_DONTROUTE = 0x4;
-    public static final int MSG_WAITALL = 0x100;
-
     protected AddressFamily soDomain;
     protected ProtocolFamily soProtocolFamily;
     protected Sock soType;
     protected Protocol soProtocol = Protocol.getProtocolByNumber(0);
 
     private static final String JRUBY_SERVER_SOCKET_ERROR =
-            "use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
+            "use ServerSocket for servers (https://github.com/jruby/jruby/wiki/ServerSocket)";
 }// RubySocket

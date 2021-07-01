@@ -26,9 +26,12 @@ describe "A Java Throwable" do
     expect(ex.to_s).to eq ex.message
   end
 
-  it "implements inspect as toString" do
+  it "implements inspect to be Ruby-like" do
     ex = java.lang.Exception.new('hello')
-    expect(ex.inspect).to eq "java.lang.Exception: hello"
+    expect(ex.inspect).to eq '#<Java::JavaLang::Exception: hello>'
+
+    ex = java.lang.AssertionError.new
+    expect(ex.inspect).to eq '#<Java::JavaLang::AssertionError: >'
   end
 
   it "implements full_message" do
@@ -128,6 +131,48 @@ describe "Rescuing a Java exception using Exception" do
     expect(i).to eq 2
   end
 
+  it "synchronizes causes" do
+    ex = Class.new(StandardError)
+
+    begin
+      e = ex.new
+
+      expect(e.cause).to be_nil
+
+      raise e
+    rescue
+      begin
+        e2 = ex.new
+
+        expect(e2.cause).to be_nil
+
+        t = JRuby.ref(e2)
+
+        expect(t.getCause).to be_nil
+
+        raise e2
+      rescue
+        expect(e2.cause).to equal(e)
+        expect(t.getCause).to equal(e)
+      end
+    end
+
+    begin
+      e = java.lang.NullPointerException.new
+
+      raise e
+    rescue java.lang.NullPointerException
+      begin
+        e2 = ex.new
+
+        raise e2
+      rescue
+        expect(e2.cause).to equal(e)
+        expect(JRuby.ref(e2).toThrowable.getCause).to equal(e)
+      end
+    end
+  end
+
   describe 'Ruby sub-class' do
 
     class RubyThrowable < java.lang.Exception
@@ -139,11 +184,10 @@ describe "Rescuing a Java exception using Exception" do
 
     it 'has Throwable extensions' do
       throwable = RubyThrowable.new 'foo'
-      expect( throwable.backtrace ).to_not be nil
       expect( throwable.backtrace ).to_not be_empty
 
       expect( throwable.message ).to eql 'foo'
-      expect( throwable.to_s ).to eql 'foo'
+      expect( throwable.inspect ).to eql '#<RubyThrowable: foo>'
     end
 
   end

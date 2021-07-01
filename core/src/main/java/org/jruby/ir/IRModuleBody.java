@@ -4,7 +4,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.util.ByteList;
 
 public class IRModuleBody extends IRScope {
-    private boolean executesOnce;
+    private final boolean executesOnce;
 
     public IRModuleBody(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber,
                         StaticScope staticScope, boolean executesOnce) {
@@ -12,8 +12,8 @@ public class IRModuleBody extends IRScope {
 
         this.executesOnce = executesOnce;
 
-        if (!getManager().isDryRun()) {
-            if (staticScope != null) staticScope.setIRScope(this);
+        if (staticScope != null) {
+            staticScope.setIRScope(this);
         }
     }
 

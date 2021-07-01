@@ -70,10 +70,10 @@ public class JRubyLibrary implements Library {
         JRuby.defineAnnotatedMethods(JRubyLibrary.class);
         JRuby.defineAnnotatedMethods(JRubyUtilLibrary.class);
 
-        JRuby.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR)
+        JRuby.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal::new)
              .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
-        JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR)
+        JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal::new)
              .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
         RubyModule CONFIG = JRuby.defineModuleUnder("CONFIG");
@@ -86,12 +86,12 @@ public class JRubyLibrary implements Library {
     public static class JRubyConfig {
         @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
+            return RubyBoolean.newBoolean(context, context.runtime.getInstanceConfig().isDisableGems());
         }
 
         @JRubyMethod(name = "did_you_mean_disabled?")
         public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
+            return RubyBoolean.newBoolean(context, context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
     }
 
@@ -254,9 +254,9 @@ public class JRubyLibrary implements Library {
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
         RootNode node = (RootNode) parseImpl(context, args, block);
         IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
-        manager.setDryRun(true);
         IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, node).getScope();
         scope.setScriptDynamicScope(node.getScope());
+        scope.getStaticScope().setIRScope(scope);
         return scope;
     }
 
@@ -271,7 +271,7 @@ public class JRubyLibrary implements Library {
 
         IRScriptBody scope = compileIR(context, args, block);
 
-        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
         byte[] bytes = visitor.compileToBytecode(scope, methodContext);
 

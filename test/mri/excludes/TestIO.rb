@@ -1,3 +1,4 @@
+exclude :test_autoclose_true_closed_by_finalizer, "uses RubyVM"
 exclude :test_cloexec, "needs investigation"
 exclude :test_copy_stream_bigcontent_chop, "needs investigation"
 exclude :test_copy_stream_bigcontent_fpos, "needs investigation"

@@ -13,7 +13,7 @@ public class IRScriptBody extends IRScope {
         this.toplevelScope = null;
         this.fileName = sourceName;
 
-        if (!getManager().isDryRun() && staticScope != null) {
+        if (staticScope != null) {
             staticScope.setIRScope(this);
         }
     }
@@ -38,7 +38,7 @@ public class IRScriptBody extends IRScope {
 
     @Override
     public String toString() {
-        return "Script: file: " + getFileName() + super.toString();
+        return "Script: file: " + getFile() + super.toString();
     }
 
     @Override

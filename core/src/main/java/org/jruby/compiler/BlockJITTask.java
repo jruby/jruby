@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -32,6 +33,8 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
 
@@ -65,15 +68,17 @@ class BlockJITTask extends JITCompiler.Task {
             return;
         }
 
-        final String key = SexpMaker.sha1(body.getIRScope());
+        IRClosure closure = body.getScope();
+        StaticScope scope = closure.getStaticScope();
+        final String key = SexpMaker.sha1(closure);
         final Ruby runtime = jitCompiler.runtime;
-        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         BlockJITClassGenerator generator = new BlockJITClassGenerator(className, blockId, key, runtime, body, visitor);
 
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         generator.compile(context);
 
-        Class<?> sourceClass = defineClass(generator, visitor, body.getIRScope(), body.ensureInstrsReady());
+        Class<?> sourceClass = defineClass(generator, visitor, closure, body.ensureInstrsReady());
         if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
         // successfully got back a jitted body
@@ -83,7 +88,10 @@ class BlockJITTask extends JITCompiler.Task {
         body.completeBuild(
                 new CompiledIRBlockBody(
                         JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
-                        body.getIRScope(),
+                        scope,
+                        closure.getFile(),
+                        closure.getLine(),
+                        ArgumentDescriptor.encode(closure.getArgumentDescriptors()),
                         ((IRClosure) body.getIRScope()).getSignature().encode()));
     }
 

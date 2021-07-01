@@ -14,9 +14,9 @@ import org.jruby.ir.operands.Variable;
  * replacement labels and variables.
  */
 public abstract class CloneInfo {
-    protected Map<Label, Label> labelRenameMap = new HashMap<>();
-    protected Map<Variable, Variable> variableRenameMap = new HashMap<>();
-    protected IRScope scope; // clone and inlining use this field differently.
+    protected final Map<Label, Label> labelRenameMap = new HashMap<>();
+    protected final Map<Variable, Variable> variableRenameMap = new HashMap<>();
+    protected final IRScope scope; // clone and inlining use this field differently.
 
     // Only used by subclasses
     protected CloneInfo(IRScope scope) {

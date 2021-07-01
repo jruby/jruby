@@ -13,6 +13,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.EnumSet;
+
 public class DefineMetaClassInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final IRModuleBody metaClassBody;
 
@@ -33,13 +35,14 @@ public class DefineMetaClassInstr extends OneOperandResultBaseInstr implements F
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         // SSS: Inner-classes are defined with closures and
         // a return in the closure can force a return from this method
         // For now, conservatively assume that a scope with inner-classes
         // can receive non-local returns. (Alternatively, have to inspect
         // all lexically nested scopes, not just closures in computeScopeFlags())
-        scope.getFlags().add(IRFlags.CAN_RECEIVE_NONLOCAL_RETURNS);
+        scope.setCanReceiveNonlocalReturns();
+
         return true;
     }
 

@@ -20,10 +20,47 @@ module InterpreterSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield eval(src, TOPLEVEL_BINDING, filename, line) unless (ENV['INTERPRETER_TEST'] == 'false')
+    yield eval(src, TOPLEVEL_BINDING, filename, line)
   end
 
   def self.name; "interpreter"; end
+end
+
+module PersistenceSpecUtils
+  include CompilerSpecUtils
+
+  def run_in_method(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
+    run( "def __temp; #{src}; end; __temp", filename, line)
+  end
+
+  def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
+    yield encode_decode_run(src, filename, line)
+  end
+
+  def self.name; "persistence"; end
+
+  private
+
+  def encode_decode_run(src, filename, line)
+    runtime = JRuby.runtime
+    manager = runtime.getIRManager()
+
+    method = JRuby.compile_ir(src, filename, false, line - 1)
+
+    top_self = runtime.top_self
+
+    # encode and decode
+    baos = java.io.ByteArrayOutputStream.new
+    writer = org.jruby.ir.persistence.IRWriterStream.new(baos)
+    org.jruby.ir.persistence.IRWriter.persist(writer, method)
+
+    reader = org.jruby.ir.persistence.IRReaderStream.new(manager, baos.to_byte_array, org.jruby.util.ByteList.new(filename.to_java.getBytes))
+    method = org.jruby.ir.persistence.IRReader.load(manager, reader)
+
+    # interpret
+    interpreter = org.jruby.ir.interpreter.Interpreter.new
+    interpreter.execute(runtime, method, top_self)
+  end
 end
 
 module JITSpecUtils
@@ -34,7 +71,7 @@ module JITSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield compile_run(src, filename, line) unless (ENV['COMPILER_TEST'] == 'false')
+    yield compile_run(src, filename, line)
   end
 
   def self.name; "jit"; end
@@ -57,7 +94,7 @@ module JITSpecUtils
     method = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
     method.prepareForCompilation
 
-    compiler = org.jruby.ir.targets.JVMVisitor.new(runtime)
+    compiler = org.jruby.ir.targets.JVMVisitor.newForJIT(runtime)
     compiled = compiler.compile(method, org.jruby.util.OneShotClassLoader.new(runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod("RUBY$script",
         org.jruby.runtime.ThreadContext.java_class,
@@ -68,12 +105,18 @@ module JITSpecUtils
         org.jruby.RubyModule.java_class,
         java.lang.String.java_class)
     handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod)
+    if method.kind_of?(org.jruby.ir.IRMethod) || method.kind_of?(org.jruby.ir.IRClosure)
+      descriptors = org.jruby.runtime.ArgumentDescriptor.encode(method.argument_descriptors)
+    else
+      descriptors = ""
+    end
 
     return org.jruby.internal.runtime.methods.CompiledIRMethod.new(
         handle,
         method,
         org.jruby.runtime.Visibility::PUBLIC,
-        currModule)
+        currModule,
+        descriptors)
   end
 
   def compile_run(src, filename, line)
@@ -91,6 +134,7 @@ end
 
 modes = []
 modes << InterpreterSpecUtils unless (ENV['INTERPRETER_TEST'] == 'false')
+modes << PersistenceSpecUtils unless (ENV['PERSISTENCE_TEST'] == 'false')
 modes << JITSpecUtils unless (ENV['COMPILER_TEST'] == 'false')
 
 Block = org.jruby.runtime.Block
@@ -1157,6 +1201,11 @@ modes.each do |mode|
       run('a = Class.new { def a; end }; b = Class.new(a) { def a; [defined? super, defined? super()]; end }.new; b.a') do |x|
         expect(x).to eq(["super", "super"])
       end
+
+      # inside a block
+      run('a = Class.new { def a; end }; b = Class.new(a) { def a; proc { [defined? super, defined? super()] }.call; end }.new; b.a') do |x|
+        expect(x).to eq(["super", "super"])
+      end
     end
 
     it "handles defined? method forms" do
@@ -1187,6 +1236,125 @@ modes.each do |mode|
       run('defined? $"') do |x|
         expect(x).to eq("global-variable")
       end
+    end
+
+    it "handles refined AsString constructs" do
+      run('
+          class ThingToRefine; end
+          module RefineForAsString; refine(ThingToRefine) { def to_s; "foo"; end }; end
+          class AsStringWithUsing; using RefineForAsString; def go; /#{ThingToRefine.new}/; end; end
+          AsStringWithUsing.new.go') do |x|
+        expect(x).to eq(/foo/)
+      end
+    end
+
+    it "handles method_missing dispatch forms" do
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo()') {|x| expect(x).to eq([:foo])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1)') {|x| expect(x).to eq([:foo, 1])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2)') {|x| expect(x).to eq([:foo, 1, 2])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2,3)') {|x| expect(x).to eq([:foo, 1, 2, 3])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; obj.foo(1,2,3,4)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; ary = 1.upto(4).to_a; obj.foo(*ary)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+      run('obj = Class.new { def method_missing(name, *args); [name, *args]; end }.new; ary = 2.upto(4).to_a; obj.foo(1, *ary)') {|x| expect(x).to eq([:foo, 1, 2, 3, 4])}
+    end
+
+    it "handles send dispatch forms" do
+      run('obj = Class.new { def foo(*args); args; end }.new; obj.send(:foo,1)') {|x| expect(x).to eq([1])}
+      run('obj = Class.new { def foo(*args); args; end }.new; obj.send(:foo,1,2,3,4)') {|x| expect(x).to eq([1, 2, 3, 4])}
+      run('obj = Class.new { def foo(*args); args; end }.new; ary = 1.upto(4).to_a; obj.send(:foo,*ary)') {|x| expect(x).to eq([1, 2, 3, 4])}
+      run('obj = Class.new { def foo(*args); args; end }.new; ary = 2.upto(4).to_a; obj.send(:foo,1,*ary)') {|x| expect(x).to eq([1, 2, 3, 4])}
+    end
+
+    it "calls compiled methods of all arities with and without block" do
+      run('Class.new { def foo; 1; end; }.new.foo') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a); a; end; }.new.foo(1)') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a, b); [a, b]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(a, b, c); [a, b, c]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(a, b, c, d); [a, b, c, d]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(*a); a; end; }.new.foo()') {|x| expect(x).to eq([])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1)') {|x| expect(x).to eq([1])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(*a); a; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1)') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { def foo(a, *b); [a, b]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2)') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { def foo(a, b, *c); [a, b, c]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { def foo(a, b, c, *d); [a, b, c, d]; end; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { def foo(a, b, c, *d); [a, b, c, d]; end; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,[4]])}
+
+      run('Class.new { def foo; yield 1; end; }.new.foo{|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a); yield a; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { def foo(a, b); yield [a, b]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(a, b, c); yield [a, b, c]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(a, b, c, d); yield [a, b, c, d]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(){|x|x}') {|x| expect(x).to eq([])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { def foo(*a); yield a; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { def foo(a, *b); yield [a, b]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { def foo(a, b, *c); yield [a, b, c]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { def foo(a, b, c, *d); yield [a, b, c, d]; end; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { def foo(a, b, c, *d); yield [a, b, c, d]; end; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,[4]])}
+    end
+
+    it "calls interpreted methods of all arities with and without block" do
+      run('Class.new { eval "def foo; 1; end"; }.new.foo') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a); a; end"; }.new.foo(1)') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a, b); [a, b]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(a, b, c); [a, b, c]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(a, b, c, d); [a, b, c, d]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo()') {|x| expect(x).to eq([])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1)') {|x| expect(x).to eq([1])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(*a); a; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1)') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { eval "def foo(a, *b); [a, b]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2)') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { eval "def foo(a, b, *c); [a, b, c]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { eval "def foo(a, b, c, *d); [a, b, c, d]; end"; }.new.foo(1,2,3)') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { eval "def foo(a, b, c, *d); [a, b, c, d]; end"; }.new.foo(1,2,3,4)') {|x| expect(x).to eq([1,2,3,[4]])}
+
+      run('Class.new { eval "def foo; yield 1; end"; }.new.foo{|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a); yield a; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq(1)}
+      run('Class.new { eval "def foo(a, b); yield [a, b]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(a, b, c); yield [a, b, c]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(a, b, c, d); yield [a, b, c, d]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(){|x|x}') {|x| expect(x).to eq([])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3])}
+      run('Class.new { eval "def foo(*a); yield a; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,4])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1){|x|x}') {|x| expect(x).to eq([1,[]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,[2]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,[2,3]])}
+      run('Class.new { eval "def foo(a, *b); yield [a, b]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,[2,3,4]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2){|x|x}') {|x| expect(x).to eq([1,2,[]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,[3]])}
+      run('Class.new { eval "def foo(a, b, *c); yield [a, b, c]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,[3,4]])}
+      run('Class.new { eval "def foo(a, b, c, *d); yield [a, b, c, d]; end"; }.new.foo(1,2,3){|x|x}') {|x| expect(x).to eq([1,2,3,[]])}
+      run('Class.new { eval "def foo(a, b, c, *d); yield [a, b, c, d]; end"; }.new.foo(1,2,3,4){|x|x}') {|x| expect(x).to eq([1,2,3,[4]])}
+    end
+
+    it "calls root package methods with and without block" do
+      run('java') {|x| expect(x).to eq(java)}
+      run('javax') {|x| expect(x).to eq(javax)}
+      run('javafx') {|x| expect(x).to eq(javafx)}
+      run('org') {|x| expect(x).to eq(org)}
+      run('com') {|x| expect(x).to eq(com)}
     end
   end
 end

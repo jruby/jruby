@@ -119,7 +119,7 @@ public class RipperParserBase {
 
     public IRubyObject assignableIdentifier(IRubyObject value) {
         String ident = lexer.getIdent().intern();
-        getCurrentScope().assign(lexer.getPosition(), context.runtime.newSymbol(lexer.getIdent()), null);
+        getCurrentScope().assign(lexer.getRubySourceline(), context.runtime.newSymbol(lexer.getIdent()), null);
         return value;
     }
 
@@ -153,6 +153,10 @@ public class RipperParserBase {
 
     public IRubyObject escape(IRubyObject arg) {
         return arg == null ? context.nil : arg;
+    }
+
+    IRubyObject new_nil_at() {
+        return context.nil;
     }
     
     public IRubyObject formal_argument(IRubyObject identifier) {
@@ -233,6 +237,10 @@ public class RipperParserBase {
     }
     
     public void popCurrentScope() {
+        if (!currentScope.isBlockScope()) {
+            getCmdArgumentState().pop();
+            getConditionState().pop();
+        }
         currentScope = currentScope.getEnclosingScope();
     }
     
@@ -242,7 +250,8 @@ public class RipperParserBase {
     
     public void pushLocalScope() {
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
-        getCmdArgumentState().reset();
+        getCmdArgumentState().push0();
+        getConditionState().push0();
     }
 
     public int getHeredocIndent() {

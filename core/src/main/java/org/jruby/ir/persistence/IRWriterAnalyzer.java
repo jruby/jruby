@@ -8,15 +8,16 @@ package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.RubyEvent;
@@ -29,7 +30,7 @@ import org.jruby.util.ByteList;
  */
 public class IRWriterAnalyzer implements IRWriterEncoder {
     private int currentOffsetId = 0;
-    private final Map<String, Integer> offsetIds = new HashMap<String, Integer>();
+    private final Map<IRScope, Integer> offsetIds = new HashMap();
 
     // Figure out most commonly used operands for eventual creation of an operand pool
     private final Map<Operand, Integer> operandCounts = new HashMap<Operand, Integer>();
@@ -39,6 +40,15 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
         for (Operand operand: instr.getOperands()) {
             increment(operand);
         }
+    }
+
+    @Override
+    public boolean isAnalyzer() {
+        return true;
+    }
+
+    public IRScope getCurrentScope() {
+        return null;
     }
 
     @Override
@@ -55,6 +65,11 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
 
     @Override
     public void encode(RubySymbol value) {
+    }
+
+    @Override
+    public void encodeRaw(RubySymbol value) {
+
     }
 
     @Override
@@ -123,6 +138,10 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
     }
 
     @Override
+    public void encode(EnumSet<IRFlags> value) {
+    }
+
+    @Override
     public void encode(double value) {
     }
 
@@ -144,7 +163,7 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
 
     @Override
     public void startEncodingScopeInstrs(IRScope scope) {
-        offsetIds.put(scope.toString(), currentOffsetId++);
+        offsetIds.put(scope, currentOffsetId++);
     }
 
     @Override
@@ -175,7 +194,7 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
     }
 
     public int getScopeID(IRScope value) {
-        return offsetIds.get(value.toString());
+        return offsetIds.get(value);
     }
 
     public int getScopeCount() {

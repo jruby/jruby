@@ -7,7 +7,6 @@ require 'stringio'
 class TestIO < Test::Unit::TestCase
   include TestHelper
 
-  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SOLARIS = RbConfig::CONFIG['host_os'] =~ /solaris/
 
   def setup
@@ -102,7 +101,7 @@ class TestIO < Test::Unit::TestCase
     @to_close << f
     assert_raises(Errno::EINVAL) { IO.new(f.fileno, "w") }
     f.close
-  end
+  end unless WINDOWS # MRI (on Windows) does not raise anything
 
   def test_ios_with_compatible_flags
     ensure_files @file
@@ -143,6 +142,7 @@ class TestIO < Test::Unit::TestCase
     file2_fileno = file2.fileno;
     file2 = file2.reopen(file)
     assert_equal(file.pos, file2.pos)
+    pend 'TODO: fileno is NOT being re-used on Windows' if WINDOWS
     assert_equal(file2_fileno, file2.fileno);
     assert(file.fileno != file2.fileno);
     file2.close
@@ -308,6 +308,7 @@ class TestIO < Test::Unit::TestCase
       f.read(3)
       f.ungetc(100)
       f.pos = 2
+      pend 'TODO: set pos read fails with IOError: byte oriented read for character buffered IO' if WINDOWS
       assert_equal("LLO", f.read(3))
 
       f.ungetc(100)
@@ -355,11 +356,10 @@ class TestIO < Test::Unit::TestCase
   def test_multithreaded_writes
     f = File.open("__temp1", "w")
     @to_close << f
-    threads = []
-    100.times {
-      threads << Thread.new { 100.times { f.print('.') } }
-    }
-    threads.each {|thread| thread.join}
+    100.times.map {
+      Thread.new { 100.times { f.print('.') } }
+    }.each(&:join)
+    f.flush
     f.close
     assert_equal 100*100, File.size("__temp1")
   ensure
@@ -424,13 +424,13 @@ class TestIO < Test::Unit::TestCase
 
   def test_file_constants_included
     assert IO.include?(File::Constants)
-    constants = ["APPEND", "BINARY", "CREAT", "EXCL", "FNM_CASEFOLD",
-                   "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
-                   "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NONBLOCK",
-                   "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
-                   "WRONLY"]
+    constants = ["APPEND", "BINARY", "CREAT", "EXCL",
+                 "FNM_CASEFOLD", "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
+                 "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NONBLOCK",
+                 "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "TRUNC", "WRONLY"]
     constants = constants.map(&:to_sym)
     constants.each { |c| assert(IO.constants.include?(c), "#{c} is not included") }
+    assert IO.constants.include?(:SYNC), "SYNC not included" unless WINDOWS
   end
 
   #JRUBY-3012

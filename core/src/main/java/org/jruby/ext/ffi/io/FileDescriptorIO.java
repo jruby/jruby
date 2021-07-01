@@ -49,12 +49,6 @@ import java.nio.channels.ByteChannel;
 @JRubyClass(name="FFI::" + FileDescriptorIO.CLASS_NAME, parent="IO")
 public class FileDescriptorIO extends RubyIO {
     public static final String CLASS_NAME = "FileDescriptorIO";
-    private static final class Allocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new FileDescriptorIO(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new Allocator();
-    }
 
     public FileDescriptorIO(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -86,7 +80,7 @@ public class FileDescriptorIO extends RubyIO {
 
     public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getClass("IO"),
-                Allocator.INSTANCE, module);
+                FileDescriptorIO::new, module);
         result.defineAnnotatedMethods(FileDescriptorIO.class);
         result.defineAnnotatedConstants(FileDescriptorIO.class);
 
@@ -101,31 +95,5 @@ public class FileDescriptorIO extends RubyIO {
     @JRubyMethod(name = "wrap", required = 1, meta = true)
     public static RubyIO wrap(ThreadContext context, IRubyObject recv, IRubyObject fd) {
         return new FileDescriptorIO(context.runtime, fd);
-    }
-
-    static class FileDescriptorHelper {
-        static java.lang.reflect.Constructor<java.io.FileDescriptor> CONSTRUCTOR;
-        static {
-            java.lang.reflect.Constructor<java.io.FileDescriptor> constructor;
-            try {
-                constructor = java.io.FileDescriptor.class.getDeclaredConstructor(int.class);
-                constructor.setAccessible(true);
-            } catch (Throwable t) {
-                constructor = null;
-            }
-            CONSTRUCTOR = constructor;
-        }
-
-        public static java.io.FileDescriptor wrap(int fileno) {
-            try {
-                return CONSTRUCTOR != null ? CONSTRUCTOR.newInstance(fileno) : new java.io.FileDescriptor();
-            } catch (IllegalAccessException iae) {
-                return new java.io.FileDescriptor();
-            } catch (InstantiationException ie) {
-                return new java.io.FileDescriptor();
-            } catch (java.lang.reflect.InvocationTargetException ite) {
-                return new java.io.FileDescriptor();
-            }
-        }
     }
 }

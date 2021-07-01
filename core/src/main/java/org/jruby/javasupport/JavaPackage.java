@@ -96,6 +96,10 @@ public class JavaPackage extends RubyModule {
         this.packageName = packageName.toString();
     }
 
+    public String getPackageName() {
+        return packageName;
+    }
+
     // NOTE: name is Ruby name not pkg.name ~ maybe it should be just like with JavaClass?
 
     @JRubyMethod(name = "package_name", alias = "to_s")
@@ -116,7 +120,7 @@ public class JavaPackage extends RubyModule {
     @JRubyMethod(name = "===")
     public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
         // maybe we could handle java.lang === java.lang.reflect as well ?
-        return context.runtime.newBoolean(obj == this || isInstance(obj));
+        return RubyBoolean.newBoolean(context, obj == this || isInstance(obj));
     }
 
     @JRubyMethod(name = "const_missing", required = 1)
@@ -187,8 +191,7 @@ public class JavaPackage extends RubyModule {
 
     RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
         final String fullName = packageRelativeName( name.toString() ).toString();
-        final JavaClass javaClass = JavaClass.forNameVerbose(runtime, fullName);
-        return Java.getProxyClass(runtime, javaClass);
+        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName));
     }
 
     @JRubyMethod(name = "respond_to?")
@@ -214,8 +217,8 @@ public class JavaPackage extends RubyModule {
         */
 
         //if ( ! (mname instanceof RubySymbol) ) mname = context.runtime.newSymbol(name);
-        //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, context.runtime.newBoolean(includePrivate));
-        //return context.runtime.newBoolean(respond.isTrue());
+        //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, RubyBoolean.newBoolean(context, includePrivate));
+        //return RubyBoolean.newBoolean(context, respond.isTrue());
 
         return context.nil; // NOTE: this is wrong - should be true but compatibility first, for now
     }
@@ -243,7 +246,7 @@ public class JavaPackage extends RubyModule {
     }
 
     private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        return context.runtime.newBoolean(BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
+        return RubyBoolean.newBoolean(context, BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
     }
 
     @JRubyMethod(name = "method_missing")
@@ -276,14 +279,14 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod(name = "available?")
     public IRubyObject available_p(ThreadContext context) {
-        return context.runtime.newBoolean(isAvailable());
+        return RubyBoolean.newBoolean(context, isAvailable());
     }
 
     @JRubyMethod(name = "sealed?")
     public IRubyObject sealed_p(ThreadContext context) {
         final Package pkg = Package.getPackage(packageName);
         if ( pkg == null ) return context.nil;
-        return context.runtime.newBoolean(pkg.isSealed());
+        return RubyBoolean.newBoolean(context, pkg.isSealed());
     }
 
     @Override
@@ -306,7 +309,7 @@ public class JavaPackage extends RubyModule {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
             final Ruby runtime = pkg.getRuntime();
-            JavaClass javaClass = JavaClass.forNameVerbose(runtime, subPackageName);
+            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
             return (RubyClass) Java.getProxyClass(runtime, javaClass);
         }
 
@@ -314,7 +317,7 @@ public class JavaPackage extends RubyModule {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
             final Ruby runtime = pkg.getRuntime();
-            JavaClass javaClass = JavaClass.forNameVerbose(runtime, subPackageName);
+            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
             return Java.getInterfaceModule(runtime, javaClass);
         }
 
@@ -374,10 +377,14 @@ public class JavaPackage extends RubyModule {
                 }
             }
 
-            @Override
+            @Deprecated @Override
             public Arity getArity() { return Arity.NO_ARGUMENTS; }
 
+            public Signature getSignature() {
+                return Signature.NO_ARGUMENTS;
+            }
         }
+
         private static String handlesMethod(final String name) {
             // FIXME: We should consider pure-bytelist search here.
             switch (name) {

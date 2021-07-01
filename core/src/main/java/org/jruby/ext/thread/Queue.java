@@ -244,20 +244,24 @@ public class Queue extends RubyObject implements DataType {
         last = head = new Node(null);
     }
 
-    public static void setup(Ruby runtime) {
-        RubyClass cQueue = runtime.getThread().defineClassUnder("Queue", runtime.getObject(), new ObjectAllocator() {
+    public static RubyClass setup(RubyClass threadClass, RubyClass objectClass) {
+        RubyClass cQueue = threadClass.defineClassUnder("Queue", objectClass, Queue::new);
 
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new Queue(runtime, klass);
-            }
-        });
         cQueue.undefineMethod("initialize_copy");
         cQueue.setReifiedClass(Queue.class);
         cQueue.defineAnnotatedMethods(Queue.class);
-        runtime.getObject().setConstant("Queue", cQueue);
 
-        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", runtime.getStopIteration(), runtime.getStopIteration().getAllocator());
-        runtime.getObject().setConstant("ClosedQueueError", cClosedQueueError);
+        objectClass.setConstant("Queue", cQueue);
+
+        return cQueue;
+    }
+
+    public static RubyClass setupError(RubyClass cQueue, RubyClass stopIteration, RubyClass objectClass) {
+        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", stopIteration, stopIteration.getAllocator());
+
+        objectClass.setConstant("ClosedQueueError", cClosedQueueError);
+
+        return cClosedQueueError;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -309,7 +313,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
         initializedCheck();
-        return context.runtime.newBoolean(count.get() == 0);
+        return RubyBoolean.newBoolean(context, count.get() == 0);
     }
 
     @JRubyMethod(name = {"length", "size"})
@@ -378,7 +382,7 @@ public class Queue extends RubyObject implements DataType {
         if (e == null) throw new NullPointerException();
         // Note: convention in all put/takeInternal/etc is to preset local var
         // holding count negative to indicate failure unless set.
-        int c = -1;
+        int c;
         Node node = new Node(e);
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;
@@ -481,7 +485,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "closed?")
     public IRubyObject closed_p(ThreadContext context) {
         initializedCheck();
-        return context.runtime.newBoolean(closed);
+        return RubyBoolean.newBoolean(context, closed);
     }
 
     public synchronized void shutdown() throws InterruptedException {
@@ -602,7 +606,7 @@ public class Queue extends RubyObject implements DataType {
     };
 
     public IRubyObject raiseClosedError(ThreadContext context) {
-        throw context.runtime.newRaiseException(context.runtime.getClass("ClosedQueueError"), "queue closed");
+        throw context.runtime.newRaiseException(context.runtime.getClosedQueueError(), "queue closed");
     }
 
     protected RaiseException createInterruptedError(ThreadContext context, String methodName) {

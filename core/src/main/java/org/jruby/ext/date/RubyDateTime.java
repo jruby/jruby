@@ -48,7 +48,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -56,7 +55,7 @@ import org.jruby.util.ByteList;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.*;
 
 /**
@@ -74,21 +73,14 @@ import java.time.*;
 public class RubyDateTime extends RubyDate {
 
     static RubyClass createDateTimeClass(Ruby runtime, RubyClass Date) {
-        RubyClass DateTime = runtime.defineClass("DateTime", Date, ALLOCATOR);
+        RubyClass DateTime = runtime.defineClass("DateTime", Date, RubyDateTime::new);
         DateTime.setReifiedClass(RubyDateTime.class);
         DateTime.defineAnnotatedMethods(RubyDateTime.class);
         return DateTime;
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyDateTime(runtime, klass, defaultDateTime, 0);
-        }
-    };
-
     protected RubyDateTime(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
+        this(runtime, klass, defaultDateTime);
     }
 
     public RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt) {
@@ -266,8 +258,8 @@ public class RubyDateTime extends RubyDate {
             rest[0] = r0.longValueExact();
             rest[1] = r1.longValueExact();
         } catch (ArithmeticException e) {
-            BigDecimal r = new BigDecimal(r0).divide(new BigDecimal(r1), 18, BigDecimal.ROUND_HALF_UP);
-            r = r.setScale(18, BigDecimal.ROUND_HALF_UP);
+            BigDecimal r = new BigDecimal(r0).divide(new BigDecimal(r1), 18, RoundingMode.HALF_UP);
+            r = r.setScale(18, RoundingMode.HALF_UP);
             rest[0] = r.unscaledValue().longValue();
             rest[1] = (long) Math.pow(10, r.scale());
         }

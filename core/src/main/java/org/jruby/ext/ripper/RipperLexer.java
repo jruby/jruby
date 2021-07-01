@@ -1174,6 +1174,8 @@ public class RipperLexer extends LexingCommon {
                     dispatchScanEvent(tSP);
                     continue;
                 }
+                if (c == ' ') return tSP;
+                if (Character.isWhitespace(c)) return c;
                 pushback(c);
                 return '\\';
             case '%':
@@ -1375,9 +1377,9 @@ public class RipperLexer extends LexingCommon {
             return RipperParser.keyword_do_lambda;
         }
 
-        if (conditionState.isInState()) return RipperParser.keyword_do_cond;
+        if (conditionState.set_p()) return RipperParser.keyword_do_cond;
 
-        if (cmdArgumentState.isInState() && !isLexState(state, EXPR_CMDARG)) {
+        if (cmdArgumentState.set_p() && !isLexState(state, EXPR_CMDARG)) {
             return RipperParser.keyword_do_block;
         }
         if (isLexState(state,  EXPR_BEG|EXPR_ENDARG)) {
@@ -1675,8 +1677,8 @@ public class RipperLexer extends LexingCommon {
         }
 
         setState(EXPR_BEG|EXPR_LABEL);
-        conditionState.stop();
-        cmdArgumentState.stop();
+        conditionState.push0();
+        cmdArgumentState.push0();
         yaccValue = "[";
         return c;
     }
@@ -1688,8 +1690,8 @@ public class RipperLexer extends LexingCommon {
             setState(EXPR_BEG);
             setLeftParenBegin(0);
             parenNest--;
-            conditionState.stop();
-            cmdArgumentState.stop();
+            conditionState.push0();
+            cmdArgumentState.push0();
             return RipperParser.tLAMBEG;
         }
 
@@ -1704,8 +1706,8 @@ public class RipperLexer extends LexingCommon {
             c = RipperParser.tLBRACE;
         }
 
-        conditionState.stop();
-        cmdArgumentState.stop();
+        conditionState.push0();
+        cmdArgumentState.push0();
         setState(EXPR_BEG);
         setState(c == RipperParser.tLBRACE_ARG ? EXPR_BEG : EXPR_BEG|EXPR_LABEL);
         if (c != RipperParser.tLBRACE) commandStart = true;
@@ -1725,8 +1727,8 @@ public class RipperLexer extends LexingCommon {
         }
 
         parenNest++;
-        conditionState.stop();
-        cmdArgumentState.stop();
+        conditionState.push0();
+        cmdArgumentState.push0();
         setState(EXPR_BEG|EXPR_LABEL);
 
         return result;
@@ -1968,26 +1970,28 @@ public class RipperLexer extends LexingCommon {
 
     private int rightBracket() {
         parenNest--;
-        conditionState.restart();
-        cmdArgumentState.restart();
+        conditionState.pop();
+        cmdArgumentState.pop();
         setState(EXPR_END);
         return RipperParser.tRBRACK;
     }
 
     private int rightCurly() {
-        conditionState.restart();
-        cmdArgumentState.restart();
-        setState(EXPR_END);
-        //System.out.println("braceNest: " + braceNest);
-        int tok = braceNest == 0 ? RipperParser.tSTRING_DEND : RipperParser.tRCURLY;
+        if (braceNest <= 0) {
+            return RipperParser.tSTRING_DEND;
+        }
         braceNest--;
-        return tok;
+
+        conditionState.pop();
+        cmdArgumentState.pop();
+        setState(EXPR_END);
+        return RipperParser.tRCURLY;
     }
 
     private int rightParen() {
         parenNest--;
-        conditionState.restart();
-        cmdArgumentState.restart();
+        conditionState.pop();
+        cmdArgumentState.pop();
         setState(EXPR_ENDFN);
         return RipperParser.tRPAREN;
     }
@@ -2316,7 +2320,7 @@ public class RipperLexer extends LexingCommon {
     private int setNumberLiteral(int type, int suffix) {
         if ((suffix & SUFFIX_I) != 0) type = RipperParser.tIMAGINARY;
 
-        setState(EXPR_END|EXPR_ENDARG);
+        setState(EXPR_END);
         return type;
     }
 

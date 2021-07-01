@@ -38,6 +38,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -50,27 +51,28 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
 
-import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.util.Numeric.*;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.util.Numeric.f_gcd;
+import static org.jruby.util.Numeric.f_lcm;
 
 /** Implementation of the Integer class.
  *
  * @author  jpetersen
  */
-@JRubyClass(name="Integer", parent="Numeric")
+@JRubyClass(name="Integer", parent="Numeric", overrides = {RubyFixnum.class, RubyBignum.class})
 public abstract class RubyInteger extends RubyNumeric {
 
     public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setInteger(integer);
 
         integer.setClassIndex(ClassIndex.INTEGER);
         integer.setReifiedClass(RubyInteger.class);
@@ -120,12 +122,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        return context.runtime.newBoolean(isNegative());
+        return RubyBoolean.newBoolean(context, isNegative());
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        return context.runtime.newBoolean(isPositive());
+        return RubyBoolean.newBoolean(context, isPositive());
     }
 
     @Override
@@ -212,7 +214,8 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         }
-        return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, uptoSize(context, this, to));
+        // "from" is the same as "this", so we take advantage of that to reduce lambda size
+        return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, RubyInteger::uptoSize);
     }
 
     static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
@@ -238,7 +241,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static void duckUpto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
+    static void duckUpto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject i = from;
         RubyFixnum one = RubyFixnum.one(runtime);
@@ -251,13 +254,13 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static SizeFn uptoSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return intervalStepSize(context, from, to, RubyFixnum.one(context.runtime), false);
-            }
-        };
+    /**
+     * An upto size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject uptoSize(ThreadContext context, IRubyObject from, IRubyObject[] args) {
+        return intervalStepSize(context, from, args[0], RubyFixnum.one(context.runtime), false);
     }
 
     /** int_downto
@@ -273,7 +276,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         }
-        return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, downToSize(context, this, to));
+        return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, RubyInteger::downtoSize);
     }
 
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
@@ -311,13 +314,13 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static SizeFn downToSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return intervalStepSize(context, from, to, RubyFixnum.newFixnum(context.runtime, -1), false);
-            }
-        };
+    /**
+     * A downto size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject downtoSize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return intervalStepSize(context, recv, args[0], RubyFixnum.newFixnum(context.runtime, -1), false);
     }
 
     @JRubyMethod
@@ -335,25 +338,23 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
+            return enumeratorizeWithSize(context, this, "times", RubyInteger::timesSize);
         }
     }
 
-    protected SizeFn timesSizeFn(final Ruby runtime) {
-        final RubyInteger self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                RubyFixnum zero = RubyFixnum.zero(runtime);
-                ThreadContext context = runtime.getCurrentContext();
-                if ((self instanceof RubyFixnum && getLongValue() < 0)
-                        || sites(context).op_lt.call(context, self, self, zero).isTrue()) {
-                    return zero;
-                }
+    /**
+     * A times size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    protected static IRubyObject timesSize(ThreadContext context, RubyInteger recv, IRubyObject[] args) {
+        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+        if ((recv instanceof RubyFixnum && recv.getLongValue() < 0)
+                || sites(context).op_lt.call(context, recv, recv, zero).isTrue()) {
+            return zero;
+        }
 
-                return self;
-            }
-        };
+        return recv;
     }
 
     /** int_succ
@@ -363,6 +364,8 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject succ(ThreadContext context) {
         if (this instanceof RubyFixnum) {
             return ((RubyFixnum) this).op_plus_one(context);
+        } else if (this instanceof RubyBignum) {
+            return ((RubyBignum) this).op_plus(context, 1);
         } else {
             return numFuncall(context, this, sites(context).op_plus, RubyFixnum.one(context.runtime));
         }
@@ -380,8 +383,53 @@ public abstract class RubyInteger extends RubyNumeric {
     @Deprecated
     public static final ByteList[] SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
 
-    static ByteList singleCharByteList(final byte index) {
+    public static ByteList singleCharByteList(final byte index) {
         return SINGLE_CHAR_BYTELISTS[index & 0xFF];
+    }
+
+    static final ByteList[] SINGLE_CHAR_UTF8_BYTELISTS;
+    static {
+        SINGLE_CHAR_UTF8_BYTELISTS = new ByteList[128];
+        for (int i = 0; i < 128; i++) {
+            ByteList bytes = new ByteList(new byte[] { (byte) i }, false);
+            SINGLE_CHAR_UTF8_BYTELISTS[i] = bytes;
+            bytes.setEncoding(UTF8Encoding.INSTANCE);
+        }
+    }
+
+    /**
+     * Return a low ASCII single-character bytelist with UTF-8 encoding, using cached values.
+     *
+     * The resulting ByteList should not be modified.
+     *
+     * @param index the byte
+     * @return a cached single-character ByteList
+     */
+    public static ByteList singleCharUTF8ByteList(final byte index) {
+        return SINGLE_CHAR_UTF8_BYTELISTS[index & 0xFF];
+    }
+
+    /**
+     * Return a single-character ByteList, possibly cached, corresponding to the given byte and encoding.
+     *
+     * Note this will return high ASCII non-UTF8 characters as ASCII-8BIT, rather than US-ASCII.
+     *
+     * @param b the byte
+     * @param enc the encoding
+     * @return a new single-character RubyString
+     */
+    public static RubyString singleCharString(Ruby runtime, byte b, RubyClass meta, Encoding enc) {
+        ByteList bytes;
+        if (enc == USASCIIEncoding.INSTANCE) {
+            bytes = singleCharByteList(b);
+        } else if ((b & 0xFF) < 0x80 && enc == RubyString.UTF8) {
+            bytes = singleCharUTF8ByteList(b);
+        } else {
+            return new RubyString(runtime, meta, new ByteList(new byte[]{b}, enc));
+        }
+
+        // use shared for cached bytelists
+        return RubyString.newStringShared(runtime, meta, bytes);
     }
 
     /** int_chr
@@ -526,7 +574,7 @@ public abstract class RubyInteger extends RubyNumeric {
             return RubyFixnum.zero(runtime);
         }
 
-        f = int_pow(context, 10, -ndigits);
+        f = Numeric.int_pow(context, 10, -ndigits);
         if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
             long x = fix2long(this), y = fix2long(f);
             boolean neg = x < 0;

@@ -140,7 +140,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2, block);
         }
 
-        return method.call(context, self, entry.sourceModule, methodName, arg0, arg1, arg2);
+        return method.call(context, self, entry.sourceModule, methodName, arg0, arg1, arg2, block);
     }
 
     protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {

@@ -52,11 +52,6 @@ public class CallBlock extends BlockBody {
         return new Block(body, binding);
     }
 
-    @Deprecated
-    public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
-        return newCallClosure(self, imClass, Signature.from(arity), callback, context);
-    }
-
     private CallBlock(ThreadContext context, Signature signature, BlockCallback callback) {
         super(signature);
         this.callback = callback;
@@ -98,7 +93,7 @@ public class CallBlock extends BlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
+        return callback.call(context, adjustArgs(block, args));
     }
 
     public StaticScope getStaticScope() {

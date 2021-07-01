@@ -7,6 +7,7 @@ exclude :test_callcc_reenter, "needs investigation"
 exclude :test_eql, "needs investigation"
 exclude :test_fetch_error, "needs investigation"
 exclude :test_inverse_hash, "needs investigation"
+exclude :test_tainted_string_key, "taint is deprecated"
 
 # These are all excluded as a group because we do not generally randomize hashes.
 # We may want or need to follow MRI lead here if we are concerned about the other hashDOS vectors.

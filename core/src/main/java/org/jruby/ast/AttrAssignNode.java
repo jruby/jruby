@@ -34,19 +34,19 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Node that represents an assignment of either an array element or attribute.
  */
 public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     protected final Node receiverNode;
-    private RubySymbol name;
+    private final RubySymbol name;
     private Node argsNode;
+    private final Node blockNode;
     private final boolean isLazy;
 
-    public AttrAssignNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode, boolean isLazy) {
-        super(position, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
+    public AttrAssignNode(int line, Node receiverNode, RubySymbol name, Node argsNode, Node blockNode, boolean isLazy) {
+        super(line, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
 
         assert receiverNode != null : "receiverNode is not null";
         // TODO: At least ParserSupport.attrset passes argsNode as null.  ImplicitNil is wrong magic for
@@ -57,6 +57,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         this.receiverNode = receiverNode;
         this.name = name;
         this.argsNode = argsNode;
+        this.blockNode = blockNode;
         this.isLazy = isLazy;
     }
 
@@ -97,6 +98,10 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      */
     public Node getArgsNode() {
         return argsNode;
+    }
+
+    public Node getBlockNode() {
+        return blockNode;
     }
 
     /**

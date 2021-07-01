@@ -12,6 +12,7 @@ module Gem
       ruby_path
     end
 
+    private
     def jarred_path?(p)
       p =~ /^(file|uri|jar|classpath):/
     end
@@ -19,8 +20,10 @@ module Gem
 
   def self.platform_defaults
     return {
-        'install' => '--no-rdoc --no-ri --env-shebang',
-        'update' => '--no-rdoc --no-ri --env-shebang'
+        'install' => '--env-shebang',
+        'update' => '--env-shebang',
+        'setup' => '--env-shebang',
+        'pristine' => '--env-shebang'
     }
   end
 
@@ -31,28 +34,16 @@ module Gem
   # to preserve the old location: lib/ruby/gems.
   def self.default_dir
     dir = RbConfig::CONFIG["default_gem_home"]
-    dir ||= File.join(ConfigMap[:libdir], 'ruby', 'gems', 'shared')
+    dir ||= File.join(RbConfig::CONFIG['libdir'], 'ruby', 'gems', 'shared')
     dir
   end
 
   # Default locations for RubyGems' .rb and bin files
   def self.default_rubygems_dirs
     [
-        File.join(ConfigMap[:libdir], 'ruby', 'stdlib'),
-        ConfigMap[:bindir]
+        File.join(RbConfig::CONFIG['libdir'], 'ruby', 'stdlib'),
+        RbConfig::CONFIG['bindir']
     ]
-  end
-
-  ##
-  # Is this a windows platform?
-  #
-  # JRuby: Look in CONFIG['host_os'] as well.
-  def self.win_platform?
-    if @@win_platform.nil? then
-      @@win_platform = !!WIN_PATTERNS.find { |r| RUBY_PLATFORM =~ r || RbConfig::CONFIG["host_os"] =~ r }
-    end
-
-    @@win_platform
   end
 
   # Allow specifying jar and classpath type gem path entries
@@ -76,22 +67,14 @@ class Gem::Specification
       }.compact + spec_directories_from_classpath
     end
 
-    def add_dir dir
-      new_dirs = [ dir ] + (@@dirs||[]).collect { |d| d.sub(/.specifications/, '') }
-      self.reset
-
-      # ugh
-      @@dirs = new_dirs.map { |d| File.join d, "specifications" }
-    end
-
     # Replace existing dirs=
     def dirs= dirs
       self.reset
 
-      # ugh
       @@dirs = Array(dirs).map { |d| File.join d, "specifications" } + spec_directories_from_classpath
     end
 
+    private
     def spec_directories_from_classpath
       stuff = [ 'uri:classloader://specifications' ]
       JRuby::Util.extra_gem_paths.each do |path|
@@ -105,14 +88,6 @@ class Gem::Specification
   end
 end
 ## END JAR FILES
-
-if (Gem::win_platform?)
-  module Process
-    def self.uid
-      0
-    end
-  end
-end
 
 # Check for jruby_native and load it if present. jruby_native
 # indicates the native launcher is installed and will override

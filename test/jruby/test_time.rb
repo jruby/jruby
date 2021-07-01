@@ -213,4 +213,10 @@ class TestTimeNilOps < Test::Unit::TestCase
     end
   end
 
+  def test_strptime_type_error
+    assert_raise(TypeError) { Time.strptime(0, '%Y-%m-%d') }
+    assert_raise(TypeError) { Time.strptime(nil, '%Y-%m-%d') }
+    assert_raise(TypeError) { Time.strptime('2020-01-01', 0) }
+    assert_raise(TypeError) { Time.strptime('2020-01-01', nil) }
+  end
 end

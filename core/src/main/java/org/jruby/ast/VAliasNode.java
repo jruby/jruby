@@ -36,19 +36,16 @@ import java.util.List;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /** 
  * Represents an alias of a global variable.
  */
 public class VAliasNode extends Node {
-    private RubySymbol oldName;
-    private RubySymbol newName;
+    private final RubySymbol oldName;
+    private final RubySymbol newName;
 
-    public VAliasNode(ISourcePosition position, RubySymbol newName, RubySymbol oldName) {
-        super(position, false);
+    public VAliasNode(int line, RubySymbol newName, RubySymbol oldName) {
+        super(line, false);
         this.oldName = oldName;
         this.newName = newName;
     }

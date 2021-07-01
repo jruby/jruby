@@ -1,0 +1,110 @@
+name: JRuby CI
+
+on: [push, pull_request]
+
+env:
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1'
+
+jobs:
+
+  # Maven test suites that pass on both Java 8 and 11
+  maven-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        java-version: [8, 11]
+      fail-fast: false
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: ${{ matrix.java-version }}
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: main profile
+        run: tool/maven-ci-script.sh
+        env: 
+          PHASE: 'package -Pmain'
+      - name: dist profile
+        run: tool/maven-ci-script.sh
+        env: 
+          PHASE: 'package -Pdist'
+      - name: complete profile
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package -Pcomplete'
+      - name: osgi profile
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package -Posgi'
+      - name: main extended
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package -Pmain,test -Dinvoker.test=extended'
+      - name: test profile
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package -Ptest'
+
+  # Maven test suites that don't pass on Java 11
+  maven-test-8:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java 8
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: 8
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: jruby-jars profile
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package -Pjruby-jars'
+      - name: jruby-jars extended
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package -Pjruby-jars,test -Dinvoker.test=extended'
+
+  dependency-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java 8
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: 8
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: dependency convergence
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'install -Pmain -Dinvoker.test=GH-6081*'
+

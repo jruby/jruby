@@ -140,7 +140,7 @@ public abstract class MethodDescriptor<T> {
             }
 
             if (actualRequired != 0) {
-                throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported");
+                throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported: " + methodObject);
             }
         }
 

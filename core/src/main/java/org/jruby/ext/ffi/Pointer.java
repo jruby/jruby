@@ -24,7 +24,7 @@ public class Pointer extends AbstractMemory {
     public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
         RubyClass pointerClass = module.defineClassUnder("Pointer",
                 module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(Pointer.class) : PointerAllocator.INSTANCE);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(Pointer.class) : Pointer::new);
 
         pointerClass.defineAnnotatedMethods(Pointer.class);
         pointerClass.defineAnnotatedConstants(Pointer.class);
@@ -46,14 +46,6 @@ public class Pointer extends AbstractMemory {
         runtime.getNilClass().addMethod("to_ptr", new NilToPointerMethod(runtime.getNilClass(), nullPointer, "to_ptr"));
 
         return pointerClass;
-    }
-
-    private static final class PointerAllocator implements ObjectAllocator {
-        static final ObjectAllocator INSTANCE = new PointerAllocator();
-
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            return new Pointer(runtime, klazz);
-        }
     }
 
     public static final Pointer getNull(Ruby runtime) {
@@ -142,7 +134,7 @@ public class Pointer extends AbstractMemory {
      */
     @JRubyMethod(name = "null?")
     public IRubyObject null_p(ThreadContext context) {
-        return context.runtime.newBoolean(getMemoryIO().isNull());
+        return RubyBoolean.newBoolean(context, getMemoryIO().isNull());
     }
 
 
@@ -172,7 +164,7 @@ public class Pointer extends AbstractMemory {
 
     @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean(this == obj
+        return RubyBoolean.newBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()
                 || (obj instanceof Pointer && ((Pointer) obj).getAddress() == getAddress()));
     }

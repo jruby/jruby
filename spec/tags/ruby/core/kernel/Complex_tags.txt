@@ -1,1 +1,0 @@
-fails:Kernel.Complex() when passed a single non-Numeric coerces the passed argument using #to_c

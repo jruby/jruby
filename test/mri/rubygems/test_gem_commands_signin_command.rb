@@ -48,7 +48,7 @@ class TestGemCommandsSigninCommand < Gem::TestCase
 
     assert_equal credentials[:rubygems_api_key], api_key
 
-    assert_equal credentials[host], nil
+    assert_nil credentials[host]
   end
 
   def test_execute_with_host_supplied
@@ -74,7 +74,7 @@ class TestGemCommandsSigninCommand < Gem::TestCase
 
   # Utility method to capture IO/UI within the block passed
 
-  def util_capture ui_stub = nil, host = nil, api_key = nil
+  def util_capture(ui_stub = nil, host = nil, api_key = nil)
     api_key ||= 'a5fdbb6ba150cbb83aad2bb2fede64cf040453903'
     response  = [api_key, 200, 'OK']
     email     = 'you@example.com'

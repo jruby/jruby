@@ -44,6 +44,8 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyContinuation;
+import org.jruby.RubyMatchData;
+import org.jruby.RubyProc;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -54,13 +56,11 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.JIT;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
-import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -102,6 +102,10 @@ public final class ThreadContext {
     public final RubyBoolean tru;
     public final RubyBoolean fals;
     public final RuntimeCache runtimeCache;
+
+    // Thread#set_trace_func for specific threads events.  We need this because successive
+    // Thread.set_trace_funcs will end up replacing the current one (as opposed to add_trace_func).
+    private Ruby.CallTraceFuncHook traceFuncHook = null;
 
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
@@ -158,7 +162,11 @@ public final class ThreadContext {
     private static boolean tryPreferredPRNG = true;
     private static boolean trySHA1PRNG = true;
 
+    private RubyModule privateConstantReference;
+
     public final JavaSites sites;
+
+    private RubyMatchData matchData;
 
     @SuppressWarnings("deprecation")
     public SecureRandom getSecureRandom() {
@@ -556,12 +564,40 @@ public final class ThreadContext {
     }
 
     /**
-     * Set the $~ (backref) "global" to the given value.
+     * Set the $~ (backref) "global" to nil.
+     *
+     * @return nil
+     */
+    public IRubyObject clearBackRef() {
+        return getCurrentFrame().setBackRef(nil);
+    }
+
+    /**
+     * Update the current frame's backref using the current thread-local match, or clear it if that match is null.
+     *
+     * @return The current match, or nil
+     */
+    public IRubyObject updateBackref() {
+        RubyMatchData match = matchData;
+
+        if (match == null) {
+            return clearBackRef();
+        }
+
+        match.use();
+
+        return getCurrentFrame().setBackRef(match);
+    }
+
+    /**
+     * Set the $~ (backref) "global" to the given RubyMatchData value. The value will be marked as "in use" since it
+     * can now be seen across threads that share the current frame.
      *
      * @param match the value to set
      * @return the value passed in
      */
-    public IRubyObject setBackRef(IRubyObject match) {
+    public IRubyObject setBackRef(RubyMatchData match) {
+        match.use();
         return getCurrentFrame().setBackRef(match);
     }
 
@@ -703,12 +739,6 @@ public final class ThreadContext {
         BacktraceElement b = backtrace[backtraceIndex];
         b.filename = file;
         b.line = line;
-    }
-
-    public void setFileAndLine(ISourcePosition position) {
-        BacktraceElement b = backtrace[backtraceIndex];
-        b.filename = position.getFile();
-        b.line = position.getLine();
     }
 
     public Visibility getCurrentVisibility() {
@@ -911,17 +941,6 @@ public final class ThreadContext {
         pushFrame();
         getCurrentFrame().setSelf(self);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
-    }
-
-    public void preBsfApply(String[] names) {
-        // FIXME: I think we need these pushed somewhere?
-        StaticScope staticScope = runtime.getStaticScopeFactory().newLocalScope(null);
-        staticScope.setVariables(names);
-        pushFrame();
-    }
-
-    public void postBsfApply() {
-        popFrame();
     }
 
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block,
@@ -1234,20 +1253,64 @@ public final class ThreadContext {
     }
 
     public void setExceptionRequiresBacktrace(boolean exceptionRequiresBacktrace) {
+        if (runtime.isDebug()) return; // leave true default
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
     }
 
     @JIT
     public void exceptionBacktraceOn() {
-        this.exceptionRequiresBacktrace = true;
+        setExceptionRequiresBacktrace(true);
     }
 
     @JIT
     public void exceptionBacktraceOff() {
-        this.exceptionRequiresBacktrace = false;
+        setExceptionRequiresBacktrace(false);
     }
 
     private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;
+
+    // Thread#set_trace_func of nil will not only remove the one via set_trace_func but also any which
+    // were added via add_trace_func.
+    public IRubyObject clearThreadTraceFunctions() {
+        // We called Thread#set_trace_func.  Remove it here since all thread trace funcs are going away.
+        if (traceFuncHook != null) traceFuncHook = null;
+
+        runtime.removeAllCallEventHooksFor(this);
+
+        return nil;
+    }
+
+    public IRubyObject addThreadTraceFunction(IRubyObject trace_func, boolean useContextHook) {
+        if (!(trace_func instanceof RubyProc)) throw runtime.newTypeError("trace_func needs to be Proc.");
+
+        Ruby.CallTraceFuncHook hook;
+
+        if (useContextHook) {
+            hook = traceFuncHook;
+            if (hook == null) {
+                hook = new Ruby.CallTraceFuncHook(this);
+                traceFuncHook = hook;
+            }
+        } else {
+            hook = new Ruby.CallTraceFuncHook(this);
+        }
+        runtime.setTraceFunction(hook, (RubyProc) trace_func);
+
+        return trace_func;
+    }
+
+
+    public IRubyObject setThreadTraceFunction(IRubyObject trace_func) {
+        return addThreadTraceFunction(trace_func, true);
+    }
+
+    public void setPrivateConstantReference(RubyModule privateConstantReference) {
+        this.privateConstantReference = privateConstantReference;
+    }
+
+    public RubyModule getPrivateConstantReference() {
+        return privateConstantReference;
+    }
 
     private static class RecursiveError extends Error implements Unrescuable {
         public RecursiveError(Object tag) {
@@ -1339,18 +1402,52 @@ public final class ThreadContext {
         return encodingHolder;
     }
 
-    @Deprecated
-    public void setFile(String file) {
-        backtrace[backtraceIndex].filename = file;
+    /**
+     * Set the thread-local MatchData specific to this context. This is different from the frame backref since frames
+     * may be shared by several executing contexts at once (see jruby/jruby#4868).
+     *
+     * @param localMatch the new thread-local MatchData or null
+     */
+    public void setLocalMatch(RubyMatchData localMatch) {
+        matchData = localMatch;
+    }
+
+    /**
+     * Set the thread-local MatchData specific to this context to null.
+     *
+     * @see #setLocalMatch(RubyMatchData)
+     */
+    public void clearLocalMatch() {
+        matchData = null;
+    }
+
+    /**
+     * Get the thread-local MatchData specific to this context. This is different from the frame backref since frames
+     * may be shared by several executing contexts at once (see jruby/jruby#4868).
+     *
+     * @return the current thread-local MatchData, or null if none
+     */
+    public RubyMatchData getLocalMatch() {
+        return matchData;
+    }
+
+    /**
+     * Get the thread-local MatchData specific to this context or nil if none.
+     *
+     * @see #getLocalMatch()
+     *
+     * @return the current thread-local MatchData, or nil if none
+     */
+    public IRubyObject getLocalMatchOrNil() {
+        RubyMatchData matchData = this.matchData;
+        if (matchData != null) return matchData;
+        return nil;
     }
 
     @Deprecated
-    private org.jruby.util.RubyDateFormat dateFormat;
+    public IRubyObject setBackRef(IRubyObject match) {
+        if (match.isNil()) return clearBackRef();
 
-    @Deprecated
-    public org.jruby.util.RubyDateFormat getRubyDateFormat() {
-        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US);
-
-        return dateFormat;
+        return setBackRef((RubyMatchData) match);
     }
 }

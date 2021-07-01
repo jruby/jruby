@@ -15,15 +15,15 @@ public abstract class SecurityHelper {
 
     private static final boolean JAVA9;
     static {
-        boolean versionClassFound;
+        boolean moduleClassFound;
         try {
-            Class.forName("java.lang.Runtime.Version");
-            versionClassFound = true;
+            Class.forName("java.lang.Module");
+            moduleClassFound = true;
         }
         catch (Exception notFound) {
-            versionClassFound = false;
+            moduleClassFound = false;
         }
-        JAVA9 = versionClassFound;
+        JAVA9 = moduleClassFound;
     }
 
     // attempt to enable unlimited-strength crypto on OracleJDK

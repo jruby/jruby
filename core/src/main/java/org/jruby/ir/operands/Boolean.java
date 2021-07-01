@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubyBoolean;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -21,7 +22,7 @@ public class Boolean extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.runtime.newBoolean(isTrue());
+        return RubyBoolean.newBoolean(context, isTrue());
     }
 
     public boolean isTrue()  {

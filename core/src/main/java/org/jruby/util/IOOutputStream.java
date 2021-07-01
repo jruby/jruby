@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
 
@@ -52,7 +53,8 @@ import org.jruby.runtime.MethodIndex;
  */
 public class IOOutputStream extends OutputStream {
     private final IRubyObject io;
-    private final OutputStream out;
+    private final RubyIO realIO;
+    private final Ruby runtime;
     private final CallSite writeAdapter;
     private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
     private final Encoding encoding;
@@ -64,10 +66,12 @@ public class IOOutputStream extends OutputStream {
      */
     public IOOutputStream(final IRubyObject io, Encoding encoding, boolean checkAppend, boolean verifyCanWrite) {
         this.io = io;
-        this.out = ( io instanceof RubyIO && !((RubyIO) io).isClosed() &&
-                ((RubyIO) io).isBuiltin("write") ) ?
-                    ((RubyIO) io).getOutStream() : null;
-        if (out == null || verifyCanWrite) {
+        this.runtime = io.getRuntime();
+
+        // If we can get a real IO from the object, we can do fast writes
+        RubyIO realIO = this.realIO = getRealIO(io);
+
+        if (realIO == null || verifyCanWrite) {
             final String site;
             if (io.respondsTo("write")) {
                 site = "write";
@@ -86,7 +90,28 @@ public class IOOutputStream extends OutputStream {
         }
         this.encoding = encoding;
     }
-    
+
+    protected RubyIO getRealIO(IRubyObject io) {
+        RubyIO realIO = null;
+        if (io instanceof RubyIO) {
+            RubyIO tmpIO = (RubyIO) io;
+            if (fastWritable(tmpIO)) {
+                tmpIO = tmpIO.GetWriteIO();
+
+                // recheck write IO for IOness
+                if (tmpIO == io || fastWritable(tmpIO)) {
+                    realIO = tmpIO;
+                }
+            }
+        }
+        return realIO;
+    }
+
+    protected boolean fastWritable(RubyIO io) {
+        return !io.isClosed() &&
+                io.isBuiltin("write");
+    }
+
     public IOOutputStream(final IRubyObject io, boolean checkAppend, boolean verifyCanWrite) {
         this(io, ASCIIEncoding.INSTANCE, checkAppend, verifyCanWrite);
     }    
@@ -106,12 +131,14 @@ public class IOOutputStream extends OutputStream {
 
     @Override
     public void write(final int bite) throws IOException {
-        if (out != null) {
-            out.write(bite);
+        ThreadContext context = runtime.getCurrentContext();
+
+        RubyIO realIO = this.realIO;
+        if (realIO != null) {
+            realIO.write(context, bite);
         } else {
-            final Ruby runtime = io.getRuntime();
-            writeAdapter.call(runtime.getCurrentContext(), io, io,
-                    RubyString.newStringLight(runtime, new ByteList(new byte[] { (byte) bite }, encoding, false)));
+            IRubyObject io = this.io;
+            writeAdapter.call(context, io, io, RubyString.newStringShared(runtime, new ByteList(new byte[]{(byte) bite}, encoding, false)));
         }
     }
 
@@ -122,21 +149,29 @@ public class IOOutputStream extends OutputStream {
 
     @Override
     public void write(final byte[] b,final int off, final int len) throws IOException {
-        if (out != null) {
-            out.write(b, off, len);
+        ThreadContext context = runtime.getCurrentContext();
+
+        RubyIO realIO = this.realIO;
+        if (realIO != null) {
+            realIO.write(context, b, off, len, encoding);
         } else {
-            final Ruby runtime = io.getRuntime();
-            writeAdapter.call(runtime.getCurrentContext(), io, io,
-                    RubyString.newStringLight(runtime, new ByteList(b, off, len, encoding, false)));
+            IRubyObject io = this.io;
+            writeAdapter.call(context, io, io, RubyString.newStringLight(runtime, new ByteList(b, off, len, encoding, false)));
         }
     }
     
     @Override
     public void close() throws IOException {
-        if (out != null) {
-            out.close();
-        } else if (io.respondsTo("close")) {
-            closeAdapter.call(io.getRuntime().getCurrentContext(), io, io);
+        ThreadContext context = runtime.getCurrentContext();
+
+        RubyIO realIO = this.realIO;
+        if (realIO != null) {
+            realIO.close(context);
+        } else {
+            IRubyObject io = this.io;
+            if (io.respondsTo("close")) {
+                closeAdapter.call(context, io, io);
+            }
         }
     }
 }

@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.GlobalVariable;
@@ -14,6 +13,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.EnumSet;
 
 public class GetGlobalVariableInstr extends OneOperandResultBaseInstr  implements FixedArityInstr {
     public GetGlobalVariableInstr(Variable dest, RubySymbol gvarName) {
@@ -28,15 +29,15 @@ public class GetGlobalVariableInstr extends OneOperandResultBaseInstr  implement
         return (GlobalVariable) getOperand1();
     }
 
-    public boolean computeScopeFlags(IRScope scope) {
+    public boolean computeScopeFlags(EnumSet<IRFlags> flags) {
         String name = getTarget().getId();
 
         if (name.equals("$_") || name.equals("$LAST_READ_LINE")) {
-            scope.getFlags().add(IRFlags.REQUIRES_LASTLINE);
+            flags.add(IRFlags.REQUIRES_LASTLINE);
         } else if (name.equals("$~") || name.equals("$`") || name.equals("$'") ||
             name.equals("$+") || name.equals("$LAST_MATCH_INFO") ||
             name.equals("$PREMATCH") || name.equals("$POSTMATCH") || name.equals("$LAST_PAREN_MATCH")) {
-            scope.getFlags().add(IRFlags.REQUIRES_BACKREF);
+            flags.add(IRFlags.REQUIRES_BACKREF);
             return true;
         }
 

@@ -32,6 +32,24 @@ class Proc
     Proc.__make_curry_proc__(self, [], curried_arity || arity)
   end
 
+  # From https://github.com/marcandre/backports, MIT license
+  def <<(g)
+    if lambda?
+      lambda { |*args, &blk| call(g.call(*args, &blk)) }
+    else
+      proc { |*args, &blk| call(g.call(*args, &blk)) }
+    end
+  end
+
+  # From https://github.com/marcandre/backports, MIT license
+  def >>(g)
+    if lambda?
+      lambda { |*args, &blk| g.call(call(*args, &blk)) }
+    else
+      proc { |*args, &blk| g.call(call(*args, &blk)) }
+    end
+  end
+
   # Create a singleton class based on Proc that re-defines these methods but
   # otherwise looks just like Proc in every way. This allows us to override
   # the methods with different behavior without constructing a singleton every
@@ -70,7 +88,7 @@ class Proc
     end
 
     # Replace the curried proc's class with our prototype singleton class
-    JRuby.send(:set_meta_class, f, Curried)
+    JRuby::Util.send(:set_meta_class, f, Curried)
 
     f
   end

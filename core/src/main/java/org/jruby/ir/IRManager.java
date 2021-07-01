@@ -13,9 +13,11 @@ import org.jruby.ast.IScopingNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.*;
@@ -40,7 +42,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 
 public class IRManager {
@@ -49,9 +50,9 @@ public class IRManager {
     public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,DeadCodeElimination,OptimizeDynScopesPass,OptimizeDelegationPass,AddCallProtocolInstructions,AddMissingInitsPass";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
     
-    public static boolean IR_INLINER = Options.IR_INLINER.load();
-    public static int IR_INLINER_THRESHOLD = Options.IR_INLINER_THRESHOLD.load();
-    public static boolean IR_INLINER_VERBOSE = Options.IR_INLINER_VERBOSE.load();
+    public static final boolean IR_INLINER = Options.IR_INLINER.load();
+    public static final int IR_INLINER_THRESHOLD = Options.IR_INLINER_THRESHOLD.load();
+    public static final boolean IR_INLINER_VERBOSE = Options.IR_INLINER_VERBOSE.load();
 
     private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
     private final CompilerPass optimizeDynScopesPass = new OptimizeDynScopesPass();
@@ -69,22 +70,19 @@ public class IRManager {
     public final ToggleBacktraceInstr needsNoBacktrace = new ToggleBacktraceInstr(false);
 
     // Listeners for debugging and testing of IR
-    private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
-    private CompilerPassListener defaultListener = new BasicCompilerPassListener();
+    private final Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
+    private final CompilerPassListener defaultListener = new BasicCompilerPassListener();
 
     private InstructionsListener instrsListener = null;
     private IRScopeListener irScopeListener = null;
 
     // FIXME: Eventually make these attrs into either a) set b) part of state machine
-    private List<CompilerPass> compilerPasses;
-    private List<CompilerPass> inliningCompilerPasses;
-    private List<CompilerPass> jitPasses;
-    private List<CompilerPass> safePasses;
+    private final List<CompilerPass> compilerPasses;
+    private final List<CompilerPass> inliningCompilerPasses;
+    private final List<CompilerPass> jitPasses;
+    private final List<CompilerPass> safePasses;
     private final RubyInstanceConfig config;
     public final Ruby runtime;
-
-    // If true then code will not execute (see ir/ast tool)
-    private boolean dryRun = false;
 
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
@@ -100,14 +98,6 @@ public class IRManager {
 
     public Ruby getRuntime() {
         return runtime;
-    }
-
-    public boolean isDryRun() {
-        return dryRun;
-    }
-
-    public void setDryRun(boolean value) {
-        this.dryRun = value;
     }
 
     public Nil getNil() {
@@ -140,7 +130,7 @@ public class IRManager {
 
     public static CompilerPassScheduler schedulePasses(final List<CompilerPass> passes) {
         CompilerPassScheduler scheduler = new CompilerPassScheduler() {
-            private Iterator<CompilerPass> iterator;
+            private final Iterator<CompilerPass> iterator;
             {
                 this.iterator = passes.iterator();
             }
@@ -221,8 +211,8 @@ public class IRManager {
         }
     }
 
-    private static int CLOSURE_PREFIX_CACHE_SIZE = 300; // arbtrary.  one library in rails 6 uses over 270 in one scope...
-    private String[] closurePrefixCache = new String[CLOSURE_PREFIX_CACHE_SIZE];
+    private static final int CLOSURE_PREFIX_CACHE_SIZE = 300; // arbtrary.  one library in rails 6 uses over 270 in one scope...
+    private final String[] closurePrefixCache = new String[CLOSURE_PREFIX_CACHE_SIZE];
 
     public String getClosurePrefix(int closureId) {
         if (closureId >= CLOSURE_PREFIX_CACHE_SIZE) {
@@ -240,8 +230,8 @@ public class IRManager {
     }
 
 
-    private static int FIXNUM_CACHE_HALF_SIZE = 16384;
-    private Fixnum fixnums[] = new Fixnum[2 * FIXNUM_CACHE_HALF_SIZE];
+    private static final int FIXNUM_CACHE_HALF_SIZE = 16384;
+    private final Fixnum[] fixnums = new Fixnum[2 * FIXNUM_CACHE_HALF_SIZE];
 
     // Fixnum operand caches end up providing twice the value since it will share the same instance of
     // the same logical fixnum, but since immutable literals cache the actual RubyFixnum they end up
@@ -270,7 +260,9 @@ public class IRManager {
     public LineNumberInstr newLineNumber(int line) {
         if (line >= lineNumbers.length-1) growLineNumbersPool(line);
 
-        if (line < 0) line = 0;
+        // We do not cache negative line numbers as they are very rare...
+        if (line < 0) return new LineNumberInstr((line));
+
         LineNumberInstr tempVar = lineNumbers[line];
 
         if (tempVar == null) {
@@ -282,7 +274,7 @@ public class IRManager {
 
     }
 
-    private ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr(Self.SELF);
+    private final ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr(Self.SELF);
 
     public ReceiveSelfInstr getReceiveSelfInstr() {
         return receiveSelfInstr;
@@ -346,16 +338,16 @@ public class IRManager {
      * For scopes that don't require a dynamic scope we can run DCE and some other passes which cannot
      * be stymied by escaped bindings.
      */
-    protected void optimizeIfSimpleScope(IRScope scope) {
+    protected void optimizeIfSimpleScope(FullInterpreterContext fic) {
         // We cannot pick the passes if we want an explicit set to run.
         if (RubyInstanceConfig.IR_COMPILER_PASSES != null) return;
 
-        EnumSet<IRFlags> flags = scope.getFlags();
+        EnumSet<IRFlags> flags = fic.getFlags();
 
         if (!flags.contains(REQUIRES_DYNSCOPE)) {
-            if (flags.contains(RECEIVES_CLOSURE_ARG)) optimizeDelegationPass.run(scope);
-            deadCodeEliminationPass.run(scope);
-            optimizeDynScopesPass.run(scope);
+            if (fic.getScope().receivesClosureArg()) optimizeDelegationPass.run(fic);
+            deadCodeEliminationPass.run(fic);
+            optimizeDynScopesPass.run(fic);
         }
     }
 
@@ -381,7 +373,7 @@ public class IRManager {
             } else {
                 containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
             }
-            IRMethod newMethod = new IRMethod(this, containingScope, defNode, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), false);
+            IRMethod newMethod = new IRMethod(this, containingScope, defNode, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), CoverageData.NONE);
 
             newMethod.prepareForCompilation();
 

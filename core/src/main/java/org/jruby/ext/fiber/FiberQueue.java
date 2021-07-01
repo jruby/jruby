@@ -61,23 +61,6 @@ public class FiberQueue {
         }
     };
 
-    final RubyThread.Task<IRubyObject[], IRubyObject> putTask = new RubyThread.Task<IRubyObject[], IRubyObject>() {
-        @Override
-        public IRubyObject run(ThreadContext context, IRubyObject[] args) throws InterruptedException {
-            final BlockingQueue<IRubyObject> queue = getQueueSafe();
-            if(args.length == 2 && args[1].isTrue() && queue.remainingCapacity() == 0) {
-                throw context.runtime.newThreadError("queue full");
-            }
-            queue.put(args[0]);
-            return context.nil;
-        }
-
-        @Override
-        public void wakeup(RubyThread thread, IRubyObject[] data) {
-            thread.getNativeThread().interrupt();
-        }
-    };
-
     public IRubyObject shutdown(ThreadContext context) {
         queue = null;
         return context.nil;
@@ -104,32 +87,20 @@ public class FiberQueue {
     }
 
     public IRubyObject pop(ThreadContext context) {
-        return pop(context, true);
-    }
-
-    public IRubyObject pop(ThreadContext context, IRubyObject arg0) {
-        return pop(context, !arg0.isTrue());
-    }
-
-    public void push(ThreadContext context, final IRubyObject[] args) {
-        checkShutdown();
-        try {
-            context.getThread().executeTask(context, args, putTask);
-        } catch (InterruptedException ie) {
-            throw context.runtime.newThreadError("interrupted in FiberQueue.push");
-        }
-    }
-
-    private IRubyObject pop(ThreadContext context, boolean should_block) {
-        final BlockingQueue<IRubyObject> queue = getQueueSafe();
-        if (!should_block && queue.size() == 0) {
-            throw RaiseException.from(context.runtime, context.runtime.getThreadError(), "queue empty");
-        }
         try {
             return context.getThread().executeTask(context, this, takeTask);
         } catch (InterruptedException ie) {
             throw context.runtime.newThreadError("interrupted in FiberQueue.pop");
         }
     }
-    
+
+    public void push(ThreadContext context, final IRubyObject arg) {
+        checkShutdown();
+        try {
+            queue.put(arg);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in FiberQueue.push");
+        }
+    }
+
 }

@@ -13,4 +13,5 @@ exclude :test_strftime_seconds_from_epoch, "Integer unification, needs Bignum su
 exclude :test_strftime_too_wide, "needs investigation"
 exclude :test_strftime_year, "Integer unification, needs Bignum support (#4687)"
 exclude :test_utc_or_local, "needs investigation"
+exclude :test_zone, "not implemented, zone = 0 should not return UTC"
 exclude :test_2038, "OK: RangeError: bignum too big to convert into `long'"

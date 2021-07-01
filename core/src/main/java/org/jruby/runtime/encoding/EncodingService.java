@@ -49,6 +49,7 @@ public final class EncodingService {
     private static final ByteList INTERNAL_BL = ByteList.create("internal");
     private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
     private static final Pattern MS_CP_PATTERN = Pattern.compile("^MS([0-9]+)$");
+    private Encoding consoleEncoding;
 
     public EncodingService(Ruby runtime) {
         this.runtime = runtime;
@@ -73,19 +74,30 @@ public final class EncodingService {
     public Encoding getConsoleEncoding() {
         if (!Platform.IS_WINDOWS) return null;
 
-        Encoding consoleEncoding = null;
+        Encoding consoleEncoding = this.consoleEncoding;
+
+        if (consoleEncoding != null) return consoleEncoding;
+
         try {
-            Console console = System.console();
-            if (console != null) {
-                final String CONSOLE_CHARSET = "cs";
-                Field fcs = Console.class.getDeclaredField(CONSOLE_CHARSET);
-                Java.trySetAccessible(fcs);
-                Charset cs = (Charset) fcs.get(console);
-                consoleEncoding = loadEncoding(ByteList.create(cs.name()));
+            String stdoutEncoding = SafePropertyAccessor.getProperty("sun.stdout.encoding");
+            Charset cs = Charset.forName(stdoutEncoding);
+            this.consoleEncoding = consoleEncoding = loadEncoding(ByteList.create(cs.name()));
+        } catch (Throwable t) {
+            // try using System.console
+            try {
+                Console console = System.console();
+                if (console != null) {
+                    final String CONSOLE_CHARSET = "cs";
+                    Field fcs = Console.class.getDeclaredField(CONSOLE_CHARSET);
+                    Java.trySetAccessible(fcs);
+                    Charset cs = (Charset) fcs.get(console);
+                    this.consoleEncoding = consoleEncoding = loadEncoding(ByteList.create(cs.name()));
+                }
+            } catch (Throwable e) {
+                // leave it null
             }
-        } catch (Throwable e) { // to cover both Exceptions and Errors
-            // just fall back on local encoding above
         }
+
         return consoleEncoding;
     }
 

@@ -28,26 +28,23 @@
 
 package org.jruby.ext.socket;
 
-import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channel;
-import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectableChannel;
-
 import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.IPProto;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
-
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.annotations.In;
+import jnr.ffi.annotations.Out;
+import jnr.ffi.byref.IntByReference;
+import jnr.posix.Timeval;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -57,21 +54,33 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
-
-import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
-import static jnr.constants.platform.IPProto.IPPROTO_TCP;
-import static jnr.constants.platform.IPProto.IPPROTO_IP;
+import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.Channel;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectableChannel;
+
+import static jnr.constants.platform.TCP.TCP_INFO;
+import static jnr.constants.platform.TCP.TCP_KEEPCNT;
+import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
+import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
+import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
+import static org.jruby.runtime.Helpers.throwErrorFromException;
 
 /**
  * Implementation of the BasicSocket class from Ruby.
@@ -79,21 +88,15 @@ import static jnr.constants.platform.TCP.TCP_NODELAY;
 @JRubyClass(name="BasicSocket", parent="IO")
 public class RubyBasicSocket extends RubyIO {
     static void createBasicSocket(Ruby runtime) {
-        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), BASICSOCKET_ALLOCATOR);
+        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), RubyBasicSocket::new);
 
         rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
         rb_cBasicSocket.undefineMethod("initialize");
     }
 
-    private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyBasicSocket(runtime, klass);
-        }
-    };
-
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        doNotReverseLookup = true;
+        doNotReverseLookup = runtime.isDoNotReverseLookupEnabled();
     }
 
     @JRubyMethod(meta = true)
@@ -112,7 +115,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(name = "do_not_reverse_lookup")
     public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
-        return context.runtime.newBoolean(doNotReverseLookup);
+        return RubyBoolean.newBoolean(context, doNotReverseLookup);
     }
 
     @JRubyMethod(name = "do_not_reverse_lookup=")
@@ -123,7 +126,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(meta = true)
     public static IRubyObject do_not_reverse_lookup(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(context.runtime.isDoNotReverseLookupEnabled());
+        return RubyBoolean.newBoolean(context, context.runtime.isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "do_not_reverse_lookup=", meta = true)
@@ -135,14 +138,47 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(name = "send")
     public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags) {
-        // TODO: implement flags
-        return syswrite(context, _mesg);
+        return doSend(context, _mesg, _flags, null);
     }
 
     @JRubyMethod(name = "send")
     public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
-        // TODO: implement flags and to
-        return send(context, _mesg, _flags);
+        return doSend(context, _mesg, _flags, _to);
+    }
+
+    private IRubyObject doSend(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
+        final SocketAddress sockaddr;
+
+        if (_to instanceof Addrinfo) {
+            Addrinfo addr = (Addrinfo) _to;
+            sockaddr = addr.getSocketAddress();
+        } else if (_to == null || _to.isNil()) {
+            sockaddr = null;
+        } else {
+            sockaddr = Sockaddr.addressFromSockaddr(context, _to);
+        }
+
+        RubyString mesg = _mesg.convertToString();
+        ByteList mesgByteList = mesg.getByteList();
+        ByteBuffer mesgBytes = ByteBuffer.wrap(mesgByteList.unsafeBytes(), mesgByteList.begin(), mesgByteList.realSize());
+
+        Channel channel = getChannel();
+
+        int written = 0;
+
+        // TODO: implement flags
+        try {
+            if (channel instanceof DatagramChannel && sockaddr != null) {
+                written = ((DatagramChannel) channel).send(mesgBytes, sockaddr);
+
+                return context.runtime.newFixnum(written);
+            } else {
+                return syswrite(context, _mesg);
+            }
+        } catch (Exception e) {
+            throwErrorFromException(context.runtime, e);
+            return null; // not reached
+        }
     }
 
     @JRubyMethod
@@ -150,7 +186,7 @@ public class RubyBasicSocket extends RubyIO {
         return recv(context, length, null, null);
     }
 
-    @JRubyMethod(required = 2, optional = 1) // (length) required = 1 handled above
+    @JRubyMethod(required = 1, optional = 2) // (length) required = 1 handled above
     public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
         IRubyObject length; RubyString str; IRubyObject flags;
 
@@ -178,26 +214,50 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject recv(ThreadContext context, IRubyObject length,
-        RubyString str, IRubyObject flags) {
+                             RubyString str, IRubyObject flags) {
         // TODO: implement flags
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
-        ByteList bytes = doRead(context, buffer);
+        ByteList bytes;
 
+        Channel channel = getChannel();
+
+        Ruby runtime = context.runtime;
+        if (channel instanceof DatagramChannel) {
+            try {
+                DatagramChannel dgram = (DatagramChannel) channel;
+
+                dgram.receive(buffer);
+
+                buffer.flip();
+                bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+            } catch (Exception e) {
+                throwErrorFromException(runtime, e);
+                return null; // not reached
+            }
+        } else {
+                bytes = doRead(context, buffer);
+        }
         if (bytes == null) return context.nil;
 
         if (str != null) {
             str.setValue(bytes);
             return str;
         }
-        return RubyString.newString(context.runtime, bytes);
+
+        return RubyString.newString(runtime, bytes);
     }
 
-    @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
+    @JRubyMethod(required = 1, optional = 3)
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
         int argc = args.length;
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
-        if (opts != context.nil) argc--;
+        boolean exception = true;
+        Ruby runtime = context.runtime;
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
+        if (opts != context.nil) {
+            argc--;
+            exception = extractExceptionOnlyArg(context, (RubyHash) opts);
+        }
 
         IRubyObject length, flags, str;
         length = flags = context.nil; str = null;
@@ -209,21 +269,115 @@ public class RubyBasicSocket extends RubyIO {
         }
 
         // TODO: implement flags
+
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
-        ByteList bytes = doReadNonblock(context, buffer);
+        ByteList bytes;
 
-        if (bytes == null) {
-            if (!extractExceptionArg(context, opts)) return context.runtime.newSymbol("wait_readable");
-            throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
+        Channel channel = getChannel();
+
+        if (channel instanceof DatagramChannel) {
+            try {
+                DatagramChannel dgram = (DatagramChannel) channel;
+
+                getOpenFile().setBlocking(runtime, false);
+
+                dgram.receive(buffer);
+
+                if (buffer.position() == 0) {
+                    bytes = null;
+                } else {
+                    buffer.flip();
+                    bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+                }
+            } catch (Exception e) {
+                if (exception) throwErrorFromException(runtime, e);
+                return context.nil;
+            }
+        } else {
+            bytes = doReadNonblock(context, buffer, exception);
         }
 
-        if (str != null && str != context.nil) {
+        return handleReturnBytes(runtime, bytes, str, "recvfrom(2)", exception);
+    }
+
+    private IRubyObject handleReturnBytes(Ruby runtime, ByteList bytes, IRubyObject str, String exMessage, boolean exception) {
+        if (bytes == null) {
+            if (!exception) return runtime.newSymbol("wait_readable");
+            throw runtime.newErrnoEAGAINReadableError(exMessage);
+        }
+
+        if (str != null && str != runtime.getNil()) {
             str = str.convertToString();
             ((RubyString) str).setValue(bytes);
             return str;
         }
-        return RubyString.newString(context.runtime, bytes);
+
+        return RubyString.newString(runtime, bytes);
+    }
+
+    @Override
+    @JRubyMethod(required = 1, optional = 2)
+    public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        Channel channel = getChannel();
+
+        if (!(channel instanceof DatagramChannel)) {
+            return super.read_nonblock(context, args);
+        }
+
+        int argc = args.length;
+        boolean exception = true;
+        IRubyObject str = context.nil;
+        IRubyObject length;
+
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, args);
+
+        if (!maybeHash.isNil()) {
+            exception = ArgsUtil.extractKeywordArg(context, "exception", maybeHash) != context.fals;
+            argc--;
+        }
+
+        switch (argc) {
+            case 3:
+            case 2:
+                str = args[1];
+                // fall through
+            case 1:
+                length = args[0];
+                break;
+            default:
+                throw runtime.newArgumentError(argc, 1, 3);
+        }
+
+        final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
+
+        ByteList bytes;
+
+        try {
+            DatagramChannel dgram = (DatagramChannel) channel;
+
+            getOpenFile().setBlocking(runtime, false);
+
+            dgram.receive(buffer);
+
+            if (buffer.position() == 0) {
+                bytes = null;
+            } else {
+                buffer.flip();
+                bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
+            }
+        } catch (Exception ex) {
+            if (exception) throwErrorFromException(runtime, ex);
+            return context.nil;
+        } finally {
+            if (Platform.IS_LINUX) {
+                // unset nonblocking to emulate recv(... MSG_DONTWAIT) leaving it blocking
+                getOpenFile().setBlocking(runtime, true);
+            }
+        }
+
+        return handleReturnBytes(runtime, bytes, str, "read_nonblock", exception);
     }
 
     @JRubyMethod
@@ -239,10 +393,6 @@ public class RubyBasicSocket extends RubyIO {
             switch(level) {
 
             case SOL_SOCKET:
-            case SOL_IP:
-            case SOL_TCP:
-            case SOL_UDP:
-
                 if (opt == SocketOption.__UNKNOWN_CONSTANT__) {
                     throw runtime.newErrnoENOPROTOOPTError();
                 }
@@ -265,11 +415,37 @@ public class RubyBasicSocket extends RubyIO {
                 return new Option(runtime, ProtocolFamily.PF_INET, level, opt, packedValue);
 
             default:
+                int intLevel = _level.convertToInteger().getIntValue();
+                int intOpt = _opt.convertToInteger().getIntValue();
+                ChannelFD fd = getOpenFile().fd();
+                IPProto proto = IPProto.valueOf(intLevel);
+ 
+                switch (proto) {
+                    case IPPROTO_TCP:
+                        if (Platform.IS_LINUX && validTcpSockOpt(intOpt) &&
+                                fd.realFileno > 0 && SOCKOPT != null) {
+                            ByteBuffer buf = ByteBuffer.allocate(256);
+                            IntByReference len = new IntByReference(4);
+                            
+                            int ret = SOCKOPT.getsockopt(fd.realFileno, intLevel, intOpt, buf, len);
+
+                            if (ret != 0) {
+                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                            }
+                            buf.flip();
+                            ByteList bytes = new ByteList(buf.array(), buf.position(), len.getValue());
+
+                            return new Option(runtime, ProtocolFamily.PF_INET, level, opt, bytes);
+                        }
+
+                        break;
+                }
+
                 throw runtime.newErrnoENOPROTOOPTError();
             }
-        }
-        catch (IOException e) {
-            throw runtime.newErrnoENOPROTOOPTError();
+        } catch (Exception e) {
+            throwErrorFromException(context.runtime, e);
+            return null; // not reached
         }
     }
 
@@ -296,11 +472,7 @@ public class RubyBasicSocket extends RubyIO {
 
             switch(level) {
 
-            case SOL_IP:
             case SOL_SOCKET:
-            case SOL_TCP:
-            case SOL_UDP:
-
                 if (opt == SocketOption.SO_LINGER) {
                     if (val instanceof RubyString) {
                         int[] linger = Option.unpackLinger(val.convertToString().getByteList());
@@ -312,31 +484,77 @@ public class RubyBasicSocket extends RubyIO {
                     socketType.setSocketOption(channel, opt, asNumber(context, val));
                 }
 
-                break;
+                return RubyFixnum.zero(runtime);
 
             default:
-                int intLevel = (int)_level.convertToInteger().getLongValue();
-                int intOpt = (int)_opt.convertToInteger().getLongValue();
-                if (IPPROTO_TCP.intValue() == intLevel && TCP_NODELAY.intValue() == intOpt) {
-                    socketType.setTcpNoDelay(channel, asBoolean(context, val));
+                int intLevel = _level.convertToInteger().getIntValue();
+                int intOpt = _opt.convertToInteger().getIntValue();
+                ChannelFD fd = getOpenFile().fd();
+                IPProto proto = IPProto.valueOf(intLevel);
 
-                } else if (IPPROTO_IP.intValue() == intLevel) {
-                    if (MulticastStateManager.IP_ADD_MEMBERSHIP == intOpt) {
-                        joinMulticastGroup(val);
-                    }
+                switch (proto) {
+                    case IPPROTO_TCP:
+                        if (TCP_NODELAY.intValue() == intOpt) {
+                            socketType.setTcpNoDelay(channel, asBoolean(context, val));
+                        } else if (Platform.IS_LINUX && validTcpSockOpt(intOpt) &&
+                                fd.realFileno > 0 && SOCKOPT != null) {
 
-                } else {
-                    throw runtime.newErrnoENOPROTOOPTError();
+                            ByteBuffer buf = ByteBuffer.allocate(4);
+                            buf.order(ByteOrder.nativeOrder());
+                            buf.putInt(val.convertToInteger().getIntValue()).flip();
+                            int ret = SOCKOPT.setsockopt(fd.realFileno, intLevel, intOpt, buf, buf.remaining());
+
+                            if (ret != 0) {
+                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                            }
+                        }
+
+                        break;
+
+                    case IPPROTO_IP:
+                    case IPPROTO_HOPOPTS: // these both have value 0 on several platforms
+                        if (MulticastStateManager.IP_ADD_MEMBERSHIP == intOpt) {
+                            joinMulticastGroup(val);
+                        }
+
+                        break;
+
+                    default:
+                        throw runtime.newErrnoENOPROTOOPTError();
                 }
+
+                return RubyFixnum.zero(runtime);
             }
+        } catch (Exception e) {
+            throwErrorFromException(context.runtime, e);
+            return null; // not reached
         }
-        catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
+    }
+
+    // FIXME: copied from jnr-unixsocket
+    static final String[] libnames = jnr.ffi.Platform.getNativePlatform().getOS() == jnr.ffi.Platform.OS.SOLARIS
+            ? new String[] { "socket", "nsl", jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName() }
+            : new String[] { jnr.ffi.Platform.getNativePlatform().getStandardCLibraryName() };
+
+    public interface LibC {
+        int F_GETFL = jnr.constants.platform.Fcntl.F_GETFL.intValue();
+        int F_SETFL = jnr.constants.platform.Fcntl.F_SETFL.intValue();
+        int O_NONBLOCK = jnr.constants.platform.OpenFlags.O_NONBLOCK.intValue();
+
+        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntByReference optlen);
+        int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
+        int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
+        String strerror(int error);
+    }
+
+    static final LibC SOCKOPT;
+
+    static {
+        LibraryLoader<LibC> loader = LibraryLoader.create(LibC.class);
+        for (String libraryName : libnames) {
+            loader.library(libraryName);
         }
-        catch(IOException e) {
-            throw runtime.newErrnoENOPROTOOPTError();
-        }
-        return runtime.newFixnum(0);
+        SOCKOPT = loader.load();
     }
 
     @JRubyMethod(name = "getsockname")
@@ -492,22 +710,15 @@ public class RubyBasicSocket extends RubyIO {
             if (read == 0) return null;
 
             return new ByteList(buffer.array(), 0, buffer.position(), false);
-        }
-        catch (IOException e) {
-            // All errors to sysread should be SystemCallErrors, but on a closed stream
-            // Ruby returns an IOError.  Java throws same exception for all errors so
-            // we resort to this hack...
-            if ( "Socket not open".equals(e.getMessage()) ) {
-                throw context.runtime.newIOError(e.getMessage());
-            }
-            throw context.runtime.newSystemCallError(e.getMessage());
-        }
-        finally {
+        } catch (Exception e) {
+            throwErrorFromException(context.runtime, e);
+            return null; // not reached
+        } finally {
             context.getThread().afterBlockingCall();
         }
     }
 
-    protected final ByteList doReadNonblock(ThreadContext context, final ByteBuffer buffer) {
+    protected final ByteList doReadNonblock(ThreadContext context, final ByteBuffer buffer, boolean exception) {
         Channel channel = getChannel();
 
         if ( ! (channel instanceof SelectableChannel) ) {
@@ -528,9 +739,9 @@ public class RubyBasicSocket extends RubyIO {
                 finally {
                     selectable.configureBlocking(oldBlocking);
                 }
-            }
-            catch (IOException e) {
-                throw context.runtime.newIOErrorFromException(e);
+            } catch (Exception e) {
+                if (exception) throwErrorFromException(context.runtime, e);
+                return null;
             }
         }
     }
@@ -601,6 +812,17 @@ public class RubyBasicSocket extends RubyIO {
         }
 
         return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
+    }
+
+    private boolean validTcpSockOpt(int intOpt) {
+        if (TCP_INFO.intValue() == intOpt ||
+            TCP_KEEPIDLE.intValue() == intOpt ||
+            TCP_KEEPINTVL.intValue() == intOpt ||
+            TCP_KEEPCNT.intValue() == intOpt) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private static IRubyObject shutdownInternal(ThreadContext context, OpenFile fptr, int how) {
@@ -681,14 +903,14 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     static boolean extractExceptionArg(ThreadContext context, IRubyObject opts) {
-        return ArgsUtil.extractKeywordArg(context, "exception", opts) != context.fals;
+        return extractExceptionOnlyArg(context, opts, true);
     }
 
     private static int asNumber(ThreadContext context, IRubyObject val) {
-        if ( val instanceof RubyNumeric ) {
+        if ( val instanceof RubyNumeric) {
             return RubyNumeric.fix2int(val);
         }
-        if ( val instanceof RubyBoolean ) {
+        if ( val instanceof RubyBoolean) {
             return val.isTrue() ? 1 : 0;
         }
         return stringAsNumber(context, val);
@@ -703,10 +925,10 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected boolean asBoolean(ThreadContext context, IRubyObject val) {
-        if ( val instanceof RubyString ) {
+        if ( val instanceof RubyString) {
             return stringAsNumber(context, val) != 0;
         }
-        if ( val instanceof RubyNumeric ) {
+        if ( val instanceof RubyNumeric) {
             return RubyNumeric.fix2int(val) != 0;
         }
         return val.isTrue();
@@ -729,6 +951,10 @@ public class RubyBasicSocket extends RubyIO {
         }
         ret3 = runtime.newString(hostAddress);
         return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
+    }
+
+    protected static String bindContextMessage(IRubyObject host, int port) {
+        return "bind(2) for " + host.inspect() + " port " + port;
     }
 
     @Deprecated

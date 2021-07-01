@@ -30,7 +30,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     public transient long callSiteId;
     private final CallType callType;
-    protected RubySymbol name;
+    protected final RubySymbol name;
     protected final transient CallSite callSite;
     protected final transient int argsCount;
     protected final transient boolean hasClosure;
@@ -41,8 +41,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
     private transient boolean dontInline;
     private transient boolean[] splatMap;
-    private transient boolean procNew;
-    private boolean potentiallyRefined;
+    protected transient boolean procNew;
+    private final boolean potentiallyRefined;
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 
@@ -185,11 +185,16 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         switch (callType) {
             case NORMAL:
                 if (IRManager.IR_INLINER && hasLiteralClosure) {
-                    return MethodIndex.getProfilingCallSite(name, scope, callsiteId);
+                    return MethodIndex.getProfilingCallSite(callType, name, scope, callsiteId);
                 } else {
                     return MethodIndex.getCallSite(name);
                 }
-            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
+            case FUNCTIONAL:
+                if (IRManager.IR_INLINER && hasLiteralClosure) {
+                    return MethodIndex.getProfilingCallSite(callType, name, scope, callsiteId);
+                } else {
+                    return MethodIndex.getFunctionalCallSite(name);
+                }
             case VARIABLE: return MethodIndex.getVariableCallSite(name);
             case SUPER: return MethodIndex.getSuperCallSite();
             case UNKNOWN:
@@ -223,10 +228,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        boolean modifiedScope = super.computeScopeFlags(scope);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        boolean modifiedScope = super.computeScopeFlags(scope, flags);
 
-        EnumSet<IRFlags> flags = scope.getFlags();
         if (targetRequiresCallersBinding()) {
             modifiedScope = true;
             flags.add(BINDING_HAS_ESCAPED);
@@ -248,29 +252,34 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
         if (canBeEval()) {
             modifiedScope = true;
-            flags.add(USES_EVAL);
+            scope.setUsesEval();
 
             // If eval contains a return then a nonlocal may pass through (e.g. def foo; eval "return 1"; end).
-            flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
+            scope.setCanReceiveNonlocalReturns();
 
             // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
             // it could be using the closure as a binding -- which means it could be using pretty much any
             // variable from the caller's binding!
-            if (flags.contains(RECEIVES_CLOSURE_ARG) && argsCount > 1) {
-                flags.add(CAN_CAPTURE_CALLERS_BINDING);
-            }
+            if (scope.receivesClosureArg() && argsCount > 1) scope.setCanCaptureCallersBinding();
         }
 
         if (potentiallySend(getId(), argsCount)) { // ok to look at raw string since we know we are looking for 7bit names.
             Operand meth = getArg1();
-            if (meth instanceof StringLiteral) {
+
+            if (isPotentiallyRefined()) {
+                // send within a refined scope needs to reflect refinements
+                modifiedScope = true;
+                flags.add(REQUIRES_DYNSCOPE);
+            }
+
+            if (meth instanceof MutableString) {
                 // This logic is intended to reduce the framing impact of send if we can
                 // statically determine the sent name and we know it does not need to be
                 // either framed or scoped. Previously it only did this logic for
                 // send(:local_variables).
 
                 // This says getString but I believe this will also always be an id string in this case so it is ok.
-                String sendName = ((StringLiteral) meth).getString();
+                String sendName = ((MutableString) meth).getString();
                 if (MethodIndex.SCOPE_AWARE_METHODS.contains(sendName)) {
                     modifiedScope = true;
                     flags.add(REQUIRES_DYNSCOPE);
@@ -346,9 +355,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
         if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (!(meth instanceof StringLiteral)) return true; // We don't know
+            if (!(meth instanceof MutableString)) return true; // We don't know
 
-            String name = ((StringLiteral) meth).getString();
+            String name = ((MutableString) meth).getString();
             // FIXME: ENEBO - Half of these are name and half mname?
             return name.equals("call") || name.equals("eval") || mname.equals("module_eval") ||
                     mname.equals("class_eval") || mname.equals("instance_eval") || name.equals("send") ||
@@ -369,9 +378,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             return true;
         } else if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
+            if (!(meth instanceof MutableString)) return true; // We don't know -- could be anything
 
-            return MethodIndex.SCOPE_AWARE_METHODS.contains(((StringLiteral) meth).getString());
+            return MethodIndex.SCOPE_AWARE_METHODS.contains(((MutableString) meth).getString());
         }
 
         /* -------------------------------------------------------------
@@ -540,7 +549,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return callSite.call(context, self, object, values, preparedBlock);
     }
 
-    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
+    public IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
         return splatMap != null ?
                 prepareArgumentsComplex(context, self, currScope, dynamicScope, temp) :
                 prepareArgumentsSimple(context, self, currScope, dynamicScope, temp);

@@ -1,0 +1,39 @@
+name: JRuby CI (Windows)
+
+on: [push, pull_request]
+
+jobs:
+
+  rake-test-jruby:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        java-version: [11]
+      fail-fast: false
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: ${{ matrix.java-version }}
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: install bundler
+        run: bin/jruby -S gem install bundler
+      - name: bundle install
+        run: bin/jruby -S bundle install
+      - name: rake test:jruby
+        run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
+        env:
+          JRUBY_OPTS: ''
+      - name: mvn -P test
+        run: ./mvnw package -B -Ptest

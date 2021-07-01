@@ -89,11 +89,8 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        EnumSet<IRFlags> flags = scope.getFlags();
-
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
-
         return true;
     }
 }

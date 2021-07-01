@@ -1,1 +1,1 @@
-fails:Socket.gethostname returns the host name
+travis(reverses localhost to a travis hostname):Socket.gethostname returns the host name

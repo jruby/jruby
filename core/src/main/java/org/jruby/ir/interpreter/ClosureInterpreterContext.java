@@ -1,9 +1,11 @@
 package org.jruby.ir.interpreter;
 
+import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -12,12 +14,12 @@ import org.jruby.runtime.ThreadContext;
  * Interpreter knowledge needed to interpret a closure.
  */
 public class ClosureInterpreterContext extends InterpreterContext {
-    public ClosureInterpreterContext(IRClosure scope, List<Instr> instructions) {
-        super(scope, instructions);
+    public ClosureInterpreterContext(IRClosure scope, List<Instr> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
+        super(scope, instructions, temporaryVariableCount,flags);
     }
 
-    public ClosureInterpreterContext(IRClosure scope, Callable<List<Instr>> instructions) {
-        super(scope, instructions);
+    public ClosureInterpreterContext(IRClosure scope, Supplier<List<Instr>> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
+        super(scope, instructions, temporaryVariableCount, flags);
     }
 
     /**

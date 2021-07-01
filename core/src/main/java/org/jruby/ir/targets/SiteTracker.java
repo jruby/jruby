@@ -23,11 +23,17 @@ public class SiteTracker {
     }
 
     public synchronized void clearTypes() {
-        seenTypes.clear();
         clearCount++;
+        seenTypes.clear();
     }
 
     public int clearCount() {
         return clearCount;
+    }
+
+    @Override
+    public synchronized String toString() {
+        return getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this))
+                + this.seenTypes + "clearCount=" + clearCount;
     }
 }

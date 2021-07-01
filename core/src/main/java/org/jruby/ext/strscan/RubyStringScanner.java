@@ -50,7 +50,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -78,15 +77,8 @@ public class RubyStringScanner extends RubyObject {
 
     private static final int MATCHED_STR_SCN_F = 1 << 11;
 
-    private static ObjectAllocator STRINGSCANNER_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyStringScanner(runtime, klass);
-        }
-    };
-
     public static RubyClass createScannerClass(final Ruby runtime) {
-        RubyClass scannerClass = runtime.defineClass("StringScanner", runtime.getObject(), STRINGSCANNER_ALLOCATOR);
+        RubyClass scannerClass = runtime.defineClass("StringScanner", runtime.getObject(), RubyStringScanner::new);
         scannerClass.defineAnnotatedMethods(RubyStringScanner.class);
         ThreadContext context = runtime.getCurrentContext();
         scannerClass.setConstant("Version", runtime.newString("0.7.0").freeze(context));
@@ -239,8 +231,8 @@ public class RubyStringScanner extends RubyObject {
         return str.makeSharedString(runtime, beg, len);
     }
 
-    ThreadLocal<Matcher> currentMatcher = new ThreadLocal<>();
-    RubyThread.Task<RubyStringScanner, Integer> task = new RubyThread.Task<RubyStringScanner, Integer>() {
+    final ThreadLocal<Matcher> currentMatcher = new ThreadLocal<>();
+    final RubyThread.Task<RubyStringScanner, Integer> task = new RubyThread.Task<RubyStringScanner, Integer>() {
         @Override
         public Integer run(ThreadContext context, RubyStringScanner rubyStringScanner) throws InterruptedException {
             ByteList value = str.getByteList();

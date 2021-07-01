@@ -36,7 +36,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * an 'if' statement.
@@ -46,15 +45,14 @@ public class IfNode extends Node {
     private final Node thenBody;
     private final Node elseBody;
 
-    public IfNode(ISourcePosition position, Node condition, Node thenBody, Node elseBody) {
-        super(position, condition.containsVariableAssignment || thenBody != null && thenBody.containsVariableAssignment ||
+    public IfNode(int line, Node condition, Node thenBody, Node elseBody) {
+        super(line, condition.containsVariableAssignment || thenBody != null && thenBody.containsVariableAssignment ||
                 elseBody != null && elseBody.containsVariableAssignment);
-        
-        assert condition != null : "condition is not null";
 
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;
+        setNewline();
     }
 
     public NodeType getNodeType() {

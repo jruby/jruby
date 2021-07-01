@@ -86,8 +86,8 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
         return null;
     }
 
-    public static boolean removeJarResource(String jarPath){
-        return jarCache.remove(jarPath);
+    public static void removeJarResource(String jarPath){
+        jarCache.remove(jarPath);
     }
 
     private final CharSequence jarPrefix;
@@ -109,6 +109,11 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
 
     @Override
     public String canonicalPath() {
+        return absolutePath();
+    }
+
+    @Override
+    public String path() {
         return absolutePath();
     }
 

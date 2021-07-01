@@ -1,0 +1,7 @@
+fails:Kernel#BigDecimal when interacting with Rational has the expected precision on the LHS
+fails:Kernel#BigDecimal when interacting with Rational has the expected maximum precision on the LHS
+fails:Kernel#BigDecimal when interacting with Rational BigDecimal precision is the number of digits rounded up to a multiple of nine
+fails:Kernel#BigDecimal when interacting with Rational BigDecimal maximum precision is nine more than precision except for abnormals
+fails:Kernel#BigDecimal when interacting with Rational BigDecimal(Rational, BigDecimal.precs[0]) produces the result we expect
+fails:Kernel#BigDecimal when interacting with Rational produces the expected result
+fails:Kernel#BigDecimal with exception: false returns nil for invalid strings

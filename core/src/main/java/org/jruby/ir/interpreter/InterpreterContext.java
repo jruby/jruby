@@ -1,9 +1,10 @@
 package org.jruby.ir.interpreter;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Stack;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
@@ -16,7 +17,6 @@ import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 
 public class InterpreterContext {
@@ -38,70 +38,63 @@ public class InterpreterContext {
     protected int[] rescueIPCs = null;
 
     // Cached computed fields
-    private boolean hasExplicitCallProtocol;
-    private boolean pushNewDynScope;
-    private boolean reuseParentDynScope;
-    private boolean popDynScope;
-    private boolean receivesKeywordArguments;
+    protected boolean hasExplicitCallProtocol; // Only can be true in Full+
+    protected boolean dynamicScopeEliminated; // Only can be true in Full+
+    private boolean reuseParentDynScope; // Only can be true in Full+
     private boolean metaClassBodyScope;
 
     private InterpreterEngine engine;
-    public final Callable<List<Instr>> instructionsCallback;
+    public final Supplier<List<Instr>> instructionsCallback;
+    private EnumSet<IRFlags> flags;
 
     private final IRScope scope;
 
-    public InterpreterContext(IRScope scope, List<Instr> instructions) {
+    public InterpreterContext(IRScope scope, List<Instr> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
         this.scope = scope;
 
         // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
         // For impl testing - engine = determineInterpreterEngine(scope);
-        setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
+        this.engine = instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         setInstructions(instructions);
         this.instructionsCallback = null; // engine != null
+        this.temporaryVariableCount = temporaryVariableCount;
+        this.flags = flags;
     }
 
-    public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) {
+    public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags) {
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.instructionsCallback = instructions;
+        this.temporaryVariableCount = temporaryVariableCount;
+        this.flags = flags;
+    }
+
+    protected void initialize() {
+        if (instructions == null) getEngine();
     }
 
     public InterpreterEngine getEngine() {
         if (engine == null) {
-            try {
-                setInstructions(instructionsCallback.call());
-            } catch (Exception e) {
-                Helpers.throwException(e);
-            }
+            setInstructions(instructionsCallback.get());
+
             // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
             // For impl testing - engine = determineInterpreterEngine(scope);
-            setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
+            this.engine = instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER;
         }
         return engine;
     }
 
     public Instr[] getInstructions() {
-        if (instructions == null) {
-            getEngine();
-        }
+        initialize();
+
         return instructions == null ? NO_INSTRUCTIONS : instructions;
     }
 
     private void setInstructions(final List<Instr> instructions) {
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
-    }
-
-    private void retrieveFlags() {
-        this.temporaryVariableCount = scope.getTemporaryVariablesCount();
-        this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
-        // FIXME: Centralize this out of InterpreterContext
-        this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
-        this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
-        this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
 
     private Instr[] prepareBuildInstructions(List<Instr> instructions) {
@@ -114,7 +107,7 @@ public class InterpreterContext {
             if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
         }
 
-        Stack<Integer> markers = new Stack();
+        Deque<Integer> markers = new ArrayDeque<>(8);
         rescueIPCs = new int[length];
         int rpc = -1;
 
@@ -147,17 +140,12 @@ public class InterpreterContext {
         return scope;
     }
 
-    /**
-     * Is the build complete?  For startup builds, which this class represents, we finish build in the constructor
-     * so it is always complete.  For FullInterpreterContext this is more complicated (see javadocs there for more
-     * info).
-     */
-    public boolean buildComplete() {
-        return true;
-    }
-
     public CFG getCFG() {
         return null;
+    }
+
+    public int getTemporaryVariableCount() {
+        return temporaryVariableCount;
     }
 
     public Object[] allocateTemporaryVariables() {
@@ -190,7 +178,7 @@ public class InterpreterContext {
 
     public void computeScopeFlagsFromInstructions() {
         for (Instr instr : getInstructions()) {
-            instr.computeScopeFlags(scope);
+            instr.computeScopeFlags(scope, getFlags());
         }
     }
 
@@ -206,23 +194,47 @@ public class InterpreterContext {
     }
 
     public boolean hasExplicitCallProtocol() {
+        initialize();
+
         return hasExplicitCallProtocol;
     }
 
+    public void setExplicitCallProtocol(boolean callProtocol) {
+        this.hasExplicitCallProtocol = callProtocol;
+    }
+
+    public boolean isDynamicScopeEliminated() {
+        return dynamicScopeEliminated;
+    }
+
+    public void setDynamicScopeEliminated(boolean dynamicScopeEliminated) {
+        this.dynamicScopeEliminated = dynamicScopeEliminated;
+    }
+
     public boolean pushNewDynScope() {
-        return pushNewDynScope;
+        initialize();
+
+        return !dynamicScopeEliminated && !reuseParentDynScope;
     }
 
     public boolean reuseParentDynScope() {
+        initialize();
+
         return reuseParentDynScope;
     }
 
+    public void setReuseParentDynScope(boolean reuseParentDynScope) {
+        this.reuseParentDynScope = reuseParentDynScope;
+    }
+
     public boolean popDynScope() {
-        return popDynScope;
+        initialize();
+
+        return pushNewDynScope() || this.reuseParentDynScope();
     }
 
     public boolean receivesKeywordArguments() {
-        return receivesKeywordArguments;
+        return scope.receivesKeywordArgs();
     }
 
     @Override
@@ -232,7 +244,7 @@ public class InterpreterContext {
         buf.append(getFileName()).append(':').append(scope.getLine());
         if (getName() != null) buf.append(' ').append(getName()).append("\n");
 
-        if (instructions == null) {
+        if (getInstructions() == null) {
             buf.append("  No Instructions.  Full Build before linearizeInstr?");
         } else {
             buf.append(toStringInstrs()).append("\n");
@@ -247,7 +259,7 @@ public class InterpreterContext {
 
         for (int i = 0; i < length; i++) {
             if (i > 0) b.append("\n");
-            b.append("  ").append(i).append('\t').append(instructions[i]);
+            b.append(String.format("%6d",i)).append('\t').append(instructions[i]);
         }
 
         /* ENEBO: I this this is too much output espectially for ic and not fic
@@ -262,13 +274,7 @@ public class InterpreterContext {
         return b.toString();
     }
 
-    public void setEngine(InterpreterEngine engine) {
-        this.engine = engine;
-
-        retrieveFlags();
-    }
-
     public EnumSet<IRFlags> getFlags() {
-        return scope.getFlags();
+        return flags;
     }
 }

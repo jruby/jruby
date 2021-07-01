@@ -36,14 +36,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.type.MirroredTypesException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Types;
 
 import org.jruby.util.CodegenUtils;
 
@@ -61,7 +65,13 @@ public class AnnotationBinder extends AbstractProcessor {
     public static final String SRC_GEN_DIR = "target/generated-sources/org/jruby/gen/";
     private final List<CharSequence> classNames = new ArrayList<>();
     private PrintStream out;
+    private Types types;
     private static final boolean DEBUG = false;
+
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        types = processingEnv.getTypeUtils();
+    }
 
     @Override
     public boolean process(Set<? extends TypeElement> typeElements, RoundEnvironment roundEnvironment) {
@@ -104,6 +114,7 @@ public class AnnotationBinder extends AbstractProcessor {
             if (!qualifiedName.contains("org$jruby")) {
                 return;
             }
+
             ByteArrayOutputStream bytes = new ByteArrayOutputStream(1024);
             out = new PrintStream(bytes);
 
@@ -122,7 +133,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("import org.jruby.runtime.MethodIndex;");
             out.println("import java.util.Arrays;");
             out.println("import java.util.List;");
-            out.println("import javax.annotation.Generated;");
+            out.println("import jakarta.annotation.Generated;");
             out.println("");
             out.println("@Generated(\"org.jruby.anno.AnnotationBinder\")");
             out.println("@SuppressWarnings(\"deprecation\")");
@@ -193,58 +204,33 @@ public class AnnotationBinder extends AbstractProcessor {
 
             if (methodCount == 0) return; // no annotated methods found, skip
 
-            classNames.add(getActualQualifiedName(cd));
+            CharSequence primaryName = getActualQualifiedName(cd);
+            classNames.add(primaryName);
 
-            List<ExecutableElement> simpleNames = new ArrayList<>();
-            Map<CharSequence, List<ExecutableElement>> complexNames = new HashMap<>();
+            List<String> classAndSubs = new ArrayList<>();
+            classAndSubs.add(cd.getQualifiedName().toString());
+
+            JRubyClass classAnno = cd.getAnnotation(JRubyClass.class);
+            if (classAnno != null) {
+                addSubclassNames(classAndSubs, classAnno);
+            }
+
+            // set up a list of class names for backtrace generation
+            Map<CharSequence, CharSequence> mappings = new HashMap<>();
 
             processMethodDeclarations(staticAnnotatedMethods);
-            for (Map.Entry<CharSequence, List<ExecutableElement>> entry : staticAnnotatedMethods.entrySet()) {
-                ExecutableElement decl = entry.getValue().get(0);
-                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
-
-                if (anno.omit()) continue;
-
-                CharSequence rubyName = entry.getKey();
-
-                if (decl.getSimpleName().equals(rubyName)) {
-                    simpleNames.add(decl);
-                    continue;
-                }
-
-                List<ExecutableElement> complex = complexNames.get(rubyName);
-                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<>(8));
-                complex.add(decl);
-            }
+            gatherMappings(staticAnnotatedMethods, mappings);
 
             processMethodDeclarations(annotatedMethods);
-            for (Map.Entry<CharSequence, List<ExecutableElement>> entry : annotatedMethods.entrySet()) {
-                ExecutableElement decl = entry.getValue().get(0);
-                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
-
-                if (anno.omit()) continue;
-
-                CharSequence rubyName = entry.getKey();
-
-                if (decl.getSimpleName().equals(rubyName) && decl.getAnnotation(JRubyMethod.class).name().length <= 1) {
-                    simpleNames.add(decl);
-                    continue;
-                }
-
-                List<ExecutableElement> complex = complexNames.get(rubyName);
-                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<>(8));
-                complex.add(decl);
-            }
+            gatherMappings(annotatedMethods, mappings);
 
             out.println("");
 
-            List<String> args = new ArrayList<>();
-            args.add( cd.getQualifiedName().toString() ); // first arg -> className
-            args.addAll(getMethodMappings(cd, complexNames));
-            args.addAll(getSimpleMethodMappings(cd, simpleNames));
-            // addBoundMethods(String className, String... tuples)
-            out.println("        runtime.addBoundMethods(" + join(args.stream().map((str) -> quote(str)).toArray()) + ");");
-
+            // addBoundMethods(int tuplesIndex, String... classNamesAndTuples)
+            out.print("        runtime.addBoundMethods(" + classAndSubs.size() + ", ");
+            out.print(classAndSubs.stream().map(s -> quote(s)).collect(Collectors.joining(", ")));
+            mappings.forEach((javaName, rubyName) -> out.print(", " + quote(javaName) + ", " + quote(rubyName) + ""));
+            out.println(");");
             out.println("    }");
 
             // write out a static initializer for frame names, so it only fires once
@@ -269,6 +255,32 @@ public class AnnotationBinder extends AbstractProcessor {
         catch (IOException ex) {
             ex.printStackTrace(System.err);
             System.exit(1);
+        }
+    }
+
+    public void addSubclassNames(List<String> classAndSubs, JRubyClass classAnno) {
+        // all implementer classes specified in annotation
+        try {
+            AnnotationHelper.addSubclassNames(classAndSubs, classAnno);
+        } catch (MirroredTypesException mte) {
+            for (TypeMirror tm : mte.getTypeMirrors()) {
+                classAndSubs.add(((TypeElement) types.asElement(tm)).getQualifiedName().toString());
+            }
+        }
+
+    }
+
+    protected void gatherMappings(Map<CharSequence, List<ExecutableElement>> methods, Map<CharSequence, CharSequence> mappings) {
+        for (Map.Entry<CharSequence, List<ExecutableElement>> entry : methods.entrySet()) {
+            ExecutableElement decl = entry.getValue().get(0);
+            JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+            if (anno.omit()) continue;
+
+            CharSequence javaName = decl.getSimpleName().toString();
+            CharSequence rubyName = entry.getKey();
+
+            mappings.putIfAbsent(javaName, rubyName);
         }
     }
 
@@ -417,33 +429,6 @@ public class AnnotationBinder extends AbstractProcessor {
             this.hasBlock = hasBlock;
         }
 
-    }
-
-    private List<String> getMethodMappings(TypeElement type, Map<CharSequence, List<ExecutableElement>> complexNames) {
-        List<String> mappings = new ArrayList<>();
-
-        for (Map.Entry<CharSequence, List<ExecutableElement>> entry : complexNames.entrySet()) {
-
-            for (Iterator<ExecutableElement> iterator = entry.getValue().iterator(); iterator.hasNext(); ) {
-                ExecutableElement elt = iterator.next();
-                mappings.add(elt.getSimpleName().toString());
-                mappings.add(entry.getKey().toString());
-            }
-        }
-
-        return mappings;
-    }
-
-    private List<String> getSimpleMethodMappings(TypeElement type, List<ExecutableElement> simpleNames) {
-        List<String> mappings = new ArrayList<>();
-
-        for (ExecutableElement elt : simpleNames) {
-            final String name = elt.getSimpleName().toString();
-            mappings.add(name);
-            mappings.add(name);
-        }
-
-        return mappings;
     }
 
     private static CharSequence getActualQualifiedName(TypeElement elem) {

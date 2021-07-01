@@ -16,7 +16,8 @@ describe "JRuby class reification" do
       add_method_signature("run", [java.lang.Void::TYPE])
     end
     java_class = RubyRunnable.become_java!
-    expect(java_class.interfaces).to include(java.lang.Runnable.java_class)
+    interfaces = java_class.interfaces
+    expect( interfaces ).to include(java.lang.Runnable.java_class)
   end
 
   it "uses the nesting of the class for its package name" do
@@ -81,8 +82,198 @@ describe "JRuby class reification" do
     java_class = TopRightOfTheStack.become_java!
     expect(java_class).not_to be_nil
 
-    java_class = TopRightOfTheStack.to_java.getReifiedClass
+    java_class = TopRightOfTheStack.to_java.getReifiedRubyClass
     expect(java_class).not_to be_nil
+  end
+
+  it "supports fully reifying a deep class hierarchy from java parents" do
+    class BottomOfTheJStack < java.util.ArrayList ; end
+    class MiddleOfTheJStack < BottomOfTheJStack ; end
+    class TopLeftOfTheJStack < MiddleOfTheJStack ; end
+    class TopRightOfTheJStack < MiddleOfTheJStack ;def size; super + 3; end ; end
+
+    java_class = TopLeftOfTheJStack.become_java!
+    expect(java_class).not_to be_nil
+
+    java_class = TopRightOfTheJStack.become_java!
+    expect(java_class).not_to be_nil
+
+    java_class = TopRightOfTheJStack.to_java.getReifiedJavaClass
+    expect(java_class).not_to be_nil
+    
+    expect(TopRightOfTheJStack.new).not_to be_nil
+    
+    expect(TopLeftOfTheJStack.new.size).to eq 0
+    expect(TopRightOfTheJStack.new([:a, :b]).size).to eq (2+3)
+  end
+  
+  it "constructs in the right order using the right methods" do
+	class BottomOfTheCJStack < java.util.ArrayList
+		def initialize(lst)
+			lst << :bottom_start
+			super()
+			lst << :bottom_end
+		end
+	end
+    class MiddleLofTheCJStack < BottomOfTheCJStack 
+		def initialize(lst)
+			lst << :mid1_start
+			super
+			lst << :mid1_end
+		end
+	end
+    class MiddleMofTheCJStack < MiddleLofTheCJStack 
+		def initialize(lst)
+			lst << :mid2_error
+			super
+			lst << :mid2_end_error
+		end
+		configure_java_class ctor_name: :reconfigured
+		def reconfigured(lst)
+			lst << :mid2_good_start
+			super
+			lst << :mid2_good_end
+		end
+	end
+    class MiddleUofTheCJStack < MiddleMofTheCJStack 
+		#default init
+	end
+	class TopOfTheCJStack < MiddleUofTheCJStack
+		def initialize(lst)
+		lst << :top_start
+		super
+		lst << :top_end
+		end
+	end
+	
+	trace = []
+    expect(TopOfTheCJStack.new(trace)).not_to be_nil
+    expect(trace).to eql([:top_start, :mid2_good_start, :mid1_start, :bottom_start, :bottom_end, :mid1_end, :mid2_good_end, :top_end])
+  end
+  
+  it "supports reification of java classes with interfaces" do
+	clz = Class.new(java.lang.Exception) do
+		include java.util.Iterator
+		def initialize(array)
+			@array = array
+			super(array.inspect)
+			@at=0
+			@loop = false
+		end
+		def hasNext
+			@at<@array.length
+		end
+		def next()
+			@array[@array.length - 1 - @at].tap{@at+=1}
+		end
+		
+		def remove
+			raise java.lang.StackOverflowError.new if @loop
+			@loop = true
+			begin
+				@array<< :fail1
+				super
+				@array << :fail2
+			rescue java.lang.UnsupportedOperationException => uo
+				@array = [:success]
+			rescue java.lang.StackOverflowError => so
+				@array << :failSO
+			end
+			@loop = false
+		end
+	end
+
+	gotten = []
+	clz.new([:a, :b, :c]).forEachRemaining { |k| gotten << k }
+	expect(gotten).to eql([:c,:b, :a])
+	expect(clz.new([:a, :b, :c]).message).to eql("[:a, :b, :c]")
+
+	pending "GH#6479 + reification not yet hooked up"
+	obj = clz.new(["fail3"])
+	obj.remove
+	gotten = []
+	obj.forEachRemaining { |k| gotten << k }
+	expect(gotten).to eql([:success])
+	expect(gotten.length).to eql(2)
+  end
+  
+  it "supports reification of ruby classes with interfaces" do
+    pending "GH#6479 + reification not yet hooked up"
+
+	clz = Class.new do
+		include java.util.Iterator
+		def initialize(array)
+			@array = array
+			@at=0
+			@loop = false
+		end
+		def hasNext
+			@at<@array.length
+		end
+		def next()
+			@array[@array.length - 1 - @at].tap{@at+=1}
+		end
+		
+		def remove
+			raise java.lang.StackOverflowError.new if @loop
+			@loop = true
+			begin
+				@array<< :fail1
+				super
+				@array << :fail2
+			rescue java.lang.UnsupportedOperationException => uo
+				@array = [:success]
+			rescue java.lang.StackOverflowError => so
+				@array << :failSO
+			end
+			@loop = false
+		end
+	end
+
+	obj = clz.new(["fail3"])
+	obj.remove
+	gotten = []
+	obj.forEachRemaining { |k| gotten << k }
+	expect(gotten).to eql([:success])
+	expect(gotten.length).to eql(2)
+  end
+  
+  
+  it "supports reification of concrete classes with non-standard construction" do
+  
+	clz = Class.new(java.lang.Exception) do
+		def jinit(str, seq)
+			@seq = seq
+			super("foo: #{str}")
+			seq << :jinit
+		end
+		
+		def initialize(str, foo)
+			@seq << :init
+			@seq << str
+			@seq << foo
+		end
+		
+		def self.new(seq, str)
+			obj = allocate
+			seq << :new
+			obj.__jallocate!(str, seq)
+			seq << :ready
+			obj
+		end
+		
+		configure_java_class ctor_name: :jinit
+	end
+	
+	clz.become_java!
+	
+	lst = []
+	obj = clz.new(lst, :bar)
+	expect(obj).not_to be_nil
+	expect(lst).to eq([:new, :jinit, :ready])
+	expect(obj.message).to eq("foo: bar")
+	obj.send :initialize, :x, "y"
+	expect(lst).to eq([:new, :jinit, :ready, :init, :x, "y"])
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do
@@ -104,6 +295,16 @@ describe "JRuby class reification" do
 
     anno = method.get_annotation( java.lang.Deprecated.java_class )
     expect(anno).not_to be_nil
+  end
+  
+  it "Errors on unimplemented methods in abstract/interfaces" do
+    expect { Class.new do; include java.util.Iterator; end.hasNext }.to raise_error(NoMethodError)
+    expect { Class.new(java.lang.Exception) do; include java.util.Iterator; end.hasNext }.to raise_error(NoMethodError)
+    expect { Class.new(java.util.AbstractList) do; end.get(0) }.to raise_error(NoMethodError)
+  end
+  
+  it "Errors on invalid logic jumps" do
+    expect { Class.new(java.util.AbstractList) do; def initialize();while true; super([]); fail_by_not_existing; end; end; end.new }.to raise_error(RuntimeError)
   end
 
   it "supports reification of annotations and signatures on static methods with parameters" do

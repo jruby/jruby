@@ -33,17 +33,16 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
  * @author enebo
  */
 public class OptArgNode extends Node implements INameNode {
-    private Node value;
+    private final Node value;
 
-    public OptArgNode(ISourcePosition position, Node value) {
-        super(position, value != null && value.containsVariableAssignment());
+    public OptArgNode(int line, Node value) {
+        super(line, value != null && value.containsVariableAssignment());
         this.value = value;
     }
 

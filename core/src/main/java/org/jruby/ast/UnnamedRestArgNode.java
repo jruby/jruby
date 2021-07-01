@@ -30,14 +30,13 @@
 package org.jruby.ast;
 
 import org.jruby.RubySymbol;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * a bare '*' or nothing.  Name is "" if it is '*' and null if it is nothing.
  */
 public class UnnamedRestArgNode extends RestArgNode {
-    public UnnamedRestArgNode(ISourcePosition position, RubySymbol name, int index) {
-        super(position, name, index);
+    public UnnamedRestArgNode(int line, RubySymbol name, int index) {
+        super(line, name, index);
     }
 
     public boolean isStar() {

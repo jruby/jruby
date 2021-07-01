@@ -31,11 +31,11 @@ public class CFG {
 
     private static final Logger LOG = LoggerFactory.getLogger(CFG.class);
 
-    private IRScope scope;
-    private Map<Label, BasicBlock> bbMap;
+    private final IRScope scope;
+    private final Map<Label, BasicBlock> bbMap;
 
     // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
-    private Map<BasicBlock, BasicBlock> rescuerMap;
+    private final Map<BasicBlock, BasicBlock> rescuerMap;
 
     /** Entry BB */
     private BasicBlock entryBB;
@@ -47,7 +47,7 @@ public class CFG {
     private BasicBlock globalEnsureBB;
 
     /** The graph itself */
-    private DirectedGraph<BasicBlock> graph;
+    private final DirectedGraph<BasicBlock> graph;
 
     private int nextBBId;       // Next available basic block id
 

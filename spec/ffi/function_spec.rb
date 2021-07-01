@@ -12,7 +12,7 @@ describe FFI::Function do
     attach_function :testFunctionAdd, [:int, :int, :pointer], :int
   end
   before do
-    @libtest = FFI::DynamicLibrary.open(TestLibrary::PATH, 
+    @libtest = FFI::DynamicLibrary.open(TestLibrary::PATH,
                                         FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
   end
 
@@ -21,8 +21,17 @@ describe FFI::Function do
     expect(fn.call).to eql 5
   end
 
+  context 'when called with a block' do
+    it 'creates a thread for dispatching callbacks and sets its name' do
+      skip 'this is MRI-specific' if RUBY_ENGINE == 'truffleruby' || RUBY_ENGINE == 'jruby'
+      FFI::Function.new(:int, []) { 5 } # Trigger initialization
+
+      expect(Thread.list.map(&:name)).to include('FFI Callback Dispatcher')
+    end
+  end
+
   it 'raises an error when passing a wrong signature' do
-    expect { FFI::Function.new([], :int).new { } }.to raise_error TypeError 
+    expect { FFI::Function.new([], :int).new { } }.to raise_error TypeError
   end
 
   it 'returns a native pointer' do
@@ -63,15 +72,20 @@ describe FFI::Function do
   end
 
   it 'can wrap a blocking function' do
-    fp = FFI::Function.new(:void, [ :int ], @libtest.find_function('testBlocking'), :blocking => true)
-    threads = 10.times.map do |x|
-      Thread.new do
-        time = Time.now
-        fp.call(2)
-        expect(Time.now - time).to be >= 2
-      end
+    fpOpen = FFI::Function.new(:pointer, [ ], @libtest.find_function('testBlockingOpen'))
+    fpRW = FFI::Function.new(:char, [ :pointer, :char ], @libtest.find_function('testBlockingRW'), :blocking => true)
+    fpWR = FFI::Function.new(:char, [ :pointer, :char ], @libtest.find_function('testBlockingWR'), :blocking => true)
+    fpClose = FFI::Function.new(:void, [ :pointer ], @libtest.find_function('testBlockingClose'))
+    handle = fpOpen.call
+    expect(handle).not_to be_null
+    begin
+      thWR = Thread.new { fpWR.call(handle, 63) }
+      thRW = Thread.new { fpRW.call(handle, 64) }
+      expect(thWR.value).to eq(64)
+      expect(thRW.value).to eq(63)
+    ensure
+      fpClose.call(handle)
     end
-    threads.each { |t| t.join }
   end
 
   it 'autorelease flag is set to true by default' do

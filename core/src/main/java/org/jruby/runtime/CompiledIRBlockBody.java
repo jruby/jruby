@@ -1,7 +1,6 @@
 package org.jruby.runtime;
 
 import com.headius.invokebinder.Binder;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -16,30 +15,36 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected MethodHandle normalYieldHandle;
     protected MethodHandle normalYieldSpecificHandle;
     protected MethodHandle normalYieldUnwrapHandle;
+    private final String encodedArgumentDescriptors;
 
-    public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
-        super(closure, Signature.decode(encodedSignature));
+    public CompiledIRBlockBody(MethodHandle handle, StaticScope scope, String file, int line, String encodedArgumentDescriptors, long encodedSignature) {
+        super(scope, file, line, Signature.decode(encodedSignature));
+
         // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
         this.handle = handle;
-        MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, closure.getStaticScope(), null);
+        MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, scope, null);
         // This is gross and should be done in IR rather than in the handles.
         this.callHandle = MethodHandles.foldArguments(callHandle, CHECK_ARITY);
         this.yieldDirectHandle = MethodHandles.insertArguments(
-                MethodHandles.insertArguments(handle, 2, closure.getStaticScope()),
+                MethodHandles.insertArguments(handle, 2, scope),
                 4,
                 Block.NULL_BLOCK);
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
-        closure.getStaticScope().determineModule();
+        scope.determineModule();
+
+        this.encodedArgumentDescriptors = encodedArgumentDescriptors;
     }
 
-    private static final MethodHandle VALUE_TO_ARRAY = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "singleBlockArgToArray");
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private static final MethodHandle WRAP_VALUE = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(MethodHandles.lookup(), CompiledIRBlockBody.class, "wrapValue");
+    private static final MethodHandle VALUE_TO_ARRAY = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "singleBlockArgToArray");
+
+    private static final MethodHandle WRAP_VALUE = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(LOOKUP, CompiledIRBlockBody.class, "wrapValue");
 
     private static final MethodHandle CHECK_ARITY = Binder
             .from(void.class, ThreadContext.class, Block.class, IRubyObject[].class, Block.class)
-            .invokeStaticQuiet(MethodHandles.lookup(), CompiledIRBlockBody.class, "checkArity");
+            .invokeStaticQuiet(LOOKUP, CompiledIRBlockBody.class, "checkArity");
 
     private static void checkArity(ThreadContext context, Block selfBlock, IRubyObject[] args, Block block) {
         if (selfBlock.type == Block.Type.LAMBDA) {
@@ -51,7 +56,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
     @Override
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        return closure.getArgumentDescriptors();
+        return ArgumentDescriptor.decode(scope.getModule().getRuntime(), encodedArgumentDescriptors);
     }
 
     @Override

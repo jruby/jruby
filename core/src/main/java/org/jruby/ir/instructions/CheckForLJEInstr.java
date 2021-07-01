@@ -13,11 +13,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 
+import java.util.EnumSet;
+
 public class CheckForLJEInstr extends NoOperandInstr {
     // We know the proc/lambda was not lexically made within a method scope.  If it is a lambda
     // then it will not matter but if it is a proc and it is not found to be within a define_method
     // closure then we will raise an LJE if this true.
-    private boolean definedWithinMethod;
+    private final boolean definedWithinMethod;
 
     public CheckForLJEInstr(boolean notDefinedWithinMethod) {
         super(Operation.CHECK_FOR_LJE);
@@ -70,9 +72,9 @@ public class CheckForLJEInstr extends NoOperandInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        super.computeScopeFlags(scope);
-        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
+    public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
+        super.computeScopeFlags(scope, flags);
+        flags.add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }
 }

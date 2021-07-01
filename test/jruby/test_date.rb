@@ -912,6 +912,14 @@ class TestDate < Test::Unit::TestCase
     assert_equal(-1199, dt.year)
   end
 
+  def test_marshaling_keeps_offset
+    dt = DateTime.now
+    offset = dt.offset
+    dt2 = Marshal.load(Marshal.dump(dt))
+    assert_equal(offset, dt2.offset)
+    assert_equal(dt, dt2)
+  end
+
   def test_marshaling_with_active_support_like_calculation # GH-5188
     time = ActiveSupport.time_advance(Time.now, days: 1)
     date = time.to_date
@@ -936,6 +944,24 @@ class TestDate < Test::Unit::TestCase
     assert_equal(17, dt.sec)
     # NOTE: due rounding JRuby ends up with a different fraction :
     #assert_equal(0.4, dt.sec_fraction.to_f.round(1))
+  end
+
+  def test_exception_cause_cmp
+    begin
+      Date.new(2000, 1, 1) == nil
+      raise TypeError
+    rescue TypeError => e
+      assert_equal(nil, e.cause)
+    end
+  end
+
+  def test_exception_cause_eqq
+    begin
+      Date.new(2000, 1, 1) <=> nil
+      raise TypeError
+    rescue TypeError => e
+      assert_equal(nil, e.cause)
+    end
   end
 
   module ActiveSupport

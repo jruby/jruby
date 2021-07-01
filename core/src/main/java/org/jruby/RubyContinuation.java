@@ -55,15 +55,15 @@ public class RubyContinuation extends RubyObject {
     private final Continuation continuation;
     private boolean disabled;
     
-    public static void createContinuation(Ruby runtime) {
+    public static RubyClass createContinuation(Ruby runtime) {
         RubyClass cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
 
         cContinuation.setClassIndex(ClassIndex.CONTINUATION);
         cContinuation.setReifiedClass(RubyContinuation.class);
 
         cContinuation.getSingletonClass().undefineMethod("new");
-        
-        runtime.setContinuation(cContinuation);
+
+        return cContinuation;
     }
 
     @Deprecated

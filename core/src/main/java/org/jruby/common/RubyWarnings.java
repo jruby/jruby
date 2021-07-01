@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -35,7 +36,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -59,8 +59,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warning.defineAnnotatedMethods(RubyWarnings.class);
         warning.extend_object(warning);
 
-        runtime.setWarning(warning);
-
         return warning;
     }
 
@@ -83,25 +81,11 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     @Override
-    @Deprecated
-    public void warn(ID id, ISourcePosition position, String message) {
-        if (!runtime.warningsEnabled()) return;
-
-        warn(id, position.getFile(), position.getLine(), message);
-    }
-
-    /**
-     * Prints a warning, unless $VERBOSE is nil.
-     */
-    @Override
     public void warn(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        StringBuilder buffer = new StringBuilder(100);
-
-        buffer.append(fileName).append(':').append(lineNumber + 1).append(": ");
-        buffer.append("warning: ").append(message).append('\n');
-        RubyString errorString = runtime.newString(buffer.toString());
+        String buffer = fileName + ':' + (lineNumber + 1) + ": warning: " + message + '\n';
+        RubyString errorString = runtime.newString(buffer);
 
         writeWarningDyncall(runtime.getCurrentContext(), errorString);
     }
@@ -146,10 +130,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(String filename, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        StringBuilder buffer = new StringBuilder(100);
-
-        buffer.append(filename).append(": ").append(message).append('\n');
-        RubyString errorString = runtime.newString(buffer.toString());
+        RubyString errorString = runtime.newString(filename + ": " + message + '\n');
 
         writeWarningDyncall(runtime.getCurrentContext(), errorString);
     }
@@ -200,15 +181,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, only in verbose mode.
      */
     @Override
-    @Deprecated
-    public void warning(ID id, ISourcePosition position, String message) {
-        warning(id, position.getFile(), position.getLine(), message);
-    }
-
-    /**
-     * Prints a warning, only in verbose mode.
-     */
-    @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
@@ -218,8 +190,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     @JRubyMethod
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
-
-        if (!runtime.warningsEnabled()) return context.nil;
 
         TypeConverter.checkType(context, arg, runtime.getString());
         RubyString str = (RubyString) arg;
@@ -242,11 +212,8 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(ID id, String fileName, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        StringBuilder buffer = new StringBuilder(100);
-
-        buffer.append(fileName).append(' ');
-        buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
+        String buffer = fileName + " warning: " + message + '\n';
+        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer));
     }
 }

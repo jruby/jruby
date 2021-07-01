@@ -85,7 +85,7 @@ public class RubyZlib {
         mZlib.defineOrGetClassUnder("VersionError", cZlibError, cZlibError.getAllocator());
         mZlib.defineOrGetClassUnder("DataError", cZlibError, cZlibError.getAllocator());
 
-        RubyClass cGzFile = mZlib.defineOrGetClassUnder("GzipFile", runtime.getObject(), RubyGzipFile.GZIPFILE_ALLOCATOR);
+        RubyClass cGzFile = mZlib.defineOrGetClassUnder("GzipFile", runtime.getObject(), RubyGzipFile::new);
         cGzFile.defineAnnotatedMethods(RubyGzipFile.class);
 
         cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
@@ -95,11 +95,11 @@ public class RubyZlib {
         cGzFile.defineOrGetClassUnder("NoFooter", cGzError, cGzError.getAllocator());
         cGzFile.defineOrGetClassUnder("LengthError", cGzError, cGzError.getAllocator());
 
-        RubyClass cGzReader = mZlib.defineOrGetClassUnder("GzipReader", cGzFile, JZlibRubyGzipReader.GZIPREADER_ALLOCATOR);
+        RubyClass cGzReader = mZlib.defineOrGetClassUnder("GzipReader", cGzFile, JZlibRubyGzipReader::new);
         cGzReader.includeModule(runtime.getEnumerable());
         cGzReader.defineAnnotatedMethods(JZlibRubyGzipReader.class);
 
-        RubyClass cGzWriter = mZlib.defineOrGetClassUnder("GzipWriter", cGzFile, JZlibRubyGzipWriter.GZIPWRITER_ALLOCATOR);
+        RubyClass cGzWriter = mZlib.defineOrGetClassUnder("GzipWriter", cGzFile, JZlibRubyGzipWriter::new);
         cGzWriter.defineAnnotatedMethods(JZlibRubyGzipWriter.class);
 
         mZlib.defineConstant("ZLIB_VERSION", runtime.newString(ZLIB_VERSION));
@@ -150,10 +150,10 @@ public class RubyZlib {
         cZStream.defineAnnotatedMethods(ZStream.class);
         cZStream.undefineMethod("new");
 
-        RubyClass cInflate = mZlib.defineOrGetClassUnder("Inflate", cZStream, JZlibInflate.INFLATE_ALLOCATOR);
+        RubyClass cInflate = mZlib.defineOrGetClassUnder("Inflate", cZStream, JZlibInflate::new);
         cInflate.defineAnnotatedMethods(JZlibInflate.class);
 
-        RubyClass cDeflate = mZlib.defineOrGetClassUnder("Deflate", cZStream, JZlibDeflate.DEFLATE_ALLOCATOR);
+        RubyClass cDeflate = mZlib.defineOrGetClassUnder("Deflate", cZStream, JZlibDeflate::new);
         cDeflate.defineAnnotatedMethods(JZlibDeflate.class);
 
         runtime.getKernel().callMethod(runtime.getCurrentContext(), "require", runtime.newString("stringio"));

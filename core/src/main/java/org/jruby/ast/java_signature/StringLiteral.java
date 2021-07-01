@@ -9,10 +9,24 @@ package org.jruby.ast.java_signature;
  * @author enebo
  */
 public class StringLiteral implements Literal {
-    private String string;
+    private final String string;
     
     public StringLiteral(String string) {
         this.string = string;
+    }
+    
+    @Override
+    public Object getLiteral(){
+    	return string;
+    }
+
+    /**
+     * Accept for the visitor pattern.
+     * @param visitor the visitor
+     **/
+    @Override
+    public <T> T accept(AnnotationVisitor<T> visitor) {
+    	return visitor.literal(this);
     }
     
     @Override

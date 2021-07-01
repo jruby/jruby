@@ -62,14 +62,14 @@ public class Pack {
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
     /** Native pack type.
      **/
-    private static final String NATIVE_CODES = "sSiIlL";
-    private static final String MAPPED_CODES = "sSiIqQ";
+    private static final String NATIVE_CODES = "sSiIlLjJ";
+    private static final String MAPPED_CODES = "sSiIqQjJ";
     
-    private static final char BE = '>' - 1; // 61, only 1 char "free" b/w q and s
+    private static final char BE = '>' + 127; // 189, bumped up to avoid collisions with LE
     private static final char LE = '<'; // 60
     private static final String ENDIANESS_CODES = new String(new char[] {
-            's' + BE, 'S' + BE/*n*/, 'i' + BE, 'I' + BE, 'l' + BE, 'L' + BE/*N*/, 'q' + BE, 'Q' + BE,
-            's' + LE, 'S' + LE/*v*/, 'i' + LE, 'I' + LE, 'l' + LE, 'L' + LE/*V*/, 'q' + LE, 'Q' + LE});
+            's' + BE, 'S' + BE/*n*/, 'i' + BE, 'I' + BE, 'l' + BE, 'L' + BE/*N*/, 'q' + BE, 'Q' + BE, 'j' + BE, 'J' + BE,
+            's' + LE, 'S' + LE/*v*/, 'i' + LE, 'I' + LE, 'l' + LE, 'L' + LE/*V*/, 'q' + LE, 'Q' + LE, 'j' + LE, 'J' + LE});
     private static final String UNPACK_IGNORE_NULL_CODES = "cC";
     private static final String PACK_IGNORE_NULL_CODES = "cCiIlLnNqQsSvV";
     private static final String PACK_IGNORE_NULL_CODES_WITH_MODIFIERS = "lLsS";
@@ -84,7 +84,7 @@ public class Pack {
     private static final byte[] b64_table;
     public static final byte[] sHexDigits;
     public static final int[] b64_xtable = new int[256];
-    private static final Converter[] converters = new Converter[256];
+    private static final Converter[] converters = new Converter[512];
 
     private static long num2quad(IRubyObject arg) {
         if (arg.isNil()) return 0L;
@@ -383,7 +383,7 @@ public class Pack {
         converters['l' + BE] = tmp; // long, native
 
         // 64-bit number, native (as bignum)
-        converters['Q'] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l = Platform.BYTE_ORDER == Platform.BIG_ENDIAN ? decodeLongBigEndian(enc) : decodeLongLittleEndian(enc);
 
@@ -395,8 +395,11 @@ public class Pack {
                 encodeLongByByteOrder(result, num2quad(o));
             }
         };
+        converters['Q'] = tmp;
+        converters['J'] = tmp;
+
         // 64-bit number, little endian (as bignum)
-        converters['Q' + LE] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l = decodeLongLittleEndian(enc);
                 return RubyBignum.bignorm(runtime,BigInteger.valueOf(l).and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
@@ -407,8 +410,12 @@ public class Pack {
                 encodeLongLittleEndian(result, num2quad(o));
             }
         };
+        converters['Q' + LE] = tmp;
+        converters['J' + LE] = tmp;
+
         // 64-bit number, big endian (as bignum)
-        converters['Q' + BE] = new QuadConverter(8, "Integer") {
+
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l = decodeLongBigEndian(enc);
                 return RubyBignum.bignorm(runtime,BigInteger.valueOf(l).and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
@@ -419,8 +426,11 @@ public class Pack {
                 encodeLongBigEndian(result, num2quad(o));
             }
         };
+        converters['Q' + BE] = tmp;
+        converters['J' + BE] = tmp;
+
         // 64-bit number, native (as fixnum)
-        converters['q'] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(Platform.BYTE_ORDER == Platform.BIG_ENDIAN ? 
                         decodeLongBigEndian(enc) : decodeLongLittleEndian(enc));
@@ -431,8 +441,11 @@ public class Pack {
                 encodeLongByByteOrder(result, num2quad(o));
             }
         };
+        converters['q'] = tmp;
+        converters['j'] = tmp;
+
         // 64-bit number, little-endian (as fixnum)
-        converters['q' + LE] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(decodeLongLittleEndian(enc));
             }
@@ -442,8 +455,11 @@ public class Pack {
                 encodeLongLittleEndian(result, num2quad(o));
             }
         };
+        converters['q' + LE] = tmp;
+        converters['j' + LE] = tmp;
+
         // 64-bit number, big-endian (as fixnum)
-        converters['q' + BE] = new QuadConverter(8, "Integer") {
+        tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(decodeLongBigEndian(enc));
             }
@@ -453,6 +469,8 @@ public class Pack {
                 encodeLongBigEndian(result, num2quad(o));
             }
         };
+        converters['q' + BE] = tmp;
+        converters['j' + BE] = tmp;
     }
 
     public static int unpackInt_i(ByteBuffer enc) {
@@ -809,7 +827,86 @@ public class Pack {
         return (RubyArray) unpackInternal(context, encoded, formatString, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY, block);
     }
 
+    private static RubyString unpackBase46Strict(Ruby runtime, ByteList input) {
+        int index = 0; // current index of out
+        int s = -1;
+        int a = -1;
+        int b = -1;
+        int c = 0;
+
+        byte[] buf = input.unsafeBytes();
+        int begin = input.begin();
+        int length = input.realSize();
+        int end = begin + length;
+
+        if (length % 4 != 0) throw runtime.newArgumentError("invalid base64");
+
+        int p = begin;
+        byte[] out = new byte[3 * ((length + 3) / 4)];
+
+        while (p < end && s != '=') {
+            // obtain a
+            s = buf[p++];
+            a = b64_xtable[s];
+            if (a == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain b
+            s = buf[p++];
+            b = b64_xtable[s];
+            if (b == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain c
+            s = buf[p++];
+            c = b64_xtable[s];
+            if (s == '=') {
+                if (buf[p++] != '=') throw runtime.newArgumentError("invalid base64");
+                break;
+            }
+            if (c == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain d
+            s = buf[p++];
+            int d = b64_xtable[s];
+            if (s == '=') break;
+            if (d == -1) throw runtime.newArgumentError("invalid base64");
+
+            // calculate based on a, b, c and d
+            out[index++] = (byte) (a << 2 | b >> 4);
+            out[index++] = (byte) (b << 4 | c >> 2);
+            out[index++] = (byte) (c << 6 | d);
+        }
+
+        if (p < end) throw runtime.newArgumentError("invalid base64");
+
+        if (a != -1 && b != -1) {
+            if (c == -1 && s == '=') {
+                if ((b & 15) > 0) throw runtime.newArgumentError("invalid base64");
+                out[index++] = (byte)((a << 2 | b >> 4) & 255);
+            } else if(c != -1 && s == '=') {
+                if ((c & 3) > 0) throw runtime.newArgumentError("invalid base64");
+                out[index++] = (byte)((a << 2 | b >> 4) & 255);
+                out[index++] = (byte)((b << 4 | c >> 2) & 255);
+            }
+        }
+        return runtime.newString(new ByteList(out, 0, index));
+    }
+
     public static IRubyObject unpack1WithBlock(ThreadContext context, RubyString encoded, ByteList formatString, Block block) {
+        int formatLength = formatString.realSize();
+
+        // Strict m0 is commmonly used in cookie handling so it has a fast path.
+        if (formatLength >= 1) {
+            byte first = (byte) (formatString.get(0) & 0xff);
+
+            if (first == 'm') {
+                if (formatLength == 2) {
+                    byte second = (byte) (formatString.get(1) & 0xff);
+
+                    if (second == '0') return unpackBase46Strict(context.runtime, encoded.getByteList());
+                }
+            }
+        }
+
         return unpackInternal(context, encoded, formatString, UNPACK_1, block);
     }
 
@@ -854,7 +951,7 @@ public class Pack {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
                 if (index == -1) {
-                    throw runtime.newArgumentError("'" + (char)next + "' allowed only after types sSiIlLqQ");
+                    throw runtime.newArgumentError("'" + (char)next + "' allowed only after types sSiIlLqQjJ");
                 }
                 type = ENDIANESS_CODES.charAt(index);
                 next = safeGet(format);
@@ -1428,14 +1525,23 @@ public class Pack {
 
     private static void unpack_at(Ruby runtime, ByteList encodedString, ByteBuffer encode, int occurrences) {
         try {
+            int limit;
             if (occurrences == IS_STAR) {
-                positionBuffer(encode, encodedString.begin() + encode.remaining());
+                limit = checkLimit(runtime, encode, encodedString.begin() + encode.remaining());
             } else {
-                positionBuffer(encode, encodedString.begin() + occurrences);
+                limit = checkLimit(runtime, encode, encodedString.begin() + occurrences);
             }
+            positionBuffer(encode, limit);
         } catch (IllegalArgumentException iae) {
             throw runtime.newArgumentError("@ outside of string");
         }
+    }
+
+    private static int checkLimit(Ruby runtime, ByteBuffer encode, int limit) {
+        if (limit >= encode.capacity() || limit < 0) {
+            throw runtime.newRangeError("pack length too big");
+        }
+        return limit;
     }
 
     @Deprecated
@@ -1659,8 +1765,8 @@ public class Pack {
     }
 
     public abstract static class Converter {
-        public int size;
-        public String type;
+        public final int size;
+        public final String type;
 
         public Converter(int size) {
             this(size, null);
@@ -1748,12 +1854,14 @@ public class Pack {
      * Same as pack but defaults tainting of output to false.
      */
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor());
+        RubyString buffer = runtime.newString();
+        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor(), buffer);
     }
 
     @Deprecated
     public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        return pack(context, list, formatString);
+        RubyString buffer = runtime.newString();
+        return pack(context, list, formatString, buffer);
     }
 
     @Deprecated
@@ -1763,8 +1871,8 @@ public class Pack {
             result, block, converter, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY);
     }
 
-    public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString) {
-        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor());
+    public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString, RubyString buffer) {
+        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor(), buffer);
         return (RubyString) pack.infectBy(formatString);
     }
 
@@ -1780,9 +1888,11 @@ public class Pack {
         int idx;
     }
 
-    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
+    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor, RubyString buffer) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
-        ByteList result = new ByteList();
+
+        buffer.modify();
+        ByteList result = buffer.getByteList();
         boolean taintOutput = tainted;
         PackInts packInts = new PackInts(list.size(), 0);
         int type;
@@ -1907,21 +2017,20 @@ public class Pack {
             }
         }
 
-        RubyString output = RubyString.newString(context.runtime, result);
-        if (taintOutput) output.setTaint(true);
+        if (taintOutput) buffer.setTaint(true);
 
         switch (enc_info) {
             case 1:
-                output.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
+                buffer.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
                 break;
             case 2:
-                output.associateEncoding(UTF8);
+                buffer.associateEncoding(UTF8);
                 break;
             default:
                 /* do nothing, keep ASCII-8BIT */
         }
 
-        return output;
+        return buffer;
     }
 
     private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {

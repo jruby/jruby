@@ -48,6 +48,7 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -56,7 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author Benoit
 */
-public class TestRuby extends TestRubyBase {
+public class TestRuby extends Base {
     
     public TestRuby(String name) {
         super(name);
@@ -193,5 +194,11 @@ public class TestRuby extends TestRubyBase {
         assertTrue(ruby.getExecutor().isShutdown());
         assertTrue(ruby.getFiberExecutor().isShutdown());
         assertTrue(ruby.getJITCompiler().isShutdown());
+    }
+
+    // Test that the revision is being populated correctly. jruby/jruby#6090
+    public void testRevision() {
+        assertTrue(Constants.REVISION.length() == 10);
+        assertFalse(Constants.REVISION.equals(Constants.BOGUS_REVISION));
     }
 }

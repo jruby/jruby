@@ -172,6 +172,10 @@ public final class StringSupport {
         return new StringBuilder(str1.length() + str2.length()).append(str1).append(str2);
     }
 
+    public static String concat(final String str1, final String str2) {
+        return new StringBuilder(str1.length() + str2.length()).append(str1).append(str2).toString();
+    }
+
     public static String delete(final String str, final char c) { // str.replaceAll(c.toString(), "")
         char[] ary = null; int end = 0, s = 0;
         for (int i = 0; i < str.length(); i++) {
@@ -322,6 +326,13 @@ public final class StringSupport {
 
     public static int searchNonAscii(ByteList bytes) {
         return searchNonAscii(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
+    }
+
+    public static int searchNonAscii(String string) {
+        for (int p = 0; p < string.length(); p++) {
+            if (!Encoding.isAscii(string.charAt(p))) return p;
+        }
+        return -1;
     }
 
     public static int codeRangeScan(Encoding enc, byte[]bytes, int p, int len) {
@@ -623,6 +634,21 @@ public final class StringSupport {
         return p;
     }
 
+    /**
+     * Return the byte offset of the nth character {@code n} in the given byte array between {@code p} and {@code n} using
+     * {@code enc} as the encoding.
+     *
+     * Note that the resulting offset will absolute, and therefore >= {@code p}. Subtract {@code p} to get a relative
+     * offset.
+     *
+     * @param enc the encoding of the characters in the byte array
+     * @param bytes the byte array
+     * @param p starting offset
+     * @param end limit offset
+     * @param n character offset to find
+     * @return the byte offset of the requested character, or -1 if the requested character offset is outside
+     *         the given byte offset range
+     */
     public static int nth(Encoding enc, byte[]bytes, int p, int end, int n) {
         return nth(enc, bytes, p, end, n, enc.isSingleByte());
     }
@@ -762,7 +788,7 @@ public final class StringSupport {
 
     /**
      * Check whether input object's string value contains a null byte, and if so
-     * throw SecurityError.
+     * throw ArgumentError.
      * @param runtime
      * @param value
      */
@@ -773,7 +799,7 @@ public final class StringSupport {
         final int end = bl.length();
         for (int i = bl.begin(); i < end; ++i) {
             if (array[i] == (byte) 0) {
-                throw runtime.newSecurityError("string contains null byte");
+                throw runtime.newArgumentError("string contains null byte");
             }
         }
     }
@@ -993,7 +1019,7 @@ public final class StringSupport {
         p = byteList.getBegin();
         end = p + byteList.getRealSize();
 
-        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
+        if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         while (p < end) {
             int c = bytes[p++] & 0xff;
             switch (c) {
@@ -1045,7 +1071,7 @@ public final class StringSupport {
                     }
             }
         }
-        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
+        if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         outBytes.setRealSize(q);
         assert out == outBytes.getUnsafeBytes(); // must not reallocate
 
@@ -1191,7 +1217,10 @@ public final class StringSupport {
         }
 
         final byte[] buf;
-        int p, pend, now, max;
+        int p;
+        final int pend;
+        int now;
+        int max;
         boolean gen;
     }
 
@@ -1420,11 +1449,19 @@ public final class StringSupport {
         if (!alnumSeen) {
             s = end;
             while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
+                byte tmp[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
                 int cl = preciseLength(enc, bytes, s, end);
                 if (cl <= 0) continue;
-                neighbor = succChar(enc, bytes, s, cl);
-                if (neighbor == NeighborChar.FOUND) return valueCopy;
-                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
+                System.arraycopy(bytes, s, tmp, 0, cl);
+                neighbor = succChar(enc, tmp, 0, cl);
+                if (neighbor == NeighborChar.FOUND) {
+                    System.arraycopy(tmp, 0, bytes, s, cl);
+                    return valueCopy;
+                }
+                if (neighbor == NeighborChar.WRAPPED) {
+                    System.arraycopy(tmp, 0, bytes, s, cl);
+                }
+                if (preciseLength(enc, bytes, s, s + cl) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
                 if (!enc.isAsciiCompatible()) {
                     System.arraycopy(bytes, s, carry, 0, cl);
                     carryLen = cl;
@@ -1510,7 +1547,13 @@ public final class StringSupport {
 
     // MRI: enc_succ_alnum_char
     private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
+        NeighborChar ret;
         byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
+
+        /* skip 03A2, invalid char between GREEK CAPITAL LETTERS */
+        int tryCounter;
+        final int maxGaps = 1;
+
         int c = enc.mbcToCode(bytes, p, p + len);
 
         final int cType;
@@ -1523,10 +1566,12 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, save, 0, len);
-        NeighborChar ret = succChar(enc, bytes, p, len);
-        if (ret == NeighborChar.FOUND) {
-            c = enc.mbcToCode(bytes, p, p + len);
-            if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
+        for (tryCounter = 0; tryCounter <= maxGaps; ++tryCounter) {
+            ret = succChar(enc, bytes, p, len);
+            if (ret == NeighborChar.FOUND) {
+                c = enc.mbcToCode(bytes, p, p + len);
+                if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
+            }
         }
 
         System.arraycopy(save, 0, bytes, p, len);
@@ -1614,6 +1659,38 @@ public final class StringSupport {
 
     public static boolean isSingleByteOptimizable(CodeRangeable string, Encoding encoding) {
         return string.getCodeRange() == CR_7BIT || encoding.maxLength() == 1;
+    }
+
+    /**
+     *
+     * @param source string to find index within
+     * @param other string to match in source
+     * @param offset in bytes to start looking
+     * @param enc encoding to use to walk the source string.
+     * @return
+     */
+    public static int index(ByteList source, ByteList other, int offset, Encoding enc) {
+        int sourceLen = source.realSize();
+        int sourceBegin = source.begin();
+        int otherLen = other.realSize();
+
+        if (otherLen == 0) return offset;
+        if (sourceLen - offset < otherLen) return -1;
+
+        byte[] sourceBytes = source.getUnsafeBytes();
+        int p = sourceBegin + offset;
+        int end = p + sourceLen;
+
+        while (true) {
+            int pos = source.indexOf(other, p - sourceBegin);
+            if (pos < 0) return pos;
+            pos -= (p - sourceBegin);
+            int t = enc.rightAdjustCharHead(sourceBytes, p, p + pos, end);
+            if (t == p + pos) return pos + offset;
+            if ((sourceLen -= t - p) <= 0) return -1;
+            offset += t - p;
+            p = t;
+        }
     }
 
     public static int index(CodeRangeable sourceString, CodeRangeable otherString, int offset, Encoding enc) {

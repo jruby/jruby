@@ -37,14 +37,18 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.nio.channels.Channels;
-import org.jruby.*;
+
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyFile;
+import org.jruby.RubyHash;
+import org.jruby.RubyIO;
 import org.jruby.ast.Node;
 import org.jruby.lexer.ByteListLexerSource;
 import org.jruby.lexer.GetsLexerSource;
 import org.jruby.lexer.LexerSource;
-import org.jruby.lexer.yacc.*;
+import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
@@ -69,7 +73,6 @@ public class Parser {
         return totalBytes;
     }
     
-    @SuppressWarnings("unchecked")
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
@@ -78,7 +81,6 @@ public class Parser {
         return parse(file, lexerSource, blockScope, configuration);
     }
 
-    @SuppressWarnings("unchecked")
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
@@ -87,7 +89,6 @@ public class Parser {
         return parse(file, lexerSource, blockScope, configuration);
     }
 
-    @SuppressWarnings("unchecked")
     public Node parse(String file, InputStream content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         if (content instanceof LoadServiceResourceInputStream) {
@@ -116,7 +117,6 @@ public class Parser {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public Node parse(String file, LexerSource lexerSource, DynamicScope blockScope,
             ParserConfiguration configuration) {
         // We only need to pass in current scope if we are evaluating as a block (which
@@ -142,19 +142,8 @@ public class Parser {
             // but I am not sure which conditions leads to this...so lame message.
             throw runtime.newSyntaxError("Problem reading source: " + e);
         } catch (SyntaxException e) {
-            switch (e.getPid()) {
-                case UNKNOWN_ENCODING:
-                case NOT_ASCII_COMPATIBLE:
-                    throw runtime.newArgumentError(e.getMessage());
-                default:
-                    StringBuilder buffer = new StringBuilder(100);
-                    buffer.append(e.getFile()).append(':');
-                    buffer.append(e.getLine() + 1).append(": ");
-                    buffer.append(e.getMessage());
-
-                    throw runtime.newSyntaxError(buffer.toString());
-            }
-        } 
+            throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage());
+        }
         
         // If variables were added then we may need to grow the dynamic scope to match the static
         // one.
@@ -184,5 +173,4 @@ public class Parser {
         }
         return list;
     }
-
 }

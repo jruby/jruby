@@ -56,6 +56,11 @@ public class BeanManagerImpl implements BeanManager {
         if (managementEnabled) register(base + "service=Runtime", runtime);
     }
 
+    @Override
+    public void register(InlineStats inlineStats) {
+        if (managementEnabled) register(base + "service=InlineStats", inlineStats);
+    }
+
     public void unregisterCompiler() {
         if (managementEnabled) unregister(base + "service=JITCompiler");
     }
@@ -70,6 +75,11 @@ public class BeanManagerImpl implements BeanManager {
     }
     public void unregisterRuntime() {
         if (managementEnabled) unregister(base + "service=Runtime");
+    }
+
+    @Override
+    public void unregisterInlineStats() {
+        if (managementEnabled) unregister(base + "service=InlineStats");
     }
 
     public boolean tryShutdownAgent() {

@@ -32,6 +32,7 @@ package org.jruby.ext.ripper;
 
 import org.jruby.RubyArray;
 import org.jruby.lexer.LexerSource;
+import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
@@ -48,75 +49,126 @@ public class RipperParser extends RipperParserBase {
     }
 %}
 
-%token <IRubyObject> keyword_class keyword_module keyword_def keyword_undef
-  keyword_begin keyword_rescue keyword_ensure keyword_end keyword_if
-  keyword_unless keyword_then keyword_elsif keyword_else keyword_case
-  keyword_when keyword_while keyword_until keyword_for keyword_break
-  keyword_next keyword_redo keyword_retry keyword_in keyword_do keyword_do_cond
-  keyword_do_block keyword_return keyword_yield keyword_super keyword_self
-  keyword_nil keyword_true keyword_false keyword_and keyword_or keyword_not
-  modifier_if modifier_unless modifier_while modifier_until modifier_rescue
-  keyword_alias keyword_defined keyword_BEGIN keyword_END keyword__LINE__
-  keyword__FILE__ keyword__ENCODING__ keyword_do_lambda
-
-%token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+%token <IRubyObject> keyword_class        /* {{class}} */
+%token <IRubyObject> keyword_module       /* {{module}} */
+%token <IRubyObject> keyword_def          /* {{def}} */
+%token <IRubyObject> keyword_undef        /* {{undef}} */
+%token <IRubyObject> keyword_begin        /* {{begin}} */
+%token <IRubyObject> keyword_rescue       /* {{rescue}} */
+%token <IRubyObject> keyword_ensure       /* {{ensure}} */
+%token <IRubyObject> keyword_end          /* {{end}} */
+%token <IRubyObject> keyword_if           /* {{if}} */
+%token <IRubyObject> keyword_unless       /* {{unless}} */
+%token <IRubyObject> keyword_then         /* {{then}} */
+%token <IRubyObject> keyword_elsif        /* {{elsif}} */
+%token <IRubyObject> keyword_else         /* {{else}} */
+%token <IRubyObject> keyword_case         /* {{case}} */
+%token <IRubyObject> keyword_when         /* {{when}} */
+%token <IRubyObject> keyword_while        /* {{while}} */
+%token <IRubyObject> keyword_until        /* {{until}} */
+%token <IRubyObject> keyword_for          /* {{for}} */
+%token <IRubyObject> keyword_break        /* {{break}} */
+%token <IRubyObject> keyword_next         /* {{next}} */
+%token <IRubyObject> keyword_redo         /* {{redo}} */
+%token <IRubyObject> keyword_retry        /* {{retry}} */
+%token <IRubyObject> keyword_in           /* {{in}} */
+%token <IRubyObject> keyword_do           /* {{do}} */
+%token <IRubyObject> keyword_do_cond      /* {{do (for condition)}} */
+%token <IRubyObject> keyword_do_block     /* {{do (for block)}} */
+%token <IRubyObject> keyword_return       /* {{return}} */
+%token <IRubyObject> keyword_yield        /* {{yield}} */
+%token <IRubyObject> keyword_super        /* {{super}} */
+%token <IRubyObject> keyword_self         /* {{self}} */
+%token <IRubyObject> keyword_nil          /* {{nil}} */
+%token <IRubyObject> keyword_true         /* {{true}} */
+%token <IRubyObject> keyword_false        /* {{false}} */
+%token <IRubyObject> keyword_and          /* {{and}} */
+%token <IRubyObject> keyword_or           /* {{or}} */
+%token <IRubyObject> keyword_not          /* {{not}} */
+%token <IRubyObject> modifier_if          /* {{if (modifier)}} */
+%token <IRubyObject> modifier_unless      /* {{unless (modifier)}} */
+%token <IRubyObject> modifier_while       /* {{while (modifier)}} */
+%token <IRubyObject> modifier_until       /* {{until (modifier)}} */
+%token <IRubyObject> modifier_rescue      /* {{rescue (modifier)}} */
+%token <IRubyObject> keyword_alias        /* {{alias}} */
+%token <IRubyObject> keyword_defined      /* {{defined}} */
+%token <IRubyObject> keyword_BEGIN        /* {{BEGIN}} */
+%token <IRubyObject> keyword_END          /* {{END}} */
+%token <IRubyObject> keyword__LINE__      /* {{__LINE__}} */
+%token <IRubyObject> keyword__FILE__      /* {{__FILE__}} */
+%token <IRubyObject> keyword__ENCODING__  /* {{__ENCODING__}} */
+%token <IRubyObject> keyword_do_lambda    /* {{do (for lambda)}} */
+%token <IRubyObject> tIDENTIFIER         
+%token <IRubyObject> tFID
+%token <IRubyObject> tGVAR
+%token <IRubyObject> tIVAR
+%token <IRubyObject> tCONSTANT
+%token <IRubyObject> tCVAR
+%token <IRubyObject> tLABEL
 %token <IRubyObject> tCHAR
-%type <IRubyObject> sym symbol operation operation2 operation3 op fname cname 
-%type <IRubyObject> f_norm_arg restarg_mark
-%type <IRubyObject> dot_or_colon blkarg_mark
-%token <IRubyObject> tUPLUS         /* unary+ */
-%token <IRubyObject> tUMINUS        /* unary- */
-%token <IRubyObject> tUMINUS_NUM    /* unary- */
-%token <IRubyObject> tPOW           /* ** */
-%token <IRubyObject> tCMP           /* <=> */
-%token <IRubyObject> tEQ            /* == */
-%token <IRubyObject> tEQQ           /* === */
-%token <IRubyObject> tNEQ           /* != */
-%token <IRubyObject> tGEQ           /* >= */
-%token <IRubyObject> tLEQ           /* <= */
-%token <IRubyObject> tANDOP tOROP   /* && and || */
-%token <IRubyObject> tMATCH tNMATCH /* =~ and !~ */
-%token <IRubyObject>  tDOT           /* Is just '.' in ruby and not a token */
-%token <IRubyObject> tDOT2 tDOT3    /* .. and ... */
-%token <IRubyObject> tAREF tASET    /* [] and []= */
-%token <IRubyObject> tLSHFT tRSHFT  /* << and >> */
-%token <String> tANDDOT	            /* &. */
-%token <IRubyObject> tCOLON2        /* :: */
-%token <IRubyObject> tCOLON3        /* :: at EXPR_BEG */
-%token <IRubyObject> tOP_ASGN       /* +=, -=  etc. */
-%token <IRubyObject> tASSOC         /* => */
-%token <IRubyObject> tLPAREN        /* ( */
-%token <IRubyObject> tLPAREN2        /* ( Is just '(' in ruby and not a token */
-%token <IRubyObject> tRPAREN        /* ) */
-%token <IRubyObject> tLPAREN_ARG    /* ( */
-%token <IRubyObject> tLBRACK        /* [ */
-%token <IRubyObject> tRBRACK        /* ] */
-%token <IRubyObject> tLBRACE        /* { */
-%token <IRubyObject> tLBRACE_ARG    /* { */
-%token <IRubyObject> tSTAR          /* * */
-%token <IRubyObject> tSTAR2         /* *  Is just '*' in ruby and not a token */
-%token <IRubyObject> tAMPER         /* & */
-%token <IRubyObject> tAMPER2        /* &  Is just '&' in ruby and not a token */
-%token <IRubyObject> tTILDE         /* ` is just '`' in ruby and not a token */
-%token <IRubyObject> tPERCENT       /* % is just '%' in ruby and not a token */
-%token <IRubyObject> tDIVIDE        /* / is just '/' in ruby and not a token */
-%token <IRubyObject> tPLUS          /* + is just '+' in ruby and not a token */
-%token <IRubyObject> tMINUS         /* - is just '-' in ruby and not a token */
-%token <IRubyObject> tLT            /* < is just '<' in ruby and not a token */
-%token <IRubyObject> tGT            /* > is just '>' in ruby and not a token */
-%token <IRubyObject> tPIPE          /* | is just '|' in ruby and not a token */
-%token <IRubyObject> tBANG          /* ! is just '!' in ruby and not a token */
-%token <IRubyObject> tCARET         /* ^ is just '^' in ruby and not a token */
-%token <IRubyObject> tLCURLY        /* { is just '{' in ruby and not a token */
-%token <IRubyObject> tRCURLY        /* } is just '}' in ruby and not a token */
-%token <IRubyObject> tBACK_REF2     /* { is just '`' in ruby and not a token */
+%token <IRubyObject> tUPLUS               /* {{unary+}} */
+%token <IRubyObject> tUMINUS              /* {{unary-}} */
+%token <IRubyObject> tUMINUS_NUM
+%token <IRubyObject> tPOW                 /* {{**}} */
+%token <IRubyObject> tCMP                 /* {{<=>}} */
+%token <IRubyObject> tEQ                  /* {{==}} */
+%token <IRubyObject> tEQQ                 /* {{===}} */
+%token <IRubyObject> tNEQ                 /* {{!=}} */
+%token <IRubyObject> tGEQ                 /* {{>=}} */
+%token <IRubyObject> tLEQ                 /* {{<=}} */
+%token <IRubyObject> tANDOP               /* {{&&}}*/
+%token <IRubyObject> tOROP                /* {{||}} */
+%token <IRubyObject> tMATCH               /* {{=~}} */
+%token <IRubyObject> tNMATCH              /* {{!~}} */
+%token <IRubyObject> tDOT                 /* {{.}} -  '.' in ruby and not a token */
+%token <IRubyObject> tDOT2                /* {{..}} */
+%token <IRubyObject> tDOT3                /* {{...}} */
+%token <IRubyObject> tAREF                /* {{[]}} */
+%token <IRubyObject> tASET                /* {{[]=}} */
+%token <IRubyObject> tLSHFT               /* {{<<}} */
+%token <IRubyObject> tRSHFT               /* {{>>}} */
+%token <String> tANDDOT                /* {{&.}} */
+%token <IRubyObject> tCOLON2              /* {{::}} */
+%token <IRubyObject> tCOLON3              /* {{:: at EXPR_BEG}} */
+%token <IRubyObject> tOP_ASGN             /* +=, -=  etc. */
+%token <IRubyObject> tASSOC               /* {{=>}} */
+%token <IRubyObject> tLPAREN               /* {{(}} */
+%token <IRubyObject> tLPAREN2              /* {{(}} - '(' in ruby and not a token */
+%token <IRubyObject> tRPAREN              /* {{)}} */
+%token <IRubyObject> tLPAREN_ARG           /* {{( arg}} */
+%token <IRubyObject> tLBRACK              /* {{[}} */
+%token <IRubyObject> tRBRACK              /* {{]}} */
+%token <IRubyObject> tLBRACE               /* {{{}} */
+%token <IRubyObject> tLBRACE_ARG           /* {{{ arg}} */
+%token <IRubyObject> tSTAR                /* {{*}} */
+%token <IRubyObject> tSTAR2               /* {{*}} - '*' in ruby and not a token */
+%token <IRubyObject> tAMPER               /* {{&}} */
+%token <IRubyObject> tAMPER2              /* {{&}} - '&' in ruby and not a token */
+%token <IRubyObject> tTILDE               /* {{`}} - '`' in ruby and not a token */
+%token <IRubyObject> tPERCENT             /* {{%}} - '%' in ruby and not a token */
+%token <IRubyObject> tDIVIDE              /* {{/}} - '/' in ruby and not a token */
+%token <IRubyObject> tPLUS                /* {{+}} - '+' in ruby and not a token */
+%token <IRubyObject> tMINUS               /* {{-}} - '-' in ruby and not a token */
+%token <IRubyObject> tLT                  /* {{<}} - '<' in ruby and not a token */
+%token <IRubyObject> tGT                  /* {{>}} - '>' in ruby and not a token */
+%token <IRubyObject> tPIPE                /* {{|}} - '|' in ruby and not a token */
+%token <IRubyObject> tBANG                /* {{!}} - '!' in ruby and not a token */
+%token <IRubyObject> tCARET               /* {{^}} - '^' in ruby and not a token */
+%token <IRubyObject> tLCURLY               /* {{{}} - '{' in ruby and not a token */
+%token <IRubyObject> tRCURLY              /* {{}}} - '}' in ruby and not a token */
+%token <IRubyObject> tBACK_REF2           /* {{`}} - '`' in ruby and not a token */
 %token <IRubyObject> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
 %token <IRubyObject> tSTRING_DBEG tSTRING_DVAR tSTRING_END
-%token <IRubyObject> tLAMBDA tLAMBEG
+%token <IRubyObject> tLAMBDA              /* {{->}} */
+%token <IRubyObject> tLAMBEG
 %token <IRubyObject> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER tIMAGINARY
 %token <IRubyObject> tFLOAT
 %token <IRubyObject> tRATIONAL
 %token <IRubyObject>  tREGEXP_END
+   
+%type <IRubyObject> sym symbol operation operation2 operation3 op fname cname 
+%type <IRubyObject> f_norm_arg restarg_mark
+%type <IRubyObject> dot_or_colon blkarg_mark
 /* RIPPER-ONY TOKENS { */
 %token <IRubyObject> tIGNORED_NL tCOMMENT tEMBDOC_BEG tEMBDOC tEMBDOC_END
 %token <IRubyObject> tSP tHEREDOC_BEG tHEREDOC_END
@@ -131,7 +183,7 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> mrhs_arg
 %type <IRubyObject> compstmt bodystmt stmts stmt expr arg primary command
 %type <IRubyObject> stmt_or_begin
-%type <IRubyObject> expr_value primary_value opt_else cases if_tail exc_var rel_expr
+%type <IRubyObject> expr_value expr_value_do primary_value opt_else cases if_tail exc_var rel_expr
 %type <IRubyObject> call_args opt_ensure paren_args superclass
 %type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
 %type <IRubyObject> command_rhs arg_rhs
@@ -399,6 +451,14 @@ expr            : command_call
 
 expr_value      : expr {
                     $$ = $1;
+                }
+
+expr_value_do   : {
+                    p.getConditionState().push1();
+                } expr_value do {
+                    p.getConditionState().pop();
+                } {
+                    $$ = $2;
                 }
 
 // Node:command - call with or with block on end [!null]
@@ -813,6 +873,12 @@ arg             : lhs '=' arg_rhs {
                 | arg tDOT3 arg {
                     $$ = p.dispatch("on_dot3", $1, $3);
                 }
+                | arg tDOT2 {
+                    $$ = p.dispatch("on_dot2", $1, p.new_nil_at());
+                }
+                | arg tDOT3 {
+                    $$ = p.dispatch("on_dot3", $1, p.new_nil_at());
+                }
                 | arg tPLUS arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("+"), $3);
                 }
@@ -901,25 +967,25 @@ arg             : lhs '=' arg_rhs {
                 }
 
 relop           : tGT {
-                    $$ = $1;
+                    $$ = p.intern(">");
                 }
                 | tLT  {
-                    $$ = $1;
+                    $$ = p.intern("<");
                 }
                 | tGEQ {
-                     $$ = $1;
+                    $$ = p.intern(">=");
                 }
                 | tLEQ {
-                     $$ = $1;
+                    $$ = p.intern("<=");
                 }
 
 rel_expr        : arg relop arg   %prec tGT {
-                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+                     $$ = p.dispatch("on_binary", $1, $2, $3);
 
                 }
 		| rel_expr relop arg   %prec tGT {
                      p.warning("comparison '" + $2 + "' after comparison");
-                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+                     $$ = p.dispatch("on_binary", $1, $2, $3);
                 }
  
 arg_value       : arg {
@@ -992,10 +1058,27 @@ call_args       : command {
                 }
 
 command_args    : /* none */ {
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().begin();
+                    boolean lookahead = false;
+                    switch (yychar) {
+                    case tLPAREN2: case tLPAREN: case tLPAREN_ARG: case '[': case tLBRACK:
+                       lookahead = true;
+                    }
+                    StackState cmdarg = p.getCmdArgumentState();
+                    if (lookahead) cmdarg.pop();
+                    cmdarg.push1();
+                    if (lookahead) cmdarg.push0();
                 } call_args {
-                    p.getCmdArgumentState().reset($<Long>1.longValue());
+                    StackState cmdarg = p.getCmdArgumentState();
+
+                    boolean lookahead = false;
+                    switch (yychar) {
+                    case tLBRACE_ARG:
+                       lookahead = true;
+                    }
+
+                    if (lookahead) cmdarg.pop();
+                    cmdarg.pop();
+                    if (lookahead) cmdarg.push0();
                     $$ = $2;
                 }
 
@@ -1061,10 +1144,9 @@ primary         : literal
                     $$ = p.dispatch("on_method_add_arg", p.dispatch("on_fcall", $1), p.dispatch("on_args_new"));
                 }
                 | keyword_begin {
-                    $$ = p.getCmdArgumentState().getStack();
-                    p.getCmdArgumentState().reset();
+                    p.getCmdArgumentState().push0();
                 } bodystmt keyword_end {
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
+                    p.getCmdArgumentState().pop();
                     $$ = p.dispatch("on_begin", $3);
                 }
                 | tLPAREN_ARG {
@@ -1073,12 +1155,11 @@ primary         : literal
                     $$ = p.dispatch("on_paren", null);
                 }
                 | tLPAREN_ARG {
-                    $$ = p.getCmdArgumentState().getStack();
-                    p.getCmdArgumentState().reset();
+                    p.getCmdArgumentState().push0();
                 } stmt {
                     p.setState(EXPR_ENDARG); 
                 } rparen {
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
+                    p.getCmdArgumentState().pop();
                     p.warning("(...) interpreted as grouped expression");
                     $$ = p.dispatch("on_paren", $3);
                 }
@@ -1139,18 +1220,18 @@ primary         : literal
                     $$ = p.dispatch("on_unless", $2, $4, $5);
                 }
                 | keyword_while {
-                    p.getConditionState().begin();
-                } expr_value do {
-                    p.getConditionState().end();
+                    p.getConditionState().push1();
+                } expr_value_do {
+                    p.getConditionState().pop();
                 } compstmt keyword_end {
-                    $$ = p.dispatch("on_while", $3, $6);
+                    $$ = p.dispatch("on_while", $3, $5);
                 }
                 | keyword_until {
-                  p.getConditionState().begin();
-                } expr_value do {
-                  p.getConditionState().end();
+                  p.getConditionState().push1();
+                } expr_value_do {
+                  p.getConditionState().pop();
                 } compstmt keyword_end {
-                    $$ = p.dispatch("on_until", $3, $6);
+                    $$ = p.dispatch("on_until", $3, $5);
                 }
                 | keyword_case expr_value opt_terms case_body keyword_end {
                     $$ = p.dispatch("on_case", $2, $4);
@@ -1159,11 +1240,11 @@ primary         : literal
                     $$ = p.dispatch("on_case", null, $3);
                 }
                 | keyword_for for_var keyword_in {
-                    p.getConditionState().begin();
-                } expr_value do {
-                    p.getConditionState().end();
+                    p.getConditionState().push1();
+                } expr_value_do {
+                    p.getConditionState().pop();
                 } compstmt keyword_end {
-                    $$ = p.dispatch("on_for", $2, $5, $8);
+                    $$ = p.dispatch("on_for", $2, $5, $7);
                 }
                 | keyword_class cpath superclass {
                     if (p.isInDef()) {
@@ -1178,7 +1259,8 @@ primary         : literal
                     p.setIsInClass($<Boolean>4.booleanValue());
                 }
                 | keyword_class tLSHFT expr {
-                    $$ = new Integer((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
+                    $$ = new Integer((p.isInClass() ? 0b10 : 0) |
+                                     (p.isInDef()   ? 0b01 : 0));
                     p.setInDef(false);
                     p.setIsInClass(false);
                     p.pushLocalScope();
@@ -1186,8 +1268,8 @@ primary         : literal
                     $$ = p.dispatch("on_sclass", $3, $6);
 
                     p.popCurrentScope();
-                    p.setInDef((($<Integer>4.intValue()) & 1) != 0);
-                    p.setIsInClass((($<Integer>4.intValue()) & 2) != 0);
+                    p.setInDef((($<Integer>4.intValue())     & 0b01) != 0);
+                    p.setIsInClass((($<Integer>4.intValue()) & 0b10) != 0);
                 }
                 | keyword_module cpath {
                     if (p.isInDef()) { 
@@ -1450,11 +1532,9 @@ lambda          : /* none */  {
                     $$ = p.getLeftParenBegin();
                     p.setLeftParenBegin(p.incrementParenNest());
                 } f_larglist {
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
+                    p.getCmdArgumentState().push0();
                 } lambda_body {
-                    p.getCmdArgumentState().reset($<Long>3.longValue());
-                    p.getCmdArgumentState().restart();
+                    p.getCmdArgumentState().pop();
                     $$ = p.dispatch("on_lambda", $2, $4);
                     p.setLeftParenBegin($<Integer>1);
                     p.popCurrentScope();
@@ -1525,31 +1605,24 @@ brace_block     : tLCURLY brace_body tRCURLY {
                 }
                 | keyword_do {
                     p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt keyword_end {
                     $$ = p.dispatch("on_do_block", $3, $4);
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.popCurrentScope();
                 }
 
 brace_body      : {
                     p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack()) >> 1;
-                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt  {
                     $$ = p.dispatch("on_brace_block", $2, $3);
-                    p.getCmdArgumentState().reset($<Long>1.longValue());
                     p.popCurrentScope();
                 }
 
 do_body 	: {
                     p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
+                    p.getCmdArgumentState().push0();
                 } opt_block_param bodystmt {
                     $$ = p.dispatch("on_do_block", $2, $3);
-                    p.getCmdArgumentState().reset($<Long>1.longValue());
+                    p.getCmdArgumentState().pop();
                     p.popCurrentScope();
                 }
 
@@ -1706,10 +1779,8 @@ string_content  : tSTRING_CONTENT
                 | tSTRING_DBEG {
                    $$ = p.getStrTerm();
                    p.setStrTerm(null);
-                   p.getConditionState().stop();
-                } {
-                   $$ = p.getCmdArgumentState().getStack();
-                   p.getCmdArgumentState().reset();
+                   p.getConditionState().push0();
+                   p.getCmdArgumentState().push0();
                 } {
                    $$ = p.getState();
                    p.setState(EXPR_BEG);
@@ -1720,13 +1791,13 @@ string_content  : tSTRING_CONTENT
                    $$ = p.getHeredocIndent();
                    p.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
-                   p.getConditionState().restart();
+                   p.getConditionState().pop();
+                   p.getCmdArgumentState().pop();
                    p.setStrTerm($<StrTerm>2);
-                   p.getCmdArgumentState().reset($<Long>3.longValue());
-                   p.setState($<Integer>4);
-                   p.setBraceNest($<Integer>5);
-                   p.setHeredocIndent($<Integer>6);
-                   $$ = p.dispatch("on_string_embexpr", $7);
+                   p.setState($<Integer>3);
+                   p.setBraceNest($<Integer>4);
+                   p.setHeredocIndent($<Integer>5);
+                   $$ = p.dispatch("on_string_embexpr", $6);
                 }
 
 string_dvar     : tGVAR {
@@ -1749,7 +1820,7 @@ symbol          : tSYMBEG sym {
 // Token:symbol
 sym             : fname | tIVAR | tGVAR | tCVAR
 
-dsym            : tSYMBEG xstring_contents tSTRING_END {
+dsym            : tSYMBEG string_contents tSTRING_END {
                      p.setState(EXPR_END|EXPR_ENDARG);
                      $$ = p.dispatch("on_dyna_symbol", $2);
                 }

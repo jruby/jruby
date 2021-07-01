@@ -68,7 +68,7 @@ public class CFGInliner {
 
     // Use receivers variable if it is one.  Otherwise make a new temp for one.
     private Variable getReceiverVariable(Operand receiver) {
-        return receiver instanceof Variable ? (Variable) receiver : hostScope.createTemporaryVariable();
+        return receiver instanceof Variable ? (Variable) receiver : hostScope.getFullInterpreterContext().createTemporaryVariable();
     }
 
     public BasicBlock findCallsiteBB(CallBase call) {
@@ -92,8 +92,8 @@ public class CFGInliner {
         LOG.info("---------------------------------- PROLOGUE (start) --------");
         LOG.info("Looking for: " + call.getCallSiteId() + ":\n    > " + call + "\n");
         printInlineCFG(cfg, "host of inline");
-        LOG.info("method to inline cfg:\n" + scopeToInline.getCFG().toStringGraph());
-        LOG.info("method to inline instrs:\n" + scopeToInline.getCFG().toStringInstrs());
+        LOG.info("method to inline cfg:\n" + scopeToInline.getFullInterpreterContext().getCFG().toStringGraph());
+        LOG.info("method to inline instrs:\n" + scopeToInline.getFullInterpreterContext().getCFG().toStringInstrs());
         LOG.info("---------------------------------- PROLOGUE (end) -----------");
     }
 
@@ -166,7 +166,7 @@ public class CFGInliner {
         InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, scopeToInline);
 
         // Inlinee method data init
-        CFG methodToInline = scopeToInline.getCFG();
+        CFG methodToInline = scopeToInline.getFullInterpreterContext().getCFG();
         List<BasicBlock> methodBBs = new ArrayList<>(methodToInline.getBasicBlocks());
 
         if (isRecursiveInline(scopeToInline)) {
@@ -285,25 +285,26 @@ public class CFGInliner {
         failurePathBB.addInstr(new JumpInstr(hostCloneInfo == null ? splitBBLabel : hostCloneInfo.getRenamedLabel(splitBBLabel)));
         call.blockInlining();
 
+        // We made a new BB with a call which can always raise an exception so add exception edge.
+        cfg.addEdge(failurePathBB, callBB.exceptionBB(), EdgeType.EXCEPTION);
+        cfg.setRescuerBB(failurePathBB, callBB.exceptionBB());
+
         cfg.addEdge(beforeInlineBB, failurePathBB, CFG.EdgeType.REGULAR);
         cfg.addEdge(failurePathBB, afterInlineBB, CFG.EdgeType.REGULAR);
 
         // Inline any closure argument passed into the call.
         Operand closureArg = call.getClosureArg(null);
-        List yieldSites = ii.getYieldSites();
+        List<Tuple<BasicBlock, YieldInstr>> yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
-            // Detect unlikely but contrived scenarios where there are far too many yield sites that could lead to code blowup
-            // if we inline the closure at all those yield sites!
-
-            // currently we will only inline a single block into a single yield.
-            if (yieldSites.size() > 1) return "cannot inline a scope with two or more yields";
+            // FIXME: Do we care if we have too many yields?
 
             if (!(closureArg instanceof WrappedIRClosure)) {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
             }
 
-            Tuple t = (Tuple) yieldSites.get(0);
-            inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
+            for (Tuple t: yieldSites) {
+                inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
+            }
         }
 
         // Optimize cfg by merging straight-line bbs (just one piece of what CFG.optimize does)
@@ -377,7 +378,7 @@ public class CFGInliner {
         ii.setupYieldArgsAndYieldResult(yield, beforeInlineBB, cl.getBlockBody().getSignature().arityValue());
 
         // 2. Merge closure cfg into the current cfg
-        CFG closureCFG = cl.getCFG();
+        CFG closureCFG = cl.getFullInterpreterContext().getCFG();
 
         BasicBlock closureGEB = closureCFG.getGlobalEnsureBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {

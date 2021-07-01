@@ -31,7 +31,6 @@ import java.math.BigInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -226,22 +225,17 @@ public class RubyRandom extends RubyObject {
     @SuppressWarnings("deprecation")
     public static RubyClass createRandomClass(Ruby runtime) {
         RubyClass randomClass = runtime
-                .defineClass("Random", runtime.getObject(), RANDOM_ALLOCATOR);
+                .defineClass("Random", runtime.getObject(), RubyRandom::new);
+
         randomClass.defineAnnotatedMethods(RubyRandom.class);
+
         RubyRandom defaultRand = new RubyRandom(runtime, randomClass);
         defaultRand.random = new RandomType(randomSeed(runtime));
         randomClass.setConstant("DEFAULT", defaultRand);
         runtime.setDefaultRand(defaultRand.random);
-        runtime.setRandomClass(randomClass);
+
         return randomClass;
     }
-
-    private static ObjectAllocator RANDOM_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyRandom(runtime, klass);
-        }
-    };
 
     private RandomType random = null;
 
@@ -273,27 +267,20 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "rand", meta = true, optional = 1)
-    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "rand", meta = true)
+    public static IRubyObject randDefault(ThreadContext context, IRubyObject recv) {
         RandomType random = getDefaultRand(context);
-        if (args.length == 0) return randFloat(context, random);
-
-        return randomRand(context, args[0], random);
+        return randFloat(context, random);
     }
 
-    @Deprecated // not-used
-    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return randKernel(context, args);
+    @JRubyMethod(name = "rand", meta = true)
+    public static IRubyObject randDefault(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        RandomType random = getDefaultRand(context);
+        return randomRand(context, arg, random);
     }
 
-    // c: rb_f_rand for 1.9
-    static IRubyObject randKernel(ThreadContext context, IRubyObject[] args) {
+    static IRubyObject randKernel(ThreadContext context, IRubyObject arg) {
         RandomType random = getDefaultRand(context);
-        if (args.length == 0) {
-            return randFloat(context, random);
-        }
-
-        IRubyObject arg = args[0];
         if (arg == context.nil) {
             return randFloat(context, random);
         }
@@ -621,7 +608,7 @@ public class RubyRandom extends RubyObject {
         if (!getType().equals(obj.getType())) {
             return context.fals;
         }
-        return context.runtime.newBoolean(random.equals(((RubyRandom) obj).random));
+        return RubyBoolean.newBoolean(context, random.equals(((RubyRandom) obj).random));
     }
 
     // c: random_state
@@ -680,9 +667,19 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
+    // c: random_s_bytes
+    @JRubyMethod(meta = true)
+    public static IRubyObject bytes(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return bytesCommon(context, getDefaultRand(context), arg);
+    }
+
     // c: rb_random_bytes
     @JRubyMethod(name = "bytes")
     public IRubyObject bytes(ThreadContext context, IRubyObject arg) {
+        return bytesCommon(context, random, arg);
+    }
+
+    private static IRubyObject bytesCommon(ThreadContext context, RandomType random, IRubyObject arg) {
         int n = RubyNumeric.num2int(arg);
         byte[] bytes = new byte[n];
         int idx = 0;
@@ -760,5 +757,33 @@ public class RubyRandom extends RubyObject {
 
     private void setRandomType(RandomType random) {
         this.random = random;
+    }
+
+    @Deprecated // not-used
+    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return randKernel(context, args);
+    }
+
+    @Deprecated
+    static IRubyObject randKernel(ThreadContext context, IRubyObject[] args) {
+        RandomType random = getDefaultRand(context);
+        if (args.length == 0) {
+            return randFloat(context, random);
+        }
+
+        IRubyObject arg = args[0];
+        return randKernel(context, arg);
+    }
+
+    @Deprecated
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return randDefault(context, recv);
+            case 1:
+                return randDefault(context, recv, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
     }
 }

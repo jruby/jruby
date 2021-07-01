@@ -36,15 +36,15 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * @author  jpetersen
@@ -62,19 +62,9 @@ public class RubyBinding extends RubyObject {
     private RubyBinding(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
-    
-    private static ObjectAllocator BINDING_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyBinding instance = new RubyBinding(runtime, klass);
-            
-            return instance;
-        }
-    };
-    
+
     public static RubyClass createBindingClass(Ruby runtime) {
-        RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
-        runtime.setBinding(bindingClass);
+        RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), RubyBinding::new);
 
         bindingClass.setClassIndex(ClassIndex.BINDING);
         bindingClass.setReifiedClass(RubyBinding.class);
@@ -141,7 +131,7 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
-        return context.runtime.newBoolean(binding.getEvalScope(context.runtime).getStaticScope().isDefined(symbol.asJavaString()) != -1);
+        return RubyBoolean.newBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(symbol.asJavaString()) != -1);
     }
 
     @JRubyMethod
@@ -150,7 +140,7 @@ public class RubyBinding extends RubyObject {
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
         int slot = evalScope.getStaticScope().isDefined(name);
 
-        if (slot == -1) throw context.runtime.newNameError("local variable `" + name +  "' not defined for " + inspect(), name);
+        if (slot == -1) throw context.runtime.newNameError(str(context.runtime, "local variable `", symbol, "' not defined for " + inspect()), symbol);
 
         return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
     }
@@ -179,5 +169,13 @@ public class RubyBinding extends RubyObject {
     @JRubyMethod(name = "receiver")
     public IRubyObject receiver(ThreadContext context) {
         return binding.getSelf();
+    }
+
+    @JRubyMethod
+    public IRubyObject source_location(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        IRubyObject filename = runtime.newString(binding.getFile()).freeze(context);
+        RubyFixnum line = runtime.newFixnum(binding.getLine() + 1); /* zero-based */
+        return runtime.newArray(filename, line);
     }
 }

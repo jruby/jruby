@@ -6,16 +6,16 @@ DO NOT MODIFIY - GENERATED CODE
 
 
 -->
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.2.9.0-SNAPSHOT</version>
+    <version>9.3.0.0-SNAPSHOT</version>
   </parent>
-  <artifactId>jruby-core</artifactId>
-  <name>JRuby Core</name>
+  <artifactId>jruby-base</artifactId>
+  <name>JRuby Base</name>
   <properties>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
     <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
@@ -23,7 +23,6 @@ DO NOT MODIFIY - GENERATED CODE
     <build.dir>target</build.dir>
     <build.lib.dir>test/target</build.lib.dir>
     <create.sources.jar>false</create.sources.jar>
-    <dest.lib.dir>${lib.dir}</dest.lib.dir>
     <install4j.executable>/Applications/install4j7/bin/install4jc</install4j.executable>
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <jay.bin>jay</jay.bin>
@@ -42,17 +41,12 @@ DO NOT MODIFIY - GENERATED CODE
     <mspec.dir>${spec.dir}/mspec</mspec.dir>
     <mspec.tar.file>${build.dir}/mspec.tgz</mspec.tar.file>
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
-    <pkg.dir>${build.dir}/pkg</pkg.dir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
-    <prawn.dir>${test.dir}/prawn</prawn.dir>
-    <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
-    <prawn.stable.version>0.4.1</prawn.stable.version>
     <rails.dir>${test.dir}/rails</rails.dir>
     <rails.git.repo>git://github.com/rails/rails.git</rails.git.repo>
     <rake.args></rake.args>
     <release.dir>release</release.dir>
-    <rubyspec.1.8.dir>${rubyspec.dir}/1.8</rubyspec.1.8.dir>
     <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
     <spec.dir>spec</spec.dir>
     <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
@@ -60,11 +54,11 @@ DO NOT MODIFIY - GENERATED CODE
     <test.dir>test</test.dir>
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
-    <tzdata.version>2013d</tzdata.version>
-    <version.ruby>2.5.7</version.ruby>
-    <version.ruby.major>2.5</version.ruby.major>
-    <version.ruby.minor>7</version.ruby.minor>
-    <version.ruby.revision>67816</version.ruby.revision>
+    <tzdata.version>2019c</tzdata.version>
+    <version.ruby>2.6.5</version.ruby>
+    <version.ruby.major>2.6</version.ruby.major>
+    <version.ruby.minor>0</version.ruby.minor>
+    <version.ruby.revision>67812</version.ruby.revision>
   </properties>
   <dependencies>
     <dependency>
@@ -85,7 +79,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-netdb</artifactId>
-      <version>1.1.6</version>
+      <version>1.2.0</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -96,7 +90,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.22</version>
+      <version>0.32.6</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -107,7 +101,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.23</version>
+      <version>0.38.8</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -118,7 +112,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.50</version>
+      <version>3.1.7</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -129,7 +123,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.9.12</version>
+      <version>0.10.2</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -140,7 +134,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.1.10</version>
+      <version>2.2.4</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -156,12 +150,12 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.29</version>
+      <version>2.1.40</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.45</version>
+      <version>1.0.55</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -171,28 +165,17 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
-      <version>1.11</version>
+      <version>1.12</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>options</artifactId>
-      <version>1.4</version>
-    </dependency>
-    <dependency>
-      <groupId>bsf</groupId>
-      <artifactId>bsf</artifactId>
-      <version>2.4.0</version>
-      <scope>provided</scope>
+      <version>1.5</version>
     </dependency>
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jzlib</artifactId>
       <version>1.1.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.martiansoftware</groupId>
-      <artifactId>nailgun-server</artifactId>
-      <version>0.9.1</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -249,13 +232,13 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>backport9</artifactId>
-      <version>1.3</version>
+      <version>1.10</version>
     </dependency>
     <dependency>
-      <groupId>javax.annotation</groupId>
-      <artifactId>javax.annotation-api</artifactId>
-      <version>1.3.1</version>
-      <scope>compile</scope>
+      <groupId>jakarta.annotation</groupId>
+      <artifactId>jakarta.annotation-api</artifactId>
+      <version>2.0.0</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
@@ -271,24 +254,6 @@ DO NOT MODIFIY - GENERATED CODE
         <directory>src/main/resources</directory>
         <includes>
           <include>META-INF/**/*</include>
-        </includes>
-      </resource>
-      <resource>
-        <targetPath>${project.build.sourceDirectory}</targetPath>
-        <filtering>true</filtering>
-        <directory>${project.basedir}/src/main/resources</directory>
-        <includes>
-          <include>${Constants.java}</include>
-        </includes>
-      </resource>
-      <resource>
-        <targetPath>${project.build.outputDirectory}/META-INF/</targetPath>
-        <directory>${project.basedir}/..</directory>
-        <includes>
-          <include>BSDL</include>
-          <include>COPYING</include>
-          <include>LEGAL</include>
-          <include>LICENSE.RUBY</include>
         </includes>
       </resource>
     </resources>
@@ -385,7 +350,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>create</goal>
             </goals>
             <configuration>
-              <shortRevisionLength>7</shortRevisionLength>
+              <shortRevisionLength>10</shortRevisionLength>
               <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
             </configuration>
           </execution>
@@ -530,7 +495,7 @@ DO NOT MODIFIY - GENERATED CODE
         <configuration>
           <encoding>utf-8</encoding>
           <debug>true</debug>
-          <verbose>true</verbose>
+          <verbose>false</verbose>
           <fork>true</fork>
           <compilerArgs>
             <arg>-J-Xmx1G</arg>
@@ -588,11 +553,11 @@ DO NOT MODIFIY - GENERATED CODE
             <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
           <argLine>-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
+          <environmentVariables>
+            <JDK_JAVA_OPTIONS>--add-modules java.scripting</JDK_JAVA_OPTIONS>
+          </environmentVariables>
           <includes>
-            <include>org/jruby/test/MainTestSuite.java</include>
-            <include>org/jruby/embed/**/*Test*.java</include>
-            <include>org/jruby/util/**/*Test*.java</include>
-            <include>org/jruby/runtime/**/*Test*.java</include>
+            <include>org/jruby/test/TestAdoptedThreading.java</include>
           </includes>
           <additionalClasspathElements>
             <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
@@ -610,31 +575,33 @@ DO NOT MODIFIY - GENERATED CODE
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
+        <artifactId>maven-resources-plugin</artifactId>
         <executions>
           <execution>
-            <id>create lib/jruby.jar</id>
-            <phase>package</phase>
+            <phase>process-resources</phase>
             <goals>
-              <goal>shade</goal>
+              <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <relocations>
-                <relocation>
-                  <pattern>org.objectweb</pattern>
-                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                </relocation>
-              </relocations>
-              <outputFile>${jruby.basedir}/lib/jruby.jar</outputFile>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.jruby.Main</mainClass>
-                  <manifestEntries>
-                    <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
-                  </manifestEntries>
-                </transformer>
-              </transformers>
-              <createSourcesJar>${create.sources.jar}</createSourcesJar>
+              <outputDirectory>${basedir}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources</directory>
+                  <includes>${Constants.java}</includes>
+                  <targetPath>${project.build.sourceDirectory}</targetPath>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>..</directory>
+                  <includes>
+                    <include>BSDL</include>
+                    <include>COPYING</include>
+                    <include>LEGAL</include>
+                    <include>LICENSE.RUBY</include>
+                  </includes>
+                  <targetPath>${project.build.sourceDirectory}/META-INF/</targetPath>
+                </resource>
+              </resources>
             </configuration>
           </execution>
         </executions>
@@ -668,492 +635,6 @@ DO NOT MODIFIY - GENERATED CODE
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>all</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>main</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>osgi</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>j2ee</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>complete</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>dist</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jruby_complete_jar_extended</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jruby-jars</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>shade the asm classes</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.github.jnr:jnr-ffi</include>
-                      <include>me.qmx.jitescript:jitescript</include>
-                      <include>org.ow2.asm:*</include>
-                    </includes>
-                  </artifactSet>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>me.qmx.jitescript</pattern>
-                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                      <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
-                      </manifestEntries>
-                    </transformer>
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>clean</id>
       <activation>

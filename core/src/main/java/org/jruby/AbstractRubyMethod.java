@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -32,10 +33,10 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
@@ -48,6 +49,7 @@ import org.jruby.runtime.marshal.DataType;
  * @see RubyMethod
  * @see RubyUnboundMethod
  */
+@JRubyClass(name = {"Method", "UnboundMethod"}, overrides = {RubyMethod.class, RubyUnboundMethod.class})
 public abstract class AbstractRubyMethod extends RubyObject implements DataType {
     protected RubyModule implementationModule;
     protected String methodName;
@@ -71,14 +73,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
      */
     @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
-        int value;
-        if (method instanceof IRMethodArgs) {
-            value = ((IRMethodArgs) method).getSignature().arityValue();
-        } else {
-            value = method.getArity().getValue();
-        }
-
-        return getRuntime().newFixnum(value);
+        return getRuntime().newFixnum(method.getSignature().arityValue());
     }
 
     @Deprecated
@@ -88,7 +83,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean( equals(other) );
+        return RubyBoolean.newBoolean(context,  equals(other) );
     }
 
     @Override
@@ -151,7 +146,10 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         if (superClass == null) return context.nil;
 
         CacheEntry entry = superClass.searchWithCache(methodName);
-        if (entry.method == UndefinedMethod.INSTANCE) return context.nil;
+        if (entry.method == UndefinedMethod.INSTANCE ||
+                entry.method.getDefinedClass().getMethods().get(entry.method.getName()) == UndefinedMethod.INSTANCE) {
+            return context.nil;
+        }
 
         if (receiver == null) {
             return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, entry);

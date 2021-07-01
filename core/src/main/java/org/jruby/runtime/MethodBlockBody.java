@@ -14,7 +14,6 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     private final CacheEntry entry;
     private final ArgumentDescriptor[] argsDesc;
     private final IRubyObject receiver;
-    private final RubyModule originModule;
     private final String originName;
     private final String file;
     private final int line;
@@ -26,7 +25,6 @@ public class MethodBlockBody extends ContextAwareBlockBody {
         this.entry = entry;
         this.argsDesc = argsDesc;
         this.receiver = receiver;
-        this.originModule = originModule;
         this.originName = originName;
         this.file = file;
         this.line = line;
@@ -66,7 +64,7 @@ public class MethodBlockBody extends ContextAwareBlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-        IRubyObject[] realArgs = Helpers.restructureBlockArgs(context, value, getSignature(), block.type, false);
+        IRubyObject[] realArgs = Helpers.restructureBlockArgs(context, value, getSignature(), block.type);
         return entry.method.call(context, receiver, entry.sourceModule, originName, realArgs, Block.NULL_BLOCK);
     }
 
@@ -89,10 +87,4 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return argsDesc;
     }
-
-    @Override
-    public void setEvalType(EvalType evalType) {
-        // nop
-    }
-
 }

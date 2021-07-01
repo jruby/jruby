@@ -37,6 +37,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.ThreadContext;
@@ -69,7 +70,7 @@ public class JavaProxyReflectionObject extends RubyObject {
             }
             obj = (IRubyObject) wrappedObj;
         }
-        return context.runtime.newBoolean( this.equals(obj) );
+        return RubyBoolean.newBoolean(context,  this.equals(obj) );
     }
 
     @Deprecated
@@ -89,7 +90,7 @@ public class JavaProxyReflectionObject extends RubyObject {
             }
             obj = (IRubyObject) wrappedObj;
         }
-        return context.runtime.newBoolean(this == obj);
+        return RubyBoolean.newBoolean(context, this == obj);
     }
 
     @Override
@@ -125,8 +126,8 @@ public class JavaProxyReflectionObject extends RubyObject {
     }
 
     @JRubyMethod
-    public JavaClass java_class() {
-        return JavaClass.get(getRuntime(), getJavaClass());
+    public IRubyObject java_class() {
+        return Java.getInstance(getRuntime(), getJavaClass());
     }
 
     @JRubyMethod
@@ -157,8 +158,12 @@ public class JavaProxyReflectionObject extends RubyObject {
         return RubyArray.newArrayMayCopy(getRuntime(), elements);
     }
 
-    final RubyArray toRubyArray(final Class<?>[] classes) {
-        return JavaClass.toRubyArray(getRuntime(), classes);
+    static RubyArray toClassArray(final Ruby runtime, final Class<?>[] classes) {
+        IRubyObject[] javaClasses = new IRubyObject[classes.length];
+        for ( int i = classes.length; --i >= 0; ) {
+            javaClasses[i] = Java.getProxyClass(runtime, classes[i]);
+        }
+        return RubyArray.newArrayMayCopy(runtime, javaClasses);
     }
 
 }

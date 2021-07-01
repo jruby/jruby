@@ -410,7 +410,12 @@ public class InterpreterEngine {
                 ((CheckArityInstr) instr).checkArity(context, currScope, args, block);
                 break;
             case LINE_NUM:
-                context.setLine(((LineNumberInstr)instr).lineNumber);
+                LineNumberInstr line = (LineNumberInstr) instr;
+                context.setLine(line.lineNumber);
+                if (line.coverage) {
+                    IRRuntimeHelpers.updateCoverage(context, currScope.getFile(), line.lineNumber);
+                    if (line.oneshot) line.coverage = false;
+                }
                 break;
             case TOGGLE_BACKTRACE:
                 context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
@@ -473,18 +478,6 @@ public class InterpreterEngine {
                 break;
             }
 
-            case SEARCH_CONST: {
-                SearchConstInstr sci = (SearchConstInstr)instr;
-                ConstantCache cache = sci.getConstantCache();
-                if (!ConstantCache.isCached(cache)) {
-                    result = sci.cache(context, currScope, currDynScope, self, temp);
-                } else {
-                    result = cache.value;
-                }
-                setResult(temp, currDynScope, sci.getResult(), result);
-                break;
-            }
-
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
@@ -509,7 +502,7 @@ public class InterpreterEngine {
             }
 
             case BOX_BOOLEAN: {
-                RubyBoolean f = context.runtime.newBoolean(getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
+                RubyBoolean f = RubyBoolean.newBoolean(context, getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
                 setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
                 break;
             }
@@ -538,6 +531,10 @@ public class InterpreterEngine {
 
             case LOAD_FRAME_CLOSURE:
                 setResult(temp, currDynScope, instr, context.getFrameBlock());
+                break;
+
+            case LOAD_BLOCK_IMPLICIT_CLOSURE:
+                setResult(temp, currDynScope, instr, Helpers.getImplicitBlockFromBlockBinding(block));
                 return;
 
             // ---------- All the rest ---------

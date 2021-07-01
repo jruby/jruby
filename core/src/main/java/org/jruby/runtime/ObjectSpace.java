@@ -60,7 +60,7 @@ public class ObjectSpace {
     private final ReferenceQueue<ObjectGroup> objectGroupReferenceQueue = new ReferenceQueue<>();
     private WeakReferenceListNode top;
 
-    private ReferenceQueue deadIdentityReferences = new ReferenceQueue();
+    private final ReferenceQueue deadIdentityReferences = new ReferenceQueue();
     private final Map<Long, IdReference> identities = new HashMap<>(64);
     private final Map<IRubyObject, Long> identitiesByObject = new WeakIdentityHashMap(64);
     private static final AtomicLong maxId = new AtomicLong(1000);
@@ -76,8 +76,8 @@ public class ObjectSpace {
     }
 
     public static long calculateObjectId(Object object) {
-        // Fixnums get all the odd IDs, so we use identityHashCode * 2
-        return maxId.getAndIncrement() * 2;
+        // Fixnums get all the 0b01 id's, flonums get the 0b10 id's, so we use next ID * 4
+        return maxId.getAndIncrement() * 4;
     }
 
     public long createAndRegisterObjectId(IRubyObject rubyObject) {

@@ -31,6 +31,7 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
@@ -51,12 +52,7 @@ import static org.jruby.lexer.LexingCommon.*;
 
 public class RubyRipper extends RubyObject {
     public static void initRipper(Ruby runtime) {
-        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new RubyRipper(runtime, klazz);
-            }
-        });
+        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), RubyRipper::new);
         
         ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime, ripper));
         ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime, ripper));
@@ -310,12 +306,12 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(name = "end_seen?")
     public IRubyObject end_seen_p(ThreadContext context) {
-        return context.runtime.newBoolean(parser.isEndSeen());
+        return RubyBoolean.newBoolean(context, parser.isEndSeen());
     }
 
     @JRubyMethod(name = "error?")
     public IRubyObject error_p(ThreadContext context) {
-        return context.runtime.newBoolean(parser.isError());
+        return RubyBoolean.newBoolean(context, parser.isError());
     }
     @JRubyMethod
     public IRubyObject filename(ThreadContext context) {
@@ -354,7 +350,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject yydebug(ThreadContext context) {
-        return context.runtime.newBoolean(parser.getYYDebug());
+        return RubyBoolean.newBoolean(context, parser.getYYDebug());
     }
     
     @JRubyMethod(name = "yydebug=")

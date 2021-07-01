@@ -38,7 +38,9 @@ import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.Java;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.BasicLibraryService;
@@ -81,7 +83,7 @@ public class JRubyUtilLibrary implements Library {
         final Ruby runtime = recv.getRuntime();
         boolean enabled = arg.isTrue();
         if (enabled) {
-            runtime.getWarnings().warn("ObjectSpace impacts performance. See http://wiki.jruby.org/PerformanceTuning#dont-enable-objectspace");
+            runtime.getWarnings().warn("ObjectSpace impacts performance. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");
         }
         runtime.setObjectSpaceEnabled(enabled);
         return runtime.newBoolean(enabled);
@@ -89,12 +91,25 @@ public class JRubyUtilLibrary implements Library {
 
     @JRubyMethod(meta = true, name = "native_posix?")
     public static IRubyObject native_posix_p(ThreadContext context, IRubyObject self) {
-        return context.runtime.newBoolean(context.runtime.getPosix().isNative());
+        return RubyBoolean.newBoolean(context, context.runtime.getPosix().isNative());
     }
 
     @Deprecated
     public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject name) {
         return class_loader_resources(recv.getRuntime().getCurrentContext(), recv, name);
+    }
+
+    /**
+     * Loads a (Java) class.
+     * @param context
+     * @param recv
+     * @param name the class name
+     * @return Java class (wrapper) or raises a NameError if loading fails or class is not found
+     */
+    @JRubyMethod(meta = true)
+    public static IRubyObject load_java_class(ThreadContext context, IRubyObject recv, IRubyObject name) {
+        Class<?> klass = Java.getJavaClass(context.runtime, name.convertToString().asJavaString());
+        return Java.getInstance(context.runtime, klass);
     }
 
     /**
@@ -202,11 +217,11 @@ public class JRubyUtilLibrary implements Library {
     }
 
     private static boolean loadExtension(final Ruby runtime, final String className) {
-        Class<?> clazz = runtime.getJavaSupport().loadJavaClassQuiet(className);
+        Class<?> clazz = Java.getJavaClass(runtime, className);
         // 1. BasicLibraryService interface
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {
             try {
-                return ((BasicLibraryService) clazz.newInstance()).basicLoad(runtime);
+                return ((BasicLibraryService) clazz.getConstructor().newInstance()).basicLoad(runtime);
             } catch (org.jruby.exceptions.Exception e) {
                 // propagate Ruby exceptions as-is
                 throw e;
@@ -214,14 +229,14 @@ public class JRubyUtilLibrary implements Library {
                 final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
                 ex.initCause(e); throw ex;
             } catch (Exception e) {
-                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", (String) null, e, true);
                 ex.initCause(e); throw ex;
             }
         }
         // 2 org.jruby.runtime.load.Library
         if (Library.class.isAssignableFrom(clazz)) {
             try {
-                ((Library) clazz.newInstance()).load(runtime, false);
+                ((Library) clazz.getConstructor().newInstance()).load(runtime, false);
                 return true;
             } catch (org.jruby.exceptions.Exception e) {
                 // propagate Ruby exceptions as-is
@@ -231,7 +246,7 @@ public class JRubyUtilLibrary implements Library {
                 ex.initCause(e);
                 throw ex;
             } catch (java.lang.Exception e) {
-                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", (String) null, e, true);
                 ex.initCause(e); throw ex;
             }
         }
@@ -243,9 +258,135 @@ public class JRubyUtilLibrary implements Library {
             // propagate Ruby exceptions as-is
             throw e;
         } catch (java.lang.Exception e) {
-            final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+            final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", (String) null, e, true);
             ex.initCause(e); throw ex;
         }
+    }
+
+    /**
+     * Invoke the given block under synchronized lock, using standard Java synchronization.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object against which to synchronize
+     * @param block the block to execute
+     * @return the return value of the block
+     */
+    @JRubyMethod(name = "synchronized", module = true)
+    public static IRubyObject rbSynchronized(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
+        synchronized (getSyncObject(arg)) {
+            return block.call(context);
+        }
+    }
+
+    /**
+     * Wait for a locked object to notify, as in Object {@link #wait()}.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to wait for
+     * @return the object given
+     * @throws InterruptedException if interrupted
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg) throws InterruptedException {
+        Object obj = getSyncObject(arg);
+
+        obj.wait();
+
+        return arg;
+    }
+
+    /**
+     * Wait for a locked object to notify, as in Object {@link #wait(long)}.
+     *
+     * The object given must be locked using JRuby.synchronized or a similar Java monitor-based locking mechanism.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to wait for
+     * @param timeoutMillis the time in millis to wait (converted using #to_int)
+     * @return the object given
+     * @throws InterruptedException if interrupted
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis) throws InterruptedException {
+        Object obj = getSyncObject(arg);
+
+        obj.wait(timeoutMillis.convertToInteger().getLongValue());
+
+        return arg;
+    }
+
+    /**
+     * Wait for a locked object to notify, as in Object {@link #wait(long, int)}.
+     *
+     * The object given must be locked using JRuby.synchronized or a similar Java monitor-based locking mechanism.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to wait for
+     * @param timeoutMillis the time in millis to wait (converted using #to_int)
+     * @param timeoutNanos the time in nanos to wait (converted using #to_int, and truncated to a signed 32-bit integer)
+     * @return the object given
+     * @throws InterruptedException if interrupted
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis, IRubyObject timeoutNanos) throws InterruptedException {
+        Object obj = getSyncObject(arg);
+
+        obj.wait(
+                timeoutMillis.convertToInteger().getLongValue(),
+                timeoutNanos.convertToInteger().getIntValue());
+
+        return arg;
+    }
+
+    /**
+     * Notify one waiter on a locked object, as in Object {@link #notify()}
+     *
+     * The object given must be locked using JRuby.synchronized or a similar Java monitor-based locking mechanism.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to notify
+     * @return the object given
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject notify(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Object obj = getSyncObject(arg);
+
+        obj.notify();
+        
+        return arg;
+    }
+
+    /**
+     * Notify all waiters on a locked object, as in Object {@link #notifyAll()}
+     *
+     * The object given must be locked using JRuby.synchronized or a similar Java monitor-based locking mechanism.
+     *
+     * @param context the current context
+     * @param recv the JRuby module
+     * @param arg the object to notify
+     * @return the object given
+     */
+    @JRubyMethod(name = "notify_all", module = true)
+    public static IRubyObject notifyAll(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Object obj = getSyncObject(arg);
+
+        obj.notifyAll();
+
+        return arg;
+    }
+
+    private static Object getSyncObject(IRubyObject arg) {
+        Object obj = arg;
+
+        if (arg instanceof ConcreteJavaProxy) {
+            obj = ((ConcreteJavaProxy) arg).getObject();
+        }
+        return obj;
     }
 
     @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
