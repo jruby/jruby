@@ -131,9 +131,10 @@ esac
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
-    if [ -x "/usr/libexec/java_home" ] ; then
+    java_home_command="/usr/libexec/java_home"
+    if [ -r "$java_home_command" ] && [ -x "$java_home_command" ] && [ ! -d "$java_home_command" ] ; then
       # use java_home command when none is set (on MacOS)
-      JAVA_HOME="$(/usr/libexec/java_home)"
+      JAVA_HOME="$("$java_home_command")"
       JAVACMD="$JAVA_HOME"/bin/java
     else
       # Linux and others have a chain of symlinks
