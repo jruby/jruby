@@ -1271,7 +1271,6 @@ public class IRBuilder {
         Label endLabel = getNewLabel();                   // end of the entire case statement.
         boolean hasExplicitElse = caseNode.getElseNode() != null; // does this have an explicit 'else' or not.
         Variable result = createTemporaryVariable();      // final result value of the case statement.
-        List<Label> bodyLabels = new ArrayList<>();       // label to jump to on when value match.
         Map<Label, Node> bodies = new HashMap<>();        // we save bodies and emit them after processing when values.
         Set<IRubyObject> seenLiterals = new HashSet<>();  // track to warn on duplicated values in when clauses.
 
@@ -1279,7 +1278,6 @@ public class IRBuilder {
             WhenNode when = (WhenNode) aCase;
             Label bodyLabel = getNewLabel();
 
-            bodyLabels.add(bodyLabel);
             buildWhenArgs(when, testValue, bodyLabel, seenLiterals);
             bodies.put(bodyLabel, when.getBodyNode());
         }
@@ -1287,22 +1285,27 @@ public class IRBuilder {
         addInstr(new JumpInstr(elseLabel));               // if no explicit matches jump to else
 
         if (hasExplicitElse) {                            // build explicit else
-            bodyLabels.add(elseLabel);
             bodies.put(elseLabel, caseNode.getElseNode());
         }
 
-        // Now, emit bodies while preserving when clauses order
-        for (Label whenLabel: bodyLabels) {
-            addInstr(new LabelInstr(whenLabel));
-            Operand bodyValue = build(bodies.get(whenLabel));
-            // bodyValue can be null if the body ends with a return!
-            if (bodyValue != null) {
-                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
-                // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
-                // to look at what the last generated instruction was.
+        int numberOfBodies = bodies.size();
+        int i = 1;
+        for (Map.Entry<Label, Node> entry: bodies.entrySet()) {
+            addInstr(new LabelInstr(entry.getKey()));
+            Operand bodyValue = build(entry.getValue());
+
+            if (bodyValue != null) {                      // can be null if the body ends with a return!
                 addInstr(new CopyInstr(result, bodyValue));
-                addInstr(new JumpInstr(endLabel));
+
+                //  we can omit the jump to the last body so long as we don't have an implicit else
+                //  since that is emitted right after this section.
+                if (i != numberOfBodies) {
+                    addInstr(new JumpInstr(endLabel));
+                } else if (!hasExplicitElse) {
+                    addInstr(new JumpInstr(endLabel));
+                }
             }
+            i++;
         }
 
         if (!hasExplicitElse) {                           // build implicit else
