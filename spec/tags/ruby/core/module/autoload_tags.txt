@@ -1,4 +1,2 @@
-critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks a second thread while a first is doing the autoload
-critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks others threads while doing an autoload
 fails(conflicting state changes for failed load and autoload):Module#autoload does not remove the constant from Module#constants if load raises a RuntimeError and keeps it as an autoload
-fails(incompatible locking in autoload):Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and returns the path in other threads for Module#autoload?
+hangs(incompatible locking in autoload):Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and returns the path in other threads for Module#autoload?
