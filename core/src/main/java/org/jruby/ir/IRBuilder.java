@@ -428,6 +428,13 @@ public class IRBuilder {
         }
     }
 
+    private NotCompilableException notCompilable(String message, Node node) {
+        int line = node != null ? node.getLine() : scope.getLine();
+        String loc = scope.getFile() + ":" + line;
+        String what = node != null ? node.getClass().getSimpleName() + " - " + loc : loc;
+        return new NotCompilableException(message + " (" + what + ").");
+    }
+
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
         determineIfWeNeedLineNumber(node);
 
@@ -502,12 +509,12 @@ public class IRBuilder {
             case REDONODE: return buildRedo((RedoNode) node);
             case REGEXPNODE: return buildRegexp((RegexpNode) node);
             case RESCUEBODYNODE:
-                throw new NotCompilableException("rescue body is handled by rescue compilation at: " + scope.getFile() + ":" + node.getLine());
+                throw notCompilable("handled by rescue compilation", node);
             case RESCUENODE: return buildRescue((RescueNode) node);
             case RETRYNODE: return buildRetry((RetryNode) node);
             case RETURNNODE: return buildReturn((ReturnNode) node);
             case ROOTNODE:
-                throw new NotCompilableException("Use buildRoot(); Root node at: " + scope.getFile() + ":" + node.getLine());
+                throw notCompilable("Use buildRoot()", node);
             case SCLASSNODE: return buildSClass((SClassNode) node);
             case SELFNODE: return buildSelf();
             case SPLATNODE: return buildSplat((SplatNode) node);
@@ -526,7 +533,7 @@ public class IRBuilder {
             case YIELDNODE: return buildYield((YieldNode) node, result);
             case ZARRAYNODE: return buildZArray(result);
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node);
-            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
+            default: throw notCompilable("Unknown node encountered in builder", node);
         }
     }
 
@@ -689,8 +696,7 @@ public class IRBuilder {
             }
         }
 
-        throw new NotCompilableException("Invalid node for attrassign call args: " + args.getClass().getSimpleName() +
-                ":" + scope.getFile() + ":" + args.getLine());
+        throw notCompilable("Invalid node for attrassign call args", args);
     }
 
     protected Operand[] buildCallArgs(Node args) {
@@ -724,8 +730,7 @@ public class IRBuilder {
                 return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false))) };
         }
 
-        throw new NotCompilableException("Invalid node for call args: " + args.getClass().getSimpleName() + ":" +
-                scope.getFile() + ":" + args.getLine());
+        throw notCompilable("Invalid node for call args: ", args);
     }
 
     public Operand[] setupCallArgs(Node args) {
@@ -771,7 +776,7 @@ public class IRBuilder {
                 break;
             }
             case ZEROARGNODE:
-                throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
+                throw notCompilable("Shouldn't get here; zeroarg does not do assignment", node);
             case MULTIPLEASGNNODE: {
                 Variable tmp = createTemporaryVariable();
                 addInstr(new ToAryInstr(tmp, rhsVal));
@@ -779,12 +784,12 @@ public class IRBuilder {
                 break;
             }
             default:
-                throw new NotCompilableException("Can't build assignment node: " + node);
+                throw notCompilable("Can't build assignment node", node);
         }
     }
 
     protected LocalVariable getBlockArgVariable(RubySymbol name, int depth) {
-        if (!(scope instanceof IRFor)) throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
+        if (!(scope instanceof IRFor)) throw notCompilable("Cannot ask for block-arg variable in 1.9 mode", null);
 
         return getLocalVariable(name, depth);
     }
@@ -803,7 +808,7 @@ public class IRBuilder {
     }
 
     public void buildVersionSpecificBlockArgsAssignment(Node node) {
-        if (!(scope instanceof IRFor)) throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+        if (!(scope instanceof IRFor)) throw notCompilable("Should not have come here for block args assignment", node);
 
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
         switch (node.getNodeType()) {
@@ -818,7 +823,7 @@ public class IRBuilder {
                 break;
             }
             default:
-                throw new NotCompilableException("Can't build assignment node: " + node);
+                throw notCompilable("Can't build assignment node", node);
         }
     }
 
@@ -865,7 +870,7 @@ public class IRBuilder {
                 break;
             }
             case ZEROARGNODE:
-                throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
+                throw notCompilable("Shouldn't get here; zeroarg does not do assignment", node);
             default:
                 buildVersionSpecificBlockArgsAssignment(node);
         }
@@ -1329,24 +1334,69 @@ public class IRBuilder {
         return testValue == null ? UndefinedValue.UNDEFINED : testValue;
     }
 
-    private void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
-        Variable eqqResult = createTemporaryVariable();
-        Node exprNodes = whenNode.getExpressionNodes();
-        Operand expression = buildWithOrder(exprNodes, whenNode.containsVariableAssignment());
-        boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
+    // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).
+    private boolean literalWhenCheck(Node value, Set<IRubyObject> seenLiterals) {
+        IRubyObject literal = getWhenLiteral(value);
 
-        // FIXME: Remove duplicated entries to reduce codesize (like MRI does).
-        IRubyObject literal = getWhenLiteral(exprNodes);
         if (literal != null) {
             if (seenLiterals.contains(literal)) {
-                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), exprNodes.getLine(), "duplicated when clause is ignored");
+                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS,
+                        getFileName(), value.getLine(), "duplicated when clause is ignored");
+                return false;
             } else {
                 seenLiterals.add(literal);
+                return true;
             }
         }
 
+        return true;
+    }
+
+    private void buildWhenValues(Variable eqqResult, ListNode exprValues, Operand testValue, Label bodyLabel,
+                                 Set<IRubyObject> seenLiterals) {
+        for (Node value: exprValues.children()) {
+            if (literalWhenCheck(value, seenLiterals)) { // we only emit first literal of the same value.
+                boolean containsAssignment = value != null && value.containsVariableAssignment();
+                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(value, containsAssignment), false);
+            }
+        }
+    }
+
+    private void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, Operand expression, boolean needsSplat) {
         addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
         addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
+    }
+
+    private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
+                                      Set<IRubyObject> seenLiterals) {
+        if (node instanceof ListNode && !(node instanceof DNode) && !(node instanceof ArrayNode)) {
+            buildWhenValues(eqqResult, (ListNode) node, testValue, bodyLabel, seenLiterals);
+        } else if (node instanceof SplatNode) {
+            buildWhenValue(eqqResult, testValue, bodyLabel, build(node), true);
+        } else if (node instanceof ArgsCatNode) {
+            ArgsCatNode catNode = (ArgsCatNode) node;
+            buildWhenSplatValues(eqqResult, catNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
+            buildWhenSplatValues(eqqResult, catNode.getSecondNode(), testValue, bodyLabel, seenLiterals);
+        } else if (node instanceof ArgsPushNode) {
+            ArgsPushNode pushNode = (ArgsPushNode) node;
+            buildWhenSplatValues(eqqResult, pushNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
+            buildWhenValue(eqqResult, testValue, bodyLabel, build(pushNode.getSecondNode()), false);
+        } else {
+            buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(node, node.containsVariableAssignment()), true);
+        }
+    }
+
+    private void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+        Variable eqqResult = createTemporaryVariable();
+        Node exprNodes = whenNode.getExpressionNodes();
+
+        if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode)) {
+            buildWhenValues(eqqResult, (ListNode) exprNodes, testValue, bodyLabel, seenLiterals);
+        } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
+            buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
+        } else {
+            buildWhenValue(eqqResult, testValue, bodyLabel, build(exprNodes), false);
+        }
     }
 
     // Note: This is potentially a little wasteful in that we eagerly create these literals for a duplicated warning
@@ -1392,7 +1442,7 @@ public class IRBuilder {
 
             FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
             long exprLong = expr.getValue();
-            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + getFileName() + ":" + caseNode.getLine());
+            if (exprLong > Integer.MAX_VALUE) throw notCompilable("optimized fixnum case has long-ranged", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
@@ -2287,7 +2337,7 @@ public class IRBuilder {
                 buildMultipleAsgn19Assignment(childNode, tmp, null);
                 break;
             }
-            default: throw new NotCompilableException("Can't build assignment node: " + node);
+            default: throw notCompilable("Can't build assignment node", node);
         }
     }
 
@@ -2521,7 +2571,7 @@ public class IRBuilder {
                 break;
             }
             default:
-                throw new NotCompilableException("Shouldn't get here: " + node);
+                throw notCompilable("Shouldn't get here", node);
         }
     }
 
@@ -2954,7 +3004,7 @@ public class IRBuilder {
                 return bodyNode instanceof SymbolNode && !scope.maybeUsingRefinements() ?
                         new SymbolProc(((SymbolNode)bodyNode).getName()) : build(bodyNode);
             default:
-                throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
+                throw notCompilable("ERROR: Encountered a method with a non-block, non-blockpass iter node", node);
         }
     }
 
