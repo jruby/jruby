@@ -33,7 +33,7 @@ public class JarCacheTest {
         assertNotNull(index);
 
         jarFile.setLastModified(System.currentTimeMillis() - MINUTES.toMillis(1));
-        waitAtMost(500, MILLISECONDS).untilAsserted(() -> {
+        waitAtMost(750, MILLISECONDS).untilAsserted(() -> {
             JarCache.JarIndex updatedIndex = jarCache.getIndex(resource.getFile());
             assertNotSame(index, updatedIndex);
         });
