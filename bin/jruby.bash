@@ -131,11 +131,19 @@ esac
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
-    resolve_symlinks "$(command -v java)"
-    JAVACMD="$result"
+    java_home_command="/usr/libexec/java_home"
+    if [ -r "$java_home_command" ] && [ -x "$java_home_command" ] && [ ! -d "$java_home_command" ] ; then
+      # use java_home command when none is set (on MacOS)
+      JAVA_HOME="$("$java_home_command")"
+      JAVACMD="$JAVA_HOME"/bin/java
+    else
+      # Linux and others have a chain of symlinks
+      resolve_symlinks "$(command -v java)"
+      JAVACMD="$result"
 
-    # export separately from command execution
-    JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
+      # export separately from command execution
+      JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
+    fi
   else
     if $cygwin; then
       JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
