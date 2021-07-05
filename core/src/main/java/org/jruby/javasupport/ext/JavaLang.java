@@ -840,7 +840,7 @@ public abstract class JavaLang {
 
     }
 
-    static RubyString inspectJavaValue(final ThreadContext context, final IRubyObject self) {
+    static RubyString inspectValueWithTypePrefix(final ThreadContext context, final IRubyObject self) {
         java.lang.Object obj = unwrapIfJavaObject(self);
 
         RubyString buf = inspectPrefix(context, self.getMetaClass());
@@ -851,15 +851,29 @@ public abstract class JavaLang {
         return buf;
     }
 
-    static final class InspectValue extends JavaMethod.JavaMethodZero {
+    static final class InspectRawValue extends JavaMethod.JavaMethodZero {
 
-        InspectValue(RubyModule implClass) {
+        InspectRawValue(RubyModule implClass) {
             super(implClass, PUBLIC, "inspect");
         }
 
         @Override
         public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final java.lang.String name) {
-            return inspectJavaValue(context, self);
+            java.lang.Object val = unwrapIfJavaObject(self);;
+            return context.runtime.newString(val.toString());
+        }
+
+    }
+
+    static final class InspectValueWithTypePrefix extends JavaMethod.JavaMethodZero {
+
+        InspectValueWithTypePrefix(RubyModule implClass) {
+            super(implClass, PUBLIC, "inspect");
+        }
+
+        @Override
+        public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final java.lang.String name) {
+            return inspectValueWithTypePrefix(context, self);
         }
     }
 

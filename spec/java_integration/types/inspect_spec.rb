@@ -49,3 +49,11 @@ describe "java.nio.ByteBuffer" do
     expect(buf.inspect).to match /#<Java::JavaNio::DirectByteBuffer:.*? position=1, limit=8, capacity=8, readOnly=false>/
   end
 end
+
+describe "java.util.TimeZone/ZoneInfo" do
+  it "inspects as scalar" do
+    zone = java.util.TimeZone.getTimeZone 'America/Los_Angeles'
+    expect(zone.inspect).to eq 'America/Los_Angeles'
+    expect(zone.to_zone_id.inspect).to eq 'America/Los_Angeles'
+  end
+end
