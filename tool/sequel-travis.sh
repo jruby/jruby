@@ -17,4 +17,4 @@ cp .ci.gemfile Gemfile
 ../bin/jruby -S bundle install
 
 # run tests
-../bin/jruby -S bundle exec rake spec_ci
+../bin/jruby -rbundler/setup -S rake spec_ci

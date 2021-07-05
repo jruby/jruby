@@ -12,4 +12,4 @@ cd concurrent-ruby
 ../bin/jruby -S bundle install
 
 # run tests
-../bin/jruby -S bundle exec rake ci
+../bin/jruby -rbundler/setup -S rake ci
