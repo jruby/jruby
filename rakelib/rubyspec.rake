@@ -75,46 +75,48 @@ namespace :spec do
   desc "Tagged specs in interpreted mode only"
   task :interpreted do
     mspec :compile_mode => "OFF",
-       :format => 'd'
+          :format => 'd'
   end
 
   desc "Tagged specs in JIT mode only (threshold=0)"
   task :compiled do
     mspec :compile_mode => "JIT",
-       :jit_threshold => 0,
-       :format => 'd'
+          :jit_threshold => 0,
+          :format => 'd'
   end
 
   desc "Tagged specs in AOT mode only"
   task :precompiled do
     mspec :compile_mode => "FORCE",
-       :jit_threshold => 0,
-       :format => 'd'
+          :jit_threshold => 0,
+          :format => 'd'
   end
 
   desc "All specs in interpreted mode only"
   task :all_interpreted do
     mspec :compile_mode => "OFF",
-       :format => 'd'
+          :format => 'd'
   end
 
   desc "All specs in JIT mode only (threshold=0)"
-  task :all_compiled_18 do
-    mspec :compile_mode => "JIT", :jit_threshold => 0,
-       :format => 'd'
+  task :all_compiled do
+    mspec :compile_mode => "JIT",
+          :jit_threshold => 0,
+          :format => 'd'
   end
 
   desc "All specs in AOT mode only"
   task :all_precompiled do
-    mspec :compile_mode => "FORCE", :jit_threshold => 0,
-       :format => 'd'
+    mspec :compile_mode => "FORCE",
+          :jit_threshold => 0,
+          :format => 'd'
   end
 
   # Parameterized rubyspec runs for e.g. TravisCI
   desc "Run RubySpec on Travis in interpreted mode"
   task :ci_interpreted_travis do
     mspec :compile_mode => 'OFF',
-     :format => 's'
+          :format => 's'
   end
 
   # Complimentary tasks for running specs

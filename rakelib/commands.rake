@@ -26,10 +26,7 @@ def jruby(java_options = {}, &code)
   end
 end
 
-def mspec(mspec_options = {}, java_options = {}, &code)
-  java_options[:dir] ||= BASE_DIR
-  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
-
+def mspec(mspec_options = {})
   mspec_options[:compile_mode] ||= 'OFF'
   mspec_options[:jit_threshold] ||= 20
   mspec_options[:jit_max] ||= -1
@@ -38,44 +35,50 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:reflection] ||= false
   mspec_options[:format] ||= "m"
   mspec_options[:timeout] ||= 120
-  ms = mspec_options
 
   # We can check this property to see whether we failed the run or not
-  java_options[:resultproperty] ||="spec.status.#{mspec_options[:compile_mode]}"
+  # TODO a status system property is not implemented
+  # java_options[:resultproperty] ||="spec.status.#{mspec_options[:compile_mode]}"
 
-  puts "MSPEC: #{ms.inspect}"
+  puts "MSPEC: #{mspec_options.inspect}"
   rm_rf "rubyspec_temp"
 
-  jruby(java_options) do
-    jvmarg :line => "-ea"
-    sysproperty :key => "jruby.launch.inproc", :value => "false"
-    sysproperty :key => "emma.verbosity.level", :value=> "silent"
+  env = {
+      "JAVA_OPTS" => "-Demma.verbosity.level=silent",
+      "JRUBY_OPTS" => mspec_options[:jruby_opts] || ""
+  }
 
-    env :key => "JAVA_OPTS", :value => "-Demma.verbosity.level=silent"
-    env :key => "JRUBY_OPTS", :value => ms[:jruby_opts] || ""
-    # launch in the same mode we're testing, since config is loaded by top process
+  java_cmd = [ File.join(ENV_JAVA['java.home'], 'bin', 'java') ]
+  java_cmd << "-Xmx#{JRUBY_LAUNCH_MEMORY || '1024m'}"
+  java_cmd << '-ea'
+  java_cmd << '-classpath' ; java_cmd << 'lib/jruby.jar'
+  java_cmd << "-Djruby.home=#{BASE_DIR}"
 
-    # add . to load path so mspec config is found
-    arg :line => "-I ."
+  java_cmd << "-Djruby.launch.inproc=false"
+  java_cmd << "-Demma.verbosity.level=silent"
 
-    arg :line => "#{MSPEC_BIN} ci"
-    arg :line => "-T -J-ea"
-    arg :line => "-T -J-Djruby.launch.inproc=false"
-    arg :line => "-T -J-Djruby.compile.mode=#{ms[:compile_mode]}"
-    arg :line => "-T -J-Djruby.jit.threshold=#{ms[:jit_threshold]}"
-    arg :line => "-T -J-Djruby.jit.max=#{ms[:jit_max]}"
-    arg :line => "-T -J-Djruby.objectspace.enabled=#{ms[:objectspace_enabled]}"
-    arg :line => "-T -J-Djruby.thread.pool.enabled=#{ms[:thread_pooling]}"
-    arg :line => "-T -J-Djruby.reflection=#{ms[:reflection]}"
-    arg :line => "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
-    arg :line => "-T -J-Demma.coverage.out.merge=true"
-    arg :line => "-T -J-Demma.verbosity.level=silent"
-    arg :line => "-T -J-XX:MaxMetaspaceSize=512M"
-    arg :line => "-f #{ms[:format]}"
-    arg :line => "--timeout #{ms[:timeout]}"
-    arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
-    arg :line => "#{ms[:spec_target]}" if ms[:spec_target]
-  end
+  java_cmd << 'org.jruby.Main'
+  # add . to load path so mspec config is found
+  java_cmd << "-I . #{MSPEC_BIN} ci"
+
+  java_cmd << "-T -J-ea"
+  java_cmd << "-T -J-Djruby.launch.inproc=false"
+  java_cmd << "-T -J-Djruby.compile.mode=#{mspec_options[:compile_mode]}"
+  java_cmd << "-T -J-Djruby.jit.threshold=#{mspec_options[:jit_threshold]}"
+  java_cmd << "-T -J-Djruby.jit.max=#{mspec_options[:jit_max]}"
+  java_cmd << "-T -J-Djruby.objectspace.enabled=#{mspec_options[:objectspace_enabled]}"
+  java_cmd << "-T -J-Djruby.thread.pool.enabled=#{mspec_options[:thread_pooling]}"
+  java_cmd << "-T -J-Djruby.reflection=#{mspec_options[:reflection]}"
+  java_cmd << "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
+  java_cmd << "-T -J-Demma.coverage.out.merge=true"
+  java_cmd << "-T -J-Demma.verbosity.level=silent"
+  java_cmd << "-T -J-XX:MaxMetaspaceSize=512M"
+  java_cmd << "-f #{mspec_options[:format]}"
+  java_cmd << "--timeout #{mspec_options[:timeout]}"
+  java_cmd << "-B #{mspec_options[:spec_config]}" if mspec_options[:spec_config]
+  java_cmd << "#{mspec_options[:spec_target]}" if mspec_options[:spec_target]
+
+  sh(env, java_cmd.join(' '))
 end
 
 def gem_install(gems, gem_options = "", java_options = {}, &code)
