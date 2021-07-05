@@ -34,6 +34,16 @@ describe "java.lang.StringBuilder" do
   end
 end
 
+describe "java.lang.Thread" do
+  it "inspects with a custom format" do
+    thread = java.lang.Thread.new { Thread.pass }
+    thread.name = 'a-thread'
+    thread.start
+    sleep(0.25)
+    expect(thread.inspect).to match /#<Java::JavaLang::Thread:\d+ a-thread TERMINATED>/
+  end
+end
+
 describe "java.nio.CharSequence" do # implements CharSequence
   it "inspects as other Buffer impls" do
     buf = java.nio.CharBuffer.allocate(12)

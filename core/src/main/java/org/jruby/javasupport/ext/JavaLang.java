@@ -37,7 +37,6 @@ import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaClass;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
@@ -86,6 +85,7 @@ public abstract class JavaLang {
         JavaExtensions.put(runtime, java.lang.String.class, (proxyClass) -> String.define(runtime, (RubyClass) proxyClass));
         JavaExtensions.put(runtime, java.lang.Enum.class, (proxyClass) -> proxyClass.defineAlias("inspect", "to_s"));
         JavaExtensions.put(runtime, java.lang.Boolean.class, (proxyClass) -> proxyClass.defineAlias("inspect", "to_s"));
+        JavaExtensions.put(runtime, java.lang.Thread.class, (proxyClass) -> proxyClass.addMethod("inspect", new InspectThread(proxyClass)));
     }
 
     @JRubyModule(name = "Java::JavaLang::Iterable", include = "Enumerable")
@@ -838,6 +838,31 @@ public abstract class JavaLang {
             return RubyString.newString(context.runtime, str).inspect();
         }
 
+    }
+
+    static final class InspectThread extends JavaMethod.JavaMethodZero {
+
+        InspectThread(RubyModule implClass) {
+            super(implClass, PUBLIC, "inspect");
+        }
+
+        @Override
+        public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final java.lang.String name) {
+            java.lang.Thread thread = unwrapIfJavaObject(self);
+
+            // 0.03 % of cpu usage, state: timed_waiting, thread name: '[foo] bar', thread id: 760
+            // <#Java::JavaLang::Thread:760 [foo] bar TIMED_WAITING>
+
+            RubyString buf = inspectPrefix(context, self.getMetaClass());
+            RubyStringBuilder.cat(context.runtime, buf, Long.toString(thread.getId()));
+            RubyStringBuilder.cat(context.runtime, buf, ' ');
+            RubyStringBuilder.cat(context.runtime, buf, thread.getName());
+            RubyStringBuilder.cat(context.runtime, buf, ' ');
+            RubyStringBuilder.cat(context.runtime, buf, thread.getState().toString());
+            RubyStringBuilder.cat(context.runtime, buf, GT); // >
+
+            return buf;
+        }
     }
 
     static RubyString inspectValueWithTypePrefix(final ThreadContext context, final IRubyObject self) {
