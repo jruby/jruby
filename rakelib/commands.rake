@@ -6,27 +6,7 @@ rescue Exception => ex
 end
 require 'rbconfig'
 
-def initialize_paths
-  ant.path(:id => "jruby.execute.classpath") do
-    pathelement :path => "lib/jruby.jar"
-  end
-
-  ant.path(:id => "test.class.path") do
-    pathelement :path => File.join(BUILD_LIB_DIR, 'junit.jar')
-    pathelement :path => File.join(BUILD_LIB_DIR, 'annotation-api.jar')
-    pathelement :path => File.join(BUILD_LIB_DIR, 'livetribe-jsr223.jar')
-    pathelement :path => File.join(BUILD_LIB_DIR, 'bsf.jar')
-    pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging.jar')
-    #  pathelement :path => "${java.class.path}"/>
-    pathelement :path => File.join(LIB_DIR, 'jruby.jar')
-    pathelement :location => TEST_CLASSES_DIR
-    pathelement :path => File.join(TEST_DIR, 'jruby', 'requireTest.jar')
-    pathelement :location => TEST_DIR
-  end
-end
-
 def jruby(java_options = {}, &code)
-  initialize_paths
 
   java_options[:fork] ||= 'true'
   java_options[:failonerror] ||= 'true'
@@ -35,19 +15,14 @@ def jruby(java_options = {}, &code)
 
   puts "JAVA options: #{java_options.inspect}"
 
+  ant.path(:id => "jruby.execute.classpath") do
+    pathelement :path => "lib/jruby.jar"
+  end
+
   ant.java(java_options) do
     classpath :path => 'lib/jruby.jar'
     sysproperty :key => "jruby.home", :value => BASE_DIR
     instance_eval(&code) if block_given?
-  end
-end
-
-def jrake(dir, targets, java_options = {}, &code)
-  java_options[:dir] = dir
-  jruby(java_options) do
-    classpath :refid => "test.class.path"
-    instance_eval(&code) if block_given?
-    arg :line => "-S rake #{targets}"
   end
 end
 
@@ -72,7 +47,6 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   rm_rf "rubyspec_temp"
 
   jruby(java_options) do
-    classpath :refid => "test.class.path"
     jvmarg :line => "-ea"
     sysproperty :key => "jruby.launch.inproc", :value => "false"
     sysproperty :key => "emma.verbosity.level", :value=> "silent"
