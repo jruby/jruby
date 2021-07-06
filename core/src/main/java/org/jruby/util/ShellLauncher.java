@@ -1173,6 +1173,8 @@ public class ShellLauncher {
             String cmdline = rawArgs[0].toString().trim();
             if (doExecutableSearch && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
                 verifyExecutable();
+                // replace cmdline with found executable
+                cmdline = executableFile.getAbsolutePath();
             }
 
             // now, prepare the exec args
@@ -1648,7 +1650,7 @@ public class ShellLauncher {
     }
 
     private static String getShell(Ruby runtime) {
-        return RbConfigLibrary.jrubyShell();
+        return findPathExecutable(runtime, RbConfigLibrary.jrubyShell()).getAbsolutePath();
     }
 
     public static boolean shouldUseShell(String command) {
