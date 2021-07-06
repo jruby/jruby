@@ -1356,7 +1356,7 @@ public class IRBuilder {
                                  Set<IRubyObject> seenLiterals) {
         for (Node value: exprValues.children()) {
             if (literalWhenCheck(value, seenLiterals)) { // we only emit first literal of the same value.
-                boolean containsAssignment = value != null && value.containsVariableAssignment();
+                boolean containsAssignment = value.containsVariableAssignment();
                 buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(value, containsAssignment), false);
             }
         }
@@ -1372,7 +1372,9 @@ public class IRBuilder {
         if (node instanceof ListNode && !(node instanceof DNode) && !(node instanceof ArrayNode)) {
             buildWhenValues(eqqResult, (ListNode) node, testValue, bodyLabel, seenLiterals);
         } else if (node instanceof SplatNode) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, build(node), true);
+            if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(node, node.containsVariableAssignment()), true);
+            }
         } else if (node instanceof ArgsCatNode) {
             ArgsCatNode catNode = (ArgsCatNode) node;
             buildWhenSplatValues(eqqResult, catNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
@@ -1380,9 +1382,13 @@ public class IRBuilder {
         } else if (node instanceof ArgsPushNode) {
             ArgsPushNode pushNode = (ArgsPushNode) node;
             buildWhenSplatValues(eqqResult, pushNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
-            buildWhenValue(eqqResult, testValue, bodyLabel, build(pushNode.getSecondNode()), false);
+            if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(pushNode.getSecondNode(), pushNode.containsVariableAssignment()), false);
+            }
         } else {
-            buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(node, node.containsVariableAssignment()), true);
+            if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(node, node.containsVariableAssignment()), true);
+            }
         }
     }
 
@@ -1395,7 +1401,9 @@ public class IRBuilder {
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
             buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
         } else {
-            buildWhenValue(eqqResult, testValue, bodyLabel, build(exprNodes), false);
+            if (literalWhenCheck(exprNodes, seenLiterals)) { // we only emit first literal of the same value.
+                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(exprNodes, exprNodes.containsVariableAssignment()), false);
+            }
         }
     }
 
