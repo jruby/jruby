@@ -1355,16 +1355,18 @@ public class IRBuilder {
     private void buildWhenValues(Variable eqqResult, ListNode exprValues, Operand testValue, Label bodyLabel,
                                  Set<IRubyObject> seenLiterals) {
         for (Node value: exprValues.children()) {
-            if (literalWhenCheck(value, seenLiterals)) { // we only emit first literal of the same value.
-                boolean containsAssignment = value.containsVariableAssignment();
-                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(value, containsAssignment), false);
-            }
+            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, false);
         }
     }
 
-    private void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, Operand expression, boolean needsSplat) {
-        addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
-        addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
+    private void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, Node node,
+                                Set<IRubyObject> seenLiterals, boolean needsSplat) {
+        if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+            Operand expression = buildWithOrder(node, node.containsVariableAssignment());
+
+            addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
+            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
+        }
     }
 
     private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
@@ -1372,9 +1374,7 @@ public class IRBuilder {
         if (node instanceof ListNode && !(node instanceof DNode) && !(node instanceof ArrayNode)) {
             buildWhenValues(eqqResult, (ListNode) node, testValue, bodyLabel, seenLiterals);
         } else if (node instanceof SplatNode) {
-            if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
-                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(node, node.containsVariableAssignment()), true);
-            }
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
         } else if (node instanceof ArgsCatNode) {
             ArgsCatNode catNode = (ArgsCatNode) node;
             buildWhenSplatValues(eqqResult, catNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
@@ -1382,13 +1382,9 @@ public class IRBuilder {
         } else if (node instanceof ArgsPushNode) {
             ArgsPushNode pushNode = (ArgsPushNode) node;
             buildWhenSplatValues(eqqResult, pushNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
-            if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
-                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(pushNode.getSecondNode(), pushNode.containsVariableAssignment()), false);
-            }
+            buildWhenValue(eqqResult, testValue, bodyLabel, pushNode.getSecondNode(), seenLiterals, false);
         } else {
-            if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
-                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(node, node.containsVariableAssignment()), true);
-            }
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
         }
     }
 
@@ -1401,9 +1397,7 @@ public class IRBuilder {
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
             buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
         } else {
-            if (literalWhenCheck(exprNodes, seenLiterals)) { // we only emit first literal of the same value.
-                buildWhenValue(eqqResult, testValue, bodyLabel, buildWithOrder(exprNodes, exprNodes.containsVariableAssignment()), false);
-            }
+            buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes, seenLiterals, false);
         }
     }
 
