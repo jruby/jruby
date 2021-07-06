@@ -146,6 +146,12 @@ project 'JRuby Lib Setup' do
 
     log 'install gems unless already installed'
     ENV_JAVA['jars.skip'] = 'true'
+
+    # force Ruby command to "jruby" for the generated Windows bat files since we install using 9.1.17.0 jar file
+    Gem.singleton_class.send(:define_method, :ruby) do
+      File.join(global_bin, "jruby#{RbConfig::CONFIG['EXEEXT']}")
+    end
+
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|
