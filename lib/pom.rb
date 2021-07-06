@@ -120,9 +120,6 @@ project 'JRuby Lib Setup' do
     stdlib_dir = File.join( ruby_dir, 'stdlib' )
     jruby_home = ctx.project.parent.basedir.to_pathname
 
-    # bin location for global binstubs
-    global_bin = File.join( jruby_home, "bin" )
-
     FileUtils.mkdir_p( default_specs )
 
     # have an empty openssl.rb so we do not run in trouble with not having
@@ -146,6 +143,9 @@ project 'JRuby Lib Setup' do
 
     log 'install gems unless already installed'
     ENV_JAVA['jars.skip'] = 'true'
+
+    # bin location for global binstubs
+    global_bin = File.join( jruby_home, "bin" )
 
     # force Ruby command to "jruby" for the generated Windows bat files since we install using 9.1.17.0 jar file
     Gem.singleton_class.send(:define_method, :ruby) do
