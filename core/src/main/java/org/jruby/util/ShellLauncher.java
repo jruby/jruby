@@ -1182,13 +1182,7 @@ public class ShellLauncher {
             execArgs = new String[3];
             execArgs[0] = shell;
             execArgs[1] = shell.endsWith("sh") ? "-c" : "/c";
-
-            if (Platform.IS_WINDOWS) {
-                // that's how MRI does it too
-                execArgs[2] = "\"" + cmdline + "\"";
-            } else {
-                execArgs[2] = cmdline;
-            }
+            execArgs[2] = cmdline;
         }
 
         public void verifyExecutableForDirect() {
