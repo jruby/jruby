@@ -1171,7 +1171,7 @@ public class ShellLauncher {
 
         public void verifyExecutableForShell() {
             String cmdline = rawArgs[0].toString().trim();
-            if (doExecutableSearch && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
+            if (doExecutableSearch && args.length == rawArgs.length && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
                 verifyExecutable();
                 // replace cmdline with found executable
                 cmdline = executableFile.getAbsolutePath();
