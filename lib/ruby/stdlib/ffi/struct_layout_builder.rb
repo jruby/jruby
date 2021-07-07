@@ -1,35 +1,41 @@
 #
 # Copyright (C) 2008-2010 Wayne Meissner
 #
-# Version: EPL 2.0/GPL 2.0/LGPL 2.1
+# This file is part of ruby-ffi.
 #
-# The contents of this file are subject to the Common Public
-# License Version 1.0 (the "License"); you may not use this file
-# except in compliance with the License. You may obtain a copy of
-# the License at http://www.eclipse.org/legal/cpl-v10.html
+# All rights reserved.
 #
-# Software distributed under the License is distributed on an "AS
-# IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-# implied. See the License for the specific language governing
-# rights and limitations under the License.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-# Alternatively, the contents of this file may be used under the terms of
-# either of the GNU General Public License Version 2 or later (the "GPL"),
-# or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the EPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the EPL, the GPL or the LGPL.
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright notice
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+# * Neither the name of the Ruby FFI project nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
 module FFI
+
+  # Build a {StructLayout struct layout}.
   class StructLayoutBuilder
-    attr_reader :size, :alignment
-    
+    attr_reader :size
+    attr_reader :alignment
+
     def initialize
       @size = 0
       @alignment = 1
@@ -39,25 +45,49 @@ module FFI
       @fields = Array.new
     end
 
+    # Set size attribute with +size+ only if +size+ is greater than attribute value.
+    # @param [Numeric] size
     def size=(size)
       @size = size if size > @size
     end
 
+    # Set alignment attribute with +align+ only if it is greater than attribute value.
+    # @param [Numeric] align
     def alignment=(align)
       @alignment = align if align > @alignment
       @min_alignment = align
     end
 
+    # Set union attribute.
+    # Set to +true+ to build a {Union} instead of a {Struct}.
+    # @param [Boolean] is_union
+    # @return [is_union]
     def union=(is_union)
       @union = is_union
     end
 
+    # Building a {Union} or a {Struct} ?
+    #
+    # @return [Boolean]
+    #
     def union?
       @union
     end
 
+    # Set packed attribute
+    # @overload packed=(packed) Set alignment and packed attributes to
+    #   +packed+.
+    #
+    #   @param [Fixnum] packed
+    #
+    #   @return [packed]
+    # @overload packed=(packed) Set packed attribute.
+    #   @param packed
+    #
+    #   @return [0,1]
+    #
     def packed=(packed)
-      if packed.is_a?(Fixnum)
+      if packed.is_a?(0.class)
         @alignment = packed
         @packed = packed
       else
@@ -66,7 +96,8 @@ module FFI
     end
 
 
-    SCALAR_TYPES = [
+    # List of number types
+    NUMBER_TYPES = [
       Type::INT8,
       Type::UINT8,
       Type::INT16,
@@ -79,9 +110,16 @@ module FFI
       Type::UINT64,
       Type::FLOAT32,
       Type::FLOAT64,
+      Type::LONGDOUBLE,
       Type::BOOL,
     ]
 
+    # @param [String, Symbol] name name of the field
+    # @param [Array, DataConverter, Struct, StructLayout::Field, Symbol, Type] type type of the field
+    # @param [Numeric, nil] offset
+    # @return [self]
+    # Add a field to the builder.
+    # @note Setting +offset+ to +nil+ or +-1+ is equivalent to +0+.
     def add(name, type, offset = nil)
 
       if offset.nil? || offset == -1
@@ -99,31 +137,53 @@ module FFI
       return self
     end
 
+    # @param (see #add)
+    # @return (see #add)
+    # Same as {#add}.
+    # @see #add
     def add_field(name, type, offset = nil)
       add(name, type, offset)
     end
-    
+
+    # @param (see #add)
+    # @return (see #add)
+    # Add a struct as a field to the builder.
     def add_struct(name, type, offset = nil)
       add(name, Type::Struct.new(type), offset)
     end
 
+    # @param name (see #add)
+    # @param type (see #add)
+    # @param [Numeric] count array length
+    # @param offset (see #add)
+    # @return (see #add)
+    # Add an array as a field to the builder.
     def add_array(name, type, count, offset = nil)
       add(name, Type::Array.new(type, count), offset)
     end
 
+    # @return [StructLayout]
+    # Build and return the struct layout.
     def build
       # Add tail padding if the struct is not packed
       size = @packed ? @size : align(@size, @alignment)
-      
-      StructLayout.new(@fields, size, @alignment)
+
+      layout = StructLayout.new(@fields, size, @alignment)
+      layout.__union! if @union
+      layout
     end
 
     private
-    
+
+    # @param [Numeric] offset
+    # @param [Numeric] align
+    # @return [Numeric]
     def align(offset, align)
       align + ((offset - 1) & ~(align - 1));
     end
 
+    # @param (see #add)
+    # @return [StructLayout::Field]
     def field_for_type(name, offset, type)
       field_class = case
       when type.is_a?(Type::Function)
@@ -138,7 +198,7 @@ module FFI
       when type.is_a?(FFI::Enum)
         StructLayout::Enum
 
-      when SCALAR_TYPES.include?(type)
+      when NUMBER_TYPES.include?(type)
         StructLayout::Number
 
       when type == Type::POINTER
