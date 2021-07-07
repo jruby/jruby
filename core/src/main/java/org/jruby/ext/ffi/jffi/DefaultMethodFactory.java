@@ -72,23 +72,27 @@ public final class DefaultMethodFactory extends MethodFactory {
     }
 
     static FunctionInvoker getFunctionInvoker(Type returnType) {
-        if (returnType instanceof Type.Builtin) {
-            return getFunctionInvoker(returnType.getNativeType());
+        try {
+            if (returnType instanceof Type.Builtin) {
+                return getFunctionInvoker(returnType.getNativeType());
 
-        } else if (returnType instanceof CallbackInfo) {
-            return new ConvertingInvoker(getFunctionInvoker(NativeType.POINTER), 
-                    DataConverters.getResultConverter(returnType));
+            } else if (returnType instanceof CallbackInfo) {
+                return new ConvertingInvoker(getFunctionInvoker(NativeType.POINTER),
+                        DataConverters.getResultConverter(returnType));
 
-        } else if (returnType instanceof StructByValue) {
-            return new StructByValueInvoker((StructByValue) returnType);
-        
-        } else if (returnType instanceof MappedType) {
-            MappedType ctype = (MappedType) returnType;
-            return new ConvertingInvoker(getFunctionInvoker(ctype.getRealType()), 
-                    DataConverters.getResultConverter(ctype));
+            } else if (returnType instanceof StructByValue) {
+                return new StructByValueInvoker((StructByValue) returnType);
+
+            } else if (returnType instanceof MappedType) {
+                MappedType ctype = (MappedType) returnType;
+                return new ConvertingInvoker(getFunctionInvoker(ctype.getRealType()),
+                        DataConverters.getResultConverter(ctype));
+            }
+        } catch (IllegalArgumentException e) {
+            // throw an exception
         }
 
-        throw returnType.getRuntime().newArgumentError("Cannot get FunctionInvoker for " + returnType);
+        throw returnType.getRuntime().newTypeError("Cannot get FunctionInvoker for " + returnType);
     }
 
     static FunctionInvoker getFunctionInvoker(NativeType returnType) {
@@ -115,6 +119,8 @@ public final class DefaultMethodFactory extends MethodFactory {
                 return Signed64Invoker.INSTANCE;
             case ULONG_LONG:
                 return Unsigned64Invoker.INSTANCE;
+//            case LONGDOUBLE:
+//                return Float128Invoker.INSTANCE;
             case LONG:
                 return Platform.getPlatform().longSize() == 32
                         ? Signed32Invoker.INSTANCE
@@ -221,6 +227,8 @@ public final class DefaultMethodFactory extends MethodFactory {
                 return Signed64Marshaller.INSTANCE;
             case ULONG_LONG:
                 return Unsigned64Marshaller.INSTANCE;
+//            case LONGDOUBLE:
+//                return Float128Marshaller.INSTANCE;
             case LONG:
                 return Platform.getPlatform().longSize() == 32
                         ? Signed32Marshaller.INSTANCE
@@ -381,6 +389,17 @@ public final class DefaultMethodFactory extends MethodFactory {
         public static final FunctionInvoker INSTANCE = new Float64Invoker();
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
             return context.runtime.newFloat(invoker.invokeDouble(function, args));
+        }
+    }
+    
+    /**
+     * Invokes the native function with a 128 bit float return value.
+     * Returns a Float to ruby.
+     */
+    private static final class Float128Invoker extends BaseInvoker {
+        public static final FunctionInvoker INSTANCE = new Float128Invoker();
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return context.runtime.newFloat(0); // not implemented
         }
     }
 
@@ -596,6 +615,16 @@ public final class DefaultMethodFactory extends MethodFactory {
         public static final ParameterMarshaller INSTANCE = new Float64Marshaller();
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             buffer.putDouble(RubyNumeric.num2dbl(parameter));
+        }
+    }
+    
+    /**
+     * Converts a ruby Float into a 128 bit native float.
+     */
+    static final class Float128Marshaller extends NonSessionMarshaller {
+        public static final ParameterMarshaller INSTANCE = new Float64Marshaller();
+        public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
+            return; // not implemented
         }
     }
 

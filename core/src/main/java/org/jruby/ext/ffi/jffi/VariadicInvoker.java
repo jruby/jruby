@@ -64,56 +64,58 @@ public class VariadicInvoker extends RubyObject {
         return Arity.OPTIONAL;
     }
 
-    @JRubyMethod(name = { "new" }, meta = true, required = 3, optional = 1)
+    @JRubyMethod(name = { "new" }, meta = true, required = 4)
     public static VariadicInvoker newInstance(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
+        IRubyObject rbFunction = args[0];
+        IRubyObject rbParameterTypes = args[1];
+        IRubyObject rbReturnType = args[2];
+        RubyHash options = (RubyHash) args[3];
+
         // Get the convention from the options hash
         String convention = "default";
         IRubyObject enums = null;
         boolean saveError = true;
         IRubyObject typeMap = null;
 
-        if (args.length == 4) {
-            RubyHash options = (RubyHash) args[3];
-            IRubyObject rbConvention = options.fastARef(context.runtime.newSymbol("convention"));
-            if (rbConvention != null && !rbConvention.isNil()) {
-                convention = rbConvention.asJavaString();
-            }
-
-            IRubyObject rbSaveErrno = options.fastARef(context.runtime.newSymbol("save_errno"));
-            if (rbSaveErrno != null && !rbSaveErrno.isNil()) {
-                saveError = rbSaveErrno.isTrue();
-            }
-
-            enums = options.fastARef(context.runtime.newSymbol("enums"));
-            if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
-                throw context.runtime.newTypeError("wrong type for options[:enum] "
-                    + enums.getMetaClass().getName() + " (expected Hash or Enums)");
-
-            }
-            typeMap = options.fastARef(context.runtime.newSymbol("type_map"));
-            if (typeMap != null && !typeMap.isNil() && !(typeMap instanceof RubyHash)) {
-                throw context.runtime.newTypeError("wrong type for options[:type_map] "
-                        + typeMap.getMetaClass().getName() + " (expected Hash)");
-
-            }
+        IRubyObject rbConvention = options.fastARef(context.runtime.newSymbol("convention"));
+        if (rbConvention != null && !rbConvention.isNil()) {
+            convention = rbConvention.asJavaString();
         }
 
-        final Type returnType = org.jruby.ext.ffi.Util.findType(context, args[0], typeMap);
+        IRubyObject rbSaveErrno = options.fastARef(context.runtime.newSymbol("save_errno"));
+        if (rbSaveErrno != null && !rbSaveErrno.isNil()) {
+            saveError = rbSaveErrno.isTrue();
+        }
 
-        if (!(args[1] instanceof RubyArray)) {
+        enums = options.fastARef(context.runtime.newSymbol("enums"));
+        if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
+            throw context.runtime.newTypeError("wrong type for options[:enum] "
+                + enums.getMetaClass().getName() + " (expected Hash or Enums)");
+
+        }
+        typeMap = options.fastARef(context.runtime.newSymbol("type_map"));
+        if (typeMap != null && !typeMap.isNil() && !(typeMap instanceof RubyHash)) {
+            throw context.runtime.newTypeError("wrong type for options[:type_map] "
+                    + typeMap.getMetaClass().getName() + " (expected Hash)");
+
+        }
+
+        final Type returnType = org.jruby.ext.ffi.Util.findType(context, rbReturnType, typeMap);
+
+        if (!(rbParameterTypes instanceof RubyArray)) {
             throw context.runtime.newTypeError("Invalid parameter array "
-                    + args[1].getMetaClass().getName() + " (expected Array)");
+                    + rbParameterTypes.getMetaClass().getName() + " (expected Array)");
         }
 
-        if (!(args[2] instanceof Pointer)) {
-            throw context.runtime.newTypeError(args[2], context.runtime.getFFI().pointerClass);
+        if (!(rbFunction instanceof Pointer)) {
+            throw context.runtime.newTypeError(rbFunction, context.runtime.getFFI().pointerClass);
         }
-        final Pointer address = (Pointer) args[2];
+        final Pointer address = (Pointer) rbFunction;
 
         CallingConvention callConvention = "stdcall".equals(convention)
                         ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
 
-        RubyArray paramTypes = (RubyArray) args[1];
+        RubyArray paramTypes = (RubyArray) rbParameterTypes;
         RubyArray fixed = RubyArray.newArray(context.runtime);
         for (int i = 0; i < paramTypes.getLength(); ++i) {
             Type type = (Type)paramTypes.entry(i);

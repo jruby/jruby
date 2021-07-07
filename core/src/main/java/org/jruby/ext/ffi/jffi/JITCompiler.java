@@ -44,7 +44,7 @@ class JITCompiler {
     }
     
     private static final class HandleRef extends WeakReference<JITHandle> {
-        JITSignature signature;
+        final JITSignature signature;
 
         public HandleRef(JITHandle handle, JITSignature signature, ReferenceQueue refqueue) {
             super(handle, refqueue);

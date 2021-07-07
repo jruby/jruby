@@ -51,10 +51,6 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
         return compiledInvoker != null ? compiledInvoker : this;
     }
 
-    Signature getSignature() {
-        return signature;
-    }
-
     CallContext getCallContext() {
         return function.getCallContext();
     }

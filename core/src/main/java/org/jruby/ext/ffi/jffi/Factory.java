@@ -9,6 +9,8 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.platform.Platform;
+import org.jruby.util.WindowsFFI;
 
 public class Factory extends org.jruby.ext.ffi.Factory {
 
@@ -40,6 +42,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             }
             if (ffi.getClass("LastError") == null) {
                 ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
+                if (Platform.IS_WINDOWS) {
+                  ffi.defineModuleUnder("LastError").defineAnnotatedMethods(WinapiLastError.class);
+                }
             }
         }
 
@@ -118,6 +123,20 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         @JRubyMethod(name = {  "error=" }, module = true)
         public static final  IRubyObject error_set(ThreadContext context, IRubyObject recv, IRubyObject value) {
             com.kenai.jffi.LastError.getInstance().set((int)value.convertToInteger().getLongValue());
+
+            return value;
+        }
+    }
+
+    public static final class WinapiLastError {
+        @JRubyMethod(name = {  "winapi_error" }, module = true)
+        public static final  IRubyObject winapi_error(ThreadContext context, IRubyObject recv) {
+            return context.runtime.newFixnum(WindowsFFI.getKernel32().GetLastError());
+        }
+
+        @JRubyMethod(name = {  "winapi_error=" }, module = true)
+        public static final  IRubyObject winapi_error_set(ThreadContext context, IRubyObject recv, IRubyObject value) {
+            WindowsFFI.getKernel32().SetLastError((int)value.convertToInteger().getLongValue());
 
             return value;
         }

@@ -44,6 +44,7 @@ public final class FFIUtil {
 
         m.put(NativeType.FLOAT, com.kenai.jffi.Type.FLOAT);
         m.put(NativeType.DOUBLE, com.kenai.jffi.Type.DOUBLE);
+        m.put(NativeType.LONGDOUBLE, com.kenai.jffi.Type.LONGDOUBLE);
         m.put(NativeType.POINTER, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.BUFFER_IN, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.BUFFER_OUT, com.kenai.jffi.Type.POINTER);

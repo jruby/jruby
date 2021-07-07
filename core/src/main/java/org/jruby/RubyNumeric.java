@@ -238,6 +238,55 @@ public class RubyNumeric extends RubyObject {
     }
 
     /**
+     * Convert the given value into an unsigned long, encoded as a signed long.
+     *
+     * Because we can't represent an unsigned long directly in Java, callers of this code must deal with the signed
+     * long bits accordingly.
+     *
+     * @param arg the argument to convert
+     * @return an unsigned long encoded as a signed long, or raise an error if out of range
+     */
+    public static long num2ulong(IRubyObject arg) {
+        // loop until we have a Numeric
+        while (true) {
+            if (arg instanceof RubyFixnum) {
+                return ((RubyFixnum) arg).value;
+            } else if (arg instanceof RubyBignum) {
+                return RubyBignum.big2ulong((RubyBignum) arg);
+            } else if (arg instanceof RubyFloat) {
+                return float2ulong((RubyFloat) arg);
+            } else {
+                if (arg.isNil()) {
+                    throw arg.getRuntime().newTypeError("no implicit conversion from nil to integer");
+                }
+                arg = arg.convertToInteger();
+                // loop again
+            }
+        }
+    }
+
+    /**
+     * Convert the given RubyFloat into an unsigned long, encoded as a signed long.
+     *
+     * Because we can't represent an unsigned long directly in Java, callers of this code must deal with the signed
+     * long bits accordingly.
+     *
+     * @param flt the argument to convert
+     * @return an unsigned long encoded as a signed long, or raise an error if out of range
+     */
+    public static long float2ulong(RubyFloat flt) {
+        final double aFloat = flt.value;
+
+        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) 0) {
+            BigDecimal bd = BigDecimal.valueOf(aFloat);
+            BigInteger bi = bd.toBigInteger();
+            return bi.longValue();
+        }
+        // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
+        throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
+    }
+
+    /**
      * MRI: macro DBL2NUM
      */
     public static IRubyObject dbl2num(Ruby runtime, double val) {

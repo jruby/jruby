@@ -12,7 +12,8 @@ public final class MemoryUtil {
     public static final IRubyObject getArrayOfSigned8(Ruby runtime, MemoryIO io, long offset, int count) {
 
         byte[] array = new byte[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
         
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -29,13 +30,15 @@ public final class MemoryUtil {
             array[i] = Util.int8Value(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfUnsigned8(Ruby runtime, MemoryIO io, long offset, int count) {
 
         byte[] array = new byte[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -52,13 +55,15 @@ public final class MemoryUtil {
             array[i] = (byte) Util.uint8Value(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfSigned16(Ruby runtime, MemoryIO io, long offset, int count) {
 
         short[] array = new short[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -75,13 +80,15 @@ public final class MemoryUtil {
             array[i] = Util.int16Value(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfUnsigned16(Ruby runtime, MemoryIO io, long offset, int count) {
 
         short[] array = new short[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -98,13 +105,15 @@ public final class MemoryUtil {
             array[i] = (short) Util.uint16Value(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfSigned32(Ruby runtime, MemoryIO io, long offset, int count) {
 
         int[] array = new int[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -121,13 +130,15 @@ public final class MemoryUtil {
             array[i] = Util.int32Value(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
     
     public static final IRubyObject getArrayOfUnsigned32(Ruby runtime, MemoryIO io, long offset, int count) {
 
         int[] array = new int[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -144,13 +155,15 @@ public final class MemoryUtil {
             array[i] = (int) Util.uint32Value(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfSigned64(Ruby runtime, MemoryIO io, long offset, int count) {
 
         long[] array = new long[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -167,13 +180,15 @@ public final class MemoryUtil {
             array[i] = Util.int64Value(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfUnsigned64(Ruby runtime, MemoryIO io, long offset, int count) {
 
         long[] array = new long[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -190,13 +205,15 @@ public final class MemoryUtil {
             array[i] = Util.uint64Value(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfFloat32(Ruby runtime, MemoryIO io, long offset, int count) {
 
         float[] array = new float[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -213,13 +230,15 @@ public final class MemoryUtil {
             array[i] = Util.floatValue(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfFloat64(Ruby runtime, MemoryIO io, long offset, int count) {
 
         double[] array = new double[count];
-        io.get(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.get(offset, array, 0, array.length);
 
         RubyArray arr = RubyArray.newArray(runtime, array.length);
         for (int i = 0; i < array.length; ++i) {
@@ -236,7 +255,8 @@ public final class MemoryUtil {
             array[i] = Util.doubleValue(ary.entry(i));
         }
 
-        io.put(offset, array, 0, array.length);
+        if (array.length > 0)
+            io.put(offset, array, 0, array.length);
     }
 
     /**

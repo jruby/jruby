@@ -15,7 +15,7 @@
 # platform.
 begin
   require 'ffi'
-  require "#{File.join(FFI::Platform::CONF_DIR, 'syslog.rb')}"
+  require "#{File.join('syslog/ffi/', FFI::Platform::NAME, 'syslog.rb')}"
 rescue LoadError => ex
   raise LoadError, "Syslog not supported on this platform"
 end

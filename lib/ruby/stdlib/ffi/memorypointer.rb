@@ -1,1 +1,1 @@
-# Now implemented in java
+# This class is now implemented in C

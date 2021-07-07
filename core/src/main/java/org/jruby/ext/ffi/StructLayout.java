@@ -40,7 +40,6 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -54,7 +53,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
@@ -118,37 +116,32 @@ public final class StructLayout extends Type {
         charArrayClass.defineAnnotatedMethods(CharArrayProxy.class);
 
         RubyClass fieldClass = runtime.defineClassUnder("Field", runtime.getObject(),
-                FieldAllocator.INSTANCE, layoutClass);
+                Field::new, layoutClass);
         fieldClass.defineAnnotatedMethods(Field.class);
 
         RubyClass numberFieldClass = runtime.defineClassUnder("Number", fieldClass,
-                NumberFieldAllocator.INSTANCE, layoutClass);
+                NumberField::new, layoutClass);
 
         RubyClass enumFieldClass = runtime.defineClassUnder("Enum", fieldClass,
-                EnumFieldAllocator.INSTANCE, layoutClass);
+                EnumField::new, layoutClass);
 
         RubyClass stringFieldClass = runtime.defineClassUnder("String", fieldClass,
-                StringFieldAllocator.INSTANCE, layoutClass);
+                StringField::new, layoutClass);
 
         RubyClass pointerFieldClass = runtime.defineClassUnder("Pointer", fieldClass,
-                PointerFieldAllocator.INSTANCE, layoutClass);
+                PointerField::new, layoutClass);
 
         RubyClass functionFieldClass = runtime.defineClassUnder("Function", fieldClass,
-                FunctionFieldAllocator.INSTANCE, layoutClass);
+                FunctionField::new, layoutClass);
         functionFieldClass.defineAnnotatedMethods(FunctionField.class);
 
         RubyClass innerStructFieldClass = runtime.defineClassUnder("InnerStruct", fieldClass,
-                InnerStructFieldAllocator.INSTANCE, layoutClass);
+                InnerStructField::new, layoutClass);
         innerStructFieldClass.defineAnnotatedMethods(InnerStructField.class);
 
         RubyClass arrayFieldClass = runtime.defineClassUnder("Array", fieldClass,
-                ArrayFieldAllocator.INSTANCE, layoutClass);
+                ArrayField::new, layoutClass);
         arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
-
-        RubyClass mappedFieldClass = runtime.defineClassUnder("Mapped", fieldClass,
-                MappedFieldAllocator.INSTANCE, layoutClass);
-        mappedFieldClass.defineAnnotatedMethods(MappedField.class);
-
 
         return layoutClass;
     }
@@ -312,20 +305,47 @@ public final class StructLayout extends Type {
         return RubyArray.newArray(context.runtime, fields);
     }
 
-    final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
-        if (!(ptr instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
+    @JRubyMethod(name = "__union!")
+    public IRubyObject union_bang(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        NativeType[] alignmentTypes = {
+                NativeType.CHAR, NativeType.SHORT, NativeType.INT, NativeType.LONG,
+                NativeType.FLOAT, NativeType.DOUBLE, NativeType.LONGDOUBLE
+        };
+
+        NativeType t = null;
+        int count, i;
+
+        for (NativeType alignmentType : alignmentTypes) {
+            if (Type.getNativeAlignment(alignmentType) == alignment) {
+                t = alignmentType;
+                break;
+            }
         }
 
-        return getMember(context.runtime, name).get(context, cache, (AbstractMemory) ptr);
+        if (t == null) {
+            throw runtime.newRuntimeError("cannot create libffi union representation for alignment " + alignment);
+        }
+
+        // FIXME: wot
+//        count = layout.size / Type.getNativeSize(t);
+//        layout.ffiTypes = xcalloc(count + 1, sizeof(ffi_type *));
+//        layout.base.ffiType->elements = layout->ffiTypes;
+//
+//        for (i = 0; i < count; ++i) {
+//            layout->ffiTypes[i] = t;
+//        }
+
+        return this;
+    }
+
+    final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
+        return getMember(context.runtime, name).get(context, cache, AbstractMemory.cast(context, ptr));
     }
 
     final void putValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr, IRubyObject value) {
-        if (!(ptr instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
-        }
-
-        getMember(context.runtime, name).put(context, cache, (AbstractMemory) ptr, value);
+        getMember(context.runtime, name).put(context, cache, AbstractMemory.cast(context, ptr), value);
     }
 
     @Override
@@ -486,7 +506,7 @@ public final class StructLayout extends Type {
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
-         * @param runtime The ruby runtime
+         * @param context the current context
          * @param cache The value cache
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
@@ -519,7 +539,7 @@ public final class StructLayout extends Type {
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
-         * @param runtime The ruby runtime
+         * @param context the current context
          * @param cache The value cache
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
@@ -572,13 +592,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class FieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new Field(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new FieldAllocator();
-    }
-
     @JRubyClass(name="FFI::StructLayout::Field", parent="Object")
     public static class Field extends RubyObject {
 
@@ -593,6 +606,9 @@ public final class StructLayout extends Type {
 
         /** The offset within the memory area of this member */
         private int offset;
+
+        /** The memory operation for this field type */
+        private MemoryOp memoryOp;
 
 
         Field(Ruby runtime, RubyClass klass) {
@@ -611,12 +627,15 @@ public final class StructLayout extends Type {
             this.type = type;
             this.offset = offset;
             this.io = io;
+            this.memoryOp = MemoryOp.getMemoryOp(type);
         }
 
         void init(IRubyObject name, IRubyObject type, IRubyObject offset) {
             this.name = name;
-            this.type = checkType(type);
+            Type realType = checkType(type);
+            this.type = realType;
             this.offset = RubyNumeric.num2int(offset);
+            this.memoryOp = MemoryOp.getMemoryOp(realType);
         }
 
         void init(IRubyObject name, IRubyObject type, IRubyObject offset, FieldIO io) {
@@ -731,13 +750,29 @@ public final class StructLayout extends Type {
         public final IRubyObject name(ThreadContext context) {
             return name;
         }
-    }
 
-    private static final class NumberFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new NumberField(runtime, klass);
+        @JRubyMethod
+        public final IRubyObject get(ThreadContext context, IRubyObject pointer) {
+            MemoryOp memoryOp = this.memoryOp;
+            if (memoryOp == null) {
+                throw context.runtime.newArgumentError("get not supported for " + type.nativeType.name());
+            }
+
+            return memoryOp.get(context, AbstractMemory.cast(context, pointer), offset);
         }
-        private static final ObjectAllocator INSTANCE = new NumberFieldAllocator();
+
+        @JRubyMethod
+        public final IRubyObject put(ThreadContext context, IRubyObject pointer, IRubyObject value) {
+            MemoryOp memoryOp = this.memoryOp;
+
+            if (memoryOp == null) {
+                throw context.runtime.newArgumentError("put not supported for " + type.nativeType.name());
+            }
+
+            memoryOp.put(context, AbstractMemory.cast(context, pointer), offset, value);
+
+            return this;
+        }
     }
 
     @JRubyClass(name="FFI::StructLayout::Number", parent="FFI::StructLayout::Field")
@@ -756,13 +791,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class EnumFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new EnumField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new EnumFieldAllocator();
-    }
-
     @JRubyClass(name="FFI::StructLayout::Enum", parent="FFI::StructLayout::Field")
     public static final class EnumField extends Field {
         public EnumField(Ruby runtime, RubyClass klass) {
@@ -778,13 +806,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class StringFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new StringField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new StringFieldAllocator();
-    }
-
     @JRubyClass(name="FFI::StructLayout::String", parent="FFI::StructLayout::Field")
     static final class StringField extends Field {
         public StringField(Ruby runtime, RubyClass klass) {
@@ -792,25 +813,11 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class PointerFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new PointerField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new PointerFieldAllocator();
-    }
-
     @JRubyClass(name="FFI::StructLayout::Pointer", parent="FFI::StructLayout::Field")
     public static final class PointerField extends Field {
         public PointerField(Ruby runtime, RubyClass klass) {
             super(runtime, klass, PointerFieldIO.INSTANCE);
         }
-    }
-
-    private static final class FunctionFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new FunctionField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new FunctionFieldAllocator();
     }
 
     @JRubyClass(name="FFI::StructLayout::Function", parent="FFI::StructLayout::Field")
@@ -835,13 +842,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class InnerStructFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new InnerStructField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new InnerStructFieldAllocator();
-    }
-    
     @JRubyClass(name="FFI::StructLayout::InnerStruct", parent="FFI::StructLayout::Field")
     public static final class InnerStructField extends Field {
 
@@ -865,13 +865,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class ArrayFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new ArrayField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new ArrayFieldAllocator();
-    }
-    
     @JRubyClass(name="FFI::StructLayout::Array", parent="FFI::StructLayout::Field")
     public static final class ArrayField extends Field {
 
@@ -893,39 +886,6 @@ public final class StructLayout extends Type {
             return this;
         }
     }
-
-    private static final class MappedFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new MappedField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new MappedFieldAllocator();
-    }
-
-    @JRubyClass(name="FFI::StructLayout::Mapped", parent="FFI::StructLayout::Field")
-    public static final class MappedField extends Field {
-
-        public MappedField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass, DefaultFieldIO.INSTANCE);
-        }
-
-        @JRubyMethod(required = 4, visibility = PRIVATE)
-        public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-            if (!(args[2] instanceof MappedType)) {
-                throw context.runtime.newTypeError(args[2],
-                        context.runtime.getModule("FFI").getClass("Type").getClass("Mapped"));
-            }
-
-            if (!(args[3] instanceof Field)) {
-                throw context.runtime.newTypeError(args[3],
-                        context.runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
-            }
-
-            init(args[0], args[2], args[1], new MappedFieldIO((MappedType) args[2], ((Field) args[3]).getFieldIO()));
-
-            return this;
-        }
-    }
-
 
     public static interface Storage {
         IRubyObject getCachedValue(Member member);
@@ -1369,9 +1329,16 @@ public final class StructLayout extends Type {
             
             if (isCharArray() && value instanceof RubyString) {
                 ByteList bl = value.convertToString().getByteList();
-                ptr.getMemoryIO().putZeroTerminatedByteArray(m.offset, bl.getUnsafeBytes(), bl.begin(),
-                    Math.min(bl.length(), arrayType.length() - 1));
-
+                int arrayLen = arrayType.length();
+                int valueLen = bl.length();
+                if(valueLen < arrayLen) {
+                    ptr.getMemoryIO().putZeroTerminatedByteArray(m.offset, bl.getUnsafeBytes(), bl.begin(), bl.length());
+                } else if (valueLen == arrayLen) {
+                    ptr.getMemoryIO().put(m.offset, bl.getUnsafeBytes(), bl.begin(), valueLen);
+                } else {
+                    throw context.runtime.newIndexError("String is longer (" + valueLen +
+                            " bytes) than the char array (" + arrayLen + " bytes)");
+                }
             } else if (false) {
                 RubyArray ary = value.convertToArray();
                 int count = ary.size();

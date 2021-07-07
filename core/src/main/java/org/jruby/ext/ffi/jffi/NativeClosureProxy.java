@@ -147,6 +147,8 @@ final class NativeClosureProxy implements Closure {
                     buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
                 case DOUBLE:
                     buffer.setDoubleReturn(RubyNumeric.num2dbl(value)); break;
+//                case LONGDOUBLE:
+//                    break; // not implemented
                 case POINTER:
                     buffer.setAddressReturn(addressValue(value)); break;
 
@@ -252,6 +254,8 @@ final class NativeClosureProxy implements Closure {
                     return runtime.newFloat(buffer.getFloat(index));
                 case DOUBLE:
                     return runtime.newFloat(buffer.getDouble(index));
+//                case LONGDOUBLE:
+//                    return runtime.newFloat(0); // not implemented
 
                 case POINTER:
                     return new Pointer(runtime, NativeMemoryIO.wrap(runtime, buffer.getAddress(index)));
