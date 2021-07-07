@@ -1171,8 +1171,10 @@ public class ShellLauncher {
 
         public void verifyExecutableForShell() {
             String cmdline = rawArgs[0].toString().trim();
-            if (doExecutableSearch && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
+            if (doExecutableSearch && args.length == rawArgs.length && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
                 verifyExecutable();
+                // replace cmdline with found executable
+                cmdline = executableFile.getAbsolutePath();
             }
 
             // now, prepare the exec args
@@ -1180,13 +1182,7 @@ public class ShellLauncher {
             execArgs = new String[3];
             execArgs[0] = shell;
             execArgs[1] = shell.endsWith("sh") ? "-c" : "/c";
-
-            if (Platform.IS_WINDOWS) {
-                // that's how MRI does it too
-                execArgs[2] = "\"" + cmdline + "\"";
-            } else {
-                execArgs[2] = cmdline;
-            }
+            execArgs[2] = cmdline;
         }
 
         public void verifyExecutableForDirect() {
@@ -1648,7 +1644,7 @@ public class ShellLauncher {
     }
 
     private static String getShell(Ruby runtime) {
-        return RbConfigLibrary.jrubyShell();
+        return findPathExecutable(runtime, RbConfigLibrary.jrubyShell()).getAbsolutePath();
     }
 
     public static boolean shouldUseShell(String command) {
