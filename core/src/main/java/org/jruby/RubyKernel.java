@@ -175,7 +175,7 @@ public class RubyKernel {
 
         if (module == null) module = context.getCurrentStaticScope().getModule();
 
-        if (module.isNil()) {
+        if (module == null || module.isNil()) {
             return context.nil;
         }
 
@@ -188,7 +188,9 @@ public class RubyKernel {
 
         if (module == null) module = context.getCurrentStaticScope().getModule();
 
-        if (module.isNil()) throw context.runtime.newTypeError("Can not set autoload on singleton class");
+        module = module.getRealModule();
+
+        if (module == null || module.isNil()) throw context.runtime.newTypeError("Can not set autoload on singleton class");
 
         return module.autoload(context, symbol, file);
     }
