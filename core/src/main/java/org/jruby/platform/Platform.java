@@ -40,15 +40,8 @@ import org.jruby.runtime.Helpers;
  * Platform specific constants.
  */
 public abstract class Platform {
-    public static Platform getPlatform() {
-        return INSTANCE;
-    }
-    protected Platform() {
-    }
 
-    public static void main(String[] args) {
-        System.out.println(System.getProperties());
-    }
+    private Platform() { }
 
     public String getPackageName() {
         return String.format("%s.%s.%s", Platform.class.getPackage().getName(), OS, ARCH);
@@ -69,11 +62,6 @@ public abstract class Platform {
     private static final String GCJ = "GNU libgcj";
     private static final String IBM = "IBM J9 VM";
     private static final String OPENJ9 = "Eclipse OpenJ9 VM";
-
-    @Deprecated // no longer used
-    public static final Map<String, String> OS_NAMES = Helpers.map("Mac OS X", DARWIN);
-    @Deprecated // no longer used
-    public static final Map<String, String> ARCH_NAMES = Helpers.map("x86", "i386");
     
     private static String initOperatingSystem() {
         String osname = getProperty("os.name", "unknown").toLowerCase();
@@ -131,23 +119,6 @@ public abstract class Platform {
     public static final boolean IS_J9 = JVM.equals(OPENJ9) || JVM.equals(IBM);
     public static final boolean IS_IBM = IS_J9;
 
-    private static final Platform INSTANCE = initPlatform();
-
-    private static Platform initPlatform(){
-        try {
-            if (IS_WINDOWS)
-                return new NTPlatform();
-
-            if (IS_SOLARIS)
-                return new SolarisPlatform();
-
-            // Punt
-            return new UnixPlatform();
-        } catch (UnsupportedOperationException e) {
-            return new UnsupportedPlatform();
-        }
-    }
-
     /**
      * An extension over <code>System.getProperty</code> method.
      * Handles security restrictions, and returns the default
@@ -165,5 +136,4 @@ public abstract class Platform {
         }
     }
 
-    public abstract long[] getGroups(IRubyObject recv);
 }
