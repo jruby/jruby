@@ -7,10 +7,10 @@ class Enumerator
       # Allow #to_generator to return nil, indicating it has none for
       # this method.
       if @__object__.respond_to? :to_generator
-        @__generator__ = @__object__.to_generator(@__method__, *@__args__)
+        @__generator__ = @__object__.to_generator(@__method__, @__args__, @__feedvalue__)
       end
 
-      @__generator__ ||= FiberGenerator.new(@__object__, @__method__, @__args__, @__feedvalue__)
+      @__generator__ ||= JRuby::FiberGenerator.new(@__object__, @__method__, @__args__, @__feedvalue__)
     end
 
     begin
@@ -52,65 +52,6 @@ class Enumerator
     raise TypeError, 'Feed value already set' unless @__feedvalue__.value.nil?
     @__feedvalue__.value = val
     nil
-  end
-
-  class FiberGenerator
-    class State
-      attr_reader :to_proc
-      attr_accessor :done, :result
-
-      def initialize(object, method, args, feed_value)
-        @to_proc = proc do
-          @result = object.__send__ method, *args do |*vals|
-            ret = Fiber.yield(*vals)
-            val = feed_value.use_value
-            ret = val unless val.nil?
-            ret
-          end
-
-          @done = true
-        end
-      end
-
-    end
-    private_constant :State
-
-    def initialize(obj, method, args, feed_value)
-      @state = State.new(obj, method, args, feed_value)
-      @fiber = nil
-      rewind
-    end
-
-    def result
-      @state.result
-    end
-
-    def next?
-      !@state.done
-    end
-
-    def next
-      reset unless @fiber&.__alive__
-
-      val = @fiber.resume
-
-      raise StopIteration, 'iteration has ended' if @state.done
-
-      val
-    end
-
-    def rewind
-      fiber, @fiber = @fiber, nil
-      fiber.send(:__finalize__) if fiber&.__alive__
-      @state.done = false
-    end
-
-    def reset
-      @state.done = false
-      @state.result = nil
-      @fiber = Fiber.new(&@state)
-    end
-
   end
 
   class Lazy < Enumerator
