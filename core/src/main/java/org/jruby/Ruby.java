@@ -371,8 +371,6 @@ public final class Ruby implements Constantizable {
         trueObject = new RubyBoolean.True(this);
         trueObject.setFrozen(true);
 
-        reportOnException = trueObject;
-
         // Set up the main thread in thread service
         threadService.initMainThread();
 
@@ -4374,19 +4372,38 @@ public final class Ruby implements Constantizable {
         return err;
     }
 
+    public boolean isAbortOnException() {
+        return abortOnException;
+    }
+
+    public void setAbortOnException(final boolean abortOnException) {
+        this.abortOnException = abortOnException;
+    }
+
+    @Deprecated
     public boolean isGlobalAbortOnExceptionEnabled() {
-        return globalAbortOnExceptionEnabled;
+        return abortOnException;
     }
 
+    @Deprecated
     public void setGlobalAbortOnExceptionEnabled(boolean enable) {
-        globalAbortOnExceptionEnabled = enable;
+        abortOnException = enable;
     }
 
+    @Deprecated
     public IRubyObject getReportOnException() {
+        return reportOnException ? getTrue() : getFalse();
+    }
+
+    public boolean isReportOnException() {
         return reportOnException;
     }
 
     public void setReportOnException(IRubyObject enable) {
+        reportOnException = enable.isTrue();
+    }
+
+    public void setReportOnException(boolean enable) {
         reportOnException = enable;
     }
 
@@ -5282,8 +5299,8 @@ public final class Ruby implements Constantizable {
     private volatile EventHook[] eventHooks = EMPTY_HOOKS;
     private boolean hasEventHooks;
 
-    private boolean globalAbortOnExceptionEnabled = false;
-    private IRubyObject reportOnException;
+    private boolean abortOnException = false; // Thread.abort_on_exception
+    private boolean reportOnException = true; // Thread.report_on_exception
     private boolean doNotReverseLookupEnabled = false;
     private volatile boolean objectSpaceEnabled;
     private boolean siphashEnabled;
