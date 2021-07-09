@@ -429,7 +429,7 @@ public class CGIEscape implements Library {
         rb_mEscape.defineAnnotatedMethods(CGIEscape.class);
         // We do this in cgi/util.rb to work around jruby/jruby#4531.
 //        rb_mUtil.prependModule(rb_mEscape);
-//        rb_mEscape.extend_object(rb_cCGI);
+        rb_mEscape.extend_object(rb_cCGI);
     }
 
     // PORTED FROM OTHER FILES IN MRI
