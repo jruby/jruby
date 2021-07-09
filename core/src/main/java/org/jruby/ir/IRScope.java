@@ -290,6 +290,24 @@ public abstract class IRScope implements ParseResult {
         return current;
     }
 
+    public IRScope getNearestUncompiledScope() {
+        IRScope current = this;
+
+        while (current != null && !current.isTopLocalVariableScope()) {
+            IRScope parent = current.getLexicalParent();
+
+            if (parent.isPreparedForCompilation()) {
+                // found a parent scope that's already compiled, start from current child scope
+                break;
+            }
+
+            // proceed to parent
+            current = current.getLexicalParent();
+        }
+
+        return current;
+    }
+
     /**
      * returns whether this scope is contained by the parentScope parameter.
      * For simplicity a scope is considered to contain itself.
@@ -646,6 +664,12 @@ public abstract class IRScope implements ParseResult {
         this.fullInterpreterContext = fic;
 
         return bbs;
+    }
+
+    public synchronized boolean isPreparedForCompilation() {
+        if (optimizedInterpreterContext != null && optimizedInterpreterContext.buildComplete()) return true;
+        if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return true;
+        return false;
     }
 
     // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even
