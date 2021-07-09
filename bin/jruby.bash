@@ -74,7 +74,7 @@ resolve_symlinks() {
     # 4) append the basename
     sym="$(readlink "$cur_path")"
     sym_base="$(cd -P -- "$(dirname -- "$cur_path")" >/dev/null && pwd -P)"
-    cur_path="$(cd "$sym_base" && cd "$(dirname -- "$sym")" && pwd -P)/$(basename -- "$sym")"
+    cur_path="$(cd "$sym_base" && cd "$(dirname -- "$sym")" && pwd -P)/$(basename "$sym")"
   done
   result="$cur_path"
 }
@@ -83,7 +83,7 @@ resolve_symlinks() {
 
 # get the absolute path of the executable
 BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
-resolve_symlinks "$BASE_DIR/$(basename -- "$BASH_SOURCE")"
+resolve_symlinks "$BASE_DIR/$(basename "$BASH_SOURCE")"
 SELF_PATH="$result"
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
