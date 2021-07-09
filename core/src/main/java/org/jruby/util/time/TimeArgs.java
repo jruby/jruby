@@ -16,6 +16,8 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.function.Function;
 
 public class TimeArgs {
@@ -102,6 +104,7 @@ public class TimeArgs {
         this.dst = dst;
     }
 
+    @Deprecated
     public void initializeTime(ThreadContext context, RubyTime time, DateTimeZone dtz) {
         Ruby runtime = context.runtime;
 
@@ -204,6 +207,11 @@ public class TimeArgs {
 
         time.setDateTime(dt);
         time.setNSec(nanos);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void initializeTime(ThreadContext context, RubyTime time, ZoneId dtz) {
+        initializeTime(context, time, JodaConverters.javaToJodaTimeZone(dtz));
     }
 
     private static int parseYear(ThreadContext context, IRubyObject _year) {

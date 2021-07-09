@@ -38,6 +38,7 @@ import java.io.Reader;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParsePosition;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
@@ -57,6 +58,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.time.JodaConverters;
 
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
@@ -399,17 +401,15 @@ public class RubyDateFormatter {
     }
 
     /** Convenience method when using no pattern caching */
-    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
-        RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
-        out.setEncoding(pattern.getEncoding());
-        if (pattern.isTaint()) out.setTaint(true);
-        return out;
+    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, ZonedDateTime zdt, long nsec, RubyNumeric sub_millis) {
+        return compileAndFormat(pattern, dateLibrary, JodaConverters.javaToJodaDateTime(zdt), nsec, sub_millis);
     }
 
-    public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
-        return runtime.newString(formatToByteList(compiledPattern, dt, nsec, sub_millis));
+    public RubyString format(List<Token> compiledPattern, ZonedDateTime zdt, long nsec, RubyNumeric sub_millis) {
+        return format(compiledPattern, JodaConverters.javaToJodaDateTime(zdt), nsec, sub_millis);
     }
 
+    @Deprecated
     private ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
         final ByteList toAppendTo = new ByteList(24);
@@ -699,6 +699,19 @@ public class RubyDateFormatter {
      */
     public Date parse(String source, ParsePosition pos) {
         throw new UnsupportedOperationException();
+    }
+
+    @Deprecated
+    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
+        RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
+        out.setEncoding(pattern.getEncoding());
+        if (pattern.isTaint()) out.setTaint(true);
+        return out;
+    }
+
+    @Deprecated
+    public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
+        return runtime.newString(formatToByteList(compiledPattern, dt, nsec, sub_millis));
     }
 
 }

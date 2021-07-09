@@ -64,6 +64,7 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.time.JodaConverters;
 import org.jruby.util.time.TimeArgs;
 
 import java.io.Serializable;
@@ -147,17 +148,34 @@ public class RubyTime extends RubyObject {
         return (entry.value instanceof RubyString) ? ((RubyString) entry.value).asJavaString() : null;
     }
 
+    @Deprecated
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
         final String tz = getEnvTimeZone(runtime);
         return tz == null ? DateTimeZone.getDefault() : getTimeZoneFromTZString(runtime, tz);
     }
 
+    @SuppressWarnings("deprecation")
+    public static ZoneId getLocalZoneId(Ruby runtime) {
+        final String tz = getEnvTimeZone(runtime);
+        return tz == null ? ZoneId.systemDefault() : getZoneIdFromTZString(runtime, tz);
+    }
+
+    @Deprecated
     public static DateTimeZone getTimeZoneFromTZString(Ruby runtime, String zone) {
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
         if (cachedZone != null) return cachedZone;
 
         DateTimeZone dtz = parseTZString(runtime, zone);
         runtime.getTimezoneCache().put(zone, dtz);
+        return dtz;
+    }
+
+    public static ZoneId getZoneIdFromTZString(Ruby runtime, String zone) {
+        ZoneId cachedZone = runtime.getZoneIdCache().get(zone);
+        if (cachedZone != null) return cachedZone;
+
+        ZoneId dtz = JodaConverters.jodaToJavaTimeZone(getTimeZoneFromTZString(runtime, zone));
+        runtime.getZoneIdCache().put(zone, dtz);
         return dtz;
     }
 
@@ -201,6 +219,7 @@ public class RubyTime extends RubyObject {
         }
     }
 
+    @Deprecated
     public static DateTimeZone getTimeZoneFromString(Ruby runtime, String zone) {
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
         if (cachedZone != null) {
@@ -212,12 +231,24 @@ public class RubyTime extends RubyObject {
         }
     }
 
+    public static ZoneId getZoneIdFromString(Ruby runtime, String zone) {
+        ZoneId cachedZone = runtime.getZoneIdCache().get(zone);
+        if (cachedZone != null) {
+            return cachedZone;
+        } else {
+            ZoneId dtz = JodaConverters.jodaToJavaTimeZone(parseZoneString(runtime, zone));
+            runtime.getZoneIdCache().put(zone, dtz);
+            return dtz;
+        }
+    }
+
     private static DateTimeZone parseZoneString(Ruby runtime, String zone) {
         // TODO: handle possible differences with TZ format
         return parseTZString(runtime, zone);
     }
 
     // MRI: utc_offset_arg
+    @Deprecated
     public static DateTimeZone getTimeZoneFromUtcOffset(ThreadContext context, IRubyObject arg) {
         final Ruby runtime = context.runtime;
 
@@ -288,6 +319,26 @@ public class RubyTime extends RubyObject {
         runtime.getTimezoneCache().put(strOffset, dtz);
 
         return dtz;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static ZoneId getZoneIdFromUtcOffset(ThreadContext context, IRubyObject arg) {
+        final Ruby runtime = context.runtime;
+
+        String strOffset = arg.toString();
+
+        ZoneId cachedZone = runtime.getZoneIdCache().get(strOffset);
+        if (cachedZone != null) return cachedZone;
+
+        DateTimeZone dtz = getTimeZoneFromUtcOffset(context, arg);
+
+        if (dtz == null) return null;
+
+        ZoneId zone = JodaConverters.jodaToJavaTimeZone(dtz);
+
+        runtime.getZoneIdCache().put(strOffset, zone);
+
+        return zone;
     }
 
     public static RaiseException invalidUTCOffset(Ruby runtime) {
@@ -368,6 +419,7 @@ public class RubyTime extends RubyObject {
         return timeZoneWithOffset(name, offset);
     }
 
+    @Deprecated
     public static DateTimeZone getTimeZone(Ruby runtime, long seconds) {
         if (seconds >= 60*60*24 || seconds <= -60*60*24) {
             throw runtime.newArgumentError("utc_offset out of range");
@@ -375,6 +427,14 @@ public class RubyTime extends RubyObject {
         return getTimeZoneWithOffset(runtime, "", (int) (seconds * 1000));
     }
 
+    public static ZoneId getZoneId(Ruby runtime, long seconds) {
+        if (seconds >= 60*60*24 || seconds <= -60*60*24) {
+            throw runtime.newArgumentError("utc_offset out of range");
+        }
+        return getZoneIdWithOffset(runtime, "", (int) (seconds * 1000));
+    }
+
+    @Deprecated
     public static DateTimeZone getTimeZoneWithOffset(Ruby runtime, String zoneName, int offset) {
         // validate_zone_name
         zoneName = zoneName.trim();
@@ -397,6 +457,29 @@ public class RubyTime extends RubyObject {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    public static ZoneId getZoneIdWithOffset(Ruby runtime, String zoneName, int offset) {
+        // validate_zone_name
+        zoneName = zoneName.trim();
+
+        String zone = zoneName + offset;
+
+        ZoneId cachedZone = runtime.getZoneIdCache().get(zone);
+        if (cachedZone != null) {
+            return cachedZone;
+        }
+
+        try {
+            ZoneId dtz = JodaConverters.jodaToJavaTimeZone(timeZoneWithOffset(zoneName, offset));
+            if (zone.length() > 0) {
+                runtime.getZoneIdCache().put(zone, dtz);
+            }
+            return dtz;
+        } catch (IllegalArgumentException iae) {
+            throw runtime.newArgumentError("utc_offset out of range");
+        }
+    }
+
     private static DateTimeZone timeZoneWithOffset(String zoneName, int offset) {
         if (zoneName.isEmpty()) {
             return DateTimeZone.forOffsetMillis(offset);
@@ -409,14 +492,14 @@ public class RubyTime extends RubyObject {
         super(runtime, rubyClass);
     }
 
-    public RubyTime(Ruby runtime, RubyClass rubyClass, DateTime dt) {
+    public RubyTime(Ruby runtime, RubyClass rubyClass, ZonedDateTime zdt) {
         super(runtime, rubyClass);
-        this.dt = dt;
+        this.dt = JodaConverters.javaToJodaDateTime(zdt);
     }
 
-    public RubyTime(Ruby runtime, RubyClass rubyClass, DateTime dt, boolean tzRelative) {
+    public RubyTime(Ruby runtime, RubyClass rubyClass, ZonedDateTime zdt, boolean tzRelative) {
         super(runtime, rubyClass);
-        this.dt = dt;
+        this.dt = JodaConverters.javaToJodaDateTime(zdt);
         setIsTzRelative(tzRelative);
     }
 
@@ -479,14 +562,6 @@ public class RubyTime extends RubyObject {
         this.zone = zone;
     }
 
-    /**
-     * Use {@link #setDateTime(DateTime)} instead.
-     */
-    @Deprecated
-    public void updateCal(DateTime dt) {
-        this.dt = dt;
-    }
-
     public static RubyTime newTime(Ruby runtime, long milliseconds) {
         return newTime(runtime, new DateTime(milliseconds));
     }
@@ -497,27 +572,27 @@ public class RubyTime extends RubyObject {
         return RubyTime.newTime(runtime, new DateTime(milliseconds, getLocalTimeZone(runtime)), extraNanoseconds);
     }
 
-    public static RubyTime newTime(Ruby runtime, DateTime dt) {
-        return new RubyTime(runtime, runtime.getTime(), dt);
+    public static RubyTime newTime(Ruby runtime, ZonedDateTime zdt) {
+        return new RubyTime(runtime, runtime.getTime(), zdt);
     }
 
     /**
      * Create new (Ruby) Time instance.
      *
-     * Note that {@code dt} of {@code org.joda.time.DateTime} represents the integer part and
+     * Note that {@code zdt} of {@code org.joda.time.DateTime} represents the integer part and
      * the fraction part to milliseconds, and {@code nsec} the nano part (4 to 9 decimal places).
      *
      * For example, {@code RubyTime.newTime(rt, new DateTime(987000), 345678)} creates an epoch
      * second of {@code 987.000345678}, not {@code 987000.345678}.
      *
      * @param runtime the runtime
-     * @param dt the integer part of time + the fraction part in milliseconds
+     * @param zdt the integer part of time + the fraction part in milliseconds
      * @param nsec the nanos only party of the time (millis excluded)
      * @see #setNSec(long)
      * @return the new Time
      */
-    public static RubyTime newTime(Ruby runtime, DateTime dt, long nsec) {
-        RubyTime t = new RubyTime(runtime, runtime.getTime(), dt);
+    public static RubyTime newTime(Ruby runtime, ZonedDateTime zdt, long nsec) {
+        RubyTime t = new RubyTime(runtime, runtime.getTime(), zdt);
         t.setNSec(nsec);
         return t;
     }
@@ -658,6 +733,7 @@ public class RubyTime extends RubyObject {
         return strftime(getRuntime().getCurrentContext(), format);
     }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod(required = 1)
     public RubyString strftime(ThreadContext context, IRubyObject format) {
         final RubyDateFormatter rdf = context.getRubyDateFormatter();
@@ -1140,49 +1216,31 @@ public class RubyTime extends RubyObject {
         return getRubyTimeZoneName(getRuntime(), dt);
     }
 
+    @Deprecated
 	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
         final String tz = getEnvTimeZone(runtime);
         return RubyTime.getRubyTimeZoneName(tz == null ? "" : tz, dt);
 	}
 
-	public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
-        switch (envTZ) { // Some TZ values need to be overriden for Time#zone
-            case "Etc/UCT":
-            case "UCT":
-                return "UCT";
-            case "MET":
-                return inDaylighTime(dt) ? "MEST" : "MET"; // needs to be overriden
-        }
+    public static String getRubyTimeZoneName(Ruby runtime, ZonedDateTime zdt) {
+        final String tz = getEnvTimeZone(runtime);
+        return RubyTime.getRubyTimeZoneName(tz == null ? "" : tz, zdt);
+    }
 
-        String zone = dt.getZone().getShortName(dt.getMillis());
-
-        Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
-
-        if (offsetMatcher.matches()) {
-            if (zone.equals("+00:00")) {
-                zone = "UTC";
-            } else {
-                // try non-localized time zone name
-                zone = dt.getZone().getNameKey(dt.getMillis());
-                if (zone == null) {
-                    zone = "";
-                }
-            }
-        }
-
-        return zone;
-	}
+    public static String getRubyTimeZoneName(String envTZ, ZonedDateTime zdt) {
+        return getRubyTimeZoneName(envTZ, JodaConverters.javaToJodaDateTime(zdt));
+    }
 
 	private static boolean inDaylighTime(final DateTime dt) {
         return dt.getZone().toTimeZone().inDaylightTime(dt.toDate());
     }
 
-    public void setDateTime(DateTime dt) {
-        this.dt = dt;
+    public void setDateTime(ZonedDateTime zdt) {
+        this.dt = JodaConverters.javaToJodaDateTime(zdt);
     }
 
-    public DateTime getDateTime() {
-        return this.dt;
+    public ZonedDateTime getZonedDateTime() {
+        return JodaConverters.jodaToJavaDateTime(this.dt);
     }
 
     @JRubyMethod
@@ -1531,7 +1589,7 @@ public class RubyTime extends RubyObject {
 
         TimeArgs timeArgs = new TimeArgs(context, args);
 
-        timeArgs.initializeTime(context, time, getLocalTimeZone(context.runtime));
+        timeArgs.initializeTime(context, time, getLocalZoneId(context.runtime));
 
         return time;
     }
@@ -1540,7 +1598,7 @@ public class RubyTime extends RubyObject {
     public IRubyObject initialize(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        DateTimeZone dtz = getLocalTimeZone(runtime);
+        ZoneId dtz = getLocalZoneId(runtime);
         long msecs;
         long nsecs;
         POSIX posix = runtime.getPosix();
@@ -1565,7 +1623,7 @@ public class RubyTime extends RubyObject {
             nsecs = 0;
         }
 
-        DateTime dt = new DateTime(msecs, dtz);
+        DateTime dt = new DateTime(msecs, JodaConverters.javaToJodaTimeZone(dtz));
 
         this.dt = dt;
         this.setNSec(nsecs);
@@ -1579,7 +1637,7 @@ public class RubyTime extends RubyObject {
 
         TimeArgs timeArgs = new TimeArgs(context, year, nil, nil, nil, nil, nil, nil, false);
 
-        timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
+        timeArgs.initializeTime(context, this, getLocalZoneId(context.runtime));
 
         return nil;
     }
@@ -1590,7 +1648,7 @@ public class RubyTime extends RubyObject {
 
         TimeArgs timeArgs = new TimeArgs(context, year, month, nil, nil, nil, nil, nil, false);
 
-        timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
+        timeArgs.initializeTime(context, this, getLocalZoneId(context.runtime));
 
         return nil;
     }
@@ -1601,7 +1659,7 @@ public class RubyTime extends RubyObject {
 
         TimeArgs timeArgs = new TimeArgs(context, year, month, day, nil, nil, nil, nil, false);
 
-        timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
+        timeArgs.initializeTime(context, this, getLocalZoneId(context.runtime));
 
         return nil;
     }
@@ -1637,7 +1695,7 @@ public class RubyTime extends RubyObject {
 
         TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, nil, false);
 
-        timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
+        timeArgs.initializeTime(context, this, getLocalZoneId(context.runtime));
 
         return nil;
     }
@@ -1647,7 +1705,7 @@ public class RubyTime extends RubyObject {
         IRubyObject nil = context.nil;
 
         boolean maybeZoneObj = false;
-        DateTimeZone dtz;
+        ZoneId dtz;
 
         // 7th argument can be the symbol :dst instead of an offset
         boolean dst = false;
@@ -1656,16 +1714,16 @@ public class RubyTime extends RubyObject {
             return initialize(context, year, month, day, hour, minute, second);
         } else if (zone == runtime.newSymbol("dst")) {
             dst = true;
-            dtz = getLocalTimeZone(runtime);
+            dtz = getLocalZoneId(runtime);
         } else if (zone == runtime.newSymbol("std")) {
             dst = false;
-            dtz = getLocalTimeZone(runtime);
+            dtz = getLocalZoneId(runtime);
         } else if (maybeTimezoneObject(zone)) {
             maybeZoneObj = true;
             this.zone = zone;
-            dtz = DateTimeZone.UTC;
+            dtz = ZoneId.of("UTC");
         } else {
-            dtz = getTimeZoneFromUtcOffset(context, zone);
+            dtz = getZoneIdFromUtcOffset(context, zone);
             if (dtz != null) {
                 this.setIsTzRelative(true);
             } else {
@@ -1673,7 +1731,7 @@ public class RubyTime extends RubyObject {
                     maybeZoneObj = true;
                     this.zone = zone;
 
-                    dtz = DateTimeZone.UTC;
+                    dtz = ZoneId.of("UTC");
                 } else {
                     throw invalidUTCOffset(runtime);
                 }
@@ -1688,9 +1746,9 @@ public class RubyTime extends RubyObject {
             if (zoneTimeLocal(context, zone, this)) {
                 return this;
             } else {
-                dtz = getTimeZoneFromUtcOffset(context, zone);
+                dtz = getZoneIdFromUtcOffset(context, zone);
                 if (dtz != null) {
-                    dt = dt.withZoneRetainFields(dtz);
+                    dt = dt.withZoneRetainFields(JodaConverters.javaToJodaTimeZone(dtz));
                 } else if ((zone = findTimezone(context, zone)) == null || !zoneTimeLocal(context, zone, this)) {
                     throw invalidUTCOffset(runtime);
                 }
@@ -1715,7 +1773,7 @@ public class RubyTime extends RubyObject {
 
         TimeArgs timeArgs = new TimeArgs(context, args);
 
-        timeArgs.initializeTime(context, time, DateTimeZone.UTC);
+        timeArgs.initializeTime(context, time, ZoneId.of("UTC"));
 
         return time;
     }
@@ -2052,6 +2110,75 @@ public class RubyTime extends RubyObject {
         }
 
         return t * 1000;
+    }
+
+    @Deprecated
+    public RubyTime(Ruby runtime, RubyClass rubyClass, DateTime dt) {
+        super(runtime, rubyClass);
+        this.dt = dt;
+    }
+
+    @Deprecated
+    public RubyTime(Ruby runtime, RubyClass rubyClass, DateTime dt, boolean tzRelative) {
+        super(runtime, rubyClass);
+        this.dt = dt;
+        setIsTzRelative(tzRelative);
+    }
+
+    @Deprecated
+    public void updateCal(DateTime dt) {
+        this.dt = dt;
+    }
+
+    @Deprecated
+    public static RubyTime newTime(Ruby runtime, DateTime dt) {
+        return new RubyTime(runtime, runtime.getTime(), dt);
+    }
+
+    @Deprecated
+    public static RubyTime newTime(Ruby runtime, DateTime dt, long nsec) {
+        RubyTime t = new RubyTime(runtime, runtime.getTime(), dt);
+        t.setNSec(nsec);
+        return t;
+    }
+
+    @Deprecated
+    public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
+        switch (envTZ) { // Some TZ values need to be overriden for Time#zone
+            case "Etc/UCT":
+            case "UCT":
+                return "UCT";
+            case "MET":
+                return inDaylighTime(dt) ? "MEST" : "MET"; // needs to be overriden
+        }
+
+        String zone = dt.getZone().getShortName(dt.getMillis());
+
+        Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
+
+        if (offsetMatcher.matches()) {
+            if (zone.equals("+00:00")) {
+                zone = "UTC";
+            } else {
+                // try non-localized time zone name
+                zone = dt.getZone().getNameKey(dt.getMillis());
+                if (zone == null) {
+                    zone = "";
+                }
+            }
+        }
+
+        return zone;
+    }
+
+    @Deprecated
+    public void setDateTime(DateTime dt) {
+        this.dt = dt;
+    }
+
+    @Deprecated
+    public DateTime getDateTime() {
+        return this.dt;
     }
 
     private static TimeSites sites(ThreadContext context) {

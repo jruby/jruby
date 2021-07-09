@@ -54,6 +54,7 @@ public abstract class TimeExt {
     @JRubyMethod
     public static RubyTime to_time(IRubyObject self) { return (RubyTime) self; }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod(name = "to_date")
     public static RubyDate to_date(ThreadContext context, IRubyObject self) {
         final DateTime dt = ((RubyTime) self).getDateTime();
@@ -61,6 +62,7 @@ public abstract class TimeExt {
         return new RubyDate(context, getDate(context.runtime), jd_to_ajd(context, jd), CHRONO_ITALY_UTC, 0);
     }
 
+    @SuppressWarnings("deprecation")
     @JRubyMethod(name = "to_datetime")
     public static RubyDateTime to_datetime(ThreadContext context, IRubyObject self) {
         final RubyTime time = (RubyTime) self;
