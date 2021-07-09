@@ -13,6 +13,8 @@ public interface ConfigMBean {
     void setJitMax(int max);
     public int getJitMaxSize();
     void setJitMaxSize(int maxSize);
+    public long getJitTimeDelta();
+    void setJitTimeDelta(long timeDelta);
     public boolean isRunRubyInProcess();
     public String getCurrentDirectory();
     public boolean isObjectSpaceEnabled();

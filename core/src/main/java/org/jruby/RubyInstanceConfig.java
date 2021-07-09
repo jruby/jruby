@@ -90,6 +90,7 @@ public class RubyInstanceConfig {
             jitThreshold = -1;
             jitMax = 0;
             jitMaxSize = -1;
+            jitTimeDelta = -1;
             managementEnabled = false;
         } else {
             if (COMPILE_EXCLUDE != null) {
@@ -106,6 +107,7 @@ public class RubyInstanceConfig {
             jitThreshold = Options.JIT_THRESHOLD.load();
             jitMax = Options.JIT_MAX.load();
             jitMaxSize = Options.JIT_MAXSIZE.load();
+            jitTimeDelta = Options.JIT_TIME_DELTA.load();
         }
 
         initEnvironment();
@@ -121,6 +123,7 @@ public class RubyInstanceConfig {
         jitThreshold = parentConfig.jitThreshold;
         jitMax = parentConfig.jitMax;
         jitMaxSize = parentConfig.jitMaxSize;
+        jitTimeDelta = parentConfig.jitTimeDelta;
         managementEnabled = parentConfig.managementEnabled;
         runRubyInProcess = parentConfig.runRubyInProcess;
         excludedMethods = parentConfig.excludedMethods;
@@ -570,6 +573,22 @@ public class RubyInstanceConfig {
      */
     public void setJitMaxSize(int jitMaxSize) {
         this.jitMaxSize = jitMaxSize;
+    }
+
+    /**
+     * @see Options#JIT_TIME_DELTA
+     * @return time-delta in nanos
+     */
+    public long getJitTimeDelta() {
+        return jitTimeDelta;
+    }
+
+    /**
+     * @see Options#JIT_TIME_DELTA
+     * @param timeDelta time-delta in nanos
+     */
+    public void setJitTimeDelta(long timeDelta) {
+        this.jitTimeDelta = jitTimeDelta;
     }
 
     /**
@@ -1497,6 +1516,7 @@ public class RubyInstanceConfig {
     private int jitThreshold;
     private int jitMax;
     private int jitMaxSize;
+    private long jitTimeDelta;
 
     private String internalEncoding = Options.CLI_ENCODING_INTERNAL.load();
     private String externalEncoding = Options.CLI_ENCODING_EXTERNAL.load();
