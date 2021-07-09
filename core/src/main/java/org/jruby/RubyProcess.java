@@ -42,6 +42,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import jnr.posix.POSIX;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
@@ -138,6 +139,13 @@ public class RubyProcess {
 
         process.defineConstant("Tms", tmsStruct);
         runtime.setTmsStruct(tmsStruct);
+
+        if (!runtime.getPosix().isNative()) {
+            // cannot support pid waits
+            process.searchMethod("wait").getRealMethod().setNotImplemented(true);
+            process.searchMethod("waitpid").getRealMethod().setNotImplemented(true);
+            process.searchMethod("waitall").getRealMethod().setNotImplemented(true);
+        }
 
         return process;
     }
@@ -895,16 +903,20 @@ public class RubyProcess {
         throw recv.getRuntime().newNotImplementedError("Process#groups not yet implemented");
     }
 
-    @Deprecated
-    public static IRubyObject waitpid(IRubyObject recv, IRubyObject[] args) {
-        return waitpid(recv.getRuntime(), args);
-    }
     @JRubyMethod(name = "waitpid", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject waitpid(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return waitpid(context.runtime, args);
+        return waitpid(context, args);
     }
 
-    public static IRubyObject waitpid(Ruby runtime, IRubyObject[] args) {
+    public static IRubyObject waitpid(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        POSIX posix = runtime.getPosix();
+
+        if (!posix.isNative()) {
+            warnWaitUnsupported(runtime);
+            return context.nil;
+        }
+
         long pid = -1;
         int flags = 0;
         if (args.length > 0) {
@@ -914,7 +926,7 @@ public class RubyProcess {
             flags = (int)args[1].convertToInteger().getLongValue();
         }
 
-        pid = waitpid(runtime, pid, flags);
+        pid = waitpid(context, pid, flags);
 
         checkErrno(runtime, pid, ECHILD);
 
@@ -926,10 +938,11 @@ public class RubyProcess {
     }
 
     // MRI: rb_waitpid
-    public static long waitpid(Ruby runtime, long pid, int flags) {
+    public static long waitpid(ThreadContext context, long pid, int flags) {
+        Ruby runtime = context.runtime;
+
         int[] status = new int[1];
         POSIX posix = runtime.getPosix();
-        ThreadContext context = runtime.getCurrentContext();
 
         posix.errno(0);
 
@@ -1018,23 +1031,25 @@ public class RubyProcess {
         }
     };
 
-    @Deprecated
-    public static IRubyObject wait(IRubyObject recv, IRubyObject[] args) {
-        return wait(recv.getRuntime(), args);
-    }
     @JRubyMethod(name = "wait", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return wait(context.runtime, args);
     }
 
-    public static IRubyObject wait(Ruby runtime, IRubyObject[] args) {
+    public static IRubyObject wait(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        POSIX posix = runtime.getPosix();
+
+        if (!posix.isNative()) {
+            warnWaitUnsupported(runtime);
+            return context.nil;
+        }
+
         if (args.length > 0) {
             return waitpid(runtime, args);
         }
 
         int[] status = new int[1];
-        POSIX posix = runtime.getPosix();
-        ThreadContext context = runtime.getCurrentContext();
 
         posix.errno(0);
 
@@ -1046,17 +1061,21 @@ public class RubyProcess {
         return runtime.newFixnum(pid);
     }
 
-
-    @Deprecated
-    public static IRubyObject waitall(IRubyObject recv) {
-        return waitall(recv.getRuntime());
-    }
     @JRubyMethod(name = "waitall", module = true, visibility = PRIVATE)
     public static IRubyObject waitall(ThreadContext context, IRubyObject recv) {
         return waitall(context.runtime);
     }
-    public static IRubyObject waitall(Ruby runtime) {
+
+    public static IRubyObject waitall(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
         POSIX posix = runtime.getPosix();
+
+        if (!posix.isNative()) {
+            warnWaitUnsupported(runtime);
+            return context.nil;
+        }
+
         RubyArray results = runtime.newArray();
 
         int[] status = new int[1];
@@ -1071,6 +1090,10 @@ public class RubyProcess {
         }
 
         return results;
+    }
+
+    private static void warnWaitUnsupported(Ruby runtime) {
+        runtime.getWarnings().warnOnce(IRubyWarnings.ID.PROCESS_WAIT_UNAVAILABLE, "process wait functions unavailable without native support");
     }
 
     @Deprecated
@@ -1721,5 +1744,39 @@ public class RubyProcess {
     @Deprecated
     public static IRubyObject waitpid2(IRubyObject recv, IRubyObject[] args) {
         return waitpid2(recv.getRuntime(), args);
+    }
+
+    @Deprecated
+    public static IRubyObject waitall(IRubyObject recv) {
+        return waitall(recv.getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public static IRubyObject waitall(Ruby runtime) {
+        return waitall(runtime.getCurrentContext());
+    }
+
+    @Deprecated
+    public static IRubyObject wait(IRubyObject recv, IRubyObject[] args) {
+        return wait(recv.getRuntime(), args);
+    }
+
+    @Deprecated
+    public static IRubyObject wait(Ruby runtime, IRubyObject[] args) {
+        return wait(runtime.getCurrentContext(), args);
+    }
+    @Deprecated
+    public static IRubyObject waitpid(IRubyObject recv, IRubyObject[] args) {
+        return waitpid(recv.getRuntime(), args);
+    }
+
+    @Deprecated
+    public static IRubyObject waitpid(Ruby runtime, IRubyObject[] args) {
+        return waitpid(runtime.getCurrentContext(), args);
+    }
+
+    @Deprecated
+    public static long waitpid(Ruby runtime, long pid, int flags) {
+        return waitpid(runtime.getCurrentContext(), pid, flags);
     }
 }

@@ -100,7 +100,8 @@ public interface IRubyWarnings {
         GC_STRESS_UNIMPLEMENTED,
         GC_ENABLE_UNIMPLEMENTED,
         GC_DISABLE_UNIMPLEMENTED,
-        RATIONAL_OUT_OF_RANGE,;
+        RATIONAL_OUT_OF_RANGE,
+        PROCESS_WAIT_UNAVAILABLE;
 
         public String getID() {
             return name();
