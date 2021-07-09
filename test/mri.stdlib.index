@@ -108,11 +108,14 @@ net/http/test_httpresponses.rb
 net/http/test_https_proxy.rb
 net/imap/test_imap.rb
 net/imap/test_imap_response_parser.rb
+net/imap/test_imap_authenticators.rb
+net/imap/test_imap_data_encoding.rb
 net/pop/test_pop.rb
 net/protocol/test_protocol.rb
-net/smtp/test_response.rb
 net/smtp/test_smtp.rb
-net/smtp/test_ssl_socket.rb
+net/smtp/test_response.rb
+# net/smtp/test_sslcontext.rb
+# net/smtp/test_starttls.rb
 
 nkf/test_kconv.rb
 nkf/test_nkf.rb

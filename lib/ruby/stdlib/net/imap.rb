@@ -16,24 +16,29 @@
 
 require "socket"
 require "monitor"
-require "digest/md5"
-require "strscan"
-require_relative 'protocol'
+require 'net/protocol'
 begin
   require "openssl"
 rescue LoadError
 end
 
+require_relative "imap/command_data"
+require_relative "imap/data_encoding"
+require_relative "imap/flags"
+require_relative "imap/response_data"
+require_relative "imap/response_parser"
+
 module Net
 
   #
   # Net::IMAP implements Internet Message Access Protocol (IMAP) client
-  # functionality.  The protocol is described in [IMAP].
+  # functionality.  The protocol is described in
+  # [IMAP[https://tools.ietf.org/html/rfc3501]].
   #
   # == IMAP Overview
   #
-  # An IMAP client connects to a server, and then authenticates
-  # itself using either #authenticate() or #login().  Having
+  # An \IMAP client connects to a server, and then authenticates
+  # itself using either #authenticate or #login.  Having
   # authenticated itself, there is a range of commands
   # available to it.  Most work with mailboxes, which may be
   # arranged in an hierarchical namespace, and each of which
@@ -43,8 +48,8 @@ module Net
   # within a hierarchy of directories.
   #
   # To work on the messages within a mailbox, the client must
-  # first select that mailbox, using either #select() or (for
-  # read-only access) #examine().  Once the client has successfully
+  # first select that mailbox, using either #select or (for
+  # read-only access) #examine.  Once the client has successfully
   # selected a mailbox, they enter _selected_ state, and that
   # mailbox becomes the _current_ mailbox, on which mail-item
   # related commands implicitly operate.
@@ -65,7 +70,7 @@ module Net
   # be assigned in ascending (but not necessarily sequential)
   # order within a mailbox; this means that if a non-IMAP client
   # rearranges the order of mailitems within a mailbox, the
-  # UIDs have to be reassigned.  An IMAP client thus cannot
+  # UIDs have to be reassigned.  An \IMAP client thus cannot
   # rearrange message orders.
   #
   # == Examples of Usage
@@ -155,40 +160,61 @@ module Net
   #
   # == References
   #
-  # [[IMAP]]
-  #    M. Crispin, "INTERNET MESSAGE ACCESS PROTOCOL - VERSION 4rev1",
-  #    RFC 2060, December 1996.  (Note: since obsoleted by RFC 3501)
+  # [[IMAP[https://tools.ietf.org/html/rfc3501]]]
+  #    Crispin, M. "INTERNET MESSAGE ACCESS PROTOCOL - \VERSION 4rev1",
+  #    RFC-3501[https://tools.ietf.org/html/rfc3501], March 2003.  (Note:
+  #    obsoletes RFC-2060[https://tools.ietf.org/html/rfc2060], December 1996.)
   #
-  # [[LANGUAGE-TAGS]]
-  #    Alvestrand, H., "Tags for the Identification of
-  #    Languages", RFC 1766, March 1995.
+  # [[LANGUAGE-TAGS[https://tools.ietf.org/html/rfc1766]]]
+  #    Phillips, A. and Davis, M. "Tags for Identifying Languages",
+  #    RFC-5646[https://tools.ietf.org/html/rfc5646], September 2009.
+  #    (Note: obsoletes
+  #    RFC-3066[https://tools.ietf.org/html/rfc3066], January 2001,
+  #    RFC-4646[https://tools.ietf.org/html/rfc4646], September 2006, and
+  #    RFC-1766[https://tools.ietf.org/html/rfc1766], March 1995.)
   #
-  # [[MD5]]
-  #    Myers, J., and M. Rose, "The Content-MD5 Header Field", RFC
-  #    1864, October 1995.
+  # [[MD5[https://tools.ietf.org/html/rfc1864]]]
+  #    Myers, J. and M. Rose, "The Content-MD5 Header Field",
+  #    RFC-1864[https://tools.ietf.org/html/rfc1864], October 1995.
   #
-  # [[MIME-IMB]]
-  #    Freed, N., and N. Borenstein, "MIME (Multipurpose Internet
-  #    Mail Extensions) Part One: Format of Internet Message Bodies", RFC
-  #    2045, November 1996.
+  # [[MIME-IMB[https://tools.ietf.org/html/rfc2045]]]
+  #    Freed, N. and N. Borenstein, "MIME (Multipurpose Internet
+  #    Mail Extensions) Part One: Format of Internet Message Bodies",
+  #    RFC-2045[https://tools.ietf.org/html/rfc2045], November 1996.
   #
-  # [[RFC-822]]
-  #    Crocker, D., "Standard for the Format of ARPA Internet Text
-  #    Messages", STD 11, RFC 822, University of Delaware, August 1982.
+  # [[RFC-5322[https://tools.ietf.org/html/rfc5322]]]
+  #    Resnick, P., "Internet Message Format",
+  #    RFC-5322[https://tools.ietf.org/html/rfc5322], October 2008.
+  #    (Note: obsoletes
+  #    RFC-2822[https://tools.ietf.org/html/rfc2822], April 2001, and
+  #    RFC-822[https://tools.ietf.org/html/rfc822], August 1982.)
   #
-  # [[RFC-2087]]
-  #    Myers, J., "IMAP4 QUOTA extension", RFC 2087, January 1997.
+  # [[EXT-QUOTA[https://tools.ietf.org/html/rfc2087]]]
+  #    Myers, J., "IMAP4 QUOTA extension",
+  #    RFC-2087[https://tools.ietf.org/html/rfc2087], January 1997.
   #
-  # [[RFC-2086]]
-  #    Myers, J., "IMAP4 ACL extension", RFC 2086, January 1997.
+  # [[EXT-NAMESPACE[https://tools.ietf.org/html/rfc2342]]]
+  #    Gahrns, M. and Newman, C., "IMAP4 Namespace",
+  #    RFC-2342[https://tools.ietf.org/html/rfc2342], May 1998.
   #
-  # [[RFC-2195]]
-  #    Klensin, J., Catoe, R., and Krumviede, P., "IMAP/POP AUTHorize Extension
-  #    for Simple Challenge/Response", RFC 2195, September 1997.
+  # [[EXT-ID[https://tools.ietf.org/html/rfc2971]]]
+  #    Showalter, T., "IMAP4 ID extension",
+  #    RFC-2971[https://tools.ietf.org/html/rfc2971], October 2000.
   #
-  # [[SORT-THREAD-EXT]]
-  #    Crispin, M., "INTERNET MESSAGE ACCESS PROTOCOL - SORT and THREAD
-  #    Extensions", draft-ietf-imapext-sort, May 2003.
+  # [[EXT-ACL[https://tools.ietf.org/html/rfc4314]]]
+  #    Melnikov, A., "IMAP4 ACL extension",
+  #    RFC-4314[https://tools.ietf.org/html/rfc4314], December 2005.  (Note:
+  #    obsoletes RFC-2086[https://tools.ietf.org/html/rfc2086], January 1997.)
+  #
+  # [[EXT-SORT-THREAD[https://tools.ietf.org/html/rfc5256]]]
+  #    Crispin, M. and Muchison, K., "INTERNET MESSAGE ACCESS PROTOCOL - SORT
+  #    and THREAD Extensions", RFC-5256[https://tools.ietf.org/html/rfc5256],
+  #    June 2008.
+  #
+  # [[EXT-MOVE[https://tools.ietf.org/html/rfc6851]]]
+  #    Gulbrandsen, A. and Freed, N., "Internet Message Access Protocol (\IMAP) -
+  #    MOVE Extension", RFC-6851[https://tools.ietf.org/html/rfc6851], January
+  #    2013.
   #
   # [[OSSL]]
   #    http://www.openssl.org
@@ -196,11 +222,13 @@ module Net
   # [[RSSL]]
   #    http://savannah.gnu.org/projects/rubypki
   #
-  # [[UTF7]]
+  # [[UTF7[https://tools.ietf.org/html/rfc2152]]]
   #    Goldsmith, D. and Davis, M., "UTF-7: A Mail-Safe Transformation Format of
-  #    Unicode", RFC 2152, May 1997.
+  #    Unicode", RFC-2152[https://tools.ietf.org/html/rfc2152], May 1997.
   #
   class IMAP < Protocol
+    VERSION = "0.2.1"
+
     include MonitorMixin
     if defined?(OpenSSL::SSL)
       include OpenSSL
@@ -227,45 +255,11 @@ module Net
     # it raises a Net::OpenTimeout exception. The default value is 30 seconds.
     attr_reader :open_timeout
 
+    # Seconds to wait until an IDLE response is received.
+    attr_reader :idle_response_timeout
+
     # The thread to receive exceptions.
     attr_accessor :client_thread
-
-    # Flag indicating a message has been seen.
-    SEEN = :Seen
-
-    # Flag indicating a message has been answered.
-    ANSWERED = :Answered
-
-    # Flag indicating a message has been flagged for special or urgent
-    # attention.
-    FLAGGED = :Flagged
-
-    # Flag indicating a message has been marked for deletion.  This
-    # will occur when the mailbox is closed or expunged.
-    DELETED = :Deleted
-
-    # Flag indicating a message is only a draft or work-in-progress version.
-    DRAFT = :Draft
-
-    # Flag indicating that the message is "recent," meaning that this
-    # session is the first session in which the client has been notified
-    # of this message.
-    RECENT = :Recent
-
-    # Flag indicating that a mailbox context name cannot contain
-    # children.
-    NOINFERIORS = :Noinferiors
-
-    # Flag indicating that a mailbox is not selected.
-    NOSELECT = :Noselect
-
-    # Flag indicating that a mailbox has been marked "interesting" by
-    # the server; this commonly indicates that the mailbox contains
-    # new messages.
-    MARKED = :Marked
-
-    # Flag indicating that the mailbox does not contains new messages.
-    UNMARKED = :Unmarked
 
     # Returns the debug mode.
     def self.debug
@@ -275,31 +269,6 @@ module Net
     # Sets the debug mode.
     def self.debug=(val)
       return @@debug = val
-    end
-
-    # Returns the max number of flags interned to symbols.
-    def self.max_flag_count
-      return @@max_flag_count
-    end
-
-    # Sets the max number of flags interned to symbols.
-    def self.max_flag_count=(count)
-      @@max_flag_count = count
-    end
-
-    # Adds an authenticator for Net::IMAP#authenticate.  +auth_type+
-    # is the type of authentication this authenticator supports
-    # (for instance, "LOGIN").  The +authenticator+ is an object
-    # which defines a process() method to handle authentication with
-    # the server.  See Net::IMAP::LoginAuthenticator,
-    # Net::IMAP::CramMD5Authenticator, and Net::IMAP::DigestMD5Authenticator
-    # for examples.
-    #
-    #
-    # If +auth_type+ refers to an existing authenticator, it will be
-    # replaced by the new one.
-    def self.add_authenticator(auth_type, authenticator)
-      @@authenticators[auth_type] = authenticator
     end
 
     # The default port for IMAP connections, port 143
@@ -363,6 +332,30 @@ module Net
       end
     end
 
+    # Sends an ID command, and returns a hash of the server's
+    # response, or nil if the server does not identify itself.
+    #
+    # Note that the user should first check if the server supports the ID
+    # capability. For example:
+    #
+    #    capabilities = imap.capability
+    #    if capabilities.include?("ID")
+    #      id = imap.id(
+    #        name: "my IMAP client (ruby)",
+    #        version: MyIMAP::VERSION,
+    #        "support-url": "mailto:bugs@example.com",
+    #        os: RbConfig::CONFIG["host_os"],
+    #      )
+    #    end
+    #
+    # See [EXT-ID[https://tools.ietf.org/html/rfc2971]] for field definitions.
+    def id(client_id=nil)
+      synchronize do
+        send_command("ID", ClientID.new(client_id))
+        @responses.delete("ID")&.last
+      end
+    end
+
     # Sends a NOOP command to the server. It does nothing.
     def noop
       send_command("NOOP")
@@ -402,11 +395,11 @@ module Net
     #
     # For both of these mechanisms, there should be two +args+: username
     # and (cleartext) password.  A server may not support one or the other
-    # of these mechanisms; check #capability() for a capability of
+    # of these mechanisms; check #capability for a capability of
     # the form "AUTH=LOGIN" or "AUTH=CRAM-MD5".
     #
     # Authentication is done using the appropriate authenticator object:
-    # see @@authenticators for more information on plugging in your own
+    # see +add_authenticator+ for more information on plugging in your own
     # authenticator.
     #
     # For example:
@@ -415,12 +408,7 @@ module Net
     #
     # A Net::IMAP::NoResponseError is raised if authentication fails.
     def authenticate(auth_type, *args)
-      auth_type = auth_type.upcase
-      unless @@authenticators.has_key?(auth_type)
-        raise ArgumentError,
-          format('unknown auth type - "%s"', auth_type)
-      end
-      authenticator = @@authenticators[auth_type].new(*args)
+      authenticator = self.class.authenticator(auth_type, *args)
       send_command("AUTHENTICATE", auth_type) do |resp|
         if resp.instance_of?(ContinuationRequest)
           data = authenticator.process(resp.data.text.unpack("m")[0])
@@ -433,8 +421,8 @@ module Net
 
     # Sends a LOGIN command to identify the client and carries
     # the plaintext +password+ authenticating this +user+.  Note
-    # that, unlike calling #authenticate() with an +auth_type+
-    # of "LOGIN", #login() does *not* use the login authenticator.
+    # that, unlike calling #authenticate with an +auth_type+
+    # of "LOGIN", #login does *not* use the login authenticator.
     #
     # A Net::IMAP::NoResponseError is raised if authentication fails.
     def login(user, password)
@@ -445,10 +433,10 @@ module Net
     # in the +mailbox+ can be accessed.
     #
     # After you have selected a mailbox, you may retrieve the
-    # number of items in that mailbox from @responses["EXISTS"][-1],
-    # and the number of recent messages from @responses["RECENT"][-1].
+    # number of items in that mailbox from +@responses["EXISTS"][-1]+,
+    # and the number of recent messages from +@responses["RECENT"][-1]+.
     # Note that these values can change if new messages arrive
-    # during a session; see #add_response_handler() for a way of
+    # during a session; see #add_response_handler for a way of
     # detecting this event.
     #
     # A Net::IMAP::NoResponseError is raised if the mailbox does not
@@ -461,7 +449,7 @@ module Net
     end
 
     # Sends a EXAMINE command to select a +mailbox+ so that messages
-    # in the +mailbox+ can be accessed.  Behaves the same as #select(),
+    # in the +mailbox+ can be accessed.  Behaves the same as #select,
     # except that the selected +mailbox+ is identified as read-only.
     #
     # A Net::IMAP::NoResponseError is raised if the mailbox does not
@@ -503,7 +491,7 @@ module Net
 
     # Sends a SUBSCRIBE command to add the specified +mailbox+ name to
     # the server's set of "active" or "subscribed" mailboxes as returned
-    # by #lsub().
+    # by #lsub.
     #
     # A Net::IMAP::NoResponseError is raised if +mailbox+ cannot be
     # subscribed to; for instance, because it does not exist.
@@ -550,6 +538,63 @@ module Net
       end
     end
 
+    # Sends a NAMESPACE command and returns the namespaces that are available.
+    # The NAMESPACE command allows a client to discover the prefixes of
+    # namespaces used by a server for personal mailboxes, other users'
+    # mailboxes, and shared mailboxes.
+    #
+    # The NAMESPACE extension predates [IMAP4rev1[https://tools.ietf.org/html/rfc2501]],
+    # so most IMAP servers support it. Many popular IMAP servers are configured
+    # with the default personal namespaces as `("" "/")`: no prefix and "/"
+    # hierarchy delimiter. In that common case, the naive client may not have
+    # any trouble naming mailboxes.
+    #
+    # But many servers are configured with the default personal namespace as
+    # e.g. `("INBOX." ".")`, placing all personal folders under INBOX, with "."
+    # as the hierarchy delimiter. If the client does not check for this, but
+    # naively assumes it can use the same folder names for all servers, then
+    # folder creation (and listing, moving, etc) can lead to errors.
+    #
+    # From RFC2342:
+    #
+    #    Although typically a server will support only a single Personal
+    #    Namespace, and a single Other User's Namespace, circumstances exist
+    #    where there MAY be multiples of these, and a client MUST be prepared
+    #    for them. If a client is configured such that it is required to create
+    #    a certain mailbox, there can be circumstances where it is unclear which
+    #    Personal Namespaces it should create the mailbox in. In these
+    #    situations a client SHOULD let the user select which namespaces to
+    #    create the mailbox in.
+    #
+    # The user of this method should first check if the server supports the
+    # NAMESPACE capability.  The return value is a +Net::IMAP::Namespaces+
+    # object which has +personal+, +other+, and +shared+ fields, each an array
+    # of +Net::IMAP::Namespace+ objects. These arrays will be empty when the
+    # server responds with nil.
+    #
+    # For example:
+    #
+    #    capabilities = imap.capability
+    #    if capabilities.include?("NAMESPACE")
+    #      namespaces = imap.namespace
+    #      if namespace = namespaces.personal.first
+    #        prefix = namespace.prefix  # e.g. "" or "INBOX."
+    #        delim  = namespace.delim   # e.g. "/" or "."
+    #        # personal folders should use the prefix and delimiter
+    #        imap.create(prefix + "foo")
+    #        imap.create(prefix + "bar")
+    #        imap.create(prefix + %w[path to my folder].join(delim))
+    #      end
+    #    end
+    #
+    # The NAMESPACE extension is described in [EXT-NAMESPACE[https://tools.ietf.org/html/rfc2342]]
+    def namespace
+      synchronize do
+        send_command("NAMESPACE")
+        return @responses.delete("NAMESPACE")[-1]
+      end
+    end
+
     # Sends a XLIST command, and returns a subset of names from
     # the complete set of all names available to the client.
     # +refname+ provides a context (for instance, a base directory
@@ -586,6 +631,8 @@ module Net
     # This command is generally available to both admin and user.
     # If this mailbox exists, it returns an array containing objects of type
     # Net::IMAP::MailboxQuotaRoot and Net::IMAP::MailboxQuota.
+    #
+    # The QUOTA extension is described in [EXT-QUOTA[https://tools.ietf.org/html/rfc2087]]
     def getquotaroot(mailbox)
       synchronize do
         send_command("GETQUOTAROOT", mailbox)
@@ -600,6 +647,8 @@ module Net
     # If this mailbox exists, then an array containing a
     # Net::IMAP::MailboxQuota object is returned.  This
     # command is generally only available to server admin.
+    #
+    # The QUOTA extension is described in [EXT-QUOTA[https://tools.ietf.org/html/rfc2087]]
     def getquota(mailbox)
       synchronize do
         send_command("GETQUOTA", mailbox)
@@ -610,8 +659,9 @@ module Net
     # Sends a SETQUOTA command along with the specified +mailbox+ and
     # +quota+.  If +quota+ is nil, then +quota+ will be unset for that
     # mailbox.  Typically one needs to be logged in as a server admin
-    # for this to work.  The IMAP quota commands are described in
-    # [RFC-2087].
+    # for this to work.
+    #
+    # The QUOTA extension is described in [EXT-QUOTA[https://tools.ietf.org/html/rfc2087]]
     def setquota(mailbox, quota)
       if quota.nil?
         data = '()'
@@ -624,7 +674,8 @@ module Net
     # Sends the SETACL command along with +mailbox+, +user+ and the
     # +rights+ that user is to have on that mailbox.  If +rights+ is nil,
     # then that user will be stripped of any rights to that mailbox.
-    # The IMAP ACL commands are described in [RFC-2086].
+    #
+    # The ACL extension is described in [EXT-ACL[https://tools.ietf.org/html/rfc4314]]
     def setacl(mailbox, user, rights)
       if rights.nil?
         send_command("SETACL", mailbox, user, "")
@@ -636,6 +687,8 @@ module Net
     # Send the GETACL command along with a specified +mailbox+.
     # If this mailbox exists, an array containing objects of
     # Net::IMAP::MailboxACLItem will be returned.
+    #
+    # The ACL extension is described in [EXT-ACL[https://tools.ietf.org/html/rfc4314]]
     def getacl(mailbox)
       synchronize do
         send_command("GETACL", mailbox)
@@ -646,7 +699,8 @@ module Net
     # Sends a LSUB command, and returns a subset of names from the set
     # of names that the user has declared as being "active" or
     # "subscribed."  +refname+ and +mailbox+ are interpreted as
-    # for #list().
+    # for #list.
+    #
     # The return value is an array of +Net::IMAP::MailboxList+.
     def lsub(refname, mailbox)
       synchronize do
@@ -774,7 +828,7 @@ module Net
       return search_internal("SEARCH", keys, charset)
     end
 
-    # Similar to #search(), but returns unique identifiers.
+    # Similar to #search, but returns unique identifiers.
     def uid_search(keys, charset = nil)
       return search_internal("UID SEARCH", keys, charset)
     end
@@ -818,7 +872,7 @@ module Net
       return fetch_internal("FETCH", set, attr, mod)
     end
 
-    # Similar to #fetch(), but +set+ contains unique identifiers.
+    # Similar to #fetch, but +set+ contains unique identifiers.
     def uid_fetch(set, attr, mod = nil)
       return fetch_internal("UID FETCH", set, attr, mod)
     end
@@ -841,7 +895,7 @@ module Net
       return store_internal("STORE", set, attr, flags)
     end
 
-    # Similar to #store(), but +set+ contains unique identifiers.
+    # Similar to #store, but +set+ contains unique identifiers.
     def uid_store(set, attr, flags)
       return store_internal("UID STORE", set, attr, flags)
     end
@@ -854,7 +908,7 @@ module Net
       copy_internal("COPY", set, mailbox)
     end
 
-    # Similar to #copy(), but +set+ contains unique identifiers.
+    # Similar to #copy, but +set+ contains unique identifiers.
     def uid_copy(set, mailbox)
       copy_internal("UID COPY", set, mailbox)
     end
@@ -863,12 +917,15 @@ module Net
     # of the specified destination +mailbox+. The +set+ parameter is
     # a number, an array of numbers, or a Range object. The number is
     # a message sequence number.
-    # The IMAP MOVE extension is described in [RFC-6851].
+    #
+    # The MOVE extension is described in [EXT-MOVE[https://tools.ietf.org/html/rfc6851]].
     def move(set, mailbox)
       copy_internal("MOVE", set, mailbox)
     end
 
-    # Similar to #move(), but +set+ contains unique identifiers.
+    # Similar to #move, but +set+ contains unique identifiers.
+    #
+    # The MOVE extension is described in [EXT-MOVE[https://tools.ietf.org/html/rfc6851]].
     def uid_move(set, mailbox)
       copy_internal("UID MOVE", set, mailbox)
     end
@@ -881,12 +938,14 @@ module Net
     #   p imap.sort(["DATE"], ["SUBJECT", "hello"], "US-ASCII")
     #   #=> [6, 7, 8, 1]
     #
-    # See [SORT-THREAD-EXT] for more details.
+    # The SORT extension is described in [EXT-SORT-THREAD[https://tools.ietf.org/html/rfc5256]].
     def sort(sort_keys, search_keys, charset)
       return sort_internal("SORT", sort_keys, search_keys, charset)
     end
 
-    # Similar to #sort(), but returns an array of unique identifiers.
+    # Similar to #sort, but returns an array of unique identifiers.
+    #
+    # The SORT extension is described in [EXT-SORT-THREAD[https://tools.ietf.org/html/rfc5256]].
     def uid_sort(sort_keys, search_keys, charset)
       return sort_internal("UID SORT", sort_keys, search_keys, charset)
     end
@@ -903,8 +962,9 @@ module Net
     #     end
     #   }
     #
-    def add_response_handler(handler = Proc.new)
-      @response_handlers.push(handler)
+    def add_response_handler(handler = nil, &block)
+      raise ArgumentError, "two Procs are passed" if handler && block
+      @response_handlers.push(block || handler)
     end
 
     # Removes the response handler.
@@ -912,7 +972,7 @@ module Net
       @response_handlers.delete(handler)
     end
 
-    # Similar to #search(), but returns message sequence numbers in threaded
+    # Similar to #search, but returns message sequence numbers in threaded
     # format, as a Net::IMAP::ThreadMember tree.  The supported algorithms
     # are:
     #
@@ -921,16 +981,18 @@ module Net
     # REFERENCES:: split into threads by parent/child relationships determined
     #              by which message is a reply to which.
     #
-    # Unlike #search(), +charset+ is a required argument.  US-ASCII
+    # Unlike #search, +charset+ is a required argument.  US-ASCII
     # and UTF-8 are sample values.
     #
-    # See [SORT-THREAD-EXT] for more details.
+    # The THREAD extension is described in [EXT-SORT-THREAD[https://tools.ietf.org/html/rfc5256]].
     def thread(algorithm, search_keys, charset)
       return thread_internal("THREAD", algorithm, search_keys, charset)
     end
 
-    # Similar to #thread(), but returns unique identifiers instead of
+    # Similar to #thread, but returns unique identifiers instead of
     # message sequence numbers.
+    #
+    # The THREAD extension is described in [EXT-SORT-THREAD[https://tools.ietf.org/html/rfc5256]].
     def uid_thread(algorithm, search_keys, charset)
       return thread_internal("UID THREAD", algorithm, search_keys, charset)
     end
@@ -938,7 +1000,7 @@ module Net
     # Sends an IDLE command that waits for notifications of new or expunged
     # messages.  Yields responses from the server during the IDLE.
     #
-    # Use #idle_done() to leave IDLE.
+    # Use #idle_done to leave IDLE.
     #
     # If +timeout+ is given, this method returns after +timeout+ seconds passed.
     # +timeout+ can be used for keep-alive.  For example, the following code
@@ -959,7 +1021,7 @@ module Net
         put_string("#{tag} IDLE#{CRLF}")
 
         begin
-          add_response_handler(response_handler)
+          add_response_handler(&response_handler)
           @idle_done_cond = new_cond
           @idle_done_cond.wait(timeout)
           @idle_done_cond = nil
@@ -970,7 +1032,7 @@ module Net
           unless @receiver_thread_terminating
             remove_response_handler(response_handler)
             put_string("DONE#{CRLF}")
-            response = get_tagged_response(tag, "IDLE")
+            response = get_tagged_response(tag, "IDLE", @idle_response_timeout)
           end
         end
       end
@@ -988,46 +1050,6 @@ module Net
       end
     end
 
-    # Decode a string from modified UTF-7 format to UTF-8.
-    #
-    # UTF-7 is a 7-bit encoding of Unicode [UTF7].  IMAP uses a
-    # slightly modified version of this to encode mailbox names
-    # containing non-ASCII characters; see [IMAP] section 5.1.3.
-    #
-    # Net::IMAP does _not_ automatically encode and decode
-    # mailbox names to and from UTF-7.
-    def self.decode_utf7(s)
-      return s.gsub(/&([^-]+)?-/n) {
-        if $1
-          ($1.tr(",", "/") + "===").unpack1("m").encode(Encoding::UTF_8, Encoding::UTF_16BE)
-        else
-          "&"
-        end
-      }
-    end
-
-    # Encode a string from UTF-8 format to modified UTF-7.
-    def self.encode_utf7(s)
-      return s.gsub(/(&)|[^\x20-\x7e]+/) {
-        if $1
-          "&-"
-        else
-          base64 = [$&.encode(Encoding::UTF_16BE)].pack("m0")
-          "&" + base64.delete("=").tr("/", ",") + "-"
-        end
-      }.force_encoding("ASCII-8BIT")
-    end
-
-    # Formats +time+ as an IMAP-style date.
-    def self.format_date(time)
-      return time.strftime('%d-%b-%Y')
-    end
-
-    # Formats +time+ as an IMAP-style date-time.
-    def self.format_datetime(time)
-      return time.strftime('%d-%b-%Y %H:%M %z')
-    end
-
     private
 
     CRLF = "\r\n"      # :nodoc:
@@ -1035,8 +1057,6 @@ module Net
     SSL_PORT = 993   # :nodoc:
 
     @@debug = false
-    @@authenticators = {}
-    @@max_flag_count = 10000
 
     # :call-seq:
     #    Net::IMAP.new(host, options = {})
@@ -1049,13 +1069,14 @@ module Net
     # The available options are:
     #
     # port::  Port number (default value is 143 for imap, or 993 for imaps)
-    # ssl::   If options[:ssl] is true, then an attempt will be made
+    # ssl::   If +options[:ssl]+ is true, then an attempt will be made
     #         to use SSL (now TLS) to connect to the server.  For this to work
     #         OpenSSL [OSSL] and the Ruby OpenSSL [RSSL] extensions need to
     #         be installed.
-    #         If options[:ssl] is a hash, it's passed to
+    #         If +options[:ssl]+ is a hash, it's passed to
     #         OpenSSL::SSL::SSLContext#set_params as parameters.
     # open_timeout:: Seconds to wait until a connection is opened
+    # idle_response_timeout:: Seconds to wait until an IDLE response is received
     #
     # The most common errors are:
     #
@@ -1085,6 +1106,7 @@ module Net
       @tag_prefix = "RUBY"
       @tagno = 0
       @open_timeout = options[:open_timeout] || 30
+      @idle_response_timeout = options[:idle_response_timeout] || 5
       @parser = ResponseParser.new
       @sock = tcp_socket(@host, @port)
       begin
@@ -1208,10 +1230,19 @@ module Net
       end
     end
 
-    def get_tagged_response(tag, cmd)
+    def get_tagged_response(tag, cmd, timeout = nil)
+      if timeout
+        deadline = Time.now + timeout
+      end
       until @tagged_responses.key?(tag)
         raise @exception if @exception
-        @tagged_response_arrival.wait
+        if timeout
+          timeout = deadline - Time.now
+          if timeout <= 0
+            return nil
+          end
+        end
+        @tagged_response_arrival.wait(timeout)
       end
       resp = @tagged_responses.delete(tag)
       case resp.name
@@ -1267,7 +1298,7 @@ module Net
           @logout_command_tag = tag
         end
         if block
-          add_response_handler(block)
+          add_response_handler(&block)
         end
         begin
           return get_tagged_response(tag, cmd)
@@ -1297,114 +1328,6 @@ module Net
           @debug_output_bol = false
         end
       end
-    end
-
-    def validate_data(data)
-      case data
-      when nil
-      when String
-      when Integer
-        NumValidator.ensure_number(data)
-      when Array
-        if data[0] == 'CHANGEDSINCE'
-          NumValidator.ensure_mod_sequence_value(data[1])
-        else
-          data.each do |i|
-            validate_data(i)
-          end
-        end
-      when Time
-      when Symbol
-      else
-        data.validate
-      end
-    end
-
-    def send_data(data, tag = nil)
-      case data
-      when nil
-        put_string("NIL")
-      when String
-        send_string_data(data, tag)
-      when Integer
-        send_number_data(data)
-      when Array
-        send_list_data(data, tag)
-      when Time
-        send_time_data(data)
-      when Symbol
-        send_symbol_data(data)
-      else
-        data.send_data(self, tag)
-      end
-    end
-
-    def send_string_data(str, tag = nil)
-      case str
-      when ""
-        put_string('""')
-      when /[\x80-\xff\r\n]/n
-        # literal
-        send_literal(str, tag)
-      when /[(){ \x00-\x1f\x7f%*"\\]/n
-        # quoted string
-        send_quoted_string(str)
-      else
-        put_string(str)
-      end
-    end
-
-    def send_quoted_string(str)
-      put_string('"' + str.gsub(/["\\]/n, "\\\\\\&") + '"')
-    end
-
-    def send_literal(str, tag = nil)
-      synchronize do
-        put_string("{" + str.bytesize.to_s + "}" + CRLF)
-        @continued_command_tag = tag
-        @continuation_request_exception = nil
-        begin
-          @continuation_request_arrival.wait
-          e = @continuation_request_exception || @exception
-          raise e if e
-          put_string(str)
-        ensure
-          @continued_command_tag = nil
-          @continuation_request_exception = nil
-        end
-      end
-    end
-
-    def send_number_data(num)
-      put_string(num.to_s)
-    end
-
-    def send_list_data(list, tag = nil)
-      put_string("(")
-      first = true
-      list.each do |i|
-        if first
-          first = false
-        else
-          put_string(" ")
-        end
-        send_data(i, tag)
-      end
-      put_string(")")
-    end
-
-    DATE_MONTH = %w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
-
-    def send_time_data(time)
-      t = time.dup.gmtime
-      s = format('"%2d-%3s-%4d %02d:%02d:%02d +0000"',
-                 t.day, DATE_MONTH[t.month - 1], t.year,
-                 t.hour, t.min, t.sec)
-      put_string(s)
-    end
-
-    def send_symbol_data(symbol)
-      put_string("\\" + symbol.to_s)
     end
 
     def search_internal(cmd, keys, charset)
@@ -1537,122 +1460,6 @@ module Net
       end
     end
 
-    class RawData # :nodoc:
-      def send_data(imap, tag)
-        imap.send(:put_string, @data)
-      end
-
-      def validate
-      end
-
-      private
-
-      def initialize(data)
-        @data = data
-      end
-    end
-
-    class Atom # :nodoc:
-      def send_data(imap, tag)
-        imap.send(:put_string, @data)
-      end
-
-      def validate
-      end
-
-      private
-
-      def initialize(data)
-        @data = data
-      end
-    end
-
-    class QuotedString # :nodoc:
-      def send_data(imap, tag)
-        imap.send(:send_quoted_string, @data)
-      end
-
-      def validate
-      end
-
-      private
-
-      def initialize(data)
-        @data = data
-      end
-    end
-
-    class Literal # :nodoc:
-      def send_data(imap, tag)
-        imap.send(:send_literal, @data, tag)
-      end
-
-      def validate
-      end
-
-      private
-
-      def initialize(data)
-        @data = data
-      end
-    end
-
-    class MessageSet # :nodoc:
-      def send_data(imap, tag)
-        imap.send(:put_string, format_internal(@data))
-      end
-
-      def validate
-        validate_internal(@data)
-      end
-
-      private
-
-      def initialize(data)
-        @data = data
-      end
-
-      def format_internal(data)
-        case data
-        when "*"
-          return data
-        when Integer
-          if data == -1
-            return "*"
-          else
-            return data.to_s
-          end
-        when Range
-          return format_internal(data.first) +
-            ":" + format_internal(data.last)
-        when Array
-          return data.collect {|i| format_internal(i)}.join(",")
-        when ThreadMember
-          return data.seqno.to_s +
-            ":" + data.children.collect {|i| format_internal(i).join(",")}
-        end
-      end
-
-      def validate_internal(data)
-        case data
-        when "*"
-        when Integer
-          NumValidator.ensure_nz_number(data)
-        when Range
-        when Array
-          data.each do |i|
-            validate_internal(i)
-          end
-        when ThreadMember
-          data.children.each do |i|
-            validate_internal(i)
-          end
-        else
-          raise DataFormatError, data.inspect
-        end
-      end
-    end
-
     # Common validators of number and nz_number types
     module NumValidator # :nodoc
       class << self
@@ -1709,1969 +1516,6 @@ module Net
       end
     end
 
-    # Net::IMAP::ContinuationRequest represents command continuation requests.
-    #
-    # The command continuation request response is indicated by a "+" token
-    # instead of a tag.  This form of response indicates that the server is
-    # ready to accept the continuation of a command from the client.  The
-    # remainder of this response is a line of text.
-    #
-    #   continue_req    ::= "+" SPACE (resp_text / base64)
-    #
-    # ==== Fields:
-    #
-    # data:: Returns the data (Net::IMAP::ResponseText).
-    #
-    # raw_data:: Returns the raw data string.
-    ContinuationRequest = Struct.new(:data, :raw_data)
-
-    # Net::IMAP::UntaggedResponse represents untagged responses.
-    #
-    # Data transmitted by the server to the client and status responses
-    # that do not indicate command completion are prefixed with the token
-    # "*", and are called untagged responses.
-    #
-    #   response_data   ::= "*" SPACE (resp_cond_state / resp_cond_bye /
-    #                       mailbox_data / message_data / capability_data)
-    #
-    # ==== Fields:
-    #
-    # name:: Returns the name, such as "FLAGS", "LIST", or "FETCH".
-    #
-    # data:: Returns the data such as an array of flag symbols,
-    #        a ((<Net::IMAP::MailboxList>)) object.
-    #
-    # raw_data:: Returns the raw data string.
-    UntaggedResponse = Struct.new(:name, :data, :raw_data)
-
-    # Net::IMAP::TaggedResponse represents tagged responses.
-    #
-    # The server completion result response indicates the success or
-    # failure of the operation.  It is tagged with the same tag as the
-    # client command which began the operation.
-    #
-    #   response_tagged ::= tag SPACE resp_cond_state CRLF
-    #
-    #   tag             ::= 1*<any ATOM_CHAR except "+">
-    #
-    #   resp_cond_state ::= ("OK" / "NO" / "BAD") SPACE resp_text
-    #
-    # ==== Fields:
-    #
-    # tag:: Returns the tag.
-    #
-    # name:: Returns the name, one of "OK", "NO", or "BAD".
-    #
-    # data:: Returns the data. See ((<Net::IMAP::ResponseText>)).
-    #
-    # raw_data:: Returns the raw data string.
-    #
-    TaggedResponse = Struct.new(:tag, :name, :data, :raw_data)
-
-    # Net::IMAP::ResponseText represents texts of responses.
-    # The text may be prefixed by the response code.
-    #
-    #   resp_text       ::= ["[" resp_text_code "]" SPACE] (text_mime2 / text)
-    #                       ;; text SHOULD NOT begin with "[" or "="
-    #
-    # ==== Fields:
-    #
-    # code:: Returns the response code. See ((<Net::IMAP::ResponseCode>)).
-    #
-    # text:: Returns the text.
-    #
-    ResponseText = Struct.new(:code, :text)
-
-    # Net::IMAP::ResponseCode represents response codes.
-    #
-    #   resp_text_code  ::= "ALERT" / "PARSE" /
-    #                       "PERMANENTFLAGS" SPACE "(" #(flag / "\*") ")" /
-    #                       "READ-ONLY" / "READ-WRITE" / "TRYCREATE" /
-    #                       "UIDVALIDITY" SPACE nz_number /
-    #                       "UNSEEN" SPACE nz_number /
-    #                       atom [SPACE 1*<any TEXT_CHAR except "]">]
-    #
-    # ==== Fields:
-    #
-    # name:: Returns the name, such as "ALERT", "PERMANENTFLAGS", or "UIDVALIDITY".
-    #
-    # data:: Returns the data, if it exists.
-    #
-    ResponseCode = Struct.new(:name, :data)
-
-    # Net::IMAP::MailboxList represents contents of the LIST response.
-    #
-    #   mailbox_list    ::= "(" #("\Marked" / "\Noinferiors" /
-    #                       "\Noselect" / "\Unmarked" / flag_extension) ")"
-    #                       SPACE (<"> QUOTED_CHAR <"> / nil) SPACE mailbox
-    #
-    # ==== Fields:
-    #
-    # attr:: Returns the name attributes. Each name attribute is a symbol
-    #        capitalized by String#capitalize, such as :Noselect (not :NoSelect).
-    #
-    # delim:: Returns the hierarchy delimiter.
-    #
-    # name:: Returns the mailbox name.
-    #
-    MailboxList = Struct.new(:attr, :delim, :name)
-
-    # Net::IMAP::MailboxQuota represents contents of GETQUOTA response.
-    # This object can also be a response to GETQUOTAROOT.  In the syntax
-    # specification below, the delimiter used with the "#" construct is a
-    # single space (SPACE).
-    #
-    #    quota_list      ::= "(" #quota_resource ")"
-    #
-    #    quota_resource  ::= atom SPACE number SPACE number
-    #
-    #    quota_response  ::= "QUOTA" SPACE astring SPACE quota_list
-    #
-    # ==== Fields:
-    #
-    # mailbox:: The mailbox with the associated quota.
-    #
-    # usage:: Current storage usage of the mailbox.
-    #
-    # quota:: Quota limit imposed on the mailbox.
-    #
-    MailboxQuota = Struct.new(:mailbox, :usage, :quota)
-
-    # Net::IMAP::MailboxQuotaRoot represents part of the GETQUOTAROOT
-    # response. (GETQUOTAROOT can also return Net::IMAP::MailboxQuota.)
-    #
-    #    quotaroot_response ::= "QUOTAROOT" SPACE astring *(SPACE astring)
-    #
-    # ==== Fields:
-    #
-    # mailbox:: The mailbox with the associated quota.
-    #
-    # quotaroots:: Zero or more quotaroots that affect the quota on the
-    #              specified mailbox.
-    #
-    MailboxQuotaRoot = Struct.new(:mailbox, :quotaroots)
-
-    # Net::IMAP::MailboxACLItem represents the response from GETACL.
-    #
-    #    acl_data        ::= "ACL" SPACE mailbox *(SPACE identifier SPACE rights)
-    #
-    #    identifier      ::= astring
-    #
-    #    rights          ::= astring
-    #
-    # ==== Fields:
-    #
-    # user:: Login name that has certain rights to the mailbox
-    #        that was specified with the getacl command.
-    #
-    # rights:: The access rights the indicated user has to the
-    #          mailbox.
-    #
-    MailboxACLItem = Struct.new(:user, :rights, :mailbox)
-
-    # Net::IMAP::StatusData represents the contents of the STATUS response.
-    #
-    # ==== Fields:
-    #
-    # mailbox:: Returns the mailbox name.
-    #
-    # attr:: Returns a hash. Each key is one of "MESSAGES", "RECENT", "UIDNEXT",
-    #        "UIDVALIDITY", "UNSEEN". Each value is a number.
-    #
-    StatusData = Struct.new(:mailbox, :attr)
-
-    # Net::IMAP::FetchData represents the contents of the FETCH response.
-    #
-    # ==== Fields:
-    #
-    # seqno:: Returns the message sequence number.
-    #         (Note: not the unique identifier, even for the UID command response.)
-    #
-    # attr:: Returns a hash. Each key is a data item name, and each value is
-    #        its value.
-    #
-    #        The current data items are:
-    #
-    #        [BODY]
-    #           A form of BODYSTRUCTURE without extension data.
-    #        [BODY[<section>]<<origin_octet>>]
-    #           A string expressing the body contents of the specified section.
-    #        [BODYSTRUCTURE]
-    #           An object that describes the [MIME-IMB] body structure of a message.
-    #           See Net::IMAP::BodyTypeBasic, Net::IMAP::BodyTypeText,
-    #           Net::IMAP::BodyTypeMessage, Net::IMAP::BodyTypeMultipart.
-    #        [ENVELOPE]
-    #           A Net::IMAP::Envelope object that describes the envelope
-    #           structure of a message.
-    #        [FLAGS]
-    #           A array of flag symbols that are set for this message. Flag symbols
-    #           are capitalized by String#capitalize.
-    #        [INTERNALDATE]
-    #           A string representing the internal date of the message.
-    #        [RFC822]
-    #           Equivalent to BODY[].
-    #        [RFC822.HEADER]
-    #           Equivalent to BODY.PEEK[HEADER].
-    #        [RFC822.SIZE]
-    #           A number expressing the [RFC-822] size of the message.
-    #        [RFC822.TEXT]
-    #           Equivalent to BODY[TEXT].
-    #        [UID]
-    #           A number expressing the unique identifier of the message.
-    #
-    FetchData = Struct.new(:seqno, :attr)
-
-    # Net::IMAP::Envelope represents envelope structures of messages.
-    #
-    # ==== Fields:
-    #
-    # date:: Returns a string that represents the date.
-    #
-    # subject:: Returns a string that represents the subject.
-    #
-    # from:: Returns an array of Net::IMAP::Address that represents the from.
-    #
-    # sender:: Returns an array of Net::IMAP::Address that represents the sender.
-    #
-    # reply_to:: Returns an array of Net::IMAP::Address that represents the reply-to.
-    #
-    # to:: Returns an array of Net::IMAP::Address that represents the to.
-    #
-    # cc:: Returns an array of Net::IMAP::Address that represents the cc.
-    #
-    # bcc:: Returns an array of Net::IMAP::Address that represents the bcc.
-    #
-    # in_reply_to:: Returns a string that represents the in-reply-to.
-    #
-    # message_id:: Returns a string that represents the message-id.
-    #
-    Envelope = Struct.new(:date, :subject, :from, :sender, :reply_to,
-                          :to, :cc, :bcc, :in_reply_to, :message_id)
-
-    #
-    # Net::IMAP::Address represents electronic mail addresses.
-    #
-    # ==== Fields:
-    #
-    # name:: Returns the phrase from [RFC-822] mailbox.
-    #
-    # route:: Returns the route from [RFC-822] route-addr.
-    #
-    # mailbox:: nil indicates end of [RFC-822] group.
-    #           If non-nil and host is nil, returns [RFC-822] group name.
-    #           Otherwise, returns [RFC-822] local-part.
-    #
-    # host:: nil indicates [RFC-822] group syntax.
-    #        Otherwise, returns [RFC-822] domain name.
-    #
-    Address = Struct.new(:name, :route, :mailbox, :host)
-
-    #
-    # Net::IMAP::ContentDisposition represents Content-Disposition fields.
-    #
-    # ==== Fields:
-    #
-    # dsp_type:: Returns the disposition type.
-    #
-    # param:: Returns a hash that represents parameters of the Content-Disposition
-    #         field.
-    #
-    ContentDisposition = Struct.new(:dsp_type, :param)
-
-    # Net::IMAP::ThreadMember represents a thread-node returned
-    # by Net::IMAP#thread.
-    #
-    # ==== Fields:
-    #
-    # seqno:: The sequence number of this message.
-    #
-    # children:: An array of Net::IMAP::ThreadMember objects for mail
-    #            items that are children of this in the thread.
-    #
-    ThreadMember = Struct.new(:seqno, :children)
-
-    # Net::IMAP::BodyTypeBasic represents basic body structures of messages.
-    #
-    # ==== Fields:
-    #
-    # media_type:: Returns the content media type name as defined in [MIME-IMB].
-    #
-    # subtype:: Returns the content subtype name as defined in [MIME-IMB].
-    #
-    # param:: Returns a hash that represents parameters as defined in [MIME-IMB].
-    #
-    # content_id:: Returns a string giving the content id as defined in [MIME-IMB].
-    #
-    # description:: Returns a string giving the content description as defined in
-    #               [MIME-IMB].
-    #
-    # encoding:: Returns a string giving the content transfer encoding as defined in
-    #            [MIME-IMB].
-    #
-    # size:: Returns a number giving the size of the body in octets.
-    #
-    # md5:: Returns a string giving the body MD5 value as defined in [MD5].
-    #
-    # disposition:: Returns a Net::IMAP::ContentDisposition object giving
-    #               the content disposition.
-    #
-    # language:: Returns a string or an array of strings giving the body
-    #            language value as defined in [LANGUAGE-TAGS].
-    #
-    # extension:: Returns extension data.
-    #
-    # multipart?:: Returns false.
-    #
-    class BodyTypeBasic < Struct.new(:media_type, :subtype,
-                                     :param, :content_id,
-                                     :description, :encoding, :size,
-                                     :md5, :disposition, :language,
-                                     :extension)
-      def multipart?
-        return false
-      end
-
-      # Obsolete: use +subtype+ instead.  Calling this will
-      # generate a warning message to +stderr+, then return
-      # the value of +subtype+.
-      def media_subtype
-        warn("media_subtype is obsolete, use subtype instead.\n", uplevel: 1)
-        return subtype
-      end
-    end
-
-    # Net::IMAP::BodyTypeText represents TEXT body structures of messages.
-    #
-    # ==== Fields:
-    #
-    # lines:: Returns the size of the body in text lines.
-    #
-    # And Net::IMAP::BodyTypeText has all fields of Net::IMAP::BodyTypeBasic.
-    #
-    class BodyTypeText < Struct.new(:media_type, :subtype,
-                                    :param, :content_id,
-                                    :description, :encoding, :size,
-                                    :lines,
-                                    :md5, :disposition, :language,
-                                    :extension)
-      def multipart?
-        return false
-      end
-
-      # Obsolete: use +subtype+ instead.  Calling this will
-      # generate a warning message to +stderr+, then return
-      # the value of +subtype+.
-      def media_subtype
-        warn("media_subtype is obsolete, use subtype instead.\n", uplevel: 1)
-        return subtype
-      end
-    end
-
-    # Net::IMAP::BodyTypeMessage represents MESSAGE/RFC822 body structures of messages.
-    #
-    # ==== Fields:
-    #
-    # envelope:: Returns a Net::IMAP::Envelope giving the envelope structure.
-    #
-    # body:: Returns an object giving the body structure.
-    #
-    # And Net::IMAP::BodyTypeMessage has all methods of Net::IMAP::BodyTypeText.
-    #
-    class BodyTypeMessage < Struct.new(:media_type, :subtype,
-                                       :param, :content_id,
-                                       :description, :encoding, :size,
-                                       :envelope, :body, :lines,
-                                       :md5, :disposition, :language,
-                                       :extension)
-      def multipart?
-        return false
-      end
-
-      # Obsolete: use +subtype+ instead.  Calling this will
-      # generate a warning message to +stderr+, then return
-      # the value of +subtype+.
-      def media_subtype
-        warn("media_subtype is obsolete, use subtype instead.\n", uplevel: 1)
-        return subtype
-      end
-    end
-
-    # Net::IMAP::BodyTypeAttachment represents attachment body structures
-    # of messages.
-    #
-    # ==== Fields:
-    #
-    # media_type:: Returns the content media type name.
-    #
-    # subtype:: Returns +nil+.
-    #
-    # param:: Returns a hash that represents parameters.
-    #
-    # multipart?:: Returns false.
-    #
-    class BodyTypeAttachment < Struct.new(:media_type, :subtype,
-                                          :param)
-      def multipart?
-        return false
-      end
-    end
-
-    # Net::IMAP::BodyTypeMultipart represents multipart body structures
-    # of messages.
-    #
-    # ==== Fields:
-    #
-    # media_type:: Returns the content media type name as defined in [MIME-IMB].
-    #
-    # subtype:: Returns the content subtype name as defined in [MIME-IMB].
-    #
-    # parts:: Returns multiple parts.
-    #
-    # param:: Returns a hash that represents parameters as defined in [MIME-IMB].
-    #
-    # disposition:: Returns a Net::IMAP::ContentDisposition object giving
-    #               the content disposition.
-    #
-    # language:: Returns a string or an array of strings giving the body
-    #            language value as defined in [LANGUAGE-TAGS].
-    #
-    # extension:: Returns extension data.
-    #
-    # multipart?:: Returns true.
-    #
-    class BodyTypeMultipart < Struct.new(:media_type, :subtype,
-                                         :parts,
-                                         :param, :disposition, :language,
-                                         :extension)
-      def multipart?
-        return true
-      end
-
-      # Obsolete: use +subtype+ instead.  Calling this will
-      # generate a warning message to +stderr+, then return
-      # the value of +subtype+.
-      def media_subtype
-        warn("media_subtype is obsolete, use subtype instead.\n", uplevel: 1)
-        return subtype
-      end
-    end
-
-    class BodyTypeExtension < Struct.new(:media_type, :subtype,
-                                         :params, :content_id,
-                                         :description, :encoding, :size)
-      def multipart?
-        return false
-      end
-    end
-
-    class ResponseParser # :nodoc:
-      def initialize
-        @str = nil
-        @pos = nil
-        @lex_state = nil
-        @token = nil
-        @flag_symbols = {}
-      end
-
-      def parse(str)
-        @str = str
-        @pos = 0
-        @lex_state = EXPR_BEG
-        @token = nil
-        return response
-      end
-
-      private
-
-      EXPR_BEG          = :EXPR_BEG
-      EXPR_DATA         = :EXPR_DATA
-      EXPR_TEXT         = :EXPR_TEXT
-      EXPR_RTEXT        = :EXPR_RTEXT
-      EXPR_CTEXT        = :EXPR_CTEXT
-
-      T_SPACE   = :SPACE
-      T_NIL     = :NIL
-      T_NUMBER  = :NUMBER
-      T_ATOM    = :ATOM
-      T_QUOTED  = :QUOTED
-      T_LPAR    = :LPAR
-      T_RPAR    = :RPAR
-      T_BSLASH  = :BSLASH
-      T_STAR    = :STAR
-      T_LBRA    = :LBRA
-      T_RBRA    = :RBRA
-      T_LITERAL = :LITERAL
-      T_PLUS    = :PLUS
-      T_PERCENT = :PERCENT
-      T_CRLF    = :CRLF
-      T_EOF     = :EOF
-      T_TEXT    = :TEXT
-
-      BEG_REGEXP = /\G(?:\
-(?# 1:  SPACE   )( +)|\
-(?# 2:  NIL     )(NIL)(?=[\x80-\xff(){ \x00-\x1f\x7f%*"\\\[\]+])|\
-(?# 3:  NUMBER  )(\d+)(?=[\x80-\xff(){ \x00-\x1f\x7f%*"\\\[\]+])|\
-(?# 4:  ATOM    )([^\x80-\xff(){ \x00-\x1f\x7f%*"\\\[\]+]+)|\
-(?# 5:  QUOTED  )"((?:[^\x00\r\n"\\]|\\["\\])*)"|\
-(?# 6:  LPAR    )(\()|\
-(?# 7:  RPAR    )(\))|\
-(?# 8:  BSLASH  )(\\)|\
-(?# 9:  STAR    )(\*)|\
-(?# 10: LBRA    )(\[)|\
-(?# 11: RBRA    )(\])|\
-(?# 12: LITERAL )\{(\d+)\}\r\n|\
-(?# 13: PLUS    )(\+)|\
-(?# 14: PERCENT )(%)|\
-(?# 15: CRLF    )(\r\n)|\
-(?# 16: EOF     )(\z))/ni
-
-      DATA_REGEXP = /\G(?:\
-(?# 1:  SPACE   )( )|\
-(?# 2:  NIL     )(NIL)|\
-(?# 3:  NUMBER  )(\d+)|\
-(?# 4:  QUOTED  )"((?:[^\x00\r\n"\\]|\\["\\])*)"|\
-(?# 5:  LITERAL )\{(\d+)\}\r\n|\
-(?# 6:  LPAR    )(\()|\
-(?# 7:  RPAR    )(\)))/ni
-
-      TEXT_REGEXP = /\G(?:\
-(?# 1:  TEXT    )([^\x00\r\n]*))/ni
-
-      RTEXT_REGEXP = /\G(?:\
-(?# 1:  LBRA    )(\[)|\
-(?# 2:  TEXT    )([^\x00\r\n]*))/ni
-
-      CTEXT_REGEXP = /\G(?:\
-(?# 1:  TEXT    )([^\x00\r\n\]]*))/ni
-
-      Token = Struct.new(:symbol, :value)
-
-      def response
-        token = lookahead
-        case token.symbol
-        when T_PLUS
-          result = continue_req
-        when T_STAR
-          result = response_untagged
-        else
-          result = response_tagged
-        end
-        while lookahead.symbol == T_SPACE
-          # Ignore trailing space for Microsoft Exchange Server
-          shift_token
-        end
-        match(T_CRLF)
-        match(T_EOF)
-        return result
-      end
-
-      def continue_req
-        match(T_PLUS)
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-          return ContinuationRequest.new(resp_text, @str)
-        else
-          return ContinuationRequest.new(ResponseText.new(nil, ""), @str)
-        end
-      end
-
-      def response_untagged
-        match(T_STAR)
-        match(T_SPACE)
-        token = lookahead
-        if token.symbol == T_NUMBER
-          return numeric_response
-        elsif token.symbol == T_ATOM
-          case token.value
-          when /\A(?:OK|NO|BAD|BYE|PREAUTH)\z/ni
-            return response_cond
-          when /\A(?:FLAGS)\z/ni
-            return flags_response
-          when /\A(?:LIST|LSUB|XLIST)\z/ni
-            return list_response
-          when /\A(?:QUOTA)\z/ni
-            return getquota_response
-          when /\A(?:QUOTAROOT)\z/ni
-            return getquotaroot_response
-          when /\A(?:ACL)\z/ni
-            return getacl_response
-          when /\A(?:SEARCH|SORT)\z/ni
-            return search_response
-          when /\A(?:THREAD)\z/ni
-            return thread_response
-          when /\A(?:STATUS)\z/ni
-            return status_response
-          when /\A(?:CAPABILITY)\z/ni
-            return capability_response
-          else
-            return text_response
-          end
-        else
-          parse_error("unexpected token %s", token.symbol)
-        end
-      end
-
-      def response_tagged
-        tag = atom
-        match(T_SPACE)
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        return TaggedResponse.new(tag, name, resp_text, @str)
-      end
-
-      def response_cond
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        return UntaggedResponse.new(name, resp_text, @str)
-      end
-
-      def numeric_response
-        n = number
-        match(T_SPACE)
-        token = match(T_ATOM)
-        name = token.value.upcase
-        case name
-        when "EXISTS", "RECENT", "EXPUNGE"
-          return UntaggedResponse.new(name, n, @str)
-        when "FETCH"
-          shift_token
-          match(T_SPACE)
-          data = FetchData.new(n, msg_att(n))
-          return UntaggedResponse.new(name, data, @str)
-        end
-      end
-
-      def msg_att(n)
-        match(T_LPAR)
-        attr = {}
-        while true
-          token = lookahead
-          case token.symbol
-          when T_RPAR
-            shift_token
-            break
-          when T_SPACE
-            shift_token
-            next
-          end
-          case token.value
-          when /\A(?:ENVELOPE)\z/ni
-            name, val = envelope_data
-          when /\A(?:FLAGS)\z/ni
-            name, val = flags_data
-          when /\A(?:INTERNALDATE)\z/ni
-            name, val = internaldate_data
-          when /\A(?:RFC822(?:\.HEADER|\.TEXT)?)\z/ni
-            name, val = rfc822_text
-          when /\A(?:RFC822\.SIZE)\z/ni
-            name, val = rfc822_size
-          when /\A(?:BODY(?:STRUCTURE)?)\z/ni
-            name, val = body_data
-          when /\A(?:UID)\z/ni
-            name, val = uid_data
-          when /\A(?:MODSEQ)\z/ni
-            name, val = modseq_data
-          else
-            parse_error("unknown attribute `%s' for {%d}", token.value, n)
-          end
-          attr[name] = val
-        end
-        return attr
-      end
-
-      def envelope_data
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        return name, envelope
-      end
-
-      def envelope
-        @lex_state = EXPR_DATA
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          result = nil
-        else
-          match(T_LPAR)
-          date = nstring
-          match(T_SPACE)
-          subject = nstring
-          match(T_SPACE)
-          from = address_list
-          match(T_SPACE)
-          sender = address_list
-          match(T_SPACE)
-          reply_to = address_list
-          match(T_SPACE)
-          to = address_list
-          match(T_SPACE)
-          cc = address_list
-          match(T_SPACE)
-          bcc = address_list
-          match(T_SPACE)
-          in_reply_to = nstring
-          match(T_SPACE)
-          message_id = nstring
-          match(T_RPAR)
-          result = Envelope.new(date, subject, from, sender, reply_to,
-                                to, cc, bcc, in_reply_to, message_id)
-        end
-        @lex_state = EXPR_BEG
-        return result
-      end
-
-      def flags_data
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        return name, flag_list
-      end
-
-      def internaldate_data
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        token = match(T_QUOTED)
-        return name, token.value
-      end
-
-      def rfc822_text
-        token = match(T_ATOM)
-        name = token.value.upcase
-        token = lookahead
-        if token.symbol == T_LBRA
-          shift_token
-          match(T_RBRA)
-        end
-        match(T_SPACE)
-        return name, nstring
-      end
-
-      def rfc822_size
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        return name, number
-      end
-
-      def body_data
-        token = match(T_ATOM)
-        name = token.value.upcase
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-          return name, body
-        end
-        name.concat(section)
-        token = lookahead
-        if token.symbol == T_ATOM
-          name.concat(token.value)
-          shift_token
-        end
-        match(T_SPACE)
-        data = nstring
-        return name, data
-      end
-
-      def body
-        @lex_state = EXPR_DATA
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          result = nil
-        else
-          match(T_LPAR)
-          token = lookahead
-          if token.symbol == T_LPAR
-            result = body_type_mpart
-          else
-            result = body_type_1part
-          end
-          match(T_RPAR)
-        end
-        @lex_state = EXPR_BEG
-        return result
-      end
-
-      def body_type_1part
-        token = lookahead
-        case token.value
-        when /\A(?:TEXT)\z/ni
-          return body_type_text
-        when /\A(?:MESSAGE)\z/ni
-          return body_type_msg
-        when /\A(?:ATTACHMENT)\z/ni
-          return body_type_attachment
-        when /\A(?:MIXED)\z/ni
-          return body_type_mixed
-        else
-          return body_type_basic
-        end
-      end
-
-      def body_type_basic
-        mtype, msubtype = media_type
-        token = lookahead
-        if token.symbol == T_RPAR
-          return BodyTypeBasic.new(mtype, msubtype)
-        end
-        match(T_SPACE)
-        param, content_id, desc, enc, size = body_fields
-        md5, disposition, language, extension = body_ext_1part
-        return BodyTypeBasic.new(mtype, msubtype,
-                                 param, content_id,
-                                 desc, enc, size,
-                                 md5, disposition, language, extension)
-      end
-
-      def body_type_text
-        mtype, msubtype = media_type
-        match(T_SPACE)
-        param, content_id, desc, enc, size = body_fields
-        match(T_SPACE)
-        lines = number
-        md5, disposition, language, extension = body_ext_1part
-        return BodyTypeText.new(mtype, msubtype,
-                                param, content_id,
-                                desc, enc, size,
-                                lines,
-                                md5, disposition, language, extension)
-      end
-
-      def body_type_msg
-        mtype, msubtype = media_type
-        match(T_SPACE)
-        param, content_id, desc, enc, size = body_fields
-
-        token = lookahead
-        if token.symbol == T_RPAR
-          # If this is not message/rfc822, we shouldn't apply the RFC822
-          # spec to it.  We should handle anything other than
-          # message/rfc822 using multipart extension data [rfc3501] (i.e.
-          # the data itself won't be returned, we would have to retrieve it
-          # with BODYSTRUCTURE instead of with BODY
-
-          # Also, sometimes a message/rfc822 is included as a large
-          # attachment instead of having all of the other details
-          # (e.g. attaching a .eml file to an email)
-          if msubtype == "RFC822"
-            return BodyTypeMessage.new(mtype, msubtype, param, content_id,
-                                       desc, enc, size, nil, nil, nil, nil,
-                                       nil, nil, nil)
-          else
-            return BodyTypeExtension.new(mtype, msubtype,
-                                         param, content_id,
-                                         desc, enc, size)
-          end
-        end
-
-        match(T_SPACE)
-        env = envelope
-        match(T_SPACE)
-        b = body
-        match(T_SPACE)
-        lines = number
-        md5, disposition, language, extension = body_ext_1part
-        return BodyTypeMessage.new(mtype, msubtype,
-                                   param, content_id,
-                                   desc, enc, size,
-                                   env, b, lines,
-                                   md5, disposition, language, extension)
-      end
-
-      def body_type_attachment
-        mtype = case_insensitive_string
-        match(T_SPACE)
-        param = body_fld_param
-        return BodyTypeAttachment.new(mtype, nil, param)
-      end
-
-      def body_type_mixed
-        mtype = "MULTIPART"
-        msubtype = case_insensitive_string
-        param, disposition, language, extension = body_ext_mpart
-        return BodyTypeBasic.new(mtype, msubtype, param, nil, nil, nil, nil, nil, disposition, language, extension)
-      end
-
-      def body_type_mpart
-        parts = []
-        while true
-          token = lookahead
-          if token.symbol == T_SPACE
-            shift_token
-            break
-          end
-          parts.push(body)
-        end
-        mtype = "MULTIPART"
-        msubtype = case_insensitive_string
-        param, disposition, language, extension = body_ext_mpart
-        return BodyTypeMultipart.new(mtype, msubtype, parts,
-                                     param, disposition, language,
-                                     extension)
-      end
-
-      def media_type
-        mtype = case_insensitive_string
-        token = lookahead
-        if token.symbol != T_SPACE
-          return mtype, nil
-        end
-        match(T_SPACE)
-        msubtype = case_insensitive_string
-        return mtype, msubtype
-      end
-
-      def body_fields
-        param = body_fld_param
-        match(T_SPACE)
-        content_id = nstring
-        match(T_SPACE)
-        desc = nstring
-        match(T_SPACE)
-        enc = case_insensitive_string
-        match(T_SPACE)
-        size = number
-        return param, content_id, desc, enc, size
-      end
-
-      def body_fld_param
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          return nil
-        end
-        match(T_LPAR)
-        param = {}
-        while true
-          token = lookahead
-          case token.symbol
-          when T_RPAR
-            shift_token
-            break
-          when T_SPACE
-            shift_token
-          end
-          name = case_insensitive_string
-          match(T_SPACE)
-          val = string
-          param[name] = val
-        end
-        return param
-      end
-
-      def body_ext_1part
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-        else
-          return nil
-        end
-        md5 = nstring
-
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-        else
-          return md5
-        end
-        disposition = body_fld_dsp
-
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-        else
-          return md5, disposition
-        end
-        language = body_fld_lang
-
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-        else
-          return md5, disposition, language
-        end
-
-        extension = body_extensions
-        return md5, disposition, language, extension
-      end
-
-      def body_ext_mpart
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-        else
-          return nil
-        end
-        param = body_fld_param
-
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-        else
-          return param
-        end
-        disposition = body_fld_dsp
-
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-        else
-          return param, disposition
-        end
-        language = body_fld_lang
-
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-        else
-          return param, disposition, language
-        end
-
-        extension = body_extensions
-        return param, disposition, language, extension
-      end
-
-      def body_fld_dsp
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          return nil
-        end
-        match(T_LPAR)
-        dsp_type = case_insensitive_string
-        match(T_SPACE)
-        param = body_fld_param
-        match(T_RPAR)
-        return ContentDisposition.new(dsp_type, param)
-      end
-
-      def body_fld_lang
-        token = lookahead
-        if token.symbol == T_LPAR
-          shift_token
-          result = []
-          while true
-            token = lookahead
-            case token.symbol
-            when T_RPAR
-              shift_token
-              return result
-            when T_SPACE
-              shift_token
-            end
-            result.push(case_insensitive_string)
-          end
-        else
-          lang = nstring
-          if lang
-            return lang.upcase
-          else
-            return lang
-          end
-        end
-      end
-
-      def body_extensions
-        result = []
-        while true
-          token = lookahead
-          case token.symbol
-          when T_RPAR
-            return result
-          when T_SPACE
-            shift_token
-          end
-          result.push(body_extension)
-        end
-      end
-
-      def body_extension
-        token = lookahead
-        case token.symbol
-        when T_LPAR
-          shift_token
-          result = body_extensions
-          match(T_RPAR)
-          return result
-        when T_NUMBER
-          return number
-        else
-          return nstring
-        end
-      end
-
-      def section
-        str = String.new
-        token = match(T_LBRA)
-        str.concat(token.value)
-        token = match(T_ATOM, T_NUMBER, T_RBRA)
-        if token.symbol == T_RBRA
-          str.concat(token.value)
-          return str
-        end
-        str.concat(token.value)
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-          str.concat(token.value)
-          token = match(T_LPAR)
-          str.concat(token.value)
-          while true
-            token = lookahead
-            case token.symbol
-            when T_RPAR
-              str.concat(token.value)
-              shift_token
-              break
-            when T_SPACE
-              shift_token
-              str.concat(token.value)
-            end
-            str.concat(format_string(astring))
-          end
-        end
-        token = match(T_RBRA)
-        str.concat(token.value)
-        return str
-      end
-
-      def format_string(str)
-        case str
-        when ""
-          return '""'
-        when /[\x80-\xff\r\n]/n
-          # literal
-          return "{" + str.bytesize.to_s + "}" + CRLF + str
-        when /[(){ \x00-\x1f\x7f%*"\\]/n
-          # quoted string
-          return '"' + str.gsub(/["\\]/n, "\\\\\\&") + '"'
-        else
-          # atom
-          return str
-        end
-      end
-
-      def uid_data
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        return name, number
-      end
-
-      def modseq_data
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        match(T_LPAR)
-        modseq = number
-        match(T_RPAR)
-        return name, modseq
-      end
-
-      def text_response
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        @lex_state = EXPR_TEXT
-        token = match(T_TEXT)
-        @lex_state = EXPR_BEG
-        return UntaggedResponse.new(name, token.value)
-      end
-
-      def flags_response
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        return UntaggedResponse.new(name, flag_list, @str)
-      end
-
-      def list_response
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        return UntaggedResponse.new(name, mailbox_list, @str)
-      end
-
-      def mailbox_list
-        attr = flag_list
-        match(T_SPACE)
-        token = match(T_QUOTED, T_NIL)
-        if token.symbol == T_NIL
-          delim = nil
-        else
-          delim = token.value
-        end
-        match(T_SPACE)
-        name = astring
-        return MailboxList.new(attr, delim, name)
-      end
-
-      def getquota_response
-        # If quota never established, get back
-        # `NO Quota root does not exist'.
-        # If quota removed, get `()' after the
-        # folder spec with no mention of `STORAGE'.
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        mailbox = astring
-        match(T_SPACE)
-        match(T_LPAR)
-        token = lookahead
-        case token.symbol
-        when T_RPAR
-          shift_token
-          data = MailboxQuota.new(mailbox, nil, nil)
-          return UntaggedResponse.new(name, data, @str)
-        when T_ATOM
-          shift_token
-          match(T_SPACE)
-          token = match(T_NUMBER)
-          usage = token.value
-          match(T_SPACE)
-          token = match(T_NUMBER)
-          quota = token.value
-          match(T_RPAR)
-          data = MailboxQuota.new(mailbox, usage, quota)
-          return UntaggedResponse.new(name, data, @str)
-        else
-          parse_error("unexpected token %s", token.symbol)
-        end
-      end
-
-      def getquotaroot_response
-        # Similar to getquota, but only admin can use getquota.
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        mailbox = astring
-        quotaroots = []
-        while true
-          token = lookahead
-          break unless token.symbol == T_SPACE
-          shift_token
-          quotaroots.push(astring)
-        end
-        data = MailboxQuotaRoot.new(mailbox, quotaroots)
-        return UntaggedResponse.new(name, data, @str)
-      end
-
-      def getacl_response
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        mailbox = astring
-        data = []
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-          while true
-            token = lookahead
-            case token.symbol
-            when T_CRLF
-              break
-            when T_SPACE
-              shift_token
-            end
-            user = astring
-            match(T_SPACE)
-            rights = astring
-            data.push(MailboxACLItem.new(user, rights, mailbox))
-          end
-        end
-        return UntaggedResponse.new(name, data, @str)
-      end
-
-      def search_response
-        token = match(T_ATOM)
-        name = token.value.upcase
-        token = lookahead
-        if token.symbol == T_SPACE
-          shift_token
-          data = []
-          while true
-            token = lookahead
-            case token.symbol
-            when T_CRLF
-              break
-            when T_SPACE
-              shift_token
-            when T_NUMBER
-              data.push(number)
-            when T_LPAR
-              # TODO: include the MODSEQ value in a response
-              shift_token
-              match(T_ATOM)
-              match(T_SPACE)
-              match(T_NUMBER)
-              match(T_RPAR)
-            end
-          end
-        else
-          data = []
-        end
-        return UntaggedResponse.new(name, data, @str)
-      end
-
-      def thread_response
-        token = match(T_ATOM)
-        name = token.value.upcase
-        token = lookahead
-
-        if token.symbol == T_SPACE
-          threads = []
-
-          while true
-            shift_token
-            token = lookahead
-
-            case token.symbol
-            when T_LPAR
-              threads << thread_branch(token)
-            when T_CRLF
-              break
-            end
-          end
-        else
-          # no member
-          threads = []
-        end
-
-        return UntaggedResponse.new(name, threads, @str)
-      end
-
-      def thread_branch(token)
-        rootmember = nil
-        lastmember = nil
-
-        while true
-          shift_token    # ignore first T_LPAR
-          token = lookahead
-
-          case token.symbol
-          when T_NUMBER
-            # new member
-            newmember = ThreadMember.new(number, [])
-            if rootmember.nil?
-              rootmember = newmember
-            else
-              lastmember.children << newmember
-            end
-            lastmember = newmember
-          when T_SPACE
-            # do nothing
-          when T_LPAR
-            if rootmember.nil?
-              # dummy member
-              lastmember = rootmember = ThreadMember.new(nil, [])
-            end
-
-            lastmember.children << thread_branch(token)
-          when T_RPAR
-            break
-          end
-        end
-
-        return rootmember
-      end
-
-      def status_response
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        mailbox = astring
-        match(T_SPACE)
-        match(T_LPAR)
-        attr = {}
-        while true
-          token = lookahead
-          case token.symbol
-          when T_RPAR
-            shift_token
-            break
-          when T_SPACE
-            shift_token
-          end
-          token = match(T_ATOM)
-          key = token.value.upcase
-          match(T_SPACE)
-          val = number
-          attr[key] = val
-        end
-        data = StatusData.new(mailbox, attr)
-        return UntaggedResponse.new(name, data, @str)
-      end
-
-      def capability_response
-        token = match(T_ATOM)
-        name = token.value.upcase
-        match(T_SPACE)
-        data = []
-        while true
-          token = lookahead
-          case token.symbol
-          when T_CRLF
-            break
-          when T_SPACE
-            shift_token
-            next
-          end
-          data.push(atom.upcase)
-        end
-        return UntaggedResponse.new(name, data, @str)
-      end
-
-      def resp_text
-        @lex_state = EXPR_RTEXT
-        token = lookahead
-        if token.symbol == T_LBRA
-          code = resp_text_code
-        else
-          code = nil
-        end
-        token = match(T_TEXT)
-        @lex_state = EXPR_BEG
-        return ResponseText.new(code, token.value)
-      end
-
-      def resp_text_code
-        @lex_state = EXPR_BEG
-        match(T_LBRA)
-        token = match(T_ATOM)
-        name = token.value.upcase
-        case name
-        when /\A(?:ALERT|PARSE|READ-ONLY|READ-WRITE|TRYCREATE|NOMODSEQ)\z/n
-          result = ResponseCode.new(name, nil)
-        when /\A(?:PERMANENTFLAGS)\z/n
-          match(T_SPACE)
-          result = ResponseCode.new(name, flag_list)
-        when /\A(?:UIDVALIDITY|UIDNEXT|UNSEEN)\z/n
-          match(T_SPACE)
-          result = ResponseCode.new(name, number)
-        else
-          token = lookahead
-          if token.symbol == T_SPACE
-            shift_token
-            @lex_state = EXPR_CTEXT
-            token = match(T_TEXT)
-            @lex_state = EXPR_BEG
-            result = ResponseCode.new(name, token.value)
-          else
-            result = ResponseCode.new(name, nil)
-          end
-        end
-        match(T_RBRA)
-        @lex_state = EXPR_RTEXT
-        return result
-      end
-
-      def address_list
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          return nil
-        else
-          result = []
-          match(T_LPAR)
-          while true
-            token = lookahead
-            case token.symbol
-            when T_RPAR
-              shift_token
-              break
-            when T_SPACE
-              shift_token
-            end
-            result.push(address)
-          end
-          return result
-        end
-      end
-
-      ADDRESS_REGEXP = /\G\
-(?# 1: NAME     )(?:NIL|"((?:[^\x80-\xff\x00\r\n"\\]|\\["\\])*)") \
-(?# 2: ROUTE    )(?:NIL|"((?:[^\x80-\xff\x00\r\n"\\]|\\["\\])*)") \
-(?# 3: MAILBOX  )(?:NIL|"((?:[^\x80-\xff\x00\r\n"\\]|\\["\\])*)") \
-(?# 4: HOST     )(?:NIL|"((?:[^\x80-\xff\x00\r\n"\\]|\\["\\])*)")\
-\)/ni
-
-      def address
-        match(T_LPAR)
-        if @str.index(ADDRESS_REGEXP, @pos)
-          # address does not include literal.
-          @pos = $~.end(0)
-          name = $1
-          route = $2
-          mailbox = $3
-          host = $4
-          for s in [name, route, mailbox, host]
-            if s
-              s.gsub!(/\\(["\\])/n, "\\1")
-            end
-          end
-        else
-          name = nstring
-          match(T_SPACE)
-          route = nstring
-          match(T_SPACE)
-          mailbox = nstring
-          match(T_SPACE)
-          host = nstring
-          match(T_RPAR)
-        end
-        return Address.new(name, route, mailbox, host)
-      end
-
-      FLAG_REGEXP = /\
-(?# FLAG        )\\([^\x80-\xff(){ \x00-\x1f\x7f%"\\]+)|\
-(?# ATOM        )([^\x80-\xff(){ \x00-\x1f\x7f%*"\\]+)/n
-
-      def flag_list
-        if @str.index(/\(([^)]*)\)/ni, @pos)
-          @pos = $~.end(0)
-          return $1.scan(FLAG_REGEXP).collect { |flag, atom|
-            if atom
-              atom
-            else
-              symbol = flag.capitalize.untaint.intern
-              @flag_symbols[symbol] = true
-              if @flag_symbols.length > IMAP.max_flag_count
-                raise FlagCountError, "number of flag symbols exceeded"
-              end
-              symbol
-            end
-          }
-        else
-          parse_error("invalid flag list")
-        end
-      end
-
-      def nstring
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          return nil
-        else
-          return string
-        end
-      end
-
-      def astring
-        token = lookahead
-        if string_token?(token)
-          return string
-        else
-          return atom
-        end
-      end
-
-      def string
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          return nil
-        end
-        token = match(T_QUOTED, T_LITERAL)
-        return token.value
-      end
-
-      STRING_TOKENS = [T_QUOTED, T_LITERAL, T_NIL]
-
-      def string_token?(token)
-        return STRING_TOKENS.include?(token.symbol)
-      end
-
-      def case_insensitive_string
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          return nil
-        end
-        token = match(T_QUOTED, T_LITERAL)
-        return token.value.upcase
-      end
-
-      def atom
-        result = String.new
-        while true
-          token = lookahead
-          if atom_token?(token)
-            result.concat(token.value)
-            shift_token
-          else
-            if result.empty?
-              parse_error("unexpected token %s", token.symbol)
-            else
-              return result
-            end
-          end
-        end
-      end
-
-      ATOM_TOKENS = [
-        T_ATOM,
-        T_NUMBER,
-        T_NIL,
-        T_LBRA,
-        T_RBRA,
-        T_PLUS
-      ]
-
-      def atom_token?(token)
-        return ATOM_TOKENS.include?(token.symbol)
-      end
-
-      def number
-        token = lookahead
-        if token.symbol == T_NIL
-          shift_token
-          return nil
-        end
-        token = match(T_NUMBER)
-        return token.value.to_i
-      end
-
-      def nil_atom
-        match(T_NIL)
-        return nil
-      end
-
-      def match(*args)
-        token = lookahead
-        unless args.include?(token.symbol)
-          parse_error('unexpected token %s (expected %s)',
-                      token.symbol.id2name,
-                      args.collect {|i| i.id2name}.join(" or "))
-        end
-        shift_token
-        return token
-      end
-
-      def lookahead
-        unless @token
-          @token = next_token
-        end
-        return @token
-      end
-
-      def shift_token
-        @token = nil
-      end
-
-      def next_token
-        case @lex_state
-        when EXPR_BEG
-          if @str.index(BEG_REGEXP, @pos)
-            @pos = $~.end(0)
-            if $1
-              return Token.new(T_SPACE, $+)
-            elsif $2
-              return Token.new(T_NIL, $+)
-            elsif $3
-              return Token.new(T_NUMBER, $+)
-            elsif $4
-              return Token.new(T_ATOM, $+)
-            elsif $5
-              return Token.new(T_QUOTED,
-                               $+.gsub(/\\(["\\])/n, "\\1"))
-            elsif $6
-              return Token.new(T_LPAR, $+)
-            elsif $7
-              return Token.new(T_RPAR, $+)
-            elsif $8
-              return Token.new(T_BSLASH, $+)
-            elsif $9
-              return Token.new(T_STAR, $+)
-            elsif $10
-              return Token.new(T_LBRA, $+)
-            elsif $11
-              return Token.new(T_RBRA, $+)
-            elsif $12
-              len = $+.to_i
-              val = @str[@pos, len]
-              @pos += len
-              return Token.new(T_LITERAL, val)
-            elsif $13
-              return Token.new(T_PLUS, $+)
-            elsif $14
-              return Token.new(T_PERCENT, $+)
-            elsif $15
-              return Token.new(T_CRLF, $+)
-            elsif $16
-              return Token.new(T_EOF, $+)
-            else
-              parse_error("[Net::IMAP BUG] BEG_REGEXP is invalid")
-            end
-          else
-            @str.index(/\S*/n, @pos)
-            parse_error("unknown token - %s", $&.dump)
-          end
-        when EXPR_DATA
-          if @str.index(DATA_REGEXP, @pos)
-            @pos = $~.end(0)
-            if $1
-              return Token.new(T_SPACE, $+)
-            elsif $2
-              return Token.new(T_NIL, $+)
-            elsif $3
-              return Token.new(T_NUMBER, $+)
-            elsif $4
-              return Token.new(T_QUOTED,
-                               $+.gsub(/\\(["\\])/n, "\\1"))
-            elsif $5
-              len = $+.to_i
-              val = @str[@pos, len]
-              @pos += len
-              return Token.new(T_LITERAL, val)
-            elsif $6
-              return Token.new(T_LPAR, $+)
-            elsif $7
-              return Token.new(T_RPAR, $+)
-            else
-              parse_error("[Net::IMAP BUG] DATA_REGEXP is invalid")
-            end
-          else
-            @str.index(/\S*/n, @pos)
-            parse_error("unknown token - %s", $&.dump)
-          end
-        when EXPR_TEXT
-          if @str.index(TEXT_REGEXP, @pos)
-            @pos = $~.end(0)
-            if $1
-              return Token.new(T_TEXT, $+)
-            else
-              parse_error("[Net::IMAP BUG] TEXT_REGEXP is invalid")
-            end
-          else
-            @str.index(/\S*/n, @pos)
-            parse_error("unknown token - %s", $&.dump)
-          end
-        when EXPR_RTEXT
-          if @str.index(RTEXT_REGEXP, @pos)
-            @pos = $~.end(0)
-            if $1
-              return Token.new(T_LBRA, $+)
-            elsif $2
-              return Token.new(T_TEXT, $+)
-            else
-              parse_error("[Net::IMAP BUG] RTEXT_REGEXP is invalid")
-            end
-          else
-            @str.index(/\S*/n, @pos)
-            parse_error("unknown token - %s", $&.dump)
-          end
-        when EXPR_CTEXT
-          if @str.index(CTEXT_REGEXP, @pos)
-            @pos = $~.end(0)
-            if $1
-              return Token.new(T_TEXT, $+)
-            else
-              parse_error("[Net::IMAP BUG] CTEXT_REGEXP is invalid")
-            end
-          else
-            @str.index(/\S*/n, @pos) #/
-            parse_error("unknown token - %s", $&.dump)
-          end
-        else
-          parse_error("invalid @lex_state - %s", @lex_state.inspect)
-        end
-      end
-
-      def parse_error(fmt, *args)
-        if IMAP.debug
-          $stderr.printf("@str: %s\n", @str.dump)
-          $stderr.printf("@pos: %d\n", @pos)
-          $stderr.printf("@lex_state: %s\n", @lex_state)
-          if @token
-            $stderr.printf("@token.symbol: %s\n", @token.symbol)
-            $stderr.printf("@token.value: %s\n", @token.value.inspect)
-          end
-        end
-        raise ResponseParseError, format(fmt, *args)
-      end
-    end
-
-    # Authenticator for the "LOGIN" authentication type.  See
-    # #authenticate().
-    class LoginAuthenticator
-      def process(data)
-        case @state
-        when STATE_USER
-          @state = STATE_PASSWORD
-          return @user
-        when STATE_PASSWORD
-          return @password
-        end
-      end
-
-      private
-
-      STATE_USER = :USER
-      STATE_PASSWORD = :PASSWORD
-
-      def initialize(user, password)
-        @user = user
-        @password = password
-        @state = STATE_USER
-      end
-    end
-    add_authenticator "LOGIN", LoginAuthenticator
-
-    # Authenticator for the "PLAIN" authentication type.  See
-    # #authenticate().
-    class PlainAuthenticator
-      def process(data)
-        return "\0#{@user}\0#{@password}"
-      end
-
-      private
-
-      def initialize(user, password)
-        @user = user
-        @password = password
-      end
-    end
-    add_authenticator "PLAIN", PlainAuthenticator
-
-    # Authenticator for the "CRAM-MD5" authentication type.  See
-    # #authenticate().
-    class CramMD5Authenticator
-      def process(challenge)
-        digest = hmac_md5(challenge, @password)
-        return @user + " " + digest
-      end
-
-      private
-
-      def initialize(user, password)
-        @user = user
-        @password = password
-      end
-
-      def hmac_md5(text, key)
-        if key.length > 64
-          key = Digest::MD5.digest(key)
-        end
-
-        k_ipad = key + "\0" * (64 - key.length)
-        k_opad = key + "\0" * (64 - key.length)
-        for i in 0..63
-          k_ipad[i] = (k_ipad[i].ord ^ 0x36).chr
-          k_opad[i] = (k_opad[i].ord ^ 0x5c).chr
-        end
-
-        digest = Digest::MD5.digest(k_ipad + text)
-
-        return Digest::MD5.hexdigest(k_opad + digest)
-      end
-    end
-    add_authenticator "CRAM-MD5", CramMD5Authenticator
-
-    # Authenticator for the "DIGEST-MD5" authentication type.  See
-    # #authenticate().
-    class DigestMD5Authenticator
-      def process(challenge)
-        case @stage
-        when STAGE_ONE
-          @stage = STAGE_TWO
-          sparams = {}
-          c = StringScanner.new(challenge)
-          while c.scan(/(?:\s*,)?\s*(\w+)=("(?:[^\\"]+|\\.)*"|[^,]+)\s*/)
-            k, v = c[1], c[2]
-            if v =~ /^"(.*)"$/
-              v = $1
-              if v =~ /,/
-                v = v.split(',')
-              end
-            end
-            sparams[k] = v
-          end
-
-          raise DataFormatError, "Bad Challenge: '#{challenge}'" unless c.rest.size == 0
-          raise Error, "Server does not support auth (qop = #{sparams['qop'].join(',')})" unless sparams['qop'].include?("auth")
-
-          response = {
-            :nonce => sparams['nonce'],
-            :username => @user,
-            :realm => sparams['realm'],
-            :cnonce => Digest::MD5.hexdigest("%.15f:%.15f:%d" % [Time.now.to_f, rand, Process.pid.to_s]),
-            :'digest-uri' => 'imap/' + sparams['realm'],
-            :qop => 'auth',
-            :maxbuf => 65535,
-            :nc => "%08d" % nc(sparams['nonce']),
-            :charset => sparams['charset'],
-          }
-
-          response[:authzid] = @authname unless @authname.nil?
-
-          # now, the real thing
-          a0 = Digest::MD5.digest( [ response.values_at(:username, :realm), @password ].join(':') )
-
-          a1 = [ a0, response.values_at(:nonce,:cnonce) ].join(':')
-          a1 << ':' + response[:authzid] unless response[:authzid].nil?
-
-          a2 = "AUTHENTICATE:" + response[:'digest-uri']
-          a2 << ":00000000000000000000000000000000" if response[:qop] and response[:qop] =~ /^auth-(?:conf|int)$/
-
-          response[:response] = Digest::MD5.hexdigest(
-            [
-             Digest::MD5.hexdigest(a1),
-             response.values_at(:nonce, :nc, :cnonce, :qop),
-             Digest::MD5.hexdigest(a2)
-            ].join(':')
-          )
-
-          return response.keys.map {|key| qdval(key.to_s, response[key]) }.join(',')
-        when STAGE_TWO
-          @stage = nil
-          # if at the second stage, return an empty string
-          if challenge =~ /rspauth=/
-            return ''
-          else
-            raise ResponseParseError, challenge
-          end
-        else
-          raise ResponseParseError, challenge
-        end
-      end
-
-      def initialize(user, password, authname = nil)
-        @user, @password, @authname = user, password, authname
-        @nc, @stage = {}, STAGE_ONE
-      end
-
-      private
-
-      STAGE_ONE = :stage_one
-      STAGE_TWO = :stage_two
-
-      def nc(nonce)
-        if @nc.has_key? nonce
-          @nc[nonce] = @nc[nonce] + 1
-        else
-          @nc[nonce] = 1
-        end
-        return @nc[nonce]
-      end
-
-      # some responses need quoting
-      def qdval(k, v)
-        return if k.nil? or v.nil?
-        if %w"username authzid realm nonce cnonce digest-uri qop".include? k
-          v.gsub!(/([\\"])/, "\\\1")
-          return '%s="%s"' % [k, v]
-        else
-          return '%s=%s' % [k, v]
-        end
-      end
-    end
-    add_authenticator "DIGEST-MD5", DigestMD5Authenticator
-
     # Superclass of IMAP errors.
     class Error < StandardError
     end
@@ -3725,3 +1569,5 @@ module Net
     end
   end
 end
+
+require_relative "imap/authenticators"

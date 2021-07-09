@@ -28,6 +28,25 @@ module Net
       end
     end
 
+    def setup
+      # Avoid hanging at fake_server_start's IO.select on --jit-wait CI like http://ci.rvm.jp/results/trunk-mjit-wait@phosphorus-docker/3302796
+      # Unfortunately there's no way to configure read_timeout for Net::SMTP.start.
+      if defined?(RubyVM::JIT) && RubyVM::JIT.enabled?
+        Net::SMTP.prepend Module.new {
+          def initialize(*)
+            super
+            @read_timeout *= 5
+          end
+        }
+      end
+
+      @server_threads = []
+    end
+
+    def teardown
+      @server_threads.each {|th| th.join }
+    end
+
     def test_critical
       smtp = Net::SMTP.new 'localhost', 25
 
@@ -104,6 +123,8 @@ module Net
     end
 
     def test_tls_connect
+      omit "openssl library not loaded" unless defined?(OpenSSL::VERSION)
+
       servers = Socket.tcp_server_sockets("localhost", 0)
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.ca_file = CA_FILE
@@ -113,52 +134,46 @@ module Net
       ctx.cert = File.open(SERVER_CERT) { |f|
         OpenSSL::X509::Certificate.new(f)
       }
-      begin
-        sock = nil
-        Thread.start do
-          s = accept(servers)
-          sock = OpenSSL::SSL::SSLSocket.new(s, ctx)
-          sock.sync_close = true
-          sock.accept
-          sock.write("220 localhost Service ready\r\n")
-          sock.gets
-          sock.write("250 localhost\r\n")
-          sock.gets
-          sock.write("221 localhost Service closing transmission channel\r\n")
-        end
-        smtp = Net::SMTP.new("localhost", servers[0].local_address.ip_port)
-        smtp.enable_tls
-        smtp.open_timeout = 1
-        smtp.start do
-        end
-      ensure
-        sock.close if sock
-        servers.each(&:close)
+      sock = nil
+      Thread.start do
+        s = accept(servers)
+        sock = OpenSSL::SSL::SSLSocket.new(s, ctx)
+        sock.sync_close = true
+        sock.accept
+        sock.write("220 localhost Service ready\r\n")
+        sock.gets
+        sock.write("250 localhost\r\n")
+        sock.gets
+        sock.write("221 localhost Service closing transmission channel\r\n")
       end
-    rescue LoadError
-      # skip (require openssl)
+      smtp = Net::SMTP.new("localhost", servers[0].local_address.ip_port)
+      smtp.enable_tls
+      smtp.open_timeout = 1
+      smtp.start(tls_verify: false) do
+      end
+    ensure
+      sock&.close
+      servers&.each(&:close)
     end
 
     def test_tls_connect_timeout
+      omit "openssl library not loaded" unless defined?(OpenSSL::VERSION)
+
       servers = Socket.tcp_server_sockets("localhost", 0)
-      begin
-        sock = nil
-        Thread.start do
-          sock = accept(servers)
-        end
-        smtp = Net::SMTP.new("localhost", servers[0].local_address.ip_port)
-        smtp.enable_tls
-        smtp.open_timeout = 0.1
-        assert_raise(Net::OpenTimeout) do
-          smtp.start do
-          end
-        end
-      rescue LoadError
-        # skip (require openssl)
-      ensure
-        sock.close if sock
-        servers.each(&:close)
+      sock = nil
+      Thread.start do
+        sock = accept(servers)
       end
+      smtp = Net::SMTP.new("localhost", servers[0].local_address.ip_port)
+      smtp.enable_tls
+      smtp.open_timeout = 0.1
+      assert_raise(Net::OpenTimeout) do
+        smtp.start do
+        end
+      end
+    ensure
+      sock&.close
+      servers&.each(&:close)
     end
 
     def test_eof_error_backtrace
@@ -184,17 +199,99 @@ module Net
       end
     end
 
+    def test_start
+      port = fake_server_start
+      smtp = Net::SMTP.start('localhost', port)
+      smtp.finish
+    end
+
+    def test_start_with_position_argument
+      port = fake_server_start(helo: 'myname', user: 'account', password: 'password')
+      smtp = Net::SMTP.start('localhost', port, 'myname', 'account', 'password', :plain)
+      smtp.finish
+    end
+
+    def test_start_with_keyword_argument
+      port = fake_server_start(helo: 'myname', user: 'account', password: 'password')
+      smtp = Net::SMTP.start('localhost', port, helo: 'myname', user: 'account', secret: 'password', authtype: :plain)
+      smtp.finish
+    end
+
+    def test_start_password_is_secret
+      port = fake_server_start(helo: 'myname', user: 'account', password: 'password')
+      smtp = Net::SMTP.start('localhost', port, helo: 'myname', user: 'account', password: 'password', authtype: :plain)
+      smtp.finish
+    end
+
+    def test_start_invalid_number_of_arguments
+      err = assert_raise ArgumentError do
+        Net::SMTP.start('localhost', 25, 'myname', 'account', 'password', :plain, :invalid_arg)
+      end
+      assert_equal('wrong number of arguments (given 7, expected 1..6)', err.message)
+    end
+
+    def test_start_instance
+      port = fake_server_start
+      smtp = Net::SMTP.new('localhost', port)
+      smtp.start
+      smtp.finish
+    end
+
+    def test_start_instance_with_position_argument
+      port = fake_server_start(helo: 'myname', user: 'account', password: 'password')
+      smtp = Net::SMTP.new('localhost', port)
+      smtp.start('myname', 'account', 'password', :plain)
+      smtp.finish
+    end
+
+    def test_start_instance_with_keyword_argument
+      port = fake_server_start(helo: 'myname', user: 'account', password: 'password')
+      smtp = Net::SMTP.new('localhost', port)
+      smtp.start(helo: 'myname', user: 'account', secret: 'password', authtype: :plain)
+      smtp.finish
+    end
+
+    def test_start_instance_password_is_secret
+      port = fake_server_start(helo: 'myname', user: 'account', password: 'password')
+      smtp = Net::SMTP.new('localhost', port)
+      smtp.start(helo: 'myname', user: 'account', password: 'password', authtype: :plain)
+      smtp.finish
+    end
+
+    def test_start_instance_invalid_number_of_arguments
+      smtp = Net::SMTP.new('localhost')
+      err = assert_raise ArgumentError do
+        smtp.start('myname', 'account', 'password', :plain, :invalid_arg)
+      end
+      assert_equal('wrong number of arguments (given 5, expected 0..4)', err.message)
+    end
+
     private
 
     def accept(servers)
-      loop do
-        readable, = IO.select(servers.map(&:to_io))
-        readable.each do |r|
-          sock, addr = r.accept_nonblock(exception: false)
-          next if sock == :wait_readable
-          return sock
+      Socket.accept_loop(servers) { |s, _| break s }
+    end
+
+    def fake_server_start(helo: 'localhost', user: nil, password: nil)
+      servers = Socket.tcp_server_sockets('localhost', 0)
+      @server_threads << Thread.start do
+        Thread.current.abort_on_exception = true
+        sock = accept(servers)
+        sock.puts "220 ready\r\n"
+        assert_equal("EHLO #{helo}\r\n", sock.gets)
+        sock.puts "220-servername\r\n220 AUTH PLAIN\r\n"
+        if user
+          credential = ["\0#{user}\0#{password}"].pack('m0')
+          assert_equal("AUTH PLAIN #{credential}\r\n", sock.gets)
+          sock.puts "235 2.7.0 Authentication successful\r\n"
         end
+        assert_equal("QUIT\r\n", sock.gets)
+        sock.puts "221 2.0.0 Bye\r\n"
+        sock.close
+        servers.each(&:close)
       end
+      port = servers[0].local_address.ip_port
+      return port
     end
   end
 end

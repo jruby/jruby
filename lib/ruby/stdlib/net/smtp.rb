@@ -17,7 +17,7 @@
 # See Net::SMTP for documentation.
 #
 
-require_relative 'protocol'
+require 'net/protocol'
 require 'digest/md5'
 require 'timeout'
 begin
@@ -38,7 +38,7 @@ module Net
     include SMTPError
   end
 
-  # Represents SMTP error code 420 or 450, a temporary error.
+  # Represents SMTP error code 4xx, a temporary error.
   class SMTPServerBusy < ProtoServerError
     include SMTPError
   end
@@ -146,8 +146,8 @@ module Net
   # The SMTP server will judge whether it should send or reject
   # the SMTP session by inspecting the HELO domain.
   #
-  #     Net::SMTP.start('your.smtp.server', 25,
-  #                     'mail.from.domain') { |smtp| ... }
+  #     Net::SMTP.start('your.smtp.server', 25
+  #                     helo: 'mail.from.domain') { |smtp| ... }
   #
   # === SMTP Authentication
   #
@@ -157,15 +157,15 @@ module Net
   # SMTP.start/SMTP#start.
   #
   #     # PLAIN
-  #     Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain',
-  #                     'Your Account', 'Your Password', :plain)
+  #     Net::SMTP.start('your.smtp.server', 25
+  #                     user: 'Your Account', secret: 'Your Password', authtype: :plain)
   #     # LOGIN
-  #     Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain',
-  #                     'Your Account', 'Your Password', :login)
+  #     Net::SMTP.start('your.smtp.server', 25
+  #                     user: 'Your Account', secret: 'Your Password', authtype: :login)
   #
   #     # CRAM MD5
-  #     Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain',
-  #                     'Your Account', 'Your Password', :cram_md5)
+  #     Net::SMTP.start('your.smtp.server', 25
+  #                     user: 'Your Account', secret: 'Your Password', authtype: :cram_md5)
   #
   class SMTP < Protocol
 
@@ -190,8 +190,10 @@ module Net
       alias default_ssl_port default_tls_port
     end
 
-    def SMTP.default_ssl_context
-      OpenSSL::SSL::SSLContext.new
+    def SMTP.default_ssl_context(ssl_context_params = nil)
+      context = OpenSSL::SSL::SSLContext.new
+      context.set_params(ssl_context_params ? ssl_context_params : {})
+      context
     end
 
     #
@@ -217,8 +219,9 @@ module Net
       @error_occurred = false
       @debug_output = nil
       @tls = false
-      @starttls = false
-      @ssl_context = nil
+      @starttls = :auto
+      @ssl_context_tls = nil
+      @ssl_context_starttls = nil
     end
 
     # Provide human-readable stringification of class state.
@@ -293,11 +296,11 @@ module Net
     # Enables SMTP/TLS (SMTPS: SMTP over direct TLS connection) for
     # this object.  Must be called before the connection is established
     # to have any effect.  +context+ is a OpenSSL::SSL::SSLContext object.
-    def enable_tls(context = SMTP.default_ssl_context)
-      raise 'openssl library not installed' unless defined?(OpenSSL)
-      raise ArgumentError, "SMTPS and STARTTLS is exclusive" if @starttls
+    def enable_tls(context = nil)
+      raise 'openssl library not installed' unless defined?(OpenSSL::VERSION)
+      raise ArgumentError, "SMTPS and STARTTLS is exclusive" if @starttls == :always
       @tls = true
-      @ssl_context = context
+      @ssl_context_tls = context
     end
 
     alias enable_ssl enable_tls
@@ -306,7 +309,7 @@ module Net
     # connection is established to have any effect.
     def disable_tls
       @tls = false
-      @ssl_context = nil
+      @ssl_context_tls = nil
     end
 
     alias disable_ssl disable_tls
@@ -330,27 +333,27 @@ module Net
 
     # Enables SMTP/TLS (STARTTLS) for this object.
     # +context+ is a OpenSSL::SSL::SSLContext object.
-    def enable_starttls(context = SMTP.default_ssl_context)
-      raise 'openssl library not installed' unless defined?(OpenSSL)
+    def enable_starttls(context = nil)
+      raise 'openssl library not installed' unless defined?(OpenSSL::VERSION)
       raise ArgumentError, "SMTPS and STARTTLS is exclusive" if @tls
       @starttls = :always
-      @ssl_context = context
+      @ssl_context_starttls = context
     end
 
     # Enables SMTP/TLS (STARTTLS) for this object if server accepts.
     # +context+ is a OpenSSL::SSL::SSLContext object.
-    def enable_starttls_auto(context = SMTP.default_ssl_context)
-      raise 'openssl library not installed' unless defined?(OpenSSL)
+    def enable_starttls_auto(context = nil)
+      raise 'openssl library not installed' unless defined?(OpenSSL::VERSION)
       raise ArgumentError, "SMTPS and STARTTLS is exclusive" if @tls
       @starttls = :auto
-      @ssl_context = context
+      @ssl_context_starttls = context
     end
 
     # Disables SMTP/TLS (STARTTLS) for this object.  Must be called
     # before the connection is established to have any effect.
     def disable_starttls
       @starttls = false
-      @ssl_context = nil
+      @ssl_context_starttls = nil
     end
 
     # The address of the SMTP server to connect to.
@@ -401,11 +404,15 @@ module Net
     #
 
     #
+    # :call-seq:
+    #  start(address, port = nil, helo: 'localhost', user: nil, secret: nil, authtype: nil, tls_verify: true, tls_hostname: nil, ssl_context_params: nil) { |smtp| ... }
+    #  start(address, port = nil, helo = 'localhost', user = nil, secret = nil, authtype = nil) { |smtp| ... }
+    #
     # Creates a new Net::SMTP object and connects to the server.
     #
     # This method is equivalent to:
     #
-    #   Net::SMTP.new(address, port).start(helo_domain, account, password, authtype)
+    #   Net::SMTP.new(address, port).start(helo: helo_domain, user: account, secret: password, authtype: authtype, tls_verify: flag, tls_hostname: hostname, ssl_context_params: nil)
     #
     # === Example
     #
@@ -435,6 +442,14 @@ module Net
     # or other authentication token; and +authtype+ is the authentication
     # type, one of :plain, :login, or :cram_md5.  See the discussion of
     # SMTP Authentication in the overview notes.
+    # If +tls_verify+ is true, verify the server's certificate. The default is true.
+    # If the hostname in the server certificate is different from +address+,
+    # it can be specified with +tls_hostname+.
+    #
+    # Additional SSLContext params can be added to +ssl_context_params+ hash argument and are passed to
+    # +OpenSSL::SSL::SSLContext#set_params+
+    #
+    # +tls_verify: true+ is equivalent to +ssl_context_params: { verify_mode: OpenSSL::SSL::VERIFY_PEER }+.
     #
     # === Errors
     #
@@ -449,10 +464,16 @@ module Net
     # * Net::ReadTimeout
     # * IOError
     #
-    def SMTP.start(address, port = nil, helo = 'localhost',
-                   user = nil, secret = nil, authtype = nil,
-                   &block)   # :yield: smtp
-      new(address, port).start(helo, user, secret, authtype, &block)
+    def SMTP.start(address, port = nil, *args, helo: nil,
+                   user: nil, secret: nil, password: nil, authtype: nil,
+                   tls_verify: true, tls_hostname: nil, ssl_context_params: nil,
+                   &block)
+      raise ArgumentError, "wrong number of arguments (given #{args.size + 2}, expected 1..6)" if args.size > 4
+      helo ||= args[0] || 'localhost'
+      user ||= args[1]
+      secret ||= password || args[2]
+      authtype ||= args[3]
+      new(address, port).start(helo: helo, user: user, secret: secret, authtype: authtype, tls_verify: tls_verify, tls_hostname: tls_hostname, ssl_context_params: ssl_context_params, &block)
     end
 
     # +true+ if the SMTP session has been started.
@@ -460,6 +481,10 @@ module Net
       @started
     end
 
+    #
+    # :call-seq:
+    #  start(helo: 'localhost', user: nil, secret: nil, authtype: nil, tls_verify: true, tls_hostname: nil, ssl_context_params: nil) { |smtp| ... }
+    #  start(helo = 'localhost', user = nil, secret = nil, authtype = nil) { |smtp| ... }
     #
     # Opens a TCP connection and starts the SMTP session.
     #
@@ -473,6 +498,14 @@ module Net
     # the type of authentication to attempt; it must be one of
     # :login, :plain, and :cram_md5.  See the notes on SMTP Authentication
     # in the overview.
+    # If +tls_verify+ is true, verify the server's certificate. The default is true.
+    # If the hostname in the server certificate is different from +address+,
+    # it can be specified with +tls_hostname+.
+    #
+    # Additional SSLContext params can be added to +ssl_context_params+ hash argument and are passed to
+    # +OpenSSL::SSL::SSLContext#set_params+
+    #
+    # +tls_verify: true+ is equivalent to +ssl_context_params: { verify_mode: OpenSSL::SSL::VERIFY_PEER }+.
     #
     # === Block Usage
     #
@@ -487,7 +520,7 @@ module Net
     #
     #     require 'net/smtp'
     #     smtp = Net::SMTP.new('smtp.mail.server', 25)
-    #     smtp.start(helo_domain, account, password, authtype) do |smtp|
+    #     smtp.start(helo: helo_domain, user: account, secret: password, authtype: authtype) do |smtp|
     #       smtp.send_message msgstr, 'from@example.com', ['dest@example.com']
     #     end
     #
@@ -511,8 +544,26 @@ module Net
     # * Net::ReadTimeout
     # * IOError
     #
-    def start(helo = 'localhost',
-              user = nil, secret = nil, authtype = nil)   # :yield: smtp
+    def start(*args, helo: nil,
+              user: nil, secret: nil, password: nil, authtype: nil, tls_verify: true, tls_hostname: nil, ssl_context_params: nil)
+      raise ArgumentError, "wrong number of arguments (given #{args.size}, expected 0..4)" if args.size > 4
+      helo ||= args[0] || 'localhost'
+      user ||= args[1]
+      secret ||= password || args[2]
+      authtype ||= args[3]
+      if defined?(OpenSSL::VERSION)
+        ssl_context_params = ssl_context_params ? ssl_context_params : {}
+        unless ssl_context_params.has_key?(:verify_mode)
+          ssl_context_params[:verify_mode] = tls_verify ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
+        end
+        if @tls && @ssl_context_tls.nil?
+          @ssl_context_tls = SMTP.default_ssl_context(ssl_context_params)
+        end
+        if @starttls && @ssl_context_starttls.nil?
+          @ssl_context_starttls = SMTP.default_ssl_context(ssl_context_params)
+        end
+        @tls_hostname = tls_hostname
+      end
       if block_given?
         begin
           do_start helo, user, secret, authtype
@@ -536,7 +587,12 @@ module Net
     private
 
     def tcp_socket(address, port)
-      TCPSocket.open address, port
+      begin
+        Socket.tcp address, port, nil, nil, connect_timeout: @open_timeout
+      rescue Errno::ETIMEDOUT #raise Net:OpenTimeout instead for compatibility with previous versions
+        raise Net::OpenTimeout, "Timeout to open TCP connection to "\
+          "#{address}:#{port} (exceeds #{@open_timeout} seconds)"
+      end
     end
 
     def do_start(helo_domain, user, secret, authtype)
@@ -545,20 +601,18 @@ module Net
         check_auth_method(authtype || DEFAULT_AUTH_TYPE)
         check_auth_args user, secret
       end
-      s = Timeout.timeout(@open_timeout, Net::OpenTimeout) do
-        tcp_socket(@address, @port)
-      end
+      s = tcp_socket(@address, @port)
       logging "Connection opened: #{@address}:#{@port}"
-      @socket = new_internet_message_io(tls? ? tlsconnect(s) : s)
+      @socket = new_internet_message_io(tls? ? tlsconnect(s, @ssl_context_tls) : s)
       check_response critical { recv_response() }
       do_helo helo_domain
-      if starttls_always? or (capable_starttls? and starttls_auto?)
+      if ! tls? and (starttls_always? or (capable_starttls? and starttls_auto?))
         unless capable_starttls?
           raise SMTPUnsupportedCommand,
               "STARTTLS is not supported on this server"
         end
         starttls
-        @socket = new_internet_message_io(tlsconnect(s))
+        @socket = new_internet_message_io(tlsconnect(s, @ssl_context_starttls))
         # helo response may be different after STARTTLS
         do_helo helo_domain
       end
@@ -576,15 +630,13 @@ module Net
       OpenSSL::SSL::SSLSocket.new socket, context
     end
 
-    def tlsconnect(s)
+    def tlsconnect(s, context)
       verified = false
-      s = ssl_socket(s, @ssl_context)
+      s = ssl_socket(s, context)
       logging "TLS connection started"
       s.sync_close = true
+      # s.hostname = @tls_hostname || @address # jruby lacks of SNI support
       ssl_socket_connect(s, @open_timeout)
-      if @ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE
-        s.post_connection_check(@address)
-      end
       verified = true
       s
     ensure
@@ -725,7 +777,7 @@ module Net
     def authenticate(user, secret, authtype = DEFAULT_AUTH_TYPE)
       check_auth_method authtype
       check_auth_args user, secret
-      send auth_method(authtype), user, secret
+      public_send auth_method(authtype), user, secret
     end
 
     def auth_plain(user, secret)
@@ -831,9 +883,6 @@ module Net
     end
 
     def mailfrom(from_addr)
-      if $SAFE > 0
-        raise SecurityError, 'tainted from_addr' if from_addr.tainted?
-      end
       getok("MAIL FROM:<#{from_addr}>")
     end
 
@@ -859,9 +908,6 @@ module Net
     end
 
     def rcptto(to_addr)
-      if $SAFE > 0
-        raise SecurityError, 'tainted to_addr' if to_addr.tainted?
-      end
       getok("RCPT TO:<#{to_addr}>")
     end
 
@@ -1048,7 +1094,7 @@ module Net
         return {} unless @string[3, 1] == '-'
         h = {}
         @string.lines.drop(1).each do |line|
-          k, *v = line[4..-1].chomp.split
+          k, *v = line[4..-1].split(' ')
           h[k] = v
         end
         h

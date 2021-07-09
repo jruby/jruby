@@ -22,44 +22,6 @@ class IMAPTest < Test::Unit::TestCase
     Socket.do_not_reverse_lookup = @do_not_reverse_lookup
   end
 
-  def test_encode_utf7
-    assert_equal("foo", Net::IMAP.encode_utf7("foo"))
-    assert_equal("&-", Net::IMAP.encode_utf7("&"))
-
-    utf8 = "\357\274\241\357\274\242\357\274\243".dup.force_encoding("UTF-8")
-    s = Net::IMAP.encode_utf7(utf8)
-    assert_equal("&,yH,Iv8j-", s)
-    s = Net::IMAP.encode_utf7("foo&#{utf8}-bar".encode("EUC-JP"))
-    assert_equal("foo&-&,yH,Iv8j--bar", s)
-
-    utf8 = "\343\201\202&".dup.force_encoding("UTF-8")
-    s = Net::IMAP.encode_utf7(utf8)
-    assert_equal("&MEI-&-", s)
-    s = Net::IMAP.encode_utf7(utf8.encode("EUC-JP"))
-    assert_equal("&MEI-&-", s)
-  end
-
-  def test_decode_utf7
-    assert_equal("&", Net::IMAP.decode_utf7("&-"))
-    assert_equal("&-", Net::IMAP.decode_utf7("&--"))
-
-    s = Net::IMAP.decode_utf7("&,yH,Iv8j-")
-    utf8 = "\357\274\241\357\274\242\357\274\243".dup.force_encoding("UTF-8")
-    assert_equal(utf8, s)
-  end
-
-  def test_format_date
-    time = Time.mktime(2009, 7, 24)
-    s = Net::IMAP.format_date(time)
-    assert_equal("24-Jul-2009", s)
-  end
-
-  def test_format_datetime
-    time = Time.mktime(2009, 7, 24, 1, 23, 45)
-    s = Net::IMAP.format_datetime(time)
-    assert_match(/\A24-Jul-2009 01:23 [+\-]\d{4}\z/, s)
-  end
-
   if defined?(OpenSSL::SSL::SSLError)
     def test_imaps_unknown_ca
       assert_raise(OpenSSL::SSL::SSLError) do
@@ -129,10 +91,18 @@ class IMAPTest < Test::Unit::TestCase
     end
   end
 
+  def start_server
+    th = Thread.new do
+      yield
+    end
+    @threads << th
+    sleep 0.1 until th.stop?
+  end
+
   def test_unexpected_eof
     server = create_tcp_server
     port = server.addr[1]
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -158,7 +128,7 @@ class IMAPTest < Test::Unit::TestCase
     server = create_tcp_server
     port = server.addr[1]
     requests = []
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -205,7 +175,7 @@ class IMAPTest < Test::Unit::TestCase
     server = create_tcp_server
     port = server.addr[1]
     requests = []
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -268,10 +238,11 @@ class IMAPTest < Test::Unit::TestCase
   def test_idle_done_not_during_idle
     server = create_tcp_server
     port = server.addr[1]
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
+        sleep 0.1
       ensure
         sock.close
         server.close
@@ -291,7 +262,7 @@ class IMAPTest < Test::Unit::TestCase
     server = create_tcp_server
     port = server.addr[1]
     requests = []
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -347,7 +318,7 @@ class IMAPTest < Test::Unit::TestCase
   def test_unexpected_bye
     server = create_tcp_server
     port = server.addr[1]
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK Gimap ready for requests from 75.101.246.151 33if2752585qyk.26\r\n")
@@ -369,7 +340,7 @@ class IMAPTest < Test::Unit::TestCase
   def test_exception_during_shutdown
     server = create_tcp_server
     port = server.addr[1]
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -404,7 +375,9 @@ class IMAPTest < Test::Unit::TestCase
     requests = []
     sock = nil
     threads = []
+    started = false
     threads << Thread.start do
+      started = true
       begin
         sock = server.accept
         sock.print("* OK test server\r\n")
@@ -415,6 +388,7 @@ class IMAPTest < Test::Unit::TestCase
         server.close
       end
     end
+    sleep 0.1 until started
     threads << Thread.start do
       imap = Net::IMAP.new(server_addr, :port => port)
       begin
@@ -461,16 +435,75 @@ class IMAPTest < Test::Unit::TestCase
   def test_connection_closed_without_greeting
     server = create_tcp_server
     port = server.addr[1]
-    @threads << Thread.start do
+    h = {
+      server: server,
+      port: port,
+      server_created: {
+        server: server.inspect,
+        t: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+      }
+    }
+    net_imap = Class.new(Net::IMAP) do
+      @@h = h
+      def tcp_socket(host, port)
+        @@h[:in_tcp_socket] = {
+          host: host,
+          port: port,
+          server: @@h[:server].inspect,
+          t: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+        }
+        #super
+        s = Socket.tcp(host, port, :connect_timeout => @open_timeout)
+        @@h[:in_tcp_socket_2] = {
+          s: s.inspect,
+          local_address: s.local_address,
+          remote_address: s.remote_address,
+          t: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+        }
+        s.setsockopt(:SOL_SOCKET, :SO_KEEPALIVE, true)
+        s
+      end
+    end
+    start_server do
       begin
+        h[:in_start_server_before_accept] = {
+          t: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+        }
         sock = server.accept
+        h[:in_start_server] = {
+          sock_addr: sock.addr,
+          sock_peeraddr: sock.peeraddr,
+          t: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+          sockets: ObjectSpace.each_object(BasicSocket).map{|s| [s.inspect, connect_address: (s.connect_address rescue nil).inspect, local_address: (s.local_address rescue nil).inspect, remote_address: (s.remote_address rescue nil).inspect] },
+        }
         sock.close
+        h[:in_start_server_sock_closed] = {
+          t: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+        }
       ensure
         server.close
       end
     end
     assert_raise(Net::IMAP::Error) do
-      Net::IMAP.new(server_addr, :port => port)
+      #Net::IMAP.new(server_addr, :port => port)
+      if true
+          net_imap.new(server_addr, :port => port)
+      else
+        # for testing debug print
+        begin
+          net_imap.new(server_addr, :port => port)
+        rescue Net::IMAP::Error
+          raise Errno::EINVAL
+        end
+      end
+    rescue SystemCallError => e # for debug on OpenCSW
+      h[:in_rescue] = {
+        e: e,
+        server_addr: server_addr,
+        t: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+      }
+      require 'pp'
+      raise(PP.pp(h, +''))
     end
   end
 
@@ -485,7 +518,7 @@ class IMAPTest < Test::Unit::TestCase
   def test_send_invalid_number
     server = create_tcp_server
     port = server.addr[1]
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -508,23 +541,23 @@ class IMAPTest < Test::Unit::TestCase
     begin
       imap = Net::IMAP.new(server_addr, :port => port)
       assert_raise(Net::IMAP::DataFormatError) do
-        imap.send(:send_command, "TEST", -1)
+        imap.__send__(:send_command, "TEST", -1)
       end
-      imap.send(:send_command, "TEST", 0)
-      imap.send(:send_command, "TEST", 4294967295)
+      imap.__send__(:send_command, "TEST", 0)
+      imap.__send__(:send_command, "TEST", 4294967295)
       assert_raise(Net::IMAP::DataFormatError) do
-        imap.send(:send_command, "TEST", 4294967296)
-      end
-      assert_raise(Net::IMAP::DataFormatError) do
-        imap.send(:send_command, "TEST", Net::IMAP::MessageSet.new(-1))
+        imap.__send__(:send_command, "TEST", 4294967296)
       end
       assert_raise(Net::IMAP::DataFormatError) do
-        imap.send(:send_command, "TEST", Net::IMAP::MessageSet.new(0))
+        imap.__send__(:send_command, "TEST", Net::IMAP::MessageSet.new(-1))
       end
-      imap.send(:send_command, "TEST", Net::IMAP::MessageSet.new(1))
-      imap.send(:send_command, "TEST", Net::IMAP::MessageSet.new(4294967295))
       assert_raise(Net::IMAP::DataFormatError) do
-        imap.send(:send_command, "TEST", Net::IMAP::MessageSet.new(4294967296))
+        imap.__send__(:send_command, "TEST", Net::IMAP::MessageSet.new(0))
+      end
+      imap.__send__(:send_command, "TEST", Net::IMAP::MessageSet.new(1))
+      imap.__send__(:send_command, "TEST", Net::IMAP::MessageSet.new(4294967295))
+      assert_raise(Net::IMAP::DataFormatError) do
+        imap.__send__(:send_command, "TEST", Net::IMAP::MessageSet.new(4294967296))
       end
       imap.logout
     ensure
@@ -537,7 +570,7 @@ class IMAPTest < Test::Unit::TestCase
     port = server.addr[1]
     requests = []
     literal = nil
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -558,7 +591,7 @@ class IMAPTest < Test::Unit::TestCase
     end
     begin
       imap = Net::IMAP.new(server_addr, :port => port)
-      imap.send(:send_command, "TEST", ["\xDE\xAD\xBE\xEF".b])
+      imap.__send__(:send_command, "TEST", ["\xDE\xAD\xBE\xEF".b])
       assert_equal(2, requests.length)
       assert_equal("RUBY0001 TEST ({4}\r\n", requests[0])
       assert_equal("\xDE\xAD\xBE\xEF".b, literal)
@@ -572,7 +605,7 @@ class IMAPTest < Test::Unit::TestCase
   def test_disconnect
     server = create_tcp_server
     port = server.addr[1]
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -608,7 +641,7 @@ hello world
 EOF
     requests = []
     received_mail = nil
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -630,7 +663,7 @@ EOF
 
     begin
       imap = Net::IMAP.new(server_addr, :port => port)
-      resp = imap.append("INBOX", mail)
+      imap.append("INBOX", mail)
       assert_equal(1, requests.length)
       assert_equal("RUBY0001 APPEND INBOX {#{mail.size}}\r\n", requests[0])
       assert_equal(mail, received_mail)
@@ -653,8 +686,7 @@ Subject: hello
 hello world
 EOF
     requests = []
-    received_mail = nil
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
@@ -684,6 +716,55 @@ EOF
     end
   end
 
+  def test_id
+    server = create_tcp_server
+    port = server.addr[1]
+    requests = Queue.new
+    server_id = {"name" => "test server", "version" => "v0.1.0"}
+    server_id_str = '("name" "test server" "version" "v0.1.0")'
+    @threads << Thread.start do
+      sock = server.accept
+      begin
+        sock.print("* OK test server\r\n")
+        requests.push(sock.gets)
+        # RFC 2971 very clearly states (in section 3.2):
+        # "a server MUST send a tagged ID response to an ID command."
+        # And yet... some servers report ID capability but won't the response.
+        sock.print("RUBY0001 OK ID completed\r\n")
+        requests.push(sock.gets)
+        sock.print("* ID #{server_id_str}\r\n")
+        sock.print("RUBY0002 OK ID completed\r\n")
+        requests.push(sock.gets)
+        sock.print("* ID #{server_id_str}\r\n")
+        sock.print("RUBY0003 OK ID completed\r\n")
+        requests.push(sock.gets)
+        sock.print("* BYE terminating connection\r\n")
+        sock.print("RUBY0004 OK LOGOUT completed\r\n")
+      ensure
+        sock.close
+        server.close
+      end
+    end
+
+    begin
+      imap = Net::IMAP.new(server_addr, :port => port)
+      resp = imap.id
+      assert_equal(nil, resp)
+      assert_equal("RUBY0001 ID NIL\r\n", requests.pop)
+      resp = imap.id({})
+      assert_equal(server_id, resp)
+      assert_equal("RUBY0002 ID ()\r\n", requests.pop)
+      resp = imap.id("name" => "test client", "version" => "latest")
+      assert_equal(server_id, resp)
+      assert_equal("RUBY0003 ID (\"name\" \"test client\" \"version\" \"latest\")\r\n",
+                   requests.pop)
+      imap.logout
+      assert_equal("RUBY0004 LOGOUT\r\n", requests.pop)
+    ensure
+      imap.disconnect if imap
+    end
+  end
+
   private
 
   def imaps_test
@@ -698,9 +779,11 @@ EOF
       OpenSSL::X509::Certificate.new(f)
     }
     ssl_server = OpenSSL::SSL::SSLServer.new(server, ctx)
+    started = false
     ths = Thread.start do
       Thread.current.report_on_exception = false # always join-ed
       begin
+        started = true
         sock = ssl_server.accept
         begin
           sock.print("* OK test server\r\n")
@@ -713,6 +796,7 @@ EOF
       rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED
       end
     end
+    sleep 0.1 until started
     begin
       begin
         imap = yield(port)
@@ -729,7 +813,7 @@ EOF
   def starttls_test
     server = create_tcp_server
     port = server.addr[1]
-    @threads << Thread.start do
+    start_server do
       sock = server.accept
       begin
         sock.print("* OK test server\r\n")
