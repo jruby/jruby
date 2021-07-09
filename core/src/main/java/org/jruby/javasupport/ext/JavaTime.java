@@ -52,8 +52,11 @@ public class JavaTime {
         JavaExtensions.put(runtime, java.time.OffsetDateTime.class, (proxyClass) -> OffsetDateTime.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.time.LocalDateTime.class, (proxyClass) -> LocalDateTime.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.time.ZonedDateTime.class, (proxyClass) -> ZonedDateTime.define(runtime, proxyClass));
+        JavaExtensions.put(runtime, java.time.ZoneId.class, (klass) -> {
+            klass.addMethod("inspect", new JavaLang.InspectRawValue(klass));
+        });
         JavaExtensions.put(runtime, java.time.temporal.Temporal.class, (klass) -> {
-            klass.addMethod("inspect", new JavaLang.InspectValue(klass));
+            klass.addMethod("inspect", new JavaLang.InspectValueWithTypePrefix(klass));
         });
     }
 
