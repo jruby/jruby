@@ -2,14 +2,14 @@
 set -v -e
 
 # set up JRuby
-mvn clean package
-export PATH=`pwd`/bin:$PATH
-gem install bundler --no-document
+./mvnw clean package
+
+bin/jruby -S gem install bundler --no-document
 
 # prep for test
 git clone --depth=10 https://github.com/ruby-concurrency/concurrent-ruby.git
 cd concurrent-ruby
-bundle install
+../bin/jruby -S bundle install
 
 # run tests
-bundle exec rake ci
+../bin/jruby -rbundler/setup -S rake ci
