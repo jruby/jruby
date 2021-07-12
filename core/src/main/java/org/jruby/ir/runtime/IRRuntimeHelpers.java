@@ -899,6 +899,22 @@ public class IRRuntimeHelpers {
         findInstanceMethodContainer(context, currDynScope, self).alias_method(context, newName, oldName);
     }
 
+    /**
+     * Find the base class or "cbase" used for various class-level operations.
+     *
+     * This should be equivalent to "cbase" in CRuby, as retrieved by vm_get_cbase.
+     *
+     * See {@link org.jruby.ir.instructions.GetClassVarContainerModuleInstr} and {@link org.jruby.RubyKernel#autoload(ThreadContext, IRubyObject, IRubyObject, IRubyObject)}
+     * for example usage.
+     *
+     * @param context the current context
+     * @param self the current self object
+     * @return the instance method definition target, or the "cbase" for other purposes
+     */
+    public static RubyModule getCurrentClassBase(ThreadContext context, IRubyObject self) {
+        return getModuleFromScope(context, context.getCurrentStaticScope(), self);
+    }
+
     public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
         Ruby runtime = context.runtime;
         RubyModule rubyClass = scope.getModule();
