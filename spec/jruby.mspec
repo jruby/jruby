@@ -112,7 +112,7 @@ class MSpecScript
 
   set :tags_patterns, [
                         [%r(^.*/language/),     TAGS_DIR + '/ruby/language/'],
-                        [%r(^.*/core/),         TAGS_DIR + '/ruby/core/'],
+                        [%r(^.*/core/),         TAGS_DIR + '/ruby/core/kernel'],
                         [%r(^.*/command_line/), TAGS_DIR + '/ruby/command_line/'],
                         [%r(^.*/library/),      TAGS_DIR + '/ruby/library/'],
                         [%r(^.*/security/),     TAGS_DIR + '/ruby/security/'],
