@@ -8,7 +8,6 @@ require_relative 'fixtures/classes'
 autoload :KSAutoloadA, "autoload_a.rb"
 autoload :KSAutoloadB, fixture(__FILE__, "autoload_b.rb")
 autoload :KSAutoloadCallsRequire, "main_autoload_not_exist.rb"
-autoload :KSAutoloadThread, fixture(__FILE__, "autoload_thread.rb")
 
 def check_autoload(const)
   autoload? const
@@ -43,8 +42,8 @@ describe "Kernel#autoload" do
     KSAutoloadB.loaded.should == :ksautoload_b
   end
 
-  it "loads the file in a thread context" do
-    Thread.new { KSAutoloadThread }.join.value.should == KSAutoloadThread
+  it "loads the file at a top level" do
+    ruby_exe(fixture(__FILE__, "autoload_top.rb")).should.strip == "ksautoload_b"
   end
 
   it "calls main.require(path) to load the file" do
