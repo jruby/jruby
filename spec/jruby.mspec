@@ -52,9 +52,9 @@ class MSpecScript
   ]
 
   set :fast, [
-      *get(:language),
+      #*get(:language),
       *get(:core),
-      *get(:library),
+      #*get(:library),
 
       # These all spawn sub-rubies, making them very slow to run
       *slow_specs.map {|name| '^' + name},
@@ -112,7 +112,7 @@ class MSpecScript
 
   set :tags_patterns, [
                         [%r(^.*/language/),     TAGS_DIR + '/ruby/language/'],
-                        [%r(^.*/core/),         TAGS_DIR + '/ruby/core/kernel'],
+                        [%r(^.*/core/),         TAGS_DIR + '/ruby/core/'],
                         [%r(^.*/command_line/), TAGS_DIR + '/ruby/command_line/'],
                         [%r(^.*/library/),      TAGS_DIR + '/ruby/library/'],
                         [%r(^.*/security/),     TAGS_DIR + '/ruby/security/'],
