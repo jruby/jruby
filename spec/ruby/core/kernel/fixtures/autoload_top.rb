@@ -1,2 +1,2 @@
 autoload(:KSAutoloadB, "#{__dir__}/autoload_b.rb")
-puts KSAutoloadB.loaded
+puts Thread.new { KSAutoloadB.loaded }.join.value
