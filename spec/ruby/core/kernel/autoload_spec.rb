@@ -56,6 +56,20 @@ describe "Kernel#autoload" do
     end
   end
 
+  describe "inside a Class.new method body" do
+    it "should define on the new anonymous class" do
+      cls = Class.new do
+        def go
+          autoload :Object, 'bogus'
+          autoload? :Object
+        end
+      end
+
+      cls.new.go.should == 'bogus'
+      cls.autoload?(:Object).should == 'bogus'
+    end
+  end
+
   describe "when Object is frozen" do
     it "raises a FrozenError before defining the constant" do
       ruby_exe(fixture(__FILE__, "autoload_frozen.rb")).should == "FrozenError - nil"
