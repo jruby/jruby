@@ -42,6 +42,10 @@ describe "Kernel#autoload" do
     KSAutoloadB.loaded.should == :ksautoload_b
   end
 
+  it "loads the file in a thread context" do
+    Thread.new { KSAutoloadB }.join.value.should == KSAutoloadB
+  end
+
   it "calls main.require(path) to load the file" do
     main = TOPLEVEL_BINDING.eval("self")
     main.should_receive(:require).with("main_autoload_not_exist.rb")
