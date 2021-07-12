@@ -571,22 +571,6 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * Get the "real" module, either the current one or the nearest ancestor that is not a singleton or include wrapper.
-     *
-     * See {@link RubyClass#getRealClass()}.
-     *
-     * @return the nearest non-singleton non-include module in the hierarchy
-     */
-    public RubyModule getRealModule() {
-        RubyModule cl = this;
-        while (cl != null &&
-                (cl.isSingleton() || cl.isIncluded())) {
-            cl = cl.superClass;
-        }
-        return cl;
-    }
-
-    /**
      * Get the base name of this class, or null if it is an anonymous class.
      *
      * @return base name of the class
