@@ -756,27 +756,46 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             throw context.runtime.newArgumentError("block is needed");
         }
 
-        final RubyHash mask = (RubyHash) TypeConverter.convertToType(_mask, context.runtime.getHash(), "to_hash");
+        final RubyHash mask = _mask.convertToHash().dupFast(context);
+
+        if (mask.isEmpty()) {
+            return block.yield(context, context.nil);
+        }
 
         mask.visitAll(context, HandleInterruptVisitor, null);
 
-        final RubyThread thread = context.getThread();
-        thread.interruptMaskStack.add(mask);
-        if (thread.pendingInterruptQueue.isEmpty()) {
-            thread.pendingInterruptQueueChecked = false;
-            thread.setInterrupt();
+        mask.setFrozen(true);
+
+        return context.getThread().handleInterrupt(context, mask, block);
+    }
+
+    private IRubyObject handleInterrupt(ThreadContext context, RubyHash mask, Block block) {
+        Vector<RubyHash> interruptMaskStack = this.interruptMaskStack;
+
+        interruptMaskStack.add(mask);
+
+        Queue<IRubyObject> pendingInterruptQueue = this.pendingInterruptQueue;
+
+        if (!pendingInterruptQueue.isEmpty()) {
+            pendingInterruptQueueChecked = false;
+            setInterrupt();
         }
 
         try {
             // check for any interrupts that should fire with new masks
-            thread.pollThreadEvents();
+            pollThreadEvents();
 
-            return block.call(context);
+            return block.call(context, context.nil);
         } finally {
-            thread.interruptMaskStack.remove(thread.interruptMaskStack.size() - 1);
-            thread.setInterrupt();
+            interruptMaskStack.remove(interruptMaskStack.size() - 1);
 
-            thread.pollThreadEvents(context);
+            if (!pendingInterruptQueue.isEmpty()) {
+                pendingInterruptQueueChecked = false;
+                setInterrupt();
+            }
+
+            // check for pending interrupts that were masked
+            pollThreadEvents(context);
         }
     }
 
@@ -1618,7 +1637,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             STATUS.set(this, status);
 
-            return task.run(context, data);
+            if (interruptMaskStack.isEmpty()) {
+                return task.run(context, data);
+            } else {
+                // loop on blocking operation until it completes normally or an unmasked thread event interrupts
+                while (true) {
+                    try {
+                        return task.run(context, data);
+                    } catch (InterruptedException ie) {
+                        // poll for thread events, or retry blocking operation
+                        pollThreadEvents(context);
+                    }
+                }
+            }
         } finally {
             STATUS.set(this, oldStatus);
             this.unblockFunc = null;
