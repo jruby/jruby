@@ -44,7 +44,9 @@ describe "Kernel#autoload" do
 
   it "loads the file at a top level" do
     puts "here?"
-    ruby_exe(fixture(__FILE__, "autoload_top.rb")).should.strip == "ksautoload_b"
+    result = ruby_exe(fixture(__FILE__, "autoload_top.rb"))
+    puts result
+    result.should.strip == "ksautoload_b"
   end
 
   it "calls main.require(path) to load the file" do
