@@ -42,6 +42,10 @@ describe "Kernel#autoload" do
     KSAutoloadB.loaded.should == :ksautoload_b
   end
 
+  it "loads the file at a top level" do
+    ruby_exe(fixture(__FILE__, "autoload_top.rb")).should.strip == "ksautoload_b"
+  end
+
   it "calls main.require(path) to load the file" do
     main = TOPLEVEL_BINDING.eval("self")
     main.should_receive(:require).with("main_autoload_not_exist.rb")
