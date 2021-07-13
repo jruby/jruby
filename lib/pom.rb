@@ -284,7 +284,10 @@ project 'JRuby Lib Setup' do
 
     # fix file permissions of installed gems
     ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
-      File.chmod( 0644, f ) rescue nil if File.file?( f )
+      if File.file?( f )
+        mod = f.include?('/bin/') || f.include?('/exe/') ? 0755 : 0644
+        File.chmod( mod, f ) rescue nil
+      end
     end
   end
 
