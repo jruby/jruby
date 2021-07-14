@@ -40,6 +40,7 @@
 package org.jruby;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -861,7 +862,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     protected RubyString inspectHash(final ThreadContext context) {
-        final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
+        final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, UTF8Encoding.INSTANCE);
 
         str.infectBy(this);
 
