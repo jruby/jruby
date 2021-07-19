@@ -282,9 +282,13 @@ project 'JRuby Lib Setup' do
     f = File.join( stdlib_dir, 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
 
-    # fix file permissions of installed gems
-    ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
-      File.chmod( 0644, f ) rescue nil if File.file?( f )
+    # axiom-types appears to be a dead project but a transitive dep we still
+    # have.  It contains unreadable files which messes up some upstream
+    # maintainers like OpenBSD (see #1989).
+    hack = File.join jruby_gems, 'gems', 'axiom-types-*'
+    (Dir[File.join(hack, '**/*')] + Dir[File.join(hack, '**/.*' )]).each do |f|
+      puts "F: #{f}"
+      FileUtils.chmod 'u+rw,go+r' rescue nil if File.file?(f)
     end
   end
 
