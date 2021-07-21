@@ -92,6 +92,12 @@ matrix:
         - bundle install
         - jruby -S rake spec:ruby:fast
 
+    - name: spec/ruby fast jit
+      script:
+        - mvn clean package -Pbootstrap
+        - bundle install
+        - jruby -S rake spec:ruby:fast:jit
+
     - name: spec/ruby fast jdk11
       jdk: openjdk11
       script:
