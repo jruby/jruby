@@ -31,6 +31,7 @@ package org.jruby.javasupport.ext;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
@@ -49,6 +50,7 @@ import static org.jruby.javasupport.JavaUtil.inspectObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.Inspector.*;
 
@@ -65,7 +67,10 @@ public abstract class JavaUtil {
         JavaExtensions.put(runtime, java.util.Collection.class, (proxyClass) -> Collection.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.util.List.class, (proxyClass) -> List.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.util.Date.class, (dateClass) -> {
-            dateClass.addMethod("inspect", new JavaLang.InspectValue(dateClass));
+            dateClass.addMethod("inspect", new JavaLang.InspectValueWithTypePrefix(dateClass));
+        });
+        JavaExtensions.put(runtime, java.util.TimeZone.class, (proxyClass) -> {
+            proxyClass.addMethod("inspect", new InspectTimeZone(proxyClass));
         });
     }
 
@@ -624,6 +629,22 @@ public abstract class JavaUtil {
 
     }
 
+    private static class InspectTimeZone extends JavaMethod.JavaMethodZero {
+
+        InspectTimeZone(RubyModule implClass) {
+            super(implClass, PUBLIC, "inspect");
+        }
+
+        @Override
+        public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final String name) {
+            // NOTE: might need work but showing type here is a bit confusing as
+            // java.util.TimeZone's impl type is Java::SunUtilCalendar::ZoneInfo
+            java.util.TimeZone tz = unwrapIfJavaObject(self);
+            return RubyString.newString(context.runtime, tz.getID());
+            // also the toString format is very verbose to use:
+            // sun.util.calendar.ZoneInfo[id=\"Europe/Prague\",offset=3600000,dstSavings=3600000,useDaylight=true,transitions=141,lastRule=java.util.SimpleTimeZone[...]]
+        }
+    }
     private static java.util.Collection tryNewEqualInstance(final java.util.Collection coll) {
         final Class<? extends java.util.Collection> klass = coll.getClass();
         // most collections provide a <init>(Collection<? extends E> coll)
