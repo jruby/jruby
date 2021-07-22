@@ -1,5 +1,6 @@
 package org.jruby.specialized;
 
+import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -134,13 +135,13 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         if (!packed()) return super.inspectAry(context);
 
         final Ruby runtime = context.runtime;
-        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
+        Encoding encoding = runtime.getDefaultExternalEncoding();
+        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, encoding.isAsciiCompatible() ? encoding : USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
         boolean tainted = isTaint();
 
         RubyString s = inspect(context, value);
         if (s.isTaint()) tainted = true;
-        else str.setEncoding(s.getEncoding());
         str.cat19(s);
 
         str.cat((byte) ']');

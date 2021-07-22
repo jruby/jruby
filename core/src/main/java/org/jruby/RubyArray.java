@@ -50,6 +50,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
+
+import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -1670,7 +1672,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     protected IRubyObject inspectAry(ThreadContext context) {
         final Ruby runtime = context.runtime;
-        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
+        Encoding encoding = runtime.getDefaultExternalEncoding();
+        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, encoding.isAsciiCompatible() ? encoding : USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
         boolean tainted = isTaint();
 
@@ -1680,11 +1683,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if (s.isTaint()) tainted = true;
             if (i > 0) {
                 ByteList bytes = str.getByteList();
-                bytes.ensure(2 + s.size() + 1);
                 bytes.append((byte) ',').append((byte) ' ');
-            }
-            else {
-                str.setEncoding(s.getEncoding());
             }
             str.cat19(s);
         }

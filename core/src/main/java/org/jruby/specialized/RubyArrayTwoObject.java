@@ -1,5 +1,6 @@
 package org.jruby.specialized;
 
+import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -150,22 +151,20 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         if (!packed()) return super.inspectAry(context);
 
         final Ruby runtime = context.runtime;
-        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
+        Encoding encoding = runtime.getDefaultExternalEncoding();
+        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, encoding.isAsciiCompatible() ? encoding : USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
         boolean tainted = isTaint();
 
         RubyString s1 = inspect(context, car);
         RubyString s2 = inspect(context, cdr);
         if (s1.isTaint()) tainted = true;
-        else str.setEncoding(s1.getEncoding());
         str.cat19(s1);
 
         ByteList bytes = str.getByteList();
-        bytes.ensure(2 + s2.size() + 1);
         bytes.append((byte) ',').append((byte) ' ');
 
         if (s2.isTaint()) tainted = true;
-        else str.setEncoding(s2.getEncoding());
         str.cat19(s2);
 
         str.cat((byte) ']');
