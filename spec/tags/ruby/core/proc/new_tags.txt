@@ -1,0 +1,1 @@
+jit(never really worked, deprecated in 2.7):Proc.new with an associated block returns a new Proc instance from the block passed to the containing method

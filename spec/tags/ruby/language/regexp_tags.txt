@@ -1,0 +1,1 @@
+jit(transition from interpreter will cause a new regexp object to be created):Literal Regexps caches the Regexp object
