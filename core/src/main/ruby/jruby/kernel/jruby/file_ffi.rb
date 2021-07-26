@@ -8,7 +8,9 @@ if JRuby::Util::ON_WINDOWS
     # Gracefully bail if FFI is not available
   end
 
-  if defined?(::FFI::Config)
+  symlink_ffi_available = false
+
+  if defined?(::FFI)
     module JRuby::Windows
       module File
         module Constants
@@ -91,55 +93,56 @@ if JRuby::Util::ON_WINDOWS
 
     # Since we only do this for symlink, skip it all if it's not available on this version of Windows (jruby/jruby#3998)
     if JRuby::Windows::File::Functions.respond_to? :CreateSymbolicLinkW
-      class File
-        include JRuby::Windows::File::Constants
-        include JRuby::Windows::File::Structs
-        extend JRuby::Windows::File::Functions
+      symlink_ffi_available = true
+    end
+  end
 
-        # Creates a symbolic link called +new_name+ for the file or directory
-        # +old_name+.
-        #
-        # This method requires Windows Vista or later to work. Otherwise, it
-        # returns nil as per MRI.
-        #
-        def self.symlink(target, link)
-          target = string_check(target)
-          link = string_check(link)
+  if symlink_ffi_available
+    class ::File
+      include JRuby::Windows::File::Constants
+      include JRuby::Windows::File::Structs
+      extend JRuby::Windows::File::Functions
 
-          flags = File.directory?(target) ? 1 : 0
+      # Creates a symbolic link called +new_name+ for the file or directory
+      # +old_name+.
+      #
+      # This method requires Windows Vista or later to work. Otherwise, it
+      # returns nil as per MRI.
+      #
+      def self.symlink(target, link)
+        target = string_check(target)
+        link = string_check(link)
 
-          wlink = link.wincode
-          wtarget = target.wincode
+        flags = File.directory?(target) ? 1 : 0
 
-          unless CreateSymbolicLinkW(wlink, wtarget, flags)
-            errno = FFI.errno
-            # FIXME: in MRI all win calling methods call into a large map between windows errors and unixy ones.  We
-            # need to add that map or possibly expost whatever we have in jnr-posix
-            raise Errno::EACCES.new('File.symlink') if errno == 1314 # ERROR_PRIVILEGE_NOT_HELD
-            raise SystemCallError.new('File.symlink', errno)
-          end
+        wlink = link.wincode
+        wtarget = target.wincode
 
-          0 # Comply with spec
+        unless CreateSymbolicLinkW(wlink, wtarget, flags)
+          errno = FFI.errno
+          # FIXME: in MRI all win calling methods call into a large map between windows errors and unixy ones.  We
+          # need to add that map or possibly expost whatever we have in jnr-posix
+          raise Errno::EACCES.new('File.symlink') if errno == 1314 # ERROR_PRIVILEGE_NOT_HELD
+          raise SystemCallError.new('File.symlink', errno)
         end
 
-        private
-
-        # Simulate Ruby's string checking
-        def self.string_check(arg)
-          return arg if arg.is_a?(String)
-          return arg.send(:to_str) if arg.respond_to?(:to_str, true) # MRI allows private to_str
-          return arg.to_path if arg.respond_to?(:to_path)
-          raise TypeError
-        end
+        0 # Comply with spec
       end
 
-      class String
-        # Convenience method for converting strings to UTF-16LE for wide character
-        # functions that require it.
-        #
-        def wincode
-          (self.tr(File::SEPARATOR, File::ALT_SEPARATOR) + 0.chr).encode('UTF-16LE')
-        end
+      private
+
+      # Simulate Ruby's string checking
+      def self.string_check(arg)
+        return arg if arg.is_a?(String)
+        return arg.send(:to_str) if arg.respond_to?(:to_str, true) # MRI allows private to_str
+        return arg.to_path if arg.respond_to?(:to_path)
+        raise TypeError
+      end
+    end
+  else
+    class ::File
+      def self.symlink(*)
+        raise NotImplementedError.new("symlink not supported on this version of Windows")
       end
     end
   end
