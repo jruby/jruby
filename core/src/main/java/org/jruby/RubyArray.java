@@ -50,6 +50,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
+
+import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -82,6 +84,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -1680,11 +1683,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if (s.isTaint()) tainted = true;
             if (i > 0) {
                 ByteList bytes = str.getByteList();
-                bytes.ensure(2 + s.size() + 1);
                 bytes.append((byte) ',').append((byte) ' ');
-            }
-            else {
-                str.setEncoding(s.getEncoding());
+            } else {
+                EncodingUtils.encAssociateIndex(str, s.getEncoding());
             }
             str.cat19(s);
         }
