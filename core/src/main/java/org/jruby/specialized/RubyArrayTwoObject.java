@@ -15,6 +15,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -151,14 +152,14 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         if (!packed()) return super.inspectAry(context);
 
         final Ruby runtime = context.runtime;
-        Encoding encoding = runtime.getDefaultExternalEncoding();
-        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, encoding.isAsciiCompatible() ? encoding : USASCIIEncoding.INSTANCE);
+        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
         boolean tainted = isTaint();
 
         RubyString s1 = inspect(context, car);
         RubyString s2 = inspect(context, cdr);
         if (s1.isTaint()) tainted = true;
+        EncodingUtils.encAssociateIndex(str, s1.getEncoding());
         str.cat19(s1);
 
         ByteList bytes = str.getByteList();

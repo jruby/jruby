@@ -10,6 +10,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.runtime.Helpers.arrayOf;
 
@@ -135,13 +136,13 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         if (!packed()) return super.inspectAry(context);
 
         final Ruby runtime = context.runtime;
-        Encoding encoding = runtime.getDefaultExternalEncoding();
-        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, encoding.isAsciiCompatible() ? encoding : USASCIIEncoding.INSTANCE);
+        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
         boolean tainted = isTaint();
 
         RubyString s = inspect(context, value);
         if (s.isTaint()) tainted = true;
+        EncodingUtils.encAssociateIndex(str, s.getEncoding());
         str.cat19(s);
 
         str.cat((byte) ']');

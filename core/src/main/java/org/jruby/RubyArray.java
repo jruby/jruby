@@ -84,6 +84,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -1672,8 +1673,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     protected IRubyObject inspectAry(ThreadContext context) {
         final Ruby runtime = context.runtime;
-        Encoding encoding = runtime.getDefaultExternalEncoding();
-        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, encoding.isAsciiCompatible() ? encoding : USASCIIEncoding.INSTANCE);
+        RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
         boolean tainted = isTaint();
 
@@ -1684,6 +1684,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if (i > 0) {
                 ByteList bytes = str.getByteList();
                 bytes.append((byte) ',').append((byte) ' ');
+            } else {
+                EncodingUtils.encAssociateIndex(str, s.getEncoding());
             }
             str.cat19(s);
         }
