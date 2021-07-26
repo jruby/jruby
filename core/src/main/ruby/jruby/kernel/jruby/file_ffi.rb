@@ -4,13 +4,7 @@ if JRuby::Util::ON_WINDOWS
 
   begin
     require 'ffi'
-  rescue LoadError
-    # Gracefully bail if FFI is not available
-  end
 
-  symlink_ffi_available = false
-
-  if defined?(::FFI)
     module JRuby::Windows
       module File
         module Constants
@@ -33,39 +27,35 @@ if JRuby::Util::ON_WINDOWS
             private args[0]
           end
 
-          begin
-            attach_pfunc :CloseHandle, [:handle], :bool
-            attach_pfunc :FindFirstFileW, [:buffer_in, :pointer], :handle
-            attach_pfunc :GetFileAttributesW, [:buffer_in], :dword
+          attach_pfunc :CloseHandle, [:handle], :bool
+          attach_pfunc :FindFirstFileW, [:buffer_in, :pointer], :handle
+          attach_pfunc :GetFileAttributesW, [:buffer_in], :dword
 
-            attach_pfunc :CreateFileW, [:buffer_in, :dword, :dword, :pointer, :dword, :dword, :handle], :handle
-            attach_pfunc :GetDiskFreeSpaceW, [:buffer_in, :pointer, :pointer, :pointer, :pointer], :bool
-            attach_pfunc :GetDriveTypeW, [:buffer_in], :uint
-            attach_pfunc :GetFileType, [:handle], :dword
-            attach_pfunc :GetFinalPathNameByHandleW, [:handle, :buffer_out, :dword, :dword], :dword
-            attach_pfunc :GetShortPathNameW, [:buffer_in, :buffer_out, :dword], :dword
-            attach_pfunc :GetLongPathNameW, [:buffer_in, :buffer_out, :dword], :dword
-            attach_pfunc :QueryDosDeviceA, [:string, :buffer_out, :dword], :dword
-            attach_pfunc :SetFileTime, [:handle, :ptr, :ptr, :ptr], :bool
-            attach_pfunc :SystemTimeToFileTime, [:ptr, :ptr], :bool
+          attach_pfunc :CreateFileW, [:buffer_in, :dword, :dword, :pointer, :dword, :dword, :handle], :handle
+          attach_pfunc :GetDiskFreeSpaceW, [:buffer_in, :pointer, :pointer, :pointer, :pointer], :bool
+          attach_pfunc :GetDriveTypeW, [:buffer_in], :uint
+          attach_pfunc :GetFileType, [:handle], :dword
+          attach_pfunc :GetFinalPathNameByHandleW, [:handle, :buffer_out, :dword, :dword], :dword
+          attach_pfunc :GetShortPathNameW, [:buffer_in, :buffer_out, :dword], :dword
+          attach_pfunc :GetLongPathNameW, [:buffer_in, :buffer_out, :dword], :dword
+          attach_pfunc :QueryDosDeviceA, [:string, :buffer_out, :dword], :dword
+          attach_pfunc :SetFileTime, [:handle, :ptr, :ptr, :ptr], :bool
+          attach_pfunc :SystemTimeToFileTime, [:ptr, :ptr], :bool
 
-            ffi_lib :shlwapi
+          ffi_lib :shlwapi
 
-            attach_pfunc :PathFindExtensionW, [:buffer_in], :pointer
-            attach_pfunc :PathIsRootW, [:buffer_in], :bool
-            attach_pfunc :PathStripPathW, [:pointer], :void
-            attach_pfunc :PathRemoveBackslashW, [:buffer_in], :string
-            attach_pfunc :PathRemoveFileSpecW, [:pointer], :bool
-            attach_pfunc :PathRemoveExtensionW, [:buffer_in], :void
-            attach_pfunc :PathStripToRootW, [:buffer_in], :bool
+          attach_pfunc :PathFindExtensionW, [:buffer_in], :pointer
+          attach_pfunc :PathIsRootW, [:buffer_in], :bool
+          attach_pfunc :PathStripPathW, [:pointer], :void
+          attach_pfunc :PathRemoveBackslashW, [:buffer_in], :string
+          attach_pfunc :PathRemoveFileSpecW, [:pointer], :bool
+          attach_pfunc :PathRemoveExtensionW, [:buffer_in], :void
+          attach_pfunc :PathStripToRootW, [:buffer_in], :bool
 
-            ffi_lib :kernel32
+          ffi_lib :kernel32
 
-            # We use the presence or absence of this method to indicate everything bound successfully (jruby/jruby#3998)
-            attach_pfunc :CreateSymbolicLinkW, [:buffer_in, :buffer_in, :dword], :bool
-          rescue FFI::NotFoundError
-            # We are unable to implement symbolic links on this version of Windows
-          end
+          # We use the presence or absence of this method to indicate everything bound successfully (jruby/jruby#3998)
+          attach_pfunc :CreateSymbolicLinkW, [:buffer_in, :buffer_in, :dword], :bool
         end
 
         module Structs
@@ -91,13 +81,6 @@ if JRuby::Util::ON_WINDOWS
       end
     end
 
-    # Since we only do this for symlink, skip it all if it's not available on this version of Windows (jruby/jruby#3998)
-    if JRuby::Windows::File::Functions.respond_to? :CreateSymbolicLinkW
-      symlink_ffi_available = true
-    end
-  end
-
-  if symlink_ffi_available
     class ::File
       include JRuby::Windows::File::Constants
       include JRuby::Windows::File::Structs
@@ -139,12 +122,16 @@ if JRuby::Util::ON_WINDOWS
         raise TypeError
       end
     end
-  else
+
+  rescue LoadError, FFI::NotFoundError
+
+    # Could not load FFI or CreateSymbolicLinkW unavailable, define symlink functions to raise NotImplemented
     class ::File
       def self.symlink(*)
         raise NotImplementedError.new("symlink not supported on this version of Windows")
       end
     end
+
   end
 end
 
@@ -152,11 +139,6 @@ end
 if JRuby::Util::ON_SOLARIS
   begin
     require 'ffi'
-  rescue LoadError
-    # Gracefully bail if FFI is not available
-  end
-
-  if defined?(::FFI)
 
     module JRuby::Fcntl
       F_RDLCK = 1
@@ -219,5 +201,15 @@ if JRuby::Util::ON_SOLARIS
         return 0
       end
     end
+
+  rescue LoadError
+
+    # Could not load FFI or fcntl not available, define File#flock to raise NotImplementedError
+    class ::File
+      def flock(*)
+        raise NotImplementedError.new("fcntl-based flock not available on this platform")
+      end
+    end
+
   end
 end
