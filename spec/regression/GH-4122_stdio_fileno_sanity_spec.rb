@@ -5,8 +5,8 @@
 # even if stdio is not on 0,1,2 we can't see it without native integration anyway.
 # See #4122.
 describe "#4122 Stdio streams in a simple non-native JRuby instance" do
-  it "should have sane fileno" do
-    filenos = eval `jruby -Xnative.enabled=false -e 'p [$stdin.fileno,$stdout.fileno,$stderr.fileno]'`
+  it "should have sane fileno" do; require 'rbconfig'
+    filenos = eval `#{RbConfig.ruby} -Xnative.enabled=false -e 'p [$stdin.fileno,$stdout.fileno,$stderr.fileno]'`
     expect(filenos[0]).to eq 0
     expect(filenos[1]).to eq 1
     expect(filenos[2]).to eq 2
