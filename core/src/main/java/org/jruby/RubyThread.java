@@ -2165,6 +2165,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         notify();
     }
 
+    /**
+     * Set the pending interrupt flag.
+     *
+     * CRuby: RB_VM_SET_INTERRUPT/
+     */
     public void setInterrupt() {
         while (true) {
             int oldFlag = interruptFlag;
