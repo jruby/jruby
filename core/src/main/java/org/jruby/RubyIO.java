@@ -4653,7 +4653,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         while (true) {
-            context.pollThreadEvents();
+            context.blockingThreadPoll();
 
             if (length > 0 && length < chunkSize) {
                 // last read should limit to remaining length

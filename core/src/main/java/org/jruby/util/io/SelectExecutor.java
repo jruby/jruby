@@ -403,8 +403,6 @@ public class SelectExecutor {
             throw context.runtime.newErrnoEINTRError();
         }
 
-        context.pollThreadEvents();
-
 //        errno = lerrno;
 
 //        if (result < 0) {

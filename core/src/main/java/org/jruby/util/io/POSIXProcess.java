@@ -3,6 +3,7 @@ package org.jruby.util.io;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Signal;
 import org.jruby.Ruby;
+import org.jruby.runtime.ThreadContext;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,6 +42,11 @@ public class POSIXProcess extends Process {
     public synchronized int waitFor() throws InterruptedException {
         if (exitValue == null) {
             int[] stat_loc = {0};
+            Ruby runtime = this.runtime;
+            ThreadContext context = runtime.getCurrentContext();
+
+            context.blockingThreadPoll();
+
             retry: while (true) {
                 stat_loc[0] = 0;
                 // TODO: investigate WNOHANG
@@ -49,7 +55,7 @@ public class POSIXProcess extends Process {
                     Errno errno = Errno.valueOf(runtime.getPosix().errno());
                     switch (errno) {
                         case EINTR:
-                            runtime.getCurrentContext().pollThreadEvents();
+                            context.pollThreadEvents();
                             continue retry;
                         case ECHILD:
                             return -1;

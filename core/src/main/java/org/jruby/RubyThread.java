@@ -737,8 +737,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     // CHECK_INTS
     public void pollThreadEvents(ThreadContext context) {
         if (anyInterrupted()) {
-            executeInterrupts(context, true);
+            executeInterrupts(context, false);
         }
+    }
+
+    // RB_VM_CHECK_INTS_BLOCKING
+    public void blockingThreadPoll(ThreadContext context) {
+        if (pendingInterruptQueue.isEmpty() || !anyInterrupted()) {
+            return;
+        }
+
+        pendingInterruptQueueChecked = false;
+        setInterrupt();
+        executeInterrupts(context, true);
     }
 
     // RUBY_VM_INTERRUPTED_ANY
@@ -1185,7 +1196,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // join call without actually calling interrupt.
             long start = System.currentTimeMillis();
             while (true) {
-                currentThread.pollThreadEvents(context);
+                currentThread.blockingThreadPoll(context);
                 threadImpl.join(timeToWait);
                 if (!threadImpl.isAlive()) {
                     break;
@@ -1293,7 +1304,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         synchronized (rubyThread) {
-            rubyThread.pollThreadEvents(context);
+            rubyThread.blockingThreadPoll(context);
             Status oldStatus = rubyThread.getStatus();
             try {
                 STATUS.set(rubyThread, Status.SLEEP);
@@ -1633,7 +1644,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             this.unblockFunc = task;
 
             // check for interrupt before going into blocking call
-            pollThreadEvents(context);
+            blockingThreadPoll(context);
 
             STATUS.set(this, status);
 
@@ -1681,7 +1692,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             this.unblockFunc = task;
 
             // check for interrupt before going into blocking call
-            pollThreadEvents(context);
+            blockingThreadPoll(context);
 
             STATUS.set(this, Status.SLEEP);
 
@@ -2055,7 +2066,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                         key = selectable.register(currentSelector, ops);
 
-                        beforeBlockingCall();
+                        beforeBlockingCall(getContext());
                         int result;
 
                         if (timeout < 0) {
@@ -2176,7 +2187,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             boolean ready = blockingIO.await();
 
             // check for thread events, in case we've been woken up to die
-            pollThreadEvents(context);
+            blockingThreadPoll(context);
             return ready;
         } catch (IOException ioe) {
             throw context.runtime.newRuntimeError("Error with selector: " + ioe);
@@ -2188,8 +2199,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             io.removeBlockingThread(this);
         }
     }
-    public void beforeBlockingCall() {
-        pollThreadEvents();
+    public void beforeBlockingCall(ThreadContext context) {
+        blockingThreadPoll(context);
         enterSleep();
     }
 
