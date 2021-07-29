@@ -108,7 +108,7 @@ public class Java implements Library {
     public void load(Ruby runtime, boolean wrap) {
         final RubyModule Java = createJavaModule(runtime);
 
-        JavaPackage.createJavaPackageClass(runtime, Java);
+        runtime.getJavaSupport().setJavaPackageClass(JavaPackage.createJavaPackageClass(runtime, Java));
 
         org.jruby.javasupport.ext.Kernel.define(runtime);
         org.jruby.javasupport.ext.Module.define(runtime);

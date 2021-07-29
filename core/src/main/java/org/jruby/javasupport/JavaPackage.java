@@ -58,7 +58,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 @JRubyClass(name="Java::JavaPackage", parent="Module")
 public class JavaPackage extends RubyModule {
 
-    static RubyModule createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
+    static RubyClass createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
         RubyClass superClass = new BlankSlateWrapper(runtime, runtime.getModule(), runtime.getKernel());
         RubyClass JavaPackage = RubyClass.newClass(runtime, superClass);
         JavaPackage.setMetaClass(runtime.getModule());
@@ -66,9 +66,7 @@ public class JavaPackage extends RubyModule {
         ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
 
         JavaPackage.setBaseName("JavaPackage");
-
         JavaPackage.setParent(Java);
-        Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
         // JavaPackage.setReifiedClass(JavaPackage.class);
 
         JavaPackage.defineAnnotatedMethods(JavaPackage.class);
