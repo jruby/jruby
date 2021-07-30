@@ -3,3 +3,4 @@ fails:ObjectSpace.memsize_of returns 0 for small Integers
 fails:ObjectSpace.memsize_of returns an Integer for an Object
 fails:ObjectSpace.memsize_of is larger if the Object has more instance variables
 fails:ObjectSpace.memsize_of returns 0 for literal Symbols
+fails:ObjectSpace.memsize_of returns a positive Integer for an Object
