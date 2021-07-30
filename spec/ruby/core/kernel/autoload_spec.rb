@@ -57,6 +57,7 @@ describe "Kernel#autoload" do
   end
 
   describe "inside a Class.new method body" do
+    # NOTE: this spec is being discussed in https://github.com/ruby/spec/pull/839
     it "should define on the new anonymous class" do
       cls = Class.new do
         def go
