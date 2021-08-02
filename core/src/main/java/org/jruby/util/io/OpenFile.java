@@ -2202,7 +2202,7 @@ public class OpenFile implements Finalizable {
         int n, r, offset = 0;
 
         /* don't write anything if current thread has a pending interrupt. */
-        context.pollThreadEvents();
+        context.blockingThreadPoll();
 
         boolean locked = lock();
         try {
