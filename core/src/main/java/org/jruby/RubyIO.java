@@ -4653,7 +4653,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         while (true) {
-            context.pollThreadEvents();
+            context.blockingThreadPoll();
 
             if (length > 0 && length < chunkSize) {
                 // last read should limit to remaining length
@@ -4721,7 +4721,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         ByteList strByteList = string.getByteList();
 
         try {
-            return context.getThread().executeTask(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
+            return context.getThread().executeTaskBlocking(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
                 @Override
                 public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
                     Ruby runtime = context.runtime;
@@ -4793,7 +4793,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         ByteList strByteList = buf.getByteList();
 
         try {
-            return context.getThread().executeTask(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
+            return context.getThread().executeTaskBlocking(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
                 @Override
                 public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
                     Ruby runtime = context.runtime;

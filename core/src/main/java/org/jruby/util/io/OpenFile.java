@@ -2202,7 +2202,7 @@ public class OpenFile implements Finalizable {
         int n, r, offset = 0;
 
         /* don't write anything if current thread has a pending interrupt. */
-        context.pollThreadEvents();
+        context.blockingThreadPoll();
 
         boolean locked = lock();
         try {
@@ -2554,7 +2554,7 @@ public class OpenFile implements Finalizable {
 //        #endif
         int ret = 0;
         try {
-            ret = context.getThread().executeTask(context, this, new RubyThread.Task<OpenFile, Integer>() {
+            ret = context.getThread().executeTaskBlocking(context, this, new RubyThread.Task<OpenFile, Integer>() {
                 @Override
                 public Integer run(ThreadContext context, OpenFile openFile) throws InterruptedException {
                     return posix.flock(fd, lockMode);

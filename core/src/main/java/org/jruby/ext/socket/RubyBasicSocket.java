@@ -703,7 +703,7 @@ public class RubyBasicSocket extends RubyIO {
         fptr.checkReadable(context);
 
         try {
-            context.getThread().beforeBlockingCall();
+            context.getThread().beforeBlockingCall(context);
 
             int read = openFile.readChannel().read(buffer);
 

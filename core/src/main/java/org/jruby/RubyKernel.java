@@ -521,9 +521,13 @@ public class RubyKernel {
         return new_string(context, recv, object);
     }
 
-    // MRI: rb_f_p_internal
+    // MRI: rb_f_p
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyThread.uninterruptible(context, args, RubyKernel::pBody);
+    }
+
+    private static IRubyObject pBody(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         int argc = args.length;
         int i;

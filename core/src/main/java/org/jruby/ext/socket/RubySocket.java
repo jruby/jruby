@@ -552,7 +552,7 @@ public class RubySocket extends RubyBasicSocket {
                         if (!blocking || result) return result;
 
                         while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
-                            context.pollThreadEvents();
+                            context.blockingThreadPoll();
                         }
                     }
                 } finally {
