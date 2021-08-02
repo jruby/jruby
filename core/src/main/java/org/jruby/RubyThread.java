@@ -741,7 +741,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    // RB_VM_CHECK_INTS_BLOCKING
+    // RUBY_VM_CHECK_INTS_BLOCKING
     public void blockingThreadPoll(ThreadContext context) {
         if (pendingInterruptQueue.isEmpty() && !anyInterrupted()) {
             return;
