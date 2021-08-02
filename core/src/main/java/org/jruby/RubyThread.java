@@ -1452,12 +1452,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
         if (!isAlive()) return context.nil;
 
+
         pendingInterruptEnqueue(prepareRaiseException(context, args, Block.NULL_BLOCK));
+        interrupt();
 
         if (currentThread == this) {
             executeInterrupts(context, false);
-        } else {
-            interrupt();
         }
 
         return context.nil;
