@@ -1,6 +1,5 @@
 # frozen_string_literal: false
 exclude :test_abort_on_exception, "very sensitive to thread timing and parallelism"
-exclude :test_handle_interrupt_blocking, "handle_interrupt is not working properly #5314"
 exclude :test_inspect_with_fiber, "Thread.current is known to reflect the fiber, not the thread, in JRuby"
 exclude :test_join_limit_negative_INT64_MIN, "times out"
 exclude :test_list, "JVM finalizer threads get adopted, randomly skewing the result (#4960)"
