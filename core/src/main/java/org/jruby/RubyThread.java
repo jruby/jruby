@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import java.util.function.BiFunction;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
@@ -81,7 +82,6 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
@@ -796,7 +796,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return context.getThread().handleInterrupt(context, mask, block);
     }
 
-    private IRubyObject handleInterrupt(ThreadContext context, RubyHash mask, Block block) {
+    private IRubyObject handleInterrupt(ThreadContext context, RubyHash mask, BiFunction<ThreadContext, IRubyObject, IRubyObject> block) {
+        return handleInterrupt(context, mask, context.nil, block);
+    }
+
+    private <StateType> IRubyObject handleInterrupt(ThreadContext context, RubyHash mask, StateType state, BiFunction<ThreadContext, StateType, IRubyObject> block) {
         Vector<RubyHash> interruptMaskStack = this.interruptMaskStack;
 
         interruptMaskStack.add(mask);
@@ -812,7 +816,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // check for any interrupts that should fire with new masks
             pollThreadEvents();
 
-            return block.call(context, context.nil);
+            return block.apply(context, state);
         } finally {
             interruptMaskStack.remove(interruptMaskStack.size() - 1);
 
@@ -2387,6 +2391,26 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private String identityString() {
         return "0x" + Integer.toHexString(System.identityHashCode(this));
+    }
+
+    /**
+     * Run the provided {@link BiFunction} without allowing for any cross-thread interrupts (equivalent to calling
+     * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object => :never.
+     *
+     * MRI: rb_uninterruptible
+     *
+     * @param context the current context
+     * @param f the bifunction to execute
+     * @return return value of f.apply.
+     */
+    public static <StateType> IRubyObject uninterruptible(ThreadContext context, StateType state, BiFunction<ThreadContext, StateType, IRubyObject> f) {
+        Ruby runtime = context.runtime;
+
+        return context.getThread().handleInterrupt(
+                context,
+                RubyHash.newHash(runtime, runtime.getObject(), runtime.newSymbol("never")),
+                state,
+                f);
     }
 
     private static final String MUTEX_FOR_THREAD_EXCLUSIVE = "MUTEX_FOR_THREAD_EXCLUSIVE";
