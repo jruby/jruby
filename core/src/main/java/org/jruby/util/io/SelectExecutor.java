@@ -398,7 +398,7 @@ public class SelectExecutor {
         lerrno = 0;
 
         try {
-            result = th.executeTask(context, this, SelectTask);
+            result = th.executeTaskBlocking(context, this, SelectTask);
         } catch (InterruptedException ie) {
             throw context.runtime.newErrnoEINTRError();
         }

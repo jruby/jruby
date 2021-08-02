@@ -1,1 +1,0 @@
-fails:Thread.handle_interrupt with :on_blocking defers interrupts until the next blocking call

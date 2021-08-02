@@ -342,7 +342,7 @@ public class Queue extends RubyObject implements DataType {
     public IRubyObject pop(ThreadContext context) {
         initializedCheck();
         try {
-            return context.getThread().executeTask(context, this, BLOCKING_POP_TASK);
+            return context.getThread().executeTaskBlocking(context, this, BLOCKING_POP_TASK);
         } catch (InterruptedException ie) {
             // FIXME: is this the right thing to do?
             throw createInterruptedError(context, "pop");
@@ -350,10 +350,14 @@ public class Queue extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
-    public IRubyObject pop(ThreadContext context, IRubyObject arg0) {
+    public IRubyObject pop(ThreadContext context, IRubyObject nonblock) {
         initializedCheck();
         try {
-            return context.getThread().executeTask(context, this, !arg0.isTrue() ? BLOCKING_POP_TASK : NONBLOCKING_POP_TASK);
+            if (nonblock.isTrue()) {
+                return context.getThread().executeTask(context, this, NONBLOCKING_POP_TASK);
+            } else {
+                return context.getThread().executeTaskBlocking(context, this, BLOCKING_POP_TASK);
+            }
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "pop");
         }

@@ -734,6 +734,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         pollThreadEvents(metaClass.runtime.getCurrentContext());
     }
 
+    /**
+     * Poll for thread events (raise, kill), propagating only events that are unmasked
+     * (see {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} or intended to fire before
+     * blocking operations if blocking = true.
+     *
+     * @param context the context
+     * @param blocking whether to trigger blocking operation interrupts
+     */
+    public void pollThreadEvents(ThreadContext context, boolean blocking) {
+        if (blocking) {
+            blockingThreadPoll(context);
+        } else {
+            pollThreadEvents(context);
+        }
+    }
+
     // CHECK_INTS
     public void pollThreadEvents(ThreadContext context) {
         if (anyInterrupted()) {
@@ -1515,7 +1531,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         assert this == getRuntime().getCurrentContext().getThread();
         sleepTask.millis = millis;
         try {
-            long timeSlept = executeTask(getContext(), null, sleepTask);
+            long timeSlept = executeTaskBlocking(getContext(), null, sleepTask);
             if (millis == 0 || timeSlept >= millis) {
                 // sleep was unbounded or we slept long enough
                 return true;
@@ -1633,18 +1649,30 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    public <Data, Return> Return executeTaskBlocking(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
+        return executeTask(context, data, Status.SLEEP, task, true);
+    }
+
     public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
-        return executeTask(context, data, Status.SLEEP, task);
+        return executeTask(context, data, Status.SLEEP, task, false);
+    }
+
+    public <Data, Return> Return executeTaskBlocking(ThreadContext context, Data data, Status status, Task<Data, Return> task) throws InterruptedException {
+        return executeTask(context, data, status, task, true);
     }
 
     public <Data, Return> Return executeTask(ThreadContext context, Data data, Status status, Task<Data, Return> task) throws InterruptedException {
+        return executeTask(context, data, status, task, false);
+    }
+
+    private <Data, Return> Return executeTask(ThreadContext context, Data data, Status status, Task<Data, Return> task, boolean blocking) throws InterruptedException {
         Status oldStatus = STATUS.get(this);
         try {
             this.unblockArg = data;
             this.unblockFunc = task;
 
             // check for interrupt before going into blocking call
-            blockingThreadPoll(context);
+            pollThreadEvents(context, blocking);
 
             STATUS.set(this, status);
 
@@ -1653,7 +1681,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             STATUS.set(this, oldStatus);
             this.unblockFunc = null;
             this.unblockArg = null;
-            pollThreadEvents(context);
+            pollThreadEvents(context, blocking);
         }
     }
 
@@ -2269,7 +2297,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void lockInterruptibly(Lock lock) throws InterruptedException {
         assert Thread.currentThread() == getNativeThread();
-        executeTask(getContext(), lock, new RubyThread.Task<Lock, Object>() {
+        executeTaskBlocking(getContext(), lock, new RubyThread.Task<Lock, Object>() {
             @Override
             public Object run(ThreadContext context, Lock reentrantLock) throws InterruptedException {
                 reentrantLock.lockInterruptibly();
@@ -2339,7 +2367,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void sleep(Lock lock, long millis) throws InterruptedException {
         assert Thread.currentThread() == getNativeThread();
-        executeTask(getContext(), lock.newCondition(), Status.NATIVE, new Task<Condition, Object>() {
+        executeTaskBlocking(getContext(), lock.newCondition(), Status.NATIVE, new Task<Condition, Object>() {
             @Override
             public Object run(ThreadContext context, Condition condition) throws InterruptedException {
                 if (millis == 0) {
