@@ -23,7 +23,7 @@ DO NOT MODIFIY - GENERATED CODE
     <build.dir>target</build.dir>
     <build.lib.dir>test/target</build.lib.dir>
     <create.sources.jar>false</create.sources.jar>
-    <install4j.executable>/Applications/install4j7/bin/install4jc</install4j.executable>
+    <install4j.executable>/Applications/install4j9/bin/install4jc</install4j.executable>
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <jay.bin>jay</jay.bin>
     <jflex.bin>jflex</jflex.bin>

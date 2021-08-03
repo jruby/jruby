@@ -504,9 +504,18 @@ public class RbConfigLibrary implements Library {
         return SafePropertyAccessor.getProperty("jruby.script", "jruby").replace('\\', '/');
     }
 
-    // TODO: note lack of command.com support for Win 9x...
+    // This differs from MRI where they always return /bin/sh on windows even though that is
+    // not going to be a useful value on windows.
     public static String jrubyShell() {
-        return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
+        if (Platform.IS_WINDOWS) {
+            // We ignore what the launcher provides since it is hardcoded as 'cmd.exe'.  MRI in all
+            // invocations just defers to what COMSPEC returns so we will as well.
+            String comspec = SafePropertyAccessor.getenv("COMSPEC");
+            // FIXME: Why do we forward slash in rbconfig and not in place which uses it and expects / vs \?
+            return comspec == null ? "cmd.exe" : comspec.replace('\\', '/');
+        } else {
+            return SafePropertyAccessor.getProperty("jruby.shell", "/bin/sh");
+        }
     }
 
     private static String getRubyEnv(RubyHash envHash, String var, String default_value) {

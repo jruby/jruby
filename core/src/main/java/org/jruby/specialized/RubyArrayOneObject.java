@@ -1,5 +1,6 @@
 package org.jruby.specialized;
 
+import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -9,6 +10,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.runtime.Helpers.arrayOf;
 
@@ -140,7 +142,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         RubyString s = inspect(context, value);
         if (s.isTaint()) tainted = true;
-        else str.setEncoding(s.getEncoding());
+        EncodingUtils.encAssociateIndex(str, s.getEncoding());
         str.cat19(s);
 
         str.cat((byte) ']');
