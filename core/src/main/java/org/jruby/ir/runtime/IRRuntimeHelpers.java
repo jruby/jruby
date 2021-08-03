@@ -2304,7 +2304,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyRational newRationalCanonicalize(ThreadContext context, IRubyObject num, IRubyObject den) {
-        return RubyRational.newRationalCanonicalize(context, num, den);
+        return (RubyRational) RubyRational.newRationalCanonicalize(context, num, den);
     }
 
     @JIT
