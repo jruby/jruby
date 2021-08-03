@@ -1,3 +1,0 @@
-fails:Thread.pending_interrupt? returns false if there are no pending interrupts, e.g., outside any Thread.handle_interrupt block
-fails:Thread.pending_interrupt? returns true if there are pending interrupts, e.g., Thread#raise inside Thread.handle_interrupt
-fails:Thread#pending_interrupt? returns whether the given threads has pending interrupts
