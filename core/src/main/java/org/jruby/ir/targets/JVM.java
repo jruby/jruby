@@ -67,6 +67,7 @@ public abstract class JVM {
     public void pushmethod(String name, IRScope scope, Signature signature, boolean specificArity) {
         clsData().pushmethod(name, scope, signature, specificArity);
         method().startMethod();
+        method().updateLineNumber(scope.getLine());
     }
 
     public void popmethod() {

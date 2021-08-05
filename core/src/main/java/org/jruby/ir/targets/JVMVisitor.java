@@ -80,21 +80,18 @@ public class JVMVisitor extends IRVisitor {
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
         file = scope.getFile();
-        lastLine = -1;
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         return defineFromBytecode(scope, compileToBytecode(scope, context), jrubyClassLoader);
     }
 
     public byte[] compileToBytecode(IRScope scope, JVMVisitorMethodContext context) {
         file = scope.getFile();
-        lastLine = -1;
         codegenScope(scope, context);
         return code();
     }
 
     public Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
         file = scope.getFile();
-        lastLine = -1;
         Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(file)), code);
 
         for (Map.Entry<String, IRScope> entry : scopeMap.entrySet()) {
@@ -282,6 +279,9 @@ public class JVMVisitor extends IRVisitor {
         jvm.pushmethod(variableName, scope, variableSignature, false);
 
         IRBytecodeAdapter m = jvmMethod();
+
+        // set line number for backtrace
+        jvmMethod().updateLineNumber(scope.getLine());
 
         // check arity
         org.jruby.runtime.Signature scopeSig = scope.getStaticScope().getSignature();
@@ -608,7 +608,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref(file, lastLine, currentScopeName, arrayderefinstr);
+        jvmMethod().invokeArrayDeref(file, currentScopeName, arrayderefinstr);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 
@@ -618,7 +618,7 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             jvmMethod().loadSelf();
             visit(asstring.getReceiver());
-            jvmMethod().invokeAsString(file, lastLine, currentScopeName, asstring);
+            jvmMethod().invokeAsString(file, currentScopeName, asstring);
             jvmStoreLocal(asstring.getResult());
         } else {
             visit(asstring.getReceiver());
@@ -1091,10 +1091,10 @@ public class JVMVisitor extends IRVisitor {
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
-                m.invokeSelf(file, lastLine, currentScopeName, call, arity);
+                m.invokeSelf(file, currentScopeName, call, arity);
                 break;
             case NORMAL:
-                m.invokeOther(file, lastLine, currentScopeName, call, arity);
+                m.invokeOther(file, currentScopeName, call, arity);
                 break;
         }
 
@@ -1392,7 +1392,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        jvmMethod().getGlobalVariable(getglobalvariableinstr.getTarget().getId(), file, lastLine);
+        jvmMethod().getGlobalVariable(getglobalvariableinstr.getTarget().getId(), file);
         jvmStoreLocal(getglobalvariableinstr.getResult());
     }
 
@@ -1461,16 +1461,16 @@ public class JVMVisitor extends IRVisitor {
 
         switch (operation) {
             case INSTANCE_SUPER:
-                m.invokeInstanceSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.invokeInstanceSuper(file, name, args.length, hasClosure, splatMap);
                 break;
             case CLASS_SUPER:
-                m.invokeClassSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.invokeClassSuper(file, name, args.length, hasClosure, splatMap);
                 break;
             case UNRESOLVED_SUPER:
-                m.invokeUnresolvedSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.invokeUnresolvedSuper(file, name, args.length, hasClosure, splatMap);
                 break;
             case ZSUPER:
-                m.invokeZSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.invokeZSuper(file, name, args.length, hasClosure, splatMap);
                 break;
             default:
                 throw new NotCompilableException("unknown super type " + operation + " in " + instr);
@@ -1502,8 +1502,7 @@ public class JVMVisitor extends IRVisitor {
     public void LineNumberInstr(LineNumberInstr linenumberinstr) {
         if (DEBUG) return; // debug mode uses IPC for line numbers
 
-        lastLine = linenumberinstr.getLineNumber() + 1;
-        jvmAdapter().line(lastLine);
+        jvmMethod().updateLineNumber(linenumberinstr.getLineNumber());
     }
 
     @Override
@@ -1560,7 +1559,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFixnum(file, lastLine, oneFixnumArgNoBlockCallInstr, fixnum);
+        m.invokeOtherOneFixnum(file, oneFixnumArgNoBlockCallInstr, fixnum);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1584,7 +1583,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFloat(file, lastLine, oneFloatArgNoBlockCallInstr, flote);
+        m.invokeOtherOneFloat(file, oneFloatArgNoBlockCallInstr, flote);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1802,7 +1801,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) {
         visit(putglobalvarinstr.getValue());
-        jvmMethod().setGlobalVariable(putglobalvarinstr.getTarget().getId(), file, lastLine);
+        jvmMethod().setGlobalVariable(putglobalvarinstr.getTarget().getId(), file);
     }
 
     @Override
@@ -2614,7 +2613,6 @@ public class JVMVisitor extends IRVisitor {
     private String currentScopeName;
     private Map<String, IRScope> scopeMap;
     private String file;
-    private int lastLine = -1;
 
     private Instr nextInstr; // nextInstr while instruction walking.  For simple peephole optimizations.
     private boolean omitStoreLoad;
