@@ -315,7 +315,7 @@ public class JavaNameMangler {
 
     // returns location $ type $ methodName as 3 elements or null if this is an invalid mangled name
     public static List<String> decodeMethodTuple(String methodName) {
-        if (!methodName.startsWith("RUBY$") || methodName.contains(VARARGS_MARKER)) return null;
+        if (!methodName.startsWith("RUBY$")) return null;
 
         return StringSupport.split(methodName, '$');
     }
@@ -324,6 +324,7 @@ public class JavaNameMangler {
         switch (type) {
             case ROOT:    return "<main>";
             case METACLASS: return "singleton class";
+            case VARARGS_WRAPPER:
             case METHOD:    return demangleMethodName(mangledTuple.get(2));
             case BLOCK:     return ""+demangleMethodNameInternal(mangledTuple.get(2));
             case CLASS:     return "<class:" + demangleMethodNameInternal(mangledTuple.get(2)) + '>';
