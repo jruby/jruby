@@ -171,6 +171,10 @@ public class InterpreterContext {
         return scope.getFile();
     }
 
+    public int getLine() {
+        return scope.getLine();
+    }
+
     public RubySymbol getName() {
         return scope.getManager().getRuntime().newSymbol(scope.getId());
     }
