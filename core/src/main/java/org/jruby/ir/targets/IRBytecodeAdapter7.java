@@ -5,37 +5,22 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jcodings.Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.specialized.RubyArraySpecialized;
-import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.RegexpOptions;
-import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 
-import java.math.BigInteger;
-
-import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -50,41 +35,41 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     @Override
-    public void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity) {
+    public void invokeOther(String file, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + id + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (call.isPotentiallyRefined()) {
-            super.invokeOther(file, line, scopeFieldName, call, arity);
+            super.invokeOther(file, scopeFieldName, call, arity);
             return;
         }
 
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         if (blockPassType.given()) {
             if (arity == -1) {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, lastLine);
             } else {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, lastLine);
             }
         } else {
             if (arity == -1) {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, false, file, lastLine);
             } else {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, false, file, lastLine);
             }
         }
     }
 
     @Override
-    public void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call) {
-        adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP, file, line);
+    public void invokeArrayDeref(String file, String scopeFieldName, CallBase call) {
+        adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP, file, lastLine);
     }
 
     @Override
-    public void invokeOtherOneFixnum(String file, int line, CallBase call, long fixnum) {
+    public void invokeOtherOneFixnum(String file, CallBase call, long fixnum) {
         String id = call.getId();
         if (!MethodIndex.hasFastFixnumOps(id)) {
             pushFixnum(fixnum);
-            invokeOtherOrSelfArity1(file, line, call);
+            invokeOtherOrSelfArity1(file, lastLine, call);
             return;
         }
 
@@ -97,15 +82,15 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 fixnum,
                 call.getCallType().ordinal(),
                 file,
-                line);
+                lastLine);
     }
 
     @Override
-    public void invokeOtherOneFloat(String file, int line, CallBase call, double flote) {
+    public void invokeOtherOneFloat(String file, CallBase call, double flote) {
         String id = call.getId();
         if (!MethodIndex.hasFastFloatOps(id)) {
             pushFloat(flote);
-            invokeOtherOrSelfArity1(file, line, call);
+            invokeOtherOrSelfArity1(file, lastLine, call);
             return;
         }
 
@@ -118,23 +103,23 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             flote,
                 call.getCallType().ordinal(),
             file,
-            line);
+            lastLine);
     }
 
     private void invokeOtherOrSelfArity1(String file, int line, CallBase call) {
         if (call.getCallType() == CallType.NORMAL) {
-            invokeOther(file, line, null, call, 1);
+            invokeOther(file, null, call, 1);
         } else {
-            invokeSelf(file, line, null, call, 1);
+            invokeSelf(file, null, call, 1);
         }
     }
 
     @Override
-    public void invokeSelf(String file, int line, String scopeFieldName, CallBase call, int arity) {
+    public void invokeSelf(String file, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + id + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (call.isPotentiallyRefined()) {
-            super.invokeSelf(file, line, scopeFieldName, call, arity);
+            super.invokeSelf(file, scopeFieldName, call, arity);
             return;
         }
 
@@ -142,60 +127,60 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         if (blockPassType != BlockPassType.NONE) {
             if (arity == -1) {
-                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, lastLine);
             } else {
-                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, lastLine);
             }
         } else {
             if (arity == -1) {
-                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, lastLine);
             } else {
-                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, lastLine);
             }
         }
     }
 
-    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, lastLine);
         } else {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, lastLine);
         }
     }
 
-    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, lastLine);
         } else {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, lastLine);
         }
     }
 
-    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, lastLine);
         } else {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, lastLine);
         }
     }
 
-    public void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeZSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, lastLine);
         } else {
-            adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, lastLine);
         }
     }
 

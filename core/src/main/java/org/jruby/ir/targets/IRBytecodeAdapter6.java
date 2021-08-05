@@ -6,23 +6,17 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
@@ -31,10 +25,8 @@ import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodIndex;
@@ -49,7 +41,6 @@ import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -149,12 +140,12 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity) {
-        invoke(file, line, scopeFieldName, call, arity);
+    public void invokeOther(String file, String scopeFieldName, CallBase call, int arity) {
+        invoke(file, lastLine, scopeFieldName, call, arity);
     }
 
     @Override
-    public void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call) {
+    public void invokeArrayDeref(String file, String scopeFieldName, CallBase call) {
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyString.class));
         String methodName = getUniqueSiteName(call.getId());
         SkinnyMethodAdapter adapter2 = new SkinnyMethodAdapter(
@@ -176,7 +167,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void invokeAsString(String file, int line, String scopeFieldName, CallBase call) {
+    public void invokeAsString(String file, String scopeFieldName, CallBase call) {
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String methodName = getUniqueSiteName(call.getId());
         SkinnyMethodAdapter adapter2 = new SkinnyMethodAdapter(
@@ -320,14 +311,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void invokeOtherOneFixnum(String file, int line, CallBase call, long fixnum) {
+    public void invokeOtherOneFixnum(String file, CallBase call, long fixnum) {
         String id = call.getId();
         if (!MethodIndex.hasFastFixnumOps(id)) {
             pushFixnum(fixnum);
             if (call.getCallType() == CallType.NORMAL) {
-                invokeOther(file, line, null, call, 1);
+                invokeOther(file, null, call, 1);
             } else {
-                invokeSelf(file, line, null, call, 1);
+                invokeSelf(file, null, call, 1);
             }
             return;
         }
@@ -346,7 +337,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null,
                 null);
 
-        adapter2.line(line);
+        adapter2.line(lastLine);
 
         // call site object field
         adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CallSite.class), null, null).visitEnd();
@@ -378,14 +369,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void invokeOtherOneFloat(String file, int line, CallBase call, double flote) {
+    public void invokeOtherOneFloat(String file, CallBase call, double flote) {
         String id = call.getId();
         if (!MethodIndex.hasFastFloatOps(id)) {
             pushFloat(flote);
             if (call.getCallType() == CallType.NORMAL) {
-                invokeOther(file, line, null, call, 1);
+                invokeOther(file, null, call, 1);
             } else {
-                invokeSelf(file, line, null, call, 1);
+                invokeSelf(file, null, call, 1);
             }
             return;
         }
@@ -404,7 +395,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null,
                 null);
 
-        adapter2.line(line);
+        adapter2.line(lastLine);
 
         // call site object field
         adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CallSite.class), null, null).visitEnd();
@@ -435,34 +426,34 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeSelf(String file, int line, String scopeFieldName, CallBase call, int arity) {
+    public void invokeSelf(String file, String scopeFieldName, CallBase call, int arity) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + call.getId() + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invoke(file, line, scopeFieldName, call, arity);
+        invoke(file, lastLine, scopeFieldName, call, arity);
     }
 
-    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "instanceSuper", "instanceSuperSplatArgs", false);
+        performSuper(file, lastLine, name, arity, hasClosure, splatmap, "instanceSuper", "instanceSuperSplatArgs", false);
     }
 
-    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "classSuper", "classSuperSplatArgs", false);
+        performSuper(file, lastLine, name, arity, hasClosure, splatmap, "classSuper", "classSuperSplatArgs", false);
     }
 
-    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "unresolvedSuper", "unresolvedSuperSplatArgs", true);
+        performSuper(file, lastLine, name, arity, hasClosure, splatmap, "unresolvedSuper", "unresolvedSuperSplatArgs", true);
     }
 
-    public void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeZSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
 
-        performSuper(file, line, name, arity, hasClosure, splatmap, "zSuper", "zSuperSplatArgs", true);
+        performSuper(file, lastLine, name, arity, hasClosure, splatmap, "zSuper", "zSuperSplatArgs", true);
     }
 
     private void performSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap, String superHelper, String splatHelper, boolean unresolved) {
@@ -745,23 +736,23 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void getGlobalVariable(String name, String file, int line) {
+    public void getGlobalVariable(String name, String file) {
         loadContext();
         adapter.invokedynamic(
                 "get:" + JavaNameMangler.mangleMethodName(name),
                 sig(IRubyObject.class, ThreadContext.class),
                 Bootstrap.global(),
-                file, line);
+                file, lastLine);
     }
 
     @Override
-    public void setGlobalVariable(String name, String file, int line) {
+    public void setGlobalVariable(String name, String file) {
         loadContext();
         adapter.invokedynamic(
                 "set:" + JavaNameMangler.mangleMethodName(name),
                 sig(void.class, IRubyObject.class, ThreadContext.class),
                 Bootstrap.global(),
-                file, line);
+                file, lastLine);
     }
 
     @Override

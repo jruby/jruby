@@ -6,7 +6,6 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRManager;
@@ -407,7 +406,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param call the call to be invoked
      */
-    public abstract void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity);
+    public abstract void invokeOther(String file, String scopeFieldName, CallBase call, int arity);
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -416,18 +415,17 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: context, self, target, arg0
      * @param file
-     * @param line
      */
-    public abstract void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call);
+    public abstract void invokeArrayDeref(String file, String scopeFieldName, CallBase call);
 
     /**
      * Invoke the to_s method with AsString semantics (tainting, refinements, etc).
      *
      * Stack required: context, self, target
      * @param file
-     * @param line
+     *
      */
-    public abstract void invokeAsString(String file, int line, String scopeFieldName, CallBase call);
+    public abstract void invokeAsString(String file, String scopeFieldName, CallBase call);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
@@ -435,7 +433,7 @@ public abstract class IRBytecodeAdapter {
      * Stack required: context, self, receiver (fixnum will be handled separately)
      *
      */
-    public abstract void invokeOtherOneFixnum(String file, int line, CallBase call, long fixnum);
+    public abstract void invokeOtherOneFixnum(String file, CallBase call, long fixnum);
 
     /**
      * Invoke a float-receiving method on an object other than self.
@@ -443,7 +441,12 @@ public abstract class IRBytecodeAdapter {
      * Stack required: context, self, receiver (float will be handled separately)
      *
      */
-    public abstract void invokeOtherOneFloat(String file, int line, CallBase call, double flote);
+    public abstract void invokeOtherOneFloat(String file, CallBase call, double flote);
+
+    public void updateLineNumber(int lineNumber) {
+        lastLine = lineNumber + 1;
+        adapter.line(lastLine);
+    }
 
     public enum BlockPassType {
         NONE(false, false),
@@ -474,69 +477,59 @@ public abstract class IRBytecodeAdapter {
      * Invoke a method on self.
      *
      * Stack required: context, caller, self, all arguments, optional block
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
+     *  @param file the filename of the script making this call
      * @param call to be invoked on self
      * @param arity of the call.
      */
-    public abstract void invokeSelf(String file, int line, String scopeFieldName, CallBase call, int arity);
+    public abstract void invokeSelf(String file, String scopeFieldName, CallBase call, int arity);
 
     /**
      * Invoke a superclass method from an instance context.
      *
      * Stack required: context, caller, self, start class, arguments[, block]
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
+     *  @param file the filename of the script making this call
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a class context.
      *
      * Stack required: context, caller, self, start class, arguments[, block]
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
+     *  @param file the filename of the script making this call
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeClassSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from an unresolved context.
      *
      * Stack required: context, caller, self, arguments[, block]
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
+     *  @param file the filename of the script making this call
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a zsuper in a block.
      *
      * Stack required: context, caller, self, arguments[, block]
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
+     *  @param file the filename of the script making this call
      * @param name name of the method to invoke
      * @param arity arity of the arguments on the stack
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeZSuper(String file, String name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Lookup a constant from current context.
@@ -662,14 +655,14 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: none
      */
-    public abstract void getGlobalVariable(String name, String file, int line);
+    public abstract void getGlobalVariable(String name, String file);
 
     /**
      * Set the global variable with the given name to the value on stack.
      *
      * Stack required: the new value
      */
-    public abstract void setGlobalVariable(String name, String file, int line);
+    public abstract void setGlobalVariable(String name, String file);
 
     /**
      * Yield argument list to a block.
@@ -713,4 +706,5 @@ public abstract class IRBytecodeAdapter {
     protected final Signature signature;
     private final ClassData classData;
     public int ipc = 0;  // counter for dumping instr index when in DEBUG
+    protected int lastLine = -1;
 }
