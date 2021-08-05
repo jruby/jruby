@@ -240,7 +240,10 @@ project 'JRuby Base' do
               'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
           },
           includes: [
-              'org/jruby/test/TestAdoptedThreading.java',
+            'org/jruby/test/**/*Test*.java',
+            'org/jruby/embed/**/*Test*.java',
+            'org/jruby/util/**/*Test*.java',
+            'org/jruby/runtime/**/*Test*.java'
           ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
