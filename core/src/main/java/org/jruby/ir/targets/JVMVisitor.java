@@ -2672,7 +2672,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(rational.getNumerator());
         visit(rational.getDenominator());
-        jvmMethod().invokeIRHelper("newRationalRaw", sig(RubyRational.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        jvmMethod().invokeIRHelper("newRationalCanonicalize", sig(RubyRational.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
     }
 
     @Override

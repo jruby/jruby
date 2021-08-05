@@ -103,24 +103,33 @@ public abstract class IOChannel implements Channel {
         return returnValue;
     }
 
+    /**
+     * Perform a write to the given IO-like object, using the given call site, and passing the contents of the given
+     * buffer.
+     *
+     * The buffer and its contents should not be referenced beyond the method's return.
+     *
+     * @param runtime the current runtime
+     * @param io the target IO-like object
+     * @param write the call site for making dynamic `write` calls
+     * @param src the data to write
+     * @return the amount of data reported written by the dynamic `write` call
+     */
     protected static int write(Ruby runtime, IRubyObject io, CallSite write, ByteBuffer src) {
-        RubyString string;
+        ByteList buffer;
         int position = src.position();
         int remaining = src.remaining();
 
-        // wrap buffer contents with String
+        // copy buffer contents to a ByteList
         if (src.hasArray()) {
-            // wrap heap src with shared string to prevent target from modifying our buffer (GH-4903)
-            string = RubyString.newStringShared(runtime, src.array(), position, remaining);
+            buffer = new ByteList(src.array(), src.position(), remaining, true);
         } else {
-            // copy native src to heap bytes to use in string
-            byte[] bytes = new byte[remaining];
-            src.duplicate().get(bytes);
-            string = RubyString.newStringNoCopy(runtime, bytes);
+            buffer = new ByteList(remaining);
+            buffer.append(src, remaining);
         }
 
         // call write with new String based on this ByteList
-        IRubyObject written = write.call(runtime.getCurrentContext(), io, io, string);
+        IRubyObject written = write.call(runtime.getCurrentContext(), io, io, RubyString.newStringLight(runtime, buffer));
         int wrote = written.convertToInteger().getIntValue();
 
         // set source position to match bytes written
