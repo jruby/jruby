@@ -38,7 +38,7 @@ describe "A Fiber" do
       
       Thread.pass while t.status
       
-      expect(t.status).to eq(false) # dead
+      expect(t.status).to eq(nil) # terminated with an exception
     end
   end
-end if RUBY_VERSION >= "1.9"
+end
