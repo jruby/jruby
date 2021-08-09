@@ -146,7 +146,10 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         if (superClass == null) return context.nil;
 
         CacheEntry entry = superClass.searchWithCache(methodName);
-        if (entry.method == UndefinedMethod.INSTANCE) return context.nil;
+        if (entry.method == UndefinedMethod.INSTANCE ||
+                entry.method.getDefinedClass().getMethods().get(entry.method.getName()) == UndefinedMethod.INSTANCE) {
+            return context.nil;
+        }
 
         if (receiver == null) {
             return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, entry);

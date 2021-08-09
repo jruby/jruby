@@ -88,7 +88,7 @@ public class FiberQueue {
 
     public IRubyObject pop(ThreadContext context) {
         try {
-            return context.getThread().executeTask(context, this, takeTask);
+            return context.getThread().executeTaskBlocking(context, this, takeTask);
         } catch (InterruptedException ie) {
             throw context.runtime.newThreadError("interrupted in FiberQueue.pop");
         }

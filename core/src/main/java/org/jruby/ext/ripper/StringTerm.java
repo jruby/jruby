@@ -89,7 +89,7 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_REGEXP) != 0) {
             validateRegexp(lexer);
             lexer.dispatchScanEvent(RipperParser.tREGEXP_END);
-            lexer.setState(EXPR_END | EXPR_ENDARG);
+            lexer.setState(EXPR_END);
             return RipperParser.tREGEXP_END;
         }
 
@@ -99,7 +99,7 @@ public class StringTerm extends StrTerm {
             return RipperParser.tLABEL_END;
         }
 
-        lexer.setState(EXPR_END | EXPR_ENDARG);
+        lexer.setState(EXPR_END);
         return RipperParser.tSTRING_END;
     }
 
@@ -123,7 +123,7 @@ public class StringTerm extends StrTerm {
 
         if ((flags & STR_FUNC_TERM) != 0) {
             if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
-            lexer.setState(EXPR_END | EXPR_ENDARG);
+            lexer.setState(EXPR_END);
             lexer.setStrTerm(null);
             return ((flags & STR_FUNC_REGEXP) != 0) ? RipperParser.tREGEXP_END : RipperParser.tSTRING_END;
         }
@@ -291,7 +291,7 @@ public class StringTerm extends StrTerm {
                         c = lexer.readEscape();
                     } else if (qwords && Character.isWhitespace(c)) {
                         /* ignore backslashed spaces in %w */
-                    } else if (c != end && !(begin != '\0' && c == begin)) {
+                    } else if (c != end && !(begin != '\0' && c == begin)) { // when begin/end are different (e.g. '(', ')' and you happen to see '\)'.
                         buffer.append('\\');
                     }
                 }

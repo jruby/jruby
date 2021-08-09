@@ -78,6 +78,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     jar( 'junit:junit:4.13.1',
          :scope => 'test' )
 
+    jar( 'org.awaitility:awaitility:4.1.0',
+         :scope => 'test' )
+
     plugin( 'org.apache.felix:maven-bundle-plugin:4.2.1',
             'instructions' => {
               'Export-Package' =>  'org.jruby.*;version=${project.version}',
@@ -261,6 +264,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
     plugin(:javadoc) do
       execute_goals('jar', :id => 'attach-javadocs')
+      configuration(doclint: 'none')
     end
   end
 

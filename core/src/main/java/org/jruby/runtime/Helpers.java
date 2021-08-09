@@ -60,7 +60,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.JavaSites.HelpersSites;
@@ -80,7 +80,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
-import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -1065,8 +1064,8 @@ public class Helpers {
         }
 
         if (catchable instanceof RubyClass && JavaClass.isProxyType(context, (RubyClass) catchable)) {
-            if ( ex instanceof InternalJavaProxy ) { // Ruby sub-class of a Java exception type
-                final IRubyObject target = ((InternalJavaProxy) ex).___getInvocationHandler().getOrig();
+            if ( ex instanceof ReifiedJavaProxy ) { // Ruby sub-class of a Java exception type
+                final IRubyObject target = ((ReifiedJavaProxy) ex).___jruby$rubyObject();
                 if ( target != null ) return ((RubyClass) catchable).isInstance(target);
             }
             return ((RubyClass) catchable).isInstance(wrappedEx);
@@ -2083,23 +2082,30 @@ public class Helpers {
     }
 
     public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz,
-                                                                             RubySymbol symbol, Visibility visibility) throws RaiseException {
-        String name = symbol.asJavaString(); // We just assume simple ascii string since that is all we are examining.
+                                                                             RubySymbol symbol, Visibility visibility, boolean checkSingleton) throws RaiseException {
+        String methodName = symbol.asJavaString(); // We just assume simple ascii string since that is all we are examining.
 
         if (clazz == runtime.getDummy()) {
             throw runtime.newTypeError("no class/module to add method");
         }
 
-        if (clazz == runtime.getObject() && "initialize".equals(name)) {
+        if (clazz == runtime.getObject() && "initialize".equals(methodName)) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
         }
 
-        if ("__id__".equals(name) || "__send__".equals(name)) {
+        if ("__id__".equals(methodName) || "__send__".equals(methodName)) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(runtime, "redefining `", ids(runtime, symbol), "' may cause serious problem"));
         }
 
-        if ("initialize".equals(name) || "initialize_copy".equals(name) || name.equals("initialize_dup") || name.equals("initialize_clone") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
-            visibility = Visibility.PRIVATE;
+        if ("initialize".equals(methodName) || "initialize_copy".equals(methodName) || methodName.equals("initialize_dup") || methodName.equals("initialize_clone") || methodName.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
+            if(checkSingleton) {
+                if(!clazz.isSingleton()){
+                    visibility = Visibility.PRIVATE;
+                }
+            } else {
+                visibility = Visibility.PRIVATE;
+            }
+
         }
 
         return visibility;

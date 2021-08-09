@@ -552,7 +552,7 @@ public class RubySocket extends RubyBasicSocket {
                         if (!blocking || result) return result;
 
                         while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
-                            context.pollThreadEvents();
+                            context.blockingThreadPoll();
                         }
                     }
                 } finally {
@@ -715,5 +715,5 @@ public class RubySocket extends RubyBasicSocket {
     protected Protocol soProtocol = Protocol.getProtocolByNumber(0);
 
     private static final String JRUBY_SERVER_SOCKET_ERROR =
-            "use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
+            "use ServerSocket for servers (https://github.com/jruby/jruby/wiki/ServerSocket)";
 }// RubySocket

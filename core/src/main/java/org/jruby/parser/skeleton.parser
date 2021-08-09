@@ -236,7 +236,7 @@ t        if (yydebug != null) yydebug.reduce(yystate, yystates[yytop-yyLen[yyn]]
 .            int count = yyLen[yyn];
 .            start = yystates[yytop - count + 1].start;
 .            end = yystates[yytop].end;
-.            yyVal = parserState.execute(support, lexer, yyVal, yystates, yytop, count);
+.            yyVal = parserState.execute(support, lexer, yyVal, yystates, yytop, count, yytoken);
 .        }
 .// ACTIONS_BEGIN (line used by optimize_parser)
 

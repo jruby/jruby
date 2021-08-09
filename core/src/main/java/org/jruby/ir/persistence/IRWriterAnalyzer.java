@@ -47,6 +47,10 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
         return true;
     }
 
+    public IRScope getCurrentScope() {
+        return null;
+    }
+
     @Override
     public void encode(ByteList value) {
     }

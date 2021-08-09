@@ -1,5 +1,4 @@
-fails:Module#define_method when name is :initialize passed a block sets visibility to private when method name is :initialize
-fails:Module#define_method when name is :initialize given an UnboundMethod sets the visibility to private when method is named :initialize
 fails:Method#define_method when passed a Proc object and a method is defined inside defines the nested method in the default definee where the Proc was created
 fails:Module#define_method raises a TypeError when an UnboundMethod from a child class is defined on a parent class
 fails:Module#define_method raises a TypeError when an UnboundMethod from one class is defined on an unrelated class
+fails:Module#define_method when the default definee is not the same as the module sets the visibility of the method to public

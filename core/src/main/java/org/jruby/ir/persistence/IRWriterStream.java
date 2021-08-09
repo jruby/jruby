@@ -15,6 +15,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope;
@@ -54,6 +55,8 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     private final IRWriterAnalyzer analyzer;
     private final Map<RubySymbol, Integer> constantMap = new HashMap();
 
+    // scope being encoded when instructions are being encoded.
+    IRScope currentScope = null;
     int headersOffset = -1;
 
     public IRWriterStream(OutputStream stream) {
@@ -81,6 +84,10 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
      */
     public int getScopeInstructionOffset(IRScope scope) {
         return scopeInstructionOffsets.get(scope);
+    }
+
+    public IRScope getCurrentScope() {
+        return currentScope;
     }
 
     @Override
@@ -297,6 +304,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void startEncodingScopeInstrs(IRScope scope) {
+        currentScope = scope;
         constantMap.clear();
         addScopeInstructionOffset(scope); // Record offset so we add this value to scope headers entry
         int instruction_count = scope.getInterpreterContext().getInstructions().length;

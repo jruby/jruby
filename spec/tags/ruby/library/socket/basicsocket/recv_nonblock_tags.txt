@@ -1,0 +1,1 @@
+fails:Socket::BasicSocket#recv_nonblock using IPv4 using a connected but not bound socket raises Errno::ENOTCONN

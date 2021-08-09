@@ -1,2 +1,0 @@
-fails:ObjectSpace::WeakMap#each is correct
-fails:ObjectSpace::WeakMap#each_key must take a block, except when empty

@@ -38,19 +38,23 @@
 // using arities: src/org/jruby/runtime/Block.arities.erb
 ////////////////////////////////////////////////////////////////////////////////
 
-
 package org.jruby.runtime;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import org.jruby.EvalType;
 import org.jruby.RubyProc;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.func.FunctionOneOrTwoOrThree;
+import org.jruby.util.func.TriFunction;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class Block {
+public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject, IRubyObject, IRubyObject> {
     public enum Type {
         NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
 
@@ -182,6 +186,27 @@ public class Block {
 
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
         return body.yield(context, this, value);
+    }
+
+    /**
+     * @see Function#apply(Object)
+     */
+    public IRubyObject apply(ThreadContext context) {
+        return call(context);
+    }
+
+    /**
+     * @see BiFunction#apply(Object, Object)
+     */
+    public IRubyObject apply(ThreadContext context, IRubyObject arg0) {
+        return call(context, arg0);
+    }
+
+    /**
+     * @see TriFunction#apply(Object, Object, Object)
+     */
+    public IRubyObject apply(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return call(context, arg0, arg1);
     }
 
     // PROC/NORMAL/THREAD will spread a single argument array if the block expects more than one required argument.

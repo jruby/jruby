@@ -137,7 +137,11 @@ public class SizedQueue extends Queue {
         boolean should_block = shouldBlock(context, argv);
 
         try {
-            return context.getThread().executeTask(context, argv[0], should_block ? blockingPushTask : nonblockingPushTask);
+            if (should_block) {
+                return context.getThread().executeTaskBlocking(context, argv[0], blockingPushTask);
+            } else {
+                return context.getThread().executeTask(context, argv[0], nonblockingPushTask);
+            }
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "push");
         }

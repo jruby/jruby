@@ -122,7 +122,6 @@ import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
-import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.management.Config;
@@ -1233,7 +1232,7 @@ public final class Ruby implements Constantizable {
     private ScriptAndCode tryCompile(RootNode root, ClassDefiningClassLoader classLoader) {
         try {
             return Compiler.getInstance().execute(this, root, classLoader);
-        } catch (NotCompilableException e) {
+        } catch (NotCompilableException | VerifyError e) {
             if (Options.JIT_LOGGING.load()) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
                     LOG.error("failed to compile target script: " + root.getFile(), e);
@@ -2997,14 +2996,6 @@ public final class Ruby implements Constantizable {
 
     public Map<String, Map<String, String>> getBoundMethods() {
         return boundMethods;
-    }
-
-    public void setJavaProxyClassFactory(JavaProxyClassFactory factory) {
-        this.javaProxyClassFactory = factory;
-    }
-
-    public JavaProxyClassFactory getJavaProxyClassFactory() {
-        return javaProxyClassFactory;
     }
 
     private static final EnumSet<RubyEvent> interest =
@@ -5653,8 +5644,6 @@ public final class Ruby implements Constantizable {
     private final IRManager irManager;
 
     private FFI ffi;
-
-    private JavaProxyClassFactory javaProxyClassFactory;
 
     /** Used to find the ProfilingService implementation to use. If profiling is disabled it's null */
     private final ProfilingServiceLookup profilingServiceLookup;

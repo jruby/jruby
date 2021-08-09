@@ -1,0 +1,4 @@
+fails:IO#lineno raises an IOError on a write-only stream
+fails:IO#lineno raises an IOError on a duplexed stream with the read side closed
+fails:IO#lineno= raises an IOError on a write-only stream
+fails:IO#lineno= raises an IOError on a duplexed stream with the read side closed

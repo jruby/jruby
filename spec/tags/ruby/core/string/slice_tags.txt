@@ -1,1 +1,4 @@
 fails:String#slice with index, length returns nil if the offset falls outside of self
+jit(transition with threshold=0 may lose tainting, GH-6757):String#slice with Regexp always taints resulting strings when self or regexp is tainted
+jit(transition with threshold=0 may lose tainting, GH-6757):String#slice with Regexp, index always taints resulting strings when self or regexp is tainted
+jit(transition with threshold=0 may lose tainting, GH-6757):String#slice with Regexp, group always taints resulting strings when self or regexp is tainted

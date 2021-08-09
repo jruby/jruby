@@ -572,8 +572,8 @@ public class JavaProxy extends RubyObject {
         }
     }
 
-    private static final String NONPERSISTENT_IVAR_MESSAGE = "instance vars on non-persistent Java type {0} (http://wiki.jruby.org/Persistence)";
-    private static final String NONPERSISTENT_SINGLETON_MESSAGE = "singleton on non-persistent Java type {0} (http://wiki.jruby.org/Persistence)";
+    private static final String NONPERSISTENT_IVAR_MESSAGE = "instance vars on non-persistent Java type {0} (https://github.com/jruby/jruby/wiki/Persistence)";
+    private static final String NONPERSISTENT_SINGLETON_MESSAGE = "singleton on non-persistent Java type {0} (https://github.com/jruby/jruby/wiki/Persistence)";
 
     public static class ClassMethods {
 
