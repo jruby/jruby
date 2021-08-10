@@ -603,6 +603,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         int i = s; int off = 0; boolean dD = false;
         int exp = -1; int lastSign = -1;
+        boolean dotFound = false;
         // 1. MRI allows d and D as exponent separators
         // 2. MRI allows underscores anywhere
         loop: while (i + off <= e) {
@@ -626,14 +627,28 @@ public class RubyBigDecimal extends RubyNumeric {
                         continue;
                     }
                     if (!strict) {
-                        e = i + off;
+                        e = i + off - 1;
                         break loop;
                     }
                     throw invalidArgumentError(context, arg);
                 // 3. MRI ignores the trailing junk
                 case '0': case '1': case '2': case '3': case '4':
                 case '5': case '6': case '7': case '8': case '9':
+                    break;
                 case '.':
+                    // MRI allows multiple dots(e.g. "1.2.3".to_d)
+                    if (dotFound == true) {
+                        e = i + off - 1;
+                        break loop;
+                    } else {
+                        dotFound = true;
+                    }
+
+                    // checking next character
+                    if ((i + off + 1) <= e && !Character.isDigit(str[i + off + 1])) {
+                        e = i + off - 1;
+                        break loop;
+                    }
                     break;
                 case '-': case '+':
                     lastSign = i; break;
@@ -642,6 +657,18 @@ public class RubyBigDecimal extends RubyNumeric {
                     else {
                         e = i - 1; continue; // (trailing) junk - DONE
                     }
+
+                    // checking next character
+                    if (i + off + 1 <= e ) {
+                        char c = str[i + off + 1];
+                        if (( c == '-') || (c == '+') || Character.isDigit(c)) {
+
+                        } else {
+                            e = i + off - 1;
+                            break loop;
+                        }
+                    }
+
                     break;
                 default : // (trailing) junk - DONE
                     e = i - 1; continue;
@@ -664,7 +691,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if ( exp != -1 ) {
             if (exp == e || (exp + 1 == e && (str[exp + 1] == '-' || str[exp + 1] == '+'))) {
-                if (!strict) return context.nil;
+                if (!strict) return newZero(context.runtime, 1);
                 throw invalidArgumentError(context, arg);
             }
             else if (isExponentOutOfRange(str, exp + 1, e)) {
