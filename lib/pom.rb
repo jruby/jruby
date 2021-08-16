@@ -17,6 +17,7 @@ end
 default_gems = [
     ['cmath', '1.0.0'],
     ['csv', '1.0.0'],
+    ['ffi', '1.15.4.pre1'],
     ['fileutils', '1.1.0'],
     ['io-console', '0.5.9'],
     ['ipaddr', '1.2.0'],

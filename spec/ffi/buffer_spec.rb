@@ -7,8 +7,8 @@ require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
 describe "Buffer#total" do
   [1,2,3].each do |i|
-    { :char => 1, :uchar => 1, :short => 2, :ushort => 2, :int => 4, 
-      :uint => 4, :long => FFI::Type::LONG.size, :ulong => FFI::Type::ULONG.size, 
+    { :char => 1, :uchar => 1, :short => 2, :ushort => 2, :int => 4,
+      :uint => 4, :long => FFI::Type::LONG.size, :ulong => FFI::Type::ULONG.size,
       :long_long => 8, :ulong_long => 8, :float => 4, :double => 8
     }.each_pair do |t, s|
 
@@ -46,7 +46,7 @@ describe "Buffer#put_uchar" do
         expect(FFI::Buffer.alloc_in(bufsize).put_uchar(offset, i).get_uchar(offset)).to eq(i)
       end
     end
-  end 
+  end
 end
 
 describe "Buffer#put_short" do
@@ -138,6 +138,14 @@ describe "Buffer#put_ulong_long" do
 end
 
 describe "Reading/Writing binary strings" do
+  it "Buffer#write_bytes and read_bytes" do
+    str = "hello\0world"
+    buf = FFI::Buffer.new 11
+    buf.write_bytes(str)
+    s2 = buf.read_bytes(11)
+    expect(s2).to eq(str)
+  end
+
   it "Buffer#put_bytes" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
@@ -165,19 +173,19 @@ describe "Reading/Writing binary strings" do
   it "Buffer#put_bytes with index > str.length" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.put_bytes(0, str, 12); }.to raise_error
+    expect { buf.put_bytes(0, str, 12); }.to raise_error(IndexError)
   end
 
   it "Buffer#put_bytes with length > str.length" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.put_bytes(0, str, 0, 12); }.to raise_error
+    expect { buf.put_bytes(0, str, 0, 12); }.to raise_error(RangeError)
   end
 
   it "Buffer#put_bytes with negative index" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.put_bytes(0, str, -1, 12); }.to raise_error
+    expect { buf.put_bytes(0, str, -1, 12); }.to raise_error(RangeError)
   end
 
   it "Buffer#write_bytes" do
@@ -207,19 +215,19 @@ describe "Reading/Writing binary strings" do
   it "Buffer#write_bytes with index > str.length" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.write_bytes(str, 12) }.to raise_error
+    expect { buf.write_bytes(str, 12) }.to raise_error(IndexError)
   end
 
   it "Buffer#put_bytes with length > str.length" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.put_bytes(0, str, 0, 12) }.to raise_error
+    expect { buf.put_bytes(0, str, 0, 12) }.to raise_error(RangeError)
   end
 
   it "Buffer#write_bytes with negative index" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.write_bytes(str, -1, 12) }.to raise_error
+    expect { buf.write_bytes(str, -1, 12) }.to raise_error(RangeError)
   end
 end
 

@@ -57,7 +57,7 @@ public abstract class Factory {
             providerNames.add(prefix + ".jffi.Factory");
             for (String className : providerNames) {
                 try {
-                    factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).newInstance();
+                    factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).getConstructor().newInstance();
                     break;
                 } catch (Throwable ex) {
                     errors.add(ex);
@@ -130,9 +130,6 @@ public abstract class Factory {
             if (ffi.getClass(CallbackInfo.CLASS_NAME) == null) {
                 CallbackInfo.createCallbackInfoClass(runtime, ffi);
             }
-            if (ffi.getClass("Enum") == null) {
-                Enum.createEnumClass(runtime, ffi);
-            }
             if (ffi.getClass("Enums") == null) {
                 Enums.createEnumsClass(runtime, ffi);
             }
@@ -147,8 +144,6 @@ public abstract class Factory {
 
             Platform.createPlatformModule(runtime, ffi);
             IOModule.createIOModule(runtime, ffi);
-            
-            StructByReference.createStructByReferenceClass(runtime, ffi);
         }
     }
     

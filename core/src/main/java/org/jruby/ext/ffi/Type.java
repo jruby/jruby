@@ -296,6 +296,7 @@ public abstract class Type extends RubyObject {
             case UINT:
             case LONG_LONG:
             case ULONG_LONG:
+//            case LONGDOUBLE:
             case LONG:
             case ULONG:
             case FLOAT:
@@ -312,10 +313,10 @@ public abstract class Type extends RubyObject {
         }
 
     }
-    private static final int getNativeAlignment(NativeType type) {
+    static final int getNativeAlignment(NativeType type) {
         return isPrimitive(type) ? Factory.getInstance().alignmentOf(type) : 1;
     }
-    private static final int getNativeSize(NativeType type) {
+    static final int getNativeSize(NativeType type) {
         return isPrimitive(type) ? Factory.getInstance().sizeOf(type) : 0;
     }
 

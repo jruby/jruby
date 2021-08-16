@@ -18,7 +18,7 @@ public final class TypeResolver {
     }
 
     public final Type findType(Ruby runtime, IRubyObject name) {
-        return findType(runtime, name, null);
+        return findType(runtime, name, runtime.getNil());
     }
 
     public final Type findType(Ruby runtime, IRubyObject name, IRubyObject typeMap) {
@@ -44,14 +44,14 @@ public final class TypeResolver {
                 return type;
             }
 
-            return lookupAndCacheType(runtime, (RubySymbol)name, (RubyHash)typeMap);
+            return lookupAndCacheType(runtime, (RubySymbol) name, typeMap);
 
         } else {
             return lookupType(runtime, name, typeMap);
         }
     }
 
-    private synchronized Type lookupAndCacheType(Ruby runtime, RubySymbol name, RubyHash typeMap) {
+    private synchronized Type lookupAndCacheType(Ruby runtime, RubySymbol name, IRubyObject typeMap) {
         Type type = lookupType(runtime, name, typeMap);
 
         Map<RubySymbol, Type> map = new IdentityHashMap<RubySymbol, Type>(symbolTypeCache);
@@ -68,11 +68,12 @@ public final class TypeResolver {
             return (Type) type;
         }
 
-        IRubyObject args[] = new IRubyObject[]{name, typeMap};
-        if ((type = ffi.ffiModule.callMethod(runtime.getCurrentContext(), "find_type", args)) instanceof Type) {
-            return (Type) type;
-        }
+        // Unsure why this was there but there's no equivalent in the C code
+//        IRubyObject args[] = new IRubyObject[]{name, typeMap};
+//        if ((type = ffi.ffiModule.callMethod(runtime.getCurrentContext(), "find_type", args)) instanceof Type) {
+//            return (Type) type;
+//        }
 
-        throw runtime.newTypeError("cannot resolve type " + name);
+        throw runtime.newArgumentError("cannot resolve type " + name);
     }
 }
