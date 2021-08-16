@@ -28,7 +28,7 @@ describe "FFI" do
 
   describe "VERSION" do
     it "should be kind of version" do
-      expect( FFI::VERSION ).to match(/^\d+\.\d+.\d+$/)
+      expect( FFI::VERSION ).to match(/^\d+\.\d+.\d+/)
     end
   end
 end
