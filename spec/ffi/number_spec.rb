@@ -142,38 +142,39 @@ describe "Function with primitive integer arguments" do
     end
   end
 end
+# range checks are not yet supported on TruffleRuby
 describe "Integer parameter range checking" do
   [ 128, -129 ].each do |i|
     it ":char call(:char (#{i}))" do
-      expect { expect(LibTest.ret_int8_t(i)).to eq(i) }.to raise_error
+      expect { expect(LibTest.ret_s8(i)).to eq(i) }.to raise_error(Exception) { |error| expect([RSpec::Expectations::ExpectationNotMetError, RangeError]).to be_include(error.class) }
     end
   end
   [ -1, 256 ].each do |i|
     it ":uchar call(:uchar (#{i}))" do
-      expect { expect(LibTest.ret_u_int8_t(i)).to eq(i) }.to raise_error
+      expect { expect(LibTest.ret_u8(i)).to eq(i) }.to raise_error(Exception) { |error| expect([RSpec::Expectations::ExpectationNotMetError, RangeError]).to be_include(error.class) }
     end
   end
   [ 0x8000, -0x8001 ].each do |i|
     it ":short call(:short (#{i}))" do
-      expect { expect(LibTest.ret_int16_t(i)).to eq(i) }.to raise_error
+      expect { expect(LibTest.ret_s16(i)).to eq(i) }.to raise_error(Exception) { |error| expect([RSpec::Expectations::ExpectationNotMetError, RangeError]).to be_include(error.class) }
     end
   end
   [ -1, 0x10000 ].each do |i|
     it ":ushort call(:ushort (#{i}))" do
-      expect { expect(LibTest.ret_u_int16_t(i)).to eq(i) }.to raise_error
+      expect { expect(LibTest.ret_u16(i)).to eq(i) }.to raise_error(Exception) { |error| expect([RSpec::Expectations::ExpectationNotMetError, RangeError]).to be_include(error.class) }
     end
   end
   [ 0x80000000, -0x80000001 ].each do |i|
     it ":int call(:int (#{i}))" do
-      expect { expect(LibTest.ret_int32_t(i)).to eq(i) }.to raise_error
+      expect { expect(LibTest.ret_s32(i)).to eq(i) }.to raise_error(Exception) { |error| expect([RSpec::Expectations::ExpectationNotMetError, RangeError]).to be_include(error.class) }
     end
   end
   [ -1, 0x100000000 ].each do |i|
-    it ":ushort call(:ushort (#{i}))" do
-      expect { expect(LibTest.ret_u_int32_t(i)).to eq(i) }.to raise_error
+    it ":uint call(:uint (#{i}))" do
+      expect { expect(LibTest.ret_u32(i)).to eq(i) }.to raise_error(Exception) { |error| expect([RSpec::Expectations::ExpectationNotMetError, RangeError]).to be_include(error.class) }
     end
   end
-end
+end if RUBY_ENGINE != "truffleruby"
 describe "Three different size Integer arguments" do
   TYPE_MAP = {
     's8' => :char, 'u8' => :uchar, 's16' => :short, 'u16' => :ushort,
@@ -184,8 +185,8 @@ describe "Three different size Integer arguments" do
   module LibTest
     extend FFI::Library
     ffi_lib TestLibrary::PATH
-    
-    
+
+
     [ 's32', 'u32', 's64', 'u64' ].each do |rt|
       TYPES.each do |t1|
         TYPES.each do |t2|
