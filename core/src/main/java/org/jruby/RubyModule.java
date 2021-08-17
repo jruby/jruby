@@ -1086,7 +1086,7 @@ public class RubyModule extends RubyObject {
         }
 
         // Make sure the module we include does not already exist
-        checkForCyclicInclude(module);
+        checkForCyclicPrepend(module);
 
         synchronized (this) {
             if (hasModuleInPrepends(module)) {
@@ -3548,7 +3548,7 @@ public class RubyModule extends RubyObject {
 
         RubyModule currentInclusionPoint = this;
         ModuleLoop: for (RubyModule nextModule : modulesToInclude) {
-            checkForCyclicInclude(nextModule);
+            checkForCyclicPrepend(nextModule);
 
             boolean superclassSeen = false;
 
