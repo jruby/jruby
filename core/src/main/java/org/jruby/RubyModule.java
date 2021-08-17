@@ -445,15 +445,11 @@ public class RubyModule extends RubyObject {
     }
 
     private void checkForCyclicInclude(RubyModule m) throws RaiseException {
-        if (getOrigin() == m.getOrigin()) {
-            throw getRuntime().newArgumentError("cyclic include detected");
-        }
+        if (isSameOrigin(m)) throw getRuntime().newArgumentError("cyclic include detected");
     }
 
     protected void checkForCyclicPrepend(RubyModule m) throws RaiseException {
-        if (getOrigin() == m.getOrigin()) {
-            throw getRuntime().newArgumentError(getName() + " cyclic prepend detected " + m.getName());
-        }
+        if (isSameOrigin(m)) throw getRuntime().newArgumentError(getName() + " cyclic prepend detected " + m.getName());
     }
 
     private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
@@ -2816,6 +2812,10 @@ public class RubyModule extends RubyObject {
         return this == module;
     }
 
+    protected boolean isSameOrigin(RubyModule other) {
+        return getOrigin() == other.getOrigin();
+    }
+
     /** rb_mod_initialize
      *
      */
@@ -3643,9 +3643,9 @@ public class RubyModule extends RubyObject {
      * @return The new module wrapper resulting from this prepend
      */
     private RubyModule proceedWithPrepend(RubyModule insertBelow, RubyModule moduleToPrepend) {
-        if (!moduleToPrepend.isPrepended()) moduleToPrepend = moduleToPrepend.getOrigin();
-
-        return proceedWithInclude(insertBelow, moduleToPrepend);
+        return proceedWithInclude(insertBelow, !moduleToPrepend.isPrepended() ?
+                moduleToPrepend.getOrigin() :
+                moduleToPrepend);
     }
 
 
@@ -4911,9 +4911,7 @@ public class RubyModule extends RubyObject {
         if (entry == null) return null;
 
         if (entry.hidden && !includePrivate) {
-            RubyModule recv = this;
-            if (recv.isIncluded()) recv = recv.getOrigin();
-            getRuntime().getCurrentContext().setPrivateConstantReference(recv);
+            getRuntime().getCurrentContext().setPrivateConstantReference(getOrigin());
             return null;
         }
         if (entry.deprecated) {
