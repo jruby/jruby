@@ -3161,7 +3161,7 @@ public final class Ruby implements Constantizable {
                     IRubyObject klass = context.nil;
                     if (type instanceof RubyModule) {
                         if (((RubyModule) type).isIncluded()) {
-                            klass = ((RubyModule) type).getNonIncludedClass();
+                            klass = ((RubyModule) type).getOrigin();
                         } else if (((RubyModule) type).isSingleton()) {
                             klass = ((MetaClass) type).getAttached();
                         }

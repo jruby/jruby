@@ -40,6 +40,12 @@ public class IncludedModule extends RubyClass {
     }
 
     @Override
+    public RubyModule getOrigin() {
+        return origin;
+    }
+
+    @Deprecated
+    @Override
     public RubyModule getNonIncludedClass() {
         return origin;
     }

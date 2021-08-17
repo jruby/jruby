@@ -485,7 +485,7 @@ public class MarshalStream extends FilterOutputStream {
         }
         while(type.isIncluded()) {
             write('e');
-            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, type.getNonIncludedClass().getName()).getBytes());
+            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, type.getOrigin().getName()).getBytes());
             type = type.getSuperClass();
         }
         return type;

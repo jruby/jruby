@@ -71,7 +71,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     @Override
     @Deprecated
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
-        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getNonIncludedClass());
+        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getOrigin());
 
         // include its parent (and in turn that module's parents)
         if (getSuperClass() != null) {
