@@ -558,10 +558,6 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
-    public boolean hasBeenPrepended() {
-        return this != methodLocation;
-    }
-
     /**
      * In an included or prepended module what is the ACTUAL module it represents?
      * @return the actual module of an included/prepended module.
@@ -3529,7 +3525,7 @@ public class RubyModule extends RubyObject {
     private void doPrependModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
-        if (!hasBeenPrepended()) { // Set up a new holder class to hold all this types original methods.
+        if (!hasPrepends()) { // Set up a new holder class to hold all this types original methods.
             RubyClass origin = new PrependedModule(getRuntime(), getSuperClass(), this);
 
             // if the insertion point is a class, update subclass lists
