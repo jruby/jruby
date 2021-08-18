@@ -426,10 +426,10 @@ public class CGIEscape implements Library {
     public void load(Ruby runtime, boolean wrap) {
         RubyClass rb_cCGI = runtime.defineClass("CGI", runtime.getObject(), runtime.getObject().getAllocator());
         RubyModule rb_mEscape = rb_cCGI.defineModuleUnder("Escape");
+        RubyModule rb_mUtil = rb_cCGI.defineModuleUnder("Util");
         rb_mEscape.defineAnnotatedMethods(CGIEscape.class);
-        // We do this in cgi/util.rb to work around jruby/jruby#4531.
-//        rb_mUtil.prependModule(rb_mEscape);
-//        rb_mEscape.extend_object(rb_cCGI);
+        rb_mUtil.prependModule(rb_mEscape);
+        rb_mEscape.extend_object(rb_cCGI);
     }
 
     // PORTED FROM OTHER FILES IN MRI
