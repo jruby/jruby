@@ -37,7 +37,11 @@ import org.jruby.internal.runtime.methods.RefinedMarker;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * This class is used as an intermediate superclass for Module#prepend
+ * This class is used as an intermediate superclass for Module#prepend.  It takes over all
+ * methods on the original module/class which is prepended and sets the originals methodLocation
+ * to this class.  The orignial type no longer has methods so it will look down its inheritance
+ * chain to find them.  The class which is actually prepended will be included onto the original
+ * type.  This original method holding type will be put beneath the prepend module.
  *
  * @see org.jruby.IncludedModuleWrapper
  * @see org.jruby.RubyModule
@@ -45,19 +49,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class PrependedModule extends RubyClass {
     private RubyModule origin;
 
-    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule klassToPrepend) {
+    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule prependedClass) {
         super(runtime, superClass, false);
-        origin = klassToPrepend;
+        origin = prependedClass;
         this.metaClass = origin.metaClass;
         if (superClass != null) {
             setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
         }
-        this.methods = klassToPrepend.methods;
-        klassToPrepend.methods = Collections.EMPTY_MAP;
-        klassToPrepend.methodLocation = this;
+        this.methods = prependedClass.methods;
+        prependedClass.methods = Collections.EMPTY_MAP;
+        prependedClass.methodLocation = this;
         for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
-            if (moveRefinedMethod(entry.getKey(), method, klassToPrepend)) {
+            if (moveRefinedMethod(entry.getKey(), method, prependedClass)) {
                 methods.remove(entry.getKey());
             }
         }

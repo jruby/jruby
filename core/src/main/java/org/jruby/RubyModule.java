@@ -558,6 +558,10 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
+    public boolean hasBeenPrepended() {
+        return this != methodLocation;
+    }
+
     /**
      * In an included or prepended module what is the ACTUAL module it represents?
      * @return the actual module of an included/prepended module.
@@ -3525,28 +3529,23 @@ public class RubyModule extends RubyObject {
     private void doPrependModule(RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
-        if (methodLocation == this) {
-            // In the current logic, if we getService here we know that module is not an
-            // IncludedModule, so there's no need to fish out the delegate. But just
-            // in case the logic should change later, let's do it anyway
+        if (!hasBeenPrepended()) { // Set up a new holder class to hold all this types original methods.
             RubyClass origin = new PrependedModule(getRuntime(), getSuperClass(), this);
 
             // if the insertion point is a class, update subclass lists
             if (this instanceof RubyClass) {
-                RubyClass insertBelowClass = (RubyClass)this;
-
                 // if there's a non-null superclass, we're including into a normal class hierarchy;
                 // update subclass relationships to avoid stale parent/child relationships
-                if (insertBelowClass.getSuperClass() != null) {
-                    insertBelowClass.getSuperClass().replaceSubclass(insertBelowClass, origin);
+                if (getSuperClass() != null) {
+                    getSuperClass().replaceSubclass((RubyClass) this, origin);
                 }
 
-                origin.addSubclass(insertBelowClass);
+                origin.addSubclass((RubyClass) this);
             }
             setSuperClass(origin);
         }
 
-        RubyModule currentInclusionPoint = this;
+        RubyModule inclusionPoint = this;
         ModuleLoop: for (RubyModule nextModule : modulesToInclude) {
             checkForCyclicPrepend(nextModule);
 
@@ -3562,7 +3561,7 @@ public class RubyModule extends RubyObject {
                         // so we skip including it
 
                         // if we haven't encountered a real superclass, use the found module as the new inclusion point
-                        if (!superclassSeen) currentInclusionPoint = nextClass;
+                        if (!superclassSeen) inclusionPoint = nextClass;
 
                         continue ModuleLoop;
                     }
@@ -3571,7 +3570,7 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            currentInclusionPoint = proceedWithPrepend(currentInclusionPoint, nextModule.getDelegate());
+            inclusionPoint = proceedWithPrepend(inclusionPoint, nextModule.getDelegate());
         }
     }
 
@@ -5468,6 +5467,14 @@ public class RubyModule extends RubyObject {
     protected Integer generationObject;
 
     protected volatile Set<RubyClass> includingHierarchies = Collections.EMPTY_SET;
+
+    /**
+     * Where are the methods of this module/class located?
+     *
+     * This only happens as a result of prepend (see PrependedModule) where it
+     * moves all methods to a PrependedModule which will be beneath the actual
+     * module which was prepended.
+     */
     protected volatile RubyModule methodLocation = this;
 
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
