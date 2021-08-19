@@ -2227,7 +2227,7 @@ public class RubyModule extends RubyObject {
     public void exportMethod(String name, Visibility visibility) {
         Ruby runtime = getRuntime();
 
-        CacheEntry entry = deepMethodSearch(name, runtime);
+        CacheEntry entry = methodLocation.deepMethodSearch(name, runtime);
         DynamicMethod method = entry.method;
 
         if (method.getVisibility() != visibility) {
