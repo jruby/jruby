@@ -85,7 +85,6 @@ public class PrependedModule extends IncludedModule {
     @Override
     public void addMethod(String id, DynamicMethod method) {
         super.addMethod(id, method);
-        method.setDefinedClass(origin);
     }
 
     @Override
