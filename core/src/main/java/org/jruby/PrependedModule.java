@@ -141,6 +141,12 @@ public class PrependedModule extends RubyClass {
     public IRubyObject id() {
         return origin.id();
     }
+    @Override
+    public void addMethod(String id, DynamicMethod method) {
+        super.addMethod(id, method);
+        method.setDefinedClass(origin);
+    }
+
 
     @Override
     protected synchronized Map<String, IRubyObject> getClassVariables() {
