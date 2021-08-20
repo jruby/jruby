@@ -1290,8 +1290,8 @@ public class IRRuntimeHelpers {
     private static RubyClass searchNormalSuperclass(RubyModule klazz) {
         // Unwrap refinements, since super should always dispatch back to the refined class
         if (klazz.isIncluded()
-                && klazz.getNonIncludedClass().isRefinement()) {
-            klazz = klazz.getNonIncludedClass();
+                && klazz.getOrigin().isRefinement()) {
+            klazz = klazz.getOrigin();
         }
         klazz = klazz.getMethodLocation();
         return klazz.getSuperClass();
