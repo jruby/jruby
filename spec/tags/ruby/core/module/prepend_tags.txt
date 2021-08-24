@@ -1,2 +1,0 @@
-fails:Module#prepend reports the class for the owner of a method aliased from the prepended module
-fails:Module#prepend reports the class for the owner of an aliased method on the class
