@@ -165,21 +165,6 @@ public class PrependedModule extends RubyClass {
     //
 
     @Override
-    protected boolean constantTableContains(String name) {
-        return origin.constantTableContains(name);
-    }
-
-    @Override
-    protected IRubyObject constantTableFetch(String name) {
-        return origin.constantTableFetch(name);
-    }
-
-    @Override
-    protected ConstantEntry constantEntryFetch(String name) {
-        return origin.constantEntryFetch(name);
-    }
-
-    @Override
     protected IRubyObject constantTableStore(String name, IRubyObject value) {
         // FIXME: legal here? may want UnsupportedOperationException
         return origin.constantTableStore(name, value);
@@ -194,22 +179,6 @@ public class PrependedModule extends RubyClass {
     protected IRubyObject constantTableRemove(String name) {
         // this _is_ legal (when removing an undef)
         return origin.constantTableRemove(name);
-    }
-
-    @Override
-    @Deprecated
-    public List<String> getStoredConstantNameList() {
-        return origin.getStoredConstantNameList();
-    }
-
-    @Override
-    public Collection<String> getConstantNames() {
-        return origin.getConstantNames();
-    }
-
-    @Override
-    public Collection<String> getConstantNames(boolean includePrivate) {
-        return origin.getConstantNames(includePrivate);
     }
 
     @Override

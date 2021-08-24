@@ -306,7 +306,7 @@ public class RubyModule extends RubyObject {
     }
 
     public Map<String, ConstantEntry> getConstantMap() {
-        return constants;
+        return getOrigin().constants;
     }
 
     public Map<String, ConstantEntry> getConstantMapForWrite() {
@@ -4967,7 +4967,7 @@ public class RubyModule extends RubyObject {
 
     @Deprecated
     public List<String> getStoredConstantNameList() {
-        return new ArrayList<String>(getConstantMap().keySet());
+        return new ArrayList<>(getConstantMap().keySet());
     }
 
     /**
@@ -4984,7 +4984,7 @@ public class RubyModule extends RubyObject {
             return Collections.EMPTY_SET;
         }
 
-        HashSet<String> publicNames = new HashSet<String>(getConstantMap().size());
+        HashSet<String> publicNames = new HashSet<>(getConstantMap().size());
 
         for (Map.Entry<String, ConstantEntry> entry : getConstantMap().entrySet()) {
             if (entry.getValue().hidden) continue;
