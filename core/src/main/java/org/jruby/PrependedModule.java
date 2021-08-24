@@ -29,7 +29,9 @@
 
 package org.jruby;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -156,6 +158,73 @@ public class PrependedModule extends RubyClass {
     @Override
     protected Map<String, IRubyObject> getClassVariablesForRead() {
         return origin.getClassVariablesForRead();
+    }
+
+    //
+    // CONSTANT TABLE METHODS - pass to origin
+    //
+
+    @Override
+    protected boolean constantTableContains(String name) {
+        return origin.constantTableContains(name);
+    }
+
+    @Override
+    protected IRubyObject constantTableFetch(String name) {
+        return origin.constantTableFetch(name);
+    }
+
+    @Override
+    protected ConstantEntry constantEntryFetch(String name) {
+        return origin.constantEntryFetch(name);
+    }
+
+    @Override
+    protected IRubyObject constantTableStore(String name, IRubyObject value) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return origin.constantTableStore(name, value);
+    }
+
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return origin.constantTableStore(name, value, hidden);
+    }
+
+    @Override
+    protected IRubyObject constantTableRemove(String name) {
+        // this _is_ legal (when removing an undef)
+        return origin.constantTableRemove(name);
+    }
+
+    @Override
+    @Deprecated
+    public List<String> getStoredConstantNameList() {
+        return origin.getStoredConstantNameList();
+    }
+
+    @Override
+    public Collection<String> getConstantNames() {
+        return origin.getConstantNames();
+    }
+
+    @Override
+    public Collection<String> getConstantNames(boolean includePrivate) {
+        return origin.getConstantNames(includePrivate);
+    }
+
+    @Override
+    protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
+        return origin.getAutoloadConstant(name, forceLoad);
+    }
+
+    @Override
+    protected Map<String, Autoload> getAutoloadMap() {
+        return origin.getAutoloadMap();
+    }
+
+    @Override
+    protected Map<String, Autoload> getAutoloadMapForWrite() {
+        return origin.getAutoloadMapForWrite();
     }
 
 }
