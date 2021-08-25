@@ -696,7 +696,8 @@ public class RubyBigDecimal extends RubyNumeric {
             }
             else if (isExponentOutOfRange(str, exp + 1, e)) {
                 // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
-                if (isZeroBase(str, s, exp)) return newZero(context.runtime, sign); // unless its a HUGE zero
+                // checking the sign of exponent part.
+                if (isZeroBase(str, s, exp) || str[exp + 1] == '-') return newZero(context.runtime, sign);
                 return newInfinity(context.runtime, sign);
             }
         }
