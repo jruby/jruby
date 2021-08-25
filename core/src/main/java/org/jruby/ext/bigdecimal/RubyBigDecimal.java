@@ -1099,6 +1099,23 @@ public class RubyBigDecimal extends RubyNumeric {
         throw context.runtime.newMathDomainError("a non-integral exponent for a negative base");
     }
 
+    // Calculate appropriate zero or infinity depending on exponent
+    private RubyBigDecimal newPowOfZero(ThreadContext context, RubyNumeric exp) {
+        if (Numeric.f_negative_p(context, exp)) {
+            /* (+0) ** (-num)  -> Infinity */
+            if (zeroSign >= 0) return newInfinity(context.runtime, 1);
+
+            // (-0) ** (-even_integer) -> +Infinity  AND (-0) ** (-odd_integer) -> -Infinity
+            if (Numeric.f_integer_p(context, exp)) return newInfinity(context.runtime, isEven(exp) ? 1 : -1);
+
+            return newInfinity(context.runtime, -1); // (-0) ** (-non_integer) -> Infinity
+        }
+
+        if (Numeric.f_zero_p(context, exp)) return new RubyBigDecimal(context.runtime, BigDecimal.ONE);
+
+        return newZero(context.runtime, 1);
+    }
+
     private static IRubyObject vpPrecLimit(final Ruby runtime) {
         return runtime.getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit");
     }
@@ -1116,11 +1133,40 @@ public class RubyBigDecimal extends RubyNumeric {
     public RubyBigDecimal op_pow(final ThreadContext context, IRubyObject exp) {
         final Ruby runtime = context.runtime;
 
+        if (isNaN()) return newNaN(runtime);
+
         if ( ! (exp instanceof RubyNumeric) ) {
             throw context.runtime.newTypeError("wrong argument type " + exp.getMetaClass() + " (expected scalar Numeric)");
+        } else if (exp instanceof RubyFixnum) {
+
+        } else if (exp instanceof RubyBignum) {
+
+        } else if (exp instanceof RubyFloat) {
+            double d = RubyNumeric.num2dbl(context, exp);
+            if (d == Math.round(d)) {
+                if (RubyNumeric.fixable(runtime, d)) {
+                    exp = RubyFixnum.newFixnum(runtime, (long)d);
+                } else {
+                    exp = RubyBignum.newBignorm(runtime, d);
+                }
+            }
+        } else if (exp instanceof RubyRational) {
+            if (Numeric.f_zero_p(context, Numeric.f_numerator(context, exp))) {
+
+            } else if (Numeric.f_one_p(context, Numeric.f_denominator(context, exp))) {
+                exp = Numeric.f_numerator(context, exp);
+            }
+        } else if (exp instanceof RubyBigDecimal) {
+            IRubyObject zero = RubyNumeric.int2fix(runtime, 0);
+            IRubyObject rounded = ((RubyBigDecimal)exp).round(context, new IRubyObject[]{zero});
+            if (((RubyBigDecimal)exp).eql_p(context, rounded).isTrue()) {
+                exp = ((RubyBigDecimal)exp).to_int();
+            }
         }
 
-        if (isNaN()) return newNaN(runtime);
+        if (isZero()) return newPowOfZero(context, (RubyNumeric) exp);
+
+        if (Numeric.f_zero_p(context, exp)) return new RubyBigDecimal(context.runtime, BigDecimal.ONE);
 
         if (isInfinity()) return newPowOfInfinity(context, (RubyNumeric) exp);
 
