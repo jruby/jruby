@@ -2227,8 +2227,22 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private RubyString toStringImpl(final Ruby runtime, String arg) {
         if ( isNaN() ) return runtime.newString("NaN");
-        if ( isInfinity() ) return runtime.newString(infinityString(infinitySign));
-        if ( isZero() ) return runtime.newString(zeroSign < 0 ? "-0.0" : "0.0");
+        if ( isInfinity() ) {
+            if ( arg != null && infinitySign >= 0) {
+                if ( formatHasLeadingSpace(arg) ) return runtime.newString(" Infinity");
+                if ( formatHasLeadingPlus(arg) ) return runtime.newString("+Infinity");
+            }
+            return runtime.newString(infinityString(infinitySign));
+        }
+        if ( isZero() ) {
+            if ( zeroSign < 0 ) {
+                return runtime.newString("-0.0");
+            } else {
+                if ( arg != null && formatHasLeadingSpace(arg) ) return runtime.newString(" 0.0");
+                if ( arg != null && formatHasLeadingPlus(arg) ) return runtime.newString("+0.0");
+                return runtime.newString("0.0");
+            }
+        }
 
         boolean asEngineering = arg == null || ! formatHasFloatingPointNotation(arg);
 
