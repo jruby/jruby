@@ -6,7 +6,6 @@ exclude :test_div, "does not pass due precision differences (ported to test/jrub
 
 exclude :test_limit, "needs investigation"
 exclude :test_marshal, "needs investigation"
-exclude :test_new, "BigDecimal('_1_1_1') parses fine while in MRI raises"
 
 exclude :test_power_of_three, "pow's precision isn't calculated the same as in MRI (for 1/81)"
 exclude :test_power_with_Bignum, "needs investigation"
