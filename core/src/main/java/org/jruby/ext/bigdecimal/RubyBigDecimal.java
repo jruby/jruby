@@ -696,7 +696,8 @@ public class RubyBigDecimal extends RubyNumeric {
             }
             else if (isExponentOutOfRange(str, exp + 1, e)) {
                 // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
-                if (isZeroBase(str, s, exp)) return newZero(context.runtime, sign); // unless its a HUGE zero
+                // checking the sign of exponent part.
+                if (isZeroBase(str, s, exp) || str[exp + 1] == '-') return newZero(context.runtime, sign);
                 return newInfinity(context.runtime, sign);
             }
         }
@@ -1099,6 +1100,23 @@ public class RubyBigDecimal extends RubyNumeric {
         throw context.runtime.newMathDomainError("a non-integral exponent for a negative base");
     }
 
+    // Calculate appropriate zero or infinity depending on exponent
+    private RubyBigDecimal newPowOfZero(ThreadContext context, RubyNumeric exp) {
+        if (Numeric.f_negative_p(context, exp)) {
+            /* (+0) ** (-num)  -> Infinity */
+            if (zeroSign >= 0) return newInfinity(context.runtime, 1);
+
+            // (-0) ** (-even_integer) -> +Infinity  AND (-0) ** (-odd_integer) -> -Infinity
+            if (Numeric.f_integer_p(context, exp)) return newInfinity(context.runtime, isEven(exp) ? 1 : -1);
+
+            return newInfinity(context.runtime, -1); // (-0) ** (-non_integer) -> Infinity
+        }
+
+        if (Numeric.f_zero_p(context, exp)) return new RubyBigDecimal(context.runtime, BigDecimal.ONE);
+
+        return newZero(context.runtime, 1);
+    }
+
     private static IRubyObject vpPrecLimit(final Ruby runtime) {
         return runtime.getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit");
     }
@@ -1116,11 +1134,40 @@ public class RubyBigDecimal extends RubyNumeric {
     public RubyBigDecimal op_pow(final ThreadContext context, IRubyObject exp) {
         final Ruby runtime = context.runtime;
 
+        if (isNaN()) return newNaN(runtime);
+
         if ( ! (exp instanceof RubyNumeric) ) {
             throw context.runtime.newTypeError("wrong argument type " + exp.getMetaClass() + " (expected scalar Numeric)");
+        } else if (exp instanceof RubyFixnum) {
+
+        } else if (exp instanceof RubyBignum) {
+
+        } else if (exp instanceof RubyFloat) {
+            double d = RubyNumeric.num2dbl(context, exp);
+            if (d == Math.round(d)) {
+                if (RubyNumeric.fixable(runtime, d)) {
+                    exp = RubyFixnum.newFixnum(runtime, (long)d);
+                } else {
+                    exp = RubyBignum.newBignorm(runtime, d);
+                }
+            }
+        } else if (exp instanceof RubyRational) {
+            if (Numeric.f_zero_p(context, Numeric.f_numerator(context, exp))) {
+
+            } else if (Numeric.f_one_p(context, Numeric.f_denominator(context, exp))) {
+                exp = Numeric.f_numerator(context, exp);
+            }
+        } else if (exp instanceof RubyBigDecimal) {
+            IRubyObject zero = RubyNumeric.int2fix(runtime, 0);
+            IRubyObject rounded = ((RubyBigDecimal)exp).round(context, new IRubyObject[]{zero});
+            if (((RubyBigDecimal)exp).eql_p(context, rounded).isTrue()) {
+                exp = ((RubyBigDecimal)exp).to_int();
+            }
         }
 
-        if (isNaN()) return newNaN(runtime);
+        if (isZero()) return newPowOfZero(context, (RubyNumeric) exp);
+
+        if (Numeric.f_zero_p(context, exp)) return new RubyBigDecimal(context.runtime, BigDecimal.ONE);
 
         if (isInfinity()) return newPowOfInfinity(context, (RubyNumeric) exp);
 
@@ -2181,8 +2228,22 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private RubyString toStringImpl(final Ruby runtime, String arg) {
         if ( isNaN() ) return runtime.newString("NaN");
-        if ( isInfinity() ) return runtime.newString(infinityString(infinitySign));
-        if ( isZero() ) return runtime.newString(zeroSign < 0 ? "-0.0" : "0.0");
+        if ( isInfinity() ) {
+            if ( arg != null && infinitySign >= 0) {
+                if ( formatHasLeadingSpace(arg) ) return runtime.newString(" Infinity");
+                if ( formatHasLeadingPlus(arg) ) return runtime.newString("+Infinity");
+            }
+            return runtime.newString(infinityString(infinitySign));
+        }
+        if ( isZero() ) {
+            if ( zeroSign < 0 ) {
+                return runtime.newString("-0.0");
+            } else {
+                if ( arg != null && formatHasLeadingSpace(arg) ) return runtime.newString(" 0.0");
+                if ( arg != null && formatHasLeadingPlus(arg) ) return runtime.newString("+0.0");
+                return runtime.newString("0.0");
+            }
+        }
 
         boolean asEngineering = arg == null || ! formatHasFloatingPointNotation(arg);
 
