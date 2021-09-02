@@ -2227,6 +2227,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         enterSleep();
     }
 
+    @Deprecated
+    public void beforeBlockingCall() {
+        beforeBlockingCall(metaClass.runtime.getCurrentContext());
+    }
+
     public void afterBlockingCall() {
         exitSleep();
         pollThreadEvents();
