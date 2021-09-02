@@ -56,7 +56,7 @@ project 'JRuby Base' do
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.12'
-  jar 'com.headius:options:1.5'
+  jar 'com.headius:options:1.6'
 
   jar 'com.jcraft:jzlib:1.1.3'
   jar 'junit:junit', :scope => 'test'
@@ -74,7 +74,7 @@ project 'JRuby Base' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.10'
+  jar 'com.headius:backport9:1.12'
 
   jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
