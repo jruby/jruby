@@ -52,7 +52,7 @@ default_gems = [
 ]
 
 bundled_gems = [
-    ['did_you_mean', '1.2.1'],
+    ['did_you_mean', '1.3.0'],
     ['minitest', '5.11.3'],
     ['net-telnet', '0.1.1'],
     ['power_assert', '1.1.3'],
