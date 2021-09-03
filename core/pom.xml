@@ -55,10 +55,10 @@ DO NOT MODIFIY - GENERATED CODE
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
     <tzdata.version>2019c</tzdata.version>
-    <version.ruby>2.6.5</version.ruby>
+    <version.ruby>2.6.8</version.ruby>
     <version.ruby.major>2.6</version.ruby.major>
     <version.ruby.minor>0</version.ruby.minor>
-    <version.ruby.revision>67812</version.ruby.revision>
+    <version.ruby.revision>67951</version.ruby.revision>
   </properties>
   <dependencies>
     <dependency>
