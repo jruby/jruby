@@ -40,14 +40,6 @@ class JSONGeneratorTest < Test::Unit::TestCase
 EOT
   end
 
-  def silence
-    v = $VERBOSE
-    $VERBOSE = nil
-    yield
-  ensure
-    $VERBOSE = v
-  end
-
   def test_generate
     json = generate(@hash)
     assert_equal(parse(@json2), parse(json))
@@ -63,11 +55,6 @@ EOT
   end
 
   def test_generate_pretty
-    json = pretty_generate({})
-    assert_equal(<<'EOT'.chomp, json)
-{
-}
-EOT
     json = pretty_generate(@hash)
     # hashes aren't (insertion) ordered on every ruby implementation
     # assert_equal(@json3, json)
@@ -142,14 +129,13 @@ EOT
   end
 
   def test_pretty_state
-    state = JSON.create_pretty_state
+    state = PRETTY_STATE_PROTOTYPE.dup
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "\n",
       :ascii_only            => false,
       :buffer_initial_length => 1024,
       :depth                 => 0,
-      :escape_slash          => false,
       :indent                => "  ",
       :max_nesting           => 100,
       :object_nl             => "\n",
@@ -159,14 +145,13 @@ EOT
   end
 
   def test_safe_state
-    state = JSON::State.new
+    state = SAFE_STATE_PROTOTYPE.dup
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "",
       :ascii_only            => false,
       :buffer_initial_length => 1024,
       :depth                 => 0,
-      :escape_slash          => false,
       :indent                => "",
       :max_nesting           => 100,
       :object_nl             => "",
@@ -176,14 +161,13 @@ EOT
   end
 
   def test_fast_state
-    state = JSON.create_fast_state
+    state = FAST_STATE_PROTOTYPE.dup
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "",
       :ascii_only            => false,
       :buffer_initial_length => 1024,
       :depth                 => 0,
-      :escape_slash          => false,
       :indent                => "",
       :max_nesting           => 0,
       :object_nl             => "",
@@ -212,8 +196,12 @@ EOT
 
   def test_depth
     ary = []; ary << ary
+    assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
     assert_raise(JSON::NestingError) { generate(ary) }
+    assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
+    assert_equal 0, JSON::PRETTY_STATE_PROTOTYPE.depth
     assert_raise(JSON::NestingError) { JSON.pretty_generate(ary) }
+    assert_equal 0, JSON::PRETTY_STATE_PROTOTYPE.depth
     s = JSON.state.new
     assert_equal 0, s.depth
     assert_raise(JSON::NestingError) { ary.to_json(s) }
@@ -232,7 +220,7 @@ EOT
   end
 
   def test_gc
-    if respond_to?(:assert_in_out_err) && !(RUBY_PLATFORM =~ /java/)
+    if respond_to?(:assert_in_out_err)
       assert_in_out_err(%w[-rjson --disable-gems], <<-EOS, [], [])
         bignum_too_long_to_embed_as_string = 1234567890123456789012345
         expect = bignum_too_long_to_embed_as_string.to_s
@@ -368,10 +356,6 @@ EOT
     json = '["/"]'
     assert_equal json, generate(data)
     #
-    data = [ '/' ]
-    json = '["\/"]'
-    assert_equal json, generate(data, :escape_slash => true)
-    #
     data = ['"']
     json = '["\""]'
     assert_equal json, generate(data)
@@ -388,12 +372,6 @@ EOT
     end
     assert_nothing_raised(SystemStackError) do
       assert_equal '["foo"]', JSON.generate([s.new('foo')])
-    end
-  end
-
-  if defined?(Encoding)
-    def test_nonutf8_encoding
-      assert_equal("\"5\u{b0}\"", "5\xb0".force_encoding("iso-8859-1").to_json)
     end
   end
 end

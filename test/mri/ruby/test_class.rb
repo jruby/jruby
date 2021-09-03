@@ -232,6 +232,11 @@ class TestClass < Test::Unit::TestCase
     assert_raise(TypeError) { Class.allocate.superclass }
     bug6863 = '[ruby-core:47148]'
     assert_raise(TypeError, bug6863) { Class.new(Class.allocate) }
+
+    allocator = Class.instance_method(:allocate)
+    assert_raise_with_message(TypeError, /prohibited/) {
+      allocator.bind(Rational).call
+    }
   end
 
   def test_nonascii_name
@@ -425,6 +430,53 @@ class TestClass < Test::Unit::TestCase
     d = c.clone
     assert_empty(added.grep(->(k) {c == k[0]}), bug5283)
     assert_equal(:foo, d.foo)
+  end
+
+  def test_clone_singleton_class_exists
+    klass = Class.new do
+      def self.bar; :bar; end
+    end
+
+    o = klass.new
+    o.singleton_class
+    clone = o.clone
+
+    assert_empty(o.singleton_class.instance_methods(false))
+    assert_empty(clone.singleton_class.instance_methods(false))
+    assert_empty(o.singleton_class.singleton_class.instance_methods(false))
+    assert_empty(clone.singleton_class.singleton_class.instance_methods(false))
+  end
+
+  def test_clone_when_singleton_class_of_singleton_class_exists
+    klass = Class.new do
+      def self.bar; :bar; end
+    end
+
+    o = klass.new
+    o.singleton_class.singleton_class
+    clone = o.clone
+
+    assert_empty(o.singleton_class.instance_methods(false))
+    assert_empty(clone.singleton_class.instance_methods(false))
+    assert_empty(o.singleton_class.singleton_class.instance_methods(false))
+    assert_empty(clone.singleton_class.singleton_class.instance_methods(false))
+  end
+
+  def test_clone_when_method_exists_on_singleton_class_of_singleton_class
+    klass = Class.new do
+      def self.bar; :bar; end
+    end
+
+    o = klass.new
+    o.singleton_class.singleton_class.define_method(:s2_method) { :s2 }
+    clone = o.clone
+
+    assert_empty(o.singleton_class.instance_methods(false))
+    assert_empty(clone.singleton_class.instance_methods(false))
+    assert_equal(:s2, o.singleton_class.s2_method)
+    assert_equal(:s2, clone.singleton_class.s2_method)
+    assert_equal([:s2_method], o.singleton_class.singleton_class.instance_methods(false))
+    assert_equal([:s2_method], clone.singleton_class.singleton_class.instance_methods(false))
   end
 
   def test_singleton_class_p

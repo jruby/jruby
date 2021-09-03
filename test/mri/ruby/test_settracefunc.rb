@@ -3,21 +3,17 @@ require 'test/unit'
 
 class TestSetTraceFunc < Test::Unit::TestCase
   def setup
-    if defined?(RubyVM)
-      @original_compile_option = RubyVM::InstructionSequence.compile_option
-      RubyVM::InstructionSequence.compile_option = {
-        :trace_instruction => true,
-        :specialized_instruction => false
-      }
-    end
+    @original_compile_option = RubyVM::InstructionSequence.compile_option
+    RubyVM::InstructionSequence.compile_option = {
+      :trace_instruction => true,
+      :specialized_instruction => false
+    }
     @target_thread = Thread.current
   end
 
   def teardown
     set_trace_func(nil)
-    if defined?(RubyVM)
-      RubyVM::InstructionSequence.compile_option = @original_compile_option
-    end
+    RubyVM::InstructionSequence.compile_option = @original_compile_option
     @target_thread = nil
   end
 

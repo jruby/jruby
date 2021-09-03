@@ -519,10 +519,11 @@ EOT
         if defined? RubyVM::InstructionSequence
           RubyVM::InstructionSequence.compile(src, filename, filename, line)
         else
-          require 'jruby'
-          root = JRuby.parse(src, filename, false, line - 1)
-          runtime = JRuby::runtime
-          org.jruby.ir.IRBuilder.build_root(runtime.ir_manager, root)
+          src = <<-WRAPPED
+#{src}
+            BEGIN { throw :tag, :ok }
+          WRAPPED
+          assert_equal(:ok, catch(:tag) { eval(src, binding, filename, line)})
         end
       end
 

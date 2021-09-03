@@ -16,7 +16,7 @@ class TestPsych < Psych::TestCase
   end
 
   def test_line_width_invalid
-    assert_raise(ArgumentError) { Psych.dump('x', { :line_width => -2 }) }
+    assert_raises(ArgumentError) { Psych.dump('x', { :line_width => -2 }) }
   end
 
   def test_line_width_no_limit
@@ -61,7 +61,7 @@ class TestPsych < Psych::TestCase
   end
 
   def test_load_argument_error
-    assert_raise(TypeError) do
+    assert_raises(TypeError) do
       Psych.load nil
     end
   end
@@ -75,7 +75,7 @@ class TestPsych < Psych::TestCase
   end
 
   def test_parse_raises_on_bad_input
-    assert_raise(Psych::SyntaxError) { Psych.parse("--- `") }
+    assert_raises(Psych::SyntaxError) { Psych.parse("--- `") }
   end
 
   def test_parse_with_fallback
@@ -83,8 +83,8 @@ class TestPsych < Psych::TestCase
   end
 
   def test_non_existing_class_on_deserialize
-    e = assert_raise(ArgumentError) do
-      Psych.unsafe_load("--- !ruby/object:NonExistent\nfoo: 1")
+    e = assert_raises(ArgumentError) do
+      Psych.load("--- !ruby/object:NonExistent\nfoo: 1")
     end
     assert_equal 'undefined class/module NonExistent', e.message
   end
@@ -125,25 +125,12 @@ class TestPsych < Psych::TestCase
     assert_equal %w{ foo bar }, docs
   end
 
-  def test_load_stream_freeze
-    docs = Psych.load_stream("--- foo\n...\n--- bar\n...", freeze: true)
-    assert_equal %w{ foo bar }, docs
-    docs.each do |string|
-      assert_predicate string, :frozen?
-    end
-  end
-
-  def test_load_stream_symbolize_names
-    docs = Psych.load_stream("---\nfoo: bar", symbolize_names: true)
-    assert_equal [{foo: 'bar'}], docs
-  end
-
   def test_load_stream_default_fallback
     assert_equal [], Psych.load_stream("")
   end
 
   def test_load_stream_raises_on_bad_input
-    assert_raise(Psych::SyntaxError) { Psych.load_stream("--- `") }
+    assert_raises(Psych::SyntaxError) { Psych.load_stream("--- `") }
   end
 
   def test_parse_stream
@@ -175,7 +162,7 @@ class TestPsych < Psych::TestCase
   end
 
   def test_parse_stream_raises_on_bad_input
-    assert_raise(Psych::SyntaxError) { Psych.parse_stream("--- `") }
+    assert_raises(Psych::SyntaxError) { Psych.parse_stream("--- `") }
   end
 
   def test_add_builtin_type
@@ -205,45 +192,29 @@ class TestPsych < Psych::TestCase
     assert_equal({ 'hello' => 'world' }, got)
   end
 
-  def test_load_freeze
-    data = Psych.load("--- {foo: ['a']}", freeze: true)
-    assert_predicate data, :frozen?
-    assert_predicate data['foo'], :frozen?
-    assert_predicate data['foo'].first, :frozen?
-  end
-
-  def test_load_freeze_deduplication
-    unless String.method_defined?(:-@) && (-("a" * 20)).equal?((-("a" * 20)))
-      pend "This Ruby implementation doesn't support string deduplication"
-    end
-
-    data = Psych.load("--- ['a']", freeze: true)
-    assert_same 'a', data.first
-  end
-
   def test_load_default_fallback
-    assert_equal false, Psych.unsafe_load("")
+    assert_equal false, Psych.load("")
   end
 
   def test_load_with_fallback
-    assert_equal 42, Psych.load("", filename: "file", fallback: 42)
+    assert_equal 42, Psych.load("", "file", fallback: 42)
   end
 
   def test_load_with_fallback_nil_or_false
-    assert_nil Psych.load("", filename: "file", fallback: nil)
-    assert_equal false, Psych.load("", filename: "file", fallback: false)
+    assert_nil Psych.load("", "file", fallback: nil)
+    assert_equal false, Psych.load("", "file", fallback: false)
   end
 
   def test_load_with_fallback_hash
-    assert_equal Hash.new, Psych.load("", filename: "file", fallback: Hash.new)
+    assert_equal Hash.new, Psych.load("", "file", fallback: Hash.new)
   end
 
   def test_load_with_fallback_for_nil
-    assert_nil Psych.unsafe_load("--- null", "file", fallback: 42)
+    assert_nil Psych.load("--- null", "file", fallback: 42)
   end
 
   def test_load_with_fallback_for_false
-    assert_equal false, Psych.unsafe_load("--- false", "file", fallback: 42)
+    assert_equal false, Psych.load("--- false", "file", fallback: 42)
   end
 
   def test_load_file
@@ -255,30 +226,9 @@ class TestPsych < Psych::TestCase
     }
   end
 
-  def test_load_file_freeze
-    Tempfile.create(['yikes', 'yml']) {|t|
-      t.binmode
-      t.write('--- hello world')
-      t.close
-
-      object = Psych.load_file(t.path, freeze: true)
-      assert_predicate object, :frozen?
-    }
-  end
-
-  def test_load_file_symbolize_names
-    Tempfile.create(['yikes', 'yml']) {|t|
-      t.binmode
-      t.write("---\nfoo: bar")
-      t.close
-
-      assert_equal({foo: 'bar'}, Psych.load_file(t.path, symbolize_names: true))
-    }
-  end
-
   def test_load_file_default_fallback
     Tempfile.create(['empty', 'yml']) {|t|
-      assert_equal false, Psych.unsafe_load_file(t.path)
+      assert_equal false, Psych.load_file(t.path)
     }
   end
 
@@ -319,18 +269,6 @@ class TestPsych < Psych::TestCase
     }
   end
 
-  def test_safe_load_file_with_permitted_classe
-    Tempfile.create(['false', 'yml']) {|t|
-      t.binmode
-      t.write("--- !ruby/range\nbegin: 0\nend: 42\nexcl: false\n")
-      t.close
-      assert_equal 0..42, Psych.safe_load_file(t.path, permitted_classes: [Range])
-      assert_raise(Psych::DisallowedClass) {
-        Psych.safe_load_file(t.path)
-      }
-    }
-  end
-
   def test_parse_file
     Tempfile.create(['yikes', 'yml']) {|t|
       t.binmode
@@ -347,9 +285,9 @@ class TestPsych < Psych::TestCase
   end
 
   def test_degenerate_strings
-    assert_equal false, Psych.unsafe_load('    ')
+    assert_equal false, Psych.load('    ')
     assert_equal false, Psych.parse('   ')
-    assert_equal false, Psych.unsafe_load('')
+    assert_equal false, Psych.load('')
     assert_equal false, Psych.parse('')
   end
 
@@ -371,18 +309,17 @@ class TestPsych < Psych::TestCase
     yaml = <<-eoyml
 foo:
   bar: baz
-  1: 2
 hoge:
   - fuga: piyo
     eoyml
 
     result = Psych.load(yaml)
-    assert_equal result, { "foo" => { "bar" => "baz", 1 => 2 }, "hoge" => [{ "fuga" => "piyo" }] }
+    assert_equal result, { "foo" => { "bar" => "baz"}, "hoge" => [{ "fuga" => "piyo" }] }
 
     result = Psych.load(yaml, symbolize_names: true)
-    assert_equal result, { foo: { bar: "baz", 1 => 2 }, hoge: [{ fuga: "piyo" }] }
+    assert_equal result, { foo: { bar: "baz" }, hoge: [{ fuga: "piyo" }] }
 
     result = Psych.safe_load(yaml, symbolize_names: true)
-    assert_equal result, { foo: { bar: "baz", 1 => 2 }, hoge: [{ fuga: "piyo" }] }
+    assert_equal result, { foo: { bar: "baz" }, hoge: [{ fuga: "piyo" }] }
   end
 end

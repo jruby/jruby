@@ -1,12 +1,12 @@
 case ENV['JSON']
 when 'pure'
-  $:.unshift File.join(__dir__, '../lib')
+  $:.unshift 'lib'
   require 'json/pure'
 when 'ext'
-  $:.unshift File.join(__dir__, '../ext'), File.join(__dir__, '../lib')
+  $:.unshift 'ext', 'lib'
   require 'json/ext'
 else
-  $:.unshift File.join(__dir__, '../ext'), File.join(__dir__, '../lib')
+  $:.unshift 'ext', 'lib'
   require 'json'
 end
 
@@ -14,4 +14,8 @@ require 'test/unit'
 begin
   require 'byebug'
 rescue LoadError
+end
+if ENV['START_SIMPLECOV'].to_i == 1
+  require 'simplecov'
+  SimpleCov.start
 end

@@ -958,10 +958,8 @@ eom
     assert_warn(/literal in condition/) do
       eval('1 if //')
     end
-    if RUBY_ENGINE != 'jruby'
-      assert_warn(/literal in condition/) do
-        eval('1 if true..false')
-      end
+    assert_warn(/literal in condition/) do
+      eval('1 if true..false')
     end
     assert_warning(/literal in condition/) do
       eval('1 if 1')
@@ -979,10 +977,8 @@ eom
     assert_warn('') do
       eval('1 if !//')
     end
-    if RUBY_ENGINE != 'jruby'
-      assert_warn('') do
-        eval('1 if !(true..false)')
-      end
+    assert_warn('') do
+      eval('1 if !(true..false)')
     end
     assert_warning('') do
       eval('1 if !1')
@@ -1269,6 +1265,15 @@ eom
     assert_nil obj.test
   end
 
+  def test_assignment_return_in_loop
+    obj = Object.new
+    def obj.test
+      x = nil
+      _y = (return until x unless x)
+    end
+    assert_nil obj.test, "[Bug #16695]"
+  end
+
   def test_method_call_location
     line = __LINE__+5
     e = assert_raise(NoMethodError) do
@@ -1308,6 +1313,12 @@ eom
   def test_command_with_cmd_brace_block
     assert_valid_syntax('obj.foo (1) {}')
     assert_valid_syntax('obj::foo (1) {}')
+  end
+
+  def test_value_expr_in_condition
+    mesg = /void value expression/
+    assert_syntax_error("tap {a = (true ? next : break)}", mesg)
+    assert_valid_syntax("tap {a = (true ? true : break)}")
   end
 
   private
