@@ -223,7 +223,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s() {
         Ruby runtime = getRuntime();
-        RubyString string = runtime.newString("#<");
+        RubyString string = RubyString.newBinaryString(runtime, "#<");
 
         string.append(types(runtime, type()));
         string.catString(":0x" + Integer.toString(System.identityHashCode(block), 16));
