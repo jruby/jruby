@@ -1,0 +1,1 @@
+fails:The -S command line option runs launcher found in PATH, but only code after the first /#!.*ruby.*/-ish line in target file

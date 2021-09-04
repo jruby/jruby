@@ -1,0 +1,8 @@
+fails:IO.copy_stream from a pipe IO raises an error when an offset is specified
+fails:IO.copy_stream with non-IO Objects calls #readpartial on the source Object if defined
+windows:IO.copy_stream from an IO to a file name copies only length bytes from the offset
+windows:IO.copy_stream from an IO to an IO copies only length bytes from the offset
+windows:IO.copy_stream from a file name to a file name copies only length bytes from the offset
+windows:IO.copy_stream from a file name to an IO copies only length bytes from the offset
+windows:IO.copy_stream with non-IO Objects calls #read on the source Object
+fails:IO.copy_stream with non-IO Objects calls #read on the source Object

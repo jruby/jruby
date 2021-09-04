@@ -1,0 +1,1 @@
+fails:BigDecimal#round raise for a non-existent round mode

@@ -1,0 +1,195 @@
+fails:Addrinfo#initialize with a sockaddr string without a family stores the ip address from the sockaddr
+fails:Addrinfo#initialize with a sockaddr string without a family stores the port number from the sockaddr
+fails:Addrinfo#initialize with a sockaddr string without a family returns the Socket::UNSPEC pfamily
+fails:Addrinfo#initialize with a sockaddr string without a family returns the INET6 afamily
+fails:Addrinfo#initialize with a sockaddr string without a family returns the 0 socket type
+fails:Addrinfo#initialize with a sockaddr string without a family returns the 0 protocol
+fails:Addrinfo#initialize with a sockaddr string with a family given stores the ip address from the sockaddr
+fails:Addrinfo#initialize with a sockaddr string with a family given stores the port number from the sockaddr
+fails:Addrinfo#initialize with a sockaddr string with a family given returns the Socket::UNSPEC pfamily
+fails:Addrinfo#initialize with a sockaddr string with a family given returns the INET6 afamily
+fails:Addrinfo#initialize with a sockaddr string with a family given returns the 0 socket type
+fails:Addrinfo#initialize with a sockaddr string with a family given returns the 0 protocol
+fails:Addrinfo#initialize with a sockaddr string with a family and socket type stores the ip address from the sockaddr
+fails:Addrinfo#initialize with a sockaddr string with a family and socket type stores the port number from the sockaddr
+fails:Addrinfo#initialize with a sockaddr string with a family and socket type returns the Socket::UNSPEC pfamily
+fails:Addrinfo#initialize with a sockaddr string with a family and socket type returns the INET6 afamily
+fails:Addrinfo#initialize with a sockaddr string with a family and socket type returns the 0 socket type
+fails:Addrinfo#initialize with a sockaddr string with a family and socket type returns the 0 protocol
+fails:Addrinfo#initialize with a sockaddr string with a family, socket type and protocol stores the ip address from the sockaddr
+fails:Addrinfo#initialize with a sockaddr string with a family, socket type and protocol stores the port number from the sockaddr
+fails:Addrinfo#initialize with a sockaddr string with a family, socket type and protocol returns the Socket::UNSPEC pfamily
+fails:Addrinfo#initialize with a sockaddr string with a family, socket type and protocol returns the INET6 afamily
+fails:Addrinfo#initialize with a sockaddr string with a family, socket type and protocol returns the specified socket type
+fails:Addrinfo#initialize with a sockaddr string with a family, socket type and protocol returns the specified protocol
+fails:Addrinfo#initialize with a sockaddr array without a family returns the Socket::UNSPEC pfamily
+fails:Addrinfo#initialize with a sockaddr array with a family and socket type returns the 0 protocol
+fails:Addrinfo#initialize with a sockaddr string without a family returns AF_INET as the default address family
+fails:Addrinfo#initialize with a sockaddr array with an invalid IP address raises SocketError
+fails:Addrinfo#initialize with a sockaddr array with a family and socket type raises SocketError when using SOCK_RDM
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET6 address family and an explicit protocol family raises SocketError when using any Socket constant except except AF_INET(6)/PF_INET(6)
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given overwrites the protocol when using IPPROTO_IP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given overwrites the protocol when using IPPROTO_UDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given overwrites the protocol when using IPPROTO_HOPOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_AH
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_PUP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_ENCAP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_FRAGMENT
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_TP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_ICMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_DSTOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_IPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_IDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_GRE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_RSVP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_TCP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_ROUTING
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_EGP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_IPIP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_RAW
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_SCTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_NONE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_IGMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_MAX
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_PIM
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_ESP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_COMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_MTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and no socket type is given raises SocketError when using IPPROTO_ICMPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM overwrites the protocol when using IPPROTO_IP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM overwrites the protocol when using IPPROTO_HOPOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_AH
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_PUP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_ENCAP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_FRAGMENT
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_TP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_ICMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_DSTOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_IPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_IDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_GRE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_RSVP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_TCP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_ROUTING
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_EGP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_IPIP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_RAW
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_SCTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_NONE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_IGMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_MAX
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_PIM
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_ESP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_COMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_MTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_DGRAM raises SocketError when using IPPROTO_ICMPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_AH
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_PUP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_ENCAP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_FRAGMENT
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_TP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_ICMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_DSTOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_IPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_IDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_GRE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_RSVP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_TCP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_ROUTING
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_EGP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_IPIP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_RAW
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_SCTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_NONE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_IGMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_MAX
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_PIM
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_ESP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_COMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_MTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_UDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_ICMPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_AH
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_PUP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_ENCAP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_FRAGMENT
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_TP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_ICMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_DSTOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_IPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_IDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_GRE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_RSVP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_TCP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_ROUTING
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_IP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_EGP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_IPIP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_RAW
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_SCTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_NONE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_IGMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_MAX
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_PIM
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_HOPOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_ESP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_COMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_MTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_UDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RDM raises SocketError when using IPPROTO_ICMPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_AH
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_PUP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_ENCAP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_FRAGMENT
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_TP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_ICMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_DSTOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_IPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_IDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_GRE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_RSVP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_TCP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_ROUTING
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_EGP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_IPIP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_RAW
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_SCTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_NONE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_IGMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_MAX
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_PIM
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_ESP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_COMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_MTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_UDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_SEQPACKET raises SocketError when using IPPROTO_ICMPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM overwrites the protocol when using IPPROTO_IP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM overwrites the protocol when using IPPROTO_HOPOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_AH
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_PUP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_ENCAP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_FRAGMENT
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_TP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_ICMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_DSTOPTS
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_IPV6
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_IDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_GRE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_RSVP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_ROUTING
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_EGP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_IPIP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_RAW
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_SCTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_NONE
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_IGMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_MAX
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_PIM
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_ESP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_COMP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_MTP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_UDP
+fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_STREAM raises SocketError when using IPPROTO_ICMPV6
+fails:Addrinfo#initialize using separate arguments for a Unix socket returns an Addrinfo with the correct unix path
+fails:Addrinfo#initialize using separate arguments for a Unix socket returns an Addrinfo with the correct protocol family
+fails:Addrinfo#initialize using separate arguments for a Unix socket returns an Addrinfo with the correct address family

@@ -1,0 +1,8 @@
+fails:IO.read from a pipe opens a pipe to a fork if the rest is -
+windows:IO.read from a pipe runs the rest as a subprocess and returns the standard output
+windows:IO.read from a pipe reads only the specified number of bytes requested
+windows:IO#read expands the buffer when too small
+windows:IO#read overwrites the buffer
+windows:IO#read truncates the buffer when too big
+windows:IO#read on Windows normalizes line endings in text mode
+fails:IO#read raises IOError when stream is closed by another thread

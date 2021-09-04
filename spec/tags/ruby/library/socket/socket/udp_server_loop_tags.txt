@@ -1,0 +1,2 @@
+fails:Socket.udp_server_loop when no connections are available blocks the caller
+hangs:Socket.udp_server_loop when a connection is available yields the message and a Socket::UDPSource

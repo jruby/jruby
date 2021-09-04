@@ -1,0 +1,2 @@
+fails:Process.groups sets the list of gids of groups in the supplemental group access list
+fails:Process.groups= raises Errno::EPERM

@@ -1,0 +1,4 @@
+fails:Thread#backtrace returns an array (which may be empty) immediately after the thread is created
+fails:Thread#backtrace returns the current backtrace of a thread
+fails:Thread#backtrace can be called with a range whose end is negative
+fails:Thread#backtrace returns nil if omitting more locations than available

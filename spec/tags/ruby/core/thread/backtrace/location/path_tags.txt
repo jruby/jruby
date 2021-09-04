@@ -1,0 +1,1 @@
+fails:Thread::Backtrace::Location#path canonicalization returns a non-canonical path with symlinks, the same as __FILE__

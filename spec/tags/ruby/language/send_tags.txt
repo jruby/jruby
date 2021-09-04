@@ -1,0 +1,2 @@
+fails:Invoking a method expands the Array elements from the splat after executing the arguments and block if no other arguments follow the splat
+fails:Invoking a private getter method does not permit self as a receiver

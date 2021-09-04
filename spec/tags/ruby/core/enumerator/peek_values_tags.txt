@@ -1,0 +1,1 @@
+fails(new Ruby impl of Enumerator#next brought some bugs with):Enumerator#peek_values returns an array with only nil if yield is called with nil

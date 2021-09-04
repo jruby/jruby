@@ -1,0 +1,3 @@
+fails:Syslog.info logs a message
+fails:Syslog.info accepts sprintf arguments
+fails:Syslog.info works as an alias for Syslog.log

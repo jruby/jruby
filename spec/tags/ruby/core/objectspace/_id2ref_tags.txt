@@ -1,0 +1,3 @@
+fails:ObjectSpace._id2ref raises RangeError when an object could not be found
+objectspace:ObjectSpace._id2ref converts an object id to a reference to the object
+objectspace:ObjectSpace._id2ref retrieves a Symbol by object_id

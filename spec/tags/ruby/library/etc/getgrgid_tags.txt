@@ -1,0 +1,2 @@
+windows:Etc.getgrgid returns nil
+critical:Etc.getgrgid can be called safely by multiple threads

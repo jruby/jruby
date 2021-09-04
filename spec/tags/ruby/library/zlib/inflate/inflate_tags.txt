@@ -1,0 +1,1 @@
+fails:Zlib::Inflate#inflate without break inflates chunked data

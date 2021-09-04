@@ -1,0 +1,241 @@
+# frozen_string_literal: false
+require_relative "utils"
+
+if defined?(OpenSSL)
+
+class OpenSSL::TestX509Store < OpenSSL::TestCase
+  def setup
+    super
+    @rsa1024 = Fixtures.pkey("rsa1024")
+    @rsa2048 = Fixtures.pkey("rsa2048")
+    @dsa256  = Fixtures.pkey("dsa256")
+    @dsa512  = Fixtures.pkey("dsa512")
+    @ca1 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=CA1")
+    @ca2 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=CA2")
+    @ee1 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=EE1")
+    @ee2 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=EE2")
+  end
+
+  def test_nosegv_on_cleanup
+    cert  = OpenSSL::X509::Certificate.new
+    store = OpenSSL::X509::Store.new
+    ctx   = OpenSSL::X509::StoreContext.new(store, cert, [])
+    EnvUtil.suppress_warning do
+      ctx.cleanup
+    end
+    ctx.verify
+  end
+
+  def test_add_file
+    ca_exts = [
+      ["basicConstraints", "CA:TRUE", true],
+      ["keyUsage", "cRLSign,keyCertSign", true],
+    ]
+    cert1 = issue_cert(@ca1, @rsa1024, 1, ca_exts, nil, nil)
+    cert2 = issue_cert(@ca2, @rsa2048, 1, ca_exts, nil, nil)
+    tmpfile = Tempfile.open { |f| f << cert1.to_pem << cert2.to_pem; f }
+
+    store = OpenSSL::X509::Store.new
+    assert_equal false, store.verify(cert1)
+    assert_equal false, store.verify(cert2)
+    store.add_file(tmpfile.path)
+    assert_equal true, store.verify(cert1)
+    assert_equal true, store.verify(cert2)
+
+    # OpenSSL < 1.1.1 leaks an error on a duplicate certificate
+    assert_nothing_raised { store.add_file(tmpfile.path) }
+    assert_equal [], OpenSSL.errors
+  ensure
+    tmpfile and tmpfile.close!
+  end
+
+  def test_verify
+    # OpenSSL uses time(2) while Time.now uses clock_gettime(CLOCK_REALTIME),
+    # and there may be difference.
+    now = Time.now - 3
+    ca_exts = [
+      ["basicConstraints","CA:TRUE",true],
+      ["keyUsage","cRLSign,keyCertSign",true],
+    ]
+    ee_exts = [
+      ["keyUsage","keyEncipherment,digitalSignature",true],
+    ]
+    ca1_cert = issue_cert(@ca1, @rsa2048, 1, ca_exts, nil, nil)
+    ca2_cert = issue_cert(@ca2, @rsa1024, 2, ca_exts, ca1_cert, @rsa2048,
+                          not_after: now+1800)
+    ee1_cert = issue_cert(@ee1, @dsa256, 10, ee_exts, ca2_cert, @rsa1024)
+    ee2_cert = issue_cert(@ee2, @dsa512, 20, ee_exts, ca2_cert, @rsa1024)
+    ee3_cert = issue_cert(@ee2, @dsa512, 30,  ee_exts, ca2_cert, @rsa1024,
+                          not_before: now-100, not_after: now-1)
+    ee4_cert = issue_cert(@ee2, @dsa512, 40, ee_exts, ca2_cert, @rsa1024,
+                          not_before: now+1000, not_after: now+2000,)
+
+    revoke_info = []
+    crl1   = issue_crl(revoke_info, 1, now, now+1800, [],
+                       ca1_cert, @rsa2048, OpenSSL::Digest::SHA1.new)
+    revoke_info = [ [2, now, 1], ]
+    crl1_2 = issue_crl(revoke_info, 2, now, now+1800, [],
+                       ca1_cert, @rsa2048, OpenSSL::Digest::SHA1.new)
+    revoke_info = [ [20, now, 1], ]
+    crl2   = issue_crl(revoke_info, 1, now, now+1800, [],
+                       ca2_cert, @rsa1024, OpenSSL::Digest::SHA1.new)
+    revoke_info = []
+    crl2_2 = issue_crl(revoke_info, 2, now-100, now-1, [],
+                       ca2_cert, @rsa1024, OpenSSL::Digest::SHA1.new)
+
+    assert_equal(true, ca1_cert.verify(ca1_cert.public_key))   # self signed
+    assert_equal(true, ca2_cert.verify(ca1_cert.public_key))   # issued by ca1
+    assert_equal(true, ee1_cert.verify(ca2_cert.public_key))   # issued by ca2
+    assert_equal(true, ee2_cert.verify(ca2_cert.public_key))   # issued by ca2
+    assert_equal(true, ee3_cert.verify(ca2_cert.public_key))   # issued by ca2
+    assert_equal(true, crl1.verify(ca1_cert.public_key))       # issued by ca1
+    assert_equal(true, crl1_2.verify(ca1_cert.public_key))     # issued by ca1
+    assert_equal(true, crl2.verify(ca2_cert.public_key))       # issued by ca2
+    assert_equal(true, crl2_2.verify(ca2_cert.public_key))     # issued by ca2
+
+    store = OpenSSL::X509::Store.new
+    assert_equal(false, store.verify(ca1_cert))
+    assert_not_equal(OpenSSL::X509::V_OK, store.error)
+
+    assert_equal(false, store.verify(ca2_cert))
+    assert_not_equal(OpenSSL::X509::V_OK, store.error)
+
+    store.add_cert(ca1_cert)
+    assert_equal(true, store.verify(ca2_cert))
+    assert_equal(OpenSSL::X509::V_OK, store.error)
+    assert_equal("ok", store.error_string)
+    chain = store.chain
+    assert_equal(2, chain.size)
+    assert_equal(@ca2.to_der, chain[0].subject.to_der)
+    assert_equal(@ca1.to_der, chain[1].subject.to_der)
+
+    store.purpose = OpenSSL::X509::PURPOSE_SSL_CLIENT
+    assert_equal(false, store.verify(ca2_cert))
+    assert_not_equal(OpenSSL::X509::V_OK, store.error)
+
+    store.purpose = OpenSSL::X509::PURPOSE_CRL_SIGN
+    assert_equal(true, store.verify(ca2_cert))
+    assert_equal(OpenSSL::X509::V_OK, store.error)
+
+    store.add_cert(ca2_cert)
+    store.purpose = OpenSSL::X509::PURPOSE_SSL_CLIENT
+    assert_equal(true, store.verify(ee1_cert))
+    assert_equal(true, store.verify(ee2_cert))
+    assert_equal(OpenSSL::X509::V_OK, store.error)
+    assert_equal("ok", store.error_string)
+    chain = store.chain
+    assert_equal(3, chain.size)
+    assert_equal(@ee2.to_der, chain[0].subject.to_der)
+    assert_equal(@ca2.to_der, chain[1].subject.to_der)
+    assert_equal(@ca1.to_der, chain[2].subject.to_der)
+    assert_equal(false, store.verify(ee3_cert))
+    assert_equal(OpenSSL::X509::V_ERR_CERT_HAS_EXPIRED, store.error)
+    assert_match(/expire/i, store.error_string)
+    assert_equal(false, store.verify(ee4_cert))
+    assert_equal(OpenSSL::X509::V_ERR_CERT_NOT_YET_VALID, store.error)
+    assert_match(/not yet valid/i, store.error_string)
+
+    store = OpenSSL::X509::Store.new
+    store.add_cert(ca1_cert)
+    store.add_cert(ca2_cert)
+    store.time = now + 1500
+    assert_equal(true, store.verify(ca1_cert))
+    assert_equal(true, store.verify(ca2_cert))
+    assert_equal(true, store.verify(ee4_cert))
+    store.time = now + 1900
+    assert_equal(true, store.verify(ca1_cert))
+    assert_equal(false, store.verify(ca2_cert))
+    assert_equal(OpenSSL::X509::V_ERR_CERT_HAS_EXPIRED, store.error)
+    assert_equal(false, store.verify(ee4_cert))
+    assert_equal(OpenSSL::X509::V_ERR_CERT_HAS_EXPIRED, store.error)
+    store.time = now + 4000
+    assert_equal(false, store.verify(ee1_cert))
+    assert_equal(OpenSSL::X509::V_ERR_CERT_HAS_EXPIRED, store.error)
+    assert_equal(false, store.verify(ee4_cert))
+    assert_equal(OpenSSL::X509::V_ERR_CERT_HAS_EXPIRED, store.error)
+
+    # the underlying X509 struct caches the result of the last
+    # verification for signature and not-before. so the following code
+    # rebuilds new objects to avoid site effect.
+    store.time = Time.now - 4000
+    assert_equal(false, store.verify(OpenSSL::X509::Certificate.new(ca2_cert)))
+    assert_equal(OpenSSL::X509::V_ERR_CERT_NOT_YET_VALID, store.error)
+    assert_equal(false, store.verify(OpenSSL::X509::Certificate.new(ee1_cert)))
+    assert_equal(OpenSSL::X509::V_ERR_CERT_NOT_YET_VALID, store.error)
+
+    store = OpenSSL::X509::Store.new
+    store.purpose = OpenSSL::X509::PURPOSE_ANY
+    store.flags = OpenSSL::X509::V_FLAG_CRL_CHECK
+    store.add_cert(ca1_cert)
+    store.add_crl(crl1)   # revoke no cert
+    store.add_crl(crl2)   # revoke ee2_cert
+    assert_equal(true,  store.verify(ca1_cert))
+    assert_equal(true,  store.verify(ca2_cert))
+    assert_equal(true,  store.verify(ee1_cert, [ca2_cert]))
+    assert_equal(false, store.verify(ee2_cert, [ca2_cert]))
+
+    store = OpenSSL::X509::Store.new
+    store.purpose = OpenSSL::X509::PURPOSE_ANY
+    store.flags = OpenSSL::X509::V_FLAG_CRL_CHECK
+    store.add_cert(ca1_cert)
+    store.add_crl(crl1_2) # revoke ca2_cert
+    store.add_crl(crl2)   # revoke ee2_cert
+    assert_equal(true,  store.verify(ca1_cert))
+    assert_equal(false, store.verify(ca2_cert))
+    assert_equal(true,  store.verify(ee1_cert, [ca2_cert]),
+      "This test is expected to be success with OpenSSL 0.9.7c or later.")
+    assert_equal(false, store.verify(ee2_cert, [ca2_cert]))
+
+    store.flags =
+      OpenSSL::X509::V_FLAG_CRL_CHECK|OpenSSL::X509::V_FLAG_CRL_CHECK_ALL
+    assert_equal(true,  store.verify(ca1_cert))
+    assert_equal(false, store.verify(ca2_cert))
+    assert_equal(false, store.verify(ee1_cert, [ca2_cert]))
+    assert_equal(false, store.verify(ee2_cert, [ca2_cert]))
+
+    store = OpenSSL::X509::Store.new
+    store.purpose = OpenSSL::X509::PURPOSE_ANY
+    store.flags =
+      OpenSSL::X509::V_FLAG_CRL_CHECK|OpenSSL::X509::V_FLAG_CRL_CHECK_ALL
+    store.add_cert(ca1_cert)
+    store.add_cert(ca2_cert)
+    store.add_crl(crl1)
+    store.add_crl(crl2_2) # issued by ca2 but expired.
+    assert_equal(true, store.verify(ca1_cert))
+    assert_equal(true, store.verify(ca2_cert))
+    assert_equal(false, store.verify(ee1_cert))
+    assert_equal(OpenSSL::X509::V_ERR_CRL_HAS_EXPIRED, store.error)
+    assert_equal(false, store.verify(ee2_cert))
+  end
+
+  def test_set_errors
+    return if openssl?(1, 1, 0) || libressl?
+    now = Time.now
+    ca1_cert = issue_cert(@ca1, @rsa2048, 1, [], nil, nil)
+    store = OpenSSL::X509::Store.new
+    store.add_cert(ca1_cert)
+    assert_raise(OpenSSL::X509::StoreError){
+      store.add_cert(ca1_cert)  # add same certificate twice
+    }
+
+    revoke_info = []
+    crl1 = issue_crl(revoke_info, 1, now, now+1800, [],
+                     ca1_cert, @rsa2048, OpenSSL::Digest::SHA1.new)
+    revoke_info = [ [2, now, 1], ]
+    crl2 = issue_crl(revoke_info, 2, now+1800, now+3600, [],
+                     ca1_cert, @rsa2048, OpenSSL::Digest::SHA1.new)
+    store.add_crl(crl1)
+    assert_raise(OpenSSL::X509::StoreError){
+      store.add_crl(crl2) # add CRL issued by same CA twice.
+    }
+  end
+
+  def test_dup
+    store = OpenSSL::X509::Store.new
+    assert_raise(NoMethodError) { store.dup }
+    ctx = OpenSSL::X509::StoreContext.new(store)
+    assert_raise(NoMethodError) { ctx.dup }
+  end
+end
+
+end

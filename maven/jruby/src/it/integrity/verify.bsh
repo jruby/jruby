@@ -1,0 +1,71 @@
+import java.io.*;
+import org.codehaus.plexus.util.FileUtils;
+
+
+String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
+String expected = "rake (10.4.2)";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+//expected = "4.1.2";
+//if ( !log.contains( expected ) )
+//{
+//    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+//}
+expected = "json (1.8.3 java)";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+//expected = "rake, version 10.1.0";
+//if ( !log.contains( expected ) )
+//{
+//    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+//}
+expected = "rdoc (4.2.0)";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "gems count 9";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "jar-dependencies,jruby-openssl";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "there is NO org.objectweb.asm.ClassWriter on the classpath";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+
+// we are already OK if those scripts execute and there a duplicates which do
+// get checked here
+expected = "hello classpath:hello.rb";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
+
+expected = "hello classpath:/hello.rb";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
+
+expected = "hello uri:classloader:/hello.rb";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
+
+expected = "hello uri:classloader://hello.rb";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
+
+expected = "hello hello.rb";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
+
+expected = "maven/jruby/target/it/integrity/target/classes/hello.jar!/helo.rb";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
+
+expected = "maven/jruby/target/it/integrity/target/classes/hello.rb";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
+
+expected = "uri:classloader://META-INF/jruby.home";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );

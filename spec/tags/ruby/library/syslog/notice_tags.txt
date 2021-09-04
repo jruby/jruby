@@ -1,0 +1,3 @@
+fails:Syslog.notice logs a message
+fails:Syslog.notice accepts sprintf arguments
+fails:Syslog.notice works as an alias for Syslog.log

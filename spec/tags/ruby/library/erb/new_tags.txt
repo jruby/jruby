@@ -1,0 +1,9 @@
+windows:ERB.new compiles eRuby script into ruby code when trim mode is 0 or not specified
+windows:"ERB.new removes '\n' when trim_mode is 1 or '>'"
+windows:"ERB.new removes spaces at beginning of line and '\n' when trim_mode is 2 or '<>'"
+windows:ERB.new removes spaces around '<%- -%>' when trim_mode is '-'
+windows:ERB.new regards lines starting with '%' as '<% ... %>' when trim_mode is '%'
+windows:ERB.new regards lines starting with '%' as '<% ... %>' and remove "\n" when trim_mode is '%>'
+windows:ERB.new regard lines starting with '%' as '<% ... %>' and remove "\n" when trim_mode is '%<>'
+windows:ERB.new regard lines starting with '%' as '<% ... %>' and spaces around '<%- -%>' when trim_mode is '%-'
+windows:ERB.new ignores '<%# ... %>'

@@ -1,0 +1,7 @@
+exclude :test_aset, "needs investigation"
+exclude :test_assoc, "needs investigation"
+exclude :test_delete, "needs investigation"
+exclude :test_fetch, "needs investigation"
+exclude :test_getenv, "needs investigation"
+exclude :test_has_key, "needs investigation"
+exclude :test_rehash, "needs investigation"

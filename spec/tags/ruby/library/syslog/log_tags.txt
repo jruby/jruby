@@ -1,0 +1,5 @@
+fails:Syslog.log receives a priority as first argument
+fails:Syslog.log accepts undefined priorites
+fails:Syslog.log fails with TypeError on nil log messages
+fails:Syslog.log fails if the log is closed
+fails:Syslog.log accepts printf parameters

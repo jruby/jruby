@@ -1,0 +1,2 @@
+class Autoloaded
+end

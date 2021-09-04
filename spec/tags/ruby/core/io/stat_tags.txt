@@ -1,0 +1,2 @@
+windows:IO#stat returns a File::Stat object for the stream
+windows:IO#stat can stat pipes

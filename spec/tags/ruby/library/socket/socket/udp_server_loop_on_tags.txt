@@ -1,0 +1,2 @@
+fails:Socket.udp_server_loop_on when a connection is available yields the message and a Socket::UDPSource
+travis:Socket.udp_server_loop_on when no connections are available blocks the caller

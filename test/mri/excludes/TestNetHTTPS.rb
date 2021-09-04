@@ -1,0 +1,5 @@
+exclude :test_identity_verify_failure, ""
+exclude :test_session_reuse, ""
+exclude :test_session_reuse_but_expire, "hangs"
+exclude :test_max_version, "missing set_minmax_proto_version for OpenSSL::SSL::SSLContext"
+exclude :test_min_version, "missing set_minmax_proto_version for OpenSSL::SSL::SSLContext"

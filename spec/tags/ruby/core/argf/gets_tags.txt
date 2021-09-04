@@ -1,0 +1,1 @@
+slow:ARGF.gets reads all lines of stdin

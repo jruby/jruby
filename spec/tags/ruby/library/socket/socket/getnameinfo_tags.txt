@@ -1,0 +1,13 @@
+windows:Socket.getnameinfo gets the name information and resolve the host
+windows:Socket.getnameinfo gets the name information and resolves the service
+fails:Socket.getnameinfo using a String as the first argument raises SocketError when using an invalid String
+fails:Socket.getnameinfo using a String as the first argument without custom flags returns an Array containing the hostname and service name
+fails:Socket.getnameinfo using IPv4 using a 3 element Array as the first argument without custom flags returns an Array containing the hostname and service name
+fails:Socket.getnameinfo using IPv4 using a 4 element Array as the first argument without custom flags returns an Array containing the hostname and service name
+fails:Socket.getnameinfo using IPv4 using a 4 element Array as the first argument without custom flags uses the 3rd value as the hostname if the 4th is not present
+fails:Socket.getnameinfo using IPv6 using a 3 element Array as the first argument without custom flags returns an Array containing the hostname and service name
+fails:Socket.getnameinfo using IPv6 using a 3 element Array as the first argument using NI_NUMERICHOST as the flag returns an Array containing the numeric hostname and service name
+fails:Socket.getnameinfo using IPv6 using a 4 element Array as the first argument without custom flags returns an Array containing the hostname and service name
+fails:Socket.getnameinfo using IPv6 using a 4 element Array as the first argument without custom flags uses the 3rd value as the hostname if the 4th is not present
+fails:Socket.getnameinfo using IPv6 using a 4 element Array as the first argument using NI_NUMERICHOST as the flag returns an Array containing the numeric hostname and service name
+fails:Socket.getnameinfo using a String as the first argument raises SocketError or TypeError when using an invalid String

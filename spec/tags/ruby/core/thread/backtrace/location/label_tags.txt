@@ -1,0 +1,3 @@
+fails:Thread::Backtrace::Location#label returns the base label of the call frame
+fails:Thread::Backtrace::Location#label includes the nesting level of a block as part of the location label
+fails:Thread::Backtrace::Location#label sets the location label for a top-level block differently depending on it being in the main file or a required file

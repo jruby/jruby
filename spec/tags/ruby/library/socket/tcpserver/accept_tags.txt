@@ -1,0 +1,1 @@
+fails:TCPServer#accept is automatically retried when interrupted by SIGVTALRM

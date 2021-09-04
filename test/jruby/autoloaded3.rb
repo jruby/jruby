@@ -1,0 +1,2 @@
+class AutoLoaded2
+end

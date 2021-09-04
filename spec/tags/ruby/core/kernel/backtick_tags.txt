@@ -1,0 +1,2 @@
+critical(on Linux, Travis, likely posix_spawn error-after-fork problem):Kernel#` raises an Errno::ENOENT if the command is not executable
+fails:Kernel#` handles invalid UTF-8 bytes in command

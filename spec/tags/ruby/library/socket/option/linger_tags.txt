@@ -1,0 +1,1 @@
+fails:Socket::Option#linger raises TypeError when called on a non SOL_SOCKET/SO_LINGER option

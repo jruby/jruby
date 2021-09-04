@@ -1,0 +1,2 @@
+windows:File.identical? returns true for a file and its link
+windows:File.identical? accepts an object that has a #to_path method

@@ -1,0 +1,3 @@
+fails:Module#private without arguments does not affect method definitions when itself is inside an eval and method definitions are outside
+fails:Module#private without arguments within a closure sets the visibility outside the closure
+fails:Module#private continues to allow a prepended module method to call super

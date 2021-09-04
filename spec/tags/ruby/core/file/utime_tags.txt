@@ -1,0 +1,3 @@
+fails(linux):File.utime allows Time instances in the far future to set mtime and atime
+fails:File.utime allows Time instances in the far future to set mtime and atime (but some filesystems limit it up to 2446-05-10)
+fails:File.utime allows Time instances in the far future to set mtime and atime (but some filesystems limit it up to 2446-05-10 or 2038-01-19)

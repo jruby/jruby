@@ -1,0 +1,2 @@
+windows:IO#gets ignores the internal encoding if the default external encoding is ASCII-8BIT
+windows:IO#gets transcodes to internal encoding if the IO object's external encoding is ASCII-8BIT

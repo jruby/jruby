@@ -1,0 +1,3 @@
+critical(only seems to fail in a full run):String#-@ returns the same object when it's called on the same String literal
+fails:String#-@ does not deduplicate tainted strings
+fails:String#-@ does not deduplicate strings with additional instance variables

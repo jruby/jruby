@@ -1,0 +1,1 @@
+fails:File::Stat#grpowned? takes non primary groups into account

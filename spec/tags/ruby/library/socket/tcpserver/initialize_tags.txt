@@ -1,0 +1,2 @@
+fails:TCPServer#initialize with a single Fixnum argument sets the hostname to 0.0.0.0
+fails:TCPServer#initialize with a single String argument containing a numeric value sets the hostname to 0.0.0.0

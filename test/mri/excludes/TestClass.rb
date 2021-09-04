@@ -1,0 +1,7 @@
+exclude :test_invalid_retry_from_class_definition, "new LJE behavior or tests in Ruby 2.5"
+exclude :test_method_redefinition, "needs investigation"
+exclude :test_redefine_private_class, "needs investigation"
+exclude :test_redefinition_mismatch, "parser issue with Japanese identifiers (#3679)"
+exclude :test_singleton_class_message, "error says class instead of Class"
+exclude :test_singleton_class_should_has_own_namespace, "new behavior for 2.3 (#3693)"
+exclude :test_uninitialized, "needs investigation"

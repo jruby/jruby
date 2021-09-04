@@ -1,0 +1,2 @@
+hangs:IO#each_line with limit when limit is 0 raises an ArgumentError
+fails:IO#each_line with both separator and limit when no block is given returns an Enumerator

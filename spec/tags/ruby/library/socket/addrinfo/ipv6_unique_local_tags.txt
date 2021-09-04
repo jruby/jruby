@@ -1,0 +1,3 @@
+fails:Addrinfo#ipv6_unique_local? returns true for an unique local IPv6 address
+fails:Addrinfo#ipv6_unique_local? returns false for a regular IPv6 address
+fails:Addrinfo#ipv6_unique_local? returns false for an IPv4 address

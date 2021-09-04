@@ -1,0 +1,1 @@
+fails:UNIXServer#initialize sets the socket to binmode

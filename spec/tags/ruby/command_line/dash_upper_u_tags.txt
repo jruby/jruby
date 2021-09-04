@@ -1,0 +1,4 @@
+fails(compiler):ruby -U raises a RuntimeError if used with -Eext:int
+fails(compiler):ruby -U raises a RuntimeError if used with -E:int
+windows:ruby -U is overruled by Encoding.default_internal=
+windows:ruby -U does not affect the default external encoding

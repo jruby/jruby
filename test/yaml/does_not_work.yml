@@ -1,0 +1,49 @@
+---
+- page_id: !str 107
+  updated_at: !str 2007-07-25 07:03:11.0
+  modified_by_user_id: !str 17
+  content: "MySQL does not install with utf-8 support by default either on Windows \
+    or OSX. \r\n\r\nTo see if you have utf-8 support enabled, start a mysql client \
+    and execute the following at the prompt\r\n\r\nmysql> show variables like 'character_set%'\r\
+    \n\r\nWith MySQL 5.0, you should get 8 variables, with the following values\r\n\
+    \r\n| character_set_client     | utf8                                         \
+    \                  | \r\n| character_set_connection | utf8                     \
+    \                                      | \r\n| character_set_database   | utf8 \
+    \                                                          | \r\n| character_set_filesystem \
+    | binary                                                         | \r\n| character_set_results \
+    \   | utf8                                                           | \r\n| character_set_server \
+    \    | utf8                                                           | \r\n| character_set_system \
+    \    | utf8                                                           |\r\n\r\n\
+    If the variables shown above are all set to utf-8, there is nothing more to be \
+    done. If not, here is how to enable utf-8 support on both platforms.\r\n\r\n* \
+    Windows\r\n** During the MySQL installation\r\n**** Once the windows installer \
+    finishes installing, it starts up a wizard to configure your MySQL instance.\r\
+    \n**** There is a configuration screen to select the default character set\r\n\
+    **** Choose the Manual Selected Default Character Set / Collation option\r\n**** \
+    Choose the dropdown value of utf8\r\n**** Continue with the rest of the configuration \
+    and finish. \r\n** If you already have MySQL installed \r\n**** Stop the MySQL \
+    service\r\n**** Close all active clients\r\n**** Navigate to your MySQL installation \
+    directory (C:\\Program Files\\MySQL\\MySQL Server 5.0 on my machine)\r\n**** Open \
+    the my.ini file in that directory in your favourite text editor\r\n**** Scroll \
+    down to the section named mysql (identified by \"[mysql]\" on a line, by itself)\r\
+    \n**** In the next line, enter this: default-character-set=utf8\r\n**** Scroll \
+    down to the section named mysqld (identified by \"[mysqld]\" on a line, by itself)\r\
+    \n**** In the next line, enter this: default-character-set=utf8\r\n**** Save and \
+    close the file\r\n**** Restart the MySQL service\r\n* OSX\r\n** Navigate to your \
+    installation directory (typically /usr/local/mysql)\r\n** There should be directory \
+    called \"support-files\" under here\r\n** Copy the my-large.cnf file from here \
+    into /etc and rename it to my.cnf. In my case, the following command works \r\n\
+    \ --- cp /usr/local/mysql/support-files/my-large.cnf /etc/my.cnf\r\n** Open /etc/my.cnf \
+    in your favourite text editor\r\n** Scroll down to the section named mysql (identified \
+    by \"[mysql]\" on a line, by itself)\r\n** In the next line, enter this: default-character-set=utf8\r\
+    \n** Scroll down to the section named mysqld (identified by \"[mysqld]\" on a \
+    line, by itself)\r\n** In the next line, enter this: default-character-set=utf8\r\
+    \n** Save and close the file\r\n** Restart the MySQL service\r\n\r\nNow if you \
+    start a mysql client and verify that the instance is configured properly."
+  has_macros: !str 1
+  project_id: !str 4
+  id: !str 1074
+  name: MySQL UTF8
+  created_by_user_id: !str 17
+  created_at: !str 2007-07-25 06:11:15.0
+  version: !str 4

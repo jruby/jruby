@@ -1,0 +1,12 @@
+fails:Socket#sysaccept using IPv4 using an unbound socket raises Errno::EINVAL
+fails:Socket#sysaccept using IPv4 using a bound socket that's not listening raises Errno::EINVAL
+fails:Socket#sysaccept using IPv4 using a bound socket that's listening without a connected client blocks the caller until a connection is available
+fails:Socket#sysaccept using IPv4 using a bound socket that's listening with a connected client returns an Array containing a Fixnum and an Addrinfo
+fails:Socket#sysaccept using IPv4 using a bound socket that's listening with a connected client returns a new file descriptor
+fails:Socket#sysaccept using IPv6 using an unbound socket raises Errno::EINVAL
+fails:Socket#sysaccept using IPv6 using a bound socket that's not listening raises Errno::EINVAL
+fails:Socket#sysaccept using IPv6 using a bound socket that's listening without a connected client blocks the caller until a connection is available
+fails:Socket#sysaccept using IPv6 using a bound socket that's listening with a connected client returns an Array containing a Fixnum and an Addrinfo
+fails:Socket#sysaccept using IPv6 using a bound socket that's listening with a connected client returns a new file descriptor
+fails:Socket#sysaccept using IPv4 using a bound socket that's listening with a connected client returns an Array containing an Integer and an Addrinfo
+fails:Socket#sysaccept using IPv6 using a bound socket that's listening with a connected client returns an Array containing an Integer and an Addrinfo

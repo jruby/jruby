@@ -1,0 +1,1 @@
+fails:Socket::BasicSocket#getpeername raises Errno::ENOTCONN for a disconnected socket

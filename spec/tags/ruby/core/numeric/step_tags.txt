@@ -1,0 +1,8 @@
+fails:Numeric#step with positional args when step is a String with self and stop as Floats raises an  when step is a numeric representation
+fails:Numeric#step with positional args when step is a String with self and stop as Floats raises an  with step as an alphanumeric string
+fails:Numeric#step with positional args when no block is given returned Enumerator size when step is a String with self and stop as Floats raises an  when step is a numeric representation
+fails:Numeric#step with positional args when no block is given returned Enumerator size when step is a String with self and stop as Floats raises an  with step as an alphanumeric string
+fails:Numeric#step with keyword arguments when step is a String with self and stop as Floats raises an  when step is a numeric representation
+fails:Numeric#step with keyword arguments when step is a String with self and stop as Floats raises an  with step as an alphanumeric string
+fails:Numeric#step with keyword arguments when no block is given returned Enumerator size when step is a String with self and stop as Floats raises an  when step is a numeric representation
+fails:Numeric#step with keyword arguments when no block is given returned Enumerator size when step is a String with self and stop as Floats raises an  with step as an alphanumeric string

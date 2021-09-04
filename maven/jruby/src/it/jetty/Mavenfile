@@ -1,0 +1,71 @@
+#-*- mode: ruby -*-
+
+# it is war-file
+packaging 'war'
+
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
+            'project.build.sourceEncoding' => 'utf-8',
+            'public.dir' => '${basedir}/public' )
+
+pom( 'org.jruby:jruby', '${jruby.version}' )
+
+jar( 'org.jruby.rack:jruby-rack', '1.1.14', 
+     :exclusions => [ 'org.jruby:jruby-complete' ] )
+
+# a gem to be used
+gem 'flickraw', '0.9.7'
+
+extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+
+jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :includeLibDirectoryInResources => true, :jrubyVersion => '9.0.0.0' do
+  execute_goal :initialize
+end
+
+# pack the war with that ruby-like directory layout
+# not really needed but for completeness
+plugin( :war, '2.2',
+        :warSourceDirectory => '${public.dir}',
+        :webResources => [ { :directory => '${basedir}',
+                             :targetPath => 'WEB-INF',
+                             :includes => [ 'config.ru' ] } ] )
+
+# jetty setup
+execute 'copy config.ru for jruby-rack to find', :phase => 'initialize' do |ctx|
+  require 'fileutils'
+  webinf = ctx.project.properties[ 'public.dir' ].to_s + '/WEB-INF'
+  FileUtils.mkdir_p webinf
+  FileUtils.cp( 'config.ru', webinf )
+end
+
+# start jetty for the tests
+plugin( 'org.eclipse.jetty:jetty-maven-plugin', '9.1.3.v20140225',
+        :path => '/',
+        :webAppSourceDirectory => '${public.dir}',
+        :stopPort => 9999,
+        :stopKey => 'foo' ) do
+   execute_goal( 'start', :id => 'start jetty', :phase => 'pre-integration-test', :daemon => true )
+   execute_goal( 'stop', :id => 'stop jetty', :phase => 'post-integration-test' )
+end
+
+# download files during the tests
+result = nil
+execute 'download', :phase => 'integration-test' do
+  require 'open-uri'
+  result = open( 'http://localhost:8080' ).string
+  puts result
+end
+
+# verify the downloads
+execute 'check download', :phase => :verify do
+  expected = 'hello world:'
+  unless result.match( /^#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
+  expected = 'uri:classloader:/gems/flickraw-0.9.7'
+  unless result.match( /#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
+end
+# vim: syntax=Ruby

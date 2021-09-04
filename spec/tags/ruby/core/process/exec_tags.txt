@@ -1,0 +1,18 @@
+fails:Process.exec raises Errno::EACCES when passed a directory
+fails:Process.exec sets the current directory when given the :chdir option
+fails:Process.exec with a command array uses the first element as the command name and the second as the argv[0] value
+fails:Process.exec with a command array coerces the argument using to_ary
+fails:Process.exec (environment variables) unsets other environment variables when given a true :unsetenv_others option
+fails:Process.exec with a command array raises an ArgumentError if the Array does not have exactly two elements
+fails:Process.exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+windows:Process.exec runs the specified command, replacing current process
+windows:Process.exec with a single argument subjects the specified command to shell expansion
+windows:Process.exec with a single argument creates an argument array with shell parsing semantics for whitespace
+windows:Process.exec (environment variables) sets environment variables in the child environment
+windows:Process.exec (environment variables) unsets environment variables whose value is nil
+windows:Process.exec (environment variables) coerces environment argument using to_hash
+fails:Process.exec (environment variables) sets environment variables in the child environment
+fails:Process.exec (environment variables) unsets environment variables whose value is nil
+fails:Process.exec (environment variables) coerces environment argument using to_hash
+fails:Process.exec with an options Hash with Integer option keys lets the process after exec have specified file descriptor despite close_on_exec
+fails:Process.exec with an options Hash with Integer option keys sets close_on_exec to false on specified fd even when it fails

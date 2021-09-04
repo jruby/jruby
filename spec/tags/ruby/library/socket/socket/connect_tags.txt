@@ -1,0 +1,8 @@
+fails:Socket#connect using IPv4 returns 0 when connected successfully using a String
+fails:Socket#connect using IPv4 returns 0 when connected successfully using an Addrinfo
+fails:Socket#connect using IPv4 raises Errno::EISCONN when already connected
+fails:Socket#connect using IPv4 raises Errno::ECONNREFUSED or Errno::ETIMEDOUT when the connection failed
+fails:Socket#connect using IPv6 returns 0 when connected successfully using a String
+fails:Socket#connect using IPv6 returns 0 when connected successfully using an Addrinfo
+fails:Socket#connect using IPv6 raises Errno::EISCONN when already connected
+fails:Socket#connect using IPv6 raises Errno::ECONNREFUSED or Errno::ETIMEDOUT when the connection failed

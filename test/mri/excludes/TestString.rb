@@ -1,0 +1,6 @@
+exclude :test_ASET, "expected behavior; JRuby can only do int range offsets into a string (integer -9223372036854775808 too small to convert to `int')"
+exclude :test_crypt, "does not raise as expected"
+exclude :test_grapheme_clusters, "unfinished in initial 2.6 work, #6161"
+exclude :test_setter, "does not raise as expected"
+exclude :test_undump, "unfinished in initial 2.6 work, #6161"
+exclude :test_uplus_minus, "only seems to fail in a full test run"

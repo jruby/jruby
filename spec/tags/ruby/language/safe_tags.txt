@@ -1,0 +1,13 @@
+fails:The $SAFE variable can be set to 1
+fails:The $SAFE variable cannot be set to 2
+fails:The $SAFE variable cannot be set to 3
+fails:The $SAFE variable cannot be set to 4
+fails:The $SAFE variable cannot be set to values below 0
+fails:The $SAFE variable cannot be set to values above 4
+fails:The $SAFE variable cannot be manually lowered
+fails:The $SAFE variable can be read when default from Thread#safe_level
+fails:The $SAFE variable can be read when modified from Thread#safe_level
+fails(SAFE is unsupported):The $SAFE variable raises ArgumentError when set to values below 0
+fails(SAFE is unsupported):The $SAFE variable is not Proc local
+fails(SAFE is unsupported):The $SAFE variable is not lambda local
+fails(SAFE is unsupported):The $SAFE variable is global like regular global variables

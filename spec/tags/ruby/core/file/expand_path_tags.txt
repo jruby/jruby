@@ -1,0 +1,5 @@
+fails:File.expand_path raises an Encoding::CompatibilityError if the external encoding is not compatible
+windows:File.expand_path does not modify a HOME string argument
+fails:File.expand_path when HOME is not set uses the user database when passed '~' if HOME is nil
+fails:File.expand_path when HOME is not set uses the user database when passed '~/' if HOME is nil
+fails:File.expand_path expands a path when the default external encoding is BINARY

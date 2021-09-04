@@ -1,0 +1,274 @@
+#-*- mode: ruby -*-
+
+gemfile
+
+gem 'bundler', '1.10.6'
+gem 'cuba', '3.4.0'
+
+name '${cmd} ${framework} from ${package}'
+
+packaging 'pom' 
+
+# TODO add extension to .mvn/extensions.xml
+extension 'de.saumya.mojo', 'jruby9-extensions', '${jruby9.plugins.version}'
+
+properties( 'jruby.plugins.version' => '1.1.0',
+            'jruby9.plugins.version' => '0.2.0' )
+
+# integration tests
+###################
+
+properties( 'gem.home' => '${basedir}/../rubygems-hellowarld',
+            # inherited from invoker config
+            'jars.home' => '${localRepository}',
+            :baseurl => 'http://localhost:9292' )
+
+profile 'sinatra' do
+  properties :framework => 'sinatra'
+end
+
+profile 'cuba' do
+  properties :framework => 'cuba'
+end
+
+profile 'rails4' do
+  properties :framework => 'rails4', 'wildfly.javaOpts' => '-XX:MaxMetaspaceSize=512m'
+end
+
+profile 'webrick' do
+  properties :cmd => 'rackup'
+end
+
+profile 'puma' do
+  properties :cmd => 'puma'
+end
+
+profile 'torquebox' do
+  properties :cmd => 'torquebox run', :baseurl => 'http://localhost:8080'
+end
+
+File.read('Jars.lock').each_line do |line|
+  data = line.sub(/-\ /, '').strip.split(':')
+  if data.size > 3
+    data = Hash[ [:groupId, :artifactId, :version, :scope].zip( data ) ]
+    jar data[:groupId], data[:artifactId], data[:version]
+  end
+end
+
+profile 'filesystem' do
+  properties( :executable => 'JARS_HOME=${jars.home} GEM_PATH=${gem.home} GEM_HOME=${gem.home}' )
+end
+
+profile 'runnable' do
+  properties( :package => 'runnable',
+              :executable => 'java -jar ${project.build.directory}/${project.build.finalName}.jar -S' )
+  
+  build do
+    resource( :directory => '${basedir}',
+              :includes => ['Gemfile*', '*lock', 'config*.ru', 'app/**', 'config/**' ] )
+  end
+end
+
+profile 'warfile' do
+  properties :package => 'warfile', :baseurl => 'http://localhost:8080'
+
+  jruby_plugin!( 'jruby9-war', '${jruby9.plugins.version}',
+                 :webResources => [ { :directory => '${basedir}',
+                                      :includes => [ 'WEB-INF/*' ] } ] )
+  
+  build do
+    resource( :directory => '${basedir}',
+              :includes => ['Gemfile*', '*lock', 'config*.ru', 'app/**', 'config/**' ] )
+  end
+end
+
+profile 'jetty' do
+
+  properties :cmd => 'jetty'
+
+  plugin( 'org.eclipse.jetty:jetty-maven-plugin', '9.1.3.v20140225',
+          :war => '${project.build.directory}/${project.build.finalName}.war',
+          :stopPort => 9999,
+          :stopKey => 'foo' ) do
+    # deploy-war will use the exploded war from
+    # ${project.build.directory}/${project.build.finalName}
+    execute_goal( 'deploy-war', :id => 'start jetty', :phase => 'pre-integration-test', :daemon => true )
+    execute_goal( 'stop', :id => 'stop jetty', :phase => 'post-integration-test' )
+  end
+end
+
+profile 'tomcat' do
+
+  properties :cmd => 'tomcat'
+
+  plugin( 'org.codehaus.mojo:tomcat-maven-plugin', '1.1',
+          :path => '/', :ignorePackaging => true,
+          :warDirectory => '${project.build.directory}/${project.build.finalName}' ) do
+    execute_goals( 'run-war-only',
+                   :id => 'start tomcat',
+                   :phase => 'pre-integration-test',
+                   :fork => true  )
+    execute_goals( 'shutdown',
+                   :id => 'stop tomcat',
+                   :phase => 'post-integration-test' )
+  end
+end
+
+[ 'wildfly_unpacked', 'wildfly_packed' ].each do |name|
+
+  profile name do
+    properties :cmd => name
+
+    plugin( 'org.wildfly.plugins:wildfly-maven-plugin', '1.0.2.Final' ) do
+      execute_goals( :start,
+                     :id => 'start wildfly',
+                     :phase => 'pre-integration-test' )
+      execute_goals( :shutdown,
+                     :id => 'stop wildfly',
+                     :phase => 'post-integration-test' )
+    end
+  end
+end
+
+profile! 'wildfly_unpacked' do
+  plugin!( 'org.wildfly.plugins:wildfly-maven-plugin' ) do
+      execute_goals( :start,
+                     :id => 'start wildfly',
+                     :phase => 'pre-integration-test' )
+      execute_goals( :shutdown,
+                     :id => 'stop wildfly',
+                     :phase => 'post-integration-test' )
+      execute_goals( 'deploy-only',
+                     :id => 'deploy to wildfly',
+                     :phase => 'pre-integration-test',
+                     :filename => '${project.build.finalName}.war',
+                     :name => 'test.war')
+  end
+end
+
+profile! 'wildfly_packed' do
+  execute 'deploy to wildfly', 'pre-integration-test' do |ctx|
+    baseurl = ctx.project.properties['baseurl']
+    dir = Dir[ 'target/wildfly-run/*' ].first
+    war = Dir[ 'target/*.war' ].first
+    FileUtils.cp( war, dir + '/standalone/deployments/test.war' )
+    loop do
+      sleep 1
+      begin
+        if open( "#{baseurl}/ping" ).string == 'pong'
+          break
+        end
+      rescue => e
+          puts e.message
+      end
+    end
+    puts "started ..."
+  end
+end
+
+[ 'filesystem', 'runnable'].each do |name|
+  profile! name do
+
+    properties( :package => name )
+
+    execute 'start up', :phase => 'pre-integration-test' do |ctx|
+      baseurl = ctx.project.properties['baseurl']
+      cmd = ctx.project.properties['cmd']
+      executable = ctx.project.properties['executable']
+      config_ru = "config-#{ctx.project.properties['framework']}.ru"
+      # just in case - during debugging it can happen
+      open( "#{baseurl}/shutdown" ) rescue nil
+      Thread.new do
+        command = "#{executable} #{cmd}"
+        puts "starting #{command}"
+        puts "#{baseurl}/ping"
+        `#{command}`
+      end.run
+      loop do
+        sleep 1
+        begin
+          if open( "#{baseurl}/ping" ).string == 'pong'
+            break
+          end
+        rescue => e
+          puts e.message
+        end
+      end
+      puts "started ..."
+    end
+
+    execute 'shutdown', :phase => 'post-integration-test' do |ctx|
+      baseurl = ctx.project.properties['baseurl']
+      open( "#{baseurl}/shutdown" ) rescue nil
+      puts "stopped"
+    end
+  end
+end
+
+require 'open-uri'
+results = []
+execute 'download', :phase => 'integration-test' do |ctx|
+  baseurl = ctx.project.properties['baseurl']
+  puts baseurl
+  results << open( "#{baseurl}/app" ).string
+  results << open( "#{baseurl}/admin" ).string
+  results << open( "#{baseurl}/admin/ping" ).string
+  results << open( "#{baseurl}/admin/health" ).string
+  results << open( "#{baseurl}/admin/metrics" ).string
+  results << open( "#{baseurl}/admin/threads" ).read
+  results << open( "#{baseurl}/ping" ).string
+  results << open( "#{baseurl}/health" ).string
+  results << open( "#{baseurl}/metrics" ).string
+  results << open( "#{baseurl}/threads" ).read
+  results.each { |r| puts r[0..20] }
+end
+
+# verify the downloads
+execute 'verify downloads', :phase => :verify do
+  expected = 'christian'
+  unless results[0].match( /#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
+  expected = 'menu'
+  unless results[1].match( /#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
+  expected = 'pong'
+  unless results[2].match( /#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
+  require 'json'
+  json = JSON.parse( results[3] )
+  unless json["app.health"]["healthy"]
+    raise "healthy expected"
+  end
+  json = JSON.parse( results[4] )
+  unless json["meters"]["webapp.responseCodes.ok"]["count"] == 1
+    raise "one OK request expected"
+  end
+  unless results[5].length > 10000
+    puts result[5]
+    raise "expected thread dump to be big"
+  end
+  expected = 'pong'
+  unless results[6].match( /#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
+  json = JSON.parse( results[7] )
+  unless json["app.health"]["healthy"]
+    raise "healthy expected"
+  end
+  json = JSON.parse( results[8] )
+  unless json["meters"]["webapp.responseCodes.ok"]["count"] == 1
+    raise "one OK request expected"
+  end
+  unless json["meters"]["collected.responseCodes.2xx"]["count"] == 1
+    raise "one 2xx request expected"
+  end
+  unless results[9].length > 10000
+    puts result[9]
+    raise "expected thread dump to be big"
+  end
+  sleep 1
+end
+

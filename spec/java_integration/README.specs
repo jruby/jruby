@@ -1,0 +1,24 @@
+This sub-directory contains specs for JRuby's Java Integration features.
+
+== RUNNING
+
+Run the specs with "jruby -S rake spec:ji" from the root of the JRuby source tree.
+Specdoc will be printed to the console showing what has been implemented so far.
+
+== NOTES
+
+The work to create the specs is just starting; please follow these guidelines.
+
+- Keep the specs free of outside dependencies.
+- Create fixture Java classes in the fixtures/ subdirectory for use by the specs.
+  Don't use any Java classes other than those in the fixtures directory, or in the
+  JDK itself.
+- Create new *_spec.rb files in subdirectories grouped by functional area. Create new
+  subdirectories if you need to.
+- For speed, the "jispec" task does not recompile the fixture classes. If you're
+  adding new fixture classes, you will need to re-run the "test:compile" rake
+  task in order to pick up the changes.
+- Try to keep each spec as short as possible. Put as much setup as you can in a
+  before(:each) block.
+- Group related specs that share the same (or similar) setup with nested describe
+  blocks.

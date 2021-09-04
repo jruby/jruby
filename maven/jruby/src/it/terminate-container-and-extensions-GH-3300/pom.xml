@@ -1,0 +1,64 @@
+<project>
+  <groupId>org.jruby.tests</groupId>
+  <artifactId>terminate-container-and-extensions</artifactId>
+  <version>1</version>
+  <modelVersion>4.0.0</modelVersion>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby</artifactId>
+      <version>@project.version@</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>thread_safe</artifactId>
+      <version>0.3.5</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>mavengems</id>
+      <url>mavengem:https://rubygems.org</url>
+    </repository>
+  </repositories>
+
+  <properties>
+    <jruby.plugins.version>1.0.10</jruby.plugins.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <build>
+    <extensions>
+      <extension>
+        <groupId>org.torquebox.mojo</groupId>
+        <artifactId>mavengem-wagon</artifactId>
+        <version>1.0.3</version>
+      </extension>
+    </extensions>
+    <plugins>
+      <plugin>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>${jruby.plugins.version}</version>
+        <executions>
+          <execution>
+            <goals><goal>initialize</goal></goals>
+          </execution>
+        </executions>
+        <configuration>
+          <jrubyVersion>1.7.22</jrubyVersion>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

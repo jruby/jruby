@@ -1,0 +1,60 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    jar-dependencies (0.2.2)
+    leafy-complete (0.6.2-java)
+      leafy-health (~> 0.6.2)
+      leafy-logger (~> 0.6.2)
+      leafy-metrics (~> 0.6.2)
+      leafy-rack (~> 0.6.2)
+    leafy-health (0.6.2-java)
+      jar-dependencies (~> 0.1)
+    leafy-logger (0.6.2-java)
+      jar-dependencies (~> 0.1)
+      leafy-metrics (~> 0.6.2)
+    leafy-metrics (0.6.2-java)
+      jar-dependencies (~> 0.1)
+    leafy-rack (0.6.2-java)
+      jar-dependencies (~> 0.1)
+      leafy-health (~> 0.6.2)
+      leafy-logger (~> 0.6.2)
+      leafy-metrics (~> 0.6.2)
+    puma (3.12.6-java)
+    rack (1.6.11)
+    rack-protection (1.5.5)
+      rack
+    rake (12.3.3)
+    sinatra (1.4.6)
+      rack (~> 1.4)
+      rack-protection (~> 1.4)
+      tilt (>= 1.3, < 3)
+    tilt (2.0.1)
+    torquebox (4.0.0.beta2-java)
+      torquebox-caching (= 4.0.0.beta2)
+      torquebox-core (= 4.0.0.beta2)
+      torquebox-messaging (= 4.0.0.beta2)
+      torquebox-scheduling (= 4.0.0.beta2)
+      torquebox-web (= 4.0.0.beta2)
+    torquebox-caching (4.0.0.beta2-java)
+      torquebox-core (= 4.0.0.beta2)
+    torquebox-core (4.0.0.beta2-java)
+    torquebox-messaging (4.0.0.beta2-java)
+      torquebox-core (= 4.0.0.beta2)
+    torquebox-scheduling (4.0.0.beta2-java)
+      torquebox-core (= 4.0.0.beta2)
+    torquebox-web (4.0.0.beta2-java)
+      rack (>= 1.4.0, < 2.0)
+      torquebox-core (= 4.0.0.beta2)
+
+PLATFORMS
+  java
+
+DEPENDENCIES
+  leafy-complete (~> 0.6)
+  puma (= 3.12.6)
+  rake (~> 10.2)
+  sinatra (~> 1.4)
+  torquebox (= 4.0.0.beta2)
+
+BUNDLED WITH
+   1.17.1

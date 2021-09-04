@@ -1,0 +1,12 @@
+fails:IO#reopen with a String closes the file descriptor obtained by opening the new file
+windows:IO#reopen calls #to_io to convert an object
+windows:IO#reopen with a String calls #to_path on non-String arguments
+windows:IO#reopen with a String opens a path after writing to the original file descriptor
+windows:IO#reopen with a String creates the file if it doesn't exist if the IO is opened in write mode
+windows:IO#reopen with an IO does not call #to_io
+windows:IO#reopen with an IO does not change the object_id
+windows:IO#reopen with an IO reads from the beginning if the other IO has not been read from
+windows:IO#reopen with an IO reads from the current position of the other IO's stream
+windows:IO#reopen with an IO associates the IO instance with the other IO's stream
+fails:IO#reopen with a String affects exec/system/fork performed after it
+fails:IO#reopen with an IO does not call #to_io

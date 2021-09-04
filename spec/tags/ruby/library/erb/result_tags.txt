@@ -1,0 +1,1 @@
+fails:ERB#result use TOPLEVEL_BINDING if binding is not passed

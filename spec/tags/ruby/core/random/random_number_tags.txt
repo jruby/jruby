@@ -1,0 +1,2 @@
+fails:Random.random_number returns a Float if no max argument is passed
+fails:Random.random_number returns an Integer if an Integer argument is passed

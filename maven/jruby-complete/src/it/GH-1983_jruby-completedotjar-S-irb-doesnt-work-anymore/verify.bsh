@@ -1,0 +1,20 @@
+import java.io.*;
+import org.codehaus.plexus.util.FileUtils;
+
+
+String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
+String expected = "hello irb";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+// expected = "hello swing_jirb";
+// if ( !log.contains( expected ) )
+// {
+//     throw new RuntimeException( "log file does not contain '" + expected + "'" );
+// }
+expected = "hello jirb";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}

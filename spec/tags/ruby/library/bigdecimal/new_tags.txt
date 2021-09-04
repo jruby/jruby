@@ -1,0 +1,1 @@
+fails:BigDecimal.new raises ArgumentError for invalid strings

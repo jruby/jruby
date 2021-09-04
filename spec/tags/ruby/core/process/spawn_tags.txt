@@ -1,0 +1,54 @@
+fails:Process.spawn sets the umask if given the :umask option
+fails:Process.spawn raises an Errno::EACCES or Errno::EISDIR when passed a directory
+fails:Process.spawn defaults :close_others to true
+hangs:Process.spawn when passed close_others: true closes file descriptors >= 3 in the child process even if fds are set close_on_exec=false
+linux:Process.spawn inside Dir.chdir kills extra chdir processes
+windows:Process.spawn executes the given command
+windows:Process.spawn sets environment variables in the child environment
+windows:Process.spawn unsets environment variables whose value is nil
+windows:Process.spawn calls #to_hash to convert the environment
+windows:Process.spawn calls #to_str to convert the environment values
+windows:Process.spawn raises an ArgumentError if an environment key includes an equals sign
+windows:Process.spawn raises an ArgumentError if an environment key includes a null byte
+windows:Process.spawn raises an ArgumentError if an environment value includes a null byte
+windows:Process.spawn unsets other environment variables when given a true :unsetenv_others option
+windows:Process.spawn raises an ArgumentError if given :pgroup option
+windows:Process.spawn uses the current working directory as its working directory
+windows:Process.spawn uses the current umask by default
+windows:Process.spawn redirects STDOUT to the given file if out: IO
+windows:Process.spawn redirects STDOUT to the given file if out: [String name, String mode]
+windows:Process.spawn redirects STDERR to the given file descriptor if err: IO
+windows:Process.spawn redirects STDERR to child STDOUT if :err => [:child, :out]
+windows:Process.spawn redirects both STDERR and STDOUT to the given IO
+windows:Process.spawn raises an ArgumentError if passed no command arguments
+windows:Process.spawn raises an ArgumentError if passed env or options but no command arguments
+windows:Process.spawn raises an ArgumentError if passed env and options but no command arguments
+windows:Process.spawn raises an ArgumentError when passed a string key in options
+windows:Process.spawn raises an ArgumentError when passed an unknown option key
+windows:Process.spawn with a single argument subjects the specified command to shell expansion
+windows:Process.spawn with a single argument creates an argument array with shell parsing semantics for whitespace
+windows:Process.spawn with a single argument calls #to_str to convert the argument to a String
+windows:Process.spawn with a single argument raises an ArgumentError if the command includes a null byte
+windows:Process.spawn with a single argument raises a TypeError if the argument does not respond to #to_str
+windows:Process.spawn with multiple arguments does not subject the arguments to shell expansion
+windows:Process.spawn with multiple arguments preserves whitespace in passed arguments
+windows:Process.spawn with multiple arguments calls #to_str to convert the arguments to Strings
+windows:Process.spawn with multiple arguments raises an ArgumentError if an argument includes a null byte
+windows:Process.spawn with multiple arguments raises a TypeError if an argument does not respond to #to_str
+windows:Process.spawn with a command array does not subject the arguments to shell expansion
+windows:Process.spawn with a command array preserves whitespace in passed arguments
+windows:Process.spawn with a command array calls #to_str to convert the first element to a String
+windows:Process.spawn with a command array calls #to_str to convert the second element to a String
+windows:Process.spawn with a command array raises an ArgumentError if the Array does not have exactly two elements
+windows:Process.spawn with a command array raises an ArgumentError if the Strings in the Array include a null byte
+windows:Process.spawn with a command array raises a TypeError if an element in the Array does not respond to #to_str
+windows:Process.spawn when passed :chdir changes to the directory passed for :chdir
+windows:Process.spawn when passed :chdir calls #to_path to convert the :chdir value
+windows:Process.spawn when passed close_others: true does not close STDIN
+windows:Process.spawn when passed close_others: true does not close STDOUT
+windows:Process.spawn when passed close_others: true does not close STDERR
+windows:Process.spawn when passed close_others: false closes file descriptors >= 3 in the child process because they are set close_on_exec by default
+windows:Process.spawn when passed close_others: false does not close STDIN
+windows:Process.spawn when passed close_others: false does not close STDOUT
+windows:Process.spawn when passed close_others: false does not close STDERR
+windows:Process.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value

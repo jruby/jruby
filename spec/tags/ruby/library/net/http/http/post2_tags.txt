@@ -1,0 +1,5 @@
+critical(setup hangs on travis):Net::HTTP#post2 when passed no block sends a post request to the passed path and returns the response
+critical(setup hangs on travis):Net::HTTP#post2 when passed no block returns a Net::HTTPResponse object
+critical(setup hangs on travis):Net::HTTP#post2 when passed a block sends a post request to the passed path and returns the response
+critical(setup hangs on travis):Net::HTTP#post2 when passed a block yields the response to the passed block
+critical(setup hangs on travis):Net::HTTP#post2 when passed a block returns a Net::HTTPResponse object

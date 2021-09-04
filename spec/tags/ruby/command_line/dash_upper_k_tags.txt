@@ -1,0 +1,5 @@
+fails:The -K command line option sets __ENCODING__ to Encoding::Windows_31J with -Ks
+fails:The -K command line option sets __ENCODING__ to Encoding::Windows_31J with -KS
+fails:The -K command line option ignores unknown codes
+fails:The -K command line option sets __ENCODING__ and Encoding.default_external to Encoding::Windows_31J with -Ks
+fails:The -K command line option sets __ENCODING__ and Encoding.default_external to Encoding::Windows_31J with -KS

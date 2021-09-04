@@ -1,0 +1,4 @@
+fails:Float#inspect uses e format for a positive value with whole part having 18 significant figures
+fails:Float#inspect uses e format for a negative value with whole part having 18 significant figures
+fails:Float#inspect uses e format for a positive value with whole part having 17 significant figures
+fails:Float#inspect uses e format for a negative value with whole part having 17 significant figures

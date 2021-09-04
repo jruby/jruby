@@ -1,0 +1,1 @@
+windows:Socket#pair ensures the returned sockets are connected

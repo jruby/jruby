@@ -1,0 +1,5 @@
+fails:Time#localtime returns a Time with a UTC offset of the specified number of Rational seconds
+fails:Time#localtime raises ArgumentError if the String argument is not in an ASCII-compatible encoding
+fails:Time#localtime with an argument that responds to #to_r coerces using #to_r
+fails:Time#localtime does nothing if already in a local time zone
+fails(not implemented, jruby/jruby#6161):Time#localtime raises ArgumentError if the String argument is not of the form (+|-)HH:MM

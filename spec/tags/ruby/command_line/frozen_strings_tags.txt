@@ -1,0 +1,3 @@
+travis:The --enable-frozen-string-literal flag causes string literals to produce the same object for literals with the same content
+travis:The --enable-frozen-string-literal flag causes string literals to produce the same object for literals with the same content in different files
+fails:The --debug flag produces debugging info on attempted frozen string modification

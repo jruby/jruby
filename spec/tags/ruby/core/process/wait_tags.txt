@@ -1,0 +1,3 @@
+fails:Process.wait returns its childs pid
+fails:Process.wait doesn't block if no child is available when WNOHANG is used
+windows:Process.wait raises an Errno::ECHILD if there are no child processes

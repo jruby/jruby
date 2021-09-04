@@ -1,0 +1,6 @@
+fails:IO.new raises an error if passed matching binary/text mode two ways
+fails:IO.new raises an error if passed conflicting binary/text mode two ways
+windows:IO.new ingores the :encoding option when the :internal_encoding option is present
+windows:IO.new raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode
+fails:IO.new ignores the :encoding option when the :external_encoding option is present
+fails:IO.new ignores the :encoding option when the :internal_encoding option is present

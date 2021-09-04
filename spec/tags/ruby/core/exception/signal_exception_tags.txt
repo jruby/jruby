@@ -1,0 +1,4 @@
+critical(crash):rescuing SignalException raises a SignalException when sent a signal
+fails:SignalException runs after at_exit
+fails:SignalException cannot be trapped with Signal.trap
+fails:SignalException self-signals for USR1

@@ -1,0 +1,2 @@
+fails:Kernel#initialize_copy does nothing if the argument is the same as the receiver
+fails:Kernel#initialize_copy raises FrozenError if the receiver is frozen

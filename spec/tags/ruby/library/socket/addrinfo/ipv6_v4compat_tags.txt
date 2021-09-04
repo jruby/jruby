@@ -1,0 +1,1 @@
+fails:Addrinfo#ipv6_v4compat? returns false for a regular IPv6 address

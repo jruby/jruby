@@ -1,0 +1,5 @@
+fails:Process.clock_getres matches the clock in practice for Process::CLOCK_REALTIME
+fails:Process.clock_getres with :GETTIMEOFDAY_BASED_CLOCK_REALTIME reports 1 microsecond
+fails:Process.clock_getres with :TIME_BASED_CLOCK_REALTIME reports 1 second
+fails:Process.clock_getres with :GETRUSAGE_BASED_CLOCK_PROCESS_CPUTIME_ID reports 1 microsecond
+fails:Process.clock_getres with Process::CLOCK_REALTIME reports at least 1 microsecond

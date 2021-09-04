@@ -1,0 +1,7 @@
+# These tests are somewhat surface-level and also launch many subprocesses
+
+# Tracing tests, all spawn subprocesses
+
+test_tracer.rb
+ruby/test_settracefunc.rb
+ruby/test_syntax.rb

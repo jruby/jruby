@@ -1,0 +1,2 @@
+fails:Syslog::Constants Syslog::Constants.LOG_MASK returns the mask value for a priority
+fails:Syslog::Constants Syslog::Constants.LOG_UPTO returns a mask for the priorities up to a given argument

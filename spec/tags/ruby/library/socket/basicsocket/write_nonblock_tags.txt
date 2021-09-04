@@ -1,0 +1,2 @@
+fails:BasicSocket#write_nonblock using IPv4 does not set the IO in nonblock mode
+fails:BasicSocket#write_nonblock using IPv6 does not set the IO in nonblock mode

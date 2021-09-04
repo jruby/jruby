@@ -1,0 +1,4 @@
+fails:A nested method definition creates a method in the surrounding context when evaluated in a def expr.method
+fails:A method definition always resets the visibility to public for nested definitions at the toplevel
+fails:An instance method raises FrozenError with the correct class name
+fails:A singleton method definition raises FrozenError with the correct class name

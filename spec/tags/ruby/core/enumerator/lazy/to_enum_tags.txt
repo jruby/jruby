@@ -1,0 +1,1 @@
+fails:Enumerator::Lazy#to_enum used by some parent's methods though returning Lazy

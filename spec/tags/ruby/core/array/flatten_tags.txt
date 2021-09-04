@@ -1,0 +1,1 @@
+fails:Array#flatten with a non-Array object in the Array calls #to_ary if not defined when #respond_to_missing? returns true

@@ -1,0 +1,8 @@
+exclude :test_abort, ""
+exclude :test_active_private_data_connection, "needs investigation"
+exclude :test_getbinaryfile_command_injection, "unfinished in initial 2.6 work, #6161"
+exclude :test_getbinaryfile_command_injection, "unfinished in initial 2.6 work, #6161"
+exclude :test_list_read_timeout_exceeded, "needs investigation #4303"
+exclude :test_passive_private_data_connection, "needs investigation"
+exclude :test_status, ""
+exclude :test_tls_post_connection_check, "new SSL-related failure in 2.4. See jruby/jruby-openssl#139"

@@ -1,0 +1,51 @@
+fails(compiler):Kernel#sprintf passes some tests for negative %u
+fails:Kernel#sprintf integer formats u converts argument as a decimal number
+fails:Kernel#sprintf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
+fails:Kernel#sprintf float formats a displays Float::INFINITY as Inf
+fails:Kernel#sprintf float formats a displays Float::NAN as NaN
+fails:Kernel#sprintf float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
+fails:Kernel#sprintf float formats A displays Float::INFINITY as Inf
+fails:Kernel#sprintf float formats A displays Float::NAN as NaN
+fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
+fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
+fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
+fails:Kernel#sprintf flags (digit)$ specifies the absolute argument number for this field
+fails:Kernel#sprintf flags # applies to format o does nothing for negative argument
+fails:Kernel#sprintf flags # applies to formats aAeEfgG forces a decimal point to be added, even if no digits follow
+fails:Kernel#sprintf flags # applies to gG does not remove trailing zeros
+fails:Kernel#sprintf flags + applies to numeric formats bBdiouxXaAeEfgG adds a leading plus sign to non-negative numbers
+fails:Kernel#sprintf flags - left-justifies the result of conversion if width is specified
+fails:Kernel#sprintf flags 0 (zero) applies to numeric formats bBdiouxXaAeEfgG and width is specified pads with zeros, not spaces
+fails:Kernel#sprintf flags * uses the previous argument as the field width
+fails:Kernel#sprintf flags * left-justifies the result if width is negative
+fails:Kernel#sprintf flags * uses the specified argument as the width if * is followed by a number and $
+fails:Kernel#sprintf flags * left-justifies the result if specified with $ argument is negative
+fails:Kernel#sprintf flags * raises ArgumentError when is mixed with width
+fails:Kernel#sprintf width specifies the minimum number of characters that will be written to the result
+fails:Kernel#sprintf precision float types controls the number of decimal places displayed in fraction part
+fails:Kernel#sprintf reference by name %{name} style supports flags, width and precision
+fails:Kernel.sprintf integer formats u converts argument as a decimal number
+fails:Kernel.sprintf float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
+fails:Kernel.sprintf float formats a displays Float::INFINITY as Inf
+fails:Kernel.sprintf float formats a displays Float::NAN as NaN
+fails:Kernel.sprintf float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
+fails:Kernel.sprintf float formats A displays Float::INFINITY as Inf
+fails:Kernel.sprintf float formats A displays Float::NAN as NaN
+fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
+fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
+fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
+fails:Kernel.sprintf flags (digit)$ specifies the absolute argument number for this field
+fails:Kernel.sprintf flags # applies to format o does nothing for negative argument
+fails:Kernel.sprintf flags # applies to formats aAeEfgG forces a decimal point to be added, even if no digits follow
+fails:Kernel.sprintf flags # applies to gG does not remove trailing zeros
+fails:Kernel.sprintf flags + applies to numeric formats bBdiouxXaAeEfgG adds a leading plus sign to non-negative numbers
+fails:Kernel.sprintf flags - left-justifies the result of conversion if width is specified
+fails:Kernel.sprintf flags 0 (zero) applies to numeric formats bBdiouxXaAeEfgG and width is specified pads with zeros, not spaces
+fails:Kernel.sprintf flags * uses the previous argument as the field width
+fails:Kernel.sprintf flags * left-justifies the result if width is negative
+fails:Kernel.sprintf flags * uses the specified argument as the width if * is followed by a number and $
+fails:Kernel.sprintf flags * left-justifies the result if specified with $ argument is negative
+fails:Kernel.sprintf flags * raises ArgumentError when is mixed with width
+fails:Kernel.sprintf width specifies the minimum number of characters that will be written to the result
+fails:Kernel.sprintf precision float types controls the number of decimal places displayed in fraction part
+fails:Kernel.sprintf reference by name %{name} style supports flags, width and precision

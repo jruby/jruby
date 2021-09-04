@@ -1,0 +1,1 @@
+fails:String#crypt raises an ArgumentError when the string contains NUL character

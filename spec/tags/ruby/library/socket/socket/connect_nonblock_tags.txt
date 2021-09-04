@@ -1,0 +1,4 @@
+fails:Socket#connect_nonblock using IPv4 using a STREAM socket raises Errno::EISCONN when already connected
+fails:Socket#connect_nonblock using IPv4 using a STREAM socket returns 0 when already connected in exceptionless mode
+fails:Socket#connect_nonblock using IPv6 using a STREAM socket raises Errno::EISCONN when already connected
+fails:Socket#connect_nonblock using IPv6 using a STREAM socket returns 0 when already connected in exceptionless mode

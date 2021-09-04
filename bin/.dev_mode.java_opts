@@ -1,0 +1,8 @@
+-XX:+TieredCompilation
+-XX:TieredStopAtLevel=1
+-XX:-PrintWarnings
+-Djruby.compile.mode=OFF
+-Djruby.compile.invokedynamic=false
+-Djnr.ffi.asm.enabled=false
+-Xverify:none
+

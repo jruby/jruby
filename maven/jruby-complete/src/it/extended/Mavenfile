@@ -1,0 +1,39 @@
+#-*- mode: ruby -*-
+
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
+            'project.build.sourceEncoding' => 'utf-8',
+            'jruby.home' => '${basedir}/../../../../..' )
+
+phase :package do
+  plugin :dependency do
+    execute_goal( :copy,
+                  :artifactItems => [ {
+                    :groupId => 'org.jruby',
+                    :artifactId => 'jruby-complete',
+                    :version => '${jruby.version}'
+                  } ] )
+  end
+
+  plugin( 'org.codehaus.mojo:exec-maven-plugin:1.2',
+          :executable => 'java',
+          :environmentVariables => {
+            'PATH' => '${project.basedir}/bin${path.separator}${env.PATH}',
+            'GEM_PATH' => '${jruby.home}/lib/ruby/gems/shared',
+            'GEM_HOME' => '${jruby.home}/lib/ruby/gems/shared'
+          },
+          :basedir => '${jruby.home}' ) do
+
+    # see if gem gets found inside the jar though it is on $PATH
+    execute_goal( :exec, :id => 'gem help',
+                  :arguments => [ '-Djruby.debug.scriptResolution=true', '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'gem', 'help' ] )
+
+    execute_goal( :exec, :id => 'rake -T',
+                  :arguments => [ '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'rake', '-T' ] )
+
+    execute_goal( :exec, :id => 'rake test:objectspace',
+                  :arguments => [ '-jar', '${project.build.directory}/dependency/jruby-complete-${jruby.version}.jar', '-S', 'rake', 'test:objectspace' ] )
+    
+  end
+end
+ 

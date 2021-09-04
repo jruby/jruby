@@ -1,0 +1,4 @@
+windows:Dir.mktmpdir when passed no arguments returns the path to the created tmp-dir
+windows:Dir.mkdir when passed a block yields the path to the passed block
+windows:Dir.mkdir when passed a block returns the blocks return value
+windows:Dir.mktmpdir when passed [String] uses the passed String as a prefix to the tmp-directory

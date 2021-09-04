@@ -1,0 +1,4 @@
+fails:TCPServer.new binds to INADDR_ANY if the hostname is empty
+fails:TCPServer.new binds to INADDR_ANY if the hostname is empty and the port is a string
+fails:TCPServer.new binds to a port if the port is explicitly nil
+fails:TCPServer.new binds to a port if the port is an empty string

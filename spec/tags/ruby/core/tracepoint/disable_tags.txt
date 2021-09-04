@@ -1,0 +1,1 @@
+debug:TracePoint#disable returns true if trace was enabled

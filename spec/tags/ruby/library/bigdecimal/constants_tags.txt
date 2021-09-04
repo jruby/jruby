@@ -1,0 +1,7 @@
+fails:BigDecimal constants rounding-related constants has a ROUND_UP value
+fails:BigDecimal constants rounding-related constants has a ROUND_DOWN value
+fails:BigDecimal constants rounding-related constants has a ROUND_HALF_UP value
+fails:BigDecimal constants rounding-related constants has a ROUND_HALF_DOWN value
+fails:BigDecimal constants rounding-related constants has a ROUND_CEILING value
+fails:BigDecimal constants rounding-related constants has a ROUND_FLOOR value
+fails:BigDecimal constants rounding-related constants has a ROUND_HALF_EVEN value

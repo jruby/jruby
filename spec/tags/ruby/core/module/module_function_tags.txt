@@ -1,0 +1,1 @@
+fails:Module#module_function as a toggle (no arguments) in a Module body doesn't affect definitions when inside an eval even if the definitions are outside of it

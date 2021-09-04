@@ -1,0 +1,14 @@
+fails:Socket#remote_address using IPv4 returns an Addrinfo
+fails:Socket#remote_address using IPv4 the returned Addrinfo uses AF_INET as the address family
+fails:Socket#remote_address using IPv4 the returned Addrinfo uses PF_INET as the protocol family
+fails:Socket#remote_address using IPv4 the returned Addrinfo uses SOCK_STREAM as the socket type
+fails:Socket#remote_address using IPv4 the returned Addrinfo uses the correct IP address
+fails:Socket#remote_address using IPv4 the returned Addrinfo uses the correct port
+fails:Socket#remote_address using IPv4 the returned Addrinfo uses 0 as the protocol
+fails:Socket#remote_address using IPv6 returns an Addrinfo
+fails:Socket#remote_address using IPv6 the returned Addrinfo uses AF_INET as the address family
+fails:Socket#remote_address using IPv6 the returned Addrinfo uses PF_INET as the protocol family
+fails:Socket#remote_address using IPv6 the returned Addrinfo uses SOCK_STREAM as the socket type
+fails:Socket#remote_address using IPv6 the returned Addrinfo uses the correct IP address
+fails:Socket#remote_address using IPv6 the returned Addrinfo uses the correct port
+fails:Socket#remote_address using IPv6 the returned Addrinfo uses 0 as the protocol

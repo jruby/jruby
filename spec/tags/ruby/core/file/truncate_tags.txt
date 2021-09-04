@@ -1,0 +1,3 @@
+windows:File.truncate truncates to a larger file size than the original file
+windows:File#truncate does not move the file write pointer to the specified byte offset
+windows:File#truncate truncates a file to a larger size than the original file

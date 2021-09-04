@@ -1,0 +1,5 @@
+fails:Zlib::Deflate.deflate deflates chunked data
+fails:Zlib::Deflate#deflate without break deflates chunked data
+fails:Zlib::Deflate#deflate without break deflates chunked data with final chunk
+fails:Zlib::Deflate#deflate with break deflates only first chunk
+fails:Zlib::Deflate#deflate with break deflates chunked data with final chunk

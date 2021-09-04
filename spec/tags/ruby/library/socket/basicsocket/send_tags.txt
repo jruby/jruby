@@ -1,0 +1,9 @@
+fails:BasicSocket#send accepts flags to specify unusual sending behaviour
+fails:BasicSocket#send using IPv4 using a disconnected socket without a destination address raises Errno::EDESTADDRREQ
+fails:BasicSocket#send using IPv4 using a disconnected socket with a destination address as a String does not persist the connection after writing to the socket
+hangs:BasicSocket#send using IPv4 using a connected UDP socket with a destination address argument sends the message to the given address instead
+fails:BasicSocket#send using IPv4 using a connected TCP socket using the MSG_OOB flag sends an out-of-band message
+fails:BasicSocket#send using IPv6 using a disconnected socket without a destination address raises Errno::EDESTADDRREQ
+fails:BasicSocket#send using IPv6 using a disconnected socket with a destination address as a String does not persist the connection after writing to the socket
+hangs:BasicSocket#send using IPv6 using a connected UDP socket with a destination address argument sends the message to the given address instead
+fails:BasicSocket#send using IPv6 using a connected TCP socket using the MSG_OOB flag sends an out-of-band message

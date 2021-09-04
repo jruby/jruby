@@ -1,0 +1,1 @@
+fails:Process.times uses getrusage when available to improve precision beyond milliseconds

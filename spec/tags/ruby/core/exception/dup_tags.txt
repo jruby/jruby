@@ -1,0 +1,1 @@
+fails:Exception#dup does copy the cause

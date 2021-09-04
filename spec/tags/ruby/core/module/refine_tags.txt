@@ -1,0 +1,7 @@
+fails:Module#refine for methods accessed indirectly is honored by Kernel#send
+fails:Module#refine for methods accessed indirectly is honored by BasicObject#__send__
+fails:Module#refine for methods accessed indirectly is not honored by &
+fails(not implemented, jruby/jruby#6161):Module#refine for methods accessed indirectly is honored by &
+fails(not implemented, jruby/jruby#6161):Module#refine for methods accessed indirectly is honored by Kernel#public_send
+fails(not implemented, jruby/jruby#6161):Module#refine for methods accessed indirectly is honored by Kernel#respond_to?
+fails:Module#refine when super is called in a refinement looks in the lexical scope refinements before other active refinements

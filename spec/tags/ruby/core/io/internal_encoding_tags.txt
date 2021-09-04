@@ -1,0 +1,1 @@
+fails:IO#internal_encoding raises an IOError on closed stream

@@ -1,0 +1,1 @@
+fails:Kernel.at_exit both exceptions in at_exit and in the main script are printed

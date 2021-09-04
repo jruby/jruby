@@ -1,0 +1,2 @@
+fails:Set#intersect? when comparing to a Set-like object returns true when a Set has at least one element in common with a Set-like object
+fails:Set#intersect? when comparing to a Set-like object returns false when a Set has no element in common with a Set-like object

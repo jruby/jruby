@@ -1,0 +1,2 @@
+fails:BasicSocket#getpeereid using a UNIXSocket returns an Array with the user and group ID
+fails:BasicSocket#getpeereid using an IPSocket raises NoMethodError

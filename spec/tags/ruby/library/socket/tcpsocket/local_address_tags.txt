@@ -1,0 +1,2 @@
+fails:TCPSocket#local_address using IPv4 using an explicit hostname the returned Addrinfo uses 0 as the protocol
+fails:TCPSocket#local_address using IPv6 using an explicit hostname the returned Addrinfo uses 0 as the protocol

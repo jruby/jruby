@@ -1,0 +1,4 @@
+#-*- mode: ruby -*-
+source 'https://rubygems.org'
+
+gem 'maven-tools', '0.34.5'

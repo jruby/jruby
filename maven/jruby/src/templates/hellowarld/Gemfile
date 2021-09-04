@@ -1,0 +1,19 @@
+#-*- mode: ruby -*-
+
+source 'https://rubygems.org'
+
+gem 'leafy-complete', '~> 0.6'
+gem 'sinatra', '~> 1.4'
+
+group 'puma' do
+  gem 'puma', '3.12.6'
+end
+group 'torquebox' do
+  gem 'torquebox', '4.0.0.beta2'
+end
+
+group 'development' do
+  gem 'rake', '>= 12.3.3'
+end
+
+# vim: syntax=Ruby

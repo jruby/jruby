@@ -1,0 +1,1 @@
+fails:Kernel#__dir__ when used in eval with a given filename returns File.dirname(filename)

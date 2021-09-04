@@ -1,0 +1,3 @@
+fails:The --enable and --disable flags can be used with rubyopt
+fails:The --enable and --disable flags can be used with all
+fails:The --enable and --disable flags can be used with all for disable

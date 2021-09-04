@@ -1,0 +1,46 @@
+#-*- mode: ruby -*-
+
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
+            'mavengem.wagon.version' => '1.0.3',
+            'jruby.version' => '9.0.5.0' )
+
+gemfile
+
+jarfile
+
+packaging :jrubyJar
+
+resource :includes => ['.rspec', '*.rb', 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
+                       'lib/**', 'app/**', 'config/**', 'vendor/**', 'spec/**']
+
+
+final_name 'runnable'
+
+# test bits
+
+phase :package do
+  plugin( 'org.codehaus.mojo:exec-maven-plugin:1.2',
+          :executable => 'java',
+          :environmentVariables => {
+            'HOME' => '${basedir}',
+            'GEM_PATH' => '${basedir}',
+            'GEM_HOME' => '${basedir}'
+          } ) do
+    
+    execute_goal( :exec, :id => 'rake -T',
+                  :arguments => [ '-jar', 'pkg/runnable.jar', '-S', 'rake', '-T' ] )
+    
+    execute_goal( :exec, :id => 'rspec',
+                  :arguments => [ '-jar', 'pkg/runnable.jar', '-S', 'rspec' ] )
+    
+    execute_goal( :exec, :id => 'nested IsolatedScriptingContainer',
+                  :arguments => [ '-jar', 'pkg/runnable.jar', 'nested.rb' ] )
+
+    # does not work anymore - bundler setup fails on forked rspec
+    # execute_goal( :exec, :id => 'rake spec',
+    #                :arguments => [ '-jar', 'pkg/runnable.jar', '-S', 'rake', 'spec' ] )
+
+  end
+end
+ 

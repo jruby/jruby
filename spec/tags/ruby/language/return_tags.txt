@@ -1,0 +1,1 @@
+fails:The return keyword at top level within a block within a class is allowed

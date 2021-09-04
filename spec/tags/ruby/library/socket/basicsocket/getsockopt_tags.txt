@@ -1,0 +1,4 @@
+fails:BasicSocket#getsockopt returns a Socket::Option for a numeric option
+fails:BasicSocket#getsockopt using Symbols as arguments returns a Socket::Option for arguments :IP and :TTL
+fails:BasicSocket#getsockopt using Strings as arguments returns a Socket::Option for arguments "IP" and "TTL"
+fails:BasicSocket#getsockopt using a String based option allows unpacking of a numeric option

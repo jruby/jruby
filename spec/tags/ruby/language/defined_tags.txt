@@ -1,0 +1,2 @@
+fails:The defined? keyword for a variable scoped constant returns nil if the scoped constant is not defined
+fails:The defined? keyword for a variable scoped constant returns 'constant' if the constant is defined in the scope of the variable reference

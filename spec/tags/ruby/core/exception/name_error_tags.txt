@@ -1,0 +1,2 @@
+fails:NameError#dup copies the name and receiver
+fails(not implemented, jruby/jruby#6161):NameError.new accepts a :receiver keyword argument

@@ -1,0 +1,6 @@
+fails:IO.open raises an error if passed matching binary/text mode two ways
+fails:IO.open raises an error if passed conflicting binary/text mode two ways
+windows:IO.open ingores the :encoding option when the :internal_encoding option is present
+windows:IO.open raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode
+fails:IO.open ignores the :encoding option when the :external_encoding option is present
+fails:IO.open ignores the :encoding option when the :internal_encoding option is present

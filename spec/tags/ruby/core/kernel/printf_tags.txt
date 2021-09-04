@@ -1,0 +1,50 @@
+fails:Kernel.printf formatting io is specified integer formats u converts argument as a decimal number
+fails:Kernel.printf formatting io is specified float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
+fails:Kernel.printf formatting io is specified float formats a displays Float::INFINITY as Inf
+fails:Kernel.printf formatting io is specified float formats a displays Float::NAN as NaN
+fails:Kernel.printf formatting io is specified float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
+fails:Kernel.printf formatting io is specified float formats A displays Float::INFINITY as Inf
+fails:Kernel.printf formatting io is specified float formats A displays Float::NAN as NaN
+fails:Kernel.printf formatting io is specified flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
+fails:Kernel.printf formatting io is specified flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
+fails:Kernel.printf formatting io is specified flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
+fails:Kernel.printf formatting io is specified flags (digit)$ specifies the absolute argument number for this field
+fails:Kernel.printf formatting io is specified flags # applies to format o does nothing for negative argument
+fails:Kernel.printf formatting io is specified flags # applies to formats aAeEfgG forces a decimal point to be added, even if no digits follow
+fails:Kernel.printf formatting io is specified flags # applies to gG does not remove trailing zeros
+fails:Kernel.printf formatting io is specified flags + applies to numeric formats bBdiouxXaAeEfgG adds a leading plus sign to non-negative numbers
+fails:Kernel.printf formatting io is specified flags - left-justifies the result of conversion if width is specified
+fails:Kernel.printf formatting io is specified flags 0 (zero) applies to numeric formats bBdiouxXaAeEfgG and width is specified pads with zeros, not spaces
+fails:Kernel.printf formatting io is specified flags * uses the previous argument as the field width
+fails:Kernel.printf formatting io is specified flags * left-justifies the result if width is negative
+fails:Kernel.printf formatting io is specified flags * uses the specified argument as the width if * is followed by a number and $
+fails:Kernel.printf formatting io is specified flags * left-justifies the result if specified with $ argument is negative
+fails:Kernel.printf formatting io is specified flags * raises ArgumentError when is mixed with width
+fails:Kernel.printf formatting io is specified width specifies the minimum number of characters that will be written to the result
+fails:Kernel.printf formatting io is specified precision float types controls the number of decimal places displayed in fraction part
+fails:Kernel.printf formatting io is specified reference by name %{name} style supports flags, width and precision
+fails:Kernel.printf formatting io is not specified integer formats u converts argument as a decimal number
+fails:Kernel.printf formatting io is not specified float formats a converts floating point argument as [-]0xh.hhhhp[+-]dd
+fails:Kernel.printf formatting io is not specified float formats a displays Float::INFINITY as Inf
+fails:Kernel.printf formatting io is not specified float formats a displays Float::NAN as NaN
+fails:Kernel.printf formatting io is not specified float formats A converts floating point argument as [-]0xh.hhhhp[+-]dd and use uppercase X and P
+fails:Kernel.printf formatting io is not specified float formats A displays Float::INFINITY as Inf
+fails:Kernel.printf formatting io is not specified float formats A displays Float::NAN as NaN
+fails:Kernel.printf formatting io is not specified flags space applies to numeric formats bBdiouxXeEfgGaA leaves a space at the start of non-negative numbers
+fails:Kernel.printf formatting io is not specified flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
+fails:Kernel.printf formatting io is not specified flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
+fails:Kernel.printf formatting io is not specified flags (digit)$ specifies the absolute argument number for this field
+fails:Kernel.printf formatting io is not specified flags # applies to format o does nothing for negative argument
+fails:Kernel.printf formatting io is not specified flags # applies to formats aAeEfgG forces a decimal point to be added, even if no digits follow
+fails:Kernel.printf formatting io is not specified flags # applies to gG does not remove trailing zeros
+fails:Kernel.printf formatting io is not specified flags + applies to numeric formats bBdiouxXaAeEfgG adds a leading plus sign to non-negative numbers
+fails:Kernel.printf formatting io is not specified flags - left-justifies the result of conversion if width is specified
+fails:Kernel.printf formatting io is not specified flags 0 (zero) applies to numeric formats bBdiouxXaAeEfgG and width is specified pads with zeros, not spaces
+fails:Kernel.printf formatting io is not specified flags * uses the previous argument as the field width
+fails:Kernel.printf formatting io is not specified flags * left-justifies the result if width is negative
+fails:Kernel.printf formatting io is not specified flags * uses the specified argument as the width if * is followed by a number and $
+fails:Kernel.printf formatting io is not specified flags * left-justifies the result if specified with $ argument is negative
+fails:Kernel.printf formatting io is not specified flags * raises ArgumentError when is mixed with width
+fails:Kernel.printf formatting io is not specified width specifies the minimum number of characters that will be written to the result
+fails:Kernel.printf formatting io is not specified precision float types controls the number of decimal places displayed in fraction part
+fails:Kernel.printf formatting io is not specified reference by name %{name} style supports flags, width and precision

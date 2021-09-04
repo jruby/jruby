@@ -1,0 +1,70 @@
+#-*- mode: ruby -*-
+require 'fileutils'
+
+gemspec
+
+version = ENV['JRUBY_VERSION'] ||
+  File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+
+# maven does treats prereleased version as snapshot - undo it here
+ruby_version = model.version.sub( /-SNAPSHOT/, '' )
+self.version nil
+
+inherit "org.jruby:jruby-artifacts:#{version}"
+
+name "JRuby Jars Gem"
+
+jar 'org.jruby:jruby-stdlib', '${project.parent.version}'
+jar 'org.jruby:jruby-core', '${project.parent.version}', scope: "compile"
+
+plugin( :clean, '2.5' ) do
+  execute_goals( :clean,
+                 :phase => :clean, 
+                 :id => 'clean-lib',
+                 :filesets => [ { :directory => '${basedir}/lib',
+                                  :includes => ['*.jar'] } ],
+                 :failOnError => false )
+end
+
+properties( 'tesla.dump.pom' => 'pom.xml',
+            'tesla.dump.readonly' => true,
+            'jruby.plugins.version' => '1.1.8',
+            # we share the already installed gems
+            'gem.home' => '${jruby_home}/lib/ruby/gems/shared',
+            # need jruby_home but not jruby.home as name otherwise
+            # polyglot-plugin will pick the jruby from jruby.home
+            'jruby_home' => '${basedir}/../../' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
+
+execute 'copy jruby.jar', 'prepare-package' do |ctx|
+  source = File.expand_path( ctx.project.properties[ 'jruby_home' ].to_pathname )
+  # TODO somehow the lib/jruby.jar gets moved away to avoid conflicts
+  FileUtils.cp( Dir[ File.join( source, "lib/jruby.jar" ) ].first,
+                File.join( ctx.project.basedir.to_pathname, 
+                           'lib',
+                           "jruby-core-#{ctx.project.version}-complete.jar" ) )
+end
+
+# do not push the gem during deploy phase
+# the bang reuses the plugin declaration which is already in place and
+# adds the extra execute_goal to it
+jruby_plugin!( :gem,
+               :gemspec => 'jruby-jars.gemspec',
+               # tell maven to include the jar files into gem
+               :includeDependencies => true,
+               :jrubyVersion => '9.3.0.0-SNAPSHOT') do
+  execute_goals :id => 'default-push', :skip => true
+end
+
+build do
+  final_name "${project.artifactId}-#{ruby_version}"
+end
+
+plugin :invoker, :properties => { 'ruby.version' => ruby_version, 'gem.home' => '${project.build.directory}/rubygems', 'gem.path' => '${project.build.directory}/rubygems' }
+
+plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
+
+# vim: syntax=Ruby

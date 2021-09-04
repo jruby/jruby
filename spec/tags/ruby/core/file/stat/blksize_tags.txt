@@ -1,0 +1,1 @@
+windows:File::Stat#blksize returns the blksize of a File::Stat object

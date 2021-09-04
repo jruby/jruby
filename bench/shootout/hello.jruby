@@ -1,0 +1,6 @@
+#!/usr/bin/ruby
+# -*- mode: ruby -*-
+# $Id: hello.jruby,v 1.1 2007-06-10 22:33:44 igouy-guest Exp $
+# http://www.bagley.org/~doug/shootout/
+
+puts "hello world"

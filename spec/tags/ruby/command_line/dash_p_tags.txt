@@ -1,0 +1,1 @@
+fails:The -p command line option sets $-p

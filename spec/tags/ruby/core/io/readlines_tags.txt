@@ -1,0 +1,5 @@
+fails:IO#readlines when passed a string that starts with a | gets data from a fork when passed -
+windows:IO#readlines when passed a string that starts with a | gets data from the standard out of the subprocess
+windows:IO#readlines when passed no arguments updates self's position
+windows:IO#readlines when passed a separator updates self's position based on the number of characters read
+fails:IO.readlines when passed a string that starts with a | gets data from a fork when passed -

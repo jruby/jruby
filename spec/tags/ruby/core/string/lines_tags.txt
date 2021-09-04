@@ -1,0 +1,2 @@
+fails:String#lines when `chomp` keyword argument is passed removes only specified separator
+fails:String#lines when `chomp` keyword argument is passed ignores new line characters when separator is specified

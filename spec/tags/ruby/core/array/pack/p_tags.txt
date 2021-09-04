@@ -1,0 +1,12 @@
+fails:Array#pack with format 'P' returns a tainted string when a pack argument is tainted
+fails:Array#pack with format 'P' returns a untrusted string when a pack argument is untrusted
+fails:Array#pack with format 'P' round-trips a string through pack and unpack
+fails:Array#pack with format 'P' taints the input string
+fails:Array#pack with format 'P' with nil gives a null pointer
+fails:Array#pack with format 'p' returns a tainted string when a pack argument is tainted
+fails:Array#pack with format 'p' returns a untrusted string when a pack argument is untrusted
+fails:Array#pack with format 'p' round-trips a string through pack and unpack
+fails:Array#pack with format 'p' taints the input string
+fails:Array#pack with format 'p' with nil gives a null pointer
+fails:Array#pack with format 'P' produces as many bytes as there are in a pointer
+fails:Array#pack with format 'p' produces as many bytes as there are in a pointer

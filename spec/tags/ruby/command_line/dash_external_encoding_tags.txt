@@ -1,0 +1,2 @@
+fails:The --external-encoding command line option sets Encoding.default_external if given an encoding with an =
+fails:The --external-encoding command line option sets Encoding.default_external if given an encoding as a separate argument

@@ -1,0 +1,3 @@
+fails:Socket.udp_server_sockets without a block returns an Array of Socket objects
+fails:Socket.udp_server_sockets with a block yields the sockets to the supplied block
+fails:Socket.udp_server_sockets with a block closes all sockets after the block returns

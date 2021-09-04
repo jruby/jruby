@@ -1,0 +1,1 @@
+fails:Process::Status#termsig for a child that raised SignalException returns the signal

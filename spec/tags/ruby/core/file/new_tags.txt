@@ -1,0 +1,2 @@
+windows:File.new can't alter mode or permissions when opening a file
+windows:File.new opens directories

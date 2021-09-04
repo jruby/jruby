@@ -1,0 +1,2 @@
+fails:Regexps with repetition does not treat {m,n}+ as possessive
+fails:Regexps with repetition supports nested quantifiers

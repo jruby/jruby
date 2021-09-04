@@ -1,0 +1,1 @@
+fails:Kernel#public_send raises a TypeError if the method name is not a string or symbol
