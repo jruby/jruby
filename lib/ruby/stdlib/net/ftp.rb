@@ -546,7 +546,6 @@ module Net
         host, port = parse227(sendcmd("PASV"))
       else
         host, port = parse229(sendcmd("EPSV"))
-        #     host, port = parse228(sendcmd("LPSV"))
       end
       return host, port
     end
@@ -1401,24 +1400,6 @@ module Net
       end
     end
     private :parse227
-
-    # handler for response code 228
-    # (Entering Long Passive Mode)
-    #
-    # Returns host and port.
-    def parse228(resp) # :nodoc:
-      if !resp.start_with?("228")
-        raise FTPReplyError, resp
-      end
-      if m = /\(4,4,(?<host>\d+(?:,\d+){3}),2,(?<port>\d+,\d+)\)/.match(resp)
-        return parse_pasv_ipv4_host(m["host"]), parse_pasv_port(m["port"])
-      elsif m = /\(6,16,(?<host>\d+(?:,\d+){15}),2,(?<port>\d+,\d+)\)/.match(resp)
-        return parse_pasv_ipv6_host(m["host"]), parse_pasv_port(m["port"])
-      else
-        raise FTPProtoError, resp
-      end
-    end
-    private :parse228
 
     def parse_pasv_ipv4_host(s)
       return s.tr(",", ".")
