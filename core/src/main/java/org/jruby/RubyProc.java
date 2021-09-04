@@ -223,9 +223,15 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s() {
         Ruby runtime = getRuntime();
-        RubyString string = RubyString.newBinaryString(runtime, "#<");
+        RubyString name = types(runtime, type());
+        RubyString string;
+        if(name.isAsciiOnly()) {
+            string = RubyString.newBinaryString(runtime, "#<");
+        } else {
+            string = RubyString.newString(runtime, "#<");
+        }
 
-        string.append(types(runtime, type()));
+        string.append(name);
         string.catString(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
         String file = block.getBody().getFile();
