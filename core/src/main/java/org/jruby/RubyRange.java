@@ -971,6 +971,16 @@ public class RubyRange extends RubyObject {
     }
 
     @JRubyMethod(frame = true)
+    public IRubyObject minmax(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            return Helpers.invokeSuper(context, this, block);
+        } else {
+            JavaSites.RangeSites sites = sites(context);
+            return context.runtime.newArray(sites.min.call(context, this, this), sites.max.call(context, this, this));
+        }
+    }
+
+    @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
         if (isEndless && block.isGiven()) throw context.runtime.newRangeError("cannot get the minimum of endless range with custom comparison method");
         if (isEndless) return first(context, arg);

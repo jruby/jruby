@@ -451,6 +451,7 @@ public class JavaSites {
         public final CallSite end = new FunctionalCachingCallSite("end");
         public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
         public final CallSite max = new FunctionalCachingCallSite("max");
+        public final CallSite min = new FunctionalCachingCallSite("min");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
