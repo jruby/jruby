@@ -59,7 +59,9 @@ public class IncludedModuleWrapper extends IncludedModule {
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, origin);
         origin.addIncludingHierarchy(this);
-        if (origin.methodLocation != origin) this.methodLocation = origin.methodLocation;
+        // FIXME: Is this ok if we are including a prepended module?
+        methods = origin.getMethodsForWrite();
+        //cachedMethods = origin.cachedMethods;
     }
 
     /**
@@ -71,7 +73,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     @Override
     @Deprecated
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
-        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getNonIncludedClass());
+        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getOrigin());
 
         // include its parent (and in turn that module's parents)
         if (getSuperClass() != null) {
@@ -79,11 +81,6 @@ public class IncludedModuleWrapper extends IncludedModule {
         }
 
         return includedModule;
-    }
-
-    @Override
-    public void addMethod(String id, DynamicMethod method) {
-        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
     public RubyModule getDelegate() {
@@ -103,16 +100,6 @@ public class IncludedModuleWrapper extends IncludedModule {
     @Override
     protected boolean isSame(RubyModule module) {
         return origin.isSame(module.getDelegate());
-    }
-
-    @Override
-    public Map<String, DynamicMethod> getMethods() {
-        return origin.getMethods();
-    }
-
-    @Override
-    public Map<String, DynamicMethod> getMethodsForWrite() {
-        return origin.getMethodsForWrite();
     }
 
     @Override
@@ -145,21 +132,6 @@ public class IncludedModuleWrapper extends IncludedModule {
     //
 
     @Override
-    protected boolean constantTableContains(String name) {
-        return origin.constantTableContains(name);
-    }
-
-    @Override
-    protected IRubyObject constantTableFetch(String name) {
-        return origin.constantTableFetch(name);
-    }
-
-    @Override
-    protected ConstantEntry constantEntryFetch(String name) {
-        return origin.constantEntryFetch(name);
-    }
-
-    @Override
     protected IRubyObject constantTableStore(String name, IRubyObject value) {
         // FIXME: legal here? may want UnsupportedOperationException
         return origin.constantTableStore(name, value);
@@ -177,22 +149,6 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    @Deprecated
-    public List<String> getStoredConstantNameList() {
-        return origin.getStoredConstantNameList();
-    }
-
-    @Override
-    public Collection<String> getConstantNames() {
-        return origin.getConstantNames();
-    }
-
-    @Override
-    public Collection<String> getConstantNames(boolean includePrivate) {
-        return origin.getConstantNames(includePrivate);
-    }
-
-    @Override
     protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
         return origin.getAutoloadConstant(name, forceLoad);
     }
@@ -205,37 +161,5 @@ public class IncludedModuleWrapper extends IncludedModule {
     @Override
     protected Map<String, Autoload> getAutoloadMapForWrite() {
         return origin.getAutoloadMapForWrite();
-    }
-
-    @Override
-    protected DynamicMethod searchMethodCommon(String id) {
-        // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
-        RubyModule module = origin;
-        RubyModule methodLoc = origin.getMethodLocation();
-
-        for (; module != methodLoc; module = module.getSuperClass()) {
-            DynamicMethod method = module.getMethods().get(id);
-            if (method != null) return method.isNull() ? null : method;
-        }
-
-        // one last search for method location
-        DynamicMethod method = module.getMethods().get(id);
-        if (method != null) return method.isNull() ? null : method;
-
-        return null;
-    }
-
-    @Override
-    protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
-        // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
-        RubyModule module = origin;
-        RubyModule methodLoc = origin.getMethodLocation();
-
-        for (; module != methodLoc; module = module.getSuperClass()) {
-            module.addMethodSymbols(runtime, seen, ary, not, visibility);
-        }
-
-        // one last add for method location
-        module.addMethodSymbols(runtime, seen, ary, not, visibility);
     }
 }

@@ -71,6 +71,9 @@ public class BacktraceData implements Serializable {
         // loop over all elements in the Java stack trace
         Iterator<StackWalker.StackFrame> stackIter = stackStream.iterator();
         Iterator<BacktraceElement> backIter = rubyTrace.iterator();
+
+        // the previously encountered frame, for condensing varargs and actual
+        StackWalker.StackFrame previousElement = null;
         while (stackIter.hasNext() && trace.size() < count) {
             StackWalker.StackFrame element = stackIter.next();
 
@@ -91,6 +94,15 @@ public class BacktraceData implements Serializable {
                         String decodedName = JavaNameMangler.decodeMethodName(type, mangledTuple);
 
                         if (decodedName != null) {
+                            // skip varargs frames if we just handled the method's regular frame
+                            if (type == FrameType.VARARGS_WRAPPER &&
+                                    previousElement != null &&
+                                    element.getMethodName().equals(previousElement.getMethodName() + JavaNameMangler.VARARGS_MARKER)) {
+
+                                previousElement = null;
+                                continue;
+                            }
+
                             // construct Ruby trace element
                             RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, decodedName, filename, line, false, type);
 
@@ -100,6 +112,7 @@ public class BacktraceData implements Serializable {
                                 trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false, type));
                             }
                             trace.add(rubyElement);
+                            previousElement = element;
                             continue;
 
                         }

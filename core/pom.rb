@@ -43,11 +43,11 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.32.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.38.8', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.1.7', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.32.7', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.38.9', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.1.8', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.10.2', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.2.4'
+  jar 'com.github.jnr:jnr-ffi:2.2.5'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
@@ -56,7 +56,7 @@ project 'JRuby Base' do
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.12'
-  jar 'com.headius:options:1.5'
+  jar 'com.headius:options:1.6'
 
   jar 'com.jcraft:jzlib:1.1.3'
   jar 'junit:junit', :scope => 'test'
@@ -74,7 +74,7 @@ project 'JRuby Base' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.10'
+  jar 'com.headius:backport9:1.12'
 
   jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
@@ -240,7 +240,10 @@ project 'JRuby Base' do
               'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
           },
           includes: [
-              'org/jruby/test/TestAdoptedThreading.java',
+            'org/jruby/test/**/*Test*.java',
+            'org/jruby/embed/**/*Test*.java',
+            'org/jruby/util/**/*Test*.java',
+            'org/jruby/runtime/**/*Test*.java'
           ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 

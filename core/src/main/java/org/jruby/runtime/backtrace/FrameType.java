@@ -10,7 +10,7 @@ import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.interpreter.Interpreter;
 
 public enum FrameType {
-    METHOD, BLOCK, EVAL, CLASS, MODULE, METACLASS, ROOT;
+    METHOD, BLOCK, EVAL, CLASS, MODULE, METACLASS, ROOT, VARARGS_WRAPPER;
 
     private static final HashSet<String> INTERPRETED_CLASSES = new HashSet<String>(6, 1);
 

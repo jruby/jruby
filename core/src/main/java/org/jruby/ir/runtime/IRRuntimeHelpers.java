@@ -1290,8 +1290,8 @@ public class IRRuntimeHelpers {
     private static RubyClass searchNormalSuperclass(RubyModule klazz) {
         // Unwrap refinements, since super should always dispatch back to the refined class
         if (klazz.isIncluded()
-                && klazz.getNonIncludedClass().isRefinement()) {
-            klazz = klazz.getNonIncludedClass();
+                && klazz.getOrigin().isRefinement()) {
+            klazz = klazz.getOrigin();
         }
         klazz = klazz.getMethodLocation();
         return klazz.getSuperClass();
@@ -2303,8 +2303,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyRational newRationalRaw(ThreadContext context, IRubyObject num, IRubyObject den) {
-        return RubyRational.newRationalRaw(context.runtime, num, den);
+    public static RubyRational newRationalCanonicalize(ThreadContext context, IRubyObject num, IRubyObject den) {
+        return (RubyRational) RubyRational.newRationalCanonicalize(context, num, den);
     }
 
     @JIT

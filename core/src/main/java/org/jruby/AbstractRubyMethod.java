@@ -104,7 +104,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "owner")
     public IRubyObject owner(ThreadContext context) {
-        return implementationModule;
+        return implementationModule.getOrigin();
     }
 
     @JRubyMethod(name = "source_location")

@@ -93,7 +93,8 @@ module CGI::Util
                 when Encoding::ISO_8859_1; 256
                 else 128
                 end
-    string.gsub(/&(apos|amp|quot|gt|lt|\#[0-9]+|\#[xX][0-9A-Fa-f]+);/) do
+    string = string.b
+    string.gsub!(/&(apos|amp|quot|gt|lt|\#[0-9]+|\#[xX][0-9A-Fa-f]+);/) do
       match = $1.dup
       case match
       when 'apos'                then "'"
@@ -119,6 +120,7 @@ module CGI::Util
         "&#{match};"
       end
     end
+    string.force_encoding enc
   end
 
   # Synonym for CGI::escapeHTML(str)

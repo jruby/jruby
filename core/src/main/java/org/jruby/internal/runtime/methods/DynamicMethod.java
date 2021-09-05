@@ -305,7 +305,7 @@ public abstract class DynamicMethod {
         // For visibility we need real meta class and not anonymous one from class << self
         if (cls instanceof MetaClass) cls = ((MetaClass) cls).getRealClass();
 
-        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getNonIncludedClass();
+        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getOrigin();
 
         return cls;
     }

@@ -22,7 +22,7 @@ default_gems = [
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],
     ['e2mmap', '0.1.0'],
-    ['ffi', '1.15.1'],
+    ['ffi', '1.15.4'],
     ['fileutils', '1.4.1'],
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
@@ -30,7 +30,7 @@ default_gems = [
     ['io-console', '0.5.9'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.10.5'],
+    ['jruby-openssl', '0.10.7'],
     ['json', '2.5.1'],
     ['logger', '1.3.0'],
     ['matrix', '0.3.0'],
@@ -41,7 +41,7 @@ default_gems = [
     ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
     ['rdoc', '6.1.2'],
-    ['rexml', '3.1.9'],
+    ['rexml', '3.1.9.1'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
     ['shell', '0.7'],
@@ -52,7 +52,7 @@ default_gems = [
 ]
 
 bundled_gems = [
-    ['did_you_mean', '1.2.1'],
+    ['did_you_mean', '1.3.0'],
     ['minitest', '5.11.3'],
     ['net-telnet', '0.1.1'],
     ['power_assert', '1.1.3'],

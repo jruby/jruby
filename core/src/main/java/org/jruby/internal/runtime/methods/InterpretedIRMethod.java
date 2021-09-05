@@ -121,7 +121,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
             IRubyObject self, String name, IRubyObject[] args, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
                 return ic.getEngine().interpret(context, null, self, ic, implClass, name, args, block);
@@ -157,7 +157,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
             IRubyObject self, String name, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
                 return ic.getEngine().interpret(context, null, self, ic, implClass, name, block);
@@ -194,7 +194,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
             IRubyObject self, String name, IRubyObject arg1, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
                 return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, block);
@@ -232,7 +232,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
             IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
                 return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
@@ -270,7 +270,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
             IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
                 return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
@@ -305,10 +305,8 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     }
 
     private ExitableReturn INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block) {
-        ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.context.getLine());
-
         try {
-            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.context.getLine());
+            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.eic.getLine());
 
             // TODO: explicit call protocol?
             try {

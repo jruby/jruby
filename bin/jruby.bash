@@ -64,6 +64,43 @@ process_java_opts() {
   fi
 }
 
+# Pure shell dirname/basename
+dir_name() {
+  local filename="$1" trail
+  case $filename in
+    */*[!/]*)
+      trail=${filename##*[!/]}
+      filename=${filename%%"$trail"}
+      result=${filename%/*}
+      ;;
+    *[!/]*)
+      trail=${filename##*[!/]}
+      result="."
+      ;;
+    *)
+      result="/"
+      ;;
+  esac
+}
+
+base_name() {
+  local filename="$1" trail
+  case $filename in
+    */*[!/]*)
+      trail=${filename##*[!/]}
+      filename=${filename%%"$trail"}
+      result=${filename##*/}
+      ;;
+    *[!/]*)
+      trail=${filename##*[!/]}
+      result=${filename%%"$trail"}
+      ;;
+    *)
+      result="/"
+      ;;
+  esac
+}
+
 # Resolve all symlinks in a chain
 resolve_symlinks() {
   cur_path="$1"
@@ -73,8 +110,19 @@ resolve_symlinks() {
     # 3) get the physical pwd
     # 4) append the basename
     sym="$(readlink "$cur_path")"
-    sym_base="$(cd -P -- "$(dirname -- "$cur_path")" >/dev/null && pwd -P)"
-    cur_path="$(cd "$sym_base" && cd "$(dirname -- "$sym")" && pwd -P)/$(basename -- "$sym")"
+
+    dir_name "$cur_path"
+    dirname="$result"
+
+    sym_base="$(cd -P -- "$dirname" >/dev/null && pwd -P)"
+
+    dir_name "$sym"
+    dirname="$result"
+
+    base_name "$sym"
+    basename="$result"
+
+    cur_path="$(cd "$sym_base" && cd "$dirname" && pwd -P)/$basename"
   done
   result="$cur_path"
 }
@@ -82,8 +130,10 @@ resolve_symlinks() {
 # ----- Determine JRUBY_HOME based on this executable's path ------------------
 
 # get the absolute path of the executable
-BASE_DIR="$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)"
-resolve_symlinks "$BASE_DIR/$(basename -- "$BASH_SOURCE")"
+dir_name "$BASH_SOURCE"
+BASE_DIR="$(cd -P -- "$result" >/dev/null && pwd -P)"
+base_name "$BASH_SOURCE"
+resolve_symlinks "$BASE_DIR/$result"
 SELF_PATH="$result"
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
@@ -142,7 +192,9 @@ if [ -z "$JAVACMD" ] ; then
       JAVACMD="$result"
 
       # export separately from command execution
-      JAVA_HOME="$(dirname "$(dirname "$JAVACMD")")"
+      dir_name "$JAVACMD"
+      dir_name "$result"
+      JAVA_HOME="$result"
     fi
   else
     if $cygwin; then
@@ -155,7 +207,9 @@ else
   resolve_symlinks "$(command -v "$JAVACMD")"
   expanded_javacmd="$result"
   if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ] ; then
-    JAVA_HOME="$(dirname "$(dirname "$expanded_javacmd")")"
+    dir_name "$expanded_javacmd"
+    dir_name "$result"
+    JAVA_HOME="$result"
   fi
 fi
 

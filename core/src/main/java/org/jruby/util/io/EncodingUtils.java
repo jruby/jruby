@@ -894,8 +894,7 @@ public class EncodingUtils {
         if (((EncodingCapable)obj).getEncoding() == encidx) {
             return obj;
         }
-        if (obj instanceof RubyString &&
-                ! CodeRangeSupport.isCodeRangeAsciiOnly((RubyString) obj) ||
+        if (obj instanceof RubyString && !CodeRangeSupport.isCodeRangeAsciiOnly((RubyString) obj) ||
                 encAsciicompat(encidx)) {
             ((RubyString)obj).clearCodeRange();
         }

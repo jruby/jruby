@@ -28,7 +28,7 @@ public class Rational extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubyRational.newRationalRaw(context.runtime,
+        return RubyRational.newRationalCanonicalize(context,
                 (IRubyObject) numerator.cachedObject(context), (IRubyObject) denominator.cachedObject(context));
     }
 

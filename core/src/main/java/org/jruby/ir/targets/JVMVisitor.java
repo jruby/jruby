@@ -93,14 +93,12 @@ public class JVMVisitor extends IRVisitor {
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
         file = scope.getFile();
-        lastLine = -1;
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         return defineFromBytecode(scope, compileToBytecode(scope, context), jrubyClassLoader);
     }
 
     public byte[] compileToBytecode(IRScope scope, JVMVisitorMethodContext context) {
         file = scope.getFile();
-        lastLine = -1;
         codegenScope(scope, context);
         return code();
     }
@@ -125,7 +123,6 @@ public class JVMVisitor extends IRVisitor {
 
     public Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader, boolean setScopes) {
         file = scope.getFile();
-        lastLine = -1;
         Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(file)), code);
 
         if (setScopes) {
@@ -317,6 +314,9 @@ public class JVMVisitor extends IRVisitor {
         jvm.pushmethod(variableName, scope, scopeField, variableSignature, false);
 
         IRBytecodeAdapter m = jvmMethod();
+
+        // set line number for backtrace
+        jvmMethod().updateLineNumber(scope.getLine());
 
         // check arity
         org.jruby.runtime.Signature scopeSig = scope.getStaticScope().getSignature();
@@ -739,7 +739,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().getInvocationCompiler().invokeArrayDeref(file, lastLine, jvm.methodData().scopeField, arrayderefinstr);
+        jvmMethod().getInvocationCompiler().invokeArrayDeref(file, jvm.methodData().scopeField, arrayderefinstr);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 
@@ -748,7 +748,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadSelf();
         visit(asstring.getReceiver());
-        jvmMethod().getInvocationCompiler().invokeOther(file, lastLine, jvm.methodData().scopeField, asstring, 0);
+        jvmMethod().getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, asstring, 0);
         jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
         jvmStoreLocal(asstring.getResult());
     }
@@ -1219,10 +1219,10 @@ public class JVMVisitor extends IRVisitor {
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
-                m.getInvocationCompiler().invokeSelf(file, lastLine, jvm.methodData().scopeField, call, arity);
+                m.getInvocationCompiler().invokeSelf(file, jvm.methodData().scopeField, call, arity);
                 break;
             case NORMAL:
-                m.getInvocationCompiler().invokeOther(file, lastLine, jvm.methodData().scopeField, call, arity);
+                m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, arity);
                 break;
         }
 
@@ -1558,7 +1558,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        jvmMethod().getGlobalVariableCompiler().getGlobalVariable(getglobalvariableinstr.getTarget().getId(), file, lastLine);
+        jvmMethod().getGlobalVariableCompiler().getGlobalVariable(getglobalvariableinstr.getTarget().getId(), file);
         jvmStoreLocal(getglobalvariableinstr.getResult());
     }
 
@@ -1628,16 +1628,16 @@ public class JVMVisitor extends IRVisitor {
 
         switch (operation) {
             case INSTANCE_SUPER:
-                m.getInvocationCompiler().invokeInstanceSuper(file, lastLine, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeInstanceSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
                 break;
             case CLASS_SUPER:
-                m.getInvocationCompiler().invokeClassSuper(file, lastLine, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeClassSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
                 break;
             case UNRESOLVED_SUPER:
-                m.getInvocationCompiler().invokeUnresolvedSuper(file, lastLine, name, args.length, hasClosure, literalClosure, splatMap);
+                m.getInvocationCompiler().invokeUnresolvedSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
                 break;
             case ZSUPER:
-                m.getInvocationCompiler().invokeZSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeZSuper(file, name, args.length, hasClosure, splatMap);
                 break;
             default:
                 throw new NotCompilableException("unknown super type " + operation + " in " + instr);
@@ -1669,8 +1669,7 @@ public class JVMVisitor extends IRVisitor {
     public void LineNumberInstr(LineNumberInstr linenumberinstr) {
         if (DEBUG) return; // debug mode uses IPC for line numbers
 
-        lastLine = linenumberinstr.getLineNumber() + 1;
-        jvmAdapter().line(lastLine);
+        jvmMethod().updateLineNumber(linenumberinstr.getLineNumber());
 
         if (linenumberinstr.coverage) {
             jvmMethod().loadContext();
@@ -1745,7 +1744,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.getInvocationCompiler().invokeOtherOneFixnum(file, lastLine, oneFixnumArgNoBlockCallInstr, fixnum);
+        m.getInvocationCompiler().invokeOtherOneFixnum(file, oneFixnumArgNoBlockCallInstr, fixnum);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1769,7 +1768,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.getInvocationCompiler().invokeOtherOneFloat(file, lastLine, oneFloatArgNoBlockCallInstr, flote);
+        m.getInvocationCompiler().invokeOtherOneFloat(file, oneFloatArgNoBlockCallInstr, flote);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1986,7 +1985,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) {
         visit(putglobalvarinstr.getValue());
-        jvmMethod().getGlobalVariableCompiler().setGlobalVariable(putglobalvarinstr.getTarget().getId(), file, lastLine);
+        jvmMethod().getGlobalVariableCompiler().setGlobalVariable(putglobalvarinstr.getTarget().getId(), file);
     }
 
     @Override
@@ -2672,7 +2671,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(rational.getNumerator());
         visit(rational.getDenominator());
-        jvmMethod().invokeIRHelper("newRationalRaw", sig(RubyRational.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        jvmMethod().invokeIRHelper("newRationalCanonicalize", sig(RubyRational.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
     }
 
     @Override
@@ -2808,7 +2807,6 @@ public class JVMVisitor extends IRVisitor {
     final Map<StaticScope, String> scopeFieldMap = new HashMap<>();
     final Map<String, String> staticScopeDescriptorMap = new HashMap<>();
     private String file;
-    private int lastLine = -1;
 
     private Instr nextInstr; // nextInstr while instruction walking.  For simple peephole optimizations.
     private boolean omitStoreLoad;

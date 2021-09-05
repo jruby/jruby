@@ -47,8 +47,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import java.lang.invoke.MethodType;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.jruby.util.CodegenUtils.*;
 
@@ -407,6 +405,15 @@ public class IRBytecodeAdapter {
         adapter = oldAdapter;
     }
 
+    public void updateLineNumber(int lineNumber) {
+        lastLine = lineNumber + 1;
+        adapter.line(lastLine);
+    }
+
+    public int getLastLine() {
+        return lastLine;
+    }
+
     public enum BlockPassType {
         NONE(false, false),
         GIVEN(true, false),
@@ -450,4 +457,5 @@ public class IRBytecodeAdapter {
     protected final BlockCompiler blockCompiler;
     protected final ArgumentsCompiler argumentsCompiler;
     public int ipc = 0;  // counter for dumping instr index when in DEBUG
+    private int lastLine = -1;
 }

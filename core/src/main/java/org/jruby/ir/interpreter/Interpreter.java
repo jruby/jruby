@@ -92,7 +92,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,
            InterpreterContext ic, RubyModule clazz, String name) {
         try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
             return ic.getEngine().interpret(context, null, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -102,7 +102,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
            InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block blockArg) {
         try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
             return ic.getEngine().interpret(context, null, self, ic, clazz, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -112,7 +112,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static IRubyObject INTERPRET_BLOCK(ThreadContext context, Block block, IRubyObject self,
             InterpreterContext ic, IRubyObject[] args, String name, Block blockArg) {
         try {
-            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), ic.getLine());
             return ic.getEngine().interpret(context, block, self, ic, null, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
