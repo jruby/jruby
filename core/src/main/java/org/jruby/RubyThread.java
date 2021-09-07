@@ -1962,10 +1962,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         final Ruby runtime = getRuntime();
 
-        // if unrescuable (internal exceptions) just re-raise and let it be handled by thread handler
-        if (throwable instanceof Error || throwable instanceof Unrescuable) {
+        if (throwable instanceof Error) {
             exitingException = throwable;
             Helpers.throwException(throwable);
+        }
+
+        // if unrescuable (internal exceptions) just re-raise and let it be handled by thread handler
+        if (throwable instanceof Unrescuable) {
+            Helpers.throwException(throwable);
+            return;
         }
 
         final IRubyObject rubyException;
