@@ -432,6 +432,13 @@ public class RubyEnumerable {
         return result;
     }
 
+    @JRubyMethod(name = "tally")
+    public static IRubyObject tally(ThreadContext context, IRubyObject self) {
+        RubyHash result = RubyHash.newHash(context.runtime);
+        callEach(context, eachSite(context), self, Signature.NO_ARGUMENTS, new TallyCallback(result));
+        return result;
+    }
+
     @JRubyMethod(name = {"to_a", "entries"})
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
         RubyArray result = context.runtime.newArray();
@@ -2258,6 +2265,27 @@ public class RubyEnumerable {
                 throw runtime.newArgumentError("element has wrong array length (expected 2, was " + array.size() + ")");
             }
             result.fastASetCheckString(runtime, array.eltOk(0), array.eltOk(1));
+        }
+
+    }
+
+    public static final class TallyCallback implements BlockCallback {
+
+        private final RubyHash result;
+
+        TallyCallback(RubyHash result) {
+            this.result = result;
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            IRubyObject value = largs[0];
+            IRubyObject count = result.fastARef(value);
+            if (count == null) {
+                result.fastASet(value, RubyFixnum.one(context.runtime));
+            } else {
+                result.fastASetSmall(value, ((RubyInteger)count).succ(context));
+            }
+            return context.nil;
         }
 
     }
