@@ -1799,7 +1799,7 @@ public class IRBuilder {
 
             FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
             long exprLong = expr.getValue();
-            if (exprLong > Integer.MAX_VALUE) throw notCompilable("optimized fixnum case has long-ranged", caseNode);
+            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized fixnum case has long-ranged", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
