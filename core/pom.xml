@@ -23,7 +23,7 @@ DO NOT MODIFIY - GENERATED CODE
     <build.dir>target</build.dir>
     <build.lib.dir>test/target</build.lib.dir>
     <create.sources.jar>false</create.sources.jar>
-    <install4j.executable>/Applications/install4j7/bin/install4jc</install4j.executable>
+    <install4j.executable>/Applications/install4j9/bin/install4jc</install4j.executable>
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <jay.bin>jay</jay.bin>
     <jflex.bin>jflex</jflex.bin>
@@ -90,7 +90,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.32.6</version>
+      <version>0.32.7</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -101,7 +101,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.38.8</version>
+      <version>0.38.9</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -112,7 +112,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.1.7</version>
+      <version>3.1.8</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -134,7 +134,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.2.4</version>
+      <version>2.2.5</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -170,7 +170,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>options</artifactId>
-      <version>1.5</version>
+      <version>1.6</version>
     </dependency>
     <dependency>
       <groupId>com.jcraft</groupId>
@@ -180,6 +180,11 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -232,7 +237,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>backport9</artifactId>
-      <version>1.10</version>
+      <version>1.12</version>
     </dependency>
     <dependency>
       <groupId>jakarta.annotation</groupId>
@@ -557,7 +562,10 @@ DO NOT MODIFIY - GENERATED CODE
             <JDK_JAVA_OPTIONS>--add-modules java.scripting</JDK_JAVA_OPTIONS>
           </environmentVariables>
           <includes>
-            <include>org/jruby/test/TestAdoptedThreading.java</include>
+            <include>org/jruby/test/**/*Test*.java</include>
+            <include>org/jruby/embed/**/*Test*.java</include>
+            <include>org/jruby/util/**/*Test*.java</include>
+            <include>org/jruby/runtime/**/*Test*.java</include>
           </includes>
           <additionalClasspathElements>
             <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>

@@ -310,6 +310,7 @@ public class CFGInliner {
         // Optimize cfg by merging straight-line bbs (just one piece of what CFG.optimize does)
         //cfg.collapseStraightLineBBs();
 
+        /*
         // FIXME: This probably is too much work here. Decide between this and just collapsing straight line BBs
         // FIXME: If we do keep this we should maybe internalize calculating these in CFG itself.
         List<BasicBlock> returnBBs = new ArrayList<>();
@@ -318,7 +319,8 @@ public class CFGInliner {
                 if (instr.getOperation().isReturn()) returnBBs.add(basicBlock);
             }
         }
-        cfg.optimize(returnBBs);
+        cfg.optimize(returnBBs);*/
+        cfg.optimize();
 
         addMissingJumps();
 

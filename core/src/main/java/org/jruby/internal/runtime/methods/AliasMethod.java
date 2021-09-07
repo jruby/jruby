@@ -163,8 +163,6 @@ public class AliasMethod extends DynamicMethod {
               CacheEntry logic or CallSite logic.
      */
     private RubyModule calculateSourceModule(IRubyObject self, RubyModule incomingSourceModule) {
-        if (entry.method.definedClass != null) return definedClass;
-
         if (findImplementer) {
             return Helpers.findImplementerIfNecessary(self.getMetaClass(), entry.method.getImplementationClass());
         } else {

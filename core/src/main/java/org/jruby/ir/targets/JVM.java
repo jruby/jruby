@@ -80,6 +80,7 @@ public class JVM {
     public void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity) {
         classData().pushmethod(name, scope, scopeField, signature, specificArity);
         method().startMethod();
+        method().updateLineNumber(scope.getLine());
     }
 
     public void popmethod() {

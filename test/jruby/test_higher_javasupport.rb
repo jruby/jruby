@@ -1079,31 +1079,24 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end if ALLOW_UPPERCASE_PACKAGE_NAMES
 
   def test_package_class
+    # Java::JavaPackage is now not directly accessible as a normal constant but it still exists.
+    # We can still test by asking for the name of the class
+    java_package = "Java::JavaPackage"
     assert org.jruby.class.is_a?(Class)
-    assert_equal org.jruby.class, Java::JavaPackage
-    assert_equal Java::OrgJrubyJavasupport.class, Java::JavaPackage
+    assert_equal org.jruby.class.name, java_package
+    assert_equal Java::OrgJrubyJavasupport.class.name, java_package
 
     assert org.jruby.singleton_class.is_a?(Class)
     assert_not_equal org.jruby.singleton_class, org.jruby.class
     assert_not_equal org.jruby.singleton_class, org.jruby.javasupport.singleton_class
-
-    # really to avoid unexpected outcomes for Class instances :
-
-    assert Java::JavaPackage.is_a?(Module)
-    # can not make it a Module instance "only", really
-    if Java::JavaPackage.is_a?(Class)
-      assert_equal Module, Java::JavaPackage.superclass
-    end
   end
 
   def test_package_name_colliding_with_name_method
     assert_equal 'Java::OrgJrubyJavasupport', org.jruby.javasupport.name
     assert_equal true, org.jruby.javasupport.respond_to?(:name)
-    assert org.jruby.javasupport.test.is_a?(Java::JavaPackage)
 
     assert_equal 'Java::OrgJrubyJavasupportTest', org.jruby.javasupport.test.name
     # we can use :: to access the name package :
-    assert Java::OrgJrubyJavasupportTestName.is_a?(Java::JavaPackage)
     assert Java::OrgJrubyJavasupportTestName::Sample
   end
 
@@ -1461,12 +1454,10 @@ CLASSDEF
 
   # JRUBY-781
   def test_that_classes_beginning_with_small_letter_can_be_referenced
-    assert_equal Java::JavaPackage, org.jruby.test.smallLetterClazz.class
     assert org.jruby.test.smallLetterClazz.is_a?(Module)
     assert ! org.jruby.test.smallLetterClazz.is_a?(Class)
     
     assert_equal Class, org.jruby.test.smallLetterClass.class
-    assert ! org.jruby.test.smallLetterClass.is_a?(Java::JavaPackage)
   end
 
   Module.send :remove_method, :attr

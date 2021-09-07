@@ -763,6 +763,15 @@ public final class ThreadContext {
         if ((callNumber++ & CALL_POLL_COUNT) == 0) pollThreadEvents();
     }
 
+    /**
+     * Poll for thread events that should be fired before a blocking call.
+     *
+     * See vm_check_ints_blocking and RUBY_VM_CHECK_INTS_BLOCKING in CRuby.
+     */
+    public void blockingThreadPoll() {
+        thread.blockingThreadPoll(this);
+    }
+
     public static void callThreadPoll(ThreadContext context) {
         if ((context.callNumber++ & CALL_POLL_COUNT) == 0) context.pollThreadEvents();
     }

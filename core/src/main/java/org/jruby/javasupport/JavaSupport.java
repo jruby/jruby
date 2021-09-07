@@ -147,7 +147,8 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getJavaClassClass();
 
-    public abstract RubyClass getJavaPackageClass() ;
+    public abstract RubyClass getJavaPackageClass();
+    abstract void setJavaPackageClass(RubyClass javaPackageClass);
 
     public abstract RubyModule getJavaInterfaceTemplate();
 

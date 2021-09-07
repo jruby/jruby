@@ -34,6 +34,16 @@ describe "java.lang.StringBuilder" do
   end
 end
 
+describe "java.lang.Thread" do
+  it "inspects with a custom format" do
+    thread = java.lang.Thread.new { Thread.pass }
+    thread.name = 'a-thread'
+    thread.start
+    sleep(0.25)
+    expect(thread.inspect).to match /#<Java::JavaLang::Thread:\d+ a-thread TERMINATED>/
+  end
+end
+
 describe "java.nio.CharSequence" do # implements CharSequence
   it "inspects as other Buffer impls" do
     buf = java.nio.CharBuffer.allocate(12)
@@ -47,5 +57,13 @@ describe "java.nio.ByteBuffer" do
     buf = java.nio.ByteBuffer.allocateDirect(8)
     buf.put(1)
     expect(buf.inspect).to match /#<Java::JavaNio::DirectByteBuffer:.*? position=1, limit=8, capacity=8, readOnly=false>/
+  end
+end
+
+describe "java.util.TimeZone/ZoneInfo" do
+  it "inspects as scalar" do
+    zone = java.util.TimeZone.getTimeZone 'America/Los_Angeles'
+    expect(zone.inspect).to eq 'America/Los_Angeles'
+    expect(zone.to_zone_id.inspect).to eq 'America/Los_Angeles'
   end
 end

@@ -433,6 +433,13 @@ public class IRBuilder {
         }
     }
 
+    private NotCompilableException notCompilable(String message, Node node) {
+        int line = node != null ? node.getLine() : scope.getLine();
+        String loc = scope.getFile() + ":" + line;
+        String what = node != null ? node.getClass().getSimpleName() + " - " + loc : loc;
+        return new NotCompilableException(message + " (" + what + ").");
+    }
+
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
         determineIfWeNeedLineNumber(node);
 
@@ -508,12 +515,12 @@ public class IRBuilder {
             case REDONODE: return buildRedo((RedoNode) node);
             case REGEXPNODE: return buildRegexp((RegexpNode) node);
             case RESCUEBODYNODE:
-                throw new NotCompilableException("rescue body is handled by rescue compilation at: " + scope.getFile() + ":" + node.getLine());
+                throw notCompilable("handled by rescue compilation", node);
             case RESCUENODE: return buildRescue((RescueNode) node);
             case RETRYNODE: return buildRetry((RetryNode) node);
             case RETURNNODE: return buildReturn((ReturnNode) node);
             case ROOTNODE:
-                throw new NotCompilableException("Use buildRoot(); Root node at: " + scope.getFile() + ":" + node.getLine());
+                throw notCompilable("Use buildRoot()", node);
             case SCLASSNODE: return buildSClass((SClassNode) node);
             case SELFNODE: return buildSelf();
             case SPLATNODE: return buildSplat((SplatNode) node);
@@ -532,7 +539,7 @@ public class IRBuilder {
             case YIELDNODE: return buildYield((YieldNode) node, result);
             case ZARRAYNODE: return buildZArray(result);
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node);
-            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
+            default: throw notCompilable("Unknown node encountered in builder", node);
         }
     }
 
@@ -695,8 +702,7 @@ public class IRBuilder {
             }
         }
 
-        throw new NotCompilableException("Invalid node for attrassign call args: " + args.getClass().getSimpleName() +
-                ":" + scope.getFile() + ":" + args.getLine());
+        throw notCompilable("Invalid node for attrassign call args", args);
     }
 
     protected Operand[] buildCallArgs(Node args) {
@@ -730,8 +736,7 @@ public class IRBuilder {
                 return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false))) };
         }
 
-        throw new NotCompilableException("Invalid node for call args: " + args.getClass().getSimpleName() + ":" +
-                scope.getFile() + ":" + args.getLine());
+        throw notCompilable("Invalid node for call args: ", args);
     }
 
     public Operand[] setupCallArgs(Node args) {
@@ -777,7 +782,7 @@ public class IRBuilder {
                 break;
             }
             case ZEROARGNODE:
-                throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
+                throw notCompilable("Shouldn't get here; zeroarg does not do assignment", node);
             case MULTIPLEASGNNODE: {
                 Variable tmp = createTemporaryVariable();
                 addInstr(new ToAryInstr(tmp, rhsVal));
@@ -785,12 +790,12 @@ public class IRBuilder {
                 break;
             }
             default:
-                throw new NotCompilableException("Can't build assignment node: " + node);
+                throw notCompilable("Can't build assignment node", node);
         }
     }
 
     protected LocalVariable getBlockArgVariable(RubySymbol name, int depth) {
-        if (!(scope instanceof IRFor)) throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
+        if (!(scope instanceof IRFor)) throw notCompilable("Cannot ask for block-arg variable in 1.9 mode", null);
 
         return getLocalVariable(name, depth);
     }
@@ -809,7 +814,7 @@ public class IRBuilder {
     }
 
     public void buildVersionSpecificBlockArgsAssignment(Node node) {
-        if (!(scope instanceof IRFor)) throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+        if (!(scope instanceof IRFor)) throw notCompilable("Should not have come here for block args assignment", node);
 
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
         switch (node.getNodeType()) {
@@ -824,7 +829,7 @@ public class IRBuilder {
                 break;
             }
             default:
-                throw new NotCompilableException("Can't build assignment node: " + node);
+                throw notCompilable("Can't build assignment node", node);
         }
     }
 
@@ -871,7 +876,7 @@ public class IRBuilder {
                 break;
             }
             case ZEROARGNODE:
-                throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
+                throw notCompilable("Shouldn't get here; zeroarg does not do assignment", node);
             default:
                 buildVersionSpecificBlockArgsAssignment(node);
         }
@@ -1621,90 +1626,134 @@ public class IRBuilder {
             }
         }
 
-        // get the incoming case value
-        Operand value = build(caseNode.getCaseNode());
+        Operand testValue = buildCaseTestValue(caseNode); // what each when arm gets tested against.
+        Label elseLabel = getNewLabel();                  // where else body is location (implicit or explicit).
+        Label endLabel = getNewLabel();                   // end of the entire case statement.
+        boolean hasExplicitElse = caseNode.getElseNode() != null; // does this have an explicit 'else' or not.
+        Variable result = createTemporaryVariable();      // final result value of the case statement.
+        Map<Label, Node> bodies = new HashMap<>();        // we save bodies and emit them after processing when values.
+        Set<IRubyObject> seenLiterals = new HashSet<>();  // track to warn on duplicated values in when clauses.
 
-        // This is for handling case statements without a value (see example below)
+        for (Node aCase: caseNode.getCases().children()) { // Emit each when value test against the case value.
+            WhenNode when = (WhenNode) aCase;
+            Label bodyLabel = getNewLabel();
+
+            buildWhenArgs(when, testValue, bodyLabel, seenLiterals);
+            bodies.put(bodyLabel, when.getBodyNode());
+        }
+
+        addInstr(new JumpInstr(elseLabel));               // if no explicit matches jump to else
+
+        if (hasExplicitElse) {                            // build explicit else
+            bodies.put(elseLabel, caseNode.getElseNode());
+        }
+
+        int numberOfBodies = bodies.size();
+        int i = 1;
+        for (Map.Entry<Label, Node> entry: bodies.entrySet()) {
+            addInstr(new LabelInstr(entry.getKey()));
+            Operand bodyValue = build(entry.getValue());
+
+            if (bodyValue != null) {                      // can be null if the body ends with a return!
+                addInstr(new CopyInstr(result, bodyValue));
+
+                //  we can omit the jump to the last body so long as we don't have an implicit else
+                //  since that is emitted right after this section.
+                if (i != numberOfBodies) {
+                    addInstr(new JumpInstr(endLabel));
+                } else if (!hasExplicitElse) {
+                    addInstr(new JumpInstr(endLabel));
+                }
+            }
+            i++;
+        }
+
+        if (!hasExplicitElse) {                           // build implicit else
+            addInstr(new LabelInstr(elseLabel));
+            addInstr(new CopyInstr(result, manager.getNil()));
+        }
+
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
+    }
+
+    private Operand buildCaseTestValue(CaseNode caseNode) {
+        Operand testValue = build(caseNode.getCaseNode());
+
+        // null is returned for valueless case statements:
         //   case
         //     when true <blah>
         //     when false <blah>
         //   end
-        if (value == null) value = UndefinedValue.UNDEFINED;
+        return testValue == null ? UndefinedValue.UNDEFINED : testValue;
+    }
 
-        Label     endLabel  = getNewLabel();
-        boolean   hasElse   = (caseNode.getElseNode() != null);
-        Label     elseLabel = getNewLabel();
-        Variable  result    = createTemporaryVariable();
+    // returns true if we should emit an eqq for this value (e.g. it has not already been seen yet).
+    private boolean literalWhenCheck(Node value, Set<IRubyObject> seenLiterals) {
+        IRubyObject literal = getWhenLiteral(value);
 
-        List<Label> labels = new ArrayList<>();
-        Map<Label, Node> bodies = new HashMap<>();
-        Set<IRubyObject> seenLiterals = new HashSet<>();
-
-        // build each "when"
-        for (Node aCase : caseNode.getCases().children()) {
-            WhenNode whenNode = (WhenNode)aCase;
-            Label bodyLabel = getNewLabel();
-
-            Variable eqqResult = createTemporaryVariable();
-            labels.add(bodyLabel);
-            Node exprNodes = whenNode.getExpressionNodes();
-            Operand expression = buildWithOrder(exprNodes, whenNode.containsVariableAssignment());
-            boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
-
-            // FIXME: Remove duplicated entries to reduce codesize (like MRI does).
-            IRubyObject literal = getWhenLiteral(exprNodes);
-            if (literal != null) {
-                if (seenLiterals.contains(literal)) {
-                    scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), exprNodes.getLine(), "duplicated when clause is ignored");
-                } else {
-                    seenLiterals.add(literal);
-                }
+        if (literal != null) {
+            if (seenLiterals.contains(literal)) {
+                scope.getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS,
+                        getFileName(), value.getLine(), "duplicated when clause is ignored");
+                return false;
+            } else {
+                seenLiterals.add(literal);
+                return true;
             }
+        }
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat, scope.maybeUsingRefinements()));
+        return true;
+    }
+
+    private void buildWhenValues(Variable eqqResult, ListNode exprValues, Operand testValue, Label bodyLabel,
+                                 Set<IRubyObject> seenLiterals) {
+        for (Node value: exprValues.children()) {
+            buildWhenValue(eqqResult, testValue, bodyLabel, value, seenLiterals, false);
+        }
+    }
+
+    private void buildWhenValue(Variable eqqResult, Operand testValue, Label bodyLabel, Node node,
+                                Set<IRubyObject> seenLiterals, boolean needsSplat) {
+        if (literalWhenCheck(node, seenLiterals)) { // we only emit first literal of the same value.
+            Operand expression = buildWithOrder(node, node.containsVariableAssignment());
+
+            addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
-
-            // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
-            // preserving the order (or maybe not, since we would have to sort the constants first
-            // in any case) for outputting jump tables in certain situations.
-            //
-            // add body to map for emitting later
-            bodies.put(bodyLabel, whenNode.getBodyNode());
         }
+    }
 
-        // Jump to else in case nothing matches!
-        addInstr(new JumpInstr(elseLabel));
-
-        // Build "else" if it exists
-        if (hasElse) {
-            labels.add(elseLabel);
-            bodies.put(elseLabel, caseNode.getElseNode());
+    private void buildWhenSplatValues(Variable eqqResult, Node node, Operand testValue, Label bodyLabel,
+                                      Set<IRubyObject> seenLiterals) {
+        if (node instanceof ListNode && !(node instanceof DNode) && !(node instanceof ArrayNode)) {
+            buildWhenValues(eqqResult, (ListNode) node, testValue, bodyLabel, seenLiterals);
+        } else if (node instanceof SplatNode) {
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
+        } else if (node instanceof ArgsCatNode) {
+            ArgsCatNode catNode = (ArgsCatNode) node;
+            buildWhenSplatValues(eqqResult, catNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
+            buildWhenSplatValues(eqqResult, catNode.getSecondNode(), testValue, bodyLabel, seenLiterals);
+        } else if (node instanceof ArgsPushNode) {
+            ArgsPushNode pushNode = (ArgsPushNode) node;
+            buildWhenSplatValues(eqqResult, pushNode.getFirstNode(), testValue, bodyLabel, seenLiterals);
+            buildWhenValue(eqqResult, testValue, bodyLabel, pushNode.getSecondNode(), seenLiterals, false);
+        } else {
+            buildWhenValue(eqqResult, testValue, bodyLabel, node, seenLiterals, true);
         }
+    }
 
-        // Now, emit bodies while preserving when clauses order
-        for (Label whenLabel: labels) {
-            addInstr(new LabelInstr(whenLabel));
-            Operand bodyValue = build(bodies.get(whenLabel));
-            // bodyValue can be null if the body ends with a return!
-            if (bodyValue != null) {
-                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
-                // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
-                // to look at what the last generated instruction was.
-                addInstr(new CopyInstr(result, bodyValue));
-                addInstr(new JumpInstr(endLabel));
-            }
+    private void buildWhenArgs(WhenNode whenNode, Operand testValue, Label bodyLabel, Set<IRubyObject> seenLiterals) {
+        Variable eqqResult = createTemporaryVariable();
+        Node exprNodes = whenNode.getExpressionNodes();
+
+        if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode)) {
+            buildWhenValues(eqqResult, (ListNode) exprNodes, testValue, bodyLabel, seenLiterals);
+        } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
+            buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
+        } else {
+            buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes, seenLiterals, false);
         }
-
-        if (!hasElse) {
-            addInstr(new LabelInstr(elseLabel));
-            addInstr(new CopyInstr(result, manager.getNil()));
-            addInstr(new JumpInstr(endLabel));
-        }
-
-        // Close it out
-        addInstr(new LabelInstr(endLabel));
-
-        return result;
     }
 
     // Note: This is potentially a little wasteful in that we eagerly create these literals for a duplicated warning
@@ -1750,7 +1799,7 @@ public class IRBuilder {
 
             FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
             long exprLong = expr.getValue();
-            if (exprLong > java.lang.Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + getFileName() + ":" + caseNode.getLine());
+            if (exprLong > Integer.MAX_VALUE) throw notCompilable("optimized fixnum case has long-ranged", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
@@ -2645,7 +2694,7 @@ public class IRBuilder {
                 buildMultipleAsgn19Assignment(childNode, tmp, null);
                 break;
             }
-            default: throw new NotCompilableException("Can't build assignment node: " + node);
+            default: throw notCompilable("Can't build assignment node", node);
         }
     }
 
@@ -2879,7 +2928,7 @@ public class IRBuilder {
                 break;
             }
             default:
-                throw new NotCompilableException("Shouldn't get here: " + node);
+                throw notCompilable("Shouldn't get here", node);
         }
     }
 
@@ -3312,7 +3361,7 @@ public class IRBuilder {
                 return bodyNode instanceof SymbolNode && !scope.maybeUsingRefinements() ?
                         new SymbolProc(((SymbolNode)bodyNode).getName()) : build(bodyNode);
             default:
-                throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
+                throw notCompilable("ERROR: Encountered a method with a non-block, non-blockpass iter node", node);
         }
     }
 

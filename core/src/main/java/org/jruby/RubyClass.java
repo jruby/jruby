@@ -1125,8 +1125,22 @@ public class RubyClass extends RubyModule {
         return runtime;
     }
 
+    /**
+     * Get the "real" class, either the current one or the nearest ancestor that is not a singleton or include wrapper.
+     *
+     * @return the nearest non-singleton non-include class
+     */
     public final RubyClass getRealClass() {
         return realClass;
+    }
+
+    /**
+     * Equivalent to {@link #getRealClass()}.
+     *
+     * @return the nearest non-singleton non-include class
+     */
+    public RubyModule getRealModule() {
+        return getRealClass();
     }
 
     @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)

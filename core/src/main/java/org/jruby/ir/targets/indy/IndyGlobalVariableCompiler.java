@@ -16,22 +16,22 @@ public class IndyGlobalVariableCompiler implements GlobalVariableCompiler {
     }
 
     @Override
-    public void getGlobalVariable(String name, String file, int line) {
+    public void getGlobalVariable(String name, String file) {
         compiler.loadContext();
         compiler.adapter.invokedynamic(
                 "get:" + JavaNameMangler.mangleMethodName(name),
                 sig(IRubyObject.class, ThreadContext.class),
                 Bootstrap.global(),
-                file, line);
+                file, compiler.getLastLine());
     }
 
     @Override
-    public void setGlobalVariable(String name, String file, int line) {
+    public void setGlobalVariable(String name, String file) {
         compiler.loadContext();
         compiler.adapter.invokedynamic(
                 "set:" + JavaNameMangler.mangleMethodName(name),
                 sig(void.class, IRubyObject.class, ThreadContext.class),
                 Bootstrap.global(),
-                file, line);
+                file, compiler.getLastLine());
     }
 }

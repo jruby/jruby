@@ -99,7 +99,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>ffi</artifactId>
-      <version>1.14.2</version>
+      <version>1.15.4</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -203,7 +203,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.10.5</version>
+      <version>0.10.7</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -346,7 +346,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rexml</artifactId>
-      <version>3.1.9</version>
+      <version>3.1.9.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -449,8 +449,8 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>test-unit</artifactId>
-      <version>3.2.9</version>
+      <artifactId>did_you_mean</artifactId>
+      <version>1.3.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -538,7 +538,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/cmath-1.0.0*</include>
           <include>specifications/csv-3.1.2*</include>
           <include>specifications/e2mmap-0.1.0*</include>
-          <include>specifications/ffi-1.14.2*</include>
+          <include>specifications/ffi-1.15.4*</include>
           <include>specifications/fileutils-1.4.1*</include>
           <include>specifications/forwardable-1.2.0*</include>
           <include>specifications/ipaddr-1.2.2*</include>
@@ -546,7 +546,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/io-console-0.5.9*</include>
           <include>specifications/jar-dependencies-0.4.1*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
-          <include>specifications/jruby-openssl-0.10.5*</include>
+          <include>specifications/jruby-openssl-0.10.7*</include>
           <include>specifications/json-2.5.1*</include>
           <include>specifications/logger-1.3.0*</include>
           <include>specifications/matrix-0.3.0*</include>
@@ -557,15 +557,15 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/racc-1.5.2*</include>
           <include>specifications/rake-ant-1.0.4*</include>
           <include>specifications/rdoc-6.1.2*</include>
-          <include>specifications/rexml-3.1.9*</include>
+          <include>specifications/rexml-3.1.9.1*</include>
           <include>specifications/rss-0.2.7*</include>
           <include>specifications/scanf-1.0.0*</include>
           <include>specifications/shell-0.7*</include>
           <include>specifications/sync-0.5.0*</include>
           <include>specifications/thwait-0.1.0*</include>
           <include>specifications/tracer-0.1.0*</include>
-          <include>specifications/webrick-1.6.1*</include>
-          <include>specifications/test-unit-3.2.9*</include>
+          <include>specifications/webrick-1.7.0*</include>
+          <include>specifications/did_you_mean-1.3.0*</include>
           <include>specifications/minitest-5.11.3*</include>
           <include>specifications/net-telnet-0.1.1*</include>
           <include>specifications/power_assert-1.1.3*</include>
@@ -575,7 +575,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/cmath-1.0.0*/**/*</include>
           <include>gems/csv-3.1.2*/**/*</include>
           <include>gems/e2mmap-0.1.0*/**/*</include>
-          <include>gems/ffi-1.14.2*/**/*</include>
+          <include>gems/ffi-1.15.4*/**/*</include>
           <include>gems/fileutils-1.4.1*/**/*</include>
           <include>gems/forwardable-1.2.0*/**/*</include>
           <include>gems/ipaddr-1.2.2*/**/*</include>
@@ -583,7 +583,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/io-console-0.5.9*/**/*</include>
           <include>gems/jar-dependencies-0.4.1*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
-          <include>gems/jruby-openssl-0.10.5*/**/*</include>
+          <include>gems/jruby-openssl-0.10.7*/**/*</include>
           <include>gems/json-2.5.1*/**/*</include>
           <include>gems/logger-1.3.0*/**/*</include>
           <include>gems/matrix-0.3.0*/**/*</include>
@@ -594,15 +594,15 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/racc-1.5.2*/**/*</include>
           <include>gems/rake-ant-1.0.4*/**/*</include>
           <include>gems/rdoc-6.1.2*/**/*</include>
-          <include>gems/rexml-3.1.9*/**/*</include>
+          <include>gems/rexml-3.1.9.1*/**/*</include>
           <include>gems/rss-0.2.7*/**/*</include>
           <include>gems/scanf-1.0.0*/**/*</include>
           <include>gems/shell-0.7*/**/*</include>
           <include>gems/sync-0.5.0*/**/*</include>
           <include>gems/thwait-0.1.0*/**/*</include>
           <include>gems/tracer-0.1.0*/**/*</include>
-          <include>gems/webrick-1.6.1*/**/*</include>
-          <include>gems/test-unit-3.2.9*/**/*</include>
+          <include>gems/webrick-1.7.0*/**/*</include>
+          <include>gems/did_you_mean-1.3.0*/**/*</include>
           <include>gems/minitest-5.11.3*/**/*</include>
           <include>gems/net-telnet-0.1.1*/**/*</include>
           <include>gems/power_assert-1.1.3*/**/*</include>
@@ -612,7 +612,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/cmath-1.0.0*</include>
           <include>cache/csv-3.1.2*</include>
           <include>cache/e2mmap-0.1.0*</include>
-          <include>cache/ffi-1.14.2*</include>
+          <include>cache/ffi-1.15.4*</include>
           <include>cache/fileutils-1.4.1*</include>
           <include>cache/forwardable-1.2.0*</include>
           <include>cache/ipaddr-1.2.2*</include>
@@ -620,7 +620,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/io-console-0.5.9*</include>
           <include>cache/jar-dependencies-0.4.1*</include>
           <include>cache/jruby-readline-1.3.7*</include>
-          <include>cache/jruby-openssl-0.10.5*</include>
+          <include>cache/jruby-openssl-0.10.7*</include>
           <include>cache/json-2.5.1*</include>
           <include>cache/logger-1.3.0*</include>
           <include>cache/matrix-0.3.0*</include>
@@ -631,15 +631,15 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/racc-1.5.2*</include>
           <include>cache/rake-ant-1.0.4*</include>
           <include>cache/rdoc-6.1.2*</include>
-          <include>cache/rexml-3.1.9*</include>
+          <include>cache/rexml-3.1.9.1*</include>
           <include>cache/rss-0.2.7*</include>
           <include>cache/scanf-1.0.0*</include>
           <include>cache/shell-0.7*</include>
           <include>cache/sync-0.5.0*</include>
           <include>cache/thwait-0.1.0*</include>
           <include>cache/tracer-0.1.0*</include>
-          <include>cache/webrick-1.6.1*</include>
-          <include>cache/test-unit-3.2.9*</include>
+          <include>cache/webrick-1.7.0*</include>
+          <include>cache/did_you_mean-1.3.0*</include>
           <include>cache/minitest-5.11.3*</include>
           <include>cache/net-telnet-0.1.1*</include>
           <include>cache/power_assert-1.1.3*</include>

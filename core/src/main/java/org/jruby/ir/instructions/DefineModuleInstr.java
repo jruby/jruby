@@ -77,7 +77,7 @@ public class DefineModuleInstr extends OneOperandResultBaseInstr implements Fixe
         if (!hasExplicitCallProtocol) pre(ic, context, clazz, null, clazz);
 
         try {
-            ThreadContext.pushBacktrace(context, id, ic.getFileName(), context.getLine());
+            ThreadContext.pushBacktrace(context, id, ic.getFileName(), ic.getLine());
             return ic.getEngine().interpret(context, null, clazz, ic, clazz.getMethodLocation(), id, Block.NULL_BLOCK);
         } finally {
             body.cleanupAfterExecution();

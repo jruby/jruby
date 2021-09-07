@@ -1,5 +1,6 @@
 package org.jruby.specialized;
 
+import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -14,6 +15,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -157,15 +159,13 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         RubyString s1 = inspect(context, car);
         RubyString s2 = inspect(context, cdr);
         if (s1.isTaint()) tainted = true;
-        else str.setEncoding(s1.getEncoding());
+        EncodingUtils.encAssociateIndex(str, s1.getEncoding());
         str.cat19(s1);
 
         ByteList bytes = str.getByteList();
-        bytes.ensure(2 + s2.size() + 1);
         bytes.append((byte) ',').append((byte) ' ');
 
         if (s2.isTaint()) tainted = true;
-        else str.setEncoding(s2.getEncoding());
         str.cat19(s2);
 
         str.cat((byte) ']');

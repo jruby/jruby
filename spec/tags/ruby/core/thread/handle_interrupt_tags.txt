@@ -1,7 +1,0 @@
-fails:Thread.handle_interrupt with :never defers interrupts until exiting the handle_interrupt block
-fails:Thread.handle_interrupt with :on_blocking defers interrupts until the next blocking call
-fails:Thread.handle_interrupt with :immediate handles interrupts immediately
-fails:Thread.handle_interrupt with :immediate immediately runs pending interrupts, before the block
-fails:Thread.handle_interrupt also works with suspended Fibers and does not duplicate interrupts
-fails:Thread.handle_interrupt runs pending interrupts at the end of the block, even if there was an exception raised in the block
-fails:Thread.handle_interrupt supports multiple pairs in the Hash

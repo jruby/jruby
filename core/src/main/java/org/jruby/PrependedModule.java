@@ -29,29 +29,41 @@
 
 package org.jruby;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.RefinedMarker;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * This class is used as an intermediate superclass for Module#prepend
+ * This class is used as an intermediate superclass for Module#prepend.  It takes over all
+ * methods on the original module/class which is prepended and sets the originals methodLocation
+ * to this class.  The orignial type no longer has methods so it will look down its inheritance
+ * chain to find them.  The class which is actually prepended will be included onto the original
+ * type.  This original method holding type will be put beneath the prepend module.
  *
  * @see org.jruby.IncludedModuleWrapper
  * @see org.jruby.RubyModule
  */
-public class PrependedModule extends IncludedModule {
+public class PrependedModule extends RubyClass {
+    private RubyModule origin;
 
-    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule klass) {
-        super(runtime, superClass, klass);
-        this.methods = klass.methods;
-        klass.methods = Collections.EMPTY_MAP;
-        klass.methodLocation = this;
+    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule prependedClass) {
+        super(runtime, superClass, false);
+        origin = prependedClass;
+        this.metaClass = origin.metaClass;
+        if (superClass != null) {
+            setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+        }
+        this.methods = prependedClass.methods;
+        prependedClass.methods = Collections.EMPTY_MAP;
+        prependedClass.methodLocation = this;
         for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
-            if (moveRefinedMethod(entry.getKey(), method, klass)) {
+            if (moveRefinedMethod(entry.getKey(), method, prependedClass)) {
                 methods.remove(entry.getKey());
             }
         }
@@ -83,14 +95,105 @@ public class PrependedModule extends IncludedModule {
     }
 
     @Override
+    public boolean isPrepended() {
+        return true;
+    }
+
+    @Override
+    public boolean isModule() {
+        return false;
+    }
+
+    @Override
+    public boolean isClass() {
+        return false;
+    }
+
+    @Override
+    public boolean isImmediate() {
+        return true;
+    }
+
+    @Override
+    public void setMetaClass(RubyClass newRubyClass) {
+        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
+    }
+
+    @Override
+    public String getName() {
+        return origin.getName();
+    }
+
+    @Override
+    public RubyModule getOrigin() {
+        return origin;
+    }
+
+    @Deprecated
+    @Override
+    public RubyModule getNonIncludedClass() {
+        return origin;
+    }
+
+    /**
+     * We don't want to reveal ourselves to Ruby code, so origin this
+     * operation.
+     */
+    @Override
+    public IRubyObject id() {
+        return origin.id();
+    }
+    @Override
     public void addMethod(String id, DynamicMethod method) {
         super.addMethod(id, method);
         method.setDefinedClass(origin);
     }
 
+
     @Override
-    public boolean isPrepended() {
-        return true;
+    protected synchronized Map<String, IRubyObject> getClassVariables() {
+        return origin.getClassVariables();
+    }
+
+    @Override
+    protected Map<String, IRubyObject> getClassVariablesForRead() {
+        return origin.getClassVariablesForRead();
+    }
+
+    //
+    // CONSTANT TABLE METHODS - pass to origin
+    //
+
+    @Override
+    protected IRubyObject constantTableStore(String name, IRubyObject value) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return origin.constantTableStore(name, value);
+    }
+
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return origin.constantTableStore(name, value, hidden);
+    }
+
+    @Override
+    protected IRubyObject constantTableRemove(String name) {
+        // this _is_ legal (when removing an undef)
+        return origin.constantTableRemove(name);
+    }
+
+    @Override
+    protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
+        return origin.getAutoloadConstant(name, forceLoad);
+    }
+
+    @Override
+    protected Map<String, Autoload> getAutoloadMap() {
+        return origin.getAutoloadMap();
+    }
+
+    @Override
+    protected Map<String, Autoload> getAutoloadMapForWrite() {
+        return origin.getAutoloadMapForWrite();
     }
 
 }

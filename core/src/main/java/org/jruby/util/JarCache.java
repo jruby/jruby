@@ -19,35 +19,42 @@ import java.util.jar.JarFile;
 import static org.jruby.RubyFile.canonicalize;
 
 /**
-  * Instances of JarCache provides jar index information.
+ * Instances of JarCache provides jar index information.
+ *
+ * <p>
+ * Implementation is threadsafe.
   *
-  * <p>
-  *     Implementation is threadsafe.
+ * Since loading index information is O(jar-entries) we cache the snapshot in a WeakHashMap.
+ * The implementation pays attention to lastModified timestamp of the jar and will invalidate
+ * the cache entry if jar has been updated since the snapshot calculation.
+ * </p>
   *
-  *     Since loading index information is O(jar-entries) we cache the snapshot in a WeakHashMap.
-  *     The implementation pays attention to lastModified timestamp of the jar and will invalidate
-  *     the cache entry if jar has been updated since the snapshot calculation.
-  * </p>
+ * ******************************************************************************************
+ * DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER
+ * ******************************************************************************************
   *
-  * ******************************************************************************************
-  * DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER
-  * ******************************************************************************************
-  *
-  * The spec for this cache is disabled currently for #2655, because of last-modified time
-  * oddities on CloudBees. Please be cautious modifying this code and make sure you run the
-  * associated spec locally.
-  */
+ * The spec for this cache is disabled currently for #2655, because of last-modified time
+ * oddities on CloudBees. Please be cautious modifying this code and make sure you run the
+ * associated spec locally.
+ */
 class JarCache {
+
+    /**
+     * The timeout in milliseconds for caching the last modified timestamp of JAR files.
+     */
+    private static final long LAST_MODIFIED_EXPIRATION_TIME_MILLISECONDS = 500;
+
     static class JarIndex {
         private static final String ROOT_KEY = "";
 
         private final Map<String, String[]> cachedDirEntries;
         private final JarFile jar;
-        private final long snapshotCalculated;
+        private final long lastModified;
+        private Long lastModifiedExpiration;
 
         JarIndex(String jarPath) throws IOException {
             this.jar = new JarFile(jarPath);
-            this.snapshotCalculated = new File(jarPath).lastModified();
+            this.lastModified = getLastModified(jarPath);
 
             Map<String, HashSet<String>> mutableCache = new HashMap<>();
 
@@ -88,6 +95,25 @@ class JarCache {
             this.cachedDirEntries = Collections.unmodifiableMap(cachedDirEntries);
         }
 
+        /**
+         * Determines the last modification timestamp of a file.
+         * <p>
+         * NOTE: Getting the value is an expensive operation on Windows systems (see
+         * {@link <a href="https://github.com/jruby/jruby/issues/6730}").
+         * Therefore a cached value is used with a maximum lifetime of {@link #LAST_MODIFIED_EXPIRATION_TIME_MILLISECONDS} milliseconds.
+         *
+         * @param jarPath The path to the JAR file.
+         * @return The last modification timestamp.
+         */
+        private long getLastModified(String jarPath) {
+            long currentTimeMillis = System.currentTimeMillis();
+            if (lastModifiedExpiration != null && currentTimeMillis < lastModifiedExpiration) {
+                return lastModified;
+            }
+            this.lastModifiedExpiration = currentTimeMillis + LAST_MODIFIED_EXPIRATION_TIME_MILLISECONDS;
+            return new File(jarPath).lastModified();
+        }
+
         public JarEntry getJarEntry(String entryPath) {
             return jar.getJarEntry(canonicalJarPath(entryPath));
         }
@@ -103,11 +129,12 @@ class JarCache {
         public void release() {
             try {
                 jar.close();
-            } catch (IOException ioe) { }
+            } catch (IOException ioe) {
+            }
         }
 
         public boolean isValid() {
-            return new File(jar.getName()).lastModified() <= snapshotCalculated;
+            return getLastModified(jar.getName()) <= lastModified;
         }
 
         private static String canonicalJarPath(String path) {

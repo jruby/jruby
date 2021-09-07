@@ -65,8 +65,8 @@ matrix:
         - bundle install
         - jruby -S rake test:mri:core:jit
 
-    - name: MRI core jit jdk14
-      jdk: openjdk14
+    - name: MRI core jit jdk16
+      jdk: openjdk16
       script:
         - mvn clean package -Pbootstrap
         - bundle install
@@ -92,6 +92,12 @@ matrix:
         - bundle install
         - jruby -S rake spec:ruby:fast
 
+    - name: spec/ruby fast jit
+      script:
+        - mvn clean package -Pbootstrap
+        - bundle install
+        - jruby -S rake spec:ruby:fast:jit
+
     - name: spec/ruby fast jdk11
       jdk: openjdk11
       script:
@@ -99,8 +105,8 @@ matrix:
         - bundle install
         - jruby -S rake spec:ruby:fast
 
-    - name: spec/ruby fast jdk14
-      jdk: openjdk14
+    - name: spec/ruby fast jdk16
+      jdk: openjdk16
       script:
         - mvn clean package -Pbootstrap
         - bundle install
@@ -147,8 +153,8 @@ matrix:
         - bundle install
         - jruby -S rake test:jruby
 
-    - name: JRuby tests jit indy jdk14
-      jdk: openjdk14
+    - name: JRuby tests jit indy jdk16
+      jdk: openjdk16
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
         - mvn clean package -Pbootstrap
@@ -187,8 +193,8 @@ matrix:
         - bundle install
         - jruby -S rake spec:ji
 
-    - name: JI specs jdk14
-      jdk: openjdk14
+    - name: JI specs jdk16
+      jdk: openjdk16
       script:
         - mvn clean package -Pbootstrap
         - bundle install
@@ -222,8 +228,8 @@ matrix:
         - bundle install
         - jruby -S rake spec:compiler
 
-    - name: Compiler specs indy jdk14
-      jdk: openjdk14
+    - name: Compiler specs indy jdk16
+      jdk: openjdk16
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
         - mvn clean package -Pbootstrap

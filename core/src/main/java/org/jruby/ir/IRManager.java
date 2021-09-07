@@ -62,7 +62,7 @@ public class IRManager {
 
     private int dummyMetaClassCount = 0;
     private final IRModuleBody object;
-    private final Nil nil = new Nil();
+    private final Nil nil = Nil.NIL;
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
     private final BuiltinClass arrayClass = new BuiltinClass(BuiltinClass.Type.ARRAY);

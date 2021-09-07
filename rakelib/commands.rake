@@ -96,7 +96,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
     arg :line => "-T -J-Demma.coverage.out.merge=true"
     arg :line => "-T -J-Demma.verbosity.level=silent"
-    arg :line => "-T -J-XX:MaxMetaspaceSize=512M"
+    arg :line => "-T -J-XX:MaxMetaspaceSize=768M"
     arg :line => "-f #{ms[:format]}"
     arg :line => "--timeout #{ms[:timeout]}"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]

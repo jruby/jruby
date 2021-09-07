@@ -6,12 +6,12 @@ public interface GlobalVariableCompiler {
      * <p>
      * Stack required: none
      */
-    void getGlobalVariable(String name, String file, int line);
+    void getGlobalVariable(String name, String file);
 
     /**
      * Set the global variable with the given name to the value on stack.
      * <p>
      * Stack required: the new value
      */
-    void setGlobalVariable(String name, String file, int line);
+    void setGlobalVariable(String name, String file);
 }

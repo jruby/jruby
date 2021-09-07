@@ -142,10 +142,8 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     }
 
     private ExitableReturn INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block) {
-        ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.context.getLine());
-
         try {
-            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.context.getLine());
+            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.eic.getLine());
 
             // TODO: explicit call protocol?
             try {

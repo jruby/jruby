@@ -46,3 +46,4 @@ fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data
 fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected socket with data available the returned Array the returned Addrinfo raises when receiving the ip_port message
 fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using a bound socket without any data available returns :wait_readable with exception: false
 fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket without any data available returns :wait_readable with exception: false
+fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected but not bound socket raises Errno::ENOTCONN

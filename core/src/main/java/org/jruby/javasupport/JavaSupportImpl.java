@@ -218,9 +218,11 @@ public class JavaSupportImpl extends JavaSupport {
     }
 
     public RubyClass getJavaPackageClass() {
-        RubyClass clazz;
-        if ((clazz = javaPackageClass) != null) return clazz;
-        return javaPackageClass = getJavaModule().getClass("JavaPackage");
+        return javaPackageClass;
+    }
+
+    public void setJavaPackageClass(RubyClass javaPackageClass) {
+        this.javaPackageClass = javaPackageClass;
     }
 
     public RubyModule getJavaInterfaceTemplate() {

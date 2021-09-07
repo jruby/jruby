@@ -31,6 +31,7 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.StringArraySet;
+import org.jruby.util.func.TriFunction;
 
 public class LibrarySearcher {
     public static final char EXTENSION_TYPE = 's';
@@ -1031,13 +1032,6 @@ public class LibrarySearcher {
         boolean isCurrent() {
             return loadPathSnapshot.isSharedJavaArray(loadPath);
         }
-    }
-
-    interface TriFunction<T, U, V, R> {
-        default <W> TriFunction<T, U, V, W> andThen(Function<? super R,? extends W> after) {
-            return (t, u, v) -> after.apply(apply(t, u, v));
-        }
-        R apply(T t, U u, V v);
     }
 
     interface LibraryFactory extends TriFunction<String, String, FileResource, Library> {}

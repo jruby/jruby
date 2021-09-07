@@ -983,7 +983,7 @@ public class RubyProcess {
         do try {
             final long threadID = (long) NATIVE_THREAD_CURRENT.invokeExact();
 
-            return context.getThread().executeTask(context, blockingCall, new RubyThread.Task<ToIntFunction<ThreadContext>, Integer>() {
+            return context.getThread().executeTaskBlocking(context, blockingCall, new RubyThread.Task<ToIntFunction<ThreadContext>, Integer>() {
 
                 @Override
                 public Integer run(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {

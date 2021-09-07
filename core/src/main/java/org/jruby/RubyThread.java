@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import java.util.function.BiFunction;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
@@ -81,7 +82,6 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
@@ -734,11 +734,38 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         pollThreadEvents(metaClass.runtime.getCurrentContext());
     }
 
+    /**
+     * Poll for thread events (raise, kill), propagating only events that are unmasked
+     * (see {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} or intended to fire before
+     * blocking operations if blocking = true.
+     *
+     * @param context the context
+     * @param blocking whether to trigger blocking operation interrupts
+     */
+    public void pollThreadEvents(ThreadContext context, boolean blocking) {
+        if (blocking) {
+            blockingThreadPoll(context);
+        } else {
+            pollThreadEvents(context);
+        }
+    }
+
     // CHECK_INTS
     public void pollThreadEvents(ThreadContext context) {
         if (anyInterrupted()) {
-            executeInterrupts(context, true);
+            executeInterrupts(context, false);
         }
+    }
+
+    // RUBY_VM_CHECK_INTS_BLOCKING
+    public void blockingThreadPoll(ThreadContext context) {
+        if (pendingInterruptQueue.isEmpty() && !anyInterrupted()) {
+            return;
+        }
+
+        pendingInterruptQueueChecked = false;
+        setInterrupt();
+        executeInterrupts(context, true);
     }
 
     // RUBY_VM_INTERRUPTED_ANY
@@ -756,27 +783,50 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             throw context.runtime.newArgumentError("block is needed");
         }
 
-        final RubyHash mask = (RubyHash) TypeConverter.convertToType(_mask, context.runtime.getHash(), "to_hash");
+        final RubyHash mask = _mask.convertToHash().dupFast(context);
+
+        if (mask.isEmpty()) {
+            return block.yield(context, context.nil);
+        }
 
         mask.visitAll(context, HandleInterruptVisitor, null);
 
-        final RubyThread thread = context.getThread();
-        thread.interruptMaskStack.add(mask);
-        if (thread.pendingInterruptQueue.isEmpty()) {
-            thread.pendingInterruptQueueChecked = false;
-            thread.setInterrupt();
+        mask.setFrozen(true);
+
+        return context.getThread().handleInterrupt(context, mask, block);
+    }
+
+    private IRubyObject handleInterrupt(ThreadContext context, RubyHash mask, BiFunction<ThreadContext, IRubyObject, IRubyObject> block) {
+        return handleInterrupt(context, mask, context.nil, block);
+    }
+
+    private <StateType> IRubyObject handleInterrupt(ThreadContext context, RubyHash mask, StateType state, BiFunction<ThreadContext, StateType, IRubyObject> block) {
+        Vector<RubyHash> interruptMaskStack = this.interruptMaskStack;
+
+        interruptMaskStack.add(mask);
+
+        Queue<IRubyObject> pendingInterruptQueue = this.pendingInterruptQueue;
+
+        if (!pendingInterruptQueue.isEmpty()) {
+            pendingInterruptQueueChecked = false;
+            setInterrupt();
         }
 
         try {
             // check for any interrupts that should fire with new masks
-            thread.pollThreadEvents();
+            pollThreadEvents();
 
-            return block.call(context);
+            return block.apply(context, state);
         } finally {
-            thread.interruptMaskStack.remove(thread.interruptMaskStack.size() - 1);
-            thread.setInterrupt();
+            interruptMaskStack.remove(interruptMaskStack.size() - 1);
 
-            thread.pollThreadEvents(context);
+            if (!pendingInterruptQueue.isEmpty()) {
+                pendingInterruptQueueChecked = false;
+                setInterrupt();
+            }
+
+            // check for pending interrupts that were masked
+            pollThreadEvents(context);
         }
     }
 
@@ -1166,7 +1216,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // join call without actually calling interrupt.
             long start = System.currentTimeMillis();
             while (true) {
-                currentThread.pollThreadEvents(context);
+                currentThread.blockingThreadPoll(context);
                 threadImpl.join(timeToWait);
                 if (!threadImpl.isAlive()) {
                     break;
@@ -1274,7 +1324,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         synchronized (rubyThread) {
-            rubyThread.pollThreadEvents(context);
+            rubyThread.blockingThreadPoll(context);
             Status oldStatus = rubyThread.getStatus();
             try {
                 STATUS.set(rubyThread, Status.SLEEP);
@@ -1402,15 +1452,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
         if (!isAlive()) return context.nil;
 
-        if (currentThread == this) {
-            RubyKernel.raise(context, this, args, Block.NULL_BLOCK);
-            assert false; // should not reach here
-        }
 
-        IRubyObject exception = prepareRaiseException(context, args, Block.NULL_BLOCK);
-
-        pendingInterruptEnqueue(exception);
+        pendingInterruptEnqueue(prepareRaiseException(context, args, Block.NULL_BLOCK));
         interrupt();
+
+        if (currentThread == this) {
+            executeInterrupts(context, false);
+        }
 
         return context.nil;
     }
@@ -1485,7 +1533,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         assert this == getRuntime().getCurrentContext().getThread();
         sleepTask.millis = millis;
         try {
-            long timeSlept = executeTask(getContext(), null, sleepTask);
+            long timeSlept = executeTaskBlocking(getContext(), null, sleepTask);
             if (millis == 0 || timeSlept >= millis) {
                 // sleep was unbounded or we slept long enough
                 return true;
@@ -1603,18 +1651,30 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    public <Data, Return> Return executeTaskBlocking(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
+        return executeTask(context, data, Status.SLEEP, task, true);
+    }
+
     public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
-        return executeTask(context, data, Status.SLEEP, task);
+        return executeTask(context, data, Status.SLEEP, task, false);
+    }
+
+    public <Data, Return> Return executeTaskBlocking(ThreadContext context, Data data, Status status, Task<Data, Return> task) throws InterruptedException {
+        return executeTask(context, data, status, task, true);
     }
 
     public <Data, Return> Return executeTask(ThreadContext context, Data data, Status status, Task<Data, Return> task) throws InterruptedException {
+        return executeTask(context, data, status, task, false);
+    }
+
+    private <Data, Return> Return executeTask(ThreadContext context, Data data, Status status, Task<Data, Return> task, boolean blocking) throws InterruptedException {
         Status oldStatus = STATUS.get(this);
         try {
             this.unblockArg = data;
             this.unblockFunc = task;
 
             // check for interrupt before going into blocking call
-            pollThreadEvents(context);
+            pollThreadEvents(context, blocking);
 
             STATUS.set(this, status);
 
@@ -1623,7 +1683,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             STATUS.set(this, oldStatus);
             this.unblockFunc = null;
             this.unblockArg = null;
-            pollThreadEvents(context);
+            pollThreadEvents(context, blocking);
         }
     }
 
@@ -1650,7 +1710,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             this.unblockFunc = task;
 
             // check for interrupt before going into blocking call
-            pollThreadEvents(context);
+            blockingThreadPoll(context);
 
             STATUS.set(this, Status.SLEEP);
 
@@ -2024,7 +2084,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                         key = selectable.register(currentSelector, ops);
 
-                        beforeBlockingCall();
+                        beforeBlockingCall(getContext());
                         int result;
 
                         if (timeout < 0) {
@@ -2123,6 +2183,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         notify();
     }
 
+    /**
+     * Set the pending interrupt flag.
+     *
+     * CRuby: RB_VM_SET_INTERRUPT/
+     */
     public void setInterrupt() {
         while (true) {
             int oldFlag = interruptFlag;
@@ -2145,7 +2210,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             boolean ready = blockingIO.await();
 
             // check for thread events, in case we've been woken up to die
-            pollThreadEvents(context);
+            blockingThreadPoll(context);
             return ready;
         } catch (IOException ioe) {
             throw context.runtime.newRuntimeError("Error with selector: " + ioe);
@@ -2157,9 +2222,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             io.removeBlockingThread(this);
         }
     }
-    public void beforeBlockingCall() {
-        pollThreadEvents();
+    public void beforeBlockingCall(ThreadContext context) {
+        blockingThreadPoll(context);
         enterSleep();
+    }
+
+    @Deprecated
+    public void beforeBlockingCall() {
+        beforeBlockingCall(metaClass.runtime.getCurrentContext());
     }
 
     public void afterBlockingCall() {
@@ -2234,7 +2304,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void lockInterruptibly(Lock lock) throws InterruptedException {
         assert Thread.currentThread() == getNativeThread();
-        executeTask(getContext(), lock, new RubyThread.Task<Lock, Object>() {
+        executeTaskBlocking(getContext(), lock, new RubyThread.Task<Lock, Object>() {
             @Override
             public Object run(ThreadContext context, Lock reentrantLock) throws InterruptedException {
                 reentrantLock.lockInterruptibly();
@@ -2304,7 +2374,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void sleep(Lock lock, long millis) throws InterruptedException {
         assert Thread.currentThread() == getNativeThread();
-        executeTask(getContext(), lock.newCondition(), Status.NATIVE, new Task<Condition, Object>() {
+        executeTaskBlocking(getContext(), lock.newCondition(), Status.NATIVE, new Task<Condition, Object>() {
             @Override
             public Object run(ThreadContext context, Condition condition) throws InterruptedException {
                 if (millis == 0) {
@@ -2324,6 +2394,26 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private String identityString() {
         return "0x" + Integer.toHexString(System.identityHashCode(this));
+    }
+
+    /**
+     * Run the provided {@link BiFunction} without allowing for any cross-thread interrupts (equivalent to calling
+     * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object => :never.
+     *
+     * MRI: rb_uninterruptible
+     *
+     * @param context the current context
+     * @param f the bifunction to execute
+     * @return return value of f.apply.
+     */
+    public static <StateType> IRubyObject uninterruptible(ThreadContext context, StateType state, BiFunction<ThreadContext, StateType, IRubyObject> f) {
+        Ruby runtime = context.runtime;
+
+        return context.getThread().handleInterrupt(
+                context,
+                RubyHash.newHash(runtime, runtime.getObject(), runtime.newSymbol("never")),
+                state,
+                f);
     }
 
     private static final String MUTEX_FOR_THREAD_EXCLUSIVE = "MUTEX_FOR_THREAD_EXCLUSIVE";

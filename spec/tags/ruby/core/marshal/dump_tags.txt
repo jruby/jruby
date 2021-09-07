@@ -7,3 +7,4 @@ fails:Marshal.dump with an Object dumps an Object with a non-US-ASCII instance v
 fails:Marshal.dump with an Exception dumps the cause for the exception
 fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
 fails:Marshal.dump with an Exception dumps instance variables if they exist
+fails:Marshal.dump with a Symbol dumps multiple Symbols sharing the same encoding

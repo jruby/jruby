@@ -43,7 +43,6 @@ import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -342,7 +341,7 @@ public class Queue extends RubyObject implements DataType {
     public IRubyObject pop(ThreadContext context) {
         initializedCheck();
         try {
-            return context.getThread().executeTask(context, this, BLOCKING_POP_TASK);
+            return context.getThread().executeTaskBlocking(context, this, BLOCKING_POP_TASK);
         } catch (InterruptedException ie) {
             // FIXME: is this the right thing to do?
             throw createInterruptedError(context, "pop");
@@ -350,10 +349,19 @@ public class Queue extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
-    public IRubyObject pop(ThreadContext context, IRubyObject arg0) {
+    public IRubyObject pop(ThreadContext context, IRubyObject nonblock) {
         initializedCheck();
         try {
-            return context.getThread().executeTask(context, this, !arg0.isTrue() ? BLOCKING_POP_TASK : NONBLOCKING_POP_TASK);
+            if (nonblock.isTrue()) {
+                IRubyObject result = pollInternal();
+                if (result == null) {
+                    throw context.runtime.newThreadError("queue empty");
+                } else {
+                    return result;
+                }
+            } else {
+                return context.getThread().executeTaskBlocking(context, this, BLOCKING_POP_TASK);
+            }
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "pop");
         }
@@ -584,20 +592,13 @@ public class Queue extends RubyObject implements DataType {
 
     private static final RubyThread.Task<Queue, IRubyObject> BLOCKING_POP_TASK = new RubyThread.Task<Queue, IRubyObject>() {
         public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
-            return queue.takeInternal(context);
-        }
-        public void wakeup(RubyThread thread, Queue queue) {
-            thread.getNativeThread().interrupt();
-        }
-    };
-
-    private static final RubyThread.Task<Queue, IRubyObject> NONBLOCKING_POP_TASK = new RubyThread.Task<Queue, IRubyObject>() {
-        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
-            IRubyObject result = queue.pollInternal();
-            if (result == null) {
-                throw context.runtime.newThreadError("queue empty");
-            } else {
-                return result;
+            while (true) {
+                try {
+                    return queue.takeInternal(context);
+                } catch (InterruptedException ie) {
+                    // only thread event can interrupt us
+                    context.blockingThreadPoll();
+                }
             }
         }
         public void wakeup(RubyThread thread, Queue queue) {

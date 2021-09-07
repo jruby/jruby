@@ -64,6 +64,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -169,26 +170,24 @@ public class RubyKernel {
         return context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.PROC, block));
     }
 
-    @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE, reads = {CLASS, SCOPE})
+    @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE, reads = {SCOPE})
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
-        RubyModule module = context.getFrameKlazz();
+        RubyModule module = IRRuntimeHelpers.getCurrentClassBase(context, recv);
 
-        if (module == null) module = context.getCurrentStaticScope().getModule();
-
-        if (module.isNil()) {
+        if (module == null || module.isNil()) {
             return context.nil;
         }
 
         return module.autoload_p(context, symbol);
     }
 
-    @JRubyMethod(required = 2, module = true, visibility = PRIVATE, reads = {CLASS, SCOPE})
+    @JRubyMethod(required = 2, module = true, visibility = PRIVATE, reads = {SCOPE})
     public static IRubyObject autoload(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        RubyModule module = context.getFrameKlazz();
+        RubyModule module = IRRuntimeHelpers.getCurrentClassBase(context, recv);
 
-        if (module == null) module = context.getCurrentStaticScope().getModule();
+        module = module.getRealModule();
 
-        if (module.isNil()) throw context.runtime.newTypeError("Can not set autoload on singleton class");
+        if (module == null || module.isNil()) throw context.runtime.newTypeError("Can not set autoload on singleton class");
 
         return module.autoload(context, symbol, file);
     }
@@ -522,9 +521,13 @@ public class RubyKernel {
         return new_string(context, recv, object);
     }
 
-    // MRI: rb_f_p_internal
+    // MRI: rb_f_p
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyThread.uninterruptible(context, args, RubyKernel::pBody);
+    }
+
+    private static IRubyObject pBody(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         int argc = args.length;
         int i;

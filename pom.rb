@@ -71,11 +71,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
               'asm.version' => '9.1',
-              'jffi.version' => '1.3.3',
+              'jffi.version' => '1.3.5',
               'joda.time.version' => '2.10.10' )
 
   plugin_management do
     jar( 'junit:junit:4.13.1',
+         :scope => 'test' )
+
+    jar( 'org.awaitility:awaitility:4.1.0',
          :scope => 'test' )
 
     plugin( 'org.apache.felix:maven-bundle-plugin:4.2.1',
@@ -117,7 +120,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin :compiler, '3.8.1'
     plugin :shade, '3.2.4'
-    plugin :surefire, '3.0.0-M2'
+    plugin :surefire, '3.0.0-M5'
     plugin :plugin, '3.6.0'
     plugin( :invoker, '3.2.1',
             'properties' => { 'jruby.version' => '${project.version}',
