@@ -12,6 +12,8 @@ import org.jruby.runtime.ThreadContext;
  * way I got lazy and removed protected.
  */
 public class Nil extends ImmutableLiteral {
+    public static Nil NIL = new Nil();
+
     public Nil() {
         super();
     }
