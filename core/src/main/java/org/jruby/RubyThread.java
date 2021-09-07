@@ -61,6 +61,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.internal.runtime.RubyNativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
@@ -1962,9 +1963,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         final Ruby runtime = getRuntime();
 
-        if (throwable instanceof Error) {
+        if (throwable instanceof Error || throwable instanceof MainExitException) {
             exitingException = throwable;
             Helpers.throwException(throwable);
+            return;
         }
 
         // if unrescuable (internal exceptions) just re-raise and let it be handled by thread handler
