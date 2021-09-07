@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include "ruby/encoding.h"
 
@@ -388,15 +389,28 @@ VALUE string_spec_RSTRING_PTR_after_yield(VALUE self, VALUE str) {
 VALUE string_spec_RSTRING_PTR_read(VALUE self, VALUE str, VALUE path) {
   char *cpath = StringValueCStr(path);
   int fd = open(cpath, O_RDONLY);
-  rb_str_modify_expand(str, 10);
+  VALUE capacities = rb_ary_new();
+  if (fd < 0) {
+    rb_syserr_fail(errno, "open");
+  }
+
+  rb_str_modify_expand(str, 30);
+  rb_ary_push(capacities, SIZET2NUM(rb_str_capacity(str)));
   char *buffer = RSTRING_PTR(str);
-  read(fd, buffer, 10);
-  rb_str_modify_expand(str, 21);
+  if (read(fd, buffer, 30) < 0) {
+    rb_syserr_fail(errno, "read");
+  }
+
+  rb_str_modify_expand(str, 53);
+  rb_ary_push(capacities, SIZET2NUM(rb_str_capacity(str)));
   char *buffer2 = RSTRING_PTR(str);
-  read(fd, buffer2 + 10, 11);
-  rb_str_set_len(str, 21);
+  if (read(fd, buffer2 + 30, 53 - 30) < 0) {
+    rb_syserr_fail(errno, "read");
+  }
+
+  rb_str_set_len(str, 53);
   close(fd);
-  return str;
+  return capacities;
 }
 
 VALUE string_spec_StringValue(VALUE self, VALUE str) {
@@ -513,6 +527,10 @@ static VALUE string_spec_rb_str_vcatf(VALUE self, VALUE mesg) {
   return call_rb_str_vcatf(mesg, "fmt %d %d number", 42, 7);
 }
 
+static VALUE string_spec_rb_str_catf(VALUE self, VALUE mesg) {
+  return rb_str_catf(mesg, "fmt %d %d number", 41, 6);
+}
+
 void Init_string_spec(void) {
   VALUE cls = rb_define_class("CApiStringSpecs", rb_cObject);
   rb_define_method(cls, "rb_cstr2inum", string_spec_rb_cstr2inum, 2);
@@ -603,6 +621,7 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_utf8_str_new", string_spec_rb_utf8_str_new, 0);
   rb_define_method(cls, "rb_utf8_str_new_cstr", string_spec_rb_utf8_str_new_cstr, 0);
   rb_define_method(cls, "rb_str_vcatf", string_spec_rb_str_vcatf, 1);
+  rb_define_method(cls, "rb_str_catf", string_spec_rb_str_catf, 1);
 }
 
 #ifdef __cplusplus

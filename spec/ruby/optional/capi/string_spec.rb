@@ -599,10 +599,12 @@ describe "C-API String function" do
       @s.RSTRING_PTR_short_memcpy(str).should == "Infinity"
     end
 
-    it "allows read to update string contents" do
+    it "allows read() to update the string contents" do
       filename = fixture(__FILE__, "read.txt")
       str = ""
-      @s.RSTRING_PTR_read(str, filename).should == "fixture file contents"
+      capacities = @s.RSTRING_PTR_read(str, filename)
+      capacities.should == [30, 53]
+      str.should == "fixture file contents to test read() with RSTRING_PTR"
     end
   end
 
@@ -1150,6 +1152,16 @@ end
       str = "test "
       @s.rb_str_vcatf(str)
       str.should == "test fmt 42 7 number"
+    end
+  end
+
+  describe "rb_str_catf" do
+    it "appends the message to the string" do
+      @s.rb_str_catf("").should == "fmt 41 6 number"
+
+      str = "test "
+      @s.rb_str_catf(str)
+      str.should == "test fmt 41 6 number"
     end
   end
 end
