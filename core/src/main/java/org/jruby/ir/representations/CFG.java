@@ -347,11 +347,11 @@ public class CFG {
             // We assume branches will not turn into other branches so we ignore this
         } else if (bb.getLastInstr() instanceof JumpTargetInstr) { // this is really a jump branch already covered
             for (Edge<BasicBlock> edge: getOutgoingEdges(bb)) {
-                if (edge.getType() == EdgeType.FALL_THROUGH) removeEdge(bb, edge.getDestination().getData());
+                if (edge.getType() == EdgeType.FALL_THROUGH) graph.removeEdge(edge);
             }
         } else {
             for (Edge<BasicBlock> edge: getOutgoingEdges(bb)) {
-                if (edge.getType() == EdgeType.REGULAR) removeEdge(bb, edge.getDestination().getData());
+                if (edge.getType() == EdgeType.REGULAR) graph.removeEdge(edge);
             }
         }
     }
@@ -524,6 +524,7 @@ public class CFG {
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);
+        returnBBs.remove(b);
     }
 
     /**
