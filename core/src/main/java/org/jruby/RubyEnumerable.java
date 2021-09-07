@@ -432,15 +432,9 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "tally") // optional = 1
-    public static IRubyObject tally(ThreadContext context, IRubyObject self) { // IRubyObject[] args
-        RubyHash result;
-        // if (args.length == 0) {
-            result = RubyHash.newHash(context.runtime);
-        // } else {
-        //   result = (RubyHash)TypeConverter.convertToType(context, args[0], context.runtime.getHash(), "to_hash", true);
-        //   result.modify();
-        // }
+    @JRubyMethod(name = "tally")
+    public static IRubyObject tally(ThreadContext context, IRubyObject self) {
+        RubyHash result = RubyHash.newHash(context.runtime);
         callEach(context, eachSite(context), self, Signature.NO_ARGUMENTS, new TallyCallback(result));
         return result;
     }
