@@ -169,11 +169,12 @@ public class Argv extends AbstractVariable {
         // ARGV constant should be only one
         if ( vars.containsKey(name) ) {
             BiVariable var = vars.getVariable(topSelf, name);
-            var.setRubyObject(argv);
+            if (var != null) {
+                var.setRubyObject(argv);
+                return;
+            }
         }
-        else {
-            vars.update(name, new Argv(topSelf, name, argv));
-        }
+        vars.update(name, new Argv(topSelf, name, argv));
     }
 
     // ARGV appears to require special treatment, leaving javaType intact
