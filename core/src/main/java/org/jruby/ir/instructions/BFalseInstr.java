@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -24,17 +23,6 @@ public class BFalseInstr extends OneOperandBranchInstr implements FixedArityInst
 
     public static BFalseInstr decode(IRReaderDecoder d) {
         return new BFalseInstr(d.decodeLabel(), d.decodeOperand());
-    }
-
-    @Override
-    public Instr simplifyBranch() {
-        if (getArg1() instanceof Boolean && ((Boolean) getArg1()).isFalse()) {
-            return new JumpInstr(getJumpTarget());
-        } else if (getArg1().isTruthyImmediate()) {
-            return NopInstr.NOP;
-        } else {
-            return super.simplifyBranch();
-        }
     }
 
     @Override
