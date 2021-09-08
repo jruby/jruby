@@ -2,3 +2,4 @@ fails:GC.stat supports access by key
 fails:GC.stat increases major_gc_count after GC is run
 fails:GC.stat provides some number for heap_free_slots
 fails:GC.stat provides some number for total_allocated_objects
+fails:GC.stat the values are all Integer since rb_gc_stat() returns size_t
