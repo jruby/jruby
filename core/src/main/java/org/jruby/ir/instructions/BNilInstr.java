@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Nil;
@@ -24,13 +25,13 @@ public class BNilInstr extends OneOperandBranchInstr  implements FixedArityInstr
     }
 
     @Override
-    public Instr simplifyBranch() {
-        if (getArg1().equals(Nil.NIL)) {
+    public Instr simplifyBranch(FullInterpreterContext fic) {
+        if (getArg1().equals(fic.getScope().getManager().getNil())) {
             return new JumpInstr(getJumpTarget());
         } else if (getArg1() instanceof ImmutableLiteral) {
             return NopInstr.NOP;
         } else {
-            return super.simplifyBranch();
+            return super.simplifyBranch(fic);
         }
     }
 

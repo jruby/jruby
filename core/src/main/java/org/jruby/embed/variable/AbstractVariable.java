@@ -127,7 +127,7 @@ abstract class AbstractVariable implements BiVariable {
      * @return true if identical otherwise false
      */
     public boolean isReceiverIdentical(final RubyObject receiver) {
-        return getReceiver() == receiver;
+        return getReceiver().equals(receiver);
     }
 
     public String getName() {
