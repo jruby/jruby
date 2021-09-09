@@ -2,3 +2,4 @@ fails:RbConfig::CONFIG ['archdir'] returns the directory containing standard lib
 fails:RbConfig::CONFIG libdir/LIBRUBY_SO is the path to libruby and it exists if and only if ENABLE_SHARED
 fails:RbConfig::CONFIG ['AR'] exists and can be executed
 fails:RbConfig::CONFIG ['STRIP'] exists and can be executed
+fails:RbConfig::CONFIG ['LIBRUBY'] is the same as LIBRUBY_SO if and only if ENABLE_SHARED
