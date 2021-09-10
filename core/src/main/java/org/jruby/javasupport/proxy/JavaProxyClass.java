@@ -30,6 +30,26 @@
 
 package org.jruby.javasupport.proxy;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
+import org.jruby.java.proxies.ConcreteJavaProxy.StaticJCreateMethod;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.JavaNameMangler;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -37,43 +57,14 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyNil;
-import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.internal.runtime.methods.*;
-import org.jruby.java.codegen.Reified;
-import org.jruby.java.proxies.ConcreteJavaProxy.*;
-import org.jruby.java.proxies.JavaProxy;
-import org.jruby.javasupport.*;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.JavaNameMangler;
-
-import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
+import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 
 /**
  * Generalized proxy for classes and interfaces.
