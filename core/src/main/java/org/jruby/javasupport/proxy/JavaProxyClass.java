@@ -70,6 +70,7 @@ import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.JavaNameMangler;
 
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
@@ -393,7 +394,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             Method method = proxy.getDeclaredMethod(name, paramTypes);
             Method superMethod = null;
             if ( hasSuper ) {
-                superMethod = proxy.getDeclaredMethod("__super$" + name, paramTypes);
+                superMethod = proxy.getDeclaredMethod(generateSuperName(proxy.getName(), name), paramTypes);
             }
 
             JavaProxyMethod proxyMethod = new ProxyMethodImpl(getRuntime(), this, method, superMethod);
@@ -415,6 +416,17 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         catch (NoSuchMethodException e) {
             throw new InternalError(e.getMessage());
         }
+    }
+
+    /**
+     * Generate a "super" stub for the given proxy class name and super method name.
+     *
+     * @param className the proxy class name
+     * @param superName the super method name
+     * @return a unique stub method name for the given proxy class and super method
+     */
+    public static String generateSuperName(String className, String superName) {
+        return "__super$" + JavaNameMangler.mangleMethodName(className) + "$" + superName;
     }
 
     private static Class[] parse(final ClassLoader loader, String desc) throws ClassNotFoundException {
