@@ -408,13 +408,13 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             methodsWithName.add(proxyMethod);
         }
         catch (ClassNotFoundException e) {
-            throw new InternalError(e.getMessage());
+            throw new InternalError(e.getMessage(), e);
         }
         catch (SecurityException e) {
-            throw new InternalError(e.getMessage());
+            throw new InternalError(e.getMessage(), e);
         }
         catch (NoSuchMethodException e) {
-            throw new InternalError(e.getMessage());
+            throw new InternalError(e.getMessage(), e);
         }
     }
 
