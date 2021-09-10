@@ -412,6 +412,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     /**
      * Generate a "super" stub for the given proxy class name and super method name.
      *
+     * This name is intended to be unique to this class and method in order to allow jumping into the super chain at any
+     * point in the hierarchy, bypassing the default behavior of virtual and reflective calls.
+     *
      * @param className the proxy class name
      * @param superName the super method name
      * @return a unique stub method name for the given proxy class and super method
