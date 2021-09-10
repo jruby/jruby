@@ -1,39 +1,23 @@
-require File.dirname(__FILE__) + "/../spec_helper"
+require_relative "../fixtures/concrete_subclass_overrides"
 
 # See GH-6718
-describe "A Java method overidden by a Ruby subclass" do
-  it "can dispatch to the super method" do
-    class Parent < java.lang.Object
-      def toString
-        "parent #{super}"
-      end
-    end
+describe "A Java method from a parent class overridden by its Ruby descendants" do
+  it "invokes all overrides followed by the Java method" do
+    expect(Child1Override.new.toString).to match(/^child1/)
+    expect(Child1NoOverride.new.toString).not_to match(/^child1/)
 
-    expect(Parent.new.toString).to match(/^parent/)
+    expect(Child1OverrideChild2Override.new.toString).to match(/^child2 child1/)
+    expect(Child1OverrideChild2NoOverride.new.toString).to match(/^child1/)
+    expect(Child1NoOverrideChild2Override.new.toString).to match(/^child2/)
+    expect(Child1NoOverrideChild2NoOverride.new.toString).not_to match(/child/)
 
-    class Child < Parent
-    end
-
-    expect(Child.new.toString).to match(/^parent/)
-  end
-
-  describe "and further overridden by a second Ruby subclass" do
-    it "can dispatch to both super methods" do
-      class Parent < java.lang.Object
-        def toString
-          "parent #{super}"
-        end
-      end
-
-      expect(Parent.new.toString).to match(/^parent/)
-
-      class Child < Parent
-        def toString
-          "child #{super}"
-        end
-      end
-
-      expect(Child.new.toString).to match(/^child parent/)
-    end
+    expect(Child1OverrideChild2OverrideChild3Override.new.toString).to match(/^child3 child2 child1/)
+    expect(Child1OverrideChild2NoOverrideChild3Override.new.toString).to match(/^child3 child1/)
+    expect(Child1NoOverrideChild2OverrideChild3Override.new.toString).to match(/^child3 child2/)
+    expect(Child1NoOverrideChild2NoOverrideChild3Override.new.toString).to match(/child3/)
+    expect(Child1OverrideChild2OverrideChild3NoOverride.new.toString).to match(/^child2 child1/)
+    expect(Child1OverrideChild2NoOverrideChild3NoOverride.new.toString).to match(/^child1/)
+    expect(Child1NoOverrideChild2OverrideChild3NoOverride.new.toString).to match(/^child2/)
+    expect(Child1NoOverrideChild2NoOverrideChild3NoOverride.new.toString).not_to match(/child/)
   end
 end
