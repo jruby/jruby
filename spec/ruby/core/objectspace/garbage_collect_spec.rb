@@ -7,7 +7,7 @@ describe "ObjectSpace.garbage_collect" do
   end
 
   it "accepts keyword arguments" do
-    -> { ObjectSpace.garbage_collect(full_mark: true, immediate_sweep: true) }.should == nil
+    ObjectSpace.garbage_collect(full_mark: true, immediate_sweep: true).should == nil
   end
 
   it "ignores the supplied block" do
