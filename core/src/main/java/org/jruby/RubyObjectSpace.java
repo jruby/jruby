@@ -189,9 +189,9 @@ public class RubyObjectSpace {
         return block.isGiven() ? each_objectInternal(context, recv, args, block) : enumeratorize(context.runtime, recv, "each_object", args);
     }
 
-    @JRubyMethod(name = "garbage_collect", module = true, visibility = PRIVATE)
-    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
-        return RubyGC.start(context, recv);
+    @JRubyMethod(name = "garbage_collect", module = true, visibility = PRIVATE, optional = 1)
+    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyGC.start(context, recv, args);
     }
 
     public static class WeakMap extends RubyObject {
