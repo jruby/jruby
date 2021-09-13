@@ -30,6 +30,26 @@
 
 package org.jruby.javasupport.proxy;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
+import org.jruby.java.proxies.ConcreteJavaProxy.StaticJCreateMethod;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.JavaNameMangler;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -37,42 +57,14 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyNil;
-import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.internal.runtime.methods.*;
-import org.jruby.java.codegen.Reified;
-import org.jruby.java.proxies.ConcreteJavaProxy.*;
-import org.jruby.java.proxies.JavaProxy;
-import org.jruby.javasupport.*;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassDefiningClassLoader;
-
-import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
+import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 
 /**
  * Generalized proxy for classes and interfaces.
@@ -393,7 +385,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             Method method = proxy.getDeclaredMethod(name, paramTypes);
             Method superMethod = null;
             if ( hasSuper ) {
-                superMethod = proxy.getDeclaredMethod("__super$" + name, paramTypes);
+                superMethod = proxy.getDeclaredMethod(generateSuperName(proxy.getName(), name), paramTypes);
             }
 
             JavaProxyMethod proxyMethod = new ProxyMethodImpl(getRuntime(), this, method, superMethod);
@@ -407,14 +399,28 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             methodsWithName.add(proxyMethod);
         }
         catch (ClassNotFoundException e) {
-            throw new InternalError(e.getMessage());
+            throw new InternalError(e.getMessage(), e);
         }
         catch (SecurityException e) {
-            throw new InternalError(e.getMessage());
+            throw new InternalError(e.getMessage(), e);
         }
         catch (NoSuchMethodException e) {
-            throw new InternalError(e.getMessage());
+            throw new InternalError(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Generate a "super" stub for the given proxy class name and super method name.
+     *
+     * This name is intended to be unique to this class and method in order to allow jumping into the super chain at any
+     * point in the hierarchy, bypassing the default behavior of virtual and reflective calls.
+     *
+     * @param className the proxy class name
+     * @param superName the super method name
+     * @return a unique stub method name for the given proxy class and super method
+     */
+    public static String generateSuperName(String className, String superName) {
+        return "__super$" + JavaNameMangler.mangleMethodName(className) + "$" + superName;
     }
 
     private static Class[] parse(final ClassLoader loader, String desc) throws ClassNotFoundException {
