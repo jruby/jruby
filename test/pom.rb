@@ -26,8 +26,6 @@ project 'JRuby Integration Tests' do
   scope :test do
     jar 'junit:junit:4.11'
     jar 'jakarta.annotation:jakarta.annotation-api:2.0.0'
-    jar 'commons-logging:commons-logging:1.1.3'
-    jar 'org.livetribe:livetribe-jsr223:2.0.7'
     jar 'org.jruby:jruby-core', '${project.version}'
   end
   scope :provided do

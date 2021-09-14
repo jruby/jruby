@@ -2,9 +2,9 @@
 set -v -e
 
 # set up JRuby
-mvn clean package
-export PATH=`pwd`/bin:$PATH
-gem install bundler -v "~>1.17.3"
+./mvnw clean package
+
+bin/jruby -S gem install bundler -v "~>1.17.3"
 
 # set up databases
 mysql -e 'create database sequel_test;'
@@ -14,7 +14,7 @@ psql -c 'create database sequel_test;' -U postgres
 git clone --depth=10 https://github.com/jeremyevans/sequel.git
 cd sequel
 cp .ci.gemfile Gemfile
-bundle install
+../bin/jruby -S bundle install
 
 # run tests
-bundle exec rake spec_ci
+../bin/jruby -rbundler/setup -S rake spec_ci

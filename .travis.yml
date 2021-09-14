@@ -13,7 +13,7 @@ cache:
 
 before_install:
   - unset _JAVA_OPTIONS
-  - rm ~/.m2/settings.xml
+  - rm -f ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
   - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:CompressedClassSpaceSize=96M"
   - export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=96M"
@@ -21,7 +21,6 @@ before_install:
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - unset _JAVA_OPTIONS # travis/travis#8408
-  - export PATH="`pwd`/bin:$PATH"
   - echo $HOME
   - echo $JAVA_OPTS
   - echo $MAVEN_OPTS
@@ -47,76 +46,76 @@ matrix:
       name: MRI core int
       script:
         - export JRUBY_OPTS=-J-Xmx1G
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:mri:core:int
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:mri:core:int
 
     - name: MRI core jit
       script:
         - export JRUBY_OPTS=-J-Xmx1G
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:mri:core:fullint
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:mri:core:fullint
 
     - name: MRI core jit jdk11
       jdk: openjdk11
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:mri:core:jit
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:mri:core:jit
 
     - name: MRI core jit jdk16
       jdk: openjdk16
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:mri:core:jit
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:mri:core:jit
 
     - name: MRI extra
       script:
         - export JRUBY_OPTS=-J-Xmx1G
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:mri:extra
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:mri:extra
 
     - name: MRI stdlib
       script:
         - export JRUBY_OPTS=-J-Xmx1G
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:mri:stdlib
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:mri:stdlib
 
     - name: spec/ruby fast
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ruby:fast
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ruby:fast
 
     - name: spec/ruby fast jit
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ruby:fast:jit
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ruby:fast:jit
 
     - name: spec/ruby fast jdk11
       jdk: openjdk11
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ruby:fast
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ruby:fast
 
     - name: spec/ruby fast jdk16
       jdk: openjdk16
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ruby:fast
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ruby:fast
 
     - name: spec/ruby slow
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ruby:slow
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ruby:slow
 
     - env: COMMAND=test/check_versions.sh
 
@@ -134,151 +133,151 @@ matrix:
 
     - name: JRuby tests int
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:jruby:int
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:jruby:int
 
     - name: JRuby tests dev
       script:
         - export JRUBY_OPTS=--dev
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:jruby
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:jruby
 
     - name: JRuby tests jit indy jdk11
       jdk: openjdk11
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:jruby
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:jruby
 
     - name: JRuby tests jit indy jdk16
       jdk: openjdk16
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:jruby
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:jruby
 
     - name: JRuby tests jit indy
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:jruby
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:jruby
 
     - name: JRuby tests aot
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:jruby:aot
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:jruby:aot
 
     - name: JRuby slow tests
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake test:slow_suites
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake test:slow_suites
 
     - name: JI specs
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ji
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ji
 
     - name: JI specs jdk11
       jdk: openjdk11
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ji
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ji
 
     - name: JI specs jdk16
       jdk: openjdk16
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ji
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ji
 
     - name: JI specs indy
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ji
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ji
 
     - name: Compiler specs
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:compiler
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:compiler
 
     - name: Compiler specs indy
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:compiler
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:compiler
 
     - name: Compiler specs indy jdk11
       jdk: openjdk11
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:compiler
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:compiler
 
     - name: Compiler specs indy jdk16
       jdk: openjdk16
       script:
         - export JRUBY_OPTS=-Xcompile.invokedynamic
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:compiler
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:compiler
 
     - name: FFI specs
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ffi
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ffi
 
     - name: FFI specs jdk11
       jdk: openjdk11
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:ffi
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:ffi
 
     - name: Regression specs
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:regression
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:regression
 
     - name: Regression specs jit
       script:
         - export JRUBY_OPTS=-Xjit.threshold=0
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:regression
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:regression
 
     - name: JRuby specs
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:jruby
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:jruby
 
     - name: jrubyc specs
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:jrubyc
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:jrubyc
 
     - name: Profilers specs
       script:
-        - mvn clean package -Pbootstrap
-        - bundle install
-        - jruby -S rake spec:profiler
+        - ./mvnw clean package -Pbootstrap
+        - bin/jruby -S bundle install
+        - bin/jruby -S rake spec:profiler
 
     - name: -Pmain openj9 jdk8
       env: PHASE='-Ptest'
