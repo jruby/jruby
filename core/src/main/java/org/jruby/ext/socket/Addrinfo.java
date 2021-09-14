@@ -268,15 +268,23 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         String base = "#<Addrinfo: %s>";
-        String val;
+        StringBuilder val = new StringBuilder();
 
         if (interfaceLink == true) {
-            val = packet_inspect();
+            val.append(packet_inspect());
         }  else {
-            val = inspect_sockaddr(context).toString();
+            val.append(inspect_sockaddr(context).toString());
         }
-
-        return context.runtime.newString(String.format(base, val));
+        
+        if ((pfamily == PF_INET || pfamily == PF_INET6) && (sock == Sock.SOCK_STREAM || sock == Sock.SOCK_DGRAM)) {
+            val.append(" ").append(protocol.getName().toUpperCase());
+        } else if (sock != null) {
+            val.append(" ").append(sock.name().toUpperCase());
+        } else if (protocol != null && protocol.getProto() != 0) {
+            val.append(" ").append(String.format("UNKNOWN PROTOCOL(%d)", protocol.getProto()));
+        }
+       
+        return context.runtime.newString(String.format(base, val.toString()));
     }
 
     @JRubyMethod
