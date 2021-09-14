@@ -38,6 +38,7 @@ import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 import jnr.ffi.byref.IntByReference;
 import jnr.posix.Timeval;
+import jnr.posix.POSIX;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -807,8 +808,9 @@ public class RubyBasicSocket extends RubyIO {
             return Sockaddr.pack_sockaddr_in(context, getInetSocketAddress());
         }
 
-        if (getUnixSocketAddress() != null) {
-            return Sockaddr.pack_sockaddr_un(context, getUnixSocketAddress().path());
+        UnixSocketAddress unix = getUnixSocketAddress();
+        if (unix != null) {
+            return Sockaddr.pack_sockaddr_un(context, unix.path());
         }
 
         return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
@@ -872,10 +874,11 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
-        ChannelFD fd = new ChannelFD(channel, runtime.getPosix(), runtime.getFilenoUtil());
+        POSIX posix = runtime.getPosix();
+        ChannelFD fd = new ChannelFD(channel, posix, runtime.getFilenoUtil());
 
-        if (runtime.getPosix().isNative() && fd.realFileno >= 0 && !Platform.IS_WINDOWS) {
-            runtime.getPosix().fcntlInt(fd.realFileno, Fcntl.F_SETFD, FcntlLibrary.FD_CLOEXEC);
+        if (posix.isNative() && fd.realFileno >= 0 && !Platform.IS_WINDOWS) {
+            posix.fcntlInt(fd.realFileno, Fcntl.F_SETFD, FcntlLibrary.FD_CLOEXEC);
         }
 
         return fd;
