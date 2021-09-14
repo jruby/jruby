@@ -449,6 +449,8 @@ public class PosixShim {
             setErrno(Errno.EACCES);
         } catch (ResourceException.TooManySymlinks e) {
             setErrno(Errno.ELOOP);
+        } catch (ResourceException.NotSupported e) {
+            setErrno(Errno.ENOTSUP);
         } catch (ResourceException ex) {
             throw ex.newRaiseException(runtime);
         } catch (Exception ex) {

@@ -73,6 +73,10 @@ public abstract class ResourceException extends IOException {
         public TooManySymlinks(String path) { super("ELOOP", path); }
     }
 
+    public static class NotSupported extends ErrnoException {
+        public NotSupported(String path) { super("ENOTSUP", path); }
+    }
+
     @Deprecated
     public static class IOError extends ResourceException {
         private final IOException ioe;

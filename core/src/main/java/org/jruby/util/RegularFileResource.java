@@ -335,6 +335,8 @@ class RegularFileResource implements FileResource {
                 throw new ResourceException.FileIsDirectory(absolutePath());
             case ENOTDIR:
                 throw new ResourceException.FileIsNotDirectory(absolutePath());
+            case ENOTSUP:
+                throw new ResourceException.NotSupported(absolutePath());
             case EMFILE:
             default:
                 throw new InternalIOException(errno.description());
