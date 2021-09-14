@@ -23,6 +23,7 @@ project 'JRuby Core' do
                    },
                    relocations: [
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
+                       {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
                    ],
                    transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          mainClass: 'org.jruby.Main',
