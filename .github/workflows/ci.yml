@@ -6,6 +6,40 @@ env:
   JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
 
 jobs:
+
+  spec-ruby-m1:
+    runs-on: [self-hosted, macos, aarch64]
+    
+    strategy:
+      matrix:
+        target: ['spec:ruby:fast', 'spec:ffi']
+        java-version: ['11']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          architecture: arm
+      - name: bootstrap
+        run: ./mvnw -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby --dev -S rake ${{ matrix.target }}
+
   mvn-test:
     runs-on: ubuntu-latest
 
