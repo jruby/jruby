@@ -32,6 +32,8 @@ project 'JRuby Core' do
     )
   end
 
+  plugin( :source, 'skipSource' =>  'true' )
+
   [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
     profile name do
       # we shade in all dependencies which use the asm classes and relocate
