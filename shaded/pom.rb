@@ -16,7 +16,7 @@ project 'JRuby Core' do
   jar 'org.jruby:jruby-base', '${project.version}'
   plugin :shade do
     execute_goals( 'shade',
-                   id: 'create lib/jruby.jar',
+                   id: 'create shaded jar',
                    phase: 'package',
                    artifactSet: {
                        excludes: 'javax.annotation:javax.annotation-api'
@@ -24,12 +24,19 @@ project 'JRuby Core' do
                    relocations: [
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                    ],
-                   outputFile: '${jruby.basedir}/lib/jruby.jar',
                    transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          mainClass: 'org.jruby.Main',
                                          manifestEntries: {'Automatic-Module-Name' => 'org.jruby.dist'}}],
                    createSourcesJar: '${create.sources.jar}',
     )
+  end
+
+  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin' do
+    execute_goals 'copy',
+                  id: 'copy to lib/jruby.jar',
+                  phase: 'package',
+                  sourceFile: 'target/jruby-core-${project.version}.jar',
+                  destinationFile: '${jruby.basedir}/lib/jruby.jar'
   end
 
   plugin( :source, 'skipSource' =>  'true' )
