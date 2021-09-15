@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 java_import "java_integration.fixtures.ClassWithVarargs"
+java_import "java_integration.fixtures.ClassWithPrimitiveVarargs"
 java_import "java_integration.fixtures.CoreTypeMethods"
 java_import "java_integration.fixtures.StaticMethodSelection"
 java_import "java_integration.fixtures.UsesSingleMethodInterface"
@@ -259,6 +260,148 @@ describe "A class with varargs static methods" do
     expect(ClassWithVarargs.varargs_static('foo', [1,2,3].to_java)).to eq("1: [1, 2, 3]")
     expect(ClassWithVarargs.varargs_static('foo', 'bar', [1,2,3].to_java)).to eq("2: [1, 2, 3]")
     expect(ClassWithVarargs.varargs_static('foo', 'bar', 'baz', [1,2,3].to_java)).to eq("3: [1, 2, 3]")
+  end
+end
+
+describe "A class with primitive varargs constructors" do
+  it "should be called with the most exact overload" do
+    obj = ClassWithPrimitiveVarargs.new()
+    expect(obj.constructor).to eq("0: []")
+    obj = ClassWithPrimitiveVarargs.new(1)
+    expect(obj.constructor).to eq("0: [1]")
+    obj = ClassWithPrimitiveVarargs.new(1,2)
+    expect(obj.constructor).to eq("0: [1, 2]")
+    obj = ClassWithPrimitiveVarargs.new(1,2,3)
+    expect(obj.constructor).to eq("0: [1, 2, 3]")
+    obj = ClassWithPrimitiveVarargs.new(1,2,3,4)
+    expect(obj.constructor).to eq("0: [1, 2, 3, 4]")
+
+    obj = ClassWithPrimitiveVarargs.new('foo', 1)
+    expect(obj.constructor).to eq("1: [1]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 1, 2)
+    expect(obj.constructor).to eq("1: [1, 2]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 1, 2, 3)
+    expect(obj.constructor).to eq("1: [1, 2, 3]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 1, 2, 3, 4)
+    expect(obj.constructor).to eq("1: [1, 2, 3, 4]")
+
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 1)
+    expect(obj.constructor).to eq("2: [1]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 1, 2)
+    expect(obj.constructor).to eq("2: [1, 2]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 1, 2, 3)
+    expect(obj.constructor).to eq("2: [1, 2, 3]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 1, 2, 3, 4)
+    expect(obj.constructor).to eq("2: [1, 2, 3, 4]")
+
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 'baz', 1)
+    expect(obj.constructor).to eq("3: [1]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 'baz', 1, 2)
+    expect(obj.constructor).to eq("3: [1, 2]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 'baz', 1, 2, 3)
+    expect(obj.constructor).to eq("3: [1, 2, 3]")
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 'baz', 1, 2, 3, 4)
+    expect(obj.constructor).to eq("3: [1, 2, 3, 4]")
+
+    #skip("needs better type-driven ranking of overloads") do
+    obj = ClassWithPrimitiveVarargs.new('foo')
+    expect(obj.constructor).to eq("1: []")
+
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar')
+    expect(obj.constructor).to eq("2: []")
+
+    obj = ClassWithPrimitiveVarargs.new('foo', 'bar', 'baz')
+    expect(obj.constructor).to eq("3: []")
+    #end
+  end
+
+  it "should be callable with an array" do
+    expect(ClassWithPrimitiveVarargs.new([1,2,3].to_java(:int)).constructor).to eq("0: [1, 2, 3]")
+    expect(ClassWithPrimitiveVarargs.new('foo', [1,2,3].to_java(:int)).constructor).to eq("1: [1, 2, 3]")
+    expect(ClassWithPrimitiveVarargs.new('foo', 'bar', [1,2,3].to_java(:int)).constructor).to eq("2: [1, 2, 3]")
+    expect(ClassWithPrimitiveVarargs.new('foo', 'bar', 'baz', [1,2,3].to_java(:int)).constructor).to eq("3: [1, 2, 3]")
+  end
+end
+
+describe "A class with primitive varargs instance methods" do
+  it "should be called with the most exact overload" do
+    obj = ClassWithPrimitiveVarargs.new(1)
+
+    expect(obj.primitive_varargs()).to eq("0: []");
+    expect(obj.primitive_varargs(1)).to eq("0: [1]");
+    expect(obj.primitive_varargs(1,2)).to eq("0: [1, 2]");
+    expect(obj.primitive_varargs(1,2,3)).to eq("0: [1, 2, 3]");
+    expect(obj.primitive_varargs(1,2,3,4)).to eq("0: [1, 2, 3, 4]");
+
+    expect(obj.primitive_varargs('foo', 1)).to eq("1: [1]");
+    expect(obj.primitive_varargs('foo', 1, 2)).to eq("1: [1, 2]");
+    expect(obj.primitive_varargs('foo', 1, 2, 3)).to eq("1: [1, 2, 3]");
+    expect(obj.primitive_varargs('foo', 1, 2, 3, 4)).to eq("1: [1, 2, 3, 4]");
+
+    expect(obj.primitive_varargs('foo', 'bar', 1)).to eq("2: [1]");
+    expect(obj.primitive_varargs('foo', 'bar', 1, 2)).to eq("2: [1, 2]");
+    expect(obj.primitive_varargs('foo', 'bar', 1, 2, 3)).to eq("2: [1, 2, 3]");
+    expect(obj.primitive_varargs('foo', 'bar', 1, 2, 3, 4)).to eq("2: [1, 2, 3, 4]");
+
+    expect(obj.primitive_varargs('foo', 'bar', 'baz', 1)).to eq("3: [1]");
+    expect(obj.primitive_varargs('foo', 'bar', 'baz', 1, 2)).to eq("3: [1, 2]");
+    expect(obj.primitive_varargs('foo', 'bar', 'baz', 1, 2, 3)).to eq("3: [1, 2, 3]");
+    expect(obj.primitive_varargs('foo', 'bar', 'baz', 1, 2, 3, 4)).to eq("3: [1, 2, 3, 4]");
+
+    #skip("needs better type-driven ranking of overloads") do
+    expect(obj.primitive_varargs('foo')).to eq("1: []")
+    expect(obj.primitive_varargs('foo', 'bar')).to eq("2: []")
+    expect(obj.primitive_varargs('foo', 'bar', 'baz')).to eq("3: []")
+    #end
+  end
+
+  it "should be callable with an array" do
+    obj = ClassWithPrimitiveVarargs.new(1)
+    expect(obj.primitive_varargs([1,2,3].to_java(:int))).to eq("0: [1, 2, 3]")
+    expect(obj.primitive_varargs('foo', [1,2,3].to_java(:int))).to eq("1: [1, 2, 3]")
+    expect(obj.primitive_varargs('foo', 'bar', [1,2,3].to_java(:int))).to eq("2: [1, 2, 3]")
+    expect(obj.primitive_varargs('foo', 'bar', 'baz', [1,2,3].to_java(:int))).to eq("3: [1, 2, 3]")
+  end
+end
+
+describe "A class with primitive varargs static methods" do
+  it "should be called with the most exact overload" do
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static()).to eq("0: []");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static(1)).to eq("0: [1]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static(1,2)).to eq("0: [1, 2]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static(1,2,3)).to eq("0: [1, 2, 3]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static(1,2,3,4)).to eq("0: [1, 2, 3, 4]");
+
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 1)).to eq("1: [1]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 1, 2)).to eq("1: [1, 2]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 1, 2, 3)).to eq("1: [1, 2, 3]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 1, 2, 3, 4)).to eq("1: [1, 2, 3, 4]");
+
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 1)).to eq("2: [1]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 1, 2)).to eq("2: [1, 2]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 1, 2, 3)).to eq("2: [1, 2, 3]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 1, 2, 3, 4)).to eq("2: [1, 2, 3, 4]");
+
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 'baz', 1)).to eq("3: [1]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 'baz', 1, 2)).to eq("3: [1, 2]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 'baz', 1, 2, 3)).to eq("3: [1, 2, 3]");
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 'baz', 1, 2, 3, 4)).to eq("3: [1, 2, 3, 4]");
+
+    #skip("needs better type-driven ranking of overloads") do
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo')).to eq("1: []")
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar')).to eq("2: []")
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 'baz')).to eq("3: []")
+    #end
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo'.to_java)).to eq("1: []")
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo'.to_java, 'bar')).to eq("2: []")
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo'.to_java, 'bar'.to_java)).to eq("2: []")
+  end
+
+  it "should be callable with an array" do
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static([1,2,3].to_java(:int))).to eq("0: [1, 2, 3]")
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', [1,2,3].to_java(:int))).to eq("1: [1, 2, 3]")
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', [1,2,3].to_java(:int))).to eq("2: [1, 2, 3]")
+    expect(ClassWithPrimitiveVarargs.primitive_varargs_static('foo', 'bar', 'baz', [1,2,3].to_java(:int))).to eq("3: [1, 2, 3]")
   end
 end
 
