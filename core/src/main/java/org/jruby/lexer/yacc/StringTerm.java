@@ -125,6 +125,7 @@ public class StringTerm extends StrTerm {
         }
 
         ByteList buffer = new ByteList(15);
+
         lexer.newtok(true);
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
             int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
@@ -135,8 +136,9 @@ public class StringTerm extends StrTerm {
         }
         lexer.pushback(c); // pushback API is deceptive here...we are just pushing index back one and not pushing c back necessarily.
 
+        boolean encodingDetermined[] = new boolean[] { false };
 
-        if (parseStringIntoBuffer(lexer, buffer, lexer.getEncoding()) == EOF) {
+        if (parseStringIntoBuffer(lexer, buffer, lexer.getEncoding(), encodingDetermined) == EOF) {
             lexer.setRubySourceline(startLine);
             lexer.compile_error("unterminated " + ((flags & STR_FUNC_REGEXP) != 0 ? "regexp" : "string") +  " meets end of file");
         }
@@ -150,14 +152,13 @@ public class StringTerm extends StrTerm {
     }
 
     // mri: parser_tokadd_string
-    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding encoding) throws IOException {
+    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding encoding, boolean[] encodingDetermined) throws IOException {
         boolean qwords = (flags & STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
         boolean regexp = (flags & STR_FUNC_REGEXP) != 0;
         boolean indent = (flags & STR_FUNC_INDENT) != 0;
         boolean hasNonAscii = false;
-        boolean encodingDetermined[] = new boolean[] { false };
         int c;
 
         while ((c = lexer.nextc()) != EOF) {
