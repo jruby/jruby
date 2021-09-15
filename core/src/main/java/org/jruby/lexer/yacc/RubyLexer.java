@@ -1985,7 +1985,7 @@ public class RubyLexer extends LexingCommon {
                 ByteList oneCharBL = new ByteList(2);
                 oneCharBL.setEncoding(getEncoding());
 
-                c = readUTFEscape(oneCharBL, false, false);
+                c = readUTFEscape(oneCharBL, false, new boolean[] { false });
                 
                 if (c >= 0x80) {
                     tokaddmbc(c, oneCharBL);
@@ -2392,7 +2392,7 @@ public class RubyLexer extends LexingCommon {
 
     // FIXME: This could be refactored into something cleaner
     // MRI: parser_tokadd_utf8 sans regexp literal parsing
-    public int readUTFEscape(ByteList buffer, boolean stringLiteral, boolean symbolLiteral) throws IOException {
+    public int readUTFEscape(ByteList buffer, boolean stringLiteral, boolean[] encodingDetermined) throws IOException {
         int codepoint;
         int c;
 
@@ -2407,7 +2407,7 @@ public class RubyLexer extends LexingCommon {
                 if (codepoint > 0x10ffff) {
                     compile_error("invalid Unicode codepoint (too large)");
                 }
-                if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral);
+                if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral, encodingDetermined);
             } while (peek(' ') || peek('\t'));
 
             c = nextc();
@@ -2417,20 +2417,19 @@ public class RubyLexer extends LexingCommon {
             }
         } else { // handle \\uxxxx
             codepoint = scanHex(4, true, "Invalid Unicode escape");
-            if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral);
+            if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral, encodingDetermined);
         }
 
         return codepoint;
     }
     
-    private void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral) throws IOException {
+    private void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral, boolean[] encodingDetermined) throws IOException {
         if (codepoint >= 0x80) {
-            if (buffer.getEncoding() != UTF8Encoding.INSTANCE &&
-                    buffer.getEncoding() != USASCIIEncoding.INSTANCE &&
-                    buffer.getEncoding() != ASCIIEncoding.INSTANCE) {
+            if (encodingDetermined[0] && buffer.getEncoding() != UTF8Encoding.INSTANCE) {
                 compile_error("UTF-8 mixed within " + buffer.getEncoding() + " source");
             }
             buffer.setEncoding(UTF8_ENCODING);
+            encodingDetermined[0] = true;
             if (stringLiteral) tokaddmbc(codepoint, buffer);
         } else if (stringLiteral) {
             buffer.append((char) codepoint);
