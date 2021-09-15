@@ -66,12 +66,6 @@ public class StringTerm extends StrTerm {
         return flags;
     }
 
-    protected ByteList createByteList(RubyLexer lexer) {
-        ByteList bytelist = new ByteList(15);
-        bytelist.setEncoding(lexer.getEncoding());
-        return bytelist;
-    }
-
     private int endFound(RubyLexer lexer) throws IOException {
         if ((flags & STR_FUNC_QWORDS) != 0) {
             flags |= STR_FUNC_TERM;
@@ -129,8 +123,9 @@ public class StringTerm extends StrTerm {
             lexer.pushback(c);
             return ' ';
         }
-        
-        ByteList buffer = createByteList(lexer);
+
+        ByteList buffer = new ByteList(15);
+
         lexer.newtok(true);
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
             int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
@@ -141,8 +136,9 @@ public class StringTerm extends StrTerm {
         }
         lexer.pushback(c); // pushback API is deceptive here...we are just pushing index back one and not pushing c back necessarily.
 
+        boolean encodingDetermined[] = new boolean[] { false };
 
-        if (parseStringIntoBuffer(lexer, buffer, lexer.getEncoding()) == EOF) {
+        if (parseStringIntoBuffer(lexer, buffer, lexer.getEncoding(), encodingDetermined) == EOF) {
             lexer.setRubySourceline(startLine);
             lexer.compile_error("unterminated " + ((flags & STR_FUNC_REGEXP) != 0 ? "regexp" : "string") +  " meets end of file");
         }
@@ -156,12 +152,11 @@ public class StringTerm extends StrTerm {
     }
 
     // mri: parser_tokadd_string
-    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding encoding) throws IOException {
+    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding encoding, boolean[] encodingDetermined) throws IOException {
         boolean qwords = (flags & STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
         boolean regexp = (flags & STR_FUNC_REGEXP) != 0;
-        boolean symbol = (flags & STR_FUNC_SYMBOL) != 0;
         boolean indent = (flags & STR_FUNC_INDENT) != 0;
         boolean hasNonAscii = false;
         int c;
@@ -219,7 +214,7 @@ public class StringTerm extends StrTerm {
                     if (regexp) {
                         lexer.readUTFEscapeRegexpLiteral(buffer);
                     } else {
-                        lexer.readUTFEscape(buffer, true, symbol);
+                        lexer.readUTFEscape(buffer, true, encodingDetermined);
                     }
 
                     if (hasNonAscii && buffer.getEncoding() != encoding) {
@@ -276,8 +271,10 @@ public class StringTerm extends StrTerm {
                 }
             } else if (!lexer.isASCII(c)) {
 nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
-
-                if (buffer.getEncoding() != encoding) {
+                if (!encodingDetermined[0]) {
+                    encodingDetermined[0] = true;
+                    buffer.setEncoding(lexer.getEncoding());
+                } else if (buffer.getEncoding() != encoding) {
                     mixedEscape(lexer, buffer.getEncoding(), encoding);
                     continue;
                 }
@@ -295,14 +292,19 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
 
             if ((c & 0x80) != 0) {
                 hasNonAscii = true;
-                if (buffer.getEncoding() != encoding) {
+
+                if (!encodingDetermined[0]) {
+                    encodingDetermined[0] = true;
+                    buffer.setEncoding(lexer.getEncoding());
+                } else if (buffer.getEncoding() != encoding) {
                     mixedEscape(lexer, buffer.getEncoding(), encoding);
                     continue;
                 }
             }
             buffer.append(c);
         }
-        
+        if (!encodingDetermined[0]) buffer.setEncoding(lexer.getEncoding());
+
         return c;
     }
 
