@@ -128,7 +128,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -181,7 +181,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -234,7 +234,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -287,7 +287,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -340,7 +340,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -393,7 +393,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -446,7 +446,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -499,7 +499,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>
@@ -552,7 +552,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.jruby.Main</mainClass>
                       <manifestEntries>
-                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                        <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
                       </manifestEntries>
                     </transformer>
                   </transformers>

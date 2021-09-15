@@ -66,7 +66,7 @@ project 'JRuby Core' do
                        ],
                        transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main',
-                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.core'}}],
+                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.dist'}}],
                        filters: [
                            {artifact: 'com.headius:invokebinder', excludes: '**/module-info.class'}
                        ]
