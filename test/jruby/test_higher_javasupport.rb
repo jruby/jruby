@@ -1,4 +1,5 @@
 require 'java'
+require 'jruby'
 require 'rbconfig'
 require 'test/unit'
 require 'test/jruby/test_helper'
@@ -932,21 +933,21 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_open_reflected_field
-    java_fields = java.lang.Class.forName('java_integration.fixtures.JavaFields')
+    java_fields = java.lang.Class.forName('org.jruby.RubyBoolean')
     begin
-      java_fields.field('privateIntField')
+      java_fields.field('hashCode')
       fail('value field is not public!')
     rescue java.lang.NoSuchFieldException => e
       # in JRuby 9.2 (JavaClass) used to map this to NameError
       assert e
     end
-    value_field = java_fields.declared_field('privateIntField')
+    value_field = java_fields.declared_field('hashCode')
     assert_equal false, value_field.static?
     assert_equal false, value_field.public?
     assert_equal true, value_field.final?
     assert_equal false, value_field.accessible?
     value_field.accessible = true
-    assert_equal 1, value_field.value( java_fields.constructor.new_instance )
+    assert_equal JRuby.ref(true).hashCode, value_field.value( JRuby.ref(true) )
     assert_equal 'int', value_field.value_type
   end
 
