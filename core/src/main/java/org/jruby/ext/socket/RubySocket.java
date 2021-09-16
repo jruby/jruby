@@ -97,6 +97,7 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, SocketLevel.class);
         runtime.loadConstantSet(rb_mConstants, ProtocolFamily.class);
         runtime.loadConstantSet(rb_mConstants, AddressFamily.class);
+        runtime.loadConstantSet(rb_mConstants, AddressInfo.class);
         runtime.loadConstantSet(rb_mConstants, INAddr.class);
         runtime.loadConstantSet(rb_mConstants, IPProto.class);
         runtime.loadConstantSet(rb_mConstants, Shutdown.class);
@@ -112,18 +113,6 @@ public class RubySocket extends RubyBasicSocket {
         // for all platforms
         rb_mConstants.setConstant("IPPORT_RESERVED", RubyFixnum.newFixnum(runtime, 1024));
         rb_mConstants.setConstant("IPPORT_USERRESERVED", RubyFixnum.newFixnum(runtime, 5000));
-
-        rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(AddressInfo.AI_PASSIVE));
-        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(AddressInfo.AI_CANONNAME));
-        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(AddressInfo.AI_NUMERICHOST));
-        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(AddressInfo.AI_ALL));
-        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(AddressInfo.AI_V4MAPPED_CFG));
-        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(AddressInfo.AI_ADDRCONFIG));
-        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(AddressInfo.AI_V4MAPPED));
-        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(AddressInfo.AI_NUMERICSERV));
-
-        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(AddressInfo.AI_DEFAULT));
-        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(AddressInfo.AI_MASK));
 
         // More constants needed by specs
         rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(IP.IP_MULTICAST_TTL.value()));
