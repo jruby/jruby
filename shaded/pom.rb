@@ -40,6 +40,18 @@ project 'JRuby Core' do
                   destinationFile: '${jruby.basedir}/lib/jruby.jar'
   end
 
+  plugin( :compiler,
+          'encoding' => 'utf-8',
+          'verbose' => 'true',
+          'fork' => 'false',
+          'compilerArgs' => { 'arg' => '-J-Xmx1G' },
+          'showWarnings' => 'true',
+          'showDeprecation' => 'true',
+          'source' => [ '${base.java.version}', '1.8' ],
+          'target' => [ '${base.javac.version}', '1.8' ],
+          'useIncrementalCompilation' =>  'false' )
+
+
   plugin( :source, 'skipSource' =>  'true' )
 
   [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
