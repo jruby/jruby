@@ -682,12 +682,14 @@ public class Addrinfo extends RubyObject {
 
     private String inspectname() {
         if (socketAddress instanceof InetSocketAddress) {
-            return getInetSocketAddress().getAddress().getHostName();
+            InetAddress address = getInetSocketAddress().getAddress();
+            if (!address.toString().startsWith("/")) { // contains hostname
+                return address.getHostName();
+            }
         } else if (socketAddress instanceof UnixSocketAddress) {
             return getUnixSocketAddress().path();
-        } else {
-            return null;
         }
+        return null;
     }
 
     private static InetAddress getRubyInetAddress(IRubyObject node) {
