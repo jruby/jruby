@@ -312,7 +312,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
         final Class<?> compType = varArrayType.getComponentType();
         final Object varArgs = Array.newInstance(compType, varCount);
-        if (varArrayType.isPrimitive()) {
+        if (compType.isPrimitive()) {
             for (int i = 0; i < varCount; i++) {
                 Array.set(varArgs, i, args[varStart + i].toJava(compType));
             }
