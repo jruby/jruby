@@ -285,7 +285,7 @@ public class Addrinfo extends RubyObject {
         }
 
         String inspectName = inspectname();
-        if (inspectName != null) {
+        if (inspectName != null && interfaceLink == false) {
             val.append(" (").append(inspectName).append(")");
         }
        
@@ -686,8 +686,6 @@ public class Addrinfo extends RubyObject {
             if (!address.toString().startsWith("/")) { // contains hostname
                 return address.getHostName();
             }
-        } else if (socketAddress instanceof UnixSocketAddress) {
-            return getUnixSocketAddress().path();
         }
         return null;
     }
