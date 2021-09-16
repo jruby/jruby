@@ -1989,7 +1989,12 @@ public class RubyModule extends RubyObject {
     public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
 
-        putAlias(name, searchForAliasMethod(getRuntime(), oldName), oldName);
+        Ruby runtime = getRuntime();
+
+        CacheEntry entry = searchForAliasMethod(runtime, oldName);
+
+        checkAliasFrameAccesses(runtime, oldName, name, entry.method);
+        putAlias(name, entry, oldName);
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
@@ -2030,24 +2035,11 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public synchronized void defineAliases(List<String> aliases, String oldId) {
-        testFrozen("module");
-
-        Ruby runtime = getRuntime();
-        CacheEntry entry = searchForAliasMethod(runtime, oldId);
-
-        for (String name: aliases) {
-            putAlias(name, entry, oldId);
-        }
-
-        methodLocation.invalidateCoreClasses();
-        methodLocation.invalidateCacheDescendants();
+    private CacheEntry searchForAliasMethod(Ruby runtime, String id) {
+        return deepMethodSearch(id, runtime);
     }
 
-    private CacheEntry searchForAliasMethod(Ruby runtime, String id) {
-        CacheEntry entry = deepMethodSearch(id, runtime);
-        final DynamicMethod method = entry.method;
-
+    private void checkAliasFrameAccesses(Ruby runtime, String id, String newName, DynamicMethod method) {
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
             // We warn because we treat certain method names as "special" for purposes of
@@ -2057,17 +2049,28 @@ public class RubyModule extends RubyObject {
             DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
 
             // native-backed but not a direct call, ok
-            if (nativeCall == null) return entry;
+            if (nativeCall == null) return;
 
             Method javaMethod = nativeCall.getMethod();
             JRubyMethod anno = javaMethod.getAnnotation(JRubyMethod.class);
 
-            if (anno == null) return entry;
+            if (anno == null) return;
 
-            if (anno.reads().length > 0 || anno.writes().length > 0) {
+            FrameField[] sourceReads = anno.reads();
+            FrameField[] sourceWrites = anno.writes();
+            Set<FrameField> targetReads = MethodIndex.METHOD_FRAME_READS.get(newName);
+            Set<FrameField> targetWrites = MethodIndex.METHOD_FRAME_READS.get(newName);
 
-                MethodIndex.addMethodReadFields(id, anno.reads());
-                MethodIndex.addMethodWriteFields(id, anno.writes());
+            boolean readsSuperset = sourceReads.length == 0 ||
+                    (targetReads != null && targetReads.containsAll(Arrays.asList(sourceReads)));
+            boolean writesSuperset = sourceWrites.length == 0 ||
+                    (targetWrites != null && targetWrites.containsAll(Arrays.asList(sourceWrites)));
+
+            // if the target name does expect the same or a superset of frame fields, warn user
+            if (!(readsSuperset && writesSuperset)) {
+
+                MethodIndex.addMethodReadFields(newName, sourceReads);
+                MethodIndex.addMethodWriteFields(newName, sourceWrites);
 
                 if (runtime.isVerbose()) {
                     String baseName = getBaseName();
@@ -2086,8 +2089,6 @@ public class RubyModule extends RubyObject {
                 }
             }
         }
-
-        return entry;
     }
 
     /** this method should be used only by interpreter or compiler
@@ -5542,6 +5543,23 @@ public class RubyModule extends RubyObject {
         public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
             return ((RubyModule) self).autoload_p(context, symbol);
         }
+    }
+
+    @Deprecated
+    public synchronized void defineAliases(List<String> aliases, String oldId) {
+        testFrozen("module");
+
+        Ruby runtime = getRuntime();
+        CacheEntry entry = deepMethodSearch(oldId, runtime);
+        DynamicMethod method = entry.method;
+
+        for (String name: aliases) {
+            checkAliasFrameAccesses(runtime, oldId, name, method);
+            putAlias(name, entry, oldId);
+        }
+
+        methodLocation.invalidateCoreClasses();
+        methodLocation.invalidateCacheDescendants();
     }
 
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
