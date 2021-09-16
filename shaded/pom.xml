@@ -61,7 +61,7 @@ DO NOT MODIFIY - GENERATED CODE
                   </manifestEntries>
                 </transformer>
               </transformers>
-              <createSourcesJar>${create.sources.jar}</createSourcesJar>
+              <createSourcesJar>true</createSourcesJar>
             </configuration>
           </execution>
         </executions>
@@ -138,6 +138,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -191,6 +192,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -244,6 +246,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -297,6 +300,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -350,6 +354,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -403,6 +408,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -456,6 +462,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -509,6 +516,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
@@ -562,6 +570,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
+                  <createSourcesJar>true</createSourcesJar>
                 </configuration>
               </execution>
             </executions>
