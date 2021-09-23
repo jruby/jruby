@@ -579,6 +579,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>shellwords</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>sync</artifactId>
       <version>0.5.0</version>
       <type>gem</type>
@@ -783,6 +796,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/resolv-replace-0.1.0*</include>
           <include>specifications/rinda-0.1.0*</include>
           <include>specifications/rss-0.2.7*</include>
+          <include>specifications/shellwords-0.1.0*</include>
           <include>specifications/sync-0.5.0*</include>
           <include>specifications/thwait-0.1.0*</include>
           <include>specifications/tracer-0.1.0*</include>
@@ -836,6 +850,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/resolv-replace-0.1.0*/**/*</include>
           <include>gems/rinda-0.1.0*/**/*</include>
           <include>gems/rss-0.2.7*/**/*</include>
+          <include>gems/shellwords-0.1.0*/**/*</include>
           <include>gems/sync-0.5.0*/**/*</include>
           <include>gems/thwait-0.1.0*/**/*</include>
           <include>gems/tracer-0.1.0*/**/*</include>
@@ -889,6 +904,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/resolv-replace-0.1.0*</include>
           <include>cache/rinda-0.1.0*</include>
           <include>cache/rss-0.2.7*</include>
+          <include>cache/shellwords-0.1.0*</include>
           <include>cache/sync-0.5.0*</include>
           <include>cache/thwait-0.1.0*</include>
           <include>cache/tracer-0.1.0*</include>

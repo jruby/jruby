@@ -59,6 +59,7 @@ default_gems = [
     ['resolv-replace', '0.1.0'],
     ['rinda', '0.1.0'],
     ['rss', '0.2.7'],
+    ['shellwords', '0.1.0'],
     ['sync', '0.5.0'],
     ['thwait', '0.1.0'],
     ['tracer', '0.1.0'],

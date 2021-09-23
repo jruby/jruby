@@ -6,8 +6,6 @@ STDLIB_FILES = %w[
   net
   open3.rb
   resolv.rb
-  set.rb
-  shellwords.rb
   singleton.rb
   time.rb
   tmpdir.rb
