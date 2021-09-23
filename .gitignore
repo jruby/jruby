@@ -115,7 +115,6 @@ lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
 lib/ruby/stdlib/shellwords*
 lib/ruby/stdlib/singleton*
 lib/ruby/stdlib/test*
-lib/ruby/stdlib/thwait*
 lib/ruby/stdlib/tracer*
 lib/ruby/stdlib/webrick*
 
