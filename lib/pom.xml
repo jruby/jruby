@@ -462,6 +462,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>pstore</artifactId>
+      <version>0.1.1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
       <version>3.3.2</version>
       <type>gem</type>
@@ -761,6 +774,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/pp-0.1.0*</include>
           <include>specifications/prettyprint-0.1.0*</include>
           <include>specifications/prime-0.1.2*</include>
+          <include>specifications/pstore-0.1.1*</include>
           <include>specifications/psych-3.3.2*</include>
           <include>specifications/racc-1.5.2*</include>
           <include>specifications/rake-ant-1.0.4*</include>
@@ -813,6 +827,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/pp-0.1.0*/**/*</include>
           <include>gems/prettyprint-0.1.0*/**/*</include>
           <include>gems/prime-0.1.2*/**/*</include>
+          <include>gems/pstore-0.1.1*/**/*</include>
           <include>gems/psych-3.3.2*/**/*</include>
           <include>gems/racc-1.5.2*/**/*</include>
           <include>gems/rake-ant-1.0.4*/**/*</include>
@@ -865,6 +880,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/pp-0.1.0*</include>
           <include>cache/prettyprint-0.1.0*</include>
           <include>cache/prime-0.1.2*</include>
+          <include>cache/pstore-0.1.1*</include>
           <include>cache/psych-3.3.2*</include>
           <include>cache/racc-1.5.2*</include>
           <include>cache/rake-ant-1.0.4*</include>

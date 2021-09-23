@@ -99,6 +99,7 @@ lib/ruby/stdlib/pp*
 lib/ruby/stdlib/prettyprint*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/prime*
+lib/ruby/stdlib/pstore*
 lib/ruby/stdlib/psych*
 lib/ruby/stdlib/racc*
 lib/ruby/stdlib/rake*

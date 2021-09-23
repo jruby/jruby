@@ -5,11 +5,6 @@ STDLIB_FILES = %w[
   debug.rb
   net
   open3.rb
-  optionparser.rb
-  optparse
-  optparse.rb
-  ostruct.rb
-  pstore.rb
   resolv-replace.rb
   resolv.rb
   rinda

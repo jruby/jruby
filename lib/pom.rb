@@ -50,6 +50,7 @@ default_gems = [
     ['pp', '0.1.0'],
     ['prettyprint', '0.1.0'],
     ['prime', '0.1.2'],
+    ['pstore', '0.1.1'],
     ['psych', '3.3.2'],
     ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
