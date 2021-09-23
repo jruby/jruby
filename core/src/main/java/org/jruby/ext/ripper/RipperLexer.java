@@ -44,6 +44,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.ext.ripper.RipperParser.tSP;
+import static org.jruby.util.StringSupport.codeRangeScan;
 
 /**
  *
@@ -467,15 +468,13 @@ public class RipperLexer extends LexingCommon {
     // STR_NEW3/parser_str_new
     public IRubyObject createStr(ByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
-        int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
 
         if ((flags & STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
-            if (codeRange == StringSupport.CR_7BIT) {
+            if (codeRangeScan(bufferEncoding, buffer) == StringSupport.CR_7BIT) {
                 // Do nothing like MRI
-            } else if (getEncoding() == USASCII_ENCODING &&
-                    bufferEncoding != UTF8_ENCODING) {
-                codeRange = RipperParserBase.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
+            } else if (getEncoding() == USASCII_ENCODING && bufferEncoding != UTF8_ENCODING) {
+                buffer.setEncoding(ASCII8BIT_ENCODING);
             }
         }
 
