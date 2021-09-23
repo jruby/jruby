@@ -61,7 +61,6 @@ default_gems = [
     ['rss', '0.2.7'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    ['sync', '0.5.0'],
     ['thwait', '0.1.0'],
     ['tracer', '0.1.0'],
     ['webrick', '1.7.0'],
