@@ -72,6 +72,7 @@ lib/ruby/stdlib/fileutils*
 lib/ruby/stdlib/find*
 lib/ruby/stdlib/forwardable*
 lib/ruby/stdlib/gauntlet_rdoc.rb
+lib/ruby/stdlib/getoptlong*
 lib/ruby/stdlib/hoe*
 lib/ruby/stdlib/io/console*
 lib/ruby/stdlib/ipaddr*

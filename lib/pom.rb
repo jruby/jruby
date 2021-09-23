@@ -32,6 +32,7 @@ default_gems = [
     ['fileutils', '1.5.0'],
     ['find', '0.1.0'],
     ['forwardable', '1.3.2'],
+    ['getoptlong', '0.1.1'],
     ['ipaddr', '1.2.2'],
     ['irb', '1.0.0'],
     ['io-console', '0.5.9'],

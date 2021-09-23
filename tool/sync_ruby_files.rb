@@ -3,7 +3,6 @@ STDLIB_FILES = %w[
   date
   date.rb
   debug.rb
-  getoptlong.rb
   net
   observer.rb
   open-uri.rb
