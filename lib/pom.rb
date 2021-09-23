@@ -47,6 +47,8 @@ default_gems = [
     ['open-uri', '0.1.0'],
     ['optparse', '0.1.0'],
     ['ostruct', '0.3.3'],
+    ['pp', '0.1.0'],
+    ['prettyprint', '0.1.0'],
     ['prime', '0.1.0'],
     ['psych', '3.3.2'],
     ['racc', '1.5.2'],

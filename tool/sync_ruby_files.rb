@@ -9,8 +9,6 @@ STDLIB_FILES = %w[
   optparse
   optparse.rb
   ostruct.rb
-  pp.rb
-  prettyprint.rb
   pstore.rb
   resolv-replace.rb
   resolv.rb
