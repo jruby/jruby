@@ -88,6 +88,7 @@ lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/mutex_m.rb
 lib/ruby/stdlib/net-telnet.rb
 lib/ruby/stdlib/net/telnet*
+lib/ruby/stdlib/observer*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
 lib/ruby/stdlib/ostruct.rb
