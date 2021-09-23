@@ -90,6 +90,8 @@ lib/ruby/stdlib/net-telnet.rb
 lib/ruby/stdlib/net/telnet*
 lib/ruby/stdlib/observer*
 lib/ruby/stdlib/open-uri*
+lib/ruby/stdlib/optparse*
+lib/ruby/stdlib/optionparser*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
 lib/ruby/stdlib/ostruct.rb
