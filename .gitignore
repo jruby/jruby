@@ -58,6 +58,7 @@ lib/ruby/stdlib/**/maven-metadata-local.xml
 lib/ruby/stdlib/*.jar
 lib/ruby/stdlib/abbrev*
 lib/ruby/stdlib/ant*
+lib/ruby/stdlib/base64*
 lib/ruby/stdlib/benchmark*
 lib/ruby/stdlib/bundler*
 lib/ruby/stdlib/cmath.rb

@@ -19,6 +19,7 @@ default_gems = [
     # - we do not want bin/update_rubygems or bin/gem overrides
     ['rubygems-update', '3.2.14', { bin: false }],
     ['abbrev', '0.1.0'],
+    ['base64', '0.1.0'],
     ['benchmark', '0.1.1'],
     ['bundler', '2.2.14'],
     ['cmath', '1.0.0'],

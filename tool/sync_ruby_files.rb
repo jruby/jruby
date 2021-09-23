@@ -1,6 +1,5 @@
 STDLIB_FILES = %w[
   English.rb
-  base64.rb
   cgi
   cgi.rb
   date
