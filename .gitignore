@@ -98,6 +98,7 @@ lib/ruby/stdlib/racc*
 lib/ruby/stdlib/rake*
 lib/ruby/stdlib/rdoc*
 lib/ruby/stdlib/readline*
+lib/ruby/stdlib/reline*
 lib/ruby/stdlib/rexml*
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rss*
