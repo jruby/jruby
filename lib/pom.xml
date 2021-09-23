@@ -202,6 +202,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>find</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>forwardable</artifactId>
       <version>1.2.0</version>
       <type>gem</type>
@@ -637,6 +650,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/erb-2.2.0*</include>
           <include>specifications/ffi-1.15.4*</include>
           <include>specifications/fileutils-1.5.0*</include>
+          <include>specifications/find-0.1.0*</include>
           <include>specifications/forwardable-1.2.0*</include>
           <include>specifications/ipaddr-1.2.2*</include>
           <include>specifications/irb-1.0.0*</include>
@@ -681,6 +695,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/erb-2.2.0*/**/*</include>
           <include>gems/ffi-1.15.4*/**/*</include>
           <include>gems/fileutils-1.5.0*/**/*</include>
+          <include>gems/find-0.1.0*/**/*</include>
           <include>gems/forwardable-1.2.0*/**/*</include>
           <include>gems/ipaddr-1.2.2*/**/*</include>
           <include>gems/irb-1.0.0*/**/*</include>
@@ -725,6 +740,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/erb-2.2.0*</include>
           <include>cache/ffi-1.15.4*</include>
           <include>cache/fileutils-1.5.0*</include>
+          <include>cache/find-0.1.0*</include>
           <include>cache/forwardable-1.2.0*</include>
           <include>cache/ipaddr-1.2.2*</include>
           <include>cache/irb-1.0.0*</include>
