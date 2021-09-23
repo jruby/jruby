@@ -66,7 +66,6 @@ lib/ruby/stdlib/csv*
 lib/ruby/stdlib/delegate*
 lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/drb*
-lib/ruby/stdlib/e2mmap*
 lib/ruby/stdlib/ffi*
 lib/ruby/stdlib/fileutils.rb
 lib/ruby/stdlib/forwardable*
