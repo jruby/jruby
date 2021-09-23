@@ -7,7 +7,6 @@ STDLIB_FILES = %w[
   open3.rb
   resolv.rb
   tmpdir.rb
-  tsort.rb
   un.rb
   unicode_normalize
   uri

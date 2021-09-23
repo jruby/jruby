@@ -117,6 +117,7 @@ lib/ruby/stdlib/singleton*
 lib/ruby/stdlib/test*
 lib/ruby/stdlib/time.rb
 lib/ruby/stdlib/tracer*
+lib/ruby/stdlib/tsort*
 lib/ruby/stdlib/webrick*
 
 release.properties
