@@ -107,6 +107,7 @@ lib/ruby/stdlib/rdoc*
 lib/ruby/stdlib/readline*
 lib/ruby/stdlib/reline*
 lib/ruby/stdlib/resolv-replace*
+lib/ruby/stdlib/rinda*
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rss*
 lib/ruby/stdlib/rubygems*

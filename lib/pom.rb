@@ -57,6 +57,7 @@ default_gems = [
     ['rdoc', '6.3.1'],
     ['reline', '0.2.5'],
     ['resolv-replace', '0.1.0'],
+    ['rinda', '0.1.0'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
     ['shell', '0.7'],

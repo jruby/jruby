@@ -553,6 +553,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>rinda</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>rss</artifactId>
       <version>0.2.7</version>
       <type>gem</type>
@@ -794,6 +807,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/rdoc-6.3.1*</include>
           <include>specifications/reline-0.2.5*</include>
           <include>specifications/resolv-replace-0.1.0*</include>
+          <include>specifications/rinda-0.1.0*</include>
           <include>specifications/rss-0.2.7*</include>
           <include>specifications/scanf-1.0.0*</include>
           <include>specifications/shell-0.7*</include>
@@ -848,6 +862,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/rdoc-6.3.1*/**/*</include>
           <include>gems/reline-0.2.5*/**/*</include>
           <include>gems/resolv-replace-0.1.0*/**/*</include>
+          <include>gems/rinda-0.1.0*/**/*</include>
           <include>gems/rss-0.2.7*/**/*</include>
           <include>gems/scanf-1.0.0*/**/*</include>
           <include>gems/shell-0.7*/**/*</include>
@@ -902,6 +917,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/rdoc-6.3.1*</include>
           <include>cache/reline-0.2.5*</include>
           <include>cache/resolv-replace-0.1.0*</include>
+          <include>cache/rinda-0.1.0*</include>
           <include>cache/rss-0.2.7*</include>
           <include>cache/scanf-1.0.0*</include>
           <include>cache/shell-0.7*</include>
