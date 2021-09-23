@@ -94,7 +94,7 @@ lib/ruby/stdlib/optparse*
 lib/ruby/stdlib/optionparser*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
-lib/ruby/stdlib/ostruct.rb
+lib/ruby/stdlib/ostruct*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/prime*
 lib/ruby/stdlib/psych*
