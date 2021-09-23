@@ -644,6 +644,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>un</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>webrick</artifactId>
       <version>1.7.0</version>
       <type>gem</type>
@@ -814,6 +827,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/time-0.1.0*</include>
           <include>specifications/tracer-0.1.1*</include>
           <include>specifications/tsort-0.1.0*</include>
+          <include>specifications/un-0.1.0*</include>
           <include>specifications/webrick-1.7.0*</include>
           <include>specifications/minitest-5.11.3*</include>
           <include>specifications/net-telnet-0.1.1*</include>
@@ -869,6 +883,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/time-0.1.0*/**/*</include>
           <include>gems/tracer-0.1.1*/**/*</include>
           <include>gems/tsort-0.1.0*/**/*</include>
+          <include>gems/un-0.1.0*/**/*</include>
           <include>gems/webrick-1.7.0*/**/*</include>
           <include>gems/minitest-5.11.3*/**/*</include>
           <include>gems/net-telnet-0.1.1*/**/*</include>
@@ -924,6 +939,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/time-0.1.0*</include>
           <include>cache/tracer-0.1.1*</include>
           <include>cache/tsort-0.1.0*</include>
+          <include>cache/un-0.1.0*</include>
           <include>cache/webrick-1.7.0*</include>
           <include>cache/minitest-5.11.3*</include>
           <include>cache/net-telnet-0.1.1*</include>
