@@ -98,6 +98,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>cgi</artifactId>
+      <version>0.2.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>cmath</artifactId>
       <version>1.0.0</version>
       <type>gem</type>
@@ -603,6 +616,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/base64-0.1.0*</include>
           <include>specifications/benchmark-0.1.1*</include>
           <include>specifications/bundler-2.2.22*</include>
+          <include>specifications/cgi-0.2.0*</include>
           <include>specifications/cmath-1.0.0*</include>
           <include>specifications/csv-3.1.2*</include>
           <include>specifications/e2mmap-0.1.0*</include>
@@ -645,6 +659,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/base64-0.1.0*/**/*</include>
           <include>gems/benchmark-0.1.1*/**/*</include>
           <include>gems/bundler-2.2.22*/**/*</include>
+          <include>gems/cgi-0.2.0*/**/*</include>
           <include>gems/cmath-1.0.0*/**/*</include>
           <include>gems/csv-3.1.2*/**/*</include>
           <include>gems/e2mmap-0.1.0*/**/*</include>
@@ -687,6 +702,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/base64-0.1.0*</include>
           <include>cache/benchmark-0.1.1*</include>
           <include>cache/bundler-2.2.22*</include>
+          <include>cache/cgi-0.2.0*</include>
           <include>cache/cmath-1.0.0*</include>
           <include>cache/csv-3.1.2*</include>
           <include>cache/e2mmap-0.1.0*</include>

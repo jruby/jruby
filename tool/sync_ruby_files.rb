@@ -1,7 +1,5 @@
 STDLIB_FILES = %w[
   English.rb
-  cgi
-  cgi.rb
   date
   date.rb
   debug.rb
