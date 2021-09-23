@@ -65,7 +65,6 @@ default_gems = [
     ['tracer', '0.1.1'],
     ['tsort', '0.1.0'],
     ['un', '0.1.0'],
-    ['webrick', '1.7.0'],
 ]
 
 bundled_gems = [

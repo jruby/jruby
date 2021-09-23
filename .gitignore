@@ -119,7 +119,6 @@ lib/ruby/stdlib/time.rb
 lib/ruby/stdlib/tracer*
 lib/ruby/stdlib/tsort*
 lib/ruby/stdlib/un*
-lib/ruby/stdlib/webrick*
 
 release.properties
 share
