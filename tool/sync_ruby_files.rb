@@ -4,7 +4,6 @@ STDLIB_FILES = %w[
   date.rb
   debug.rb
   net
-  open-uri.rb
   open3.rb
   optionparser.rb
   optparse
