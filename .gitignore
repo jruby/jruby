@@ -109,12 +109,10 @@ lib/ruby/stdlib/reline*
 lib/ruby/stdlib/resolv-replace*
 lib/ruby/stdlib/rinda*
 lib/ruby/stdlib/ripper.jar
-lib/ruby/stdlib/rss*
 lib/ruby/stdlib/rubygems*
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
 lib/ruby/stdlib/shellwords*
 lib/ruby/stdlib/singleton*
-lib/ruby/stdlib/test*
 lib/ruby/stdlib/time.rb
 lib/ruby/stdlib/tracer*
 lib/ruby/stdlib/tsort*

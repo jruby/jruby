@@ -58,7 +58,6 @@ default_gems = [
     ['reline', '0.2.5'],
     ['resolv-replace', '0.1.0'],
     ['rinda', '0.1.0'],
-    ['rss', '0.2.7'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
     ['time', '0.1.0'],
@@ -68,13 +67,13 @@ default_gems = [
 ]
 
 bundled_gems = [
-    ['minitest', '5.11.3'],
+    ['minitest', '5.14.2'],
     ['net-telnet', '0.1.1'],
-    ['power_assert', '1.1.3'],
+    ['power_assert', '1.2.0'],
     ['rake', '${rake.version}'],
     ['rexml', '3.2.5'],
-    ['test-unit', '3.2.9'],
-    ['xmlrpc', '0.3.0'],
+    ['rss', '0.2.9'],
+    ['test-unit', '3.3.7'],
 ]
 
 project 'JRuby Lib Setup' do

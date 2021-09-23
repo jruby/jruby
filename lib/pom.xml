@@ -566,19 +566,6 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rss</artifactId>
-      <version>0.2.7</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>jar-dependencies</artifactId>
-          <groupId>rubygems</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>shellwords</artifactId>
       <version>0.1.0</version>
       <type>gem</type>
@@ -658,7 +645,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
-      <version>5.11.3</version>
+      <version>5.14.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -684,7 +671,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>power_assert</artifactId>
-      <version>1.1.3</version>
+      <version>1.2.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -722,8 +709,8 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>test-unit</artifactId>
-      <version>3.2.9</version>
+      <artifactId>rss</artifactId>
+      <version>0.2.9</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -735,8 +722,8 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>xmlrpc</artifactId>
-      <version>0.3.0</version>
+      <artifactId>test-unit</artifactId>
+      <version>3.3.7</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -808,20 +795,19 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/reline-0.2.5*</include>
           <include>specifications/resolv-replace-0.1.0*</include>
           <include>specifications/rinda-0.1.0*</include>
-          <include>specifications/rss-0.2.7*</include>
           <include>specifications/shellwords-0.1.0*</include>
           <include>specifications/singleton-0.1.1*</include>
           <include>specifications/time-0.1.0*</include>
           <include>specifications/tracer-0.1.1*</include>
           <include>specifications/tsort-0.1.0*</include>
           <include>specifications/un-0.1.0*</include>
-          <include>specifications/minitest-5.11.3*</include>
+          <include>specifications/minitest-5.14.2*</include>
           <include>specifications/net-telnet-0.1.1*</include>
-          <include>specifications/power_assert-1.1.3*</include>
+          <include>specifications/power_assert-1.2.0*</include>
           <include>specifications/rake-${rake.version}*</include>
           <include>specifications/rexml-3.2.5*</include>
-          <include>specifications/test-unit-3.2.9*</include>
-          <include>specifications/xmlrpc-0.3.0*</include>
+          <include>specifications/rss-0.2.9*</include>
+          <include>specifications/test-unit-3.3.7*</include>
           <include>gems/rubygems-update-3.2.22*/**/*</include>
           <include>gems/abbrev-0.1.0*/**/*</include>
           <include>gems/base64-0.1.0*/**/*</include>
@@ -863,20 +849,19 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/reline-0.2.5*/**/*</include>
           <include>gems/resolv-replace-0.1.0*/**/*</include>
           <include>gems/rinda-0.1.0*/**/*</include>
-          <include>gems/rss-0.2.7*/**/*</include>
           <include>gems/shellwords-0.1.0*/**/*</include>
           <include>gems/singleton-0.1.1*/**/*</include>
           <include>gems/time-0.1.0*/**/*</include>
           <include>gems/tracer-0.1.1*/**/*</include>
           <include>gems/tsort-0.1.0*/**/*</include>
           <include>gems/un-0.1.0*/**/*</include>
-          <include>gems/minitest-5.11.3*/**/*</include>
+          <include>gems/minitest-5.14.2*/**/*</include>
           <include>gems/net-telnet-0.1.1*/**/*</include>
-          <include>gems/power_assert-1.1.3*/**/*</include>
+          <include>gems/power_assert-1.2.0*/**/*</include>
           <include>gems/rake-${rake.version}*/**/*</include>
           <include>gems/rexml-3.2.5*/**/*</include>
-          <include>gems/test-unit-3.2.9*/**/*</include>
-          <include>gems/xmlrpc-0.3.0*/**/*</include>
+          <include>gems/rss-0.2.9*/**/*</include>
+          <include>gems/test-unit-3.3.7*/**/*</include>
           <include>cache/rubygems-update-3.2.22*</include>
           <include>cache/abbrev-0.1.0*</include>
           <include>cache/base64-0.1.0*</include>
@@ -918,20 +903,19 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/reline-0.2.5*</include>
           <include>cache/resolv-replace-0.1.0*</include>
           <include>cache/rinda-0.1.0*</include>
-          <include>cache/rss-0.2.7*</include>
           <include>cache/shellwords-0.1.0*</include>
           <include>cache/singleton-0.1.1*</include>
           <include>cache/time-0.1.0*</include>
           <include>cache/tracer-0.1.1*</include>
           <include>cache/tsort-0.1.0*</include>
           <include>cache/un-0.1.0*</include>
-          <include>cache/minitest-5.11.3*</include>
+          <include>cache/minitest-5.14.2*</include>
           <include>cache/net-telnet-0.1.1*</include>
-          <include>cache/power_assert-1.1.3*</include>
+          <include>cache/power_assert-1.2.0*</include>
           <include>cache/rake-${rake.version}*</include>
           <include>cache/rexml-3.2.5*</include>
-          <include>cache/test-unit-3.2.9*</include>
-          <include>cache/xmlrpc-0.3.0*</include>
+          <include>cache/rss-0.2.9*</include>
+          <include>cache/test-unit-3.3.7*</include>
         </includes>
       </resource>
       <resource>
