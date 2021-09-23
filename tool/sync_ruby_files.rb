@@ -3,7 +3,6 @@ STDLIB_FILES = %w[
   date
   date.rb
   debug.rb
-  delegate.rb
   drb
   drb.rb
   erb.rb

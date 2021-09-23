@@ -24,6 +24,7 @@ default_gems = [
     ['bundler', '2.2.22'],
     ['cgi', '0.2.0'],
     ['csv', '3.1.9'],
+    ['delegate', '0.2.0'],
     ['e2mmap', '0.1.0'],
     ['ffi', '1.15.4'],
     ['fileutils', '1.4.1'],
