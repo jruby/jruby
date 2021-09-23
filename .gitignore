@@ -112,7 +112,6 @@ lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rss*
 lib/ruby/stdlib/rubygems*
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
-lib/ruby/stdlib/shell*
 lib/ruby/stdlib/sync.rb
 lib/ruby/stdlib/test*
 lib/ruby/stdlib/thwait*
