@@ -112,7 +112,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>csv</artifactId>
-      <version>3.1.2</version>
+      <version>3.1.9</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -604,7 +604,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/benchmark-0.1.1*</include>
           <include>specifications/bundler-2.2.22*</include>
           <include>specifications/cgi-0.2.0*</include>
-          <include>specifications/csv-3.1.2*</include>
+          <include>specifications/csv-3.1.9*</include>
           <include>specifications/e2mmap-0.1.0*</include>
           <include>specifications/ffi-1.15.4*</include>
           <include>specifications/fileutils-1.4.1*</include>
@@ -646,7 +646,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/benchmark-0.1.1*/**/*</include>
           <include>gems/bundler-2.2.22*/**/*</include>
           <include>gems/cgi-0.2.0*/**/*</include>
-          <include>gems/csv-3.1.2*/**/*</include>
+          <include>gems/csv-3.1.9*/**/*</include>
           <include>gems/e2mmap-0.1.0*/**/*</include>
           <include>gems/ffi-1.15.4*/**/*</include>
           <include>gems/fileutils-1.4.1*/**/*</include>
@@ -688,7 +688,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/benchmark-0.1.1*</include>
           <include>cache/bundler-2.2.22*</include>
           <include>cache/cgi-0.2.0*</include>
-          <include>cache/csv-3.1.2*</include>
+          <include>cache/csv-3.1.9*</include>
           <include>cache/e2mmap-0.1.0*</include>
           <include>cache/ffi-1.15.4*</include>
           <include>cache/fileutils-1.4.1*</include>
