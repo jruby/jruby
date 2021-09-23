@@ -5,7 +5,6 @@ STDLIB_FILES = %w[
   debug.rb
   net
   open3.rb
-  resolv-replace.rb
   resolv.rb
   rinda
   set.rb

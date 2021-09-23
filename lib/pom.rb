@@ -56,6 +56,7 @@ default_gems = [
     ['rake-ant', '1.0.4'],
     ['rdoc', '6.3.1'],
     ['reline', '0.2.5'],
+    ['resolv-replace', '0.1.0'],
     ['rexml', '3.1.9.1'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
