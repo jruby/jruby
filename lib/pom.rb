@@ -62,7 +62,7 @@ default_gems = [
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
     ['time', '0.1.0'],
-    ['tracer', '0.1.0'],
+    ['tracer', '0.1.1'],
     ['tsort', '0.1.0'],
     ['webrick', '1.7.0'],
 ]
