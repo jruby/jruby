@@ -57,7 +57,6 @@ default_gems = [
     ['rdoc', '6.3.1'],
     ['reline', '0.2.5'],
     ['resolv-replace', '0.1.0'],
-    ['rexml', '3.1.9.1'],
     ['rss', '0.2.7'],
     ['scanf', '1.0.0'],
     ['shell', '0.7'],
@@ -72,6 +71,7 @@ bundled_gems = [
     ['net-telnet', '0.1.1'],
     ['power_assert', '1.1.3'],
     ['rake', '${rake.version}'],
+    ['rexml', '3.2.5'],
     ['test-unit', '3.2.9'],
     ['xmlrpc', '0.3.0'],
 ]
