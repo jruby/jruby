@@ -6,7 +6,6 @@ STDLIB_FILES = %w[
   net
   open3.rb
   resolv.rb
-  singleton.rb
   time.rb
   tmpdir.rb
   tsort.rb
