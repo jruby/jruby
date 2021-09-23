@@ -41,7 +41,7 @@ default_gems = [
     ['jruby-openssl', '0.10.7'],
     ['json', '2.5.1'],
     ['logger', '1.4.3'],
-    ['matrix', '0.3.0'],
+    ['matrix', '0.3.1'],
     ['mutex_m', '0.1.0'],
     ['ostruct', '0.3.3'],
     ['prime', '0.1.0'],

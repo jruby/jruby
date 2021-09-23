@@ -346,7 +346,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>matrix</artifactId>
-      <version>0.3.0</version>
+      <version>0.3.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -687,7 +687,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/jruby-openssl-0.10.7*</include>
           <include>specifications/json-2.5.1*</include>
           <include>specifications/logger-1.4.3*</include>
-          <include>specifications/matrix-0.3.0*</include>
+          <include>specifications/matrix-0.3.1*</include>
           <include>specifications/mutex_m-0.1.0*</include>
           <include>specifications/ostruct-0.3.3*</include>
           <include>specifications/prime-0.1.0*</include>
@@ -734,7 +734,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/jruby-openssl-0.10.7*/**/*</include>
           <include>gems/json-2.5.1*/**/*</include>
           <include>gems/logger-1.4.3*/**/*</include>
-          <include>gems/matrix-0.3.0*/**/*</include>
+          <include>gems/matrix-0.3.1*/**/*</include>
           <include>gems/mutex_m-0.1.0*/**/*</include>
           <include>gems/ostruct-0.3.3*/**/*</include>
           <include>gems/prime-0.1.0*/**/*</include>
@@ -781,7 +781,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/jruby-openssl-0.10.7*</include>
           <include>cache/json-2.5.1*</include>
           <include>cache/logger-1.4.3*</include>
-          <include>cache/matrix-0.3.0*</include>
+          <include>cache/matrix-0.3.1*</include>
           <include>cache/mutex_m-0.1.0*</include>
           <include>cache/ostruct-0.3.3*</include>
           <include>cache/prime-0.1.0*</include>
