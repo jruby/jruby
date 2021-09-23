@@ -3,8 +3,6 @@ STDLIB_FILES = %w[
   date
   date.rb
   debug.rb
-  drb
-  drb.rb
   erb.rb
   find.rb
   getoptlong.rb

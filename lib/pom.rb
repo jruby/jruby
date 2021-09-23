@@ -26,6 +26,7 @@ default_gems = [
     ['csv', '3.1.9'],
     ['delegate', '0.2.0'],
     ['did_you_mean', '1.5.0'],
+    ['drb', '2.0.4'],
     ['e2mmap', '0.1.0'],
     ['ffi', '1.15.4'],
     ['fileutils', '1.4.1'],

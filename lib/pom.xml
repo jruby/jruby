@@ -150,6 +150,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>drb</artifactId>
+      <version>2.0.4</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>e2mmap</artifactId>
       <version>0.1.0</version>
       <type>gem</type>
@@ -620,6 +633,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/csv-3.1.9*</include>
           <include>specifications/delegate-0.2.0*</include>
           <include>specifications/did_you_mean-1.5.0*</include>
+          <include>specifications/drb-2.0.4*</include>
           <include>specifications/e2mmap-0.1.0*</include>
           <include>specifications/ffi-1.15.4*</include>
           <include>specifications/fileutils-1.4.1*</include>
@@ -663,6 +677,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/csv-3.1.9*/**/*</include>
           <include>gems/delegate-0.2.0*/**/*</include>
           <include>gems/did_you_mean-1.5.0*/**/*</include>
+          <include>gems/drb-2.0.4*/**/*</include>
           <include>gems/e2mmap-0.1.0*/**/*</include>
           <include>gems/ffi-1.15.4*/**/*</include>
           <include>gems/fileutils-1.4.1*/**/*</include>
@@ -706,6 +721,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/csv-3.1.9*</include>
           <include>cache/delegate-0.2.0*</include>
           <include>cache/did_you_mean-1.5.0*</include>
+          <include>cache/drb-2.0.4*</include>
           <include>cache/e2mmap-0.1.0*</include>
           <include>cache/ffi-1.15.4*</include>
           <include>cache/fileutils-1.4.1*</include>
