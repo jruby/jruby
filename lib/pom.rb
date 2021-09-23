@@ -18,6 +18,7 @@ default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
     ['rubygems-update', '3.2.14', { bin: false }],
+    ['benchmark', '0.1.1'],
     ['bundler', '2.2.14'],
     ['cmath', '1.0.0'],
     ['csv', '3.1.2'],

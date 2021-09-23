@@ -2,7 +2,6 @@ STDLIB_FILES = %w[
   English.rb
   abbrev.rb
   base64.rb
-  benchmark.rb
   cgi
   cgi.rb
   date
