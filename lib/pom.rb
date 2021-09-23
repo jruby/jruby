@@ -29,7 +29,7 @@ default_gems = [
     ['drb', '2.0.4'],
     ['erb', '2.2.0'],
     ['ffi', '1.15.4'],
-    ['fileutils', '1.4.1'],
+    ['fileutils', '1.5.0'],
     ['forwardable', '1.2.0'],
     ['ipaddr', '1.2.2'],
     ['irb', '1.0.0'],

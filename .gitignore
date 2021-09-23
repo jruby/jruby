@@ -68,7 +68,7 @@ lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/drb*
 lib/ruby/stdlib/erb*
 lib/ruby/stdlib/ffi*
-lib/ruby/stdlib/fileutils.rb
+lib/ruby/stdlib/fileutils*
 lib/ruby/stdlib/forwardable*
 lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/hoe*

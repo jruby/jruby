@@ -190,7 +190,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>fileutils</artifactId>
-      <version>1.4.1</version>
+      <version>1.5.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -636,7 +636,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/drb-2.0.4*</include>
           <include>specifications/erb-2.2.0*</include>
           <include>specifications/ffi-1.15.4*</include>
-          <include>specifications/fileutils-1.4.1*</include>
+          <include>specifications/fileutils-1.5.0*</include>
           <include>specifications/forwardable-1.2.0*</include>
           <include>specifications/ipaddr-1.2.2*</include>
           <include>specifications/irb-1.0.0*</include>
@@ -680,7 +680,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/drb-2.0.4*/**/*</include>
           <include>gems/erb-2.2.0*/**/*</include>
           <include>gems/ffi-1.15.4*/**/*</include>
-          <include>gems/fileutils-1.4.1*/**/*</include>
+          <include>gems/fileutils-1.5.0*/**/*</include>
           <include>gems/forwardable-1.2.0*/**/*</include>
           <include>gems/ipaddr-1.2.2*/**/*</include>
           <include>gems/irb-1.0.0*/**/*</include>
@@ -724,7 +724,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/drb-2.0.4*</include>
           <include>cache/erb-2.2.0*</include>
           <include>cache/ffi-1.15.4*</include>
-          <include>cache/fileutils-1.4.1*</include>
+          <include>cache/fileutils-1.5.0*</include>
           <include>cache/forwardable-1.2.0*</include>
           <include>cache/ipaddr-1.2.2*</include>
           <include>cache/irb-1.0.0*</include>
