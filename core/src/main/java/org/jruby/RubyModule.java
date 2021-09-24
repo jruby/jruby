@@ -2391,18 +2391,15 @@ public class RubyModule extends RubyObject {
                 IRMethod method = closure.convertToMethod(name.getBytes());
                 if (method != null) {
                     newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                    Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, runtime.newSymbol(newMethod.getName()), newMethod.getVisibility(), false);
-                    newMethod.setVisibility(newVisibility);
-                    Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
+                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
                     return name;
                 }
             }
         }
 
         newMethod = createProcMethod(runtime, name.idString(), visibility, block);
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, runtime.newSymbol(newMethod.getName()), newMethod.getVisibility(), false);
-        newMethod.setVisibility(newVisibility);
-        Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
+
+        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
         return name;
     }
@@ -2419,13 +2416,11 @@ public class RubyModule extends RubyObject {
         RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, name, visibility, false);
-
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
 
-            newMethod = createProcMethod(runtime, name.idString(), newVisibility, proc.getBlock());
+            newMethod = createProcMethod(runtime, name.idString(), visibility, proc.getBlock());
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
@@ -2433,12 +2428,12 @@ public class RubyModule extends RubyObject {
 
             newMethod = method.getMethod().dup();
             newMethod.setImplementationClass(this);
-            newMethod.setVisibility(newVisibility);
+            newMethod.setVisibility(visibility);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
 
-        Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
+        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
         return name;
     }
