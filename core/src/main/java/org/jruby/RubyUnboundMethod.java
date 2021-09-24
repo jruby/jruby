@@ -117,7 +117,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
-        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context));
+        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
         
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, entry, aReceiver);
     }
