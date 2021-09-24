@@ -2374,9 +2374,9 @@ public class RubyModule extends RubyObject {
         RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
-        if (!block.isGiven()) {
-            throw runtime.newArgumentError("tried to create Proc object without a block");
-        }
+        if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without a block");
+
+        if ("initialize".equals(name.idString())) visibility = PRIVATE;
 
         // If we know it comes from IR we can convert this directly to a method and
         // avoid overhead of invoking it as a block
@@ -2398,7 +2398,6 @@ public class RubyModule extends RubyObject {
         }
 
         newMethod = createProcMethod(runtime, name.idString(), visibility, block);
-
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
         return name;
@@ -2416,6 +2415,8 @@ public class RubyModule extends RubyObject {
         RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
+        if ("initialize".equals(name.idString())) visibility = PRIVATE;
+        
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
