@@ -11,11 +11,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
-<<<<<<< HEAD
- * Copyright (C) 2017 Miguel Landaeta <miguel@miguel.cc>
- *
-=======
->>>>>>> master
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -80,6 +75,11 @@ public class RubyKeyError extends RubyIndexError {
     }
 
     @JRubyMethod
+    public IRubyObject initialize(ThreadContext context) {
+        return context.nil;
+    }
+
+    @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject message, IRubyObject kwargs) {
         IRubyObject[] receiverKey = ArgsUtil.extractKeywordArgs(context, kwargs, VALID_KEYS);
 
@@ -90,8 +90,8 @@ public class RubyKeyError extends RubyIndexError {
         IRubyObject receiver;
         IRubyObject key;
         if (receiverKey == null) {
-            receiver = context.nil;
-            key = context.nil;
+            receiver = null;
+            key = null;
         } else {
             receiver = receiverKey[0];
             key = receiverKey[1];
@@ -115,11 +115,17 @@ public class RubyKeyError extends RubyIndexError {
 
     @JRubyMethod
     public IRubyObject receiver() {
+        if (receiver == null) {
+            throw getRuntime().newArgumentError("no receiver is available");
+        }
         return receiver;
     }
 
     @JRubyMethod
     public IRubyObject key() {
+        if (key == null) {
+            throw getRuntime().newArgumentError("no key is available");
+        }
         return key;
     }
 }
