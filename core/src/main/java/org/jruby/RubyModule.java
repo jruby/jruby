@@ -176,13 +176,14 @@ public class RubyModule extends RubyObject {
         return moduleClass;
     }
 
-    public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule) throws RaiseException {
+    public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
         // Module methods can always be transplanted
         if (!originModule.isModule() && !hasModuleInHierarchy(originModule)) {
             if (originModule instanceof MetaClass) {
                 throw context.runtime.newTypeError("can't bind singleton method to a different class");
             } else {
-                throw context.runtime.newTypeError("bind argument must be an instance of " + originModule.getName());
+                String thing = fromBind ? "an instance" : "a subclass"; // bind : define_method
+                throw context.runtime.newTypeError("bind argument must be " + thing + " of " + originModule.getName());
             }
         }
     }
@@ -2374,9 +2375,9 @@ public class RubyModule extends RubyObject {
         RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
-        if (!block.isGiven()) {
-            throw runtime.newArgumentError("tried to create Proc object without a block");
-        }
+        if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without a block");
+
+        if ("initialize".equals(name.idString())) visibility = PRIVATE;
 
         // If we know it comes from IR we can convert this directly to a method and
         // avoid overhead of invoking it as a block
@@ -2391,18 +2392,14 @@ public class RubyModule extends RubyObject {
                 IRMethod method = closure.convertToMethod(name.getBytes());
                 if (method != null) {
                     newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                    Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, runtime.newSymbol(newMethod.getName()), newMethod.getVisibility(), false);
-                    newMethod.setVisibility(newVisibility);
-                    Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
+                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
                     return name;
                 }
             }
         }
 
         newMethod = createProcMethod(runtime, name.idString(), visibility, block);
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, runtime.newSymbol(newMethod.getName()), newMethod.getVisibility(), false);
-        newMethod.setVisibility(newVisibility);
-        Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
+        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
         return name;
     }
@@ -2419,26 +2416,26 @@ public class RubyModule extends RubyObject {
         RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, this, name, visibility, false);
+        if ("initialize".equals(name.idString())) visibility = PRIVATE;
 
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
 
-            newMethod = createProcMethod(runtime, name.idString(), newVisibility, proc.getBlock());
+            newMethod = createProcMethod(runtime, name.idString(), visibility, proc.getBlock());
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
-            checkValidBindTargetFrom(context, (RubyModule) method.owner(context));
+            checkValidBindTargetFrom(context, (RubyModule) method.owner(context), false);
 
             newMethod = method.getMethod().dup();
             newMethod.setImplementationClass(this);
-            newMethod.setVisibility(newVisibility);
+            newMethod.setVisibility(visibility);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
 
-        Helpers.addInstanceMethod(this, name, newMethod, newVisibility, context, runtime);
+        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
         return name;
     }
