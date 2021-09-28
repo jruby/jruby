@@ -51,6 +51,7 @@ ruby/test_integer_comb.rb
 ruby/test_io.rb
 ruby/test_io_m17n.rb
 ruby/test_iterator.rb
+ruby/test_key_error.rb
 ruby/test_lambda.rb
 ruby/test_lazy_enumerator.rb
 ruby/test_literal.rb
