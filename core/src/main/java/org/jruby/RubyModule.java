@@ -1566,7 +1566,6 @@ public class RubyModule extends RubyObject {
         CacheEntry entry = searchWithCache(id, cacheUndef);
 
         if (entry.method.isRefined()) {
-            if (refinedScope == null) refinedScope = getRuntime().getCurrentContext().getCurrentStaticScope();
             // FIXME: We walk up scopes to look for refinements, while MRI seems to copy from parent to child on push
             // CON: Walk improved to only walk up to nearest refined scope, since methods/classes/modules will copy parent's
             for (; refinedScope != null; refinedScope = refinedScope.getEnclosingScope()) {
@@ -2276,6 +2275,10 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = searchMethod(name);
 
         return !method.isUndefined() && !(checkVisibility && method.getVisibility() == PRIVATE);
+    }
+
+    public boolean respondsToMethod(String name, boolean checkVisibility, StaticScope scope) {
+        return Helpers.respondsToMethod(searchWithRefinements(name, scope).method, checkVisibility);
     }
 
     public boolean respondsToMethod(String name, boolean checkVisibility) {
