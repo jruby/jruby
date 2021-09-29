@@ -28,4 +28,5 @@ EXT_FILES = {
   'ext/fiddle/lib/fiddle' => 'fiddle',
   'ext/ripper/lib/ripper' => 'ripper',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
+  'ext/syslog/lib/syslog/logger.rb' => 'syslog/logger.rb',
 }
