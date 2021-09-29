@@ -21,5 +21,4 @@ module Process
       self[:pid]
     end
   end
-  private_constant :Waiter
 end
