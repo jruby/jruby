@@ -78,7 +78,8 @@ ruby/test_rational2.rb
 ruby/test_readpartial.rb
 ruby/test_regexp.rb
 ruby/test_require.rb
-ruby/test_refinement.rb
+# Disabled due to https://github.com/jruby/jruby/issues/6867
+#ruby/test_refinement.rb
 ruby/test_signal.rb
 ruby/test_sleep.rb
 ruby/test_sprintf.rb
