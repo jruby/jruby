@@ -2277,6 +2277,10 @@ public class RubyModule extends RubyObject {
         return !method.isUndefined() && !(checkVisibility && method.getVisibility() == PRIVATE);
     }
 
+    public boolean respondsToMethod(String name, boolean checkVisibility, StaticScope scope) {
+        return Helpers.respondsToMethod(searchWithRefinements(name, scope).method, checkVisibility);
+    }
+
     public boolean respondsToMethod(String name, boolean checkVisibility) {
         return Helpers.respondsToMethod(searchMethod(name), checkVisibility);
     }
