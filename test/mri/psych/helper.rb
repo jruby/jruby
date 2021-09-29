@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'test/unit'
+require 'minitest/autorun'
 require 'stringio'
 require 'tempfile'
 require 'date'
@@ -7,7 +7,13 @@ require 'date'
 require 'psych'
 
 module Psych
-  class TestCase < Test::Unit::TestCase
+  superclass = if defined?(Minitest::Test)
+                 Minitest::Test
+               else
+                 MiniTest::Unit::TestCase
+               end
+
+  class TestCase < superclass
     def self.suppress_warning
       verbose, $VERBOSE = $VERBOSE, nil
       yield
@@ -41,30 +47,24 @@ module Psych
     # Convert between Psych and the object to verify correct parsing and
     # emitting
     #
-    def assert_to_yaml( obj, yaml, loader = :load )
-      assert_equal( obj, Psych.send(loader, yaml) )
+    def assert_to_yaml( obj, yaml )
+      assert_equal( obj, Psych::load( yaml ) )
       assert_equal( obj, Psych::parse( yaml ).transform )
-      assert_equal( obj, Psych.send(loader, obj.to_yaml) )
+      assert_equal( obj, Psych::load( obj.to_yaml ) )
       assert_equal( obj, Psych::parse( obj.to_yaml ).transform )
-      assert_equal( obj, Psych.send(loader,
+      assert_equal( obj, Psych::load(
         obj.to_yaml(
           :UseVersion => true, :UseHeader => true, :SortKeys => true
         )
       ))
-    rescue Psych::DisallowedClass, Psych::BadAlias
-      assert_to_yaml obj, yaml, :unsafe_load
     end
 
     #
     # Test parser only
     #
     def assert_parse_only( obj, yaml )
-      begin
-        assert_equal obj, Psych::load( yaml )
-      rescue Psych::DisallowedClass, Psych::BadAlias
-        assert_equal obj, Psych::unsafe_load( yaml )
-      end
-      assert_equal obj, Psych::parse( yaml ).transform
+      assert_equal( obj, Psych::load( yaml ) )
+      assert_equal( obj, Psych::parse( yaml ).transform )
     end
 
     def assert_cycle( obj )
@@ -75,15 +75,9 @@ module Psych
         assert_nil Psych::load(Psych.dump(obj))
         assert_nil Psych::load(obj.to_yaml)
       else
-        begin
-          assert_equal(obj, Psych.load(v.tree.yaml))
-          assert_equal(obj, Psych::load(Psych.dump(obj)))
-          assert_equal(obj, Psych::load(obj.to_yaml))
-        rescue Psych::DisallowedClass, Psych::BadAlias
-          assert_equal(obj, Psych.unsafe_load(v.tree.yaml))
-          assert_equal(obj, Psych::unsafe_load(Psych.dump(obj)))
-          assert_equal(obj, Psych::unsafe_load(obj.to_yaml))
-        end
+        assert_equal(obj, Psych.load(v.tree.yaml))
+        assert_equal(obj, Psych::load(Psych.dump(obj)))
+        assert_equal(obj, Psych::load(obj.to_yaml))
       end
     end
 

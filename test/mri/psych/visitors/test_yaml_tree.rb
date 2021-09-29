@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 require 'psych/helper'
-require 'delegate'
 
 module Psych
   module Visitors
@@ -63,19 +62,19 @@ module Psych
 
       def test_struct_anon
         s = Struct.new(:foo).new('bar')
-        obj =  Psych.unsafe_load(Psych.dump(s))
+        obj =  Psych.load(Psych.dump(s))
         assert_equal s.foo, obj.foo
       end
 
       def test_override_method
         s = Struct.new(:method).new('override')
-        obj =  Psych.unsafe_load(Psych.dump(s))
+        obj =  Psych.load(Psych.dump(s))
         assert_equal s.method, obj.method
       end
 
       def test_exception
         ex = Exception.new 'foo'
-        loaded = Psych.unsafe_load(Psych.dump(ex))
+        loaded = Psych.load(Psych.dump(ex))
 
         assert_equal ex.message, loaded.message
         assert_equal ex.class, loaded.class
@@ -89,7 +88,7 @@ module Psych
 
       def test_time
         t = Time.now
-        assert_equal t, Psych.unsafe_load(Psych.dump(t))
+        assert_equal t, Psych.load(Psych.dump(t))
       end
 
       def test_date
@@ -128,11 +127,11 @@ module Psych
       end
 
       def test_anon_class
-        assert_raise(TypeError) do
+        assert_raises(TypeError) do
           @v.accept Class.new
         end
 
-        assert_raise(TypeError) do
+        assert_raises(TypeError) do
           Psych.dump(Class.new)
         end
       end

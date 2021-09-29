@@ -35,6 +35,13 @@ class TestGemCommandsHelpCommand < Gem::TestCase
     end
   end
 
+  def test_gem_help_build
+    util_gem 'build' do |out, err|
+      assert_match(/-C PATH *Run as if gem build was started in <PATH>/, out)
+      assert_equal '', err
+    end
+  end
+
   def test_gem_help_commands
     mgr = Gem::CommandManager.new
 
@@ -48,7 +55,7 @@ class TestGemCommandsHelpCommand < Gem::TestCase
       if Gem::HAVE_OPENSSL
         assert_empty err
 
-        refute_match 'No command found for ', out
+        refute_match %r{No command found for }, out
       end
     end
   end
