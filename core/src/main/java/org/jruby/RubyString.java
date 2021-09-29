@@ -6971,7 +6971,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                             beg,
                             beg.getMetaClass(),
                             Signature.ONE_ARGUMENT,
-                            new IncludeUpToCallback(beg),
+                            new IncludeUpToCallback(val),
                             context), false);
         } catch (JumpException.SpecialJump e) {
             return context.tru;
