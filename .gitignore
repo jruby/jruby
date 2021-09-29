@@ -95,7 +95,8 @@ lib/ruby/stdlib/optionparser*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
 lib/ruby/stdlib/ostruct*
-lib/ruby/stdlib/pp*
+# https://github.com/ruby/pp/pull/4
+#lib/ruby/stdlib/pp*
 lib/ruby/stdlib/prettyprint*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/prime*
