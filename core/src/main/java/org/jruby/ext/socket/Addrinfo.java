@@ -283,6 +283,11 @@ public class Addrinfo extends RubyObject {
         } else if (protocol != null && protocol.getProto() != 0) {
             val.append(" ").append(String.format("UNKNOWN PROTOCOL(%d)", protocol.getProto()));
         }
+
+        String inspectName = inspectname();
+        if (inspectName != null && interfaceLink == false) {
+            val.append(" (").append(inspectName).append(")");
+        }
        
         return context.runtime.newString(String.format(base, val.toString()));
     }
@@ -673,6 +678,16 @@ public class Addrinfo extends RubyObject {
 
         if (in.isLoopbackAddress()) return "::1";
         return SocketUtilsIPV6.getIPV6Address(in.getHostAddress());
+    }
+
+    private String inspectname() {
+        if (socketAddress instanceof InetSocketAddress) {
+            InetAddress address = getInetSocketAddress().getAddress();
+            if (!address.toString().startsWith("/")) { // contains hostname
+                return address.getHostName();
+            }
+        }
+        return null;
     }
 
     private static InetAddress getRubyInetAddress(IRubyObject node) {
