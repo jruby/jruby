@@ -62,6 +62,7 @@ bundled_gems = [
     ['xmlrpc', '0.3.0'],
 ]
 
+
 project 'JRuby Lib Setup' do
 
   version = ENV['JRUBY_VERSION'] ||
@@ -188,8 +189,7 @@ project 'JRuby Lib Setup' do
       end
     end
 
-    copy_gem_executables = lambda do |name, version, gem_home|
-      spec = Gem::Package.new( Dir[ File.join( gem_home, 'cache', "#{name}-#{version}*.gem" ) ].first ).spec
+    copy_gem_executables = lambda do |spec, gem_home|
       if !spec.executables.empty?
         bin_source = Gem.bindir(gem_home) # Gem::Installer generated bin scripts here
         spec.executables.each do |file|
@@ -216,26 +216,30 @@ project 'JRuby Lib Setup' do
         # copy the gem content to stdlib
 
         log "copy gem content to #{stdlib_dir}"
-        # assume default require_path
-        require_base = File.join( gems, "#{gem_name}*", 'lib' )
-        require_files = File.join( require_base, '*' )
 
-        # copy in new ones and mark writable for future updates (e.g. minitest)
-        stdlib_locs = Dir[ require_files ].map do |f|
-          log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
-          FileUtils.cp_r( f, stdlib_dir )
+        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
-          stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
-          File.directory?(stdlib_loc) ? Dir[stdlib_loc + "/*"].to_a : stdlib_loc
-        end
-        stdlib_locs.flatten!
+        spec.require_paths.each do |require_path|
+          require_base = File.join( gems, "#{gem_name}*", require_path )
+          require_files = File.join( require_base, '*' )
 
-        # fix permissions on copied files
-        stdlib_locs.each do |f|
-          next if File.writable? f
-          log " fixing permissions: #{f}" if $VERBOSE
-          # TODO: better way to just set it writable without changing all modes?
-          FileUtils.chmod_R(0644, f)
+          # copy in new ones and mark writable for future updates (e.g. minitest)
+          stdlib_locs = Dir[ require_files ].map do |f|
+            log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
+            FileUtils.cp_r( f, stdlib_dir )
+
+            stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
+            File.directory?(stdlib_loc) ? Dir[stdlib_loc + "/*"].to_a : stdlib_loc
+          end
+          stdlib_locs.flatten!
+
+          # fix permissions on copied files
+          stdlib_locs.each do |f|
+            next if File.writable? f
+            log " fixing permissions: #{f}" if $VERBOSE
+            # TODO: better way to just set it writable without changing all modes?
+            FileUtils.chmod_R(0644, f)
+          end
         end
 
         # get gemspec
@@ -247,9 +251,9 @@ project 'JRuby Lib Setup' do
         end
 
         # copy bin files if the gem has any
-        copy_gem_executables.call(name, version, gem_home) if options[:bin]
+        copy_gem_executables.call(spec, gem_home) if options[:bin]
+        
         # TODO: try avoiding these binstub of gems - should use a full gem location
-        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
         spec.executables.each do |f|
           bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
           source = File.join( bin, f )
@@ -271,7 +275,9 @@ project 'JRuby Lib Setup' do
 
     bundled_gems.each do |name, version| # copy bin files for bundled gems (e.g. rake) as well
       version = ctx.project.properties.get(version[2..-2]) || version # e.g. resolve '${rake.version}' from properties
-      copy_gem_executables.call(name, version, jruby_gems)
+      gem_name = "#{name}-#{version}"
+      spec = Gem::Package.new( Dir[ File.join(jruby_gems, "cache", "#{gem_name}*.gem" ) ].first ).spec
+      copy_gem_executables.call(spec, jruby_gems)
     end
 
     # patch jruby-openssl - remove file which should be only inside gem
