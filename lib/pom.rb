@@ -49,7 +49,7 @@ default_gems = [
     ['thwait', '0.1.0'],
     ['tracer', '0.1.0'],
     ['webrick', '1.7.0'],
-    ['digest', '3.1.0.pre0'],
+    ['digest', '3.1.0.pre2'],
 ]
 
 bundled_gems = [
