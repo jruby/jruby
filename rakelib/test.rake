@@ -89,8 +89,13 @@ namespace :test do
     }
 
     mri_suites = [:core, :extra, :stdlib]
+    mri_suites = {
+      core: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace",
+      extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace",
+      stdlib: "-Xbacktrace.style=mri -Xdebug.fullTrace",
+    }
 
-    mri_suites.each do |suite|
+    mri_suites.each do |suite, extra_jruby_opts|
       files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
 
       namespace suite do
@@ -98,7 +103,7 @@ namespace :test do
         jruby_opts.each do |task, opts|
 
           task task do
-            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} --disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{opts}"
             ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
           end
         end

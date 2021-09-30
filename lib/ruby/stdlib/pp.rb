@@ -89,29 +89,15 @@ class PP < PrettyPrint
 
   # :stopdoc:
   def PP.mcall(obj, mod, meth, *args, &block)
-    mod.instance_method(meth).bind_call(obj, *args, &block)
+    mod.instance_method(meth).bind(obj).call(*args, &block)
   end
   # :startdoc:
 
-  if defined? ::Ractor
-    class << self
-      # Returns the sharing detection flag as a boolean value.
-      # It is false (nil) by default.
-      def sharing_detection
-        Ractor.current[:pp_sharing_detection]
-      end
-      # Sets the sharing detection flag to b.
-      def sharing_detection=(b)
-        Ractor.current[:pp_sharing_detection] = b
-      end
-    end
-  else
-    @sharing_detection = false
-    class << self
-      # Returns the sharing detection flag as a boolean value.
-      # It is false by default.
-      attr_accessor :sharing_detection
-    end
+  @sharing_detection = false
+  class << self
+    # Returns the sharing detection flag as a boolean value.
+    # It is false by default.
+    attr_accessor :sharing_detection
   end
 
   module PPMethods
@@ -120,17 +106,17 @@ class PP < PrettyPrint
     # and preserves the previous set of objects being printed.
     def guard_inspect_key
       if Thread.current[:__recursive_key__] == nil
-        Thread.current[:__recursive_key__] = {}.compare_by_identity
+        Thread.current[:__recursive_key__] = {}.taint
       end
 
       if Thread.current[:__recursive_key__][:inspect] == nil
-        Thread.current[:__recursive_key__][:inspect] = {}.compare_by_identity
+        Thread.current[:__recursive_key__][:inspect] = {}.taint
       end
 
       save = Thread.current[:__recursive_key__][:inspect]
 
       begin
-        Thread.current[:__recursive_key__][:inspect] = {}.compare_by_identity
+        Thread.current[:__recursive_key__][:inspect] = {}.taint
         yield
       ensure
         Thread.current[:__recursive_key__][:inspect] = save
@@ -163,20 +149,18 @@ class PP < PrettyPrint
     # Object#pretty_print_cycle is used when +obj+ is already
     # printed, a.k.a the object reference chain has a cycle.
     def pp(obj)
-      # If obj is a Delegator then use the object being delegated to for cycle
-      # detection
-      obj = obj.__getobj__ if defined?(::Delegator) and obj.is_a?(::Delegator)
+      id = obj.object_id
 
-      if check_inspect_key(obj)
+      if check_inspect_key(id)
         group {obj.pretty_print_cycle self}
         return
       end
 
       begin
-        push_inspect_key(obj)
+        push_inspect_key(id)
         group {obj.pretty_print self}
       ensure
-        pop_inspect_key(obj) unless PP.sharing_detection
+        pop_inspect_key(id) unless PP.sharing_detection
       end
     end
 
@@ -190,7 +174,7 @@ class PP < PrettyPrint
     # A convenience method, like object_group, but also reformats the Object's
     # object_id.
     def object_address_group(obj, &block)
-      str = Kernel.instance_method(:to_s).bind_call(obj)
+      str = Kernel.instance_method(:to_s).bind(obj).call
       str.chomp!('>')
       group(1, str, '>', &block)
     end
@@ -237,7 +221,7 @@ class PP < PrettyPrint
         else
           sep.call
         end
-        yield(*v, **{})
+        yield(*v)
       }
     end
 
@@ -295,9 +279,9 @@ class PP < PrettyPrint
     # This module provides predefined #pretty_print methods for some of
     # the most commonly used built-in classes for convenience.
     def pretty_print(q)
-      umethod_method = Object.instance_method(:method)
+      method_method = Object.instance_method(:method).bind(self)
       begin
-        inspect_method = umethod_method.bind_call(self, :inspect)
+        inspect_method = method_method.call(:inspect)
       rescue NameError
       end
       if inspect_method && inspect_method.owner != Kernel
@@ -334,7 +318,7 @@ class PP < PrettyPrint
     # However, doing this requires that every class that #inspect is called on
     # implement #pretty_print, or a RuntimeError will be raised.
     def pretty_print_inspect
-      if Object.instance_method(:method).bind_call(self, :pretty_print).owner == PP::ObjectMixin
+      if Object.instance_method(:method).bind(self).call(:pretty_print).owner == PP::ObjectMixin
         raise "pretty_print is not overridden for #{self.class}"
       end
       PP.singleline_pp(self, ''.dup)
@@ -424,7 +408,7 @@ end
 class File < IO # :nodoc:
   class Stat # :nodoc:
     def pretty_print(q) # :nodoc:
-      require 'etc'
+      require 'etc.so'
       q.object_group(self) {
         q.breakable
         q.text sprintf("dev=0x%x", self.dev); q.comma_breakable
@@ -526,41 +510,6 @@ class MatchData # :nodoc:
           q.pp self[i]
         end
       }
-    }
-  end
-end
-
-# RubyVM not defined outside of MRI
-defined?(RubyVM::AbstractSyntaxTree::Node) && class RubyVM::AbstractSyntaxTree::Node
-  def pretty_print_children(q, names = [])
-    children.zip(names) do |c, n|
-      if n
-        q.breakable
-        q.text "#{n}:"
-      end
-      q.group(2) do
-        q.breakable
-        q.pp c
-      end
-    end
-  end
-
-  def pretty_print(q)
-    q.group(1, "(#{type}@#{first_lineno}:#{first_column}-#{last_lineno}:#{last_column}", ")") {
-      case type
-      when :SCOPE
-        pretty_print_children(q, %w"tbl args body")
-      when :ARGS
-        pretty_print_children(q, %w[pre_num pre_init opt first_post post_num post_init rest kw kwrest block])
-      when :DEFN
-        pretty_print_children(q, %w[mid body])
-      when :ARYPTN
-        pretty_print_children(q, %w[const pre rest post])
-      when :HSHPTN
-        pretty_print_children(q, %w[const kw kwrest])
-      else
-        pretty_print_children(q)
-      end
     }
   end
 end

@@ -1,16 +1,14 @@
-# MRI tests.rb
-
-# next few files are at front so -jn will finish with them and not drag out
-# at end of the run.  This removes over 40s with -j2 for me locally.
-ruby/test_process.rb
-ruby/test_parse.rb
+# MRI core language and classes tests
 
 ruby/test_alias.rb
-# Everything in here seems to fail or hang.rb
-#ruby/test_argf.rb
+ruby/test_argf.rb
+ruby/test_arithmetic_sequence.rb
+ruby/test_arity.rb
 ruby/test_array.rb
 ruby/test_assignment.rb
+ruby/test_ast.rb
 ruby/test_autoload.rb
+ruby/test_backtrace.rb
 ruby/test_basicinstructions.rb
 ruby/test_beginendblock.rb
 ruby/test_bignum.rb
@@ -25,6 +23,7 @@ ruby/test_complexrational.rb
 ruby/test_condition.rb
 ruby/test_const.rb
 ruby/test_continuation.rb
+ruby/test_default_gems.rb
 ruby/test_defined.rb
 ruby/test_dir.rb
 ruby/test_dir_m17n.rb
@@ -35,22 +34,26 @@ ruby/test_enumerator.rb
 ruby/test_env.rb
 ruby/test_eval.rb
 ruby/test_exception.rb
-# blows up thread count and crashes
-#ruby/test_fiber.rb
+ruby/test_fiber.rb
 ruby/test_file.rb
 ruby/test_file_exhaustive.rb
 ruby/test_fixnum.rb
 ruby/test_flip.rb
 ruby/test_float.rb
 ruby/test_fnmatch.rb
+ruby/test_frozen_error.rb
 ruby/test_gc.rb
+ruby/test_gc_compact.rb
 ruby/test_hash.rb
 ruby/test_ifunless.rb
+ruby/test_inlinecache.rb
 ruby/test_integer.rb
 ruby/test_integer_comb.rb
 ruby/test_io.rb
 ruby/test_io_m17n.rb
 ruby/test_iterator.rb
+ruby/test_key_error.rb
+ruby/test_keyword.rb
 ruby/test_lambda.rb
 ruby/test_lazy_enumerator.rb
 ruby/test_literal.rb
@@ -58,19 +61,26 @@ ruby/test_m17n.rb
 ruby/test_m17n_comb.rb
 ruby/test_marshal.rb
 ruby/test_math.rb
+ruby/test_memory_view.rb
 ruby/test_metaclass.rb
 ruby/test_method.rb
+ruby/test_method_cache.rb
 ruby/test_mixed_unicode_escapes.rb
 ruby/test_module.rb
-ruby/test_notimp.rb
+ruby/test_name_error.rb
+ruby/test_nomethod_error.rb
+ruby/test_not.rb
 ruby/test_numeric.rb
 ruby/test_object.rb
 ruby/test_objectspace.rb
+ruby/test_optimization.rb
 ruby/test_pack.rb
+ruby/test_parse.rb
 ruby/test_path.rb
 ruby/test_pipe.rb
 ruby/test_primitive.rb
 ruby/test_proc.rb
+ruby/test_process.rb
 ruby/test_rand.rb
 ruby/test_range.rb
 ruby/test_rational.rb
@@ -78,12 +88,15 @@ ruby/test_rational2.rb
 ruby/test_readpartial.rb
 ruby/test_regexp.rb
 ruby/test_require.rb
-ruby/test_refinement.rb
+ruby/test_require_lib.rb
+ruby/test_rubyoptions.rb
+ruby/test_rubyvm.rb
+ruby/test_rubyvm_mjit.rb
 ruby/test_signal.rb
 ruby/test_sleep.rb
 ruby/test_sprintf.rb
-# TODO defines many tests programmatically with unusual names.rb
-#ruby/test_sprintf_comb.rb
+ruby/test_sprintf_comb.rb
+ruby/test_stack.rb
 ruby/test_string.rb
 ruby/test_stringchar.rb
 ruby/test_struct.rb
@@ -91,14 +104,34 @@ ruby/test_super.rb
 ruby/test_symbol.rb
 ruby/test_system.rb
 ruby/test_thread.rb
+ruby/test_thread_cv.rb
+ruby/test_thread_queue.rb
+ruby/test_threadgroup.rb
 ruby/test_time.rb
 ruby/test_time_tz.rb
 ruby/test_trace.rb
-#ruby/test_transcode.rb
+ruby/test_transcode.rb
 ruby/test_undef.rb
-#ruby/test_unicode_escape.rb
+ruby/test_unicode_escape.rb
 ruby/test_variable.rb
+ruby/test_vm_dump.rb
 ruby/test_weakmap.rb
 ruby/test_whileuntil.rb
 ruby/test_yield.rb
-ruby/test_not.rb
+
+# Tests below are disabled for various reasons
+
+# accesses RubyVM during load
+#ruby/test_iseq.rb
+#ruby/test_jit.rb
+#ruby/test_jit_debug.rb
+
+# fails to parse
+#ruby/test_pattern_matching.rb
+
+# Disabled due to https://github.com/jruby/jruby/issues/6867
+#ruby/test_refinement.rb
+
+# Heavy subprocess tests, moved to mri.extra.index
+#ruby/test_settracefunc.rb
+#ruby/test_syntax.rb

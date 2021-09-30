@@ -85,7 +85,7 @@ module Net
     end
 
     # :stopdoc:
-    VERSION = "0.1.1"
+    VERSION = "0.1.2"
     FTP_PORT = 21
     CRLF = "\r\n"
     DEFAULT_BLOCKSIZE = BufferedIO::BUFSIZE
@@ -340,14 +340,19 @@ module Net
     # SOCKS_SERVER, then a SOCKSSocket is returned, else a Socket is
     # returned.
     def open_socket(host, port) # :nodoc:
-      return Timeout.timeout(@open_timeout, OpenTimeout) {
-        if defined? SOCKSSocket and ENV["SOCKS_SERVER"]
-          @passive = true
+      if defined? SOCKSSocket and ENV["SOCKS_SERVER"]
+        @passive = true
+        Timeout.timeout(@open_timeout, OpenTimeout) do
           SOCKSSocket.open(host, port)
-        else
-          Socket.tcp(host, port)
         end
-      }
+      else
+        begin
+          Socket.tcp host, port, nil, nil, connect_timeout: @open_timeout
+        rescue Errno::ETIMEDOUT #raise Net:OpenTimeout instead for compatibility with previous versions
+          raise Net::OpenTimeout, "Timeout to open TCP connection to "\
+          "#{host}:#{port} (exceeds #{@open_timeout} seconds)"
+        end
+      end
     end
     private :open_socket
 
@@ -552,18 +557,22 @@ module Net
     def transfercmd(cmd, rest_offset = nil) # :nodoc:
       if @passive
         host, port = makepasv
-        conn = open_socket(host, port)
-        if @resume and rest_offset
-          resp = sendcmd("REST " + rest_offset.to_s)
-          if !resp.start_with?("3")
+        begin
+          conn = open_socket(host, port)
+          if @resume and rest_offset
+            resp = sendcmd("REST " + rest_offset.to_s)
+            if !resp.start_with?("3")
+              raise FTPReplyError, resp
+            end
+          end
+          resp = sendcmd(cmd)
+          # skip 2XX for some ftp servers
+          resp = getresp if resp.start_with?("2")
+          if !resp.start_with?("1")
             raise FTPReplyError, resp
           end
-        end
-        resp = sendcmd(cmd)
-        # skip 2XX for some ftp servers
-        resp = getresp if resp.start_with?("2")
-        if !resp.start_with?("1")
-          raise FTPReplyError, resp
+        ensure
+          conn.close if conn && $!
         end
       else
         sock = makeport
@@ -1055,10 +1064,11 @@ module Net
     TIME_PARSER = ->(value, local = false) {
       unless /\A(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})
             (?<hour>\d{2})(?<min>\d{2})(?<sec>\d{2})
-            (?:\.(?<fractions>\d+))?/x =~ value
+            (?:\.(?<fractions>\d{1,17}))?/x =~ value
+        value = value[0, 97] + "..." if value.size > 100
         raise FTPProtoError, "invalid time-val: #{value}"
       end
-      usec = fractions.to_i * 10 ** (6 - fractions.to_s.size)
+      usec = ".#{fractions}".to_r * 1_000_000 if fractions
       Time.public_send(local ? :local : :utc, year, month, day, hour, min, sec, usec)
     }
     FACT_PARSERS = Hash.new(CASE_DEPENDENT_PARSER)
@@ -1366,7 +1376,7 @@ module Net
     end
 
     #
-    # Returns +true+ iff the connection is closed.
+    # Returns +true+ if and only if the connection is closed.
     #
     def closed?
       @sock == nil or @sock.closed?
@@ -1380,7 +1390,7 @@ module Net
       if !resp.start_with?("227")
         raise FTPReplyError, resp
       end
-      if m = /\((?<host>\d+(,\d+){3}),(?<port>\d+,\d+)\)/.match(resp)
+      if m = /\((?<host>\d+(?:,\d+){3}),(?<port>\d+,\d+)\)/.match(resp)
         if @use_pasv_ip
           host = parse_pasv_ipv4_host(m["host"])
         else

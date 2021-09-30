@@ -17,48 +17,65 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.2.14', { bin: false }],
-    ['bundler', '2.2.14'],
-    ['cmath', '1.0.0'],
-    ['csv', '3.1.2'],
-    ['e2mmap', '0.1.0'],
+    ['rubygems-update', '3.2.22', { bin: false }],
+    ['abbrev', '0.1.0'],
+    ['base64', '0.1.0'],
+    ['benchmark', '0.1.1'],
+    ['bundler', '2.2.22'],
+    ['cgi', '0.2.0'],
+    ['csv', '3.1.9'],
+    ['delegate', '0.2.0'],
+    ['did_you_mean', '1.5.0'],
+    ['digest', '3.1.0.pre2'], 
+    ['drb', '2.0.4'],
+    ['erb', '2.2.0'],
     ['ffi', '1.15.4'],
-    ['fileutils', '1.4.1'],
-    ['forwardable', '1.2.0'],
+    ['fileutils', '1.5.0'],
+    ['find', '0.1.0'],
+    ['forwardable', '1.3.2'],
+    ['getoptlong', '0.1.1'],
     ['ipaddr', '1.2.2'],
-    ['irb', '1.0.0'],
+    ['irb', '1.3.5'],
     ['io-console', '0.5.9'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.7'],
     ['json', '2.5.1'],
-    ['logger', '1.3.0'],
-    ['matrix', '0.3.0'],
-    ['mutex_m', '0.1.0'],
+    ['logger', '1.4.3'],
+    ['matrix', '0.3.1'],
+    ['mutex_m', '0.1.1'],
+    ['observer', '0.1.1'],
+    ['open-uri', '0.1.0'],
+    ['optparse', '0.1.0'],
     ['ostruct', '0.3.3'],
-    ['prime', '0.1.0'],
+    # https://github.com/ruby/pp/pull/4
+    #['pp', '0.1.0'],
+    ['prettyprint', '0.1.0'],
+    ['prime', '0.1.2'],
+    ['pstore', '0.1.1'],
     ['psych', '3.3.2'],
     ['racc', '1.5.2'],
     ['rake-ant', '1.0.4'],
-    ['rdoc', '6.1.2'],
-    ['rexml', '3.1.9.1'],
-    ['rss', '0.2.7'],
-    ['scanf', '1.0.0'],
-    ['shell', '0.7'],
-    ['sync', '0.5.0'],
-    ['thwait', '0.1.0'],
-    ['tracer', '0.1.0'],
-    ['webrick', '1.7.0'],
+    ['rdoc', '6.3.1'],
+    ['reline', '0.2.5'],
+    ['resolv-replace', '0.1.0'],
+    ['rinda', '0.1.0'],
+    ['shellwords', '0.1.0'],
+    ['singleton', '0.1.1'],
+    ['time', '0.1.0'],
+    ['tracer', '0.1.1'],
+    ['tsort', '0.1.0'],
+    ['un', '0.1.0'],
 ]
 
 bundled_gems = [
-    ['did_you_mean', '1.3.0'],
-    ['minitest', '5.11.3'],
+    ['minitest', '5.14.2'],
     ['net-telnet', '0.1.1'],
-    ['power_assert', '1.1.3'],
+    ['power_assert', '1.2.0'],
     ['rake', '${rake.version}'],
-    ['test-unit', '3.2.9'],
-    ['xmlrpc', '0.3.0'],
+    ['rexml', '3.2.5'],
+    ['rss', '0.2.9'],
+    ['test-unit', '3.3.7'],
 ]
 
 project 'JRuby Lib Setup' do
@@ -187,8 +204,7 @@ project 'JRuby Lib Setup' do
       end
     end
 
-    copy_gem_executables = lambda do |name, version, gem_home|
-      spec = Gem::Package.new( Dir[ File.join( gem_home, 'cache', "#{name}-#{version}*.gem" ) ].first ).spec
+    copy_gem_executables = lambda do |spec, gem_home|
       if !spec.executables.empty?
         bin_source = Gem.bindir(gem_home) # Gem::Installer generated bin scripts here
         spec.executables.each do |file|
@@ -215,26 +231,30 @@ project 'JRuby Lib Setup' do
         # copy the gem content to stdlib
 
         log "copy gem content to #{stdlib_dir}"
-        # assume default require_path
-        require_base = File.join( gems, "#{gem_name}*", 'lib' )
-        require_files = File.join( require_base, '*' )
 
-        # copy in new ones and mark writable for future updates (e.g. minitest)
-        stdlib_locs = Dir[ require_files ].map do |f|
-          log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
-          FileUtils.cp_r( f, stdlib_dir )
+        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
-          stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
-          File.directory?(stdlib_loc) ? Dir[stdlib_loc + "/*"].to_a : stdlib_loc
-        end
-        stdlib_locs.flatten!
+        spec.require_paths.each do |require_path|
+          require_base = File.join( gems, "#{gem_name}*", require_path )
+          require_files = File.join( require_base, '*' )
 
-        # fix permissions on copied files
-        stdlib_locs.each do |f|
-          next if File.writable? f
-          log " fixing permissions: #{f}" if $VERBOSE
-          # TODO: better way to just set it writable without changing all modes?
-          FileUtils.chmod_R(0644, f)
+          # copy in new ones and mark writable for future updates (e.g. minitest)
+          stdlib_locs = Dir[ require_files ].map do |f|
+            log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
+            FileUtils.cp_r( f, stdlib_dir )
+
+            stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
+            File.directory?(stdlib_loc) ? Dir[stdlib_loc + "/*"].to_a : stdlib_loc
+          end
+          stdlib_locs.flatten!
+
+          # fix permissions on copied files
+          stdlib_locs.each do |f|
+            next if File.writable? f
+            log " fixing permissions: #{f}" if $VERBOSE
+            # TODO: better way to just set it writable without changing all modes?
+            FileUtils.chmod_R(0644, f)
+          end
         end
 
         # get gemspec
@@ -246,9 +266,9 @@ project 'JRuby Lib Setup' do
         end
 
         # copy bin files if the gem has any
-        copy_gem_executables.call(name, version, gem_home) if options[:bin]
+        copy_gem_executables.call(spec, gem_home) if options[:bin]
+        
         # TODO: try avoiding these binstub of gems - should use a full gem location
-        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
         spec.executables.each do |f|
           bin = Dir.glob(File.join( gems, "#{gem_name}*", spec.bindir ))[0]
           source = File.join( bin, f )
@@ -270,7 +290,9 @@ project 'JRuby Lib Setup' do
 
     bundled_gems.each do |name, version| # copy bin files for bundled gems (e.g. rake) as well
       version = ctx.project.properties.get(version[2..-2]) || version # e.g. resolve '${rake.version}' from properties
-      copy_gem_executables.call(name, version, jruby_gems)
+      gem_name = "#{name}-#{version}"
+      spec = Gem::Package.new( Dir[ File.join(jruby_gems, "cache", "#{gem_name}*.gem" ) ].first ).spec
+      copy_gem_executables.call(spec, jruby_gems)
     end
 
     # patch jruby-openssl - remove file which should be only inside gem
