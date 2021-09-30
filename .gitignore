@@ -65,6 +65,7 @@ lib/ruby/stdlib/cgi*
 lib/ruby/stdlib/csv*
 lib/ruby/stdlib/delegate*
 lib/ruby/stdlib/did_you_mean*
+lib/ruby/stdlib/digest*
 lib/ruby/stdlib/drb*
 lib/ruby/stdlib/erb*
 lib/ruby/stdlib/ffi*
