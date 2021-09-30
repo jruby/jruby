@@ -103,6 +103,7 @@ lib/ruby/stdlib/test*
 lib/ruby/stdlib/thwait*
 lib/ruby/stdlib/tracer*
 lib/ruby/stdlib/webrick*
+lib/ruby/stdlib/digest*
 
 release.properties
 share
