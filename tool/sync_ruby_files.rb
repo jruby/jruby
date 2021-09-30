@@ -4,7 +4,6 @@ STDLIB_FILES = %w[
   date.rb
   debug.rb
   net
-  open3.rb
   resolv.rb
   tmpdir.rb
   unicode_normalize
