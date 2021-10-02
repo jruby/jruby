@@ -276,6 +276,10 @@ public abstract class LexingCommon {
         return tokenCR;
     }
 
+    public int getParenNest() {
+        return parenNest;
+    }
+
     public int incrementParenNest() {
         parenNest++;
 

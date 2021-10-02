@@ -644,7 +644,7 @@ expr            : command_call
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     LexContext ctxt = lexer.getLexContext();
-                    $$ = (LexContext) ctxt.clone();
+                    $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                 } {
                     $$ = support.push_pvtbl();
@@ -652,7 +652,7 @@ expr            : command_call
                     support.pop_pvtbl($<Set>4);
                 } {
                     LexContext ctxt = lexer.getLexContext();
-                    ctxt.in_kwarg = $<LexContext>3.in_kwarg;
+                    ctxt.in_kwarg = $<Boolean>3;
                     $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, null, null));
                     support.warn_one_line_pattern_matching(@1.startLine(), $5, true);
                 }
@@ -661,7 +661,7 @@ expr            : command_call
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     LexContext ctxt = lexer.getLexContext();
-                    $$ = (LexContext) ctxt.clone();
+                    $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                 }
                 {
@@ -671,7 +671,7 @@ expr            : command_call
                 }
                 {
                     LexContext ctxt = lexer.getLexContext();
-                    ctxt.in_kwarg = $<LexContext>3.in_kwarg;
+                    ctxt.in_kwarg = $<Boolean>3;
                     $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
                     support.warn_one_line_pattern_matching(@1.startLine(), $5, false);
                 }
@@ -2128,7 +2128,7 @@ bvar            : tIDENTIFIER {
 lambda          : tLAMBDA {
                     support.pushBlockScope();
                     $$ = lexer.getLeftParenBegin();
-                    lexer.setLeftParenBegin(lexer.incrementParenNest());
+                    lexer.setLeftParenBegin(lexer.getParenNest());
                 } {
                     $$ = support.resetMaxNumParam();
                 } {
@@ -2296,7 +2296,7 @@ p_case_body     : keyword_in {
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     LexContext ctxt = (LexContext) lexer.getLexContext();
-                    $1 = (LexContext) ctxt.clone();
+                    $1 = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                     $$ = support.push_pvtbl();
                 } {
@@ -2304,7 +2304,7 @@ p_case_body     : keyword_in {
                 } p_top_expr then {
                     support.pop_pktbl($<Set>3);
                     support.pop_pvtbl($<Set>2);
-                    lexer.getLexContext().in_kwarg = $<LexContext>1.in_kwarg;
+                    lexer.getLexContext().in_kwarg = $<Boolean>1;
                 } compstmt p_cases {
                     $$ = support.newIn(@1.startLine(), $4, $7, $8);
                 }
@@ -2415,11 +2415,11 @@ p_expr_basic    : p_value
                 | tLBRACE {
                     $$ = support.push_pktbl();
                     LexContext ctxt = lexer.getLexContext();
-                    $1 = ctxt;
+                    $1 = ctxt.in_kwarg;
                     ctxt.in_kwarg = false;
                 } p_kwargs rbrace {
                     support.pop_pktbl($<Set>2);
-                    lexer.getLexContext().in_kwarg = $<LexContext>1.in_kwarg;
+                    lexer.getLexContext().in_kwarg = $<Boolean>1;
                     $$ = support.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
@@ -3097,11 +3097,11 @@ f_arglist       : f_paren_args {
                 }
                 | {
                    LexContext ctxt = lexer.getLexContext();
-                   $$ = (LexContext) ctxt.clone();
+                   $$ = ctxt.in_kwarg;
                    ctxt.in_kwarg = true;
                    lexer.setState(lexer.getState() | EXPR_LABEL);
                 } f_args term {
-                    lexer.getLexContext().in_kwarg = $<LexContext>1.in_kwarg;
+                    lexer.getLexContext().in_kwarg = $<Boolean>1;
                     $$ = $2;
                     lexer.setState(EXPR_BEG);
                     lexer.commandStart = true;

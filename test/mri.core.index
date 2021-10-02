@@ -127,7 +127,7 @@ ruby/test_yield.rb
 #ruby/test_jit_debug.rb
 
 # fails to parse
-#ruby/test_pattern_matching.rb
+ruby/test_pattern_matching.rb
 
 # Disabled due to https://github.com/jruby/jruby/issues/6867
 #ruby/test_refinement.rb

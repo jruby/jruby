@@ -2267,7 +2267,7 @@ states[56] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     LexContext ctxt = lexer.getLexContext();
-                    yyVal = (LexContext) ctxt.clone();
+                    yyVal = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
   return yyVal;
 };
@@ -2281,7 +2281,7 @@ states[58] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
 };
 states[59] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = lexer.getLexContext();
-                    ctxt.in_kwarg = ((LexContext)yyVals[-3+yyTop].value).in_kwarg;
+                    ctxt.in_kwarg = ((Boolean)yyVals[-3+yyTop].value);
                     yyVal = support.newPatternCaseNode(((Node)yyVals[-5+yyTop].value).getLine(), ((Node)yyVals[-5+yyTop].value), support.newIn(yyVals[yyTop - count + 1].startLine(), ((Node)yyVals[-1+yyTop].value), null, null));
                     support.warn_one_line_pattern_matching(yyVals[yyTop - count + 1].startLine(), ((Node)yyVals[-1+yyTop].value), true);
   return yyVal;
@@ -2291,7 +2291,7 @@ states[60] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     LexContext ctxt = lexer.getLexContext();
-                    yyVal = (LexContext) ctxt.clone();
+                    yyVal = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
   return yyVal;
 };
@@ -2305,7 +2305,7 @@ states[62] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
 };
 states[63] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = lexer.getLexContext();
-                    ctxt.in_kwarg = ((LexContext)yyVals[-3+yyTop].value).in_kwarg;
+                    ctxt.in_kwarg = ((Boolean)yyVals[-3+yyTop].value);
                     yyVal = support.newPatternCaseNode(((Node)yyVals[-5+yyTop].value).getLine(), ((Node)yyVals[-5+yyTop].value), support.newIn(yyVals[yyTop - count + 1].startLine(), ((Node)yyVals[-1+yyTop].value), new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
                     support.warn_one_line_pattern_matching(yyVals[yyTop - count + 1].startLine(), ((Node)yyVals[-1+yyTop].value), false);
   return yyVal;
@@ -4004,7 +4004,7 @@ states[456] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 states[457] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pushBlockScope();
                     yyVal = lexer.getLeftParenBegin();
-                    lexer.setLeftParenBegin(lexer.incrementParenNest());
+                    lexer.setLeftParenBegin(lexer.getParenNest());
   return yyVal;
 };
 states[458] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4200,7 +4200,7 @@ states[497] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     LexContext ctxt = (LexContext) lexer.getLexContext();
-                    yyVals[0+yyTop].value = (LexContext) ctxt.clone();
+                    yyVals[0+yyTop].value = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                     yyVal = support.push_pvtbl();
   return yyVal;
@@ -4212,7 +4212,7 @@ states[498] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 states[499] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     support.pop_pvtbl(((Set)yyVals[-3+yyTop].value));
-                    lexer.getLexContext().in_kwarg = ((LexContext)yyVals[-4+yyTop].value).in_kwarg;
+                    lexer.getLexContext().in_kwarg = ((Boolean)yyVals[-4+yyTop].value);
   return yyVal;
 };
 states[500] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4333,13 +4333,13 @@ states[530] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 states[531] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.push_pktbl();
                     LexContext ctxt = lexer.getLexContext();
-                    yyVals[0+yyTop].value = ctxt;
+                    yyVals[0+yyTop].value = ctxt.in_kwarg;
                     ctxt.in_kwarg = false;
   return yyVal;
 };
 states[532] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
-                    lexer.getLexContext().in_kwarg = ((LexContext)yyVals[-3+yyTop].value).in_kwarg;
+                    lexer.getLexContext().in_kwarg = ((Boolean)yyVals[-3+yyTop].value);
                     yyVal = support.new_hash_pattern(null, ((HashPatternNode)yyVals[-1+yyTop].value));
   return yyVal;
 };
@@ -5069,13 +5069,13 @@ states[698] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[699] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    LexContext ctxt = lexer.getLexContext();
-                   yyVal = (LexContext) ctxt.clone();
+                   yyVal = ctxt.in_kwarg;
                    ctxt.in_kwarg = true;
                    lexer.setState(lexer.getState() | EXPR_LABEL);
   return yyVal;
 };
 states[700] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    lexer.getLexContext().in_kwarg = ((LexContext)yyVals[-2+yyTop].value).in_kwarg;
+                    lexer.getLexContext().in_kwarg = ((Boolean)yyVals[-2+yyTop].value);
                     yyVal = ((ArgsNode)yyVals[-1+yyTop].value);
                     lexer.setState(EXPR_BEG);
                     lexer.commandStart = true;
