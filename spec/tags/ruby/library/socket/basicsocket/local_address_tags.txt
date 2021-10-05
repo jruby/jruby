@@ -1,0 +1,2 @@
+fails:BasicSocket#local_address using TCPSocket uses 0 as the protocol
+fails:BasicSocket#local_address using UDPSocket uses 0 as the protocol

@@ -7,3 +7,8 @@ fails:Marshal.restore for a wrapped C pointer loads
 fails:Marshal.restore for a wrapped C pointer raises TypeError when the local class is missing _load_data
 fails:Marshal.restore for a Symbol loads a binary encoded Symbol
 fails:Marshal.restore for an Object raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
+fails:Marshal.restore loads an array containing objects having _dump method, and with proc
+fails:Marshal.restore loads an array containing objects having marshal_dump method, and with proc
+fails:Marshal.restore when called with a proc call the proc with fully initialized strings
+fails:Marshal.restore when called with a proc loads an Array with proc
+fails:Marshal.restore when called with a proc calls the proc for recursively visited data
