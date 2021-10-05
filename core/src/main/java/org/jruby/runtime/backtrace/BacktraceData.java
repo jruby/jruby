@@ -96,8 +96,7 @@ public class BacktraceData implements Serializable {
 
                     if (decodedName != null) {
                         // skip varargs frames if we just handled the method's regular frame
-                        if (type == FrameType.VARARGS_WRAPPER &&
-                                previousElement != null &&
+                        if (previousElement != null &&
                                 element.getMethodName().equals(previousElement.getMethodName() + JavaNameMangler.VARARGS_MARKER)) {
 
                             previousElement = null;
