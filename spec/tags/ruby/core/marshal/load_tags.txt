@@ -6,3 +6,8 @@ fails:Marshal.load for an Object raises ArgumentError if the object from an 'o' 
 fails:Marshal.load for a Module loads an old module
 fails:Marshal.load for a wrapped C pointer loads
 fails:Marshal.load for a wrapped C pointer raises TypeError when the local class is missing _load_data
+fails:Marshal.load loads an array containing objects having _dump method, and with proc
+fails:Marshal.load loads an array containing objects having marshal_dump method, and with proc
+fails:Marshal.load when called with a proc call the proc with fully initialized strings
+fails:Marshal.load when called with a proc loads an Array with proc
+fails:Marshal.load when called with a proc calls the proc for recursively visited data
