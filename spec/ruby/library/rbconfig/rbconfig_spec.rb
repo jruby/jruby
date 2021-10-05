@@ -42,12 +42,14 @@ describe 'RbConfig::CONFIG' do
     RUBY
   end
 
-  it "['LIBRUBY'] is the same as LIBRUBY_SO if and only if ENABLE_SHARED" do
-    case RbConfig::CONFIG['ENABLE_SHARED']
-    when 'yes'
-      RbConfig::CONFIG['LIBRUBY'].should == RbConfig::CONFIG['LIBRUBY_SO']
-    when 'no'
-      RbConfig::CONFIG['LIBRUBY'].should_not == RbConfig::CONFIG['LIBRUBY_SO']
+  platform_is_not :windows do
+    it "['LIBRUBY'] is the same as LIBRUBY_SO if and only if ENABLE_SHARED" do
+      case RbConfig::CONFIG['ENABLE_SHARED']
+      when 'yes'
+        RbConfig::CONFIG['LIBRUBY'].should == RbConfig::CONFIG['LIBRUBY_SO']
+      when 'no'
+        RbConfig::CONFIG['LIBRUBY'].should_not == RbConfig::CONFIG['LIBRUBY_SO']
+      end
     end
   end
 
