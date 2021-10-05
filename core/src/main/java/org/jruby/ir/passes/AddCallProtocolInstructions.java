@@ -121,7 +121,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 Signature sig = ((IRClosure)fic.getScope()).getSignature();
                 if (sig.isNoArguments()) {
                     prologueBB.addInstr(PrepareNoBlockArgsInstr.INSTANCE);
-                } else if (sig.isOneArgument()) { // no kwargs and just a single required argument
+                } else if (sig.isOneArgument() && !sig.hasKwargs()) { // no kwargs and just a single required argument
                     prologueBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
                 } else {
                     prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
