@@ -1103,8 +1103,6 @@ public class RubyModule extends RubyObject {
                 return;
             }
 
-            infectBy(module);
-
             doPrependModule(module);
 
             invalidateCoreClasses();
@@ -1146,8 +1144,6 @@ public class RubyModule extends RubyObject {
 
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
-
-        infectBy(module);
 
         doIncludeModule(module);
         invalidateCoreClasses();
@@ -2378,7 +2374,6 @@ public class RubyModule extends RubyObject {
         } else {
             newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, methodName, entry);
         }
-        newMethod.infectBy(this);
 
         return newMethod;
     }
@@ -4281,7 +4276,7 @@ public class RubyModule extends RubyObject {
     //
 
     /**
-     * Set the named class variable to the given value, provided taint and freeze allow setting it.
+     * Set the named class variable to the given value, provided freeze allows setting it.
      *
      * Ruby C equivalent = "rb_cvar_set"
      *

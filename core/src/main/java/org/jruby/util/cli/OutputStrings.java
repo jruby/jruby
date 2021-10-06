@@ -37,7 +37,6 @@ public class OutputStrings {
                 .append("  -rlibrary         require the library, before executing your script\n")
                 .append("  -s                enable some switch parsing for switches after script name\n")
                 .append("  -S                look for the script in bin or using PATH environment variable\n")
-                .append("  -T[level]         turn on tainting checks\n")
                 .append("  -U                use UTF-8 as default internal encoding\n")
                 .append("  -v                print version number, then turn on verbose mode\n")
                 .append("  -w                turn warnings on for your script\n")

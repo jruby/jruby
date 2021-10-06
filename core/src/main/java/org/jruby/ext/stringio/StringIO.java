@@ -207,7 +207,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (this == otherIO) return this;
 
         ptr = otherIO.ptr;
-        infectBy(otherIO);
         flags &= ~STRIO_READWRITE;
         flags |= otherIO.flags & STRIO_READWRITE;
 
@@ -1200,7 +1199,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (ptr.pos == olen) {
                 if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
                     EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
-                    ptr.string.infectBy(str);
                 } else {
                     ptr.string.cat19(str);
                 }
@@ -1208,9 +1206,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 strioExtend(ptr.pos, len);
                 ByteList ptrByteList = ptr.string.getByteList();
                 System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + ptr.pos, len);
-                ptr.string.infectBy(str);
             }
-            ptr.string.infectBy(this);
             ptr.pos += len;
         }
 

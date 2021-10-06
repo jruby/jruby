@@ -58,11 +58,11 @@ public class RubyDateParser {
         final List<StrptimeToken> compiledPattern = context.runtime.getCachedStrptimePattern(format);
         final StrptimeParser.FormatBag bag = new StrptimeParser().parse(compiledPattern, text.asJavaString());
 
-        return bag == null ? context.nil : convertFormatBagToHash(context, bag, text.getEncoding(), text.isTaint());
+        return bag == null ? context.nil : convertFormatBagToHash(context, bag, text.getEncoding());
     }
 
     static RubyHash convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag,
-                                           Encoding encoding, boolean tainted) {
+                                           Encoding encoding) {
         final Ruby runtime = context.runtime;
         final RubyHash hash = RubyHash.newHash(runtime);
 
@@ -82,7 +82,6 @@ public class RubyDateParser {
 
         if (bag.getZone() != null) {
             final RubyString zone = RubyString.newString(runtime, bag.getZone(), encoding);
-            if (tainted) zone.taint(context);
 
             setHashValue(runtime, hash, "zone", zone);
             int offset = TimeZoneConverter.dateZoneToDiff(bag.getZone());
@@ -113,7 +112,6 @@ public class RubyDateParser {
         }
         if (bag.getLeftover() != null) {
             final RubyString leftover = RubyString.newString(runtime, bag.getLeftover(), encoding);
-            if (tainted) leftover.taint(context);
 
             setHashValue(runtime, hash, "leftover", leftover);
         }

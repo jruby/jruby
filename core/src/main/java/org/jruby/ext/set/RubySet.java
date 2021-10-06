@@ -324,22 +324,6 @@ public class RubySet extends RubyObject implements Set {
         return super.freeze(context);
     }
 
-    @Override
-    @JRubyMethod
-    public IRubyObject taint(ThreadContext context) {
-        final RubyHash hash = this.hash;
-        if ( hash != null ) hash.taint(context);
-        return super.taint(context);
-    }
-
-    @Override
-    @JRubyMethod
-    public IRubyObject untaint(ThreadContext context) {
-        final RubyHash hash = this.hash;
-        if ( hash != null ) hash.untaint(context);
-        return super.untaint(context);
-    }
-
     @JRubyMethod(name = "size", alias = "length")
     public IRubyObject length(ThreadContext context) {
         return context.runtime.newFixnum( size() );
@@ -1170,19 +1154,16 @@ public class RubySet extends RubyObject implements Set {
 
         str.cat((byte) '{');
 
-        boolean tainted = isTaint(); boolean notFirst = false;
+        boolean notFirst = false;
 
         for ( IRubyObject elem : elementsOrdered() ) {
             final RubyString s = inspect(context, elem);
-            if ( s.isTaint() ) tainted = true;
             if ( notFirst ) str.cat((byte) ',').cat((byte) ' ');
             else str.setEncoding( s.getEncoding() ); notFirst = true;
             str.cat19( s );
         }
 
         str.cat((byte) '}');
-
-        if ( tainted ) str.setTaint(true);
     }
 
     // pp (in __jruby/set.rb__)
@@ -1300,6 +1281,20 @@ public class RubySet extends RubyObject implements Set {
 
     final IRubyObject toRuby(Object obj) {
         return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), obj);
+    }
+
+    @Deprecated
+    @Override
+    @JRubyMethod
+    public IRubyObject taint(ThreadContext context) {
+        return this;
+    }
+
+    @Deprecated
+    @Override
+    @JRubyMethod
+    public IRubyObject untaint(ThreadContext context) {
+        return this;
     }
 
 }

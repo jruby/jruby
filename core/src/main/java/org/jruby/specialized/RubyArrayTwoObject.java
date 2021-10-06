@@ -154,23 +154,18 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
-        boolean tainted = isTaint();
 
         RubyString s1 = inspect(context, car);
         RubyString s2 = inspect(context, cdr);
-        if (s1.isTaint()) tainted = true;
         EncodingUtils.encAssociateIndex(str, s1.getEncoding());
         str.cat19(s1);
 
         ByteList bytes = str.getByteList();
         bytes.append((byte) ',').append((byte) ' ');
 
-        if (s2.isTaint()) tainted = true;
         str.cat19(s2);
 
         str.cat((byte) ']');
-
-        if (tainted) str.setTaint(true);
 
         return str;
     }

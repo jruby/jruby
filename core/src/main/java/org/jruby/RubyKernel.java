@@ -2102,21 +2102,6 @@ public class RubyKernel {
         return ((RubyBasicObject)self).display(context, args);
     }
 
-    @JRubyMethod(name = {"tainted?", "untrusted?"})
-    public static RubyBoolean tainted_p(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).tainted_p(context);
-    }
-
-    @JRubyMethod(name = {"taint", "untrust"})
-    public static IRubyObject taint(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).taint(context);
-    }
-
-    @JRubyMethod(name = {"untaint", "trust"})
-    public static IRubyObject untaint(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).untaint(context);
-    }
-
     @JRubyMethod
     public static IRubyObject freeze(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject)self).freeze(context);
@@ -2473,5 +2458,23 @@ public class RubyKernel {
             default:
                 throw context.runtime.newArgumentError(args.length, 0, 1);
         }
+    }
+
+    @Deprecated
+    @JRubyMethod(name = {"tainted?", "untrusted?"})
+    public static RubyBoolean tainted_p(ThreadContext context, IRubyObject self) {
+        return context.fals;
+    }
+
+    @Deprecated
+    @JRubyMethod(name = {"taint", "untrust"})
+    public static IRubyObject taint(ThreadContext context, IRubyObject self) {
+        return self;
+    }
+
+    @Deprecated
+    @JRubyMethod(name = {"untaint", "trust"})
+    public static IRubyObject untaint(ThreadContext context, IRubyObject self) {
+        return self;
     }
 }

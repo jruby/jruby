@@ -353,8 +353,6 @@ public class RubyRange extends RubyObject {
         RubyString i2 = isEndless && !isBeginless ? RubyString.newEmptyString(context.runtime) : inspectValue(context, end);
         i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
-        i1.infectBy(i2);
-        i1.infectBy(this);
         return i1;
     }
 
@@ -373,8 +371,6 @@ public class RubyRange extends RubyObject {
         RubyString i2 = end.asString();
         i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
-        i1.infectBy(i2);
-        i1.infectBy(this);
         return i1;
     }
 

@@ -1803,8 +1803,6 @@ public final class StringSupport {
         }
 
         replaceInternal19(beg, len, source, repl);
-
-        if (repl.isTaint()) source.setTaint(true);
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {

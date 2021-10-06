@@ -168,7 +168,6 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         str.append('>');
 
         RubyString res = RubyString.newString(getRuntime(), str);
-        res.setTaint(isTaint());
         return res;
     }
 

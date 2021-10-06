@@ -2246,8 +2246,6 @@ public class IRRuntimeHelpers {
             return (RubyString) target.anyToString();
         }
 
-        if (target.isTaint()) str.setTaint(true);
-
         return (RubyString) str;
     }
 

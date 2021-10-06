@@ -75,9 +75,8 @@ public class UnmarshalStream extends InputStream {
     private final UnmarshalCache cache;
     private final IRubyObject proc;
     private final InputStream inputStream;
-    private final boolean taint;
 
-    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
+    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc) throws IOException {
         assert runtime != null;
         assert in != null;
 
@@ -88,7 +87,6 @@ public class UnmarshalStream extends InputStream {
         this.cache = new UnmarshalCache(runtime);
         this.proc = proc;
         this.inputStream = in;
-        this.taint = taint;
 
         int major = in.read(); // Major
         int minor = in.read(); // Minor
@@ -143,13 +141,6 @@ public class UnmarshalStream extends InputStream {
             if (callProc) return doCallProcForLink(result, type);
         } else {
             result = unmarshalObjectDirectly(type, state, callProc);
-        }
-
-        if (!(
-                result instanceof RubyNumeric ||
-                result instanceof RubyEncoding
-        )) {
-            result.setTaint(taint);
         }
 
         return result;
@@ -553,6 +544,11 @@ public class UnmarshalStream extends InputStream {
 
     @Deprecated
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
-        this(runtime, in, proc, taint);
+        this(runtime, in, proc);
+    }
+
+    @Deprecated
+    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
+        this(runtime, in, proc);
     }
 }

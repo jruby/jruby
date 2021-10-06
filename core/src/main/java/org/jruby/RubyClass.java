@@ -394,7 +394,6 @@ public class RubyClass extends RubyModule {
         superClazz.addSubclass(this);
         allocator = superClazz.allocator;
 
-        infectBy(superClass);
     }
 
     /**
@@ -408,7 +407,6 @@ public class RubyClass extends RubyModule {
 
         this.extraCallSites = extraCallSites;
 
-        infectBy(superClass);
     }
 
     /**

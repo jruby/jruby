@@ -233,8 +233,7 @@ public class RubyMethod extends AbstractRubyMethod {
     public RubyUnboundMethod unbind() {
         RubyUnboundMethod unboundMethod =
         	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
-        unboundMethod.infectBy(this);
-        
+
         return unboundMethod;
     }
     

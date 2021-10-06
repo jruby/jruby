@@ -80,12 +80,6 @@ public class TestRubyObject extends TestCase {
         assertTrue(rubyObject.isFrozen());
     }
 
-    public void testTaint() {
-        assertTrue(!rubyObject.isTaint());
-        rubyObject.setTaint(true);
-        assertTrue(rubyObject.isTaint());
-    }
-
     public void test_to_s() {
         assertTrue(rubyObject.toString().startsWith("#<Object:0x"));
     }

@@ -402,7 +402,6 @@ public class RubyDateFormatter {
     public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
         RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
         out.setEncoding(pattern.getEncoding());
-        if (pattern.isTaint()) out.setTaint(true);
         return out;
     }
 

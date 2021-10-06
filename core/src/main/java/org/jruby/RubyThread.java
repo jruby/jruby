@@ -1805,11 +1805,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     //    if (LOG.isDebugEnabled()) LOG.debug( "{} ({}): {}", Thread.currentThread(), thread.status, message );
     //}
 
-    @JRubyMethod
-    public IRubyObject safe_level() {
-        throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
-    }
-
     @JRubyMethod(name = "backtrace")
     public IRubyObject backtrace(ThreadContext context) {
         return backtraceInternal(context, null, null);
@@ -2506,5 +2501,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         Ruby runtime = recv.getRuntime();
 
         return pass(runtime.getCurrentContext(), recv);
+    }
+
+    @Deprecated
+    public IRubyObject safe_level() {
+        throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
     }
 }

@@ -260,7 +260,7 @@ public final class MemoryUtil {
     }
 
     /**
-     * Creates a ruby string from a byte array and sets the taint flag on it
+     * Creates a ruby string from a byte array
      *
      * @param runtime The ruby runtime
      * @param bytes The array to make into a ruby string.
@@ -268,7 +268,6 @@ public final class MemoryUtil {
      */
     public static final RubyString newTaintedString(Ruby runtime, byte[] bytes) {
         RubyString s = RubyString.newStringNoCopy(runtime, bytes);
-        s.setTaint(true);
         return s;
     }
 

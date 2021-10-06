@@ -645,7 +645,7 @@ public class RubyStruct extends RubyObject {
         }
 
         buffer.cat('>');
-        return (RubyString) buffer.infectBy(this);
+        return (RubyString) buffer;
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})

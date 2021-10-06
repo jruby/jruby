@@ -422,7 +422,6 @@ public class RubyArgsFile extends RubyObject {
                 int n = runtime.getKCode().getEncoding().length(c);
                 IRubyObject file = data.currentFile;
                 RubyString str = runtime.newString();
-                str.setTaint(true);
                 str.cat(c);
 
                 while(--n > 0) {

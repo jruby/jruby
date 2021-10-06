@@ -745,7 +745,6 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         RubyObject dup = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
 
-        if (isTaint()) dup.setTaint(true);
         initCopy(dup, this, "initialize_dup");
 
         return dup;
@@ -764,7 +763,6 @@ public final class ArrayJavaProxy extends JavaProxy {
         RubyObject clone = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
         clone.setMetaClass(getSingletonClassClone());
 
-        if (isTaint()) clone.setTaint(true);
         initCopy(clone, this, "initialize_clone");
         if (isFrozen()) clone.setFrozen(true);
 

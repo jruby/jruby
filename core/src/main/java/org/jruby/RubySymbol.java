@@ -553,11 +553,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Deprecated
     public IRubyObject to_sym19() { return this; }
 
-    @Override
-    public IRubyObject taint(ThreadContext context) {
-        return this;
-    }
-
     private RubyString newShared(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
@@ -1557,5 +1552,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         public ArgumentDescriptor[] getArgumentDescriptors() {
             return ArgumentDescriptor.SYMBOL_PROC;
         }
+    }
+
+    @Deprecated
+    @Override
+    public IRubyObject taint(ThreadContext context) {
+        return this;
     }
 }

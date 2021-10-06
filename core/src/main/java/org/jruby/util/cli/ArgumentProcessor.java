@@ -325,11 +325,6 @@ public class ArgumentProcessor {
                     disallowedInRubyOpts(argument);
                     runBinScript();
                     break FOR;
-                case 'T':
-                    {
-                        grabOptionalValue();
-                        break FOR;
-                    }
                 case 'U':
                     config.setInternalEncoding("UTF-8");
                     break;

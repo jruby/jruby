@@ -190,7 +190,6 @@ public class RubyPathname extends RubyObject {
             throw context.runtime.newArgumentError("pathname contains null byte");
         }
 
-        infectBy(str);
         this.setPath((RubyString) str.dup());
         return this;
     }
@@ -212,20 +211,6 @@ public class RubyPathname extends RubyObject {
     public IRubyObject freeze(ThreadContext context) {
         getPath().freeze(context);
         return super.freeze(context);
-    }
-
-    @Override
-    @JRubyMethod
-    public IRubyObject taint(ThreadContext context) {
-        getPath().taint(context);
-        return super.taint(context);
-    }
-
-    @Override
-    @JRubyMethod
-    public IRubyObject untaint(ThreadContext context) {
-        getPath().untaint(context);
-        return super.untaint(context);
     }
 
     @Override
@@ -466,5 +451,19 @@ public class RubyPathname extends RubyObject {
 
     private static JavaSites.PathnameSites sites(ThreadContext context) {
         return context.sites.Pathname;
+    }
+
+    @Deprecated
+    @Override
+    @JRubyMethod
+    public IRubyObject taint(ThreadContext context) {
+        return this;
+    }
+
+    @Deprecated
+    @Override
+    @JRubyMethod
+    public IRubyObject untaint(ThreadContext context) {
+        return this;
     }
 }

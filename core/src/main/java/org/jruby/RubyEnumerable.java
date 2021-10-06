@@ -443,7 +443,6 @@ public class RubyEnumerable {
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
         RubyArray result = context.runtime.newArray();
         callEach(context, eachSite(context), self, Signature.OPTIONAL, new AppendBlockCallback(result));
-        result.infectBy(self);
         return result;
     }
 
@@ -453,7 +452,6 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
         Helpers.invoke(context, self, "each", args,
                 CallBlock.newCallClosure(context, self, Signature.OPTIONAL, new AppendBlockCallback(result)));
-        result.infectBy(self);
         return result;
     }
 
@@ -463,7 +461,6 @@ public class RubyEnumerable {
         final RubyHash result = RubyHash.newHash(runtime);
         Helpers.invoke(context, self, "each", args,
                 CallBlock.newCallClosure(context, self, Signature.OPTIONAL, new PutKeyValueCallback(result, block)));
-        result.infectBy(self);
         return result;
     }
 
