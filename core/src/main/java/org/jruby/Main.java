@@ -273,22 +273,35 @@ public class Main {
             runtime = Ruby.newInstance(config);
         }
 
+        Status status = null;
         try {
-            doSetContextClassLoader(runtime);
+            try {
+                doSetContextClassLoader(runtime);
 
-            if (in == null) {
-                // no script to run, return success
-                return new Status();
-            } else if (config.getShouldCheckSyntax()) {
-                // check syntax only and exit
-                return doCheckSyntax(runtime, in, filename);
-            } else {
-                // proceed to run the script
-                return doRunFromMain(runtime, in, filename);
+                if (in == null) {
+                    // no script to run, return success
+                    return new Status();
+                } else if (config.getShouldCheckSyntax()) {
+                    // check syntax only and exit
+                    return doCheckSyntax(runtime, in, filename);
+                } else {
+                    // proceed to run the script
+                    doRunFromMain(runtime, in, filename);
+                }
+                status = new Status();
+            } finally {
+                try {
+                    runtime.tearDown();
+                } catch (RaiseException rj) {
+                    status = new Status(handleRaiseException(rj));
+                }
             }
-        } finally {
-            runtime.tearDown();
+        } catch (RaiseException rj) {
+            int ret = handleRaiseException(rj);
+            if (status == null) status = new Status(ret);
         }
+
+        return status;
     }
 
     private Status handleUnsupportedClassVersion(UnsupportedClassVersionError ex) {
@@ -386,15 +399,10 @@ public class Main {
         return new Status(mee.getStatus());
     }
 
-    private Status doRunFromMain(Ruby runtime, InputStream in, String filename) {
-        try {
-            doCheckSecurityManager();
+    private void doRunFromMain(Ruby runtime, InputStream in, String filename) {
+        doCheckSecurityManager();
 
-            runtime.runFromMain(in, filename);
-        } catch (RaiseException rj) {
-            return new Status(handleRaiseException(rj));
-        }
-        return new Status();
+        runtime.runFromMain(in, filename);
     }
 
     private Status doCheckSyntax(Ruby runtime, InputStream in, String filename) throws RaiseException {
