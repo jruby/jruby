@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
 
-import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -738,7 +737,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         Ruby runtime = metaClass.runtime;
         RubyArray dup = dupImpl(runtime, runtime.getArray());
-        dup.flags |= flags & TAINTED_F; // from DUP_SETUP
+        dup.flags |= flags; // from DUP_SETUP
         return dup;
     }
 
@@ -754,7 +753,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public RubyArray aryDup() {
         // In 1.9, rb_ary_dup logic changed so that on subclasses of Array,
         // dup returns an instance of Array, rather than an instance of the subclass
-        // Also, taintedness and trustedness are not inherited to duplicates
         Ruby runtime = metaClass.runtime;
         return dupImpl(runtime, runtime.getArray());
     }
@@ -1719,12 +1717,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
-        boolean tainted = isTaint();
 
         for (int i = 0; i < realLength; i++) {
 
             RubyString s = inspect(context, safeArrayRef(runtime, values, begin + i));
-            if (s.isTaint()) tainted = true;
             if (i > 0) {
                 ByteList bytes = str.getByteList();
                 bytes.append((byte) ',').append((byte) ' ');
@@ -1734,8 +1730,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             str.cat19(s);
         }
         str.cat((byte) ']');
-
-        if (tainted) str.setTaint(true);
 
         return str;
     }
@@ -2059,7 +2053,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 if (first == null) first = new boolean[] {false};
                 else first[0] = false;
                 len += (realLength - i) * 10;
-                RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
+                RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE);
                 joinStrings(sepString, i, result);
                 first[0] = i == 0;
                 return joinAny(context, sepString, i, result, first);
@@ -2068,7 +2062,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             len += ((RubyString) tmp).getByteList().length();
         }
 
-        return joinStrings(sepString, realLength, (RubyString) RubyString.newStringLight(runtime, len).infectBy(this));
+        return joinStrings(sepString, realLength, (RubyString) RubyString.newStringLight(runtime, len));
     }
 
     @JRubyMethod(name = "join")
@@ -3274,7 +3268,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         RubyArray result = new RubyArray(runtime, runtime.getArray(), realLength);
         flatten(context, -1, result);
-        result.infectBy(this);
         return result;
     }
 
@@ -3286,7 +3279,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         RubyArray result = new RubyArray(runtime, runtime.getArray(), realLength);
         flatten(context, level, result);
-        result.infectBy(this);
         return result;
     }
 
@@ -3383,7 +3375,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         long len = RubyNumeric.num2long(times);
         Ruby runtime = context.runtime;
-        if (len == 0) return new RubyArray(runtime, metaClass, IRubyObject.NULL_ARRAY).infectBy(this);
+        if (len == 0) return new RubyArray(runtime, metaClass, IRubyObject.NULL_ARRAY);
         if (len < 0) throw runtime.newArgumentError("negative argument");
 
         if (Long.MAX_VALUE / len < realLength) {
@@ -3403,8 +3395,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(runtime, e);
         }
-
-        ary2.infectBy(this);
 
         return ary2;
     }

@@ -318,46 +318,49 @@ public class Sprintf {
     // static methods only
     private Sprintf () {}
 
-    // Special form of sprintf that returns a RubyString and handles
-    // tainted strings correctly.
+    // Special form of sprintf that returns a RubyString.
     public static boolean sprintf(ByteList to, Locale locale, CharSequence format, IRubyObject args) {
-        return rubySprintfToBuffer(to, format, new Args(locale, args));
+        rubySprintfToBuffer(to, format, new Args(locale, args));
+        return false;
     }
 
-    // Special form of sprintf that returns a RubyString and handles
-    // tainted strings correctly. Version for 1.9.
+    // Special form of sprintf that returns a RubyString. Version for 1.9.
     public static boolean sprintf1_9(ByteList to, Locale locale, CharSequence format, IRubyObject args) {
-        return rubySprintfToBuffer(to, format, new Args(locale, args), false);
+        rubySprintfToBuffer(to, format, new Args(locale, args), false);
+        return false;
     }
 
     public static boolean sprintf(ByteList to, CharSequence format, IRubyObject args) {
-        return rubySprintf(to, format, new Args(args));
+        rubySprintf(to, format, new Args(args));
+        return false;
     }
 
     public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, int arg) {
-        return rubySprintf(to, format, new Args(runtime, (long)arg));
+        rubySprintf(to, format, new Args(runtime, (long)arg));
+        return false;
     }
 
     public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, long arg) {
-        return rubySprintf(to, format, new Args(runtime, arg));
+        rubySprintf(to, format, new Args(runtime, arg));
+        return false;
     }
 
     public static boolean sprintf(ByteList to, RubyString format, IRubyObject args) {
-        return rubySprintf(to, format.getByteList(), new Args(args));
+        rubySprintf(to, format.getByteList(), new Args(args));
+        return false;
     }
 
-    private static boolean rubySprintf(ByteList to, CharSequence charFormat, Args args) {
-        return rubySprintfToBuffer(to, charFormat, args);
+    private static void rubySprintf(ByteList to, CharSequence charFormat, Args args) {
+        rubySprintfToBuffer(to, charFormat, args);
     }
 
-    private static boolean rubySprintfToBuffer(ByteList buf, CharSequence charFormat, Args args) {
-        return rubySprintfToBuffer(buf, charFormat, args, true);
+    private static void rubySprintfToBuffer(ByteList buf, CharSequence charFormat, Args args) {
+        rubySprintfToBuffer(buf, charFormat, args, true);
     }
 
-    private static boolean rubySprintfToBuffer(final ByteList buf, final CharSequence charFormat,
+    private static void rubySprintfToBuffer(final ByteList buf, final CharSequence charFormat,
                                                final Args args, final boolean usePrefixForZero) {
         final Ruby runtime = args.runtime;
-        boolean tainted = false;
         final byte[] format;
         final Encoding encoding;
 
@@ -611,7 +614,6 @@ public class Sprintf {
                         arg = arg.callMethod(runtime.getCurrentContext(), "inspect");
                     }
                     RubyString str = arg.asString();
-                    if (arg.isTaint()) tainted = true;
                     ByteList bytes = str.getByteList();
                     int len = bytes.length();
                     Encoding enc = RubyString.checkEncoding(runtime, buf, bytes);
@@ -1476,8 +1478,6 @@ public class Sprintf {
                 args.warn(ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
             }
         }
-
-        return tainted;
     }
 
     public static NumberFormat getNumberFormat(Locale locale) {

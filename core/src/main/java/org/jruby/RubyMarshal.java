@@ -98,11 +98,9 @@ public class RubyMarshal {
             }
             
             ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-            boolean taint = dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
+            dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
             RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
             
-            if (taint) result.setTaint(true);
-
             return result;
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
@@ -122,20 +120,18 @@ public class RubyMarshal {
 
         final IRubyObject str = in.checkStringType();
         try {
-            InputStream rawInput; boolean tainted;
+            InputStream rawInput;
             if (str != context.nil) {
-                tainted = in.isTaint();
                 ByteList bytes = ((RubyString) str).getByteList();
                 rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             } else if (sites(context).respond_to_getc.respondsTo(context, in, in) &&
                         sites(context).respond_to_read.respondsTo(context, in, in)) {
-                tainted = true;
                 rawInput = inputStream(context, in);
             } else {
                 throw runtime.newTypeError("instance of IO needed");
             }
 
-            return new UnmarshalStream(runtime, rawInput, proc, tainted).unmarshalObject();
+            return new UnmarshalStream(runtime, rawInput, proc).unmarshalObject();
         } catch (EOFException e) {
             if (str != context.nil) throw runtime.newArgumentError("marshal data too short");
 
@@ -155,11 +151,10 @@ public class RubyMarshal {
         return new IOOutputStream(out, true, false); // respond_to?(:write) already checked
     }
 
-    private static boolean dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput, int depthLimit)
+    private static void dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput, int depthLimit)
         throws IOException {
         MarshalStream output = new MarshalStream(runtime, rawOutput, depthLimit);
         output.dumpObject(object);
-        return output.isTainted();
     }
 
     private static void setBinmodeIfPossible(ThreadContext context, IRubyObject io) {

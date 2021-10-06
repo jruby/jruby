@@ -158,7 +158,6 @@ public final class BasicObjectStub {
         IRubyObject str = Helpers.invoke(getRuntime(self).getCurrentContext(), self, "to_s");
 
         if (!(str instanceof RubyString)) return (RubyString) anyToString(self);
-        if (isTaint(self)) str.setTaint(true);
         return (RubyString) str;
     }
 
@@ -196,9 +195,7 @@ public final class BasicObjectStub {
         final RubyClass metaClass = getMetaClass(self);
         String cname = metaClass.getRealClass().getName();
         /* 6:tags 16:addr 1:eos */
-        RubyString str = metaClass.runtime.newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(self)) + '>');
-        str.setTaint(isTaint(self));
-        return str;
+        return metaClass.runtime.newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(self)) + '>');
     }
 
     public static IRubyObject checkStringType(IRubyObject self) {

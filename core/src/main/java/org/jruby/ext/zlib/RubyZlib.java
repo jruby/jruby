@@ -180,10 +180,7 @@ public class RubyZlib {
 
     @JRubyMethod(name = "zlib_version", module = true, visibility = PRIVATE)
     public static IRubyObject zlib_version(IRubyObject recv) {
-        RubyBasicObject res = (RubyBasicObject) ((RubyModule)recv).getConstant("ZLIB_VERSION");
-        // MRI behavior, enforced by tests
-        res.setTaint(true);
-        return res;
+        return ((RubyModule)recv).getConstant("ZLIB_VERSION");
     }
 
     @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = PRIVATE)

@@ -823,7 +823,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr.swallow(context, '\n');
         }
         if (str != null) { // io_enc_str :
-            str.setTaint(true);
             str.setEncoding(enc);
         }
 
@@ -3063,7 +3062,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         str = EncodingUtils.setStrBuf(runtime, str, len);
-        str.setTaint(true);
 
         fptr = getOpenFileChecked();
 
@@ -3160,7 +3158,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (n == 0 && length > 0) throw runtime.newEOFError();
 
         str.setReadLength(n);
-        str.setTaint(true);
         return str;
     }
 
@@ -3253,8 +3250,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         str.setReadLength(len);
 
         if (len == 0) return context.nil;
-
-        str.setTaint(true);
 
         return str;
     }

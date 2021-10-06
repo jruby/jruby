@@ -236,13 +236,14 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
     }
 
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+        output.write(isTrue() ? 'T' : 'F');
+    }
+
+    @Deprecated
     @Override
     public IRubyObject taint(ThreadContext context) {
         return this;
-    }
-
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write(isTrue() ? 'T' : 'F');
     }
 }
 

@@ -1667,7 +1667,6 @@ public class RubyDate extends RubyObject {
         RubyString format = context.getRubyDateFormatter().compileAndFormat(
                 fmt.convertToString(), true, this.dt, 0, subMillis
         );
-        if (fmt.isTaint()) format.setTaint(true);
         return format;
     }
 

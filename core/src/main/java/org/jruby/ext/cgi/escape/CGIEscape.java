@@ -56,8 +56,6 @@ public class CGIEscape implements Library {
 
     static void preserve_original_state(RubyString orig, RubyString dest) {
         dest.setEncoding(orig.getEncoding());
-
-        dest.infectBy(orig);
     }
 
     static IRubyObject

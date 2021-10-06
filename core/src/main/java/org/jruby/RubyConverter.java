@@ -390,8 +390,6 @@ public class RubyConverter extends RubyObject {
             }
         }
 
-        dest.infectBy(orig);
-
         return dest;
     }
     

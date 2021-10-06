@@ -1540,7 +1540,6 @@ public class OpenFile implements Finalizable {
             } else {
                 str = (RubyString) strp;
             }
-            str.setTaint(true);
             EncodingUtils.encAssociateIndex(str, encs.enc);
         }
         return shiftCbuf(len, str);
@@ -1552,7 +1551,6 @@ public class OpenFile implements Finalizable {
         try {
             if (str != null) {
                 str.cat(cbuf.ptr, cbuf.off, len);
-                str.setTaint(true);
                 EncodingUtils.encAssociateIndex(str, encs.enc);
             }
             cbuf.off += len;

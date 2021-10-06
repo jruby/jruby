@@ -104,7 +104,7 @@ public class RubyGlobal {
         String[] argv = runtime.getInstanceConfig().getArgv();
 
         for (String arg : argv) {
-            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg).tainted());
+            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg));
         }
 
         if (runtime.getObject().getConstantNoConstMissing("ARGV") != null) {
@@ -220,8 +220,6 @@ public class RubyGlobal {
         IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug), GLOBAL);
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug), GLOBAL);
-
-        runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"), THREAD);
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
@@ -748,7 +746,7 @@ public class RubyGlobal {
 
             RubyString value = (RubyString) valueArg;
             EncodingService encodingService = context.runtime.getEncodingService();
-            Encoding encoding = isPATH(context, (RubyString) key) && !value.isTaint() ?
+            Encoding encoding = isPATH(context, (RubyString) key) ?
                     encodingService.getFileSystemEncoding() :
                     encodingService.getLocaleEncoding();
 
@@ -758,7 +756,6 @@ public class RubyGlobal {
         protected static IRubyObject newString(ThreadContext context, RubyString value, Encoding encoding) {
             IRubyObject result = newExternalStringWithEncoding(context.runtime, value.getByteList(), encoding);
 
-            result.setTaint(true);
             result.setFrozen(true);
 
             return result;
@@ -1008,23 +1005,6 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             runtime.setKCode(KCode.create(value.convertToString().toString()));
             return value;
-        }
-    }
-
-    private static class SafeGlobalVariable extends GlobalVariable {
-        public SafeGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, null);
-        }
-
-        @Override
-        public IRubyObject get() {
-            return RubyFixnum.zero(runtime);
-        }
-
-        @Override
-        public IRubyObject set(IRubyObject value) {
-            runtime.getWarnings().warnOnce(ID.SAFE_NOT_SUPPORTED, "SAFE levels are not supported in JRuby");
-            return RubyFixnum.zero(runtime);
         }
     }
 

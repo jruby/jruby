@@ -247,8 +247,6 @@ public class RubyProc extends RubyObject implements DataType {
         if (isLambda()) string.catString(" (lambda)");
         string.catString(">");
 
-        if (isTaint()) string.setTaint(true);
-
         return string;
     }
 

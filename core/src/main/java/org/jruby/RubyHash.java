@@ -865,8 +865,6 @@ public class RubyHash extends RubyObject implements Map {
     protected RubyString inspectHash(final ThreadContext context) {
         final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
 
-        str.infectBy(this);
-
         str.cat((byte)'{');
 
         visitAll(context, InspectVisitor, str);
@@ -956,7 +954,6 @@ public class RubyHash extends RubyObject implements Map {
 
             visitAll(context, RubyHash.StoreKeyValueVisitor, result);
 
-            result.setTaint(isTaint());
             return result;
         } catch (NegativeArraySizeException nase) {
             throw concurrentModification();

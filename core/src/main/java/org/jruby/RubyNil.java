@@ -224,11 +224,6 @@ public class RubyNil extends RubyObject implements Constantizable {
     public RubyFixnum id() {
         return RubyFixnum.newFixnum(metaClass.runtime, 8);
     }
-    
-    @Override
-    public IRubyObject taint(ThreadContext context) {
-        return this;
-    }
 
     /** nilclass_to_c
      * 
@@ -273,6 +268,12 @@ public class RubyNil extends RubyObject implements Constantizable {
             }
         }
         return null;
+    }
+
+    @Deprecated
+    @Override
+    public IRubyObject taint(ThreadContext context) {
+        return this;
     }
 
     @Deprecated

@@ -1463,11 +1463,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return super.id();
     }
 
-    @Override
-    public IRubyObject taint(ThreadContext context) {
-        return this;
-    }
-
     // Piece of mri rb_to_id
     @Override
     public String asJavaString() {
@@ -1567,11 +1562,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return context.sites.Fixnum;
     }
 
-    /** rb_fix_induced_from
-     *
-     */
     @Deprecated
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
+    }
+
+    @Deprecated
+    @Override
+    public IRubyObject taint(ThreadContext context) {
+        return this;
     }
 }
