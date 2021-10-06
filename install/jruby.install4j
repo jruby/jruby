@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="9.0.4" transformSequenceNumber="9">
   <directoryPresets config="." />
-  <application name="JRuby" applicationId="4535-5096-5383-5182" mediaDir="." compression="9" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" macVolumeId="720835987edcfb24" javaMinVersion="1.8" jdkMode="runtimeJre">
+  <application name="JRuby" applicationId="4535-5096-5383-5182" mediaDir="." compression="9" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" macVolumeId="720835987edcfb24" javaMinVersion="1.8" javaMaxVersion="200" jdkMode="runtimeJre">
     <variables>
       <variable name="jruby.version" value="error" />
       <variable name="ruby.version" value="error" />
