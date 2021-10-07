@@ -176,11 +176,12 @@ public class HeredocTerm extends StrTerm {
                 tok.append('#');
             }
 
+            boolean encodingDetermined[] = new boolean[] { false };
             // MRI has extra pointer which makes our code look a little bit more strange in comparison
             do {
                 lexer.pushback(c);
 
-                if ((c = new StringTerm(flags, '\0', '\n', lexer.getRubySourceline()).parseStringIntoBuffer(lexer, tok, lexer.getEncoding())) == EOF) {
+                if ((c = new StringTerm(flags, '\0', '\n', lexer.getRubySourceline()).parseStringIntoBuffer(lexer, tok, lexer.getEncoding(), encodingDetermined)) == EOF) {
                     if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }

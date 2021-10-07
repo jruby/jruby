@@ -53,10 +53,6 @@ public class RipperParserBase {
         this.lexer = new RipperLexer(this, source);
     }
     
-    static int associateEncoding(ByteList buffer, Encoding ASCII8BIT_ENCODING, int codeRange) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
     public void reset() {
 //        inSingleton = 0;
      //   inDefinition = false;

@@ -295,7 +295,6 @@ matrix:
       if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.2) # only master and maintenance pushes
 
   allow_failures:
-    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - name: concurrent ruby # temporary, see ruby-concurrency/concurrent-ruby#862
 
 script: tool/maven-ci-script.sh

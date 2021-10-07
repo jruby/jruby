@@ -16,21 +16,43 @@ project 'JRuby Core' do
   jar 'org.jruby:jruby-base', '${project.version}'
   plugin :shade do
     execute_goals( 'shade',
-                   id: 'create lib/jruby.jar',
+                   id: 'create shaded jar',
                    phase: 'package',
                    artifactSet: {
                        excludes: 'javax.annotation:javax.annotation-api'
                    },
                    relocations: [
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
+                       {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
                    ],
-                   outputFile: '${jruby.basedir}/lib/jruby.jar',
                    transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          mainClass: 'org.jruby.Main',
                                          manifestEntries: {'Automatic-Module-Name' => 'org.jruby.dist'}}],
-                   createSourcesJar: '${create.sources.jar}',
+                   createSourcesJar: true
     )
   end
+
+  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin' do
+    execute_goals 'copy',
+                  id: 'copy to lib/jruby.jar',
+                  phase: 'package',
+                  sourceFile: 'target/jruby-core-${project.version}.jar',
+                  destinationFile: '${jruby.basedir}/lib/jruby.jar'
+  end
+
+  plugin( :compiler,
+          'encoding' => 'utf-8',
+          'verbose' => 'true',
+          'fork' => 'false',
+          'compilerArgs' => { 'arg' => '-J-Xmx1G' },
+          'showWarnings' => 'true',
+          'showDeprecation' => 'true',
+          'source' => [ '${base.java.version}', '1.8' ],
+          'target' => [ '${base.javac.version}', '1.8' ],
+          'useIncrementalCompilation' =>  'false' )
+
+
+  plugin( :source, 'skipSource' =>  'true' )
 
   [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
     profile name do
@@ -56,10 +78,11 @@ project 'JRuby Core' do
                        ],
                        transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main',
-                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.core'}}],
+                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.dist'}}],
                        filters: [
                            {artifact: 'com.headius:invokebinder', excludes: '**/module-info.class'}
-                       ]
+                       ],
+                       createSourcesJar: true
         )
       end
     end

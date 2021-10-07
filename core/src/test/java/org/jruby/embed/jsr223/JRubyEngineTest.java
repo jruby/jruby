@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.script.Bindings;
@@ -768,8 +769,9 @@ public class JRubyEngineTest extends BaseTest {
             ScriptEngineManager manager = new ScriptEngineManager();
             List<ScriptEngineFactory> factories = manager.getEngineFactories();
             ScriptEngineFactory factory = null;
-            while (factories.iterator().hasNext()) {
-                factory = factories.iterator().next();
+            Iterator<ScriptEngineFactory> iterator = factories.iterator();
+            while (iterator.hasNext()) {
+                factory = iterator.next();
                 if ("ruby".equals(factory.getLanguageName())) {
                     break;
                 }

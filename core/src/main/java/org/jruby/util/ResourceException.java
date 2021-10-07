@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import jnr.constants.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 
@@ -22,13 +23,22 @@ public abstract class ResourceException extends IOException {
         super(message, cause);
     }
 
-    abstract static class ErrnoException extends ResourceException {
+    public static class ErrnoException extends ResourceException {
         private final String path;
         private final String errnoClass;
+        private final Errno errno;
 
         protected ErrnoException(String errnoClass, String path) {
             super(errnoClass + ": " + path);
+            this.errno = Errno.valueOf(errnoClass);
             this.errnoClass = errnoClass;
+            this.path = path;
+        }
+
+        protected ErrnoException(Errno errno, String path) {
+            super(errno.name() + ": " + path);
+            this.errno = errno;
+            this.errnoClass = errno.name();
             this.path = path;
         }
 
@@ -42,6 +52,10 @@ public abstract class ResourceException extends IOException {
 
         public String getPath() {
             return path;
+        }
+
+        public Errno getErrno() {
+            return errno;
         }
     }
 

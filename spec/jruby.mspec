@@ -11,7 +11,7 @@ load "#{__dir__}/ruby/default.mspec"
 # runs we change our noop version of GC.start to requesting we actually
 # perform a GC on the JVM.
 module GC
-  def start
+  def start(full_mark: true, immediate_sweep: true)
     java.lang.System.gc
   end
   module_function :start

@@ -599,10 +599,12 @@ describe "C-API String function" do
       @s.RSTRING_PTR_short_memcpy(str).should == "Infinity"
     end
 
-    it "allows read to update string contents" do
+    it "allows read() to update the string contents" do
       filename = fixture(__FILE__, "read.txt")
       str = ""
-      @s.RSTRING_PTR_read(str, filename).should == "fixture file contents"
+      capacities = @s.RSTRING_PTR_read(str, filename)
+      capacities.should == [30, 53]
+      str.should == "fixture file contents to test read() with RSTRING_PTR"
     end
   end
 
@@ -1053,6 +1055,51 @@ end
       s = 'Result: true.'
       @s.rb_sprintf4(true.class).should == s
     end
+
+    it "truncates a string to a supplied precision if that is shorter than the string" do
+      s = 'Result: Hel.'
+      @s.rb_sprintf5(0, 3, "Hello").should == s
+    end
+
+    it "does not truncates a string to a supplied precision if that is longer than the string" do
+      s = 'Result: Hello.'
+      @s.rb_sprintf5(0, 8, "Hello").should == s
+    end
+
+    it "pads a string to a supplied width if that is longer than the string" do
+      s = 'Result:    Hello.'
+      @s.rb_sprintf5(8, 5, "Hello").should == s
+    end
+
+    it "truncates a VALUE string to a supplied precision if that is shorter than the VALUE string" do
+      s = 'Result: Hel.'
+      @s.rb_sprintf6(0, 3, "Hello").should == s
+    end
+
+    it "does not truncates a VALUE string to a supplied precision if that is longer than the VALUE string" do
+      s = 'Result: Hello.'
+      @s.rb_sprintf6(0, 8, "Hello").should == s
+    end
+
+    it "pads a VALUE string to a supplied width if that is longer than the VALUE string" do
+      s = 'Result:    Hello.'
+      @s.rb_sprintf6(8, 5, "Hello").should == s
+    end
+
+    it "can format a nil VALUE as a pointer and gives the same output as sprintf in C" do
+      res = @s.rb_sprintf7("%p", nil);
+      res[0].should == res[1]
+    end
+
+    it "can format a string VALUE as a pointer and gives the same output as sprintf in C" do
+      res = @s.rb_sprintf7("%p", "Hello")
+      res[0].should == res[1]
+    end
+
+    it "can format a raw number a pointer and gives the same output as sprintf in C" do
+      res = @s.rb_sprintf7("%p", 0x223643);
+      res[0].should == res[1]
+    end
   end
 
   describe "rb_vsprintf" do
@@ -1150,6 +1197,16 @@ end
       str = "test "
       @s.rb_str_vcatf(str)
       str.should == "test fmt 42 7 number"
+    end
+  end
+
+  describe "rb_str_catf" do
+    it "appends the message to the string" do
+      @s.rb_str_catf("").should == "fmt 41 6 number"
+
+      str = "test "
+      @s.rb_str_catf(str)
+      str.should == "test fmt 41 6 number"
     end
   end
 end

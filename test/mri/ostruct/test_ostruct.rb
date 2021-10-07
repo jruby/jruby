@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 require 'test/unit'
 require 'ostruct'
-require 'yaml'
 
 class TC_OpenStruct < Test::Unit::TestCase
   def test_initialize
@@ -67,15 +66,16 @@ class TC_OpenStruct < Test::Unit::TestCase
     o = OpenStruct.new(foo: 42)
     o.a = 'a'
     o.freeze
-    assert_raise(FrozenError) {o.b = 'b'}
+    expected_error = defined?(FrozenError) ? FrozenError : RuntimeError
+    assert_raise(expected_error) {o.b = 'b'}
     assert_not_respond_to(o, :b)
-    assert_raise(FrozenError) {o.a = 'z'}
+    assert_raise(expected_error) {o.a = 'z'}
     assert_equal('a', o.a)
     assert_equal(42, o.foo)
     o = OpenStruct.new :a => 42
     def o.frozen?; nil end
     o.freeze
-    assert_raise(FrozenError, '[ruby-core:22559]') {o.a = 1764}
+    assert_raise(expected_error, '[ruby-core:22559]') {o.a = 1764}
   end
 
   def test_delete_field
@@ -179,7 +179,8 @@ class TC_OpenStruct < Test::Unit::TestCase
 
   def test_accessor_defines_method
     os = OpenStruct.new(foo: 42)
-    assert_respond_to(os, :foo)
+    assert os.respond_to? :foo
+    assert_equal([], os.singleton_methods)
     assert_equal(42, os.foo)
     assert_equal([:foo, :foo=], os.singleton_methods.sort)
   end
@@ -203,15 +204,6 @@ class TC_OpenStruct < Test::Unit::TestCase
     }
     os = assert_nothing_raised(ArgumentError, bug) {c.allocate}
     assert_instance_of(c, os)
-  end
-
-  def test_initialize_subclass
-    c = Class.new(OpenStruct) {
-      def initialize(x,y={})super(y);end
-    }
-    o = c.new(1, {a: 42})
-    assert_equal(42, o.dup.a)
-    assert_equal(42, o.clone.a)
   end
 
   def test_private_method

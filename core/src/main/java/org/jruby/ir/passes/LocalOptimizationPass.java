@@ -73,7 +73,7 @@ public class LocalOptimizationPass extends CompilerPass {
 
         // A branch may no longer need to be a branch (e.g. b_true(true, label) -> jump(label)).
         if (instr instanceof BranchInstr) {
-            instr = ((BranchInstr) instr).simplifyBranch();
+            instr = ((BranchInstr) instr).simplifyBranch(fic);
         }
 
         // Variable dst = (instr instanceof ResultInstr) ? ((ResultInstr) instr).getResult() : null;

@@ -2031,7 +2031,7 @@ public class RubyClass extends RubyModule {
             if (supr == null) return;
 
             SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_SYNTHETIC | ACC_BRIDGE | ACC_PUBLIC,
-                    "__super$" + javaMethodName, sig(methodSignature), null, null);
+                    JavaProxyClass.generateSuperName(javaName, javaMethodName), sig(methodSignature), null, null);
             GeneratorAdapter ga = RealClassGenerator.makeGenerator(m);
             ga.loadThis();
             ga.loadArgs();

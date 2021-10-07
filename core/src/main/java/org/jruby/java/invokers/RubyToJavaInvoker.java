@@ -312,7 +312,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
         final Class<?> compType = varArrayType.getComponentType();
         final Object varArgs = Array.newInstance(compType, varCount);
-        if (varArrayType.isPrimitive()) {
+        if (compType.isPrimitive()) {
             for (int i = 0; i < varCount; i++) {
                 Array.set(varArgs, i, args[varStart + i].toJava(compType));
             }
@@ -400,7 +400,16 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
     }
 
-    protected T findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
+    /**
+     * Find the matching callable object given the target proxy wrapper, method name, arguments, and actual arity.
+     *
+     * @param self the proxy wrapper
+     * @param name the method name
+     * @param args the arguments
+     * @param arity the actual arity
+     * @return a suitable callable, or else raises an argument or name error
+     */
+    public T findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
         switch (arity) {
             case 0:
                 return findCallableArityZero(self, name);

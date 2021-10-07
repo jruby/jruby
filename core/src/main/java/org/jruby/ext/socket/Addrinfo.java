@@ -268,15 +268,28 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         String base = "#<Addrinfo: %s>";
-        String val;
+        StringBuilder val = new StringBuilder();
 
         if (interfaceLink == true) {
-            val = packet_inspect();
+            val.append(packet_inspect());
         }  else {
-            val = inspect_sockaddr(context).toString();
+            val.append(inspect_sockaddr(context).toString());
+        }
+        
+        if ((pfamily == PF_INET || pfamily == PF_INET6) && (sock == Sock.SOCK_STREAM || sock == Sock.SOCK_DGRAM)) {
+            val.append(" ").append(protocol.getName().toUpperCase());
+        } else if (sock != null) {
+            val.append(" ").append(sock.name().toUpperCase());
+        } else if (protocol != null && protocol.getProto() != 0) {
+            val.append(" ").append(String.format("UNKNOWN PROTOCOL(%d)", protocol.getProto()));
         }
 
-        return context.runtime.newString(String.format(base, val));
+        String inspectName = inspectname();
+        if (inspectName != null && interfaceLink == false) {
+            val.append(" (").append(inspectName).append(")");
+        }
+       
+        return context.runtime.newString(String.format(base, val.toString()));
     }
 
     @JRubyMethod
@@ -665,6 +678,16 @@ public class Addrinfo extends RubyObject {
 
         if (in.isLoopbackAddress()) return "::1";
         return SocketUtilsIPV6.getIPV6Address(in.getHostAddress());
+    }
+
+    private String inspectname() {
+        if (socketAddress instanceof InetSocketAddress) {
+            InetAddress address = getInetSocketAddress().getAddress();
+            if (!address.toString().startsWith("/")) { // contains hostname
+                return address.getHostName();
+            }
+        }
+        return null;
     }
 
     private static InetAddress getRubyInetAddress(IRubyObject node) {

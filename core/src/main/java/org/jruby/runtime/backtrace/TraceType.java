@@ -171,6 +171,7 @@ public class TraceType {
                         stackStream,
                         Stream.empty(),
                         true,
+                        true,
                         false,
                         false);
             }
@@ -186,6 +187,7 @@ public class TraceType {
                         context.getBacktrace(),
                         true,
                         false,
+                        false,
                         false);
             }
         },
@@ -198,6 +200,7 @@ public class TraceType {
                 return new BacktraceData(
                         stackStream,
                         context.getBacktrace(),
+                        false,
                         false,
                         false,
                         true);
@@ -213,6 +216,7 @@ public class TraceType {
                         stackStream,
                         context.getBacktrace(),
                         false,
+                        false,
                         context.runtime.getInstanceConfig().getBacktraceMask(),
                         false);
             }
@@ -226,6 +230,7 @@ public class TraceType {
                 return new BacktraceData(
                         stackStream,
                         context.getBacktrace(),
+                        false,
                         false,
                         true,
                         false);

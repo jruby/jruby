@@ -4815,18 +4815,15 @@ public class IRBuilder {
                 return new BFalseInstr(jmpTarget, v1);
             }
         } else if (v2 instanceof Nil) {
-            if (v1 instanceof Nil) { // nil == nil -> just jump
-                return new JumpInstr(jmpTarget);
-            } else {
-                return new BNilInstr(jmpTarget, v1);
-            }
+            if (v1 instanceof Nil) return new JumpInstr(jmpTarget);
+            if (v1.isTruthyImmediate()) return NopInstr.NOP;
+
+            return new BNilInstr(jmpTarget, v1);
         }
         if (v2 == UndefinedValue.UNDEFINED) {
-            if (v1 == UndefinedValue.UNDEFINED) {
-                return new JumpInstr(jmpTarget);
-            } else {
-                return new BUndefInstr(jmpTarget, v1);
-            }
+            if (v1 == UndefinedValue.UNDEFINED) return new JumpInstr(jmpTarget);
+
+            return new BUndefInstr(jmpTarget, v1);
         }
 
         throw new RuntimeException("BUG: no BEQ");

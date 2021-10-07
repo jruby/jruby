@@ -64,13 +64,13 @@ public class RubyGC {
         return result;        
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject start(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(module = true, visibility = PRIVATE, optional = 1)
+    public static IRubyObject start(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return context.nil;
     }
 
-    @JRubyMethod
-    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
+    @JRubyMethod(optional = 1)
+    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return context.nil;
     }
 

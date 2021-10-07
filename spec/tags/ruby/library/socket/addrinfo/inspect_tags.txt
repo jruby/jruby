@@ -1,7 +1,0 @@
-fails:Addrinfo#inspect using an IPv4 Addrinfo returns a String when using a TCP Addrinfo
-fails:Addrinfo#inspect using an IPv4 Addrinfo returns a String when using an UDP Addrinfo
-fails:Addrinfo#inspect using an IPv6 Addrinfo returns a String when using a TCP Addrinfo
-fails:Addrinfo#inspect using an IPv6 Addrinfo returns a String when using an UDP Addrinfo
-fails:Addrinfo#inspect using a UNIX Addrinfo returns a String
-fails:Addrinfo#inspect using a UNIX Addrinfo returns a String when using a relative UNIX path
-fails:Addrinfo#inspect using a UNIX Addrinfo returns a String when using a DGRAM socket

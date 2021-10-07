@@ -405,7 +405,7 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    private IRubyObject invokeDirectSuperWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object... arguments) {
+    public IRubyObject invokeDirectSuperWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object... arguments) {
         // super calls from proxies must use reflected method
         // FIXME: possible to make handles do the superclass call?
         try {
@@ -422,7 +422,7 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    private IRubyObject invokeDirectWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object[] arguments) {
+    public IRubyObject invokeDirectWithExceptionHandling(ThreadContext context, Method method, Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
             return convertReturn(context.runtime, result);
