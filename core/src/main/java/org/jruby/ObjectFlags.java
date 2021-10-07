@@ -14,6 +14,10 @@ public interface ObjectFlags {
     int NIL_F = registry.newFlag(RubyBasicObject.class);
     int FROZEN_F = registry.newFlag(RubyBasicObject.class);
 
+    // Deprecated and unused but don't move due to checks elsewhere for the following flags
+    @Deprecated
+    int TAINTED_F = registry.newFlag(RubyBasicObject.class);
+
     int CACHEPROXY_F = registry.newFlag(RubyModule.class);
     int NEEDSIMPL_F = registry.newFlag(RubyModule.class);
     int REFINED_MODULE_F = registry.newFlag(RubyModule.class);
