@@ -737,7 +737,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         Ruby runtime = metaClass.runtime;
         RubyArray dup = dupImpl(runtime, runtime.getArray());
-        dup.flags |= flags; // from DUP_SETUP
         return dup;
     }
 

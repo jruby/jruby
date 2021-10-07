@@ -2955,7 +2955,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         final int mBeg = StringSupport.index(getByteList(), pattern.getByteList(), 0, checkEncoding(pattern));
 
         if (mBeg > -1) {
-            final RubyString repl; final int tuFlags;
+            final RubyString repl;
             final Ruby runtime = context.runtime;
             final int mLen = pattern.size();
             final int mEnd = mBeg + mLen;
@@ -2968,16 +2968,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             IRubyObject subStr = makeShared(runtime, mBeg, mLen);
             if (hash == null) {
-                tuFlags = 0;
                 repl = objAsString(context, block.yield(context, subStr));
             } else {
-                tuFlags = hash.flags;
                 repl = objAsString(context, hash.op_aref(context, subStr));
             }
 
             modifyCheck(bytes, len, enc);
 
-            return subBangCommon(context, mBeg, mEnd, repl, tuFlags | repl.flags);
+            return subBangCommon(context, mBeg, mEnd, repl, repl.flags);
         }
 
         // set backref for user
