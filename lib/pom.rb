@@ -17,7 +17,7 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.2.22', { bin: false }],
+    ['rubygems-update', '3.2.22', { bin: false, require_paths: ['lib'] }],
     ['abbrev', '0.1.0'],
     ['base64', '0.1.0'],
     ['benchmark', '0.1.1'],
@@ -234,7 +234,9 @@ project 'JRuby Lib Setup' do
 
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
 
-        spec.require_paths.each do |require_path|
+        require_paths = options[:require_paths] || spec.require_paths
+
+        require_paths.each do |require_path|
           require_base = File.join( gems, "#{gem_name}*", require_path )
           require_files = File.join( require_base, '*' )
 
