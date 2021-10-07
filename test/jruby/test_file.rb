@@ -897,6 +897,15 @@ class TestFile < Test::Unit::TestCase
     assert((time.to_i - File.mtime(filename).to_i).abs < 2)
   end
 
+  def test_file_mtime_with_encoding
+    filename = "\xEC".b.force_encoding("IBM852")
+    time = File.touch(filename)
+    time = File.mtime(filename)
+    assert_equal(Time, time.class)
+  ensure
+    File.unlink(filename)
+  end
+
   def test_file_stat # File::Stat tests
     stat = File.stat('test');
     stat2 = File.stat('pom.xml');
