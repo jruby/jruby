@@ -2035,7 +2035,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (realLength == 0) return RubyString.newEmptyString(runtime, USASCIIEncoding.INSTANCE);
 
-        if (sep == context.nil) sep = runtime.getGlobalVariables().get("$,");
+        if (sep == context.nil) {
+            sep = getDefaultSeparator(runtime);
+        }
 
         int len = 1;
         RubyString sepString = null;
@@ -2066,9 +2068,17 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "join")
     public IRubyObject join19(ThreadContext context) {
-        return join19(context, context.runtime.getGlobalVariables().get("$,"));
+        return join19(context, getDefaultSeparator(context.runtime));
     }
 
+    private IRubyObject getDefaultSeparator(Ruby runtime) {
+        IRubyObject sep;
+        sep = runtime.getGlobalVariables().get("$,");
+        if (!sep.isNil()) {
+            runtime.getWarnings().warn("$, is set to non-nil value");
+        }
+        return sep;
+    }
 
     /** rb_ary_to_a
      *
