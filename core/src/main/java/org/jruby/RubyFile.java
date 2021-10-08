@@ -819,7 +819,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        String filename = basename(context, recv, arg).getUnicodeValue();
+        String filename = basename(context, recv, arg).toString();
 
         int dotIndex = filename.lastIndexOf('.');
         if (dotIndex > 0 && dotIndex != (filename.length() - 1)) {
@@ -966,7 +966,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject ftype(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename));
-        return runtime.newFileStat(path.getUnicodeValue(), true).ftype();
+        return runtime.newFileStat(path.toString(), true).ftype();
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -977,35 +977,35 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(name = "lstat", required = 1, meta = true)
     public static IRubyObject lstat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
-        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).getUnicodeValue();
+        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, true);
     }
 
     @JRubyMethod(name = "stat", required = 1, meta = true)
     public static IRubyObject stat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
-        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).getUnicodeValue();
+        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false);
     }
 
     @JRubyMethod(name = "atime", required = 1, meta = true)
     public static IRubyObject atime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
-        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).getUnicodeValue();
+        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false).atime();
     }
 
     @JRubyMethod(name = "ctime", required = 1, meta = true)
     public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
-        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).getUnicodeValue();
+        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false).ctime();
     }
 
     @JRubyMethod(name = "birthtime", required = 1, meta = true)
     public static IRubyObject birthtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
-        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).getUnicodeValue();
+        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false).birthtime();
     }
 
@@ -1071,7 +1071,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
-        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).getUnicodeValue();
+        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
         return runtime.newFileStat(f, false).mtime();
     }
 
@@ -1081,8 +1081,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString oldNameString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, oldName));
         RubyString newNameString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, newName));
 
-        String newNameJavaString = newNameString.getUnicodeValue();
-        String oldNameJavaString = oldNameString.getUnicodeValue();
+        String newNameJavaString = newNameString.toString();
+        String oldNameJavaString = oldNameString.toString();
         JRubyFile oldFile = JRubyFile.create(runtime.getCurrentDirectory(), oldNameJavaString);
         JRubyFile newFile = JRubyFile.create(runtime.getCurrentDirectory(), newNameJavaString);
 
@@ -1131,10 +1131,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         RubyString fromStr = StringSupport.checkEmbeddedNulls(runtime, get_path(context, from));
         RubyString toStr = StringSupport.checkEmbeddedNulls(runtime, get_path(context, to));
-        String tovalue = toStr.getUnicodeValue();
+        String tovalue = toStr.toString();
         tovalue = JRubyFile.create(runtime.getCurrentDirectory(), tovalue).getAbsolutePath();
         try {
-            if (runtime.getPosix().symlink(fromStr.getUnicodeValue(), tovalue) == -1) {
+            if (runtime.getPosix().symlink(fromStr.toString(), tovalue) == -1) {
                 if (runtime.getPosix().isNative()) {
                     throw runtime.newErrnoFromInt(runtime.getPosix().errno(), String.format("(%s, %s)", fromStr, toStr));
                 } else {
@@ -1214,7 +1214,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         for (int i = 2, j = args.length; i < j; i++) {
             RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
 
-            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
+            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename.toString());
 
             if (!fileToTouch.exists()) {
                 throw runtime.newErrnoENOENTError(filename.toString());
@@ -1243,7 +1243,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         for (int i = 2, j = args.length; i < j; i++) {
             RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
 
-            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(),filename.getUnicodeValue());
+            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename.toString());
 
             if (!fileToTouch.exists()) {
                 throw runtime.newErrnoENOENTError(filename.toString());
@@ -1275,20 +1275,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         for (int i = 0; i < args.length; i++) {
             RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
-            JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
+            JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), filename.toString());
 
             // Broken symlinks considered by exists() as non-existing,
             // so we need to check for symlinks explicitly.
             if (!file.exists() && !isSymlink(context, file)) {
-                throw runtime.newErrnoENOENTError(filename.getUnicodeValue());
+                throw runtime.newErrnoENOENTError(filename.toString());
             }
 
             if (file.isDirectory() && !isSymlink(context, file)) {
-                throw runtime.newErrnoEISDirError(filename.getUnicodeValue());
+                throw runtime.newErrnoEISDirError(filename.toString());
             }
 
             if (!file.delete()) {
-                throw runtime.newErrnoEACCESError(filename.getUnicodeValue());
+                throw runtime.newErrnoEACCESError(filename.toString());
             }
         }
 
@@ -1308,17 +1308,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         for (int i = 0; i < args.length; i++) {
             RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
-            JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
+            JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(), filename.toString());
 
             boolean isSymlink = RubyFileTest.symlink_p(recv, filename).isTrue();
             // Broken symlinks considered by exists() as non-existing,
             // so we need to check for symlinks explicitly.
             if (!lToDelete.exists() && !isSymlink) {
-                throw runtime.newErrnoENOENTError(filename.getUnicodeValue());
+                throw runtime.newErrnoENOENTError(filename.toString());
             }
 
             if (lToDelete.isDirectory() && !isSymlink) {
-                throw runtime.newErrnoEPERMError(filename.getUnicodeValue());
+                throw runtime.newErrnoEPERMError(filename.toString());
             }
 
             if (posix.unlink(lToDelete.getAbsolutePath()) < 0) {
@@ -2297,7 +2297,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             final CharSequence element;
             if (arg instanceof RubyString) {
-                element = arg.convertToString().getUnicodeValue();
+                element = arg.convertToString().toString();
             } else if (arg instanceof RubyArray) {
                 if (context.runtime.isInspecting(arg)) {
                     throw context.runtime.newArgumentError("recursive array");
@@ -2306,7 +2306,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             } else {
                 RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg));
-                element = path.getUnicodeValue();
+                element = path.toString();
             }
 
             int trailingDelimiterIndex = chomp(buffer);
@@ -2384,7 +2384,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyInteger newLength = arg2.convertToInteger();
 
         File testFile ;
-        File childFile = new File(filename.getUnicodeValue());
+        File childFile = new File(filename.toString());
         String filenameString = Helpers.decodeByteList(runtime, filename.getByteList());
 
         if ( childFile.isAbsolute() ) {
