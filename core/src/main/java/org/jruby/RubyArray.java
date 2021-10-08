@@ -3374,7 +3374,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         long len = RubyNumeric.num2long(times);
         Ruby runtime = context.runtime;
-        if (len == 0) return new RubyArray(runtime, metaClass, IRubyObject.NULL_ARRAY);
+        if (len == 0) return RubyArray.newEmptyArray(runtime);
         if (len < 0) throw runtime.newArgumentError("negative argument");
 
         if (Long.MAX_VALUE / len < realLength) {
@@ -3384,7 +3384,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         len *= realLength;
 
         checkLength(runtime, len);
-        RubyArray ary2 = new RubyArray(runtime, metaClass, (int)len);
+        RubyArray ary2 = new RubyArray(runtime, (int)len);
         ary2.realLength = ary2.values.length;
 
         try {
