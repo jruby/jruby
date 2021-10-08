@@ -44,6 +44,6 @@ public class BigDecimalLibrary implements Library {
         RubyBigDecimal.createBigDecimal(runtime);
 
         // using load since this file does not exist in MRI
-        runtime.getLoadService().load("jruby/bigdecimal.rb", false);
+        runtime.getLoadService().load("jruby/stdlib/bigdecimal.rb", false);
     }
 }// BigDecimalLibrary

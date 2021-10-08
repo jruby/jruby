@@ -399,7 +399,7 @@ public class RbConfigLibrary implements Library {
 
         rbConfig.defineConstant("MAKEFILE_CONFIG", mkmfHash);
 
-        runtime.getLoadService().load("jruby/kernel/rbconfig.rb", false);
+        runtime.getLoadService().load("jruby/stdlib/rbconfig.rb", false);
     }
 
     private static final boolean IS_64_BIT = jnr.posix.util.Platform.IS_64_BIT;

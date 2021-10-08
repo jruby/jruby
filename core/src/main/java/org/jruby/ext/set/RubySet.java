@@ -68,7 +68,7 @@ public class RubySet extends RubyObject implements Set {
 
         Set.setMarshal(new SetMarshal(Set.getMarshal()));
 
-        runtime.getLoadService().require("jruby/set.rb");
+        runtime.getLoadService().require("jruby/stdlib/set.rb");
 
         return Set;
     }
