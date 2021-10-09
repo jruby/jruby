@@ -276,7 +276,7 @@ describe "JRuby class reification" do
 	obj.send :initialize, :x, "y"
 	expect(lst).to eq([:new, :jinit, :ready, :init, :x, "y"])
 	expect(bclz).to eq(clz.java_class)
-	expect(eclz).not_to eq(java.lang.Exception.java_class)
+	expect(bclz).not_to eq(java.lang.Exception.java_class)
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do
