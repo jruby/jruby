@@ -78,6 +78,7 @@ describe "JRuby class reification" do
 
     java_class = TopLeftOfTheStack.become_java!
     expect(java_class).not_to be_nil
+    expect(java_class).to eq(TopLeftOfTheStack.java_class)
 
     java_class = TopRightOfTheStack.become_java!
     expect(java_class).not_to be_nil
