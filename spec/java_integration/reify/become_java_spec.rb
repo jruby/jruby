@@ -78,6 +78,7 @@ describe "JRuby class reification" do
 
     java_class = TopLeftOfTheStack.become_java!
     expect(java_class).not_to be_nil
+    expect(java_class).to eq(TopLeftOfTheStack.java_class)
 
     java_class = TopRightOfTheStack.become_java!
     expect(java_class).not_to be_nil
@@ -265,7 +266,7 @@ describe "JRuby class reification" do
 		configure_java_class ctor_name: :jinit
 	end
 	
-	clz.become_java!
+	bclz = clz.become_java!
 	
 	lst = []
 	obj = clz.new(lst, :bar)
@@ -274,6 +275,8 @@ describe "JRuby class reification" do
 	expect(obj.message).to eq("foo: bar")
 	obj.send :initialize, :x, "y"
 	expect(lst).to eq([:new, :jinit, :ready, :init, :x, "y"])
+	expect(bclz).to eq(clz.java_class)
+	expect(bclz).not_to eq(java.lang.Exception.java_class)
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do
