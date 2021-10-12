@@ -38,7 +38,7 @@ describe "A Fiber" do
       
       Thread.pass while t.status
       
-      expect(t.status).to eq(nil) # terminated with an exception
+      expect(t.status).to eq(false) # dead
     end
   end
 end
