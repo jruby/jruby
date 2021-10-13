@@ -12,7 +12,7 @@ DO NOT MODIFIY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.3.1.0</version>
+    <version>9.3.2.0-SHAPSHOT</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
@@ -28,13 +28,13 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>9.3.1.0</version>
+      <version>9.3.2.0-SHAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rubygems-update</artifactId>
-      <version>3.2.14</version>
+      <version>3.2.29</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -47,7 +47,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>bundler</artifactId>
-      <version>2.2.14</version>
+      <version>2.2.29</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -559,8 +559,8 @@ DO NOT MODIFIY - GENERATED CODE
         <directory>${gem.home}</directory>
         <includes>
           <include>specifications/default/*</include>
-          <include>specifications/rubygems-update-3.2.14*</include>
-          <include>specifications/bundler-2.2.14*</include>
+          <include>specifications/rubygems-update-3.2.29*</include>
+          <include>specifications/bundler-2.2.29*</include>
           <include>specifications/cmath-1.0.0*</include>
           <include>specifications/csv-3.1.2*</include>
           <include>specifications/e2mmap-0.1.0*</include>
@@ -598,8 +598,8 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/rake-${rake.version}*</include>
           <include>specifications/test-unit-3.2.9*</include>
           <include>specifications/xmlrpc-0.3.0*</include>
-          <include>gems/rubygems-update-3.2.14*/**/*</include>
-          <include>gems/bundler-2.2.14*/**/*</include>
+          <include>gems/rubygems-update-3.2.29*/**/*</include>
+          <include>gems/bundler-2.2.29*/**/*</include>
           <include>gems/cmath-1.0.0*/**/*</include>
           <include>gems/csv-3.1.2*/**/*</include>
           <include>gems/e2mmap-0.1.0*/**/*</include>
@@ -637,8 +637,8 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/rake-${rake.version}*/**/*</include>
           <include>gems/test-unit-3.2.9*/**/*</include>
           <include>gems/xmlrpc-0.3.0*/**/*</include>
-          <include>cache/rubygems-update-3.2.14*</include>
-          <include>cache/bundler-2.2.14*</include>
+          <include>cache/rubygems-update-3.2.29*</include>
+          <include>cache/bundler-2.2.29*</include>
           <include>cache/cmath-1.0.0*</include>
           <include>cache/csv-3.1.2*</include>
           <include>cache/e2mmap-0.1.0*</include>
