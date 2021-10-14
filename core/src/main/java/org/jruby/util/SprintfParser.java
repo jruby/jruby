@@ -100,7 +100,7 @@ public class SprintfParser {
         int numlen = bytes.length - first;
         int len = numlen;
 
-        int precision = 0;
+        int precision = f.precision;
         if (f.zeroPad && f.width != 0) {
             precision = width;
             width = 0;
@@ -154,7 +154,7 @@ public class SprintfParser {
         public int base = 10;          // which base of number are we formatting
         public boolean spacePad;       // '% d' (FLAG_SPACE in MRI)
         public boolean plusPrefix;     // '%+d' (FLAG_PLUS in MRI)
-        public boolean rightPad;
+        public boolean rightPad;       // (FLAG_MINUS in MRI)
         public boolean hexZero;
         public boolean zeroPad;
         public int format;
