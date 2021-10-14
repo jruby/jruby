@@ -57,8 +57,8 @@ public class SprintfParser {
     }
 
     private static IRubyObject getArg(FormatToken f, Sprintf.Args args) {
-        if (f.widthIndex) {
-            return args.getPositionArg(f.width);
+        if (f.indexedArg()) {
+            return args.getPositionArg(f.index);
         } else {
             return args.getArg();
         }
@@ -168,8 +168,8 @@ public class SprintfParser {
         public int format;
         public boolean hasWidth;       // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
         public boolean hasPrecision;   // precision part expressed as syntax '%.3d', '%3.1d', '%3.*1$d' ...
-        public boolean widthIndex;     // Is the width value referring to an index instead of a value?
         public boolean precisionIndex; // Is the precision value referring to an index instead of a value?
+        public int index = -1;         // positional index to use in this format
         public int width;              // numeric value if explicitly stated (index or explicit value)
         public int precision;          // numeric value if explicitly stated (index or explicit value)
         public int value;              // numeric value if explicitly stated (index only)
@@ -178,14 +178,18 @@ public class SprintfParser {
         public boolean unsigned;       // 'u' will process argument value differently sometimes (otherwise like 'd').
         public byte[] prefix;          // put on front of value unless !0 or explicitly requested (useZeroForPrefix).
 
+        public boolean indexedArg() {
+            return index >= 0;
+        }
+
         public boolean isIndexed() {
-            return widthIndex || precisionIndex;
+            return indexedArg() || precisionIndex;
         }
 
         public String toString() {
             return "Format[%" + (char) format +
                     (name != null ?  ",name=" + (name.realSize() != 0 ? name : "''") : "") +
-                    (hasWidth ? ",width.prec=" + width + (widthIndex ? "$" : "") : "") +
+                    //(hasWidth ? ",width.prec=" + width + (widthIndex ? "$" : "") : "") +
                     (hasPrecision ? "." + precision + (precisionIndex ? "$" : "") : "") +
                     (isIndexed() ? ",index=" + value : "") +
                     (spacePad ? ",space_pad" : "") +
@@ -411,8 +415,11 @@ public class SprintfParser {
                                 if (current != '$') error("width given twice");
                                 token.value = amount;
                             } else {
-                                if (current == '$') token.widthIndex = true;
-                                token.width = amount;
+                                if (current == '$') {
+                                    token.index = amount;
+                                } else {
+                                    token.width = amount;
+                                }
                             }
                         }
 
