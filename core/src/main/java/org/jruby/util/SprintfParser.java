@@ -246,7 +246,7 @@ public class SprintfParser {
                 character = nextChar();
             }
 
-            return format.makeShared(index - count, count - 1);
+            return format.makeShared(index - count + 1, count - 1);
 
         }
 
