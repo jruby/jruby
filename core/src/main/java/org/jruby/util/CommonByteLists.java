@@ -33,8 +33,8 @@ public class CommonByteLists {
     public static final ByteList STAR = new ByteList(new byte[] {'*'});
     public static final ByteList USING_METHOD = new ByteList(new byte[] {'u', 's', 'i', 'n', 'g'});
     public static final ByteList REFINE_METHOD = new ByteList(new byte[] {'r', 'e', 'f', 'i', 'n', 'e'});
-    public static final ByteList UX = new ByteList(new byte[] {'\\', '\\', 'u', '{', '%', 'X', '}'});
-    public static final ByteList U4X = new ByteList(new byte[] {'\\', '\\', 'u', '%', '0', '4', 'X'});
-    public static final ByteList X2X = new ByteList(new byte[] {'\\', '\\', 'x', '%', '0', '2', 'X'});
-    public static final ByteList XX = new ByteList(new byte[] {'\\', '\\', 'x', '{', '%', 'X', '}'});
+    public static final ByteList UX = new ByteList(new byte[] {'\\', 'u', '{', '%', 'X', '}'});
+    public static final ByteList U4X = new ByteList(new byte[] {'\\', 'u', '%', '0', '4', 'X'});
+    public static final ByteList X2X = new ByteList(new byte[] {'\\', 'x', '%', '0', '2', 'X'});
+    public static final ByteList XX = new ByteList(new byte[] {'\\', 'x', '{', '%', 'X', '}'});
 }
