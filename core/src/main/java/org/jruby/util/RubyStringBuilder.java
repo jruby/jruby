@@ -9,6 +9,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
+import java.util.Locale;
+
+import static org.jruby.util.CommonByteLists.C;
+import static org.jruby.util.CommonByteLists.X2X;
 import static org.jruby.util.StringSupport.MBCLEN_CHARFOUND_LEN;
 import static org.jruby.util.StringSupport.MBCLEN_CHARFOUND_P;
 import static org.jruby.util.StringSupport.codePoint;
@@ -95,7 +99,7 @@ public class RubyStringBuilder {
                 if (end < p + n) n = end - p;
                 while (n-- > 0) {
                     result.modifyExpand(result.size() + 4);
-                    Sprintf.sprintf(runtime, result.getByteList() ,"\\x%02X", bytes[p] & 0377);
+                    Sprintf.sprintfLong(runtime, result.getByteList(), X2X, bytes[p] & 0377);
                     prev = ++p;
                 }
                 continue;
@@ -147,9 +151,9 @@ public class RubyStringBuilder {
             } else {
 
                 if (p - n > prev) result.cat(bytes, prev, p - n - prev);
-                String format =  StringSupport.escapedCharFormat(c, isUnicode);
-                if (!format.equals("%c")) needsQuotes = true;
-                Sprintf.sprintf(runtime, result.getByteList() ,format, (c & 0xFFFFFFFFL));
+                ByteList format =  StringSupport.escapedFormat(c, isUnicode);
+                if (!format.equals(C)) needsQuotes = true;
+                Sprintf.sprintfLong(runtime, result.getByteList(), format, c & 0xFFFFFFFFL);
                 prev = p;
                 continue;
             }

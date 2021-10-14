@@ -34,6 +34,9 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+
+import static org.jruby.util.Sprintf.sprintfUS;
 
 /**
  * The Java representation of a Ruby UncaughtThrowError.
@@ -89,13 +92,10 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
 
     @Override
     public RubyString to_s(ThreadContext context) {
-        if ( message.isNil() ) {
-            return RubyString.newEmptyString(context.runtime);
-        }
-        if ( tag == null ) return message.asString();
+        if (message.isNil()) return RubyString.newEmptyString(context.runtime);
+        if (tag == null) return message.asString();
 
-        final RubyString str = message.asString();
-        return str.op_format(context, RubyArray.newArray(context.runtime, tag));
+        return sprintfUS(context.runtime, message.asString(), new IRubyObject[] { tag }) ;
     }
 
     @Override

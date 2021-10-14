@@ -61,8 +61,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static org.jruby.RubyString.scanForCodeRange;
+import static org.jruby.util.CommonByteLists.*;
 
 public final class StringSupport {
     public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;
@@ -804,6 +806,21 @@ public final class StringSupport {
         }
     }
 
+    // c comparisons must be unsigned 32-bit
+    public static ByteList escapedFormat(int c, boolean isUnicode) {
+        if (isUnicode) {
+            if ((c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
+                return C;
+            } else if (c < 0x10000) {
+                return U4X;
+            } else {
+                return UX;
+            }
+        }
+
+        return ((c & 0xFFFFFFFFL) < 0x100) ? X2X : XX;
+    }
+
     public static String escapedCharFormat(int c, boolean isUnicode) {
         String format;
         // c comparisons must be unsigned 32-bit
@@ -1049,7 +1066,6 @@ public final class StringSupport {
                     if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                         out[q++] = (byte)c;
                     } else {
-                        out[q++] = '\\';
                         outBytes.setRealSize(q);
                         if (enc.isUTF8()) {
                             int n = preciseLength(enc, bytes, p - 1, end) - 1;
@@ -1057,16 +1073,12 @@ public final class StringSupport {
                                 int cc = codePoint(runtime, enc, bytes, p - 1, end);
                                 outBytes.setRealSize(q);
                                 p += n;
-                                if (cc <= 0xFFFF) {
-                                    Sprintf.sprintf(runtime, outBytes, "u%04X", cc);
-                                } else {
-                                    Sprintf.sprintf(runtime, outBytes, "u{%X}", cc);
-                                }
+                                Sprintf.sprintfLong(runtime, outBytes, cc <= 0xFFFF ? U4X : UX, cc);
                                 q = outBytes.getRealSize();
                                 continue;
                             }
                         }
-                        Sprintf.sprintf(runtime, outBytes, "x%02X", c);
+                        Sprintf.sprintfLong(runtime, outBytes, X2X, c);
                         q = outBytes.getRealSize();
                     }
             }

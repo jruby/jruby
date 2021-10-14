@@ -42,6 +42,8 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
 
+import java.util.Locale;
+
 /**
  * The Java representation of a Ruby NameError.
  *
@@ -141,10 +143,11 @@ public class RubyNameError extends RubyStandardError {
 
             // RubyString name = this.name.asString(); // Symbol -> String
 
-            RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
+            IRubyObject[] arr = new IRubyObject[] {this.name, description, separator, className };
 
             ByteList msgBytes = new ByteList(message.length() + description.size() + 16); // name.size()
-            Sprintf.sprintf(msgBytes, message, arr);
+            ByteList msg = ByteList.create(message); // FIXME: RubyNameError.message should be bytelist
+            Sprintf.sprintf(runtime, msgBytes, msg, arr);
 
             return runtime.newString(msgBytes);
         }

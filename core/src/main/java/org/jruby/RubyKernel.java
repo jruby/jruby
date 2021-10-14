@@ -46,6 +46,7 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 
 import jnr.constants.platform.Errno;
@@ -82,6 +83,7 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ShellLauncher;
+import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
@@ -107,6 +109,7 @@ import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
+import static org.jruby.util.Sprintf.sprintfUS;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -855,18 +858,11 @@ public class RubyKernel {
             throw context.runtime.newArgumentError("sprintf must have at least one argument");
         }
 
-        RubyString str = RubyString.stringValue(args[0]);
+        RubyString formatString = RubyString.stringValue(args[0]);
+        IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+        System.arraycopy(args, 1, newArgs, 0, args.length - 1);
 
-        IRubyObject arg;
-        if (args.length == 2 && args[1] instanceof RubyHash) {
-            arg = args[1];
-        } else {
-            RubyArray newArgs = RubyArray.newArrayMayCopy(context.runtime, args);
-            newArgs.shift(context);
-            arg = newArgs;
-        }
-
-        return str.op_format(context, arg);
+        return sprintfUS(context.runtime, formatString, newArgs);
     }
 
     @Deprecated

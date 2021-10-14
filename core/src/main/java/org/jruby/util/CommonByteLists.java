@@ -9,6 +9,7 @@ public class CommonByteLists {
     public static final ByteList AREF_METHOD = new ByteList(new byte[] {'[', ']'});
     public static final ByteList ASET_METHOD = new ByteList(new byte[] {'[', ']', '='});
     public static final ByteList BACKTRACE_IN = new ByteList(new byte[] {':', 'i', 'n', ' ', '`'});
+    public static final ByteList C = new ByteList(new byte[] {'%', 'c' });
     public static final ByteList COLON = new ByteList(new byte[] {':'});
     public static final ByteList COLON_COLON = new ByteList(new byte[] {':', ':'});
     public static final ByteList CONSTANTS = new ByteList(new byte[] {'c', 'o', 'n', 's', 't', 'a', 'n', 't', 's'});
@@ -19,6 +20,9 @@ public class CommonByteLists {
     public static final ByteList EXCEPTION = new ByteList(new byte[] {'E', 'x', 'c', 'e', 'p', 't', 'i', 'o', 'n'});
     public static final ByteList _END_ = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_'});
     public static final ByteList EQUAL_TILDE = new ByteList(new byte[] {'=', '~'});
+    public static final ByteList G17 = new ByteList(new byte[] {'%', '#', '.', '1', '7', 'g'});
+    public static final ByteList G20 = new ByteList(new byte[] {'%', '#', '.', '2', '0', 'g'});
+    public static final ByteList E14 = new ByteList(new byte[] {'%', '#', '.', '1', '4', 'e'});
     public static final ByteList METHODS = new ByteList(new byte[] {'m', 'e', 't', 'h', 'o', 'd', 's'});
     public static final ByteList FREEZE_METHOD = new ByteList(new byte[] {'f', 'r', 'e', 'e', 'z', 'e'});
     public static final ByteList NEW = new ByteList(new byte[] {'n', 'e', 'w'});
@@ -29,4 +33,8 @@ public class CommonByteLists {
     public static final ByteList STAR = new ByteList(new byte[] {'*'});
     public static final ByteList USING_METHOD = new ByteList(new byte[] {'u', 's', 'i', 'n', 'g'});
     public static final ByteList REFINE_METHOD = new ByteList(new byte[] {'r', 'e', 'f', 'i', 'n', 'e'});
+    public static final ByteList UX = new ByteList(new byte[] {'\\', '\\', 'u', '{', '%', 'X', '}'});
+    public static final ByteList U4X = new ByteList(new byte[] {'\\', '\\', 'u', '%', '0', '4', 'X'});
+    public static final ByteList X2X = new ByteList(new byte[] {'\\', '\\', 'x', '%', '0', '2', 'X'});
+    public static final ByteList XX = new ByteList(new byte[] {'\\', '\\', 'x', '{', '%', 'X', '}'});
 }

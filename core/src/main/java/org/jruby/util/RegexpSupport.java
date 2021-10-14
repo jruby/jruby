@@ -31,6 +31,11 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Locale;
+
+import static org.jruby.util.CommonByteLists.X2X;
 
 public class RegexpSupport {
 
@@ -249,10 +254,10 @@ public class RegexpSupport {
                     int l = StringSupport.preciseLength(enc, bytes, p, end);
                     if (l <= 0) {
                         l = 1;
-                        Sprintf.sprintf(runtime, to, "\\x%02X", c);
+                        Sprintf.sprintfLong(runtime, to, X2X, c);
                     } else if (resEnc != null) {
                         int code = enc.mbcToCode(bytes, p, end);
-                        Sprintf.sprintf(runtime, to , StringSupport.escapedCharFormat(code, isUnicode), code);
+                        Sprintf.sprintfLong(runtime, to, StringSupport.escapedFormat(code, isUnicode), code);
                     } else {
                         to.append(bytes, p, l);
                     }
@@ -262,7 +267,7 @@ public class RegexpSupport {
                 } else if (enc.isPrint(c)) {
                     to.append(bytes, p, cl);
                 } else if (!enc.isSpace(c)) {
-                    Sprintf.sprintf(runtime, to, "\\x%02X", c);
+                    Sprintf.sprintfLong(runtime, to, X2X, c);
                 } else {
                     to.append(bytes, p, cl);
                 }
@@ -396,7 +401,7 @@ public class RegexpSupport {
                 raisePreprocessError(runtime, str, "escaped non ASCII character in UTF-8 regexp", mode);
             }
         } else {
-            if (to != null) Sprintf.sprintf(runtime, to, "\\x%02X", chBuf[0] & 0xff);
+            if (to != null) Sprintf.sprintfLong(runtime, to, X2X, chBuf[0] & 0xff);
         }
         return p;
     }
@@ -472,7 +477,7 @@ public class RegexpSupport {
         checkUnicodeRange(runtime, code, str, ErrorMode.PREPROCESS);
 
         if (code < 0x80) {
-            if (to != null) Sprintf.sprintf(runtime, to, "\\x%02X", code);
+            if (to != null) Sprintf.sprintfLong(runtime, to, X2X, code);
         } else {
             if (to != null) {
                 to.ensure(to.getRealSize() + 6);

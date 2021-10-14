@@ -60,11 +60,11 @@ public class Sprintf {
     private static final int FLAG_WIDTH       = 1 << 5;
     private static final int FLAG_PRECISION   = 1 << 6;
 
-    private static final byte[] PREFIX_OCTAL     = {'0'};
-    private static final byte[] PREFIX_HEX_LC    = {'0','x'};
-    private static final byte[] PREFIX_HEX_UC    = {'0','X'};
-    private static final byte[] PREFIX_BINARY_LC = {'0','b'};
-    private static final byte[] PREFIX_BINARY_UC = {'0','B'};
+    protected static final byte[] PREFIX_OCTAL     = {'0'};
+    protected static final byte[] PREFIX_HEX_LC    = {'0','x'};
+    protected static final byte[] PREFIX_HEX_UC    = {'0','X'};
+    protected static final byte[] PREFIX_BINARY_LC = {'0','b'};
+    protected static final byte[] PREFIX_BINARY_UC = {'0','B'};
 
     private static final byte[] PREFIX_NEGATIVE = {'.','.'};
 
@@ -87,31 +87,62 @@ public class Sprintf {
     private static final ThreadLocal<Map<Locale, NumberFormat>> LOCALE_NUMBER_FORMATS = new ThreadLocal<Map<Locale, NumberFormat>>();
     private static final ThreadLocal<Map<Locale, DecimalFormatSymbols>> LOCALE_DECIMAL_FORMATS = new ThreadLocal<Map<Locale, DecimalFormatSymbols>>();
 
-    private static final class Args {
-        private final Ruby runtime;
+    public static final class Args {
+        public final Ruby runtime;
         private final Locale locale;
-        private final IRubyObject rubyObject;
-        private final RubyArray rubyArray;
+        private final IRubyObject[] rubyArray;
         private final RubyHash rubyHash;
         private final int length;
         private int positionIndex; // last index (+1) accessed by next()
         private int nextIndex;
         private IRubyObject nextObject;
 
+        Args(Ruby runtime, Locale locale, IRubyObject[] args) {
+            this.runtime = runtime;
+            this.locale = locale;
+
+            int length = args.length;
+            assert length >= 1: "ARGS is empty";
+
+            if (length == 1) {
+                if (args[length - 1] instanceof RubyHash) {
+                    rubyHash = (RubyHash) args[length - 1];
+                    IRubyObject[] newArgs = new IRubyObject[length - 1];
+                    System.arraycopy(args, 0, newArgs, 0, length - 1);
+                    rubyArray = newArgs;
+                } else {
+                    rubyHash = null;
+                    rubyArray = args;
+                }
+            } else { // Array
+                rubyHash = null;
+                rubyArray = args;
+            }
+
+            positionIndex = 0;
+            nextIndex = 1;
+            this.length = rubyArray.length;
+        }
+
         Args(Locale locale, IRubyObject rubyObject) {
             if (rubyObject == null) throw new IllegalArgumentException("null IRubyObject passed to sprintf");
             this.locale = locale == null ? Locale.getDefault() : locale;
-            this.rubyObject = rubyObject;
-            if (rubyObject instanceof RubyArray) {
-                this.rubyArray = (RubyArray)rubyObject;
 
-                if (rubyArray.last() instanceof RubyHash) {
-                    this.rubyHash = (RubyHash) rubyArray.pop(rubyArray.getRuntime().getCurrentContext());
+            if (rubyObject instanceof RubyArray) {
+                IRubyObject args[] = ((RubyArray) rubyObject).toJavaArray();
+                int length = args.length;
+
+                if (args[length - 1] instanceof RubyHash) {
+                    rubyHash = (RubyHash) args[length - 1];
+                    IRubyObject[] newArgs = new IRubyObject[length - 1];
+                    System.arraycopy(args, 0, newArgs, 0, length - 1);
+                    rubyArray = newArgs;
                 } else {
-                    this.rubyHash = null;
+                    rubyHash = null;
+                    rubyArray = args;
                 }
 
-                this.length = rubyArray.size();
+                this.length = rubyArray.length;
             } else if (rubyObject instanceof RubyHash) {
                 // allow a hash for args if in 1.9 mode
                 this.rubyHash = (RubyHash)rubyObject;
@@ -119,7 +150,7 @@ public class Sprintf {
                 this.length = 1;
             } else {
                 this.length = 1;
-                this.rubyArray = null;
+                this.rubyArray = new IRubyObject[] { rubyObject };
                 this.rubyHash = null;
             }
 
@@ -191,12 +222,12 @@ public class Sprintf {
                 raiseArgumentError("too few arguments");
             }
 
-            return rubyArray == null ? rubyObject : rubyArray.eltInternal(index - 1);
+            return rubyArray[index - 1];
         }
 
 
         // MRI: GETARG
-        private IRubyObject getArg() {
+        public IRubyObject getArg() {
             final IRubyObject nextObject = this.nextObject;
             if (nextObject != null) {
                 // This is different in MRI.  The do a retry and avoid part of the for loop
@@ -277,7 +308,7 @@ public class Sprintf {
             // this is the order in which MRI does these two tests
             if (positionIndex == -1) raiseArgumentError("unnumbered" + (positionIndex + 1) + "mixed with numbered");
             if (positionIndex >= length) raiseArgumentError("too few arguments");
-            IRubyObject object = rubyArray == null ? rubyObject : rubyArray.eltInternal(positionIndex);
+            IRubyObject object = rubyArray[positionIndex];
             positionIndex++;
             return object;
         }
@@ -320,28 +351,67 @@ public class Sprintf {
 
     // Special form of sprintf that returns a RubyString and handles
     // tainted strings correctly.
+    @Deprecated
     public static boolean sprintf(ByteList to, Locale locale, CharSequence format, IRubyObject args) {
         return rubySprintfToBuffer(to, format, new Args(locale, args));
     }
 
     // Special form of sprintf that returns a RubyString and handles
     // tainted strings correctly. Version for 1.9.
+    @Deprecated
     public static boolean sprintf1_9(ByteList to, Locale locale, CharSequence format, IRubyObject args) {
         return rubySprintfToBuffer(to, format, new Args(locale, args), false);
     }
 
+    /**
+     * Higher level entry point into sprintf which main printf/format/sprintf use.
+     */
+    public static RubyString sprintfUS(Ruby runtime, RubyString formatString, IRubyObject[] args) {
+        ByteList format = formatString.getByteList();
+        ByteList out = new ByteList(format.getRealSize());
+
+        out.setEncoding(format.getEncoding());
+
+        boolean tainted = sprintfUS(runtime, out, format, args);
+        RubyString result = RubyString.newString(runtime, out);
+
+        result.setTaint(tainted || formatString.isTaint());
+
+        return result;
+    }
+
+    /**
+     * This differs from ordinary sprintf in that it uses a US locale for consistency.  One consumer
+     * is marshalling.
+     */
+    public static boolean sprintfUS(Ruby runtime, ByteList to, ByteList format, IRubyObject[] args) {
+        return rubySprintf(to, format, new Args(runtime, Locale.US, args));
+    }
+
+    public static boolean sprintf(Ruby runtime, ByteList to, ByteList format, IRubyObject[] args) {
+        return rubySprintf(to, format, new Args(runtime, Locale.US, args));
+    }
+
+    public static boolean sprintfLong(Ruby runtime, ByteList to, ByteList format, long arg) {
+        return sprintf(runtime, to, format, new IRubyObject[] { runtime.newFixnum(arg)} );
+    }
+
+    @Deprecated
     public static boolean sprintf(ByteList to, CharSequence format, IRubyObject args) {
         return rubySprintf(to, format, new Args(args));
     }
 
+    @Deprecated
     public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, int arg) {
         return rubySprintf(to, format, new Args(runtime, (long)arg));
     }
 
+    @Deprecated
     public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, long arg) {
         return rubySprintf(to, format, new Args(runtime, arg));
     }
 
+    @Deprecated
     public static boolean sprintf(ByteList to, RubyString format, IRubyObject args) {
         return rubySprintf(to, format.getByteList(), new Args(args));
     }
@@ -375,6 +445,13 @@ public class Sprintf {
             offset = 0;
             length = charFormat.length();
             encoding = UTF8Encoding.INSTANCE;
+        }
+
+        //System.out.println("LOC: " + charFormat + ", " + args.runtime.getCurrentContext().getFile() + ", " + args.runtime.getCurrentContext().getLine());
+//        SprintfParser.lex(new ByteList(format, offset, length));
+        if (System.getenv("SPRINTF") != null && SprintfParser.sprintf(buf, new ByteList(format, offset, length), args, usePrefixForZero)) {
+            System.out.println("WORKED");
+            return true;
         }
 
         while (offset < length) {
@@ -1715,7 +1792,7 @@ public class Sprintf {
         }
     }
 
-    private static byte[] getUnsignedNegativeBytes(final long val) {
+    protected static byte[] getUnsignedNegativeBytes(final long val) {
         // calculation for negatives when %u specified
         // for values >= Integer.MIN_VALUE * 2, MRI uses (the equivalent of)
         //   long neg_u = (((long)Integer.MAX_VALUE + 1) << 1) + val
@@ -1728,7 +1805,7 @@ public class Sprintf {
         return getUnsignedNegativeBytes(BigInteger.valueOf(val));
     }
 
-    private static byte[] getUnsignedNegativeBytes(final BigInteger val) {
+    protected static byte[] getUnsignedNegativeBytes(final BigInteger val) {
         int shift = 0;
         // go through negated powers of 32 until we find one small enough
         for (BigInteger minus = BIG_MINUS_64; val.compareTo(minus) < 0 ; minus = minus.shiftLeft(32), shift++) {}
@@ -1738,7 +1815,7 @@ public class Sprintf {
         return stringToBytes(nPower32.add(val).toString());
     }
 
-    private static byte[] stringToBytes(CharSequence s, boolean upper) {
+    public static byte[] stringToBytes(CharSequence s, boolean upper) {
         if (upper) {
             int len = s.length();
             byte[] bytes = new byte[len];

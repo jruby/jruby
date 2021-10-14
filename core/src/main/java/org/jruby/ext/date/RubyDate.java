@@ -61,6 +61,7 @@ import java.util.GregorianCalendar;
 import static org.jruby.RubyRegexp.*;
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.util.Numeric.*;
+import static org.jruby.util.Sprintf.sprintfUS;
 
 /**
  * JRuby's <code>Date</code> implementation - 'native' parts.
@@ -1626,7 +1627,8 @@ public class RubyDate extends RubyObject {
 
     static RubyString format(ThreadContext context, ByteList fmt, IRubyObject... args) {
         final RubyString str = RubyString.newStringLight(context.runtime, fmt);
-        return str.op_format(context, RubyArray.newArrayNoCopy(context.runtime, args));
+        // FIXME: This could go more directly at sprintf internally and not wrap the format in a RubyString
+        return sprintfUS(context.runtime, str, args);
     }
 
     @JRubyMethod

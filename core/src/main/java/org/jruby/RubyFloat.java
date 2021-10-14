@@ -60,6 +60,7 @@ import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
 
+import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_expt;
@@ -264,14 +265,14 @@ public class RubyFloat extends RubyNumeric {
         // Under 1.9, use full-precision float formatting (JRUBY-4846).
         // Double-precision can represent around 16 decimal digits;
         // we use 20 to ensure full representation.
-        Sprintf.sprintf(buf, Locale.US, "%#.20g", this);
+        Sprintf.sprintfUS(runtime, buf, G20, new IRubyObject[] {this});
         int e = buf.indexOf('e');
         if (e == -1) e = buf.getRealSize();
         ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
 
         if (!ascii.isDigit(buf.get(e - 1))) {
             buf.setRealSize(0);
-            Sprintf.sprintf(buf, Locale.US, "%#.14e", this);
+            Sprintf.sprintfUS(runtime, buf, E14, new IRubyObject[] {this});
             e = buf.indexOf('e');
             if (e == -1) e = buf.getRealSize();
         }
@@ -1169,13 +1170,13 @@ public class RubyFloat extends RubyNumeric {
         return runtime.getTrue();
     }
 
+
     private ByteList marshalDump() {
         if (Double.isInfinite(value)) return value < 0 ? NEGATIVE_INFINITY_BYTELIST : INFINITY_BYTELIST;
         if (Double.isNaN(value)) return NAN_BYTELIST;
 
         ByteList byteList = new ByteList();
-        // Always use US locale, to ensure "." separator. JRUBY-5918
-        Sprintf.sprintf(byteList, Locale.US, "%.17g", RubyArray.newArray(getRuntime(), this));
+        Sprintf.sprintfUS(getRuntime(), byteList, G17, new IRubyObject[] { this });
         return byteList;
     }
 
