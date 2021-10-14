@@ -69,6 +69,7 @@ import org.jruby.util.time.TimeArgs;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.*;
 import java.time.Instant;
@@ -1459,7 +1460,7 @@ public class RubyTime extends RubyObject {
                 BigInteger numerator = rational.getNumerator().getBigIntegerValue();
                 BigInteger denominator = rational.getDenominator().getBigIntegerValue();
 
-                BigDecimal nanosBD = new BigDecimal(numerator).divide(new BigDecimal(denominator), 50, RoundingMode.HALF_UP).multiply(ONE_BILLION_BD);
+                BigDecimal nanosBD = new BigDecimal(numerator).divide(new BigDecimal(denominator), MathContext.DECIMAL64).multiply(ONE_BILLION_BD);
                 BigInteger millis = nanosBD.divide(ONE_MILLION_BD).toBigInteger();
                 BigInteger nanos = nanosBD.remainder(ONE_MILLION_BD).toBigInteger();
 
