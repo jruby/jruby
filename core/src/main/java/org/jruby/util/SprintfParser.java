@@ -238,16 +238,17 @@ public class SprintfParser {
             index--;
         }
 
-        private ByteList bytelistUpto(char delimiter, boolean countCurrent) {
-            int character = current;
-            int count = countCurrent ? 1 : 0; // includes current which we know is not % or EOF.
+        private ByteList bytelistUpto(char delimiter) {
+            int character = nextChar();
+            int count = 1;
 
             for (; character != delimiter && character != EOF; count++) {
                 character = nextChar();
             }
 
-            return format.makeShared(index - count + 1, count - 1);
-
+            // start index should only be subtracted by real characters (not EOF).
+            int startIndex = index - count + (character == EOF ? 1 : 0);
+            return format.makeShared(startIndex, count - 1);
         }
 
         private int processDigits() {
@@ -263,7 +264,8 @@ public class SprintfParser {
         }
 
         private Token processTextToken() {
-            return new ByteToken(bytelistUpto('%', true));
+            index--;
+            return new ByteToken(bytelistUpto('%'));
         }
 
         // %[flags][width][.precision]type
@@ -274,6 +276,9 @@ public class SprintfParser {
 
             FormatToken token = new FormatToken();
             processModifiers(token);
+
+            // Found %{name} or %<name>
+            if (token.name != null) return token;
 
             switch (current) {
                 case '%':
@@ -415,12 +420,12 @@ public class SprintfParser {
                         break;
                     case '<':
                         if (token.name != null) throw new IllegalArgumentException("FIXME: make str() for mbs supported name");
-                        token.name = bytelistUpto('>', false);
-                        break;
+                        token.name = bytelistUpto('>');
+                        return;
                     case '{':
                         if (token.name != null) throw new IllegalArgumentException("FIXME: make str() for mbs supported name");
-                        token.name = bytelistUpto('}', false);
-                        break;
+                        token.name = bytelistUpto('}');
+                        return;
                     default:
                         return;
                 }
