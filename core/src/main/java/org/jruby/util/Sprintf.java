@@ -185,7 +185,7 @@ public class Sprintf {
             if (runtime.isVerbose()) runtime.getWarnings().warning(id, message);
         }
 
-        private IRubyObject getHashValue(ByteList name, char startDelim, char endDelim) {
+        public IRubyObject getHashValue(ByteList name, char startDelim, char endDelim) {
             // FIXME: get_hash does hash conversion of argv and arity check...this is a bit complicated with
             // our version.  Implement it.
             if (rubyHash == null) {

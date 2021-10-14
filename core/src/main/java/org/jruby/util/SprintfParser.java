@@ -59,6 +59,12 @@ public class SprintfParser {
     private static IRubyObject getArg(FormatToken f, Sprintf.Args args) {
         if (f.indexedArg()) {
             return args.getPositionArg(f.index);
+        } else if (f.name != null) {
+            if (f.angled) {
+                return args.getHashValue(f.name, '<', '>');
+            } else {
+                return args.getHashValue(f.name, '{', '}');
+            }
         } else {
             return args.getArg();
         }
@@ -177,6 +183,7 @@ public class SprintfParser {
         public int exponent;
         public boolean unsigned;       // 'u' will process argument value differently sometimes (otherwise like 'd').
         public byte[] prefix;          // put on front of value unless !0 or explicitly requested (useZeroForPrefix).
+        public boolean angled;         // if name if is curly ('{') or angled ('<')?
 
         public boolean indexedArg() {
             return index >= 0;
@@ -209,6 +216,7 @@ public class SprintfParser {
         private int index = 0;
         private int current = 0;
         private ThreadContext context;
+        private boolean unnumberedSeen;
 
         public Lexer(ThreadContext context, ByteList format) {
             this.context = context;
@@ -289,8 +297,8 @@ public class SprintfParser {
             FormatToken token = new FormatToken();
             processModifiers(token);
 
-            // Found %{name} or %<name>
-            if (token.name != null) return token;
+            // Found %{name} or %<name>.  %{} has no formatting so just return now.
+            if (token.name != null && !token.angled) return token;
 
             switch (current) {
                 case '%':
@@ -435,8 +443,9 @@ public class SprintfParser {
                         break;
                     case '<':
                         if (token.name != null) throw new IllegalArgumentException("FIXME: make str() for mbs supported name");
+                        token.angled = true;
                         token.name = bytelistUpto('>');
-                        return;
+                        break;
                     case '{':
                         if (token.name != null) throw new IllegalArgumentException("FIXME: make str() for mbs supported name");
                         token.name = bytelistUpto('}');
