@@ -56,8 +56,16 @@ public class SprintfParser {
         return true;
     }
 
+    private static IRubyObject getArg(FormatToken f, Sprintf.Args args) {
+        if (f.widthIndex) {
+            return args.getPositionArg(f.width);
+        } else {
+            return args.getArg();
+        }
+    }
+
     private static void format_idu(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
-        IRubyObject arg = TypeConverter.convertToInteger(context, args.getArg(), 0);
+        IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
         boolean negative;
         byte[] bytes;
         int width = f.width;

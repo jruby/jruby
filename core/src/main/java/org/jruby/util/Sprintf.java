@@ -247,7 +247,7 @@ public class Sprintf {
         }
 
         // MRI: GETPOSARG
-        private IRubyObject getPositionArg(int index) {
+        public IRubyObject getPositionArg(int index) {
             checkPositionArg(index);
             positionIndex = -1;
             return getNthArg(index);
