@@ -450,7 +450,7 @@ public class Sprintf {
         //System.out.println("LOC: " + charFormat + ", " + args.runtime.getCurrentContext().getFile() + ", " + args.runtime.getCurrentContext().getLine());
 //        SprintfParser.lex(new ByteList(format, offset, length));
         if (System.getenv("SPRINTF") != null && SprintfParser.sprintf(buf, new ByteList(format, offset, length), args, usePrefixForZero)) {
-            System.out.println("WORKED");
+            //System.out.println("WORKED");
             return true;
         }
 

@@ -19,9 +19,7 @@ public class SprintfParser {
         List<Token> list = new LinkedList<>();
         Lexer lexer = new Lexer(context, format);
 
-        System.out.println("FORMAT:"  + format);
         for (Token token = lexer.next(); token != Lexer.EOFToken; token = lexer.next()) {
-            System.out.println("TOKEN = " + token);
             list.add(token);
         }
 
@@ -109,7 +107,7 @@ public class SprintfParser {
 
             width -= precision;
         }
-        System.out.println("PRECISION: " + precision + ", WIDTH: " + width);
+
         if (!f.rightPad) {
             buf.fill(' ', width);
             width = 0;
