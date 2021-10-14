@@ -47,11 +47,13 @@ public class SprintfParser {
                 switch (f.format) {
                     case 'd': // (%i, %u) %i is an alias for %d.  %u is largely %d.
                         format_idu(context, buf, args, f, usePrefixForZero);
-                        return true;
+                        break;
+                    default:
+                        return false;
                 }
             }
         }
-        return false;
+        return true;
     }
 
     private static void format_idu(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
