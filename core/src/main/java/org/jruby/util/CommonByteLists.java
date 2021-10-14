@@ -20,7 +20,7 @@ public class CommonByteLists {
     public static final ByteList EXCEPTION = new ByteList(new byte[] {'E', 'x', 'c', 'e', 'p', 't', 'i', 'o', 'n'});
     public static final ByteList _END_ = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_'});
     public static final ByteList EQUAL_TILDE = new ByteList(new byte[] {'=', '~'});
-    public static final ByteList G17 = new ByteList(new byte[] {'%', '#', '.', '1', '7', 'g'});
+    public static final ByteList G17 = new ByteList(new byte[] {'%', '.', '1', '7', 'g'});
     public static final ByteList G20 = new ByteList(new byte[] {'%', '#', '.', '2', '0', 'g'});
     public static final ByteList E14 = new ByteList(new byte[] {'%', '#', '.', '1', '4', 'e'});
     public static final ByteList METHODS = new ByteList(new byte[] {'m', 'e', 't', 'h', 'o', 'd', 's'});

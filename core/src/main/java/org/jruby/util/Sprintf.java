@@ -102,7 +102,6 @@ public class Sprintf {
             this.locale = locale;
 
             int length = args.length;
-            assert length >= 1: "ARGS is empty";
 
             if (length == 1) {
                 if (args[length - 1] instanceof RubyHash) {
@@ -372,7 +371,7 @@ public class Sprintf {
 
         out.setEncoding(format.getEncoding());
 
-        boolean tainted = sprintfUS(runtime, out, format, args);
+        boolean tainted = rubySprintfToBuffer(out, format, new Args(runtime, Locale.US, args), false);
         RubyString result = RubyString.newString(runtime, out);
 
         result.setTaint(tainted || formatString.isTaint());
