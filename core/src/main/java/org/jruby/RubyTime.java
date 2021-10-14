@@ -52,7 +52,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.TimeSites;
@@ -60,7 +59,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.TypeConverter;
@@ -70,7 +68,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
-import java.math.RoundingMode;
 import java.time.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -96,9 +93,16 @@ import static org.jruby.util.RubyStringBuilder.types;
 public class RubyTime extends RubyObject {
     public static final String UTC = "UTC";
 
-    private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
-    private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
-    public static final int TIME_SCALE = 1000000000;
+    private static final int ONE_MILLION = 1_000_000;
+    private static final int ONE_BILLION = 1_000_000_000;
+    private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(ONE_MILLION);
+    private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(ONE_BILLION);
+    private static final double ONE_THOUSAND_DOUBLE = 1_000.0;
+    private static final double ONE_BILLION_DOUBLE = 1_000_000_000.0;
+
+    public static final int TIME_SCALE = ONE_BILLION;
+    private static final double TIME_SCALE_DOUBLE = ONE_BILLION_DOUBLE;
+    private static final BigDecimal TIME_SCALE_BD = ONE_BILLION_BD;
 
     private DateTime dt;
     private long nsec;
@@ -493,8 +497,8 @@ public class RubyTime extends RubyObject {
     }
 
     public static RubyTime newTimeFromNanoseconds(Ruby runtime, long nanoseconds) {
-        long milliseconds = nanoseconds / 1000000;
-        long extraNanoseconds = nanoseconds % 1000000;
+        long milliseconds = nanoseconds / RubyTime.ONE_MILLION;
+        long extraNanoseconds = nanoseconds % RubyTime.ONE_MILLION;
         return RubyTime.newTime(runtime, new DateTime(milliseconds, getLocalTimeZone(runtime)), extraNanoseconds);
     }
 
@@ -765,11 +769,11 @@ public class RubyTime extends RubyObject {
         long currentMillis = getTimeInMillis();
 
         long newMillisPart = currentMillis + (long) adjustMillis;
-        long adjustNanos = (long)((adjustMillis - Math.floor(adjustMillis)) * 1000000);
+        long adjustNanos = (long)((adjustMillis - Math.floor(adjustMillis)) * RubyTime.ONE_MILLION);
         long newNanosPart =  nsec + adjustNanos;
 
-        if (newNanosPart >= 1000000) {
-            newNanosPart -= 1000000;
+        if (newNanosPart >= RubyTime.ONE_MILLION) {
+            newNanosPart -= RubyTime.ONE_MILLION;
             newMillisPart++;
         }
 
@@ -784,13 +788,13 @@ public class RubyTime extends RubyObject {
 
     private RubyFloat opMinus(Ruby runtime, RubyTime other) {
         if (nanosCanFitInLong() && other.nanosCanFitInLong()) {
-            long nanos1 = getTimeInMillis() * 1_000_000 + getNSec();
-            long nanos2 = other.getTimeInMillis() * 1_000_000 + other.getNSec();
+            long nanos1 = getTimeInMillis() * ONE_MILLION + getNSec();
+            long nanos2 = other.getTimeInMillis() * ONE_MILLION + other.getNSec();
 
-            return RubyFloat.newFloat(runtime, (nanos1 - nanos2) /  1_000_000_000.0); // float number of seconds
+            return RubyFloat.newFloat(runtime, (nanos1 - nanos2) / ONE_BILLION_DOUBLE); // float number of seconds
         } else {
             long timeInMillis = getTimeInMillis() - other.getTimeInMillis();
-            double timeInSeconds = timeInMillis / 1_000.0 + (getNSec() - other.getNSec()) / 1_000_000_000.0;
+            double timeInSeconds = timeInMillis / ONE_THOUSAND_DOUBLE + (getNSec() - other.getNSec()) / ONE_BILLION_DOUBLE;
 
             return RubyFloat.newFloat(runtime, timeInSeconds); // float number of seconds
         }
@@ -813,16 +817,16 @@ public class RubyTime extends RubyObject {
     }
 
     private RubyTime opMinus(Ruby runtime, double other) {
-        long adjustmentInNanos = (long) (other * 1000000000);
-        long adjustmentInMillis = adjustmentInNanos / 1000000;
-        long adjustmentInNanosLeft = adjustmentInNanos % 1000000;
+        long adjustmentInNanos = (long) (other * TIME_SCALE);
+        long adjustmentInMillis = adjustmentInNanos / RubyTime.ONE_MILLION;
+        long adjustmentInNanosLeft = adjustmentInNanos % RubyTime.ONE_MILLION;
 
         long time = getTimeInMillis() - adjustmentInMillis;
 
         long nano;
         if (nsec < adjustmentInNanosLeft) {
             time--;
-            nano = 1000000 - (adjustmentInNanosLeft - nsec);
+            nano = RubyTime.ONE_MILLION - (adjustmentInNanosLeft - nsec);
         } else {
             nano = nsec - adjustmentInNanosLeft;
         }
@@ -932,8 +936,8 @@ public class RubyTime extends RubyObject {
     private boolean nanosCanFitInLong() {
         long millis = getTimeInMillis();
 
-        return millis >= 0 && millis < (Long.MAX_VALUE - nsec) / 1_000_000 ||
-                millis < 0 && millis > -(Long.MAX_VALUE + nsec) / 1_000_000;
+        return millis >= 0 && millis < (Long.MAX_VALUE - nsec) / ONE_MILLION ||
+                millis < 0 && millis > -(Long.MAX_VALUE + nsec) / ONE_MILLION;
     }
 
     public double getTimeInSecsAsDouble() {
@@ -942,15 +946,17 @@ public class RubyTime extends RubyObject {
 
         // Being able to do a single divide here has us match MRI rounding.
         if (nanosCanFitInLong()) {
-            BigDecimal nanos = BigDecimal.valueOf(millis).multiply(BigDecimal.valueOf(1_000_000)).add(BigDecimal.valueOf(nsec));
-            BigDecimal secs = nanos.divide(BigDecimal.valueOf(1_000_000_000));
-            return secs.doubleValue();
+            return BigDecimal.valueOf(millis)
+                    .multiply(ONE_MILLION_BD)
+                    .add(BigDecimal.valueOf(nsec))
+                    .divide(TIME_SCALE_BD)
+                    .doubleValue();
         }
 
         double secs;
         secs = 0;
-        if (millis != 0) secs += (millis / 1_000.0);
-        if (nsec != 0) secs += (nsec / 1_000_000_000.0);
+        if (millis != 0) secs += (millis / ONE_THOUSAND_DOUBLE);
+        if (nsec != 0) secs += (nsec / TIME_SCALE_DOUBLE);
 
         return secs;
     }
@@ -975,7 +981,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_r(ThreadContext context) {
-        return RubyRational.newRationalCanonicalize(context, getTimeInMillis() * 1000000 + nsec, 1000000000);
+        return RubyRational.newRationalCanonicalize(context, getTimeInMillis() * RubyTime.ONE_MILLION + nsec, ONE_BILLION);
     }
 
     /**
@@ -1044,9 +1050,9 @@ public class RubyTime extends RubyObject {
      */
     public void setNanos(int nanos) {
         long millis = getTimeInMillis();
-        millis = ( millis - (millis % 1000) ) + (nanos / 1_000_000);
+        millis = ( millis - (millis % 1000) ) + (nanos / ONE_MILLION);
         dt = dt.withMillis(millis);
-        nsec = (nanos % 1_000_000);
+        nsec = (nanos % ONE_MILLION);
     }
 
     @JRubyMethod
@@ -1131,9 +1137,9 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public RubyNumeric subsec(final ThreadContext context) {
-        long nanosec = dt.getMillisOfSecond() * 1_000_000 + this.nsec;
+        long nanosec = dt.getMillisOfSecond() * ONE_MILLION + this.nsec;
 
-        RubyNumeric subsec = (RubyNumeric) RubyRational.newRationalCanonicalize(context, nanosec, 1_000_000_000);
+        RubyNumeric subsec = (RubyNumeric) RubyRational.newRationalCanonicalize(context, nanosec, ONE_BILLION);
         return subsec.isZero() ? RubyFixnum.zero(context.runtime) : subsec;
     }
 
@@ -1327,11 +1333,11 @@ public class RubyTime extends RubyObject {
             throw context.getRuntime().newArgumentError("negative ndigits given");
         }
 
-        int _nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
+        int _nsec = this.dt.getMillisOfSecond() * RubyTime.ONE_MILLION + (int) (this.nsec);
         int pow = (int) Math.pow(10, 9 - ndigits);
         int rounded = ((_nsec + pow/2) / pow) * pow;
-        DateTime _dt = this.dt.withMillisOfSecond(0).plusMillis(rounded / 1000000);
-        return newTime(context.runtime, _dt, rounded % 1000000);
+        DateTime _dt = this.dt.withMillisOfSecond(0).plusMillis(rounded / RubyTime.ONE_MILLION);
+        return newTime(context.runtime, _dt, rounded % RubyTime.ONE_MILLION);
     }
 
     /* Time class methods */
@@ -1447,14 +1453,14 @@ public class RubyTime extends RubyObject {
                 long seconds = RubyNumeric.float2long((RubyFloat) arg);
                 double dbl = ((RubyFloat) arg).value;
 
-                long nano = (long)((dbl - seconds) * 1000000000);
+                long nano = (long)((dbl - seconds) * ONE_BILLION);
 
                 if (dbl < 0 && nano != 0) {
-                    nano += 1000000000;
+                    nano += ONE_BILLION;
                 }
 
-                millisecs = seconds * 1000 + nano / 1000000;
-                nanosecs = nano % 1000000;
+                millisecs = seconds * 1000 + nano / RubyTime.ONE_MILLION;
+                nanosecs = nano % RubyTime.ONE_MILLION;
             } else if (arg instanceof RubyRational) {
                 // use Rational numerator and denominator to calculate nanos
                 RubyRational rational = (RubyRational) arg;
@@ -1499,7 +1505,7 @@ public class RubyTime extends RubyObject {
         if (arg1 instanceof RubyFloat || arg1 instanceof RubyRational) {
             double dbl = RubyNumeric.num2dbl(context, arg1);
             millisecs = (long) (dbl * 1000);
-            nanosecs = ((long) (dbl * 1000000000)) % 1000000;
+            nanosecs = ((long) (dbl * ONE_BILLION)) % RubyTime.ONE_MILLION;
         } else {
             millisecs = RubyNumeric.num2long(arg1) * 1000;
         }
@@ -1514,13 +1520,13 @@ public class RubyTime extends RubyObject {
             if (runtime.newSymbol("microsecond").eql(unit) || runtime.newSymbol("usec").eql(unit)) {
                 double micros = RubyNumeric.num2dbl(context, arg2);
                 double nanos = micros * 1000;
-                millisecs += (long) (nanos / 1000000);
-                nanosecs += (long) (nanos % 1000000);
+                millisecs += (long) (nanos / RubyTime.ONE_MILLION);
+                nanosecs += (long) (nanos % RubyTime.ONE_MILLION);
             } else if (runtime.newSymbol("millisecond").eql(unit)) {
                 double millis = RubyNumeric.num2dbl(context, arg2);
-                double nanos = millis * 1000000;
-                millisecs += (long) (nanos / 1000000);
-                nanosecs += (long) (nanos % 1000000);
+                double nanos = millis * RubyTime.ONE_MILLION;
+                millisecs += (long) (nanos / RubyTime.ONE_MILLION);
+                nanosecs += (long) (nanos % RubyTime.ONE_MILLION);
             } else if (runtime.newSymbol("nanosecond").eql(unit) || runtime.newSymbol("nsec").eql(unit)) {
                 nanosecs += RubyNumeric.num2long(arg2);
             } else {
@@ -1530,13 +1536,13 @@ public class RubyTime extends RubyObject {
             if (runtime.newSymbol("microsecond").eql(unit) || runtime.newSymbol("usec").eql(unit)) {
                 long micros = RubyNumeric.num2long(arg2);
                 long nanos = micros * 1000;
-                millisecs += nanos / 1000000;
-                nanosecs += nanos % 1000000;
+                millisecs += nanos / RubyTime.ONE_MILLION;
+                nanosecs += nanos % RubyTime.ONE_MILLION;
             } else if (runtime.newSymbol("millisecond").eql(unit)) {
                 double millis = RubyNumeric.num2long(arg2);
-                double nanos = millis * 1000000;
-                millisecs += nanos / 1000000;
-                nanosecs += nanos % 1000000;
+                double nanos = millis * RubyTime.ONE_MILLION;
+                millisecs += nanos / RubyTime.ONE_MILLION;
+                nanosecs += nanos % RubyTime.ONE_MILLION;
             } else if (runtime.newSymbol("nanosecond").eql(unit) || runtime.newSymbol("nsec").eql(unit)) {
                 nanosecs += RubyNumeric.num2long(arg2);
             } else {
@@ -1544,9 +1550,9 @@ public class RubyTime extends RubyObject {
             }
         }
 
-        long nanosecOverflow = (nanosecs / 1000000);
+        long nanosecOverflow = (nanosecs / RubyTime.ONE_MILLION);
 
-        time.setNSec(nanosecs % 1000000);
+        time.setNSec(nanosecs % RubyTime.ONE_MILLION);
         time.dt = time.dt.withMillis(millisecs + nanosecOverflow);
 
         if (!zone.isNil()) {
@@ -1883,7 +1889,7 @@ public class RubyTime extends RubyObject {
         // Keep this long cast to work on Java 8
         long sec = Math.floorDiv(millis, (long) 1000);
         // Keep this long cast to work on Java 8
-        long nanoAdj = getNSec() + (Math.floorMod(millis, (long) 1000) * 1_000_000);
+        long nanoAdj = getNSec() + (Math.floorMod(millis, (long) 1000) * ONE_MILLION);
         return java.time.Instant.ofEpochSecond(sec, nanoAdj);
     }
 
