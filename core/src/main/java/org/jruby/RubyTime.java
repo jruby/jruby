@@ -937,18 +937,20 @@ public class RubyTime extends RubyObject {
     }
 
     public double getTimeInSecsAsDouble() {
-        double secs;
+
+        long millis = getTimeInMillis();
 
         // Being able to do a single divide here has us match MRI rounding.
         if (nanosCanFitInLong()) {
-            long nanos = getTimeInMillis() * 1_000_000 + nsec;
-            secs = nanos / 1_000_000_000.0;
-        } else {
-            long millis = getTimeInMillis();
-            secs = 0;
-            if (millis != 0) secs += (millis / 1_000.0);
-            if (nsec != 0) secs += (nsec / 1_000_000_000.0);
+            BigDecimal nanos = BigDecimal.valueOf(millis).multiply(BigDecimal.valueOf(1_000_000)).add(BigDecimal.valueOf(nsec));
+            BigDecimal secs = nanos.divide(BigDecimal.valueOf(1_000_000_000));
+            return secs.doubleValue();
         }
+
+        double secs;
+        secs = 0;
+        if (millis != 0) secs += (millis / 1_000.0);
+        if (nsec != 0) secs += (nsec / 1_000_000_000.0);
 
         return secs;
     }
