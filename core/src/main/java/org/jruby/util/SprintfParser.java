@@ -2,6 +2,10 @@ package org.jruby.util;
 
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyInteger;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -34,7 +38,7 @@ public class SprintfParser {
         // For now only allow what is implemented.
         for (Token token: tokens) {
             if (token instanceof FormatToken) {
-                if (((FormatToken) token).format != 'd') return false;
+                if ("bBdoxX".indexOf(((FormatToken) token).format) == -1) return false;
             }
         }
 
@@ -47,6 +51,13 @@ public class SprintfParser {
                 switch (f.format) {
                     case 'd': // (%i, %u) %i is an alias for %d.  %u is largely %d.
                         format_idu(context, buf, args, f, usePrefixForZero);
+                        break;
+                    case 'b':
+                    case 'B':
+                    case 'o':
+                    case 'x':
+                    case 'X':
+                        format_bBxX(context, buf, args, f, usePrefixForZero);
                         break;
                     default:
                         return false;
@@ -68,6 +79,94 @@ public class SprintfParser {
         } else {
             return args.getArg();
         }
+    }
+
+    private static void format_bBxX(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
+        IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
+        boolean negative;
+        boolean zero;
+        byte[] bytes;
+        int width = f.width;
+        boolean sign = f.plusPrefix || f.spacePad;
+
+        if (arg instanceof RubyFixnum) {
+            final long v = ((RubyFixnum) arg).getLongValue();
+            negative = v < 0;
+            zero = v == 0;
+            bytes = getFixnumBytes(v, f.base, sign, f.format == 'X');
+        } else {
+            final BigInteger v = ((RubyBignum) arg).getValue();
+            negative = v.signum() < 0;
+            zero = v.signum() == 0;
+            bytes = getBignumBytes(v, f.base, sign, f.format == 'X');
+        }
+
+        byte[] prefix = null;
+        if (f.hexZero && (!zero || usePrefixForZero)) {
+            prefix = f.prefix;
+            width -= f.prefix.length;
+        }
+
+        int leadChar = 0;
+        int first = 0;
+        int signChar = 0;
+
+        int len = 0;
+        if (sign) {
+            if (negative) {
+                signChar = '-';
+                width--;
+                first = 1; // skip '-' in bytes, will add where appropriate
+            } else if (f.plusPrefix) {
+                signChar = '+';
+                width--;
+            } else if (f.spacePad) {
+                signChar = ' ';
+                width--;
+            }
+        } else if (negative) {
+            if (!f.hasPrecision && !f.zeroPad) len += 2; // '..'
+
+            first = skipSignBits(bytes, f.base);
+            leadChar = f.leadChar;
+            len++; // for f.leadChar we will be adding
+        }
+        int numlen = bytes.length - first;
+        len += numlen;
+
+        int precision = f.precision;
+        if (f.zeroPad && !f.hasPrecision) {
+            precision = width;
+            width = 0;
+        } else {
+            if (precision < len) precision = len;
+
+            width -= precision;
+        }
+
+        if (!f.rightPad) {
+            buf.fill(' ', width);
+            width = 0;
+        }
+        if (signChar != 0) buf.append(signChar);
+        if (prefix != null) buf.append(prefix);
+
+        if (len < precision) {
+            if (leadChar == 0) {
+                buf.fill('0', precision - len);
+            } else if (!usePrefixForZero) {
+                buf.append(PREFIX_NEGATIVE);
+                buf.fill(f.leadChar, precision - len - 1);
+            } else if (leadChar != 0) {
+                buf.fill(leadChar, precision - len + 1); // the 1 is for the stripped sign char
+            }
+        } else if (leadChar != 0) {
+            if (!f.hasPrecision && !f.zeroPad || !usePrefixForZero) buf.append(PREFIX_NEGATIVE);
+            buf.append(leadChar);
+        }
+        buf.append(bytes, first, numlen);
+
+        if (width > 0) buf.fill(' ', width);
     }
 
     private static void format_idu(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
@@ -137,7 +236,7 @@ public class SprintfParser {
         }
         buf.append(bytes, first, numlen);
 
-        if (width > 0) buf.fill(' ',width);
+        if (width > 0) buf.fill(' ', width);
         if (len < precision && negative && f.rightPad) {
             buf.fill(' ', precision - len);
         }
@@ -169,7 +268,7 @@ public class SprintfParser {
         public boolean spacePad;       // '% d' (FLAG_SPACE in MRI)
         public boolean plusPrefix;     // '%+d' (FLAG_PLUS in MRI)
         public boolean rightPad;       // (FLAG_MINUS in MRI)
-        public boolean hexZero;
+        public boolean hexZero;        // (FLAG_SHARP in MRI)
         public boolean zeroPad;
         public int format;
         public boolean hasWidth;       // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
@@ -184,6 +283,7 @@ public class SprintfParser {
         public boolean unsigned;       // 'u' will process argument value differently sometimes (otherwise like 'd').
         public byte[] prefix;          // put on front of value unless !0 or explicitly requested (useZeroForPrefix).
         public boolean angled;         // if name if is curly ('{') or angled ('<')?
+        public byte leadChar;
 
         public boolean indexedArg() {
             return index >= 0;
@@ -314,26 +414,31 @@ public class SprintfParser {
                 case 'o': // Convert argument as an octal number.
                     token.base = 8;
                     token.format = current;
+                    token.leadChar = '7';
                     token.prefix = PREFIX_OCTAL;
                     break;
                 case 'x': // Convert argument as a hexadecimal number.
                     token.base = 16;
                     token.format = current;
+                    token.leadChar = 'f';
                     token.prefix = PREFIX_HEX_LC;
                     break;
                 case 'X': // Equivalent to `x', but uses uppercase letters.
                     token.base = 16;
                     token.format = current;
+                    token.leadChar = 'F';
                     token.prefix = PREFIX_HEX_UC;
                     break;
                 case 'b': // binary number
                     token.base = 2;
                     token.format = current;
+                    token.leadChar = '1';
                     token.prefix = PREFIX_BINARY_LC;
                     break;
                 case 'B': // binary number with 0B prefix
                     token.base = 2;
                     token.format = current;
+                    token.leadChar = '1';
                     token.prefix = PREFIX_BINARY_UC;
                     break;
                 case 'f': // Convert floating point argument as [-]ddd.dddddd,

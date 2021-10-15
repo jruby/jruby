@@ -66,7 +66,7 @@ public class Sprintf {
     protected static final byte[] PREFIX_BINARY_LC = {'0','b'};
     protected static final byte[] PREFIX_BINARY_UC = {'0','B'};
 
-    private static final byte[] PREFIX_NEGATIVE = {'.','.'};
+    static final byte[] PREFIX_NEGATIVE = {'.','.'};
 
     private static final byte[] NAN_VALUE       = {'N','a','N'};
     private static final byte[] INFINITY_VALUE  = {'I','n','f'};
@@ -1681,7 +1681,7 @@ public class Sprintf {
         return (aChar > 32 && aChar < 127);
     }
 
-    private static int skipSignBits(byte[] bytes, int base) {
+    static int skipSignBits(byte[] bytes, int base) {
         int skip = 0;
         int length = bytes.length;
         byte b;
@@ -1751,7 +1751,7 @@ public class Sprintf {
         return nDigits;
     }
 
-    private static byte[] getFixnumBytes(final long val, int base, boolean sign, boolean upper) {
+    static byte[] getFixnumBytes(final long val, int base, boolean sign, boolean upper) {
         // limit the length of negatives if possible (also faster)
         if (val >= Integer.MIN_VALUE && val <= Integer.MAX_VALUE) {
             if (sign) {
@@ -1778,7 +1778,7 @@ public class Sprintf {
         }
     }
 
-    private static byte[] getBignumBytes(final BigInteger val, int base, boolean sign, boolean upper) {
+    static byte[] getBignumBytes(final BigInteger val, int base, boolean sign, boolean upper) {
         if (sign || base == 10 || val.signum() >= 0) {
             return stringToBytes(val.toString(base),upper);
         }
