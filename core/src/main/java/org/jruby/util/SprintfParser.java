@@ -2,11 +2,7 @@ package org.jruby.util;
 
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyInteger;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -264,26 +260,26 @@ public class SprintfParser {
     // FIXME: none of these fields need to be public.
     // FIXME: we have integralPad which probably should be combined with argumentIndex as long as it is not confusing (like use access methods).
     static class FormatToken extends Token {
-        public int base = 10;          // which base of number are we formatting
-        public boolean spacePad;       // '% d' (FLAG_SPACE in MRI)
-        public boolean plusPrefix;     // '%+d' (FLAG_PLUS in MRI)
-        public boolean rightPad;       // (FLAG_MINUS in MRI)
-        public boolean hexZero;        // (FLAG_SHARP in MRI)
-        public boolean zeroPad;
-        public int format;
-        public boolean hasWidth;       // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
-        public boolean hasPrecision;   // precision part expressed as syntax '%.3d', '%3.1d', '%3.*1$d' ...
-        public boolean precisionIndex; // Is the precision value referring to an index instead of a value?
-        public int index = -1;         // positional index to use in this format
-        public int width;              // numeric value if explicitly stated (index or explicit value)
-        public int precision;          // numeric value if explicitly stated (index or explicit value)
-        public int value;              // numeric value if explicitly stated (index only)
-        public ByteList name;
-        public int exponent;
-        public boolean unsigned;       // 'u' will process argument value differently sometimes (otherwise like 'd').
-        public byte[] prefix;          // put on front of value unless !0 or explicitly requested (useZeroForPrefix).
-        public boolean angled;         // if name if is curly ('{') or angled ('<')?
-        public byte leadChar;
+        int base = 10;          // which base of number are we formatting
+        boolean spacePad;       // '% d' (FLAG_SPACE in MRI)
+        boolean plusPrefix;     // '%+d' (FLAG_PLUS in MRI)
+        boolean rightPad;       // (FLAG_MINUS in MRI)
+        boolean hexZero;        // (FLAG_SHARP in MRI)
+        boolean zeroPad;
+        int format;
+        boolean hasWidth;       // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
+        boolean hasPrecision;   // precision part expressed as syntax '%.3d', '%3.1d', '%3.*1$d' ...
+        boolean precisionIndex; // Is the precision value referring to an index instead of a value?
+        int index = -1;         // positional index to use in this format
+        int width;              // numeric value if explicitly stated (index or explicit value)
+        int precision;          // numeric value if explicitly stated (index or explicit value)
+        int value;              // numeric value if explicitly stated (index only)
+        ByteList name;
+        int exponent;
+        boolean unsigned;       // 'u' will process argument value differently sometimes (otherwise like 'd').
+        byte[] prefix;          // put on front of value unless !0 or explicitly requested (useZeroForPrefix).
+        boolean angled;         // if name if is curly ('{') or angled ('<')?
+        byte leadChar;
 
         public boolean indexedArg() {
             return index >= 0;
@@ -291,6 +287,10 @@ public class SprintfParser {
 
         public boolean isIndexed() {
             return indexedArg() || precisionIndex;
+        }
+
+        public boolean isNamed() {
+            return name != null;
         }
 
         public String toString() {
@@ -310,13 +310,15 @@ public class SprintfParser {
     }
 
     static class Lexer {
+        static enum First { UNNUMBERED, NUMBERED, NAMED};
         private static int EOF = -1;
         public static Token EOFToken = new Token();
         private ByteList format;
         private int index = 0;
         private int current = 0;
         private ThreadContext context;
-        private boolean unnumberedSeen;
+        private First foundFirst;
+        private int formatTokensFound = 0;
 
         public Lexer(ThreadContext context, ByteList format) {
             this.context = context;
@@ -396,6 +398,7 @@ public class SprintfParser {
 
             FormatToken token = new FormatToken();
             processModifiers(token);
+            verifyHomogeneous(token);
 
             // Found %{name} or %<name>.  %{} has no formatting so just return now.
             if (token.name != null && !token.angled) return token;
@@ -481,6 +484,40 @@ public class SprintfParser {
             }
 
             return token;
+        }
+
+        private void verifyHomogeneous(FormatToken token) {
+            formatTokensFound++;
+
+            if (foundFirst == null) {
+                foundFirst = token.isIndexed() ? First.NUMBERED : First.UNNUMBERED;
+            } else {
+                if (token.isIndexed()) {
+                    switch (foundFirst) {
+                        case UNNUMBERED:
+                            throw context.runtime.newArgumentError("numbered(" + token.index + ") after unnumbered(" + (formatTokensFound - 1) + ")");
+                        case NAMED:
+                            throw context.runtime.newArgumentError("numbered(" + token.index + ") after named");
+                    }
+                } else if (token.isNamed()) {
+                    switch (foundFirst) {
+                        case UNNUMBERED:
+                            // FIXME: Names should be mbs
+                            throw context.runtime.newArgumentError("named" + token.leadChar + RubyString.newString(context.runtime, token.name) + (token.leadChar == '<' ? '>' : '}') + " after unnumbered(" + (formatTokensFound - 1) + ")");
+                        case NUMBERED:
+                            // FIXME: Names should be mbs
+                            throw context.runtime.newArgumentError("named" + token.leadChar + RubyString.newString(context.runtime, token.name) + (token.leadChar == '<' ? '>' : '}') + " after numbered");
+                    }
+                } else {
+                    switch (foundFirst) {
+                        case NUMBERED:
+                            throw context.runtime.newArgumentError("unnumbered(" + formatTokensFound + ") mixed with numbered");
+                        case NAMED:
+                            throw context.runtime.newArgumentError("unnumbered(" + formatTokensFound + ") mixed with named");
+
+                    }
+                }
+            }
         }
 
         // FIXME: multiple names should error
