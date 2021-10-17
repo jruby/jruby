@@ -94,7 +94,7 @@ public class SprintfParser {
     }
 
     private static int getWidthArg(ThreadContext context, FormatToken f, Sprintf.Args args) {
-        IRubyObject starWidth = f.isWidthIndexed() ? TypeConverter.convertToInteger(context, getWidthArg(f, args), 0) : null;
+        IRubyObject starWidth = f.hasWidth ? TypeConverter.convertToInteger(context, getWidthArg(f, args), 0) : null;
 
         // FIXME: Not sure on bounds of acceptable width here?  This is not right though
         return starWidth == null ? f.width : (int) ((RubyInteger) starWidth).getLongValue();
@@ -311,7 +311,7 @@ public class SprintfParser {
         boolean hexZero;        // (FLAG_SHARP in MRI)
         boolean zeroPad;
         int format;
-        boolean hasWidthIndex;     // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
+        boolean hasWidth;          // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
         boolean hasPrecision;      // precision part expressed as syntax '%.3d', '%3.1d', '%3.*1$d' ...
         boolean hasPrecisionIndex; // Is the precision value referring to an index instead of a value?
         int index = -1;         // positional index to use in this format
@@ -338,7 +338,7 @@ public class SprintfParser {
         }
 
         public boolean isWidthIndexed() {
-            return hasWidthIndex && width > 0;
+            return hasWidth && width > 0;
         }
 
         public String toString() {
@@ -592,9 +592,9 @@ public class SprintfParser {
                         break;
                     case '*':    // use arg list to calculate pad ('%1$*2$d', '%1$*2$d')
                         if (!token.hasPrecision) { // initial '*'.
-                            if (token.hasWidthIndex) error("width given twice");
+                            if (token.hasWidth) error("width given twice");
 
-                            token.hasWidthIndex = true; // hasWidth with no width == bare '*'. Otherwise specific index.
+                            token.hasWidth = true; // hasWidth with no width == bare '*'. Otherwise specific index.
                         } // Otherwise: '*' for '{width}.*'  [nothing to do here as it will got to 0-9 next.
                         break;
                     case '1': case '2': case '3': case '4': case '5':  // numbers representing specific field values '%3d'
@@ -612,7 +612,7 @@ public class SprintfParser {
                         } else {
                             if (token.isIndexed()) {          // index of value for format '%*2$3$d'
                                 if (current != '$') error("width given twice");
-                                if (token.hasWidthIndex) {
+                                if (token.hasWidth) {
                                     token.width = amount;
                                 } else {
                                     token.value = amount;
