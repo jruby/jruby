@@ -627,7 +627,10 @@ public class SprintfParser {
                             }
                         }
 
-                        if (current != '$') unread();
+                        if (current != '$') {
+                            if (token.hasWidth && token.width > 0) error("width given twice");
+                            unread();
+                        }
 
                         break;
                     }

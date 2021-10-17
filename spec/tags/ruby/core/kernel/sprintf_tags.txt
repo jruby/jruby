@@ -19,7 +19,6 @@ fails:Kernel#sprintf flags * uses the previous argument as the field width
 fails:Kernel#sprintf flags * left-justifies the result if width is negative
 fails:Kernel#sprintf flags * uses the specified argument as the width if * is followed by a number and $
 fails:Kernel#sprintf flags * left-justifies the result if specified with $ argument is negative
-fails:Kernel#sprintf flags * raises ArgumentError when is mixed with width
 fails:Kernel#sprintf width specifies the minimum number of characters that will be written to the result
 fails:Kernel#sprintf precision float types controls the number of decimal places displayed in fraction part
 fails:Kernel#sprintf reference by name %{name} style supports flags, width and precision
@@ -43,7 +42,6 @@ fails:Kernel.sprintf flags * uses the previous argument as the field width
 fails:Kernel.sprintf flags * left-justifies the result if width is negative
 fails:Kernel.sprintf flags * uses the specified argument as the width if * is followed by a number and $
 fails:Kernel.sprintf flags * left-justifies the result if specified with $ argument is negative
-fails:Kernel.sprintf flags * raises ArgumentError when is mixed with width
 fails:Kernel.sprintf width specifies the minimum number of characters that will be written to the result
 fails:Kernel.sprintf precision float types controls the number of decimal places displayed in fraction part
 fails:Kernel.sprintf reference by name %{name} style supports flags, width and precision
