@@ -127,7 +127,8 @@ public class SprintfParser {
         }
 
         byte[] prefix = null;
-        if (f.hexZero && (!zero || usePrefixForZero)) {
+        // Only %o will not put the prefix in front of it in the case of negative values????
+        if (f.hexZero && !(f.format == 'o' && negative) && (!zero || usePrefixForZero)) {
             prefix = f.prefix;
             width -= f.prefix.length;
         }
@@ -467,31 +468,31 @@ public class SprintfParser {
                     token.base = 8;
                     token.format = current;
                     token.leadChar = '7';
-                    token.prefix = PREFIX_OCTAL;
+                    if (token.hexZero) token.prefix = PREFIX_OCTAL;
                     break;
                 case 'x': // Convert argument as a hexadecimal number.
                     token.base = 16;
                     token.format = current;
                     token.leadChar = 'f';
-                    token.prefix = PREFIX_HEX_LC;
+                    if (token.hexZero) token.prefix = PREFIX_HEX_LC;
                     break;
                 case 'X': // Equivalent to `x', but uses uppercase letters.
                     token.base = 16;
                     token.format = current;
                     token.leadChar = 'F';
-                    token.prefix = PREFIX_HEX_UC;
+                    if (token.hexZero) token.prefix = PREFIX_HEX_UC;
                     break;
                 case 'b': // binary number
                     token.base = 2;
                     token.format = current;
                     token.leadChar = '1';
-                    token.prefix = PREFIX_BINARY_LC;
+                    if (token.hexZero) token.prefix = PREFIX_BINARY_LC;
                     break;
                 case 'B': // binary number with 0B prefix
                     token.base = 2;
                     token.format = current;
                     token.leadChar = '1';
-                    token.prefix = PREFIX_BINARY_UC;
+                    if (token.hexZero) token.prefix = PREFIX_BINARY_UC;
                     break;
                 case 'f': // Convert floating point argument as [-]ddd.dddddd,
                     token.format = current;

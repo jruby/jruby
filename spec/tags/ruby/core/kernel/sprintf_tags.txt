@@ -10,7 +10,6 @@ fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA leav
 fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:Kernel#sprintf flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
 fails:Kernel#sprintf flags (digit)$ specifies the absolute argument number for this field
-fails:Kernel#sprintf flags # applies to format o does nothing for negative argument
 fails:Kernel#sprintf flags # applies to formats aAeEfgG forces a decimal point to be added, even if no digits follow
 fails:Kernel#sprintf flags # applies to gG does not remove trailing zeros
 fails:Kernel#sprintf flags + applies to numeric formats bBdiouxXaAeEfgG adds a leading plus sign to non-negative numbers
@@ -35,7 +34,6 @@ fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA leav
 fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA does not leave a space at the start of negative numbers
 fails:Kernel.sprintf flags space applies to numeric formats bBdiouxXeEfgGaA treats several white spaces as one
 fails:Kernel.sprintf flags (digit)$ specifies the absolute argument number for this field
-fails:Kernel.sprintf flags # applies to format o does nothing for negative argument
 fails:Kernel.sprintf flags # applies to formats aAeEfgG forces a decimal point to be added, even if no digits follow
 fails:Kernel.sprintf flags # applies to gG does not remove trailing zeros
 fails:Kernel.sprintf flags + applies to numeric formats bBdiouxXaAeEfgG adds a leading plus sign to non-negative numbers
