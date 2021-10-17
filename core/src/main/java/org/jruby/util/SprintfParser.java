@@ -2,6 +2,7 @@ package org.jruby.util;
 
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,8 +64,9 @@ public class SprintfParser {
         return true;
     }
 
+    // FIXME: Once precision is added look at all three get*Arg versions and maybe just make a single one with extra params.
     private static IRubyObject getArg(FormatToken f, Sprintf.Args args) {
-        if (f.indexedArg()) {
+        if (f.isArgIndexed()) {
             return args.getPositionArg(f.index);
         } else if (f.name != null) {
             if (f.angled) {
@@ -77,13 +79,40 @@ public class SprintfParser {
         }
     }
 
+    private static IRubyObject getWidthArg(FormatToken f, Sprintf.Args args) {
+        if (f.isWidthIndexed()) {
+            return args.getPositionArg(f.width);
+        } else if (f.name != null) {
+            if (f.angled) {
+                return args.getHashValue(f.name, '<', '>');
+            } else {
+                return args.getHashValue(f.name, '{', '}');
+            }
+        } else {
+            return args.getArg();
+        }
+    }
+
+    private static int getWidthArg(ThreadContext context, FormatToken f, Sprintf.Args args) {
+        IRubyObject starWidth = f.isWidthIndexed() ? TypeConverter.convertToInteger(context, getWidthArg(f, args), 0) : null;
+
+        // FIXME: Not sure on bounds of acceptable width here?  This is not right though
+        return starWidth == null ? f.width : (int) ((RubyInteger) starWidth).getLongValue();
+    }
+
     private static void format_bBxX(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
+        int width = getWidthArg(context, f, args);
+        boolean rightPad = f.rightPad; // args can modify rightPad so we use a local instead.
         IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
         boolean negative;
         boolean zero;
         byte[] bytes;
-        int width = f.width;
         boolean sign = f.plusPrefix || f.spacePad;
+
+        if (width < 0) { // Negative widths pad from the right.
+            width *= -1;
+            rightPad = true;
+        }
 
         if (arg instanceof RubyFixnum) {
             final long v = ((RubyFixnum) arg).getLongValue();
@@ -140,7 +169,7 @@ public class SprintfParser {
             width -= precision;
         }
 
-        if (!f.rightPad) {
+        if (!rightPad) {
             buf.fill(' ', width);
             width = 0;
         }
@@ -153,7 +182,7 @@ public class SprintfParser {
             } else if (!usePrefixForZero) {
                 buf.append(PREFIX_NEGATIVE);
                 buf.fill(f.leadChar, precision - len - 1);
-            } else if (leadChar != 0) {
+            } else {
                 buf.fill(leadChar, precision - len + 1); // the 1 is for the stripped sign char
             }
         } else if (leadChar != 0) {
@@ -166,10 +195,16 @@ public class SprintfParser {
     }
 
     private static void format_idu(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
+        int width = getWidthArg(context, f, args);
+        boolean rightPad = f.rightPad; // args can modify rightPad so we use a local instead.
         IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
         boolean negative;
         byte[] bytes;
-        int width = f.width;
+
+        if (width < 0) { // Negative widths pad from the right.
+            width *= -1;
+            rightPad = true;
+        }
 
         if (arg instanceof RubyFixnum) {
             final long v = ((RubyFixnum) arg).getLongValue();
@@ -207,34 +242,33 @@ public class SprintfParser {
         }
 
         int numlen = bytes.length - first;
-        int len = numlen;
 
         int precision = f.precision;
         if (f.zeroPad && f.width != 0) {
             precision = width;
             width = 0;
         } else {
-            if (precision < len) precision = len;
+            if (precision < numlen) precision = numlen;
 
             width -= precision;
         }
 
-        if (!f.rightPad) {
+        if (!rightPad) {
             buf.fill(' ', width);
             width = 0;
         }
         if (signChar != 0) buf.append(signChar);
 
-        if (len < precision) {
-            if (!negative || f.width != 0 || (f.zeroPad && !f.rightPad)) {
-                buf.fill('0', precision - len);
+        if (numlen < precision) {
+            if (!negative || f.width != 0 || (f.zeroPad && !rightPad)) {
+                buf.fill('0', precision - numlen);
             }
         }
         buf.append(bytes, first, numlen);
 
         if (width > 0) buf.fill(' ', width);
-        if (len < precision && negative && f.rightPad) {
-            buf.fill(' ', precision - len);
+        if (numlen < precision && negative && rightPad) {
+            buf.fill(' ', precision - numlen);
         }
     }
 
@@ -242,7 +276,7 @@ public class SprintfParser {
     }
 
     static class ByteToken extends Token {
-        private ByteList bytes;
+        private final ByteList bytes;
 
         public ByteToken(ByteList bytes) {
             this.bytes = bytes;
@@ -259,6 +293,16 @@ public class SprintfParser {
 
     // FIXME: none of these fields need to be public.
     // FIXME: we have integralPad which probably should be combined with argumentIndex as long as it is not confusing (like use access methods).
+    /*
+     * Data structure for how an argument should be formatted.  This structure is not meant to be modified
+     * after it leaves the parser.  Any modifiers which rely on arguments passed to sprintf should not
+     * change this structure.  Adding code to enforce this property would be a pain so we will just work
+     * with convention.
+     *
+     * The reason this is meant to be immutable once parsed is that we need this data to preserve across
+     * multiple sprintf invocations.  If a previous call was capable of modifying it we would start seeing
+     * things like values go from left padding to right padding.
+     */
     static class FormatToken extends Token {
         int base = 10;          // which base of number are we formatting
         boolean spacePad;       // '% d' (FLAG_SPACE in MRI)
@@ -267,9 +311,9 @@ public class SprintfParser {
         boolean hexZero;        // (FLAG_SHARP in MRI)
         boolean zeroPad;
         int format;
-        boolean hasWidth;       // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
-        boolean hasPrecision;   // precision part expressed as syntax '%.3d', '%3.1d', '%3.*1$d' ...
-        boolean precisionIndex; // Is the precision value referring to an index instead of a value?
+        boolean hasWidthIndex;     // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
+        boolean hasPrecision;      // precision part expressed as syntax '%.3d', '%3.1d', '%3.*1$d' ...
+        boolean hasPrecisionIndex; // Is the precision value referring to an index instead of a value?
         int index = -1;         // positional index to use in this format
         int width;              // numeric value if explicitly stated (index or explicit value)
         int precision;          // numeric value if explicitly stated (index or explicit value)
@@ -281,23 +325,27 @@ public class SprintfParser {
         boolean angled;         // if name if is curly ('{') or angled ('<')?
         byte leadChar;
 
-        public boolean indexedArg() {
+        public boolean isArgIndexed() {
             return index >= 0;
         }
 
         public boolean isIndexed() {
-            return indexedArg() || precisionIndex;
+            return isArgIndexed() || hasPrecisionIndex;
         }
 
         public boolean isNamed() {
             return name != null;
         }
 
+        public boolean isWidthIndexed() {
+            return hasWidthIndex && width > 0;
+        }
+
         public String toString() {
             return "Format[%" + (char) format +
                     (name != null ?  ",name=" + (name.realSize() != 0 ? name : "''") : "") +
                     //(hasWidth ? ",width.prec=" + width + (widthIndex ? "$" : "") : "") +
-                    (hasPrecision ? "." + precision + (precisionIndex ? "$" : "") : "") +
+                    (hasPrecision ? "." + precision + (hasPrecisionIndex ? "$" : "") : "") +
                     (isIndexed() ? ",index=" + value : "") +
                     (spacePad ? ",space_pad" : "") +
                     (plusPrefix ? ",plus" : "") +
@@ -310,13 +358,14 @@ public class SprintfParser {
     }
 
     static class Lexer {
-        static enum First { UNNUMBERED, NUMBERED, NAMED};
-        private static int EOF = -1;
+        enum First { UNNUMBERED, NUMBERED, NAMED}
+
+        private static final int EOF = -1;
         public static Token EOFToken = new Token();
-        private ByteList format;
+        private final ByteList format;
         private int index = 0;
         private int current = 0;
-        private ThreadContext context;
+        private final ThreadContext context;
         private First foundFirst;
         private int formatTokensFound = 0;
 
@@ -400,7 +449,7 @@ public class SprintfParser {
             processModifiers(token);
             verifyHomogeneous(token);
 
-            // Found %{name} or %<name>.  %{} has no formatting so just return now.
+            // Found %{name} or %<name>.  %{} has no additional formatting so just return now.
             if (token.name != null && !token.angled) return token;
 
             switch (current) {
@@ -541,11 +590,11 @@ public class SprintfParser {
                     case '0':    // zero pad
                         token.zeroPad = true;
                         break;
-                    case '*':    // use arg list to calculate pad
+                    case '*':    // use arg list to calculate pad ('%1$*2$d', '%1$*2$d')
                         if (!token.hasPrecision) { // initial '*'.
-                            if (token.hasWidth) error("width given twice");
+                            if (token.hasWidthIndex) error("width given twice");
 
-                            token.hasWidth = true; // hasWidth with no widthIndex == bare '*'. Otherwise specific index.
+                            token.hasWidthIndex = true; // hasWidth with no width == bare '*'. Otherwise specific index.
                         } // Otherwise: '*' for '{width}.*'  [nothing to do here as it will got to 0-9 next.
                         break;
                     case '1': case '2': case '3': case '4': case '5':  // numbers representing specific field values '%3d'
@@ -553,17 +602,21 @@ public class SprintfParser {
                         int amount = processDigits();
 
                         if (inPrecision) {
-                            if (token.precisionIndex) {          // index of value for format '%3.*1$2$d'
+                            if (token.hasPrecisionIndex) {          // index of value for format '%3.*1$2$d'
                                 if (current != '$') error("width given twice");
                                 token.value = amount;
                             } else {                          // index of precision '%3.*1$'.
-                                if (current == '$') token.precisionIndex = true;
+                                if (current == '$') token.hasPrecisionIndex = true;
                                 token.precision = amount;
                             }
                         } else {
                             if (token.isIndexed()) {          // index of value for format '%*2$3$d'
                                 if (current != '$') error("width given twice");
-                                token.value = amount;
+                                if (token.hasWidthIndex) {
+                                    token.width = amount;
+                                } else {
+                                    token.value = amount;
+                                }
                             } else {
                                 if (current == '$') {
                                     token.index = amount;
