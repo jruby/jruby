@@ -79,16 +79,37 @@ public class SprintfParser {
         }
     }
 
-    private static IRubyObject getWidthArg(FormatToken f, Sprintf.Args args) {
-        if (f.isWidthIndexed()) {
-            return args.getPositionArg(f.width);
+    private static IRubyObject getPrecisionArg(FormatToken f, Sprintf.Args args) {
+        if (f.hasPrecisionIndex) { // numbered
+            return args.getPositionArg(f.precision);
         } else if (f.name != null) {
-            if (f.angled) {
+            if (f.angled) {  // name, key
                 return args.getHashValue(f.name, '<', '>');
             } else {
                 return args.getHashValue(f.name, '{', '}');
             }
-        } else {
+        } else { // unnumbered
+            return args.getArg();
+        }
+    }
+
+    private static int getPrecisionArg(ThreadContext context, FormatToken f, Sprintf.Args args) {
+        IRubyObject precision = f.isWidthIndexed() ? TypeConverter.convertToInteger(context, getPrecisionArg(f, args), 0) : null;
+
+        // FIXME: Not sure on bounds of acceptable width here?
+        return precision == null ? f.precision : (int) ((RubyInteger) precision).getLongValue();
+    }
+
+    private static IRubyObject getWidthArg(FormatToken f, Sprintf.Args args) {
+        if (f.isWidthIndexed()) { // numbered
+            return args.getPositionArg(f.width);
+        } else if (f.name != null) {
+            if (f.angled) {  // name, key
+                return args.getHashValue(f.name, '<', '>');
+            } else {
+                return args.getHashValue(f.name, '{', '}');
+            }
+        } else { // unnumbered
             return args.getArg();
         }
     }
@@ -96,12 +117,13 @@ public class SprintfParser {
     private static int getWidthArg(ThreadContext context, FormatToken f, Sprintf.Args args) {
         IRubyObject starWidth = f.hasWidth ? TypeConverter.convertToInteger(context, getWidthArg(f, args), 0) : null;
 
-        // FIXME: Not sure on bounds of acceptable width here?  This is not right though
+        // FIXME: Not sure on bounds of acceptable width here?
         return starWidth == null ? f.width : (int) ((RubyInteger) starWidth).getLongValue();
     }
 
     private static void format_bBxX(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
         int width = getWidthArg(context, f, args);
+        int precision = getPrecisionArg(context, f, args);
         boolean rightPad = f.rightPad; // args can modify rightPad so we use a local instead.
         IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
         boolean negative;
@@ -160,7 +182,6 @@ public class SprintfParser {
         int numlen = bytes.length - first;
         len += numlen;
 
-        int precision = f.precision;
         if (f.zeroPad && !f.hasPrecision) {
             precision = width;
             width = 0;
@@ -197,6 +218,7 @@ public class SprintfParser {
 
     private static void format_idu(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
         int width = getWidthArg(context, f, args);
+        int precision = getPrecisionArg(context, f, args);
         boolean rightPad = f.rightPad; // args can modify rightPad so we use a local instead.
         IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
         boolean negative;
@@ -244,7 +266,6 @@ public class SprintfParser {
 
         int numlen = bytes.length - first;
 
-        int precision = f.precision;
         if (f.zeroPad && f.width != 0) {
             precision = width;
             width = 0;
@@ -318,7 +339,6 @@ public class SprintfParser {
         int index = -1;         // positional index to use in this format
         int width;              // numeric value if explicitly stated (index or explicit value)
         int precision;          // numeric value if explicitly stated (index or explicit value)
-        int value;              // numeric value if explicitly stated (index only)
         ByteList name;
         int exponent;
         boolean unsigned;       // 'u' will process argument value differently sometimes (otherwise like 'd').
@@ -347,7 +367,7 @@ public class SprintfParser {
                     (name != null ?  ",name=" + (name.realSize() != 0 ? name : "''") : "") +
                     //(hasWidth ? ",width.prec=" + width + (widthIndex ? "$" : "") : "") +
                     (hasPrecision ? "." + precision + (hasPrecisionIndex ? "$" : "") : "") +
-                    (isIndexed() ? ",index=" + value : "") +
+                    (isArgIndexed() ? ",index=" + index: "") +
                     (spacePad ? ",space_pad" : "") +
                     (plusPrefix ? ",plus" : "") +
                     (rightPad ? ",right_pad" : "") +
@@ -423,13 +443,19 @@ public class SprintfParser {
             return format.makeShared(startIndex, count - 1);
         }
 
-        private int processDigits() {
+        private int processDigits(FormatToken token, boolean inWidth, boolean inPrecision) {
             int count =  current - '0';
 
             for (int character = nextChar(); character != EOF; character = nextChar()) {
                 if (!isDecimalDigit(character)) break;
 
-                count *= 10 + (character - '0');
+                count = count * 10 + (character - '0');
+                if (count < 0) {
+                    if (inPrecision) argumentError("prec too big");
+                    if (inWidth) argumentError("width too big");
+                    // This is a bit odd but we are requesting soo many arguments we overflow so we cannot have enough.
+                    argumentError("too few arguments");
+                }
             }
 
             return count;
@@ -536,34 +562,40 @@ public class SprintfParser {
             return token;
         }
 
+        private void argumentError(String message) {
+            throw context.runtime.newArgumentError(message);
+        }
+
         private void verifyHomogeneous(FormatToken token) {
             formatTokensFound++;
 
             if (foundFirst == null) {
-                foundFirst = token.isIndexed() ? First.NUMBERED : First.UNNUMBERED;
+                foundFirst = token.isNamed() ? First.NAMED : (token.isIndexed() ? First.NUMBERED : First.UNNUMBERED);
             } else {
                 if (token.isIndexed()) {
                     switch (foundFirst) {
                         case UNNUMBERED:
-                            throw context.runtime.newArgumentError("numbered(" + token.index + ") after unnumbered(" + (formatTokensFound - 1) + ")");
+                            argumentError("numbered(" + token.index + ") after unnumbered(" + (formatTokensFound - 1) + ")");
                         case NAMED:
-                            throw context.runtime.newArgumentError("numbered(" + token.index + ") after named");
+                            argumentError("numbered(" + token.index + ") after named");
                     }
                 } else if (token.isNamed()) {
+                    char start = token.angled ? '<' : '{';
+                    char end = token.angled ? '>' : '}';
                     switch (foundFirst) {
                         case UNNUMBERED:
                             // FIXME: Names should be mbs
-                            throw context.runtime.newArgumentError("named" + token.leadChar + RubyString.newString(context.runtime, token.name) + (token.leadChar == '<' ? '>' : '}') + " after unnumbered(" + (formatTokensFound - 1) + ")");
+                            argumentError("named" + start + RubyString.newString(context.runtime, token.name) + end + " after unnumbered(" + (formatTokensFound - 1) + ")");
                         case NUMBERED:
                             // FIXME: Names should be mbs
-                            throw context.runtime.newArgumentError("named" + token.leadChar + RubyString.newString(context.runtime, token.name) + (token.leadChar == '<' ? '>' : '}') + " after numbered");
+                            argumentError("named" + start + RubyString.newString(context.runtime, token.name) + end + " after numbered");
                     }
                 } else {
                     switch (foundFirst) {
                         case NUMBERED:
-                            throw context.runtime.newArgumentError("unnumbered(" + formatTokensFound + ") mixed with numbered");
+                            argumentError("unnumbered(" + formatTokensFound + ") mixed with numbered");
                         case NAMED:
-                            throw context.runtime.newArgumentError("unnumbered(" + formatTokensFound + ") mixed with named");
+                            argumentError("unnumbered(" + formatTokensFound + ") mixed with named");
 
                     }
                 }
@@ -573,6 +605,7 @@ public class SprintfParser {
         // FIXME: multiple names should error
         private void processModifiers(FormatToken token) {
             boolean inPrecision = false;  // Are we processing precision part of the format modifier (e.g. after the '.').
+            boolean inWidth = false;
 
             for (int character = current; character != EOF; character = nextChar()) {
                 switch (character) {
@@ -596,39 +629,36 @@ public class SprintfParser {
                             if (token.hasWidth) error("width given twice");
 
                             token.hasWidth = true; // hasWidth with no width == bare '*'. Otherwise specific index.
+                            inWidth = true;
                         } // Otherwise: '*' for '{width}.*'  [nothing to do here as it will got to 0-9 next.
                         break;
                     case '1': case '2': case '3': case '4': case '5':  // numbers representing specific field values '%3d'
                     case '6': case '7': case '8': case '9': {          // OR indices '%*1$2$d'
-                        int amount = processDigits();
+                        int amount = processDigits(token, inWidth, inPrecision);
 
                         if (inPrecision) {
+                            inPrecision = false;
                             if (token.hasPrecisionIndex) {          // index of value for format '%3.*1$2$d'
                                 if (current != '$') error("width given twice");
-                                token.value = amount;
+                                token.index = amount;
                             } else {                          // index of precision '%3.*1$'.
                                 if (current == '$') token.hasPrecisionIndex = true;
                                 token.precision = amount;
                             }
+                        } else if (inWidth) {
+                            inWidth = false;
+                            if (current != '$') error("width given twice");
+                            token.width = amount;
                         } else {
-                            if (token.isIndexed()) {          // index of value for format '%*2$3$d'
-                                if (current != '$') error("width given twice");
-                                if (token.hasWidth) {
-                                    token.width = amount;
-                                } else {
-                                    token.value = amount;
-                                }
+                            if (current == '$') {
+                                token.index = amount;
                             } else {
-                                if (current == '$') {
-                                    token.index = amount;
-                                } else {
-                                    token.width = amount;
-                                }
+                                token.width = amount;
                             }
                         }
 
                         if (current != '$') {
-                            if (token.hasWidth && token.width > 0) error("width given twice");
+                            if (token.isWidthIndexed()) error("width given twice");
                             unread();
                         }
 
@@ -640,15 +670,20 @@ public class SprintfParser {
                         token.hasPrecision = true;
                         inPrecision = true;
                         break;
-                    case '<':
-                        if (token.name != null) throw new IllegalArgumentException("FIXME: make str() for mbs supported name");
+                    case '<': {
                         token.angled = true;
-                        token.name = bytelistUpto('>');
+                        ByteList name = bytelistUpto('>');
+                        // MBS for string names
+                        if (token.name != null) argumentError("named<" + RubyString.newString(context.runtime, name) + "> after <" + RubyString.newString(context.runtime, token.name) + ">");
+                        token.name = name;
                         break;
-                    case '{':
-                        if (token.name != null) throw new IllegalArgumentException("FIXME: make str() for mbs supported name");
-                        token.name = bytelistUpto('}');
+                    }
+                    case '{': {
+                        ByteList name = bytelistUpto('}');
+                        if (token.name != null) argumentError("named<" + RubyString.newString(context.runtime, name) + "> after <" + RubyString.newString(context.runtime, token.name) + ">");
+                        token.name = name;
                         return;
+                    }
                     default:
                         return;
                 }
