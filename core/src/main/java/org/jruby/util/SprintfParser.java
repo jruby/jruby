@@ -95,10 +95,9 @@ public class SprintfParser {
 
     private static int getPrecisionArg(ThreadContext context, FormatToken f, Sprintf.Args args) {
         // FIXME:  This is form fitted nonsense.  I need to make a helper and simplify the fields in FormatToken.
-        IRubyObject precision = f.hasPrecision && (f.precision == 0 || f.hasPrecisionIndex) ? TypeConverter.convertToInteger(context, getPrecisionArg(f, args), 0) : null;
+        IRubyObject precision = (f.hasPrecision && f.precision == -1) || f.hasPrecisionIndex ? TypeConverter.convertToInteger(context, getPrecisionArg(f, args), 0) : null;
 
-        // FIXME: Not sure on bounds of acceptable width here?
-        return precision == null ? f.precision : (int) ((RubyInteger) precision).getLongValue();
+        return precision == null ? f.precision : args.intValue(precision);
     }
 
     private static IRubyObject getWidthArg(FormatToken f, Sprintf.Args args) {
@@ -118,8 +117,7 @@ public class SprintfParser {
     private static int getWidthArg(ThreadContext context, FormatToken f, Sprintf.Args args) {
         IRubyObject starWidth = f.hasWidth ? TypeConverter.convertToInteger(context, getWidthArg(f, args), 0) : null;
 
-        // FIXME: Not sure on bounds of acceptable width here?
-        return starWidth == null ? f.width : (int) ((RubyInteger) starWidth).getLongValue();
+        return starWidth == null ? f.width : args.intValue(starWidth);
     }
 
     private static void format_bBxX(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
@@ -339,7 +337,7 @@ public class SprintfParser {
         boolean hasPrecisionIndex; // Is the precision value referring to an index instead of a value?
         int index = -1;         // positional index to use in this format
         int width;              // numeric value if explicitly stated (index or explicit value)
-        int precision;          // numeric value if explicitly stated (index or explicit value)
+        int precision = -1;          // numeric value if explicitly stated (index or explicit value)
         ByteList name;
         int exponent;
         boolean unsigned;       // 'u' will process argument value differently sometimes (otherwise like 'd').
@@ -623,7 +621,12 @@ public class SprintfParser {
                         token.hexZero = true;
                         break;
                     case '0':    // zero pad
-                        token.zeroPad = true;
+                        if (inPrecision) {  // %5.0d
+                            token.precision = 0;
+                            inPrecision = false;
+                        } else {
+                            token.zeroPad = true;
+                        }
                         break;
                     case '*':    // use arg list to calculate pad ('%1$*2$d', '%1$*2$d')
                         if (!token.hasPrecision) { // initial '*'.
