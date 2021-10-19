@@ -94,7 +94,8 @@ public class SprintfParser {
     }
 
     private static int getPrecisionArg(ThreadContext context, FormatToken f, Sprintf.Args args) {
-        IRubyObject precision = f.isWidthIndexed() ? TypeConverter.convertToInteger(context, getPrecisionArg(f, args), 0) : null;
+        // FIXME:  This is form fitted nonsense.  I need to make a helper and simplify the fields in FormatToken.
+        IRubyObject precision = f.hasPrecision && (f.precision == 0 || f.hasPrecisionIndex) ? TypeConverter.convertToInteger(context, getPrecisionArg(f, args), 0) : null;
 
         // FIXME: Not sure on bounds of acceptable width here?
         return precision == null ? f.precision : (int) ((RubyInteger) precision).getLongValue();
@@ -443,7 +444,7 @@ public class SprintfParser {
             return format.makeShared(startIndex, count - 1);
         }
 
-        private int processDigits(FormatToken token, boolean inWidth, boolean inPrecision) {
+        private int processDigits(boolean inWidth, boolean inPrecision) {
             int count =  current - '0';
 
             for (int character = nextChar(); character != EOF; character = nextChar()) {
@@ -634,7 +635,7 @@ public class SprintfParser {
                         break;
                     case '1': case '2': case '3': case '4': case '5':  // numbers representing specific field values '%3d'
                     case '6': case '7': case '8': case '9': {          // OR indices '%*1$2$d'
-                        int amount = processDigits(token, inWidth, inPrecision);
+                        int amount = processDigits(inWidth, inPrecision);
 
                         if (inPrecision) {
                             inPrecision = false;
