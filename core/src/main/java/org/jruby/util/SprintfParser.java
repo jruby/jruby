@@ -4,6 +4,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -35,7 +36,7 @@ public class SprintfParser {
         // For now only allow what is implemented.
         for (Token token: tokens) {
             if (token instanceof FormatToken) {
-                if ("bBdoxX".indexOf(((FormatToken) token).format) == -1) return false;
+                if ("cbBdoxX".indexOf(((FormatToken) token).format) == -1) return false;
             }
         }
 
@@ -51,6 +52,9 @@ public class SprintfParser {
                 switch (f.format) {
                     case 'd': // (%i, %u) %i is an alias for %d.  %u is largely %d.
                         format_idu(context, buf, args, f, usePrefixForZero);
+                        break;
+                    case 'c':
+                        format_c(context, buf, args, f, usePrefixForZero);
                         break;
                     case 'b':
                     case 'B':
@@ -225,6 +229,46 @@ public class SprintfParser {
             buf.append(leadChar);
         }
         buf.append(bytes, first, numlen);
+
+        if (width > 0) buf.fill(' ', width);
+    }
+
+    private static void format_c(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
+        int width = getWidthArg(context, f, args);
+        boolean rightPad = f.rightPad;
+        IRubyObject arg = getArg(f, args);
+        byte[] bytes = new byte[1];
+
+        if (arg instanceof RubyString) {
+            final RubyString rs = ((RubyString) arg);
+            if (rs.length() != 1) {
+                throw context.runtime.newArgumentError("String not of length 1");
+            }
+            bytes[0] = rs.getBytes()[0];
+        } else if (arg instanceof RubyFixnum) {
+            final int v = ((RubyFixnum) arg).getIntValue();
+            if (v < 0 || v < Character.MIN_CODE_POINT || v > Character.MAX_CODE_POINT) {
+                // TODO:  Add negative and range mismatch error?
+                return;
+            }
+            bytes[0] = (byte)v;
+        } else {
+            final int v = ((RubyBignum) arg).getValue().intValue();
+            if (v < 0 || v < Character.MIN_CODE_POINT || v > Character.MAX_CODE_POINT) {
+                // TODO: And negative and range mismatch error?
+                return;
+            }
+            bytes[0] = (byte)v;
+        }
+
+        int numlen = 1;
+
+        if (!rightPad) {
+            buf.fill(' ', width);
+            width = 0;
+        }
+
+        buf.append(bytes, 0, numlen);
 
         if (width > 0) buf.fill(' ', width);
     }
