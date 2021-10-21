@@ -1,5 +1,7 @@
 package org.jruby.util;
 
+import org.jcodings.Encoding;
+import org.jcodings.exception.EncodingException;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -7,6 +9,7 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.EncodingUtils;
 
 import java.math.BigInteger;
 import java.util.LinkedList;
@@ -225,40 +228,42 @@ public class SprintfParser {
         int width = getWidthArg(context, f, args);
         boolean rightPad = f.rightPad;
         IRubyObject arg = getArg(f, args);
-        byte[] bytes = new byte[1];
+        Encoding encoding;
+        int codePoint, codeLen;
+
+        encoding = buf.getEncoding();
 
         if (arg instanceof RubyString) {
             final RubyString rs = ((RubyString) arg);
-            if (rs.length() != 1) {
-                throw context.runtime.newArgumentError("String not of length 1");
+            ByteList bl = rs.getByteList();
+            if (rs.strLength() != 1) {
+                throw context.runtime.newArgumentError("%c requires a character");
             }
-            bytes[0] = rs.getBytes()[0];
-        } else if (arg instanceof RubyFixnum) {
-            final int v = ((RubyFixnum) arg).getIntValue();
-            if (v < 0 || v < Character.MIN_CODE_POINT || v > Character.MAX_CODE_POINT) {
-                // TODO:  Add negative and range mismatch error?
-                return;
-            }
-            bytes[0] = (byte)v;
+            codePoint = StringSupport.codePoint(context.runtime, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
+            codeLen = StringSupport.codeLength(bl.getEncoding(), codePoint);
         } else {
-            final int v = ((RubyBignum) arg).getValue().intValue();
-            if (v < 0 || v < Character.MIN_CODE_POINT || v > Character.MAX_CODE_POINT) {
-                // TODO: And negative and range mismatch error?
-                return;
+            codePoint = (int) arg.convertToInteger().getLongValue() & 0xFFFFFFFF;
+            try {
+                codeLen = StringSupport.codeLength(encoding, codePoint);
+            } catch (EncodingException e) {
+                codeLen = -1;
             }
-            bytes[0] = (byte)v;
         }
 
-        int numlen = 1;
+        if (codeLen <= 0) {
+            throw context.runtime.newArgumentError("invalid character");
+        }
 
         if (!rightPad) {
-            buf.fill(' ', width);
+            buf.fill(' ', width-1);
             width = 0;
         }
 
-        buf.append(bytes, 0, numlen);
+        buf.ensure(buf.length() + codeLen);
+        EncodingUtils.encMbcput(codePoint, buf.unsafeBytes(), buf.realSize(), encoding);
+        buf.realSize(buf.realSize() + codeLen);
 
-        if (width > 0) buf.fill(' ', width);
+        if (width > 0) buf.fill(' ', width-1);
     }
 
     private static void format_idu(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
