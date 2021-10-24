@@ -381,7 +381,7 @@ public class SprintfParser {
         if (signChar != 0) buf.append(signChar);
 
         if (numlen < precision) {
-            if (!negative || f.width != 0 || (f.zeroPad && !rightPad)) {
+            if (!negative || f.width != 0 || f.hasPrecision || (f.zeroPad && !rightPad)) {
                 buf.fill('0', precision - numlen);
             }
         }
