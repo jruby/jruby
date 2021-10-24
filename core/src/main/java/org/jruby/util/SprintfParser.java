@@ -663,6 +663,7 @@ public class SprintfParser {
 
                         if (current != '$') {
                             if (token.isWidthIndexed()) error("width given twice");
+                            if (current == EOF) return;
                             unread();
                         }
 
