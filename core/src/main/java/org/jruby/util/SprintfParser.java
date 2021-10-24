@@ -570,6 +570,10 @@ public class SprintfParser {
             int character = nextChar();
 
             if (character == '%') return PERCENT;
+            if (character == '\n' || character == '\0') { // '%(\n|\0)'
+                unread();
+                return PERCENT;
+            }
 
             FormatToken token = new FormatToken();
             processModifiers(token);
