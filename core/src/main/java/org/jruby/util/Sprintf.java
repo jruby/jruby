@@ -92,9 +92,9 @@ public class Sprintf {
         private final Locale locale;
         private final IRubyObject[] rubyArray;
         private final RubyHash rubyHash;
-        private final int length;
-        private int positionIndex; // last index (+1) accessed by next()
-        private int nextIndex;
+        final int length;
+        int positionIndex; // last index (+1) accessed by next()
+        int nextIndex;
         private IRubyObject nextObject;
 
         Args(Ruby runtime, Locale locale, IRubyObject[] args) {

@@ -4,6 +4,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -39,6 +40,9 @@ public class SprintfParser {
             }
         }
 
+        // For special case of "" where no tokens are produced.
+        if (tokens.isEmpty() && args.length > 0) tooManyArguments(args);
+
         for (Token token: tokens) {
             if (token instanceof ByteToken) {
                 buf.append(((ByteToken) token).getBytes());
@@ -60,8 +64,18 @@ public class SprintfParser {
                         return false;
                 }
             }
+
+            if (args.positionIndex >= 0 && args.nextIndex < args.length) tooManyArguments(args);
         }
         return true;
+    }
+
+    private static void tooManyArguments(Args args) {
+        if (args.runtime.isDebug()) {
+            args.raiseArgumentError("too many arguments for format string");
+        } else if (args.runtime.isVerbose()) {
+            args.warn(IRubyWarnings.ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
+        }
     }
 
     // FIXME: Once precision is added look at all three get*Arg versions and maybe just make a single one with extra params.
