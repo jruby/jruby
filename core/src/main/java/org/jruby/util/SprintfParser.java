@@ -728,7 +728,7 @@ public class SprintfParser {
                         if (inPrecision) {  // %5.0d
                             token.precision = 0;
                             inPrecision = false;
-                        } else {
+                        } else if (!token.rightPad) { // '-' takes precedence over '0'
                             token.zeroPad = true;
                         }
                         break;
