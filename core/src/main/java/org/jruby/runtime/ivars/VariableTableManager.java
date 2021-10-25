@@ -432,6 +432,22 @@ public class VariableTableManager {
                 (myVarTable = object.varTable) != null && myVarTable.length > hasObjectID + hasFFI + hasObjectspaceGroup;
     }
 
+    public boolean hasInstanceVariables(RubyBasicObject object) {
+        // we check both to exclude object_id
+        Object[] myVarTable;
+        if (fieldVariables > 0) return true;
+        if ((myVarTable = object.varTable) != null
+                && myVarTable.length > hasObjectID + hasFFI + hasObjectspaceGroup) {
+
+            for (int i = 0; i < myVarTable.length; i++) {
+                if (i == hasObjectID || i == hasFFI || i == hasObjectspaceGroup) continue;
+                if (myVarTable[i] != null) return true;
+            }
+        }
+
+        return false;
+    }
+
     public void serializeVariables(RubyBasicObject object, ObjectOutputStream oos) throws IOException {
         if (object.varTable != null) {
             Map<String, VariableAccessor> accessors = getVariableAccessorsForRead();

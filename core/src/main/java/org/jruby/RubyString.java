@@ -6977,7 +6977,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * Is this a "bare" string, i.e. has no instance vars and class == String.
      */
     public boolean isBare(Ruby runtime) {
-        return !hasVariables() && metaClass == runtime.getString();
+        return !hasInstanceVariables() && metaClass == runtime.getString();
     }
 
     private static StringSites sites(ThreadContext context) {
