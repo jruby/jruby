@@ -64,9 +64,10 @@ public class SprintfParser {
                         return false;
                 }
             }
-
-            if (args.positionIndex >= 0 && args.nextIndex < args.length) tooManyArguments(args);
         }
+
+        if (args.positionIndex >= 0 && args.nextIndex < args.length) tooManyArguments(args);
+
         return true;
     }
 
