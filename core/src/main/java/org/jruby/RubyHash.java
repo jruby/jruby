@@ -1144,7 +1144,10 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            internalPut(hashKeyString(runtime, key), value, false);
+
+            if (!key.isFrozen()) key = hashKeyString(runtime, key);
+
+            internalPut(key, value, false);
         }
     }
 
@@ -1154,7 +1157,10 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            internalPutNoResize(hashKeyString(runtime, key), value, false);
+
+            if (!key.isFrozen()) key = hashKeyString(runtime, key);
+
+            internalPutNoResize(key, value, false);
         }
     }
 
