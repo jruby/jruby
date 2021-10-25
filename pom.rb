@@ -70,7 +70,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'rake.version' => '12.3.3',
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
-              'asm.version' => '9.1',
+              'asm.version' => '9.2',
               'jffi.version' => '1.3.5',
               'joda.time.version' => '2.10.10' )
 
