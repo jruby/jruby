@@ -7,6 +7,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.runtime.callsite.SuperCallSite;
 
 import java.lang.invoke.MutableCallSite;
 
@@ -50,6 +51,7 @@ public class JavaSites {
     public final RaiseExceptionSites RaiseException = new RaiseExceptionSites();
     public final ConditionVariableSites ConditionVariable = new ConditionVariableSites();
     public final FiberSites Fiber = new FiberSites();
+    public final SetSites Set = new SetSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -480,6 +482,11 @@ public class JavaSites {
     public static class FiberSites {
         public final CachingCallSite peek = new FunctionalCachingCallSite("peek");
         public final CachingCallSite next = new FunctionalCachingCallSite("next");
+    }
+
+    public static class SetSites {
+        public final SuperCallSite initialize_dup_super = new SuperCallSite();
+        public final SuperCallSite initialize_clone_super = new SuperCallSite();
     }
 
     public static class CheckedSites {
