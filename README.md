@@ -20,7 +20,7 @@ on the JVM and access powerful JVM libraries such as highly tuned concurrency
 primitives, you can use it to embed Ruby as a scripting language in your Java
 program, or many other possibilities.
 
-We're a welcoming community - you can talk to us on [#jruby on Freenode](http://richard.esplins.org/siwi/2011/07/08/getting-started-freenode-irc/).
+We're a welcoming community - you can talk to us on [#jruby on Libera](https://libera.chat/).
 There are core team members in the EU and US time zones.
 
 Visit the [JRuby website](https://www.jruby.org/) and the [JRuby wiki](https://github.com/jruby/jruby/wiki)

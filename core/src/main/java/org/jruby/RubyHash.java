@@ -1144,7 +1144,9 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            if (!key.isFrozen()) key = runtime.freezeAndDedupString(key);
+
+            if (!key.isFrozen()) key = hashKeyString(runtime, key);
+
             internalPut(key, value, false);
         }
     }
@@ -1155,9 +1157,20 @@ public class RubyHash extends RubyObject implements Map {
             entry.value = value;
         } else {
             checkIterating();
-            if (!key.isFrozen()) key = runtime.freezeAndDedupString(key);
+
+            if (!key.isFrozen()) key = hashKeyString(runtime, key);
+
             internalPutNoResize(key, value, false);
         }
+    }
+
+    // MRI: rb_hash_key_str
+    private static RubyString hashKeyString(Ruby runtime, RubyString key) {
+        if (key.isBare(runtime)) {
+            return runtime.freezeAndDedupString(key);
+        }
+
+        return (RubyString) key.dupFrozen();
     }
 
     // returns null when not found to avoid unnecessary getRuntime().getNil() call
