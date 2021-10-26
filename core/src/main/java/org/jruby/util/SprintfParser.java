@@ -376,6 +376,10 @@ public class SprintfParser {
             return hasWidth && width > 0;
         }
 
+        public boolean hasWidth() {
+            return hasWidth || width > 0;
+        }
+
         public String toString() {
             return "Format[%" + (char) format +
                     (name != null ?  ",name=" + (name.realSize() != 0 ? name : "''") : "") +
@@ -624,19 +628,28 @@ public class SprintfParser {
         private void processModifiers(FormatToken token) {
             boolean inPrecision = false;  // Are we processing precision part of the format modifier (e.g. after the '.').
             boolean inWidth = false;
+            int lastCharacter = 0;
 
             for (int character = current; character != EOF; character = nextChar()) {
                 switch (character) {
                     case ' ':    // space pad values
+                        if (token.hasPrecision) error("flag after precision");
+                        if (token.hasWidth()) error("flag after width");
                         token.spacePad = true;
                         break;
                     case '+':    // + prefix positive values
+                        if (token.hasPrecision) error("flag after precision");
+                        if (token.hasWidth()) error("flag after width");
                         token.plusPrefix = true;
                         break;
                     case '-':    // right pad space
+                        if (token.hasPrecision) error("flag after precision");
+                        if (token.hasWidth()) error("flag after width");
                         token.rightPad = true;
                         break;
                     case '#':    // first 0 digit in hex/binary display
+                        if (token.hasPrecision) error("flag after precision");
+                        if (token.hasWidth()) error("flag after width");
                         token.hexZero = true;
                         break;
                     case '0':    // zero pad
@@ -648,6 +661,7 @@ public class SprintfParser {
                         }
                         break;
                     case '*':    // use arg list to calculate pad ('%1$*2$d', '%1$*2$d')
+                        if (inPrecision && lastCharacter == '*') error("width after precision"); // %.**d
                         if (!token.hasPrecision) { // initial '*'.
                             if (token.hasWidth) error("width given twice");
 
@@ -674,6 +688,7 @@ public class SprintfParser {
                             token.width = amount;
                         } else {
                             if (current == '$') {
+                                if (token.index > 0) error("value given twice");
                                 token.index = amount;
                             } else {
                                 token.width = amount;
@@ -711,6 +726,8 @@ public class SprintfParser {
                     default:
                         return;
                 }
+
+                lastCharacter = character;
             }
         }
 
