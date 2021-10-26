@@ -39,7 +39,7 @@ public class SprintfParser {
         // For now only allow what is implemented.
         for (Token token: tokens) {
             if (token instanceof FormatToken) {
-                if ("cbBdoxX".indexOf(((FormatToken) token).format) == -1) return false;
+                if ("pscbBdoxX".indexOf(((FormatToken) token).format) == -1) return false;
             }
         }
 
@@ -55,6 +55,10 @@ public class SprintfParser {
                         break;
                     case 'c':
                         format_c(context, buf, args, f, usePrefixForZero);
+                        break;
+                    case 'p':
+                    case 's':
+                        format_ps(context, buf, args, f, usePrefixForZero);
                         break;
                     case 'b':
                     case 'B':
@@ -220,6 +224,53 @@ public class SprintfParser {
         buf.append(bytes, first, numlen);
 
         if (width > 0) buf.fill(' ', width);
+    }
+
+    private static void format_ps(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
+        int width = getWidthArg(context, f, args);
+        int precision = getPrecisionArg(context, f, args);
+        boolean hasPrecision = precision >= 0;
+        boolean hasWidth = width > 0;
+        boolean rightPad = f.rightPad;
+        IRubyObject arg = getArg(f, args);
+
+        if (width < 0) {
+            throw context.runtime.newArgumentError("width to %s too big");
+        }
+
+        if (f.format == 'p') {
+            arg = arg.callMethod(context, "inspect");
+        }
+
+        RubyString str = arg.asString();
+        int strLen = str.strLength();
+        ByteList bytes = str.getByteList();
+        int len = bytes.length();
+        Encoding encoding = RubyString.checkEncoding(context.runtime, buf, bytes);
+
+        if (hasPrecision || hasWidth) {
+            if (hasPrecision && precision < strLen) {
+                strLen = precision;
+                len = StringSupport.nth(encoding, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize(), precision);
+                if (len == -1) len = 0;
+                len = len - bytes.begin();
+            }
+            if (hasWidth && width > strLen) {
+                width -= strLen;
+                if (!rightPad) {
+                     buf.fill(' ', width);
+                     width = 0;
+                }
+                buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+                if (rightPad) {
+                    buf.fill(' ', width);
+                }
+                buf.setEncoding(encoding);
+                return;
+            }
+        }
+        buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+        buf.setEncoding(encoding);
     }
 
     private static void format_c(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
