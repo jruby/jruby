@@ -6,11 +6,8 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
-<<<<<<< HEAD
-import org.jruby.exceptions.ArgumentError;
-=======
 import org.jruby.common.IRubyWarnings;
->>>>>>> Add in too few args error checking
+import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
