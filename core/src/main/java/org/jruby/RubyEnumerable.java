@@ -565,6 +565,19 @@ public class RubyEnumerable {
                     return ctx.nil;
                 }
             });
+        } else if (pattern instanceof RubyRegexp) {
+            callEach(context, each, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block unused) {
+                    return call(ctx, packEnumValues(ctx, args), unused);
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject arg, Block unused) {
+                    if (((RubyRegexp) pattern).match_p(ctx, arg).isTrue() == isPresent) {
+                        synchronized (result) { result.append(arg); }
+                    }
+                    return ctx.nil;
+                }
+            });
         } else {
             // pattern === arg
             callEach(context, each, self, Signature.ONE_REQUIRED, new BlockCallback() {
