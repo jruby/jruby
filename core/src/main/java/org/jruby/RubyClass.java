@@ -63,6 +63,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.Java.JCtorCache;
 import org.jruby.javasupport.JavaClass;
@@ -1386,6 +1387,7 @@ public class RubyClass extends RubyModule {
                 // Allocator "set" via clinit {@see JavaProxyClass#setProxyClassReified()}
 
                 this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
+                JavaProxy.setJavaClass(this, result);
             } else {
                 setRubyClassAllocator(result);
             }

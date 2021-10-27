@@ -17,18 +17,20 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.2.22', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.2.29', { bin: false }],
     ['abbrev', '0.1.0'],
     ['base64', '0.1.0'],
     ['benchmark', '0.1.1'],
-    ['bundler', '2.2.22'],
+    ['bundler', '2.2.29'],
     ['cgi', '0.2.0'],
+    ['cmath', '1.0.0'],
     ['csv', '3.1.9'],
     ['delegate', '0.2.0'],
     ['did_you_mean', '1.5.0'],
     ['digest', '3.1.0.pre2'], 
     ['drb', '2.0.4'],
     ['erb', '2.2.0'],
+    ['e2mmap', '0.1.0'],
     ['ffi', '1.15.4'],
     ['fileutils', '1.5.0'],
     ['find', '0.1.0'],

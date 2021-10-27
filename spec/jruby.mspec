@@ -27,6 +27,9 @@ TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 class MSpecScript
   set :prefix, 'spec/ruby'
 
+  # enable MRI-like backtraces for specs that expect that output
+  set :flags, ['-Xbacktrace.style=mri']
+
   jruby = RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
   jruby = File.expand_path("../../bin/#{jruby}", __FILE__)
   set :target, jruby

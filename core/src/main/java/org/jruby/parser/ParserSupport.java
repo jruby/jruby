@@ -1891,9 +1891,12 @@ public class ParserSupport {
 
     public ArgsNode new_args_forward_def(int line, ListNode leading) {
         BlockArgNode blockArg = new BlockArgNode(arg_var(FWD_BLOCK));
-        ArgsTailHolder tail = new_args_tail(line, null, FWD_KWREST, blockArg);
-        RestArgNode forwordRestArg  = new RestArgNode(arg_var(FWD_REST));
-        return new_args(line, leading, null, forwordRestArg, null, tail);
+        // FIXME: signature issue doing the right thing.  Just treat this as '*' for now.
+        //ArgsTailHolder tail = new_args_tail(line, null, FWD_KWREST, blockArg);
+        //RestArgNode forwordRestArg  = new RestArgNode(arg_var(FWD_REST));
+        int slot = getCurrentScope().addVariableThisScope(FWD_REST.toString());
+        RestArgNode forwordRestArg  = new UnnamedRestArgNode(line, null, slot);
+        return new_args(line, leading, null, forwordRestArg, null, null);
     }
 
     public void check_literal_when(Node one) {

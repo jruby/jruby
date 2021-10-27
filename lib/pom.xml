@@ -34,7 +34,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rubygems-update</artifactId>
-      <version>3.2.22</version>
+      <version>3.2.29</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -86,7 +86,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>bundler</artifactId>
-      <version>2.2.22</version>
+      <version>2.2.29</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -100,6 +100,19 @@ DO NOT MODIFIY - GENERATED CODE
       <groupId>rubygems</groupId>
       <artifactId>cgi</artifactId>
       <version>0.2.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>cmath</artifactId>
+      <version>1.0.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -178,6 +191,19 @@ DO NOT MODIFIY - GENERATED CODE
       <groupId>rubygems</groupId>
       <artifactId>erb</artifactId>
       <version>2.2.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>e2mmap</artifactId>
+      <version>0.1.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -754,18 +780,20 @@ DO NOT MODIFIY - GENERATED CODE
         <directory>${gem.home}</directory>
         <includes>
           <include>specifications/default/*</include>
-          <include>specifications/rubygems-update-3.2.22*</include>
+          <include>specifications/rubygems-update-3.2.29*</include>
           <include>specifications/abbrev-0.1.0*</include>
           <include>specifications/base64-0.1.0*</include>
           <include>specifications/benchmark-0.1.1*</include>
-          <include>specifications/bundler-2.2.22*</include>
+          <include>specifications/bundler-2.2.29*</include>
           <include>specifications/cgi-0.2.0*</include>
+          <include>specifications/cmath-1.0.0*</include>
           <include>specifications/csv-3.1.9*</include>
           <include>specifications/delegate-0.2.0*</include>
           <include>specifications/did_you_mean-1.5.0*</include>
           <include>specifications/digest-3.1.0.pre2*</include>
           <include>specifications/drb-2.0.4*</include>
           <include>specifications/erb-2.2.0*</include>
+          <include>specifications/e2mmap-0.1.0*</include>
           <include>specifications/ffi-1.15.4*</include>
           <include>specifications/fileutils-1.5.0*</include>
           <include>specifications/find-0.1.0*</include>
@@ -808,18 +836,20 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/rexml-3.2.5*</include>
           <include>specifications/rss-0.2.9*</include>
           <include>specifications/test-unit-3.3.7*</include>
-          <include>gems/rubygems-update-3.2.22*/**/*</include>
+          <include>gems/rubygems-update-3.2.29*/**/*</include>
           <include>gems/abbrev-0.1.0*/**/*</include>
           <include>gems/base64-0.1.0*/**/*</include>
           <include>gems/benchmark-0.1.1*/**/*</include>
-          <include>gems/bundler-2.2.22*/**/*</include>
+          <include>gems/bundler-2.2.29*/**/*</include>
           <include>gems/cgi-0.2.0*/**/*</include>
+          <include>gems/cmath-1.0.0*/**/*</include>
           <include>gems/csv-3.1.9*/**/*</include>
           <include>gems/delegate-0.2.0*/**/*</include>
           <include>gems/did_you_mean-1.5.0*/**/*</include>
           <include>gems/digest-3.1.0.pre2*/**/*</include>
           <include>gems/drb-2.0.4*/**/*</include>
           <include>gems/erb-2.2.0*/**/*</include>
+          <include>gems/e2mmap-0.1.0*/**/*</include>
           <include>gems/ffi-1.15.4*/**/*</include>
           <include>gems/fileutils-1.5.0*/**/*</include>
           <include>gems/find-0.1.0*/**/*</include>
@@ -862,18 +892,20 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/rexml-3.2.5*/**/*</include>
           <include>gems/rss-0.2.9*/**/*</include>
           <include>gems/test-unit-3.3.7*/**/*</include>
-          <include>cache/rubygems-update-3.2.22*</include>
+          <include>cache/rubygems-update-3.2.29*</include>
           <include>cache/abbrev-0.1.0*</include>
           <include>cache/base64-0.1.0*</include>
           <include>cache/benchmark-0.1.1*</include>
-          <include>cache/bundler-2.2.22*</include>
+          <include>cache/bundler-2.2.29*</include>
           <include>cache/cgi-0.2.0*</include>
+          <include>cache/cmath-1.0.0*</include>
           <include>cache/csv-3.1.9*</include>
           <include>cache/delegate-0.2.0*</include>
           <include>cache/did_you_mean-1.5.0*</include>
           <include>cache/digest-3.1.0.pre2*</include>
           <include>cache/drb-2.0.4*</include>
           <include>cache/erb-2.2.0*</include>
+          <include>cache/e2mmap-0.1.0*</include>
           <include>cache/ffi-1.15.4*</include>
           <include>cache/fileutils-1.5.0*</include>
           <include>cache/find-0.1.0*</include>

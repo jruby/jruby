@@ -9,6 +9,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.MulCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.runtime.callsite.SuperCallSite;
 
 /**
  * A collection of all call sites used for dynamic calls from JRuby's Java code.
@@ -50,6 +51,7 @@ public class JavaSites {
     public final ConditionVariableSites ConditionVariable = new ConditionVariableSites();
     public final FiberSites Fiber = new FiberSites();
     public final MonitorSites Monitor = new MonitorSites();
+    public final SetSites Set = new SetSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -513,6 +515,11 @@ public class JavaSites {
 
     public static class MonitorSites {
         public final CachingCallSite wait = new FunctionalCachingCallSite("wait");
+    }
+
+    public static class SetSites {
+        public final SuperCallSite initialize_dup_super = new SuperCallSite();
+        public final SuperCallSite initialize_clone_super = new SuperCallSite();
     }
 
     public static class CheckedSites {

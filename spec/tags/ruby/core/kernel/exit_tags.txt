@@ -1,2 +1,0 @@
-fails:Kernel#exit! overrides the original exception and exit status when called from #at_exit
-fails:Kernel.exit! overrides the original exception and exit status when called from #at_exit

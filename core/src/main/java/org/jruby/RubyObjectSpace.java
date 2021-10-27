@@ -145,7 +145,7 @@ public class RubyObjectSpace {
             final ArrayList<IRubyObject> modules = new ArrayList<>(96);
             runtime.eachModule((module) -> {
                     if (rubyClass.isInstance(module)) {
-                        if (!(module instanceof IncludedModule)) {
+                        if (!(module instanceof IncludedModule || module instanceof PrependedModule)) {
                             // do nothing for included wrappers or singleton classes
                             modules.add(module); // store the module to avoid concurrent modification exceptions
                         }

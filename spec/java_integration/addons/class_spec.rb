@@ -42,8 +42,9 @@ describe "A Java class" do
       klass = Class.new(java.util.ArrayList)
       list = klass.new([1, 2])
       java.util.Collections.swap(list, 0, 1)
-      # NOTE: this isn't accurate/consistent but it's compatible with JRuby 9.2
-      expect( list.java_class ).to eql java.lang.Class.forName('java.util.ArrayList')
+      # Used to be the same as parent, changed to be a subclass
+      expect( list.java_class ).not_to eql java.lang.Class.forName('java.util.ArrayList')
+      expect( java.lang.Class.forName('java.util.ArrayList').isAssignableFrom(list.java_class) ).to be true
     end
   end
 

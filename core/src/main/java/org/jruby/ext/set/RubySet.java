@@ -304,14 +304,16 @@ public class RubySet extends RubyObject implements Set {
 
     @JRubyMethod
     public IRubyObject initialize_dup(ThreadContext context, IRubyObject orig) {
-        super.initialize_copy(orig);
+        RubyClass superClass = orig.getMetaClass().getSuperClass();
+        sites(context).initialize_dup_super.call(context, this, this, superClass, "initialize_dup", orig);
         setHash((RubyHash) (((RubySet) orig).hash).dup(context));
         return this;
     }
 
     @JRubyMethod
     public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
-        super.initialize_copy(orig);
+        RubyClass superClass = orig.getMetaClass().getSuperClass();
+        sites(context).initialize_clone_super.call(context, this, this, superClass, "initialize_clone", orig);
         setHash((RubyHash) (((RubySet) orig).hash).rbClone(context));
         return this;
     }
@@ -1295,6 +1297,10 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod
     public IRubyObject untaint(ThreadContext context) {
         return this;
+    }
+
+    private static JavaSites.SetSites sites(ThreadContext context) {
+        return context.sites.Set;
     }
 
 }
