@@ -5398,7 +5398,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "lstrip")
     public IRubyObject lstrip(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.lstrip_bang(context);
         return str;
     }
@@ -5463,7 +5463,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "rstrip")
     public IRubyObject rstrip(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.rstrip_bang(context);
         return str;
     }
@@ -5534,7 +5534,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "strip")
     public IRubyObject strip(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.strip_bang(context);
         return str;
     }
