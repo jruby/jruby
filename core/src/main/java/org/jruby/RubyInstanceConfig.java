@@ -901,6 +901,14 @@ public class RubyInstanceConfig {
         this.verbosity = verbosity;
     }
 
+    public void setBacktraceLimit(Integer limit) {
+        this.backtraceLimit = limit;
+    }
+
+    public Integer getBacktraceLimit(){
+        return this.backtraceLimit;
+    }
+
     /**
      * @see Options#CLI_VERBOSE
      */
@@ -1537,6 +1545,7 @@ public class RubyInstanceConfig {
     private KCode kcode = Options.CLI_KCODE.load();
     private String recordSeparator = Options.CLI_RECORD_SEPARATOR.load();
     private boolean shouldCheckSyntax = Options.CLI_CHECK_SYNTAX.load();
+    private Integer backtraceLimit = Options.CLI_BACKTRACE_LIMIT.load();
     private String inputFieldSeparator = Options.CLI_AUTOSPLIT_SEPARATOR.load();
     private boolean managementEnabled = false;
     private String inPlaceBackupExtension = Options.CLI_BACKUP_EXTENSION.load();

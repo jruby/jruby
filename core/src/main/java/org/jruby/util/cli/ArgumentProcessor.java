@@ -581,6 +581,10 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--verbose")) {
                         config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
                         break FOR;
+                    } else if (argument.startsWith("--backtrace-limit=")) {
+                        String limit = valueListFor(argument, "backtrace-limit")[0];
+                        config.setBacktraceLimit(Integer.parseInt(limit));
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
