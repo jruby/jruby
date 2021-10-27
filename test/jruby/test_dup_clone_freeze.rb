@@ -1,26 +1,6 @@
 require 'test/unit'
 
-class TestDupCloneTaintFreeze < Test::Unit::TestCase
-
-  def test_taint_dup_still_tainted
-    assert(Module.new.taint.dup.tainted?)
-    assert(Class.new.taint.dup.tainted?)
-    assert(Object.new.taint.dup.tainted?)
-    assert(String.new.taint.dup.tainted?)
-    assert([].taint.dup.tainted?)
-    assert({}.taint.dup.tainted?)
-    assert(//.taint.dup.tainted?)
-  end
-
-  def test_taint_clone_still_tainted
-    assert(Module.new.taint.clone.tainted?)
-    assert(Class.new.taint.clone.tainted?)
-    assert(Object.new.taint.clone.tainted?)
-    assert(String.new.taint.clone.tainted?)
-    assert([].taint.clone.tainted?)
-    assert({}.taint.clone.tainted?)
-    assert(//.taint.clone.tainted?)
-  end
+class TestDupCloneFreeze < Test::Unit::TestCase
 
   def test_freeze_dup_not_frozen
     assert(!Module.new.freeze.dup.frozen?)

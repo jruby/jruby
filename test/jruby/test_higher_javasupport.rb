@@ -904,7 +904,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     index_of intern java_class java_object java_object= lastIndexOf last_index_of
     length matches notify notifyAll notify_all regionMatches region_matches replace
     replaceAll replaceFirst replace_all replace_first split startsWith starts_with
-    subSequence sub_sequence substring taint tainted? toCharArray toLowerCase
+    subSequence sub_sequence substring toCharArray toLowerCase
     toString toUpperCase to_char_array to_lower_case to_string
     to_upper_case trim wait]
 
