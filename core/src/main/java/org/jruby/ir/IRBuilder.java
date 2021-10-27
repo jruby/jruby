@@ -32,6 +32,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -1118,12 +1119,14 @@ public class IRBuilder {
         RubySymbol name = methodName = callNode.getName();
 
         Node receiverNode = callNode.getReceiverNode();
+        String id = name.idString(); // ID Str ok here since compared strings are all 7-bit.
 
-        // Frozen string optimization: check for "string".freeze
-        String id = name.idString(); // ID Str ok here since it is 7bit check.
-        if (receiverNode instanceof StrNode && (id.equals("freeze") || id.equals("-@"))) {
-            StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getLine());
+        if (Options.IR_STRING_FREEZE.load()) {
+            // Frozen string optimization: check for "string".freeze
+            if (receiverNode instanceof StrNode && (id.equals("freeze") || id.equals("-@"))) {
+                StrNode asString = (StrNode) receiverNode;
+                return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getLine());
+            }
         }
 
         boolean compileLazyLabel = false;
