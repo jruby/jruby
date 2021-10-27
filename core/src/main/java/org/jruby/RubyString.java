@@ -5176,15 +5176,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         return RubyArray.newArrayNoCopy(runtime, new IRubyObject[] {
-                makeShared(runtime, 0, pos),
+                makeSharedString(runtime, 0, pos),
                 sep,
-                makeShared(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())
+                makeSharedString(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())
         });
     }
 
     private RubyArray partitionMismatch(Ruby runtime) {
         final Encoding enc = getEncoding();
-        return RubyArray.newArrayMayCopy(runtime, this.strDup(runtime), newEmptyString(runtime, enc), newEmptyString(runtime, enc));
+        return RubyArray.newArrayMayCopy(runtime, this.strDup(runtime, runtime.getString()), newEmptyString(runtime, enc), newEmptyString(runtime, enc));
     }
 
     @JRubyMethod(name = "rpartition", writes = BACKREF)
@@ -5214,7 +5214,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject rpartitionMismatch(Ruby runtime) {
         final Encoding enc = getEncoding();
-        return RubyArray.newArrayNoCopy(runtime, newEmptyString(runtime, enc), newEmptyString(runtime, enc), this.strDup(runtime));
+        return RubyArray.newArrayNoCopy(runtime, newEmptyString(runtime, enc), newEmptyString(runtime, enc), this.strDup(runtime, runtime.getString()));
     }
 
     /** rb_str_chop / rb_str_chop_bang
