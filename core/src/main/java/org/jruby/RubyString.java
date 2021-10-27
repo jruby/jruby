@@ -1486,7 +1486,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "reverse")
     public IRubyObject reverse19(ThreadContext context) {
-        RubyString str = strDup(context.runtime);
+        RubyString str = strDup(context.runtime, context.runtime.getString());
         str.reverse_bang19(context);
         return str;
     }
