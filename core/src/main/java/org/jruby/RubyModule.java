@@ -2503,7 +2503,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-        return getBaseName() == null ? context.nil : rubyName().strDup(context.runtime);
+        return getBaseName() == null ? context.nil : rubyName();
     }
 
     @Deprecated
