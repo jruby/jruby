@@ -887,6 +887,7 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tSTRING_CONTENT: System.err.print("tSTRING_CONTENT[" + ((StrNode) value()).getValue() + "],"); break;
             case tSTRING_BEG: System.err.print("tSTRING_BEG,"); break;
             case RubyParser.tSTRING_END: System.err.print("tSTRING_END,"); break;
+            case RubyParser.tSTRING_DEND: System.err.print("tSTRING_DEND,"); break;
             case RubyParser.tSTRING_DBEG: System.err.print("tSTRING_DBEG,"); break;
             case RubyParser.tSTRING_DVAR: System.err.print("tSTRING_DVAR,"); break;
             case RubyParser.tXSTRING_BEG: System.err.print("tXSTRING_BEG,"); break;
@@ -895,7 +896,6 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tWORDS_BEG: System.err.print("tWORDS_BEG,"); break;
             case RubyParser.tQWORDS_BEG: System.err.print("tQWORDS_BEG,"); break;
             case RubyParser.tBACK_REF: System.err.print("tBACK_REF,"); break;
-            case RubyParser.tBACK_REF2: System.err.print("tBACK_REF2,"); break;
             case RubyParser.tNTH_REF: System.err.print("tNTH_REF,"); break;
             case RubyParser.tUPLUS: System.err.print("tUPLUS"); break;
             case RubyParser.tUMINUS: System.err.print("tUMINUS,"); break;
@@ -910,7 +910,6 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tOROP: System.err.print("tOROP,"); break;
             case RubyParser.tMATCH: System.err.print("tMATCH,"); break;
             case RubyParser.tNMATCH: System.err.print("tNMATCH,"); break;
-            case RubyParser.tDOT: System.err.print("tDOT,"); break;
             case RubyParser.tDOT2: System.err.print("tDOT2,"); break;
             case RubyParser.tDOT3: System.err.print("tDOT3,"); break;
             case RubyParser.tAREF: System.err.print("tAREF,"); break;
@@ -922,39 +921,23 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tOP_ASGN: System.err.print("tOP_ASGN,"); break;
             case RubyParser.tASSOC: System.err.print("tASSOC,"); break;
             case RubyParser.tLPAREN: System.err.print("tLPAREN,"); break;
-            case RubyParser.tLPAREN2: System.err.print("tLPAREN2,"); break;
             case RubyParser.tLPAREN_ARG: System.err.print("tLPAREN_ARG,"); break;
             case RubyParser.tLBRACK: System.err.print("tLBRACK,"); break;
-            case RubyParser.tRBRACK: System.err.print("tRBRACK,"); break;
             case RubyParser.tLBRACE: System.err.print("tLBRACE,"); break;
             case RubyParser.tLBRACE_ARG: System.err.print("tLBRACE_ARG,"); break;
             case RubyParser.tSTAR: System.err.print("tSTAR,"); break;
-            case RubyParser.tSTAR2: System.err.print("tSTAR2,"); break;
             case RubyParser.tAMPER: System.err.print("tAMPER,"); break;
-            case RubyParser.tAMPER2: System.err.print("tAMPER2,"); break;
             case RubyParser.tSYMBEG: System.err.print("tSYMBEG,"); break;
-            case RubyParser.tTILDE: System.err.print("tTILDE,"); break;
-            case RubyParser.tPERCENT: System.err.print("tPERCENT,"); break;
-            case RubyParser.tDIVIDE: System.err.print("tDIVIDE,"); break;
-            case RubyParser.tPLUS: System.err.print("tPLUS,"); break;
-            case RubyParser.tMINUS: System.err.print("tMINUS,"); break;
-            case RubyParser.tLT: System.err.print("tLT,"); break;
-            case RubyParser.tGT: System.err.print("tGT,"); break;
-            case RubyParser.tCARET: System.err.print("tCARET,"); break;
-            case RubyParser.tBANG: System.err.print("tBANG,"); break;
-            case RubyParser.tLCURLY: System.err.print("tTLCURLY,"); break;
-            case RubyParser.tRCURLY: System.err.print("tRCURLY,"); break;
-            case RubyParser.tPIPE: System.err.print("tTPIPE,"); break;
             case RubyParser.tLAMBDA: System.err.print("tLAMBDA,"); break;
             case RubyParser.tLAMBEG: System.err.print("tLAMBEG,"); break;
-            case RubyParser.tRPAREN: System.err.print("tRPAREN,"); break;
             case RubyParser.tLABEL: System.err.print("tLABEL("+ value() +":),"); break;
             case RubyParser.tLABEL_END: System.err.print("tLABEL_END"); break;
             case RubyParser.keyword_def: System.err.print("keyword_def,"); break;
+            case RubyParser.keyword_case: System.err.print("keyword_case,"); break;
+            case RubyParser.keyword_in: System.err.print("keyword_in,"); break;
             case RubyParser.keyword_do: System.err.print("keyword_do,"); break;
             case RubyParser.keyword_do_block: System.err.print("keyword_do_block,"); break;
             case RubyParser.keyword_do_cond: System.err.print("keyword_do_cond,"); break;
-            case RubyParser.keyword_do_lambda: System.err.print("keyword_do_lambda,"); break;
             case RubyParser.keyword_end: System.err.print("keyword_end,"); break;
             case RubyParser.keyword_yield: System.err.print("keyword_yield,"); break;
             case '\n': System.err.println("NL"); break;
@@ -1021,7 +1004,7 @@ public class RubyLexer extends LexingCommon {
                 boolean normalArg = isLexState(lex_state, EXPR_BEG | EXPR_CLASS | EXPR_FNAME | EXPR_DOT) &&
                         !isLexState(lex_state, EXPR_LABELED);
                 if (normalArg || isLexStateAll(lex_state, EXPR_ARG | EXPR_LABELED)) {
-                    if (!normalArg && inKwarg) {
+                    if (!normalArg && getLexContext().in_kwarg) {
                         commandStart = true;
                         setState(EXPR_BEG);
                         return '\n';
@@ -1252,7 +1235,7 @@ public class RubyLexer extends LexingCommon {
             c = RubyParser.tAMPER;
         } else {
             warn_balanced(c, spaceSeen, "&", "argument prefix");
-            c = RubyParser.tAMPER2;
+            c = '&';
         }
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
@@ -1299,12 +1282,12 @@ public class RubyLexer extends LexingCommon {
 
         if (isLexState(lex_state, EXPR_FNAME)) {
             setState(EXPR_ENDFN);
-            return RubyParser.tBACK_REF2;
+            return '`';
         }
         if (isLexState(lex_state, EXPR_DOT)) {
             setState(commandState ? EXPR_CMDARG : EXPR_ARG);
 
-            return RubyParser.tBACK_REF2;
+            return '`';
         }
 
         lex_strterm = new StringTerm(str_xquote, '\0', '`', ruby_sourceline);
@@ -1318,7 +1301,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_ARG);
             if (c == '@') {
                 yaccValue = BANG;
-                return RubyParser.tBANG;
+                return '!';
             }
         } else {
             setState(EXPR_BEG);
@@ -1337,7 +1320,7 @@ public class RubyLexer extends LexingCommon {
             pushback(c);
             yaccValue = BANG;
             
-            return RubyParser.tBANG;
+            return '!';
         }
     }
     
@@ -1353,7 +1336,7 @@ public class RubyLexer extends LexingCommon {
         
         pushback(c);
         yaccValue = CARET;
-        return RubyParser.tCARET;
+        return '^';
     }
 
     private int colon(boolean spaceSeen) {
@@ -1403,11 +1386,9 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int doKeyword(int state) {
-        int leftParenBegin = getLeftParenBegin();
-        if (leftParenBegin > 0 && leftParenBegin == parenNest) {
-            setLeftParenBegin(0);
-            parenNest--;
-            return RubyParser.keyword_do_lambda;
+        if (isLambdaBeginning()) {
+            setLeftParenBegin(-1);
+            return RubyParser.keyword_do_LAMBDA;
         }
 
         if (conditionState.set_p()) return RubyParser.keyword_do_cond;
@@ -1415,6 +1396,7 @@ public class RubyLexer extends LexingCommon {
         if (cmdArgumentState.set_p() && !isLexState(state, EXPR_CMDARG)) {
             return RubyParser.keyword_do_block;
         }
+
         return RubyParser.keyword_do;
     }
     
@@ -1529,16 +1511,26 @@ public class RubyLexer extends LexingCommon {
 
     private int dot() {
         int c;
-        
+
+        boolean isBeg = isBEG();
         setState(EXPR_BEG);
         if ((c = nextc()) == '.') {
             if ((c = nextc()) == '.') {
                 yaccValue = DOT_DOT_DOT;
-                return RubyParser.tDOT3;
+
+                if (parenNest == 0 && isLookingAtEOL()) {
+                    warnings.warn(ID.MISCELLANEOUS, "... at EOL, should be parenthesized?");
+                } else if (getLeftParenBegin() >= 0 && getLeftParenBegin() + 1 == parenNest) {
+                    if (isLexState(last_state, EXPR_LABEL)) {
+                        return RubyParser.tDOT3;
+                    }
+                }
+
+                return isBeg ? RubyParser.tBDOT3 : RubyParser.tDOT3;
             }
             pushback(c);
             yaccValue = DOT_DOT;
-            return RubyParser.tDOT2;
+            return isBeg ? RubyParser.tBDOT2 : RubyParser.tDOT2;
         }
         
         pushback(c);
@@ -1546,7 +1538,7 @@ public class RubyLexer extends LexingCommon {
 
         setState(EXPR_DOT);
         yaccValue = DOT;
-        return RubyParser.tDOT;
+        return '.';
     }
     
     private int doubleQuote(boolean commandState) {
@@ -1580,7 +1572,7 @@ public class RubyLexer extends LexingCommon {
         default:
             pushback(c);
             yaccValue = GT;
-            return RubyParser.tGT;
+            return '>';
         }
     }
     
@@ -1640,6 +1632,7 @@ public class RubyLexer extends LexingCommon {
                 setState(keyword.state);
 
                 if (isLexState(state, EXPR_FNAME)) {
+                    setState(EXPR_ENDFN);
                     yaccValue = keyword.bytes;
                     return keyword.id0;
                 } else {
@@ -1675,6 +1668,7 @@ public class RubyLexer extends LexingCommon {
         int c = '[';
         if (isAfterOperator()) {
             if ((c = nextc()) == ']') {
+                parenNest--;
                 setState(EXPR_ARG);
                 if (peek('=')) {
                     nextc();
@@ -1698,35 +1692,36 @@ public class RubyLexer extends LexingCommon {
         yaccValue = LBRACKET;
         return c;
     }
+
+    private boolean isLambdaBeginning() {
+        return getLeftParenBegin() == parenNest;
+    }
     
     private int leftCurly() {
         braceNest++;
-        int leftParenBegin = getLeftParenBegin();
-        if (leftParenBegin > 0 && leftParenBegin == parenNest) {
-            setState(EXPR_BEG);
-            setLeftParenBegin(0);
-            parenNest--;
-            conditionState.push0();
-            cmdArgumentState.push0();
-            yaccValue = LCURLY;
-            return RubyParser.tLAMBEG;
-        }
-
         char c;
-        if (isLexState(lex_state, EXPR_LABELED)) {
-            c = RubyParser.tLBRACE;
+        if (isLambdaBeginning()) {
+            c = tLAMBEG;
+        } else if (isLexState(lex_state, EXPR_LABELED)) {
+            c = tLBRACE;
         } else if (isLexState(lex_state, EXPR_ARG_ANY|EXPR_END|EXPR_ENDFN)) { // block (primary)
-            c = RubyParser.tLCURLY;
+            c = '{';
         } else if (isLexState(lex_state, EXPR_ENDARG)) { // block (expr)
-            c = RubyParser.tLBRACE_ARG;
+            c = tLBRACE_ARG;
         } else { // hash
-            c = RubyParser.tLBRACE;
+            c = tLBRACE;
         }
 
+        if (c != tLBRACE) {
+            commandStart = true;
+            setState(EXPR_BEG);
+        } else {
+            setState(EXPR_BEG|EXPR_LABEL);
+        }
+
+        parenNest++;
         conditionState.push0();
         cmdArgumentState.push0();
-        setState(c == RubyParser.tLBRACE_ARG ? EXPR_BEG : EXPR_BEG|EXPR_LABEL);
-        if (c != RubyParser.tLBRACE) commandStart = true;
         yaccValue = ruby_sourceline;
 
         return c;
@@ -1738,11 +1733,14 @@ public class RubyLexer extends LexingCommon {
         if (isBEG()) {
             result = RubyParser.tLPAREN;
         } else if (!spaceSeen) {
-            result = RubyParser.tLPAREN2;
+            result = '(';
         } else if (isARG() || isLexStateAll(lex_state, EXPR_END|EXPR_LABEL)) {
             result = RubyParser.tLPAREN_ARG;
+        } else if (isLexState(lex_state, EXPR_ENDFN) && !isLambdaBeginning()) {
+            warnings.warn(ID.MISCELLANEOUS, "parentheses after method name is interpreted as an argument list, not a decomposed argument");
+            result = '(';
         } else {
-            result = RubyParser.tLPAREN2;
+            result = '(';
         }
 
         parenNest++;
@@ -1793,7 +1791,7 @@ public class RubyLexer extends LexingCommon {
         default:
             yaccValue = LT;
             pushback(c);
-            return RubyParser.tLT;
+            return '<';
         }
     }
     
@@ -1808,7 +1806,7 @@ public class RubyLexer extends LexingCommon {
             }
             pushback(c);
             yaccValue = MINUS;
-            return RubyParser.tMINUS;
+            return '-';
         }
         if (c == '=') {
             setState(EXPR_BEG);
@@ -1833,7 +1831,7 @@ public class RubyLexer extends LexingCommon {
         pushback(c);
         yaccValue = MINUS;
         warn_balanced(c, spaceSeen, "-", "unary operator");
-        return RubyParser.tMINUS;
+        return '-';
     }
 
     private int percent(boolean spaceSeen) {
@@ -1854,7 +1852,7 @@ public class RubyLexer extends LexingCommon {
         pushback(c);
         yaccValue = PERCENT;
         warn_balanced(c, spaceSeen, "%", "string literal");
-        return RubyParser.tPERCENT;
+        return '%';
     }
 
     private int pipe() {
@@ -1869,6 +1867,11 @@ public class RubyLexer extends LexingCommon {
                 return RubyParser.tOP_ASGN;
             }
             pushback(c);
+            if (isLexStateAll(last_state, EXPR_BEG)) {
+                yaccValue = OR;
+                pushback('|');
+                return '|';
+            }
             yaccValue = OR_OR;
             return RubyParser.tOROP;
         case '=':
@@ -1880,7 +1883,7 @@ public class RubyLexer extends LexingCommon {
             
             pushback(c);
             yaccValue = OR;
-            return RubyParser.tPIPE;
+            return '|';
         }
     }
     
@@ -1894,7 +1897,7 @@ public class RubyLexer extends LexingCommon {
             }
             pushback(c);
             yaccValue = PLUS;
-            return RubyParser.tPLUS;
+            return '+';
         }
         
         if (c == '=') {
@@ -1918,7 +1921,7 @@ public class RubyLexer extends LexingCommon {
         pushback(c);
         yaccValue = PLUS;
         warn_balanced(c, spaceSeen, "+", "unary operator");
-        return RubyParser.tPLUS;
+        return '+';
     }
     
     private int questionMark() throws IOException {
@@ -2018,19 +2021,18 @@ public class RubyLexer extends LexingCommon {
         cmdArgumentState.pop();
         setState(EXPR_END);
         yaccValue = RBRACKET;
-        return RubyParser.tRBRACK;
+        return ']';
     }
 
     private int rightCurly() {
         yaccValue = RCURLY;
-        if (braceNest <= 0) {
-            return RubyParser.tSTRING_DEND;
-        }
         braceNest--;
+        if (braceNest < 0) return RubyParser.tSTRING_DEND;
         conditionState.pop();
         cmdArgumentState.pop();
         setState(EXPR_END);
-        return RubyParser.tRCURLY;
+        parenNest--;
+        return '}';
     }
 
     private int rightParen() {
@@ -2039,7 +2041,7 @@ public class RubyLexer extends LexingCommon {
         cmdArgumentState.pop();
         setState(EXPR_ENDFN);
         yaccValue = RPAREN;
-        return RubyParser.tRPAREN;
+        return ')';
     }
     
     private int singleQuote(boolean commandState) {
@@ -2076,7 +2078,7 @@ public class RubyLexer extends LexingCommon {
 
         yaccValue = SLASH;
         warn_balanced(c, spaceSeen, "/", "regexp literal");
-        return RubyParser.tDIVIDE;
+        return '/';
     }
 
     private int star(boolean spaceSeen) {
@@ -2118,7 +2120,7 @@ public class RubyLexer extends LexingCommon {
                 c = RubyParser.tSTAR;
             } else {
                 warn_balanced(c, spaceSeen, "*", "argument prefix");
-                c = RubyParser.tSTAR2;
+                c = '*';
             }
             yaccValue = STAR;
         }
@@ -2138,7 +2140,7 @@ public class RubyLexer extends LexingCommon {
         }
         
         yaccValue = TILDE;
-        return RubyParser.tTILDE;
+        return '~';
     }
 
     private ByteList numberBuffer = new ByteList(10); // ascii is good enough.

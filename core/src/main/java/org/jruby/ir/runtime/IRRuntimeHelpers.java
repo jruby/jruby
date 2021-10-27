@@ -453,6 +453,7 @@ public class IRRuntimeHelpers {
         return RubyBoolean.newBoolean(context, ret);
     }
 
+    // partially: vm_insnhelper.c - vm_check_match + check_match
     public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite callSite, boolean splattedValue) {
         boolean isUndefValue = value == UndefinedValue.UNDEFINED;
 
@@ -1584,7 +1585,7 @@ public class IRRuntimeHelpers {
             throw context.runtime.newTypeError("no outer class/module");
         }
 
-        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(id);
+        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(id, scope.getFile(), context.getLine() + 1);
         scope.setModule(newRubyModule);
 
         if (maybeRefined) scope.captureParentRefinements(context);
@@ -1615,7 +1616,8 @@ public class IRRuntimeHelpers {
             sc = (RubyClass) superClass;
         }
 
-        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc);
+        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc,
+                scope.getFile(), runtime.getCurrentContext().getLine() + 1);
 
         scope.setModule(newRubyClass);
 
@@ -2291,8 +2293,6 @@ public class IRRuntimeHelpers {
             return (RubyString) target.anyToString();
         }
 
-        if (target.isTaint()) str.setTaint(true);
-
         return (RubyString) str;
     }
 
@@ -2339,7 +2339,7 @@ public class IRRuntimeHelpers {
     public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
         warnSetConstInRefinement(context, self);
 
-        module.setConstant(id, value);
+        module.setConstant(id, value, context.getFile(), context.getLine() + 1);
     }
 
     @JIT
@@ -2370,6 +2370,16 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
+    public static RubyClass getArray(ThreadContext context) {
+        return context.runtime.getArray();
+    }
+
+    @JIT
+    public static RubyClass getHash(ThreadContext context) {
+        return context.runtime.getHash();
+    }
+
+    @JIT
     public static RubyClass getObject(ThreadContext context) {
         return context.runtime.getObject();
     }
@@ -2386,5 +2396,10 @@ public class IRRuntimeHelpers {
 
     private static IRRuntimeHelpersSites sites(ThreadContext context) {
         return context.sites.IRRuntimeHelpers;
+    }
+
+    @Interp @JIT
+    public static int arrayLength(RubyArray array) {
+        return array.getLength();
     }
 }

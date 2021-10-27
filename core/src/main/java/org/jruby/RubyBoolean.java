@@ -54,6 +54,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     private final int hashCode;
     private final transient Object constant;
+    private final RubyString toS;
 
     RubyBoolean(Ruby runtime, boolean value) {
         super(runtime,
@@ -71,6 +72,9 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
+
+        toS = RubyString.newString(runtime, value ? TRUE_BYTES : FALSE_BYTES);
+        toS.setFrozen(true);
     }
     
     @Override
@@ -137,7 +141,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         return value ? context.tru : context.fals;
     }
 
-    static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
+    public static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
 
     public static class False extends RubyBoolean {
         False(Ruby runtime) {
@@ -163,7 +167,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
         @JRubyMethod(name = "to_s", alias = "inspect")
         public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
-            return RubyString.newStringShared(context.runtime, FALSE_BYTES);
+            return context.runtime.getFalseString();
         }
 
         @Override
@@ -175,7 +179,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
     }
 
-    static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
+    public static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
 
     public static class True extends RubyBoolean {
         True(Ruby runtime) {
@@ -201,7 +205,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
         @JRubyMethod(name = "to_s", alias = "inspect")
         public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
-            return RubyString.newStringShared(context.runtime, TRUE_BYTES);
+            return context.runtime.getTrueString();
         }
 
         @Override
@@ -232,13 +236,14 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
     }
 
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+        output.write(isTrue() ? 'T' : 'F');
+    }
+
+    @Deprecated
     @Override
     public IRubyObject taint(ThreadContext context) {
         return this;
-    }
-
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write(isTrue() ? 'T' : 'F');
     }
 }
 

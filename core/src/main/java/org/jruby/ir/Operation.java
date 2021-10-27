@@ -40,6 +40,7 @@ public enum Operation {
     B_TRUE(OpFlags.f_is_jump_or_branch),
     B_FALSE(OpFlags.f_is_jump_or_branch),
     B_SWITCH(OpFlags.f_is_jump_or_branch),
+    B_INT(OpFlags.f_is_jump_or_branch),
 
     /** argument receive in methods and blocks **/
     RECV_SELF(0),
@@ -159,6 +160,8 @@ public enum Operation {
     CLASS_VAR_MODULE(0),
     COPY(0),
     GET_ENCODING(0),
+    INT_MATH(0),
+    AS_FIXNUM(0),
     MASGN_OPT(0),
     MASGN_REQD(0),
     MASGN_REST(0),

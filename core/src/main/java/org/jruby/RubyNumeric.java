@@ -771,7 +771,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "<=>")
-    public IRubyObject op_cmp(IRubyObject other) {
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (this == other) { // won't hurt fixnums
             return RubyFixnum.zero(metaClass.runtime);
         }
@@ -1015,9 +1015,13 @@ public class RubyNumeric extends RubyObject {
             if (!by.isNil()) {
                 step = by;
             }
+
             if (step.isNil()) {
                 step = RubyFixnum.one(context.runtime);
+            } else if (step.op_equal(context, context.runtime.newFixnum(0)).isTrue()) {
+                throw context.runtime.newArgumentError("step can't be 0");
             }
+
             if ((to.isNil() || to instanceof RubyNumeric) && step instanceof RubyNumeric) {
                 return RubyArithmeticSequence.newArithmeticSequence(context, this, "step", args, this, to, step, context.fals);
             }
@@ -1130,7 +1134,7 @@ public class RubyNumeric extends RubyObject {
         boolean inf;
 
         if (step.op_equal(context, RubyFixnum.zero(runtime)).isTrue()) {
-            inf = true;
+            throw context.runtime.newArgumentError("step can't be 0");
         } else if (to instanceof RubyFloat) {
             double f = ((RubyFloat) to).value;
             inf = Double.isInfinite(f) && (f <= -0.0 ? desc : !desc);

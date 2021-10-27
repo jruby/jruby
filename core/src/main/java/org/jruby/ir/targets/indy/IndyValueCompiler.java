@@ -41,6 +41,15 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.loadContext();
         compiler.adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
     }
+    public void pushArrayClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getArray", sig(RubyClass.class, ThreadContext.class));
+    }
+
+    public void pushHashClass() {
+        compiler.loadContext();
+        compiler.invokeIRHelper("getHash", sig(RubyClass.class, ThreadContext.class));
+    }
 
     public void pushObjectClass() {
         compiler.loadContext();

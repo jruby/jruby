@@ -1,43 +1,11 @@
 STDLIB_FILES = %w[
   English.rb
-  abbrev.rb
-  base64.rb
-  benchmark.rb
-  cgi
-  cgi.rb
   date
   date.rb
   debug.rb
-  delegate.rb
-  drb
-  drb.rb
-  erb.rb
-  find.rb
-  getoptlong.rb
-  monitor.rb
   net
-  observer.rb
-  open-uri.rb
-  open3.rb
-  optionparser.rb
-  optparse
-  optparse.rb
-  ostruct.rb
-  pp.rb
-  prettyprint.rb
-  profile.rb
-  profiler.rb
-  pstore.rb
-  resolv-replace.rb
   resolv.rb
-  rinda
-  set.rb
-  shellwords.rb
-  singleton.rb
-  time.rb
   tmpdir.rb
-  tsort.rb
-  un.rb
   unicode_normalize
   uri
   uri.rb
@@ -59,4 +27,5 @@ EXT_FILES = {
   'ext/fiddle/lib/fiddle' => 'fiddle',
   'ext/ripper/lib/ripper' => 'ripper',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
+  'ext/syslog/lib/syslog/logger.rb' => 'syslog/logger.rb',
 }

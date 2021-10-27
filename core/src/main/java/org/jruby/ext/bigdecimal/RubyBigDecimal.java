@@ -2247,7 +2247,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         boolean asEngineering = arg == null || ! formatHasFloatingPointNotation(arg);
 
-        return RubyString.newString(runtime, ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) ));
+        return RubyString.newUSASCIIString(runtime, ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) ).toString());
     }
 
     @Override

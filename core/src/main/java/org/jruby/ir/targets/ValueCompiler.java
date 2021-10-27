@@ -15,6 +15,20 @@ public interface ValueCompiler {
     public abstract void pushRuntime();
 
     /**
+     * Push the Array class on the stack.
+     *
+     * Stack required: none
+     */
+    void pushArrayClass();
+
+    /**
+     * Push the Hash class on the stack.
+     *
+     * Stack required: none
+     */
+    void pushHashClass();
+
+    /**
      * Push the Object class on the stack.
      *
      * Stack required: none

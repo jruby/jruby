@@ -5,6 +5,7 @@ package org.jruby.util;
  */
 public class CommonByteLists {
     public static final ByteList EMPTY = new ByteList(new byte[] {});
+    public static final ByteList AMPERSAND = new ByteList(new byte[] {'&'});
     public static final ByteList AMPERSAND_AMPERSAND = new ByteList(new byte[] {'&', '&'});
     public static final ByteList AREF_METHOD = new ByteList(new byte[] {'[', ']'});
     public static final ByteList ASET_METHOD = new ByteList(new byte[] {'[', ']', '='});
@@ -27,6 +28,11 @@ public class CommonByteLists {
     public static final ByteList OR_OR = new ByteList(new byte[] {'|', '|'});
     public static final ByteList SINGLE_QUOTE = new ByteList(new byte[] {'\''});
     public static final ByteList STAR = new ByteList(new byte[] {'*'});
+    public static final ByteList STAR_STAR = new ByteList(new byte[] {'*', '*'});
     public static final ByteList USING_METHOD = new ByteList(new byte[] {'u', 's', 'i', 'n', 'g'});
     public static final ByteList REFINE_METHOD = new ByteList(new byte[] {'r', 'e', 'f', 'i', 'n', 'e'});
+    public static final ByteList FWD_REST = STAR;
+    public static final ByteList FWD_KWREST = STAR_STAR;
+    public static final ByteList FWD_BLOCK = AMPERSAND;
+
 }

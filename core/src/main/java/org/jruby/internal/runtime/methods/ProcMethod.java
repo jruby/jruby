@@ -98,6 +98,11 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
         return proc.getBlock().getBody().getArgumentDescriptors();
     }
 
+    @Override
+    public void setRuby2Keywords() {
+        // Should never be called
+    }
+
     public RubyProc getProc() {
         return proc;
     }

@@ -13,6 +13,9 @@ public interface ObjectFlags {
     int FALSE_F = registry.newFlag(RubyBasicObject.class);
     int NIL_F = registry.newFlag(RubyBasicObject.class);
     int FROZEN_F = registry.newFlag(RubyBasicObject.class);
+
+    // Deprecated and unused but don't move due to checks elsewhere for the following flags
+    @Deprecated
     int TAINTED_F = registry.newFlag(RubyBasicObject.class);
 
     int CACHEPROXY_F = registry.newFlag(RubyModule.class);
@@ -32,4 +35,5 @@ public interface ObjectFlags {
 
     int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
     int PROCDEFAULT_HASH_F = registry.newFlag(RubyHash.class);
+    int RUBY2_KEYWORD_F = registry.newFlag(RubyHash.class);
 }

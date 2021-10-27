@@ -41,6 +41,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -177,7 +178,7 @@ public class SocketUtils {
         final Ruby runtime = context.runtime;
         final List<IRubyObject> l = new ArrayList<IRubyObject>();
 
-        buildAddrinfoList(context, args, new AddrinfoCallback() {
+        buildAddrinfoList(context, args, true, new AddrinfoCallback() {
             @Override
             public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse) {
                 boolean is_ipv6 = address instanceof Inet6Address;
@@ -229,7 +230,7 @@ public class SocketUtils {
         final Ruby runtime = context.runtime;
         final List<Addrinfo> l = new ArrayList<Addrinfo>();
 
-        buildAddrinfoList(context, args, new AddrinfoCallback() {
+        buildAddrinfoList(context, args, false, new AddrinfoCallback() {
             @Override
             public void addrinfo(InetAddress address, int port, Sock sock, Boolean reverse) {
                 boolean sock_stream = true;
@@ -272,7 +273,8 @@ public class SocketUtils {
                 Boolean reverse);
     }
 
-    public static void buildAddrinfoList(ThreadContext context, IRubyObject[] args, AddrinfoCallback callback) {
+    // FIXME: timeout is not actually implemented and while this original method dualed nice betwee Socket/AddrInfo they now deviate on 7th arg.
+    public static void buildAddrinfoList(ThreadContext context, IRubyObject[] args, boolean processLastArgAsReverse, AddrinfoCallback callback) {
         Ruby runtime = context.runtime;
         IRubyObject host = args[0];
         IRubyObject port = args[1];
@@ -284,9 +286,17 @@ public class SocketUtils {
         IRubyObject flags = args.length > 5 ? args[5] : context.nil;
         IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
 
-        // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
-        // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
-        Boolean reverseLookup = RubyIPSocket.doReverseLookup(context, reverseArg);
+        Boolean reverseLookup = null;
+        IRubyObject timeout = context.nil;
+        if (processLastArgAsReverse) {
+            // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
+            // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
+             reverseLookup = RubyIPSocket.doReverseLookup(context, reverseArg);
+        } else {
+            if (reverseArg != context.nil) {
+                timeout = ArgsUtil.extractKeywordArg(context, "timeout", reverseArg);
+            }
+        }
 
         AddressFamily addressFamily = family.isNil() ? null : addressFamilyFromArg(family);
 

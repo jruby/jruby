@@ -91,6 +91,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static final int ARG_ENCODING_NONE      =   ReOptions.RE_NONE;
 
     public void setLiteral() {
+        setFrozen(true);
         options.setLiteral(true);
     }
 
@@ -1003,7 +1004,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // rb_reg_initialize_str
     private RubyRegexp regexpInitializeString(RubyString str, RegexpOptions options) {
-        if (isLiteral()) throw metaClass.runtime.newSecurityError("can't modify literal regexp");
+        if (isLiteral()) throw metaClass.runtime.newFrozenError(getMetaClass());
         ByteList bytes = str.getByteList();
         Encoding enc = bytes.getEncoding();
         if (options.isEncodingNone()) {
@@ -1290,7 +1291,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             }
 
             match.regexp = this;
-            match.infectBy(this);
 
             context.setLocalMatch(match);
 
@@ -1346,7 +1346,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             }
 
             match.regexp = this;
-            match.infectBy(this);
 
             context.setLocalMatch(match);
 
@@ -1387,7 +1386,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Encoding enc = (pattern == null) ? str.getEncoding() : pattern.getEncoding();
         ByteList newStr = str.dup();
         newStr.setEncoding(enc);
-        return RubyString.newString(metaClass.runtime, newStr).infectBy(this);
+        return RubyString.newString(metaClass.runtime, newStr);
     }
 
     public final int length() {
@@ -1495,7 +1494,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             RegexpSupport.appendRegexpString19(runtime, result, bytes, p, len, str.getEncoding(), null);
 
             result.append((byte)')');
-            return (RubyString) RubyString.newString(runtime, result, getEncoding()).infectBy(this);
+            return (RubyString) RubyString.newString(runtime, result, getEncoding());
         } while (true);
     }
 
@@ -1597,8 +1596,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (start == -1) return match.getRuntime().getNil();
 
-        RubyString str = match.str.makeShared(match.metaClass.runtime, start, end - start);
-        str.infectBy(match);
+        RubyString str = match.str.makeSharedString(match.metaClass.runtime, start, end - start);
         return str;
     }
 
@@ -1619,7 +1617,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         Ruby runtime = m.getRuntime();
         if (m.begin == -1) return runtime.getNil();
-        return m.str.makeShared(runtime, 0,  m.begin).infectBy(m);
+        return m.str.makeShared(runtime, 0,  m.begin);
     }
 
     /** rb_reg_match_post
@@ -1632,7 +1630,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         Ruby runtime = m.getRuntime();
         if (m.begin == -1) return runtime.getNil();
-        return m.str.makeShared(runtime, m.end, m.str.getByteList().getRealSize() - m.end).infectBy(m);
+        return m.str.makeShared(runtime, m.end, m.str.getByteList().getRealSize() - m.end);
     }
 
     /** rb_reg_match_last

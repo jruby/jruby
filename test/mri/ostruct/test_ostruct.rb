@@ -186,12 +186,15 @@ class TC_OpenStruct < Test::Unit::TestCase
   end
 
   def test_does_not_redefine
+    $VERBOSE, verbose_bak = nil, $VERBOSE
     os = OpenStruct.new(foo: 42)
     def os.foo
       43
     end
     os.foo = 44
     assert_equal(43, os.foo)
+  ensure
+    $VERBOSE = verbose_bak
   end
 
   def test_allocate_subclass
@@ -225,5 +228,106 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert_raise_with_message(NoMethodError, /protected method/) do
       os.foo true, true
     end
+  end
+
+  def test_access_undefined
+    os = OpenStruct.new
+    assert_nil os.foo
+  end
+
+  def test_overridden_private_methods
+    os = OpenStruct.new(puts: :foo, format: :bar)
+    assert_equal(:foo, os.puts)
+    assert_equal(:bar, os.format)
+  end
+
+  def test_overridden_public_methods
+    os = OpenStruct.new(method: :foo, class: :bar)
+    assert_equal(:foo, os.method)
+    assert_equal(:bar, os.class)
+  end
+
+  def test_access_original_methods
+    os = OpenStruct.new(method: :foo, hash: 42)
+    assert_equal(os.object_id, os.method!(:object_id).call)
+    assert_not_equal(42, os.hash!)
+  end
+
+  def test_override_subclass
+    c = Class.new(OpenStruct) {
+      def foo; :protect_me; end
+      private def bar; :protect_me; end
+      def inspect; 'protect me'; end
+    }
+    o = c.new(
+      foo: 1, bar: 2, inspect: '3', # in subclass: protected
+      table!: 4, # bang method: protected
+      each_pair: 5, to_s: 'hello', # others: not protected
+    )
+    # protected:
+    assert_equal(:protect_me, o.foo)
+    assert_equal(:protect_me, o.send(:bar))
+    assert_equal('protect me', o.inspect)
+    assert_not_equal(4, o.send(:table!))
+    # not protected:
+    assert_equal(5, o.each_pair)
+    assert_equal('hello', o.to_s)
+  end
+
+  def test_mistaken_subclass
+    sub = Class.new(OpenStruct) do
+      def [](k)
+        __send__(k)
+        super
+      end
+
+      def []=(k, v)
+        @item_set = true
+        __send__("#{k}=", v)
+        super
+      end
+    end
+    o = sub.new
+    o.foo = 42
+    assert_equal 42, o.foo
+  end
+
+  def test_ractor
+    assert_ractor(<<~RUBY, require: 'ostruct')
+      obj1 = OpenStruct.new(a: 42, b: 42)
+      obj1.c = 42
+      obj1.freeze
+
+      obj2 = Ractor.new obj1 do |obj|
+        obj
+      end.take
+      assert obj1.object_id == obj2.object_id
+    RUBY
+  end
+
+  def test_legacy_yaml
+    s = "--- !ruby/object:OpenStruct\ntable:\n  :foo: 42\n"
+    o = YAML.load(s)
+    assert_equal(42, o.foo)
+
+    o = OpenStruct.new(table: {foo: 42})
+    assert_equal({foo: 42}, YAML.load(YAML.dump(o)).table)
+  end
+
+  def test_yaml
+    h = {name: "John Smith", age: 70, pension: 300.42}
+    yaml = "--- !ruby/object:OpenStruct\nname: John Smith\nage: 70\npension: 300.42\n"
+    os1 = OpenStruct.new(h)
+    os2 = YAML.load(os1.to_yaml)
+    assert_equal yaml, os1.to_yaml
+    assert_equal os1, os2
+    assert_equal true, os1.eql?(os2)
+    assert_equal 300.42, os2.pension
+  end
+
+  def test_marshal
+    o = OpenStruct.new(name: "John Smith", age: 70, pension: 300.42)
+    o2 = Marshal.load(Marshal.dump(o))
+    assert_equal o, o2
   end
 end

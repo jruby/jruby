@@ -68,6 +68,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
 import org.jruby.util.SymbolNameType;
+import org.jruby.util.TypeConverter;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -92,6 +93,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final ByteList symbolBytes;
     private final int hashCode;
     private String decodedString;
+    private RubyString rubyString;
     private transient Object constant;
     private SymbolNameType type;
 
@@ -180,7 +182,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public final String toString() {
         String decoded = decodedString;
         if (decoded == null) {
-            decodedString = decoded = RubyEncoding.decodeRaw(symbolBytes);
+            decodedString = decoded = RubyEncoding.decodeRaw(getBytes());
         }
         return decoded;
     }
@@ -443,9 +445,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         Encoding resenc = runtime.getDefaultInternalEncoding();
         if (resenc == null) resenc = runtime.getDefaultExternalEncoding();
 
-        RubyString str = RubyString.newString(runtime, symbolBytes);
+        RubyString str = RubyString.newString(runtime, getBytes());
 
-        if (!(isPrintable(runtime) && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName(symbol))) {
+        if (!(isPrintable(runtime) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) && isSymbolName(symbol))) {
             str = str.inspect(runtime);
         }
 
@@ -467,13 +469,19 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(metaClass.runtime);
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "to_s", alias = "name")
     public IRubyObject to_s(ThreadContext context) {
         return to_s(context.runtime);
     }
 
     final RubyString to_s(Ruby runtime) {
-        return RubyString.newStringShared(runtime, symbolBytes);
+        // FIXME: A race here where two in-flight to_s on same symbol can return a different instance.
+        if (rubyString == null) {
+            rubyString = RubyString.newStringShared(runtime, symbolBytes);
+            rubyString.setFrozen(true);
+        }
+
+        return rubyString;
     }
 
     public IRubyObject id2name() {
@@ -544,11 +552,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Deprecated
     public IRubyObject to_sym19() { return this; }
-
-    @Override
-    public IRubyObject taint(ThreadContext context) {
-        return this;
-    }
 
     private RubyString newShared(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
@@ -637,6 +640,46 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newShared(context.runtime).empty_p(context);
     }
 
+    @JRubyMethod(name = "start_with?")
+    public IRubyObject start_with_p(ThreadContext context) {
+        return context.fals;
+    }
+
+    @JRubyMethod(name = "start_with?")
+    public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
+        if (arg instanceof RubyRegexp) {
+            return ((RubyRegexp) arg).startsWith(context, to_s(context.runtime)) ? context.tru : context.fals;
+        }
+        return to_s(context.runtime).startsWith(arg.convertToString()) ? context.tru : context.fals;
+    }
+
+    @JRubyMethod(name = "start_with?", rest = true)
+    public IRubyObject start_with_p(ThreadContext context, IRubyObject[] args) {
+        for (int i = 0; i < args.length; i++) {
+            if (start_with_p(context, args[i]).isTrue()) return context.tru;
+        }
+        return context.fals;
+    }
+
+    @JRubyMethod(name = "end_with?")
+    public IRubyObject end_with_p(ThreadContext context) {
+        return context.fals;
+    }
+
+    @JRubyMethod(name = "end_with?")
+    public IRubyObject end_with_p(ThreadContext context, IRubyObject arg) {
+        return to_s(context.runtime).endWith(arg) ? context.tru : context.fals;
+    }
+
+    @JRubyMethod(name = "end_with?", rest = true)
+    public IRubyObject end_with_p(ThreadContext context, IRubyObject[]args) {
+        RubyString str = to_s(context.runtime);
+        for (int i = 0; i < args.length; i++) {
+            if (str.endWith(args[i])) return context.tru;
+        }
+        return context.fals;
+    }
+
     @JRubyMethod
     public IRubyObject upcase(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -720,7 +763,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         return RubyProc.newProc(context.runtime,
                                 new Block(body, Block.NULL_BLOCK.getBinding()),
-                                Block.Type.PROC);
+                                Block.Type.LAMBDA);
     }
 
     public IRubyObject toRefinedProc(ThreadContext context, StaticScope scope) {
@@ -728,7 +771,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         return RubyProc.newProc(context.runtime,
                 new Block(body, Block.NULL_BLOCK.getBinding()),
-                Block.Type.PROC);
+                Block.Type.LAMBDA);
     }
 
     private static boolean isIdentStart(char c) {
@@ -777,6 +820,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     private boolean isPrintable(final Ruby runtime) {
+        ByteList symbolBytes = getBytes();
         int p = symbolBytes.getBegin();
         int end = p + symbolBytes.getRealSize();
         byte[] bytes = symbolBytes.getUnsafeBytes();
@@ -922,13 +966,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public Encoding getEncoding() {
-        return symbolBytes.getEncoding();
+        return getBytes().getEncoding();
     }
 
     @Override
     public void setEncoding(Encoding e) {
-        symbolBytes.setEncoding(e);
-        type = IdUtil.determineSymbolNameType(getRuntime(), symbolBytes);
+        getBytes().setEncoding(e);
+        type = IdUtil.determineSymbolNameType(getRuntime(), getBytes());
     }
 
     public static final class SymbolTable {
@@ -1390,7 +1434,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public Encoding getMarshalEncoding() {
-        return symbolBytes.getEncoding();
+        return getBytes().getEncoding();
     }
 
     /**
@@ -1417,16 +1461,33 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return object.convertToString().getByteList().toString();
     }
 
-    private static final class SymbolProcBody extends ContextAwareBlockBody {
+    // MRI: rb_check_id
+    public static String checkID(IRubyObject object) {
+        if (object instanceof RubySymbol) return ((RubySymbol) object).idString();
+
+        if (!(object instanceof RubyString)) {
+            IRubyObject tmp = TypeConverter.checkStringType(object.getRuntime(), object);
+
+            if (tmp.isNil()) {
+                throw object.getRuntime().newTypeError(str(object.getRuntime(), "", object, " is not a symbol nor a string"));
+            }
+
+            object = tmp;
+        }
+
+        return ((RubyString) object).getByteList().toString();
+    }
+
+    public static final class SymbolProcBody extends ContextAwareBlockBody {
         private final CallSite site;
 
         public SymbolProcBody(Ruby runtime, String symbol) {
-            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
+            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.ONE_REQUIRED);
             this.site = MethodIndex.getFunctionalCallSite(symbol);
         }
 
         public SymbolProcBody(Ruby runtime, String symbol, StaticScope scope) {
-            super(scope, Signature.OPTIONAL);
+            super(scope, Signature.ONE_REQUIRED);
             this.site = new RefinedCachingCallSite(symbol, scope, CallType.FUNCTIONAL);
         }
 
@@ -1479,7 +1540,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         public String getFile() {
-            return site.methodName;
+            return null;
         }
 
         @Override
@@ -1489,7 +1550,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         public ArgumentDescriptor[] getArgumentDescriptors() {
-            return ArgumentDescriptor.ANON_REST;
+            return ArgumentDescriptor.SYMBOL_PROC;
         }
+    }
+
+    @Deprecated
+    @Override
+    public IRubyObject taint(ThreadContext context) {
+        return this;
     }
 }

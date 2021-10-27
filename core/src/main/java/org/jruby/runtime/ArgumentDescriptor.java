@@ -19,6 +19,7 @@ public class ArgumentDescriptor {
 
     public static final ArgumentDescriptor[] EMPTY_ARRAY = new ArgumentDescriptor[0];
     public static final ArgumentDescriptor[] ANON_REST = {new ArgumentDescriptor(ArgumentType.anonrest)};
+    public static final ArgumentDescriptor[] SYMBOL_PROC = {new ArgumentDescriptor(ArgumentType.anonreq), new ArgumentDescriptor(ArgumentType.anonrest)};
     static final String ENCODING_DELIMETER = ";";
     static final byte[] ANONYMOUS_ENCODED = new byte[] { '$', 'n', 'u', 'l', 'l', '$' };
 

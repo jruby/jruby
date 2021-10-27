@@ -915,7 +915,6 @@ public class Helpers {
     }
 
     private static Block getBlockFromProc(Block currentBlock, IRubyObject proc) {
-        // TODO: Add safety check for taintedness
         if (currentBlock != null && currentBlock.isGiven()) {
             RubyProc procObject = currentBlock.getProcObject();
             // The current block is already associated with proc.  No need to create a new one

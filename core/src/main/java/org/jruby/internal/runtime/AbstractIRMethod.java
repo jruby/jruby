@@ -59,6 +59,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     protected int callCount = 0;
     protected transient InterpreterContext interpreterContext; // cached from method
     private transient MethodData methodData;
+    private boolean ruby2Keywords;
 
     // Interpreted and Jitted but live IRScope known constructor
     public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
@@ -202,6 +203,10 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         IRScope irScope = getIRScope();
         // FIXME: This may stop working if we eliminate startup interp
         return !(irScope instanceof IRMethod && !irScope.getInterpreterContext().getFlags().contains(IRFlags.REQUIRES_CLASS));
+    }
+
+    public void setRuby2Keywords() {
+        ruby2Keywords = true;
     }
     /**
      * Calls a split method (java constructor-invoked initialize) and returns the paused state. If

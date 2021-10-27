@@ -457,7 +457,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         final String path = getPath();
         if (path != null) {
             RubyString newPath = context.runtime.newString(path);
-            newPath.setTaint(true);
             return newPath;
         }
         return context.nil;
@@ -552,7 +551,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
                 switch (name.length()) {
                 case 2:
-                    return (RubyString) RubyString.newEmptyString(runtime, origString.getEncoding()).infectBy(path);
+                    return RubyString.newEmptyString(runtime, origString.getEncoding());
                 case 3:
                     return RubyString.newString(runtime, RubyString.encodeBytelist(name.substring(2), origEncoding));
                 default:
@@ -685,7 +684,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         String jfilename = filename.asJavaString();
 
-        return runtime.newString(dirname(context, jfilename)).infectBy(filename);
+        return runtime.newString(dirname(context, jfilename));
     }
 
     static final Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
@@ -873,6 +872,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return expandPathInternal(context, args, false, false);
+    }
+
+    @JRubyMethod(name = "absolute_path?", required = 1, meta = true)
+    public static IRubyObject absolute_path_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        RubyString file = get_path(context, arg);
+
+        // asJavaString should be ok here since windows drive shares will be charset representable and otherwise we look for "/" at front.
+        return context.runtime.newBoolean(isAbsolutePath(file.asJavaString()));
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
@@ -2271,7 +2278,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         boolean isTainted = joinImpl(buffer, separator, context, recv, argsAry);
 
         RubyString fixedStr = new RubyString(runtime, runtime.getString(), buffer);
-        fixedStr.setTaint(isTainted);
         return fixedStr;
     }
 
@@ -2282,7 +2288,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         for (int i = 0; i < args.size(); i++) {
             final IRubyObject arg = args.eltInternal(i);
-            if (arg.isTaint()) isTainted = true;
 
             final CharSequence element;
             if (arg instanceof RubyString) {

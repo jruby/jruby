@@ -45,6 +45,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -72,6 +73,7 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
+import static org.jruby.common.RubyWarnings.Category.DEPRECATED;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
@@ -102,7 +104,7 @@ public class RubyGlobal {
         String[] argv = runtime.getInstanceConfig().getArgv();
 
         for (String arg : argv) {
-            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg).tainted());
+            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg));
         }
 
         if (runtime.getObject().getConstantNoConstMissing("ARGV") != null) {
@@ -168,9 +170,7 @@ public class RubyGlobal {
         release.setFrozen(true);
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
-
-        // needs to be a fixnum, but our revision is a sha1 hash from git
-        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY_REVISION));
+        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newString(Constants.REVISION));
         runtime.defineGlobalConstant("RUBY_ENGINE", engine);
         runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
 
@@ -199,9 +199,9 @@ public class RubyGlobal {
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()), GLOBAL);
 
         if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
-            runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
+            runtime.defineVariable(new DeprecatedStringOrRegexpGlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
         } else {
-            runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
+            runtime.defineVariable(new DeprecatedStringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
         }
 
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
@@ -220,8 +220,6 @@ public class RubyGlobal {
         IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug), GLOBAL);
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug), GLOBAL);
-
-        runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"), THREAD);
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
@@ -445,6 +443,12 @@ public class RubyGlobal {
         }
 
         private static final ByteList ENV = new ByteList(new byte[] {'E','N','V'}, USASCIIEncoding.INSTANCE, false);
+
+        @JRubyMethod
+        public IRubyObject freeze(ThreadContext context) {
+            // FIXME: So far I can see this is only used by ENV so I put it here but perhaps we need to differentiate case
+            throw context.runtime.newTypeError("cannot freeze ENV");
+        }
 
         @JRubyMethod(name = "assoc")
         public IRubyObject assoc(final ThreadContext context, IRubyObject obj) {
@@ -742,7 +746,7 @@ public class RubyGlobal {
 
             RubyString value = (RubyString) valueArg;
             EncodingService encodingService = context.runtime.getEncodingService();
-            Encoding encoding = isPATH(context, (RubyString) key) && !value.isTaint() ?
+            Encoding encoding = isPATH(context, (RubyString) key) ?
                     encodingService.getFileSystemEncoding() :
                     encodingService.getLocaleEncoding();
 
@@ -752,7 +756,6 @@ public class RubyGlobal {
         protected static IRubyObject newString(ThreadContext context, RubyString value, Encoding encoding) {
             IRubyObject result = newExternalStringWithEncoding(context.runtime, value.getByteList(), encoding);
 
-            result.setTaint(true);
             result.setFrozen(true);
 
             return result;
@@ -958,6 +961,21 @@ public class RubyGlobal {
         }
     }
 
+    public static class DeprecatedStringOrRegexpGlobalVariable extends StringOrRegexpGlobalVariable {
+        public DeprecatedStringOrRegexpGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            IRubyObject result = super.set(value);
+
+            if (!result.isNil()) runtime.getWarnings().warnDeprecated(name);
+
+            return result;
+        }
+    }
+
     public static class StringOrRegexpGlobalVariable extends GlobalVariable {
         public StringOrRegexpGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
@@ -987,23 +1005,6 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             runtime.setKCode(KCode.create(value.convertToString().toString()));
             return value;
-        }
-    }
-
-    private static class SafeGlobalVariable extends GlobalVariable {
-        public SafeGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, null);
-        }
-
-        @Override
-        public IRubyObject get() {
-            return RubyFixnum.zero(runtime);
-        }
-
-        @Override
-        public IRubyObject set(IRubyObject value) {
-            runtime.getWarnings().warnOnce(ID.SAFE_NOT_SUPPORTED, "SAFE levels are not supported in JRuby");
-            return RubyFixnum.zero(runtime);
         }
     }
 

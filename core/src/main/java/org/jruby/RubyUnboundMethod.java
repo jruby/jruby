@@ -33,11 +33,14 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * An unbound method representation (e.g. when retrieving an instance method from a class - isn't bound to any instance).
@@ -128,6 +131,17 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
     }
 
+    @JRubyMethod(required =  1, rest = true)
+    public IRubyObject bind_call(ThreadContext context, IRubyObject[] args, Block block) {
+        IRubyObject receiver = args[0];
+        IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+        System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+
+        receiver.getMetaClass().checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
+
+        return method.call(context, receiver, implementationModule, methodName, newArgs, block);
+    }
+
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
@@ -154,7 +168,6 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         str.append('>');
 
         RubyString res = RubyString.newString(getRuntime(), str);
-        res.setTaint(isTaint());
         return res;
     }
 

@@ -3,7 +3,6 @@ require 'rubygems/test_case'
 require 'rubygems/commands/lock_command'
 
 class TestGemCommandsLockCommand < Gem::TestCase
-
   def setup
     super
 
@@ -56,7 +55,7 @@ gem 'd', '= 1'
   def test_execute_strict
     @cmd.handle_options %w[c-1 --strict]
 
-    e = assert_raises Gem::Exception do
+    e = assert_raise Gem::Exception do
       use_ui @ui do
         @cmd.execute
       end
@@ -64,5 +63,4 @@ gem 'd', '= 1'
 
     assert_equal 'Could not find gem c-1, try using the full name', e.message
   end
-
 end

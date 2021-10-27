@@ -518,7 +518,6 @@ public class RubyEtc {
             if (commonAppData != null) tmp = ByteList.create(commonAppData);
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
-        ret.untaint(context);
 
         return ret;
     }
@@ -534,7 +533,6 @@ public class RubyEtc {
             if (localAppData != null) tmp = ByteList.create(localAppData);
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
-        ret.untaint(context);
 
         return ret;
     }

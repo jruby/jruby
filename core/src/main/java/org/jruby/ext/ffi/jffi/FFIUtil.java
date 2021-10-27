@@ -200,7 +200,6 @@ public final class FFIUtil {
         }
 
         RubyString s = RubyString.newStringNoCopy(runtime, bytes);
-        s.setTaint(true);
         return s;
     }
 }

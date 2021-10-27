@@ -54,7 +54,7 @@ public class IRClosure extends IRScope {
 
         this.closureId = lexicalParent.getNextClosureId();
         ByteList name = prefix.dup();
-        name.append(Integer.toString(closureId).getBytes());
+        name.append(java.lang.Integer.toString(closureId).getBytes());
         setByteName(name);
     }
 
@@ -334,7 +334,7 @@ public class IRClosure extends IRScope {
             ByteList fullName = lexicalParent.getByteName();
             fullName = fullName != null ? fullName.dup() : new ByteList();
             fullName.append(CLOSURE_CLONE);
-            fullName.append(Integer.toString(id).getBytes());
+            fullName.append(java.lang.Integer.toString(id).getBytes());
             clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
         }
 

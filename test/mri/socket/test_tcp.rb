@@ -55,6 +55,26 @@ class TestSocket_TCPSocket < Test::Unit::TestCase
     t.close if t && !t.closed?
   end
 
+  def test_initialize_resolv_timeout
+    TCPServer.open("localhost", 0) do |svr|
+      th = Thread.new {
+        c = svr.accept
+        c.close
+      }
+      addr = svr.addr
+      s = TCPSocket.new(addr[3], addr[1], resolv_timeout: 10)
+      th.join
+    ensure
+      s.close()
+    end
+  end
+
+  def test_initialize_connect_timeout
+    assert_raise(Errno::ETIMEDOUT) do
+      TCPSocket.new("192.0.2.1", 80, connect_timeout: 0)
+    end
+  end
+
   def test_recvfrom
     TCPServer.open("localhost", 0) {|svr|
       th = Thread.new {

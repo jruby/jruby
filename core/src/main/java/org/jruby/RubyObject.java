@@ -98,7 +98,7 @@ public class RubyObject extends RubyBasicObject {
     }
 
     /**
-     * Path for objects that don't taint and don't enter objectspace.
+     * Path for objects that don't enter objectspace.
      */
     public RubyObject(RubyClass metaClass) {
         super(metaClass);

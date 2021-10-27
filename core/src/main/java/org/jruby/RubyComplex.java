@@ -26,38 +26,6 @@
 
 package org.jruby;
 
-import static org.jruby.util.Numeric.f_abs;
-import static org.jruby.util.Numeric.f_add;
-import static org.jruby.util.Numeric.f_arg;
-import static org.jruby.util.Numeric.f_conjugate;
-import static org.jruby.util.Numeric.f_denominator;
-import static org.jruby.util.Numeric.f_div;
-import static org.jruby.util.Numeric.f_equal;
-import static org.jruby.util.Numeric.f_exact_p;
-import static org.jruby.util.Numeric.f_expt;
-import static org.jruby.util.Numeric.f_gt_p;
-import static org.jruby.util.Numeric.f_inspect;
-import static org.jruby.util.Numeric.f_lcm;
-import static org.jruby.util.Numeric.f_mul;
-import static org.jruby.util.Numeric.f_negate;
-import static org.jruby.util.Numeric.f_negative_p;
-import static org.jruby.util.Numeric.f_numerator;
-import static org.jruby.util.Numeric.f_one_p;
-import static org.jruby.util.Numeric.f_quo;
-import static org.jruby.util.Numeric.f_real_p;
-import static org.jruby.util.Numeric.f_reciprocal;
-import static org.jruby.util.Numeric.f_sub;
-import static org.jruby.util.Numeric.f_to_f;
-import static org.jruby.util.Numeric.f_to_i;
-import static org.jruby.util.Numeric.f_to_r;
-import static org.jruby.util.Numeric.f_to_s;
-import static org.jruby.util.Numeric.f_xor;
-import static org.jruby.util.Numeric.f_zero_p;
-import static org.jruby.util.Numeric.k_exact_p;
-import static org.jruby.util.Numeric.k_inexact_p;
-import static org.jruby.util.Numeric.num_pow;
-import static org.jruby.util.Numeric.safe_mul;
-
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -78,6 +46,7 @@ import java.util.function.BiFunction;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import static org.jruby.util.Numeric.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -89,7 +58,7 @@ public class RubyComplex extends RubyNumeric {
 
     public static RubyClass createComplexClass(Ruby runtime) {
         final String[] UNDEFINED = new String[]{
-                "<", "<=", "<=>", ">", ">=",
+                "<", "<=", ">", ">=",
                 "between?", "divmod", "floor", "ceil", "modulo",
                 "round", "step", "truncate", "positive?", "negative?"
         };
@@ -578,6 +547,24 @@ public class RubyComplex extends RubyNumeric {
         }
 
         return newInstance(context, recv, a1, a2, true);
+    }
+
+    // MRI: nucomp_real_p
+    private boolean nucomp_real_p(ThreadContext context) {
+        return f_zero_p(context, image);
+    }
+
+    @JRubyMethod(name="<=>")
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
+        if (nucomp_real_p(context) && k_numeric_p(other)) {
+            if (other instanceof RubyComplex && ((RubyComplex) other).nucomp_real_p(context)) {
+                return real.callMethod(context, "<=>", ((RubyComplex) other).real);
+            } else if (f_real_p(context, other)) {
+                return real.callMethod(context, "<=>", other);
+            }
+        }
+
+        return context.nil;
     }
 
     /** nucomp_real

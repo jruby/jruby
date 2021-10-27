@@ -50,6 +50,7 @@ class MSpecScript
       SPEC_DIR + '/library/net/http',
       # This requires --debug which slows down or changes other spec results
       SPEC_DIR + '/core/tracepoint',
+      SPEC_DIR + '/core/objectspace/each_object', 
       *get(:command_line),
       *get(:security),
   ]

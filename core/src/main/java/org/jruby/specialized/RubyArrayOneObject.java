@@ -138,16 +138,12 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
-        boolean tainted = isTaint();
 
         RubyString s = inspect(context, value);
-        if (s.isTaint()) tainted = true;
         EncodingUtils.encAssociateIndex(str, s.getEncoding());
         str.cat19(s);
 
         str.cat((byte) ']');
-
-        if (tainted) str.setTaint(true);
 
         return str;
     }

@@ -586,9 +586,7 @@ public class RubyDir extends RubyObject implements Closeable {
     public static RubyString getwd(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
 
-        RubyString pwd = newFilesystemString(runtime, getCWD(runtime));
-        pwd.setTaint(true);
-        return pwd;
+        return newFilesystemString(runtime, getCWD(runtime));
     }
 
     /**

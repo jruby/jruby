@@ -35,6 +35,7 @@ import org.joni.WarnCallback;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
@@ -42,18 +43,24 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.util.RubyStringBuilder.str;
+
 /**
  *
  */
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
     private final Ruby runtime;
     private final Set<ID> oncelers = EnumSet.allOf(IRubyWarnings.ID.class);
+    private static final Set<Category> categories = EnumSet.allOf(Category.class);
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
     }
 
     public static RubyModule createWarningModule(Ruby runtime) {
+        categories.add(Category.EXPERIMENTAL);
+        categories.remove(Category.DEPRECATED);
+
         RubyModule warning = runtime.defineModule("Warning");
 
         warning.defineAnnotatedMethods(RubyWarnings.class);
@@ -135,6 +142,14 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         writeWarningDyncall(runtime.getCurrentContext(), errorString);
     }
 
+    public void warnExperimental(String filename, int line, String message) {
+        if (categories.contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
+    }
+
+    public void warnDeprecated(String name) {
+        if (categories.contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
+    }
+
     public void warnOnce(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
         if (oncelers.contains(id)) return;
@@ -187,6 +202,37 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warn(id, fileName, lineNumber, message);
     }
 
+    @JRubyMethod(name = "[]")
+    public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+        TypeConverter.checkType(context, arg, runtime.getSymbol());
+        String categoryId = ((RubySymbol) arg).idString();
+        Category category = Category.fromId(categoryId);
+
+        if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
+
+        return runtime.newBoolean(category != null && categories.contains(category));
+    }
+
+    @JRubyMethod(name = "[]=")
+    public static IRubyObject op_aset(ThreadContext context, IRubyObject self, IRubyObject arg, IRubyObject flag) {
+        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
+        String categoryId = ((RubySymbol) arg).idString();
+        Category category = Category.fromId(categoryId);
+
+        if (category != null) {
+            if (flag.isTrue()) {
+                categories.add(category);
+            } else {
+                categories.remove(category);
+            }
+        } else {
+            throw context.runtime.newArgumentError(str(context.runtime, "unknown category: ", arg));
+        }
+
+        return flag;
+    }
+
     @JRubyMethod
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
@@ -215,5 +261,24 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         String buffer = fileName + " warning: " + message + '\n';
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer));
+    }
+
+    public enum Category {
+        EXPERIMENTAL("experimental"), DEPRECATED("deprecated");
+
+        private String id;
+
+        Category(String id) {
+            this.id = id;
+        }
+
+        public static Category fromId(String id) {
+            switch (id) {
+                case "experimental": return EXPERIMENTAL;
+                case "deprecated": return DEPRECATED;
+            }
+
+            return null;
+        }
     }
 }

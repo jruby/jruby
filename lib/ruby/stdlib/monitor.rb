@@ -225,7 +225,7 @@ module MonitorMixin
   # Use <tt>extend MonitorMixin</tt> or <tt>include MonitorMixin</tt> instead
   # of this constructor.  Have look at the examples above to understand how to
   # use this module.
-  def initialize(*)
+  def initialize(...)
     super
     mon_initialize
   end

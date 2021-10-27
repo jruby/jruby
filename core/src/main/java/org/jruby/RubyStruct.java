@@ -59,6 +59,7 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * @author  jpetersen
@@ -126,6 +127,37 @@ public class RubyStruct extends RubyObject {
 
     private void modify() {
         testFrozen();
+    }
+
+    @JRubyMethod
+    public IRubyObject deconstruct_keys(ThreadContext context, IRubyObject keysArg) {
+        if (keysArg.isNil()) return to_h(context, Block.NULL_BLOCK);
+
+        if (!(keysArg instanceof RubyArray)) {
+            throw context.runtime.newTypeError(str(context.runtime, "wrong argument type ", keysArg.getMetaClass(), "(expected Array or nil)"));
+        }
+
+        RubyArray keys = (RubyArray) keysArg;
+        int length = keys.size();
+        RubyHash hash = RubyHash.newSmallHash(context.runtime);
+        if (values.length < length) {
+            return hash;
+        }
+
+        for (int i = 0; i < length; i++) {
+            IRubyObject key = keys.eltOk(i);
+            IRubyObject value;
+
+            try {
+                value = this.aref(key);
+            } catch (RaiseException e) {
+                return hash;
+            }
+
+            hash.op_aset(context, key, value);
+        }
+
+        return hash;
     }
 
     @JRubyMethod
@@ -613,7 +645,7 @@ public class RubyStruct extends RubyObject {
         }
 
         buffer.cat('>');
-        return (RubyString) buffer.infectBy(this);
+        return (RubyString) buffer;
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
@@ -622,7 +654,7 @@ public class RubyStruct extends RubyObject {
         return (RubyString) context.safeRecurse(InspectRecursive.INSTANCE, this, this, "inspect", false);
     }
 
-    @JRubyMethod(name = {"to_a", "values"})
+    @JRubyMethod(name = {"to_a", "deconstruct", "values"})
     @Override
     public RubyArray to_a(ThreadContext context) {
         return context.runtime.newArray(values);

@@ -49,6 +49,7 @@ public interface NodeVisitor<T> {
     T visitArgsPushNode(ArgsPushNode iVisited);
     T visitArgumentNode(ArgumentNode iVisited);
     T visitArrayNode(ArrayNode iVisited);
+    T visitArrayPatternNode(ArrayPatternNode iVisited);
     T visitAttrAssignNode(AttrAssignNode iVisited);
     T visitBackRefNode(BackRefNode iVisited);
     T visitBeginNode(BeginNode iVisited);
@@ -82,6 +83,7 @@ public interface NodeVisitor<T> {
     T visitEvStrNode(EvStrNode iVisited);
     T visitFCallNode(FCallNode iVisited);
     T visitFalseNode(FalseNode iVisited);
+    T visitFindPatternNode(FindPatternNode iVisited);
     T visitFixnumNode(FixnumNode iVisited);
     T visitFlipNode(FlipNode iVisited);
     T visitFloatNode(FloatNode iVisited);
@@ -89,6 +91,8 @@ public interface NodeVisitor<T> {
     T visitGlobalAsgnNode(GlobalAsgnNode iVisited);
     T visitGlobalVarNode(GlobalVarNode iVisited);
     T visitHashNode(HashNode iVisited);
+    T visitHashPatternNode(HashPatternNode iVisited);
+    T visitInNode(InNode iVisited);
     T visitInstAsgnNode(InstAsgnNode iVisited);
     T visitInstVarNode(InstVarNode iVisited);
     T visitIfNode(IfNode iVisited);
@@ -108,6 +112,7 @@ public interface NodeVisitor<T> {
     T visitNewlineNode(NewlineNode iVisited);
     T visitNextNode(NextNode iVisited);
     T visitNilNode(NilNode iVisited);
+    T visitNilRestArgNode(NilRestArgNode iVisited);
     T visitNthRefNode(NthRefNode iVisited);
     T visitOperatorCallNode(OperatorCallNode iVisited);
     T visitOpElementAsgnNode(OpElementAsgnNode iVisited);
@@ -117,6 +122,7 @@ public interface NodeVisitor<T> {
     T visitOpAsgnOrNode(OpAsgnOrNode iVisited);
     T visitOptArgNode(OptArgNode iVisited);
     T visitOrNode(OrNode iVisited);
+    T visitPatternCaseNode(PatternCaseNode iVisited);
     T visitPreExeNode(PreExeNode iVisited);
     T visitPostExeNode(PostExeNode iVisited);
     T visitRationalNode(RationalNode iVisited);

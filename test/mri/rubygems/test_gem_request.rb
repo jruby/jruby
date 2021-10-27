@@ -4,12 +4,11 @@ require 'rubygems/request'
 require 'ostruct'
 require 'base64'
 
-unless defined?(OpenSSL::SSL)
+unless Gem::HAVE_OPENSSL
   warn 'Skipping Gem::Request tests.  openssl not found.'
 end
 
 class TestGemRequest < Gem::TestCase
-
   CA_CERT_FILE     = cert_path 'ca'
   CHILD_CERT       = load_cert 'child'
   EXPIRED_CERT     = load_cert 'expired'
@@ -79,14 +78,25 @@ class TestGemRequest < Gem::TestCase
     assert_equal URI(@proxy_uri), proxy
   end
 
+  def test_proxy_ENV
+    ENV['http_proxy'] = "http://proxy"
+    ENV['https_proxy'] = ""
+
+    request = make_request URI('https://example'), nil, nil, nil
+
+    proxy = request.proxy_uri
+
+    assert_nil proxy
+  end
+
   def test_configure_connection_for_https
     connection = Net::HTTP.new 'localhost', 443
 
-    request = Class.new(Gem::Request) {
+    request = Class.new(Gem::Request) do
       def self.get_cert_files
         [TestGemRequest::PUBLIC_CERT_FILE]
       end
-    }.create_with_proxy URI('https://example'), nil, nil, nil
+    end.create_with_proxy URI('https://example'), nil, nil, nil
 
     Gem::Request.configure_connection_for_https connection, request.cert_files
 
@@ -101,11 +111,11 @@ class TestGemRequest < Gem::TestCase
 
     connection = Net::HTTP.new 'localhost', 443
 
-    request = Class.new(Gem::Request) {
+    request = Class.new(Gem::Request) do
       def self.get_cert_files
         [TestGemRequest::PUBLIC_CERT_FILE]
       end
-    }.create_with_proxy URI('https://example'), nil, nil, nil
+    end.create_with_proxy URI('https://example'), nil, nil, nil
 
     Gem::Request.configure_connection_for_https connection, request.cert_files
 
@@ -240,22 +250,22 @@ class TestGemRequest < Gem::TestCase
   def test_user_agent
     ua = make_request(@uri, nil, nil, nil).user_agent
 
-    assert_match %r%^RubyGems/\S+ \S+ Ruby/\S+ \(.*?\)%,          ua
-    assert_match %r%RubyGems/#{Regexp.escape Gem::VERSION}%,      ua
-    assert_match %r% #{Regexp.escape Gem::Platform.local.to_s} %, ua
-    assert_match %r%Ruby/#{Regexp.escape RUBY_VERSION}%,          ua
-    assert_match %r%\(#{Regexp.escape RUBY_RELEASE_DATE} %,       ua
+    assert_match %r{^RubyGems/\S+ \S+ Ruby/\S+ \(.*?\)},          ua
+    assert_match %r{RubyGems/#{Regexp.escape Gem::VERSION}},      ua
+    assert_match %r{ #{Regexp.escape Gem::Platform.local.to_s} }, ua
+    assert_match %r{Ruby/#{Regexp.escape RUBY_VERSION}},          ua
+    assert_match %r{\(#{Regexp.escape RUBY_RELEASE_DATE} },       ua
   end
 
   def test_user_agent_engine
     util_save_version
 
-    Object.send :remove_const, :RUBY_ENGINE if defined?(RUBY_ENGINE)
+    Object.send :remove_const, :RUBY_ENGINE
     Object.send :const_set,    :RUBY_ENGINE, 'vroom'
 
     ua = make_request(@uri, nil, nil, nil).user_agent
 
-    assert_match %r%\) vroom%, ua
+    assert_match %r{\) vroom}, ua
   ensure
     util_restore_version
   end
@@ -263,12 +273,12 @@ class TestGemRequest < Gem::TestCase
   def test_user_agent_engine_ruby
     util_save_version
 
-    Object.send :remove_const, :RUBY_ENGINE if defined?(RUBY_ENGINE)
+    Object.send :remove_const, :RUBY_ENGINE
     Object.send :const_set,    :RUBY_ENGINE, 'ruby'
 
     ua = make_request(@uri, nil, nil, nil).user_agent
 
-    assert_match %r%\)%, ua
+    assert_match %r{\)}, ua
   ensure
     util_restore_version
   end
@@ -281,7 +291,7 @@ class TestGemRequest < Gem::TestCase
 
     ua = make_request(@uri, nil, nil, nil).user_agent
 
-    assert_match %r% patchlevel 5\)%, ua
+    assert_match %r{ patchlevel 5\)}, ua
   ensure
     util_restore_version
   end
@@ -296,8 +306,8 @@ class TestGemRequest < Gem::TestCase
 
     ua = make_request(@uri, nil, nil, nil).user_agent
 
-    assert_match %r% revision 6\)%, ua
-    assert_match %r%Ruby/#{Regexp.escape RUBY_VERSION}dev%, ua
+    assert_match %r{ revision 6\)}, ua
+    assert_match %r{Ruby/#{Regexp.escape RUBY_VERSION}dev}, ua
   ensure
     util_restore_version
   end
@@ -311,12 +321,13 @@ class TestGemRequest < Gem::TestCase
 
     ua = make_request(@uri, nil, nil, nil).user_agent
 
-    assert_match %r%\(#{Regexp.escape RUBY_RELEASE_DATE}\)%, ua
+    assert_match %r{\(#{Regexp.escape RUBY_RELEASE_DATE}\)}, ua
   ensure
     util_restore_version
   end
 
   def test_verify_certificate
+    pend if Gem.java_platform?
     store = OpenSSL::X509::Store.new
     context = OpenSSL::X509::StoreContext.new store
     context.error = OpenSSL::X509::V_ERR_OUT_OF_MEM
@@ -330,6 +341,7 @@ class TestGemRequest < Gem::TestCase
   end
 
   def test_verify_certificate_extra_message
+    pend if Gem.java_platform?
     store = OpenSSL::X509::Store.new
     context = OpenSSL::X509::StoreContext.new store
     context.error = OpenSSL::X509::V_ERR_INVALID_CA
@@ -447,7 +459,7 @@ ERROR:  Certificate  is an invalid CA certificate
   end
 
   def util_restore_version
-    Object.send :remove_const, :RUBY_ENGINE if defined?(RUBY_ENGINE)
+    Object.send :remove_const, :RUBY_ENGINE
     Object.send :const_set,    :RUBY_ENGINE, @orig_RUBY_ENGINE if
       defined?(@orig_RUBY_ENGINE)
 
@@ -460,7 +472,7 @@ ERROR:  Certificate  is an invalid CA certificate
   end
 
   def util_save_version
-    @orig_RUBY_ENGINE     = RUBY_ENGINE if defined? RUBY_ENGINE
+    @orig_RUBY_ENGINE     = RUBY_ENGINE
     @orig_RUBY_PATCHLEVEL = RUBY_PATCHLEVEL
     @orig_RUBY_REVISION   = RUBY_REVISION if defined? RUBY_REVISION
   end
@@ -494,5 +506,4 @@ ERROR:  Certificate  is an invalid CA certificate
       @response
     end
   end
-
-end if defined?(OpenSSL::SSL)
+end if Gem::HAVE_OPENSSL

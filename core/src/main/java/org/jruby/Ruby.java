@@ -218,6 +218,8 @@ import java.util.stream.Collectors;
 import static java.lang.invoke.MethodHandles.explicitCastArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
+import static org.jruby.RubyBoolean.FALSE_BYTES;
+import static org.jruby.RubyBoolean.TRUE_BYTES;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -371,8 +373,6 @@ public final class Ruby implements Constantizable {
         trueObject = new RubyBoolean.True(this);
         trueObject.setFrozen(true);
 
-        reportOnException = trueObject;
-
         // Set up the main thread in thread service
         threadService.initMainThread();
 
@@ -388,6 +388,13 @@ public final class Ruby implements Constantizable {
         comparableModule = RubyComparable.createComparable(this);
         enumerableModule = RubyEnumerable.createEnumerableModule(this);
         stringClass = RubyString.createStringClass(this);
+
+        falseString = newString(FALSE_BYTES);
+        falseString.setFrozen(true);
+        nilString = RubyString.newEmptyString(this);
+        nilString.setFrozen(true);
+        trueString = newString(TRUE_BYTES);
+        trueString.setFrozen(true);
 
         encodingService = new EncodingService(this);
 
@@ -1661,6 +1668,7 @@ public final class Ruby implements Constantizable {
         ifAllowed("Fatal",                  (ruby) -> fatal = RubyFatal.define(ruby, exceptionClass));
         ifAllowed("Interrupt",              (ruby) -> interrupt = RubyInterrupt.define(ruby, signalException));
         ifAllowed("TypeError",              (ruby) -> typeError = RubyTypeError.define(ruby, standardError));
+        ifAllowed("NoMatchingPatternError", (ruby) -> noMatchingPatternError = RubyNoMatchingPatternError.define(ruby, standardError));
         ifAllowed("ArgumentError",          (ruby) -> argumentError = RubyArgumentError.define(ruby, standardError));
         ifAllowed("UncaughtThrowError",     (ruby) -> uncaughtThrowError = RubyUncaughtThrowError.define(ruby, argumentError));
         ifAllowed("IndexError",             (ruby) -> indexError = RubyIndexError.define(ruby, standardError));
@@ -2031,11 +2039,24 @@ public final class Ruby implements Constantizable {
         return trueObject;
     }
 
+    public RubyString getTrueString() {
+        return trueString;
+    }
+
+    public RubyString getNilString() {
+        return nilString;
+    }
+
+
     /** Returns the "false" instance from the instance pool.
      * @return The "false" instance.
      */
     public RubyBoolean getFalse() {
         return falseObject;
+    }
+
+    public RubyString getFalseString() {
+        return falseString;
     }
 
     /** Returns the "nil" singleton instance.
@@ -2314,6 +2335,10 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getTypeError() {
         return typeError;
+    }
+
+    public RubyClass getNoMatchingPatternError() {
+        return noMatchingPatternError;
     }
 
     public RubyClass getArgumentError() {
@@ -4374,19 +4399,38 @@ public final class Ruby implements Constantizable {
         return err;
     }
 
+    public boolean isAbortOnException() {
+        return abortOnException;
+    }
+
+    public void setAbortOnException(final boolean abortOnException) {
+        this.abortOnException = abortOnException;
+    }
+
+    @Deprecated
     public boolean isGlobalAbortOnExceptionEnabled() {
-        return globalAbortOnExceptionEnabled;
+        return abortOnException;
     }
 
+    @Deprecated
     public void setGlobalAbortOnExceptionEnabled(boolean enable) {
-        globalAbortOnExceptionEnabled = enable;
+        abortOnException = enable;
     }
 
+    @Deprecated
     public IRubyObject getReportOnException() {
+        return reportOnException ? getTrue() : getFalse();
+    }
+
+    public boolean isReportOnException() {
         return reportOnException;
     }
 
     public void setReportOnException(IRubyObject enable) {
+        reportOnException = enable.isTrue();
+    }
+
+    public void setReportOnException(boolean enable) {
         reportOnException = enable;
     }
 
@@ -4828,11 +4872,10 @@ public final class Ruby implements Constantizable {
      * @return the freeze-duped version of the string
      */
     public RubyString freezeAndDedupString(RubyString string) {
-        if (string.getMetaClass() != stringClass) {
+        if (!string.isBare(this)) {
             // never cache a non-natural String
-            RubyString duped = string.strDup(this);
-            duped.setFrozen(true);
-            return duped;
+            string.setFrozen(true);
+            return string;
         }
 
         // Populate thread-local wrapper
@@ -5282,8 +5325,8 @@ public final class Ruby implements Constantizable {
     private volatile EventHook[] eventHooks = EMPTY_HOOKS;
     private boolean hasEventHooks;
 
-    private boolean globalAbortOnExceptionEnabled = false;
-    private IRubyObject reportOnException;
+    private boolean abortOnException = false; // Thread.abort_on_exception
+    private boolean reportOnException = true; // Thread.report_on_exception
     private boolean doNotReverseLookupEnabled = false;
     private volatile boolean objectSpaceEnabled;
     private boolean siphashEnabled;
@@ -5297,6 +5340,9 @@ public final class Ruby implements Constantizable {
     private final IRubyObject[] singleNilArray;
     private final RubyBoolean trueObject;
     private final RubyBoolean falseObject;
+    private final RubyString trueString;
+    private final RubyString falseString;
+    private final RubyString nilString;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
 
@@ -5386,6 +5432,7 @@ public final class Ruby implements Constantizable {
     private RubyClass fatal;
     private RubyClass interrupt;
     private RubyClass typeError;
+    private RubyClass noMatchingPatternError;
     private RubyClass argumentError;
     private RubyClass uncaughtThrowError;
     private RubyClass indexError;

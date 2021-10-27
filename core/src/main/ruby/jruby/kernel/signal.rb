@@ -19,10 +19,8 @@ module Signal
     end
 
     oldhandler, installed = if block
-      raise SecurityError.new("Insecure: tainted signal trap") if block.tainted?
       Signal::__jtrap_kernel(block, sig)
     else
-      raise SecurityError.new("Insecure: tainted signal trap") if cmd.tainted?
       cmd = cmd.to_s if Symbol === cmd
       case cmd
       when Proc

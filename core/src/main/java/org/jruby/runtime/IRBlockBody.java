@@ -11,6 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
+    protected boolean ruby2Keywords;
 
     // For interpreter IR
     public IRBlockBody(IRScope closure, Signature signature) {
@@ -203,5 +204,14 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     @Override
     public int getLine() {
         return lineNumber;
+    }
+
+    @Override
+    public boolean isRubyBlock() {
+        return true;
+    }
+
+    public void setRuby2Keywords() {
+        ruby2Keywords = true;
     }
 }

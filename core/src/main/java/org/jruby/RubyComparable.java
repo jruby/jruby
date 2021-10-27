@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /** Implementation of the Comparable module.
  *
@@ -240,9 +241,24 @@ public class RubyComparable {
     }
 
     @JRubyMethod(name = "clamp")
-    public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject min, IRubyObject max) {
-        int c;
+    public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.runtime;
 
+        if (!(arg instanceof RubyRange)) {
+            throw runtime.newArgumentError(str(runtime, "wrong argument type ", arg.getMetaClass(),  "(expected Range)"));
+        }
+
+        RubyRange range = (RubyRange) arg;
+
+        if (!range.end(context).isNil() && range.isExcludeEnd()) {
+            throw runtime.newArgumentError("cannot clamp with an exclusive range");
+        }
+
+        return clamp(context, recv, range.begin(context), range.end(context));
+    }
+
+    @JRubyMethod(name = "clamp")
+    public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject min, IRubyObject max) {
         ComparableSites sites = sites(context);
         CallSite op_gt = sites.op_gt;
         CallSite op_lt = sites.op_lt;
@@ -252,11 +268,17 @@ public class RubyComparable {
             throw context.runtime.newArgumentError("min argument must be smaller than max argument");
         }
 
-        c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, min);
-        if (c == 0) return recv;
-        if (c < 0) return min;
-        c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, max);
-        if (c > 0) return max;
+        if (!min.isNil()) {
+            int c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, min);
+            if (c == 0) return recv;
+            if (c < 0) return min;
+        }
+
+        if (!max.isNil()) {
+            int c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, max);
+            if (c > 0) return max;
+        }
+
         return recv;
     }
 

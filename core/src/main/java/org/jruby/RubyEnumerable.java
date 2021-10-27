@@ -432,11 +432,17 @@ public class RubyEnumerable {
         return result;
     }
 
+    @JRubyMethod(name = "tally")
+    public static IRubyObject tally(ThreadContext context, IRubyObject self) {
+        RubyHash result = RubyHash.newHash(context.runtime);
+        callEach(context, eachSite(context), self, Signature.NO_ARGUMENTS, new TallyCallback(result));
+        return result;
+    }
+
     @JRubyMethod(name = {"to_a", "entries"})
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
         RubyArray result = context.runtime.newArray();
         callEach(context, eachSite(context), self, Signature.OPTIONAL, new AppendBlockCallback(result));
-        result.infectBy(self);
         return result;
     }
 
@@ -446,7 +452,6 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
         Helpers.invoke(context, self, "each", args,
                 CallBlock.newCallClosure(context, self, Signature.OPTIONAL, new AppendBlockCallback(result)));
-        result.infectBy(self);
         return result;
     }
 
@@ -456,7 +461,6 @@ public class RubyEnumerable {
         final RubyHash result = RubyHash.newHash(runtime);
         Helpers.invoke(context, self, "each", args,
                 CallBlock.newCallClosure(context, self, Signature.OPTIONAL, new PutKeyValueCallback(result, block)));
-        result.infectBy(self);
         return result;
     }
 
@@ -828,6 +832,45 @@ public class RubyEnumerable {
             return result;
         } else {
             return enumeratorizeWithSize(context, self, methodName, (SizeFn) RubyEnumerable::size);
+        }
+    }
+
+    @JRubyMethod
+    public static IRubyObject filter_map(ThreadContext context, IRubyObject self, Block block) {
+        Ruby runtime = context.runtime;
+
+        if (block.isGiven()) {
+            RubyArray result = runtime.newArray();
+
+            eachSite(context).call(context, self, self, CallBlock19.newCallClosure(self, runtime.getEnumerable(), block.getSignature(), new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    final IRubyObject larg; boolean ary = false;
+                    switch (largs.length) {
+                        case 0:  larg = ctx.nil; break;
+                        case 1:  larg = largs[0]; break;
+                        default: larg = RubyArray.newArrayMayCopy(ctx.runtime, largs); ary = true;
+                    }
+                    IRubyObject val = ary ? block.yieldArray(ctx, larg, null) : block.yield(ctx, larg);
+
+                    if (val.isTrue()) {
+                        synchronized (result) { result.append(val); }
+                    }
+                    return ctx.nil;
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
+                    IRubyObject val = block.yield(ctx, larg);
+
+                    if (val.isTrue()) {
+                        synchronized (result) { result.append(val); }
+                    }
+                    return ctx.nil;
+                }
+            }, context));
+
+            return result;
+        } else {
+            return enumeratorizeWithSize(context, self, "filter_map", (SizeFn) RubyEnumerable::size);
         }
     }
 
@@ -2219,6 +2262,27 @@ public class RubyEnumerable {
                 throw runtime.newArgumentError("element has wrong array length (expected 2, was " + array.size() + ")");
             }
             result.fastASetCheckString(runtime, array.eltOk(0), array.eltOk(1));
+        }
+
+    }
+
+    public static final class TallyCallback implements BlockCallback {
+
+        private final RubyHash result;
+
+        TallyCallback(RubyHash result) {
+            this.result = result;
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            IRubyObject value = largs[0];
+            IRubyObject count = result.fastARef(value);
+            if (count == null) {
+                result.fastASet(value, RubyFixnum.one(context.runtime));
+            } else {
+                result.fastASetSmall(value, ((RubyInteger)count).succ(context));
+            }
+            return context.nil;
         }
 
     }

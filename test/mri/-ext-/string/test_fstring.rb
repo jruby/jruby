@@ -12,34 +12,20 @@ class Test_String_Fstring < Test::Unit::TestCase
     yield fstr
   end
 
-  def test_taint_shared_string
-    str = __method__.to_s.dup
-    str.taint
-    assert_fstring(str) {|s| assert_predicate(s, :tainted?)}
+  def test_rb_enc_interned_str_autoloaded_encoding
+    assert_separately([], <<~RUBY)
+      require '-test-/string'
+      assert_include(Encoding::Windows_31J.inspect, 'autoload')
+      Bug::String.rb_enc_interned_str(Encoding::Windows_31J)
+    RUBY
   end
 
-  def test_taint_normal_string
-    str = __method__.to_s * 3
-    str.taint
-    assert_fstring(str) {|s| assert_predicate(s, :tainted?)}
-  end
-
-  def test_taint_registered_tainted
-    str = __method__.to_s * 3
-    str.taint
-    assert_fstring(str) {|s| assert_predicate(s, :tainted?)}
-
-    str = __method__.to_s * 3
-    assert_fstring(str) {|s| assert_not_predicate(s, :tainted?)}
-  end
-
-  def test_taint_registered_untainted
-    str = __method__.to_s * 3
-    assert_fstring(str) {|s| assert_not_predicate(s, :tainted?)}
-
-    str = __method__.to_s * 3
-    str.taint
-    assert_fstring(str) {|s| assert_predicate(s, :tainted?)}
+  def test_rb_enc_str_new_autoloaded_encoding
+    assert_separately([], <<~RUBY)
+      require '-test-/string'
+      assert_include(Encoding::Windows_31J.inspect, 'autoload')
+      Bug::String.rb_enc_str_new(Encoding::Windows_31J)
+    RUBY
   end
 
   def test_instance_variable
@@ -58,7 +44,7 @@ class Test_String_Fstring < Test::Unit::TestCase
   end
 
   def test_singleton_class
-    str = noninterned_name.force_encoding("us-ascii")
+    str = noninterned_name
     fstr = Bug::String.fstring(str)
     assert_raise(TypeError) {fstr.singleton_class}
   end
@@ -73,8 +59,13 @@ class Test_String_Fstring < Test::Unit::TestCase
   end
 
   def test_shared_string_safety
-    -('a' * 30).force_encoding(Encoding::ASCII)
-    str = ('a' * 30).force_encoding(Encoding::ASCII).taint
+    _unused = -('a' * 30).force_encoding(Encoding::ASCII)
+    begin
+      verbose_back, $VERBOSE = $VERBOSE, nil
+      str = ('a' * 30).force_encoding(Encoding::ASCII).taint
+    ensure
+      $VERBOSE = verbose_back
+    end
     frozen_str = Bug::String.rb_str_new_frozen(str)
     assert_fstring(frozen_str) {|s| assert_equal(str, s)}
     GC.start

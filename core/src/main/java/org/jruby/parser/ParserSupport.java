@@ -38,7 +38,10 @@ package org.jruby.parser;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
@@ -52,6 +55,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.runtime.DynamicScope;
@@ -65,6 +69,9 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.lexer.LexingCommon.*;
+import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
+import static org.jruby.lexer.LexingCommon.OR_OR;
+import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
 
 /** 
@@ -76,12 +83,6 @@ public class ParserSupport {
     protected ScopedParserState scopedParserState;
 
     protected RubyLexer lexer;
-    
-    // Is the parser currently within a method definition
-    private boolean inDefinition;
-
-    // Is the parser currently within a class body.
-    private boolean inClass;
 
     // Should we warn if a variable is declared not actually used?
     private boolean warnOnUnusedVariables;
@@ -93,8 +94,18 @@ public class ParserSupport {
 
     public boolean isNextBreak = false;
 
+    public IRubyObject case_labels;
+
+    private Set<ByteList> keyTable;
+    private Set<ByteList> variableTable;
+
+    private int maxNumParam = 0;
+    private Node numParamCurrent = null;
+    private Node numParamInner = null;
+    private Node numParamOuter = null;
+
     public void reset() {
-        inDefinition = false;
+        lexer.getLexContext().reset();
     }
 
     public StaticScope getCurrentScope() {
@@ -132,6 +143,75 @@ public class ParserSupport {
         lexer.getCmdArgumentState().push0();
         lexer.getConditionState().push0();
     }
+
+    public Node numparam_push() {
+        Node inner = numParamInner;
+
+        if (numParamOuter == null) numParamOuter = numParamCurrent;
+
+        numParamInner = null;
+        numParamCurrent = null;
+
+        return inner;
+    }
+
+    public void numparam_pop(Node previousInner) {
+        if (previousInner != null) {
+            numParamInner = previousInner;
+        } else if (numParamCurrent != null) {
+            numParamInner = numParamCurrent;
+        }
+
+        if (maxNumParam > 0) {
+            numParamCurrent = numParamOuter;
+            numParamOuter = null;
+        } else {
+            numParamCurrent = null;
+        }
+
+    }
+
+    public ArgsNode args_with_numbered(ArgsNode args, int paramCount) {
+        if (paramCount > 0) {
+            if (args == null) { // FIXME: I think this is not possible.
+                ListNode pre = makePreNumArgs(paramCount);
+                args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+            } else if (args.getArgs().length == 0) {
+                ListNode pre = makePreNumArgs(paramCount);
+                args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+            } else {
+                // FIXME: not sure where errors are printed in all this but could be here.
+            }
+            // FIXME: it just sets pre-value here but what existing args node would work here?
+        }
+        return args;
+    }
+
+    private ListNode makePreNumArgs(int paramCount) {
+        ListNode list = new ArrayNode(lexer.getRubySourceline());
+
+        for (int i = 1; i <= paramCount; i++) {
+            list.add(arg_var(new ByteList(("_" + i).getBytes())));
+        }
+
+        return list;
+    }
+
+    public int resetMaxNumParam() {
+        return restoreMaxNumParam(0);
+    }
+
+    public int restoreMaxNumParam(int maxNum) {
+        int temp = maxNumParam;
+
+        maxNumParam = maxNum;
+
+        return temp;
+    }
+
+    public void ordinalMaxNumParam() {
+        maxNumParam = -1;
+    }
     
     public static Node arg_concat(Node node1, Node node2) {
         return node2 == null ? node1 : new ArgsCatNode(node1.getLine(), node1, node2);
@@ -158,15 +238,47 @@ public class ParserSupport {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
             RubySymbol name = ((INameNode) node).getName();
-            if (name.getBytes().equals(lexer.getCurrentArg())) {
-                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
-            }
-            Node newNode = currentScope.declare(node.getLine(), name);
+            String id = name.idString();
+            int slot = currentScope.isDefined(id);
 
-            if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
-                scopedParserState.markUsedVariable(name, ((IScopedNode) node).getDepth());
+            if (currentScope.isBlockScope() && slot != -1) {
+                if (isNumParamId(id) && isNumParamNested()) return null;
+                if (name.getBytes().equals(lexer.getCurrentArg())) {
+                    warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
+                }
+
+                Node newNode = new DVarNode(node.getLine(), slot, name);
+
+                if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
+                    scopedParserState.markUsedVariable(name, ((IScopedNode) node).getDepth());
+                }
+                return newNode;
             }
-            return newNode;
+
+            StaticScope.Type type = currentScope.getType();
+            if (type == StaticScope.Type.LOCAL) {
+                if (name.getBytes().equals(lexer.getCurrentArg())) {
+                    warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
+                }
+
+                Node newNode = new LocalVarNode(node.getLine(), slot, name);
+
+                if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
+                    scopedParserState.markUsedVariable(name, ((IScopedNode) node).getDepth());
+                }
+
+                return newNode;
+            }
+            if (type == StaticScope.Type.BLOCK && isNumParamId(id) && numberedParam(id)) {
+                if (isNumParamNested()) return null;
+
+                Node newNode = new DVarNode(node.getLine(), slot, name);
+                if (numParamCurrent == null) numParamCurrent = newNode;
+                return newNode;
+            }
+            if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+
+            return new VCallNode(node.getLine(), name);
         case CONSTDECLNODE: // CONSTANT
             return new ConstNode(node.getLine(), ((INameNode) node).getName());
         case INSTASGNNODE: // INSTANCE VARIABLE
@@ -182,6 +294,46 @@ public class ParserSupport {
         return null;
     }
 
+    private boolean numberedParam(String id) {
+        int n = Integer.parseInt(id.substring(1));
+        if (scopedParserState.getEnclosingScope() == null) return false;
+
+        if (maxNumParam == -1) {
+            compile_error("ordinary parameter is defined");
+            return false;
+        }
+
+        // if we have proc { _3 } then we need to up to 3 even though we never reference _1 or _2.
+        if (maxNumParam < n) maxNumParam = n;
+
+        // MRI adds to their vtable here but we do it in makePreNumArgs.  We are just
+        // making them like legit params and IRBuilder will be none the wiser.
+
+        return true;
+    }
+
+    private boolean isNumParamNested() {
+        if (numParamOuter == null && numParamInner == null) return false;
+
+        Node used = numParamOuter != null ? numParamOuter : numParamInner;
+        compile_error("numbered parameter is already used in\n" + lexer.getFile() + ":" + used.getLine() + ": " +
+                (numParamOuter != null ? "outer" : "inner") + " block here");
+        // FIXME: Show error line
+        return true;
+    }
+
+    private boolean isNumParamId(String id) {
+        if (id.length() != 2 || id.charAt(0) != '_') return false;
+
+        char one = id.charAt(1);
+        return one != '0' && Character.isDigit(one); // _1..._9
+    }
+
+    public void numparam_name(RubySymbol name) {
+        String id = name.idString();
+        if (isNumParamId(id)) compile_error(id + " is reserved for numbered parameter");
+    }
+
     public Node declareIdentifier(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
         if (byteName.equals(lexer.getCurrentArg())) {
@@ -189,17 +341,38 @@ public class ParserSupport {
                     str(getConfiguration().getRuntime(), "circular argument reference - ", name));
         }
 
-        int slot = currentScope.isDefined(name.idString());
-        Node node = currentScope.declare(lexer.tokline, name);
+        String id = name.idString();
+        boolean isNumParam = isNumParamId(id);
+
+        Node node;
+        int slot;
+        if (isNumParam && numberedParam(id)) {
+            if (isNumParamNested()) return null;
+
+            slot = currentScope.addVariable(id);
+            node = currentScope.isBlockScope() ?
+                    new DVarNode(lexer.tokline, slot, name) :
+                    new LocalVarNode(lexer.tokline, slot, name);
+            if (numParamCurrent == null) numParamCurrent = node;
+        }  else {
+            node = currentScope.declare(lexer.tokline, name);
+            slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
+        }
 
         if (warnOnUnusedVariables && node instanceof IScopedNode) addOrMarkVariable(name, slot);
 
         return node;
     }
 
+    public boolean isArgsInfoEmpty(ArgsNode argsNode) {
+        return argsNode.isEmpty();
+    }
+
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
         RubySymbol name = symbolID(byteName);
+
+        if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
 
@@ -230,6 +403,7 @@ public class ParserSupport {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
+        node = remove_begin(node);
         configuration.coverLine(line);
         node.setNewline();
 
@@ -760,9 +934,8 @@ public class ParserSupport {
     }
 
     /**
-     * Ok I admit that this is somewhat ugly.  We post-process a chain of when nodes and analyze
-     * them to re-insert them back into our new CaseNode the way we want.  The grammar is being
-     * difficult and until I go back into the depths of that this is where things are.
+     * We post-process a chain of when nodes and analyze them to re-insert them back into our new CaseNode
+     * as a list.  The grammar is more amenable to linked list style so we correct it at this point.
      *
      * @param expression of the case node (e.g. case foo)
      * @param firstWhenNode first when (which could also be the else)
@@ -777,6 +950,22 @@ public class ParserSupport {
                 cases.add(current);
             } else if (current instanceof WhenNode) {
                 simplifyMultipleArgumentWhenNodes((WhenNode) current, cases);
+            } else {
+                caseNode.setElseNode(current);
+                break;
+            }
+        }
+
+        return caseNode;
+    }
+
+    public static PatternCaseNode newPatternCaseNode(int line, Node expression, Node firstWhenNode) {
+        ArrayNode cases = new ArrayNode(firstWhenNode != null ? firstWhenNode.getLine() : line);
+        PatternCaseNode caseNode = new PatternCaseNode(line, expression, cases);
+
+        for (Node current = firstWhenNode; current != null; current = ((InNode) current).getNextCase()) {
+            if (current instanceof InNode) {
+                cases.add(current);
             } else {
                 caseNode.setElseNode(current);
                 break;
@@ -1008,23 +1197,6 @@ public class ParserSupport {
         
         result.setScope(scope);
     }
-
-    public boolean isInDef() {
-        return inDefinition;
-    }
-
-    public void setInDef(boolean inDef) {
-        this.inDefinition = inDef;
-    }
-
-    public boolean isInClass() {
-        return inClass;
-    }
-
-    public void setIsInClass(boolean inClass) {
-        this.inClass = inClass;
-    }
-
     /**
      * Gets the result.
      * @return Returns a RubyParserResult
@@ -1138,6 +1310,8 @@ public class ParserSupport {
     public Node newRescueModNode(Node body, Node rescueBody) {
         if (rescueBody == null) rescueBody = NilImplicitNode.NIL; // foo rescue () can make null.
         int line = getPosition(body);
+        body = remove_begin(body);
+        rescueBody = remove_begin(rescueBody);
 
         if (body instanceof OpElementAsgnNode) {
             OpElementAsgnNode original = (OpElementAsgnNode) body;
@@ -1202,7 +1376,7 @@ public class ParserSupport {
         return (node == null) ? new NilNode(defaultPosition) : node; 
     }
 
-    public Node new_args(int line, ListNode pre, ListNode optional, RestArgNode rest,
+    public ArgsNode new_args(int line, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, ArgsTailHolder tail) {
         ArgsNode argsNode;
         if (tail == null) {
@@ -1252,7 +1426,6 @@ public class ParserSupport {
         for (Node key: encounteredKeys) {
             hash.getPairs().remove(key);
         }
-
         return hash;
     }
 
@@ -1325,6 +1498,8 @@ public class ParserSupport {
 
     public ArgumentNode arg_var(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
+
+        if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
 
         if (warnOnUnusedVariables) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
@@ -1543,4 +1718,216 @@ public class ParserSupport {
         return INTERNAL_ID.toString();
     }
 
+    public Set<ByteList> push_pvtbl() {
+        Set<ByteList> currentTable = variableTable;
+
+        variableTable = new HashSet<>();
+
+        return currentTable;
+    }
+
+    public void pop_pvtbl(Set<ByteList> table) {
+        variableTable = table;
+    }
+
+    public Set<ByteList> push_pktbl() {
+        Set<ByteList> currentTable = keyTable;
+
+        keyTable = new HashSet<>();
+
+        return currentTable;
+    }
+
+    public void pop_pktbl(Set<ByteList> table) {
+        keyTable = table;
+    }
+
+    public Node newIn(int line, Node expression, Node body, Node nextCase) {
+        return new InNode(line, expression, body, nextCase);
+    }
+
+    public void endless_method_name(DefHolder name) {
+        // FIXME: IMPL
+    }
+
+    public Node reduce_nodes(Node body) {
+        // FIXME: impl
+        return body;
+    }
+
+    public void restore_defun(DefHolder holder) {
+        lexer.getLexContext().restore(holder);
+        lexer.setCurrentArg(holder.current_arg);
+    }
+
+    public ArrayPatternNode new_array_pattern(int line, Node constant, Node preArg, ArrayPatternNode arrayPattern) {
+        arrayPattern.setConstant(constant);
+
+        if (preArg != null) {
+            ListNode preArgs = new ListNode(line, preArg);
+            ListNode arrayPatternPreArgs = arrayPattern.getPreArgs();
+
+            arrayPattern.setPreArgs(arrayPatternPreArgs != null ?
+                    list_concat(preArgs, arrayPatternPreArgs) :
+                    preArgs);
+        }
+
+        return arrayPattern;
+    }
+
+    public HashPatternNode new_hash_pattern(Node constant, HashPatternNode hashPatternNode) {
+        hashPatternNode.setConstant(constant);
+
+        return hashPatternNode;
+    }
+
+    public static ByteList KWNOREST = new ByteList(new byte[] {});
+    public static ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
+
+    public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg) {
+        Node restArg;
+
+        if (keywordRestArg == KWNOREST) {          // '**nil'
+            restArg = new NilRestArgNode(line);
+        } else if (keywordRestArg != null) {       // '**something'
+            restArg = assignableLabelOrIdentifier(keywordRestArg, null);
+        } else {                                   // '**'
+            restArg = new StarNode(lexer.getRubySourceline());
+        }
+
+        return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
+    }
+
+    public void warn_one_line_pattern_matching(int line, Node pattern, boolean rightAssign) {
+        // FIXME: Prune out on warning categories once it is more wired in.
+        if (!(rightAssign && (pattern instanceof LocalAsgnNode || pattern instanceof DAsgnNode))) {
+            warn_experimental(line, "One-line pattern matching is experimental, and the behavior may change in future versions of Ruby!");
+        }
+    }
+
+    public void warn_experimental(int line, String message) {
+        ((RubyWarnings) warnings).warnExperimental(lexer.getFile(), line, message);
+    }
+
+    public Node rescued_expr(int line, Node arg, Node rescue) {
+        return new RescueNode(line, arg,
+                new RescueBodyNode(line, null, remove_begin(rescue), null), null);
+    }
+
+    public ArrayPatternNode new_array_pattern_tail(int line, ListNode preArgs, boolean hasRest, ByteList restArg, ListNode postArgs) {
+        return new ArrayPatternNode(
+                line,
+                preArgs,
+                hasRest ?
+                        restArg != null ?
+                                assignableLabelOrIdentifier(restArg, null) :
+                                new StarNode(lexer.getRubySourceline()) :
+                        null,
+                postArgs);
+    }
+
+    public void error_duplicate_pattern_key(ByteList key) {
+        if (keyTable.contains(key)) yyerror("duplicated key name");
+
+        keyTable.add(key);
+    }
+
+    public void error_duplicate_pattern_variable(ByteList variable) {
+        if (is_private_local_id(variable)) return;
+        if (variableTable.contains(variable)) yyerror("duplicated variable name");
+
+        variableTable.add(variable);
+    }
+
+    public Node new_find_pattern(Node constant, FindPatternNode findPattern) {
+        findPattern.setConstant(constant);
+
+        return findPattern;
+    }
+
+    public Node new_find_pattern_tail(int line, ByteList preRestArg, ListNode postArgs, ByteList postRestArg) {
+        // FIXME: in MRI all the StarNodes are the same node and so perhaps source line for them is unimportant.
+        return new FindPatternNode(
+                line,
+                preRestArg != null ? assignableLabelOrIdentifier(preRestArg, null) :  new StarNode(lexer.getRubySourceline()),
+                postArgs,
+                postRestArg != null ? assignableLabelOrIdentifier(postRestArg, null) :  new StarNode(lexer.getRubySourceline()));
+    }
+
+    public boolean local_id(ByteList value) {
+        // FIXME: local_id_ref is more complicated and we just blanket look for a scope var of the same name.
+        return currentScope.isDefined(symbolID(value).idString()) >= 0;
+    }
+
+    public boolean check_forwarding_args() {
+        if (local_id(FWD_REST) &&
+                local_id(FWD_KWREST) &&
+                local_id(FWD_BLOCK)) return true;
+
+        compile_error("unexpected ...");
+        return false;
+    }
+
+    public void add_forwarding_args() {
+        arg_var(FWD_REST);
+        arg_var(FWD_KWREST);
+        arg_var(FWD_BLOCK);
+    }
+
+    public Node new_args_forward_call(int line, Node leadingArgs) {
+        RubySymbol splatName = symbolID(FWD_REST);
+        int splatLoc = getCurrentScope().exists(splatName.idString());
+        Node splatNode = new SplatNode(line, new LocalVarNode(line, splatLoc, splatName));
+        RubySymbol kwRestName = symbolID(FWD_KWREST);
+        int kwRestLoc = getCurrentScope().exists(kwRestName.idString());
+        Node restNode = new LocalVarNode(line, kwRestLoc, kwRestName);
+        RubySymbol blockName = symbolID(FWD_BLOCK);
+        int blockLoc = getCurrentScope().exists(blockName.idString());
+        BlockPassNode block = new BlockPassNode(line, new LocalVarNode(line, blockLoc, blockName));
+        Node args = leadingArgs != null ? rest_arg_append(leadingArgs, splatNode) : splatNode;
+        args = arg_append(args, new HashNode(line, new KeyValuePair<>(null, restNode)));
+        return arg_blk_pass(args, block);
+    }
+
+    public ArgsNode new_args_forward_def(int line, ListNode leading) {
+        BlockArgNode blockArg = new BlockArgNode(arg_var(FWD_BLOCK));
+        // FIXME: signature issue doing the right thing.  Just treat this as '*' for now.
+        //ArgsTailHolder tail = new_args_tail(line, null, FWD_KWREST, blockArg);
+        //RestArgNode forwordRestArg  = new RestArgNode(arg_var(FWD_REST));
+        int slot = getCurrentScope().addVariableThisScope(FWD_REST.toString());
+        RestArgNode forwordRestArg  = new UnnamedRestArgNode(line, null, slot);
+        return new_args(line, leading, null, forwordRestArg, null, null);
+    }
+
+    public void check_literal_when(Node one) {
+        // FIXME: IMPL
+    }
+
+    public Node last_arg_append(Node args, Node lastArg) {
+        Node n1 = splat_array(args);
+
+        return n1 == null ?  arg_append(args, lastArg) : list_append(n1, lastArg);
+    }
+
+    public Node rest_arg_append(Node args, Node restArg) {
+        Node n1;
+        if ((restArg instanceof ListNode) && (n1 = splat_array(args)) != null) {
+            return list_concat(n1, restArg);
+        }
+        return arg_concat(args, restArg);
+    }
+
+    public Node remove_begin(Node node) {
+        while (node instanceof BeginNode) {
+            Node body = ((BeginNode) node).getBodyNode();
+            if (body == null) break;
+            node = body;
+        }
+
+        return node;
+    }
+
+    public void nd_set_first_loc(Node node, int line) {
+        // FIXME: IMPL
+    }
 }

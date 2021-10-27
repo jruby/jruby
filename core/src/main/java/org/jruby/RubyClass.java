@@ -63,6 +63,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.Java.JCtorCache;
 import org.jruby.javasupport.JavaClass;
@@ -394,7 +395,6 @@ public class RubyClass extends RubyModule {
         superClazz.addSubclass(this);
         allocator = superClazz.allocator;
 
-        infectBy(superClass);
     }
 
     /**
@@ -408,7 +408,6 @@ public class RubyClass extends RubyModule {
 
         this.extraCallSites = extraCallSites;
 
-        infectBy(superClass);
     }
 
     /**
@@ -451,6 +450,18 @@ public class RubyClass extends RubyModule {
         return clazz;
     }
 
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator,
+                                     RubyModule parent, boolean setParent, String file, int line) {
+        RubyClass clazz = newClass(runtime, superClass);
+        clazz.setBaseName(name);
+        clazz.setAllocator(allocator);
+        clazz.makeMetaClass(superClass.getMetaClass());
+        if (setParent) clazz.setParent(parent);
+        parent.setConstant(name, clazz, file, line);
+        clazz.inherit(superClass);
+        return clazz;
+    }
+
     /**
      * A variation on newClass that allows passing in an array of supplementary
      * call sites to improve dynamic invocation performance.
@@ -461,7 +472,7 @@ public class RubyClass extends RubyModule {
         clazz.setAllocator(allocator);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz);
+        parent.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
         clazz.inherit(superClass);
         return clazz;
     }
@@ -1376,6 +1387,7 @@ public class RubyClass extends RubyModule {
                 // Allocator "set" via clinit {@see JavaProxyClass#setProxyClassReified()}
 
                 this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
+                JavaProxy.setJavaClass(this, result);
             } else {
                 setRubyClassAllocator(result);
             }

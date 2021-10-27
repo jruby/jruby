@@ -1,0 +1,1 @@
+hangs(excessive memory use):Enumerator::Lazy#with_index enumerates with a given block

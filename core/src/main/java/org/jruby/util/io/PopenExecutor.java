@@ -74,7 +74,7 @@ public class PopenExecutor {
                 filenameByteList.getBegin() + filenameByteList.getRealSize(),
                 chlen,
                 filenameByteList.getEncoding()) == '|') {
-            return filenameStr.makeShared(context.runtime, chlen[0], filenameByteList.length() - 1).infectBy(filenameOrCommand);
+            return filenameStr.makeShared(context.runtime, chlen[0], filenameByteList.length() - 1);
         }
         return context.nil;
     }

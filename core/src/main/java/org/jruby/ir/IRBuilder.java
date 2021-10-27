@@ -11,6 +11,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.operands.Integer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -36,14 +37,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
+import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
+import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 import static org.jruby.ir.operands.ScopeModule.*;
 import static org.jruby.runtime.CallType.FUNCTIONAL;
 import static org.jruby.runtime.CallType.NORMAL;
+import static org.jruby.util.RubyStringBuilder.str;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -503,6 +508,7 @@ public class IRBuilder {
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node);
             case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node);
             case ORNODE: return buildOr((OrNode) node);
+            case PATTERNCASENODE: return buildPatternCase((PatternCaseNode) node);
             case PREEXENODE: return buildPreExe((PreExeNode) node);
             case POSTEXENODE: return buildPostExe((PostExeNode) node);
             case RATIONALNODE: return buildRational((RationalNode) node);
@@ -1247,6 +1253,355 @@ public class IRBuilder {
         return null;
     }
 
+    private void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, ArrayPatternNode pattern,
+                                   Operand obj, boolean inAlteration) {
+        Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
+
+        if (pattern.hasConstant()) {
+            Operand constant = build(pattern.getConstant());
+            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
+            cond_ne(testEnd, result, tru());
+        }
+
+        label(deconstructCheck -> {
+            cond_ne(deconstructCheck, deconstructed, buildNil(), () -> {
+                call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
+                cond_ne(testEnd, result, tru());
+
+                call(deconstructed, obj, "deconstruct");
+                label(arrayCheck -> {
+                    addInstr(new EQQInstr(scope, result, manager.getArrayClass(), deconstructed, false, false));
+                    cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
+                });
+            });
+        });
+
+        Operand minArgsCount = new Integer(pattern.minimumArgsNum());
+        Variable length = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), ARRAY_LENGTH, new Operand[]{deconstructed}));
+        label(minArgsCheck -> {
+            BIntInstr.Op compareOp = pattern.hasRestArg() ? BIntInstr.Op.GTE : BIntInstr.Op.EQ;
+            addInstr(new BIntInstr(minArgsCheck, compareOp, length, minArgsCount));
+            addInstr(new CopyInstr(result, fals()));
+            jump(testEnd);
+        });
+
+        ListNode preArgs = pattern.getPreArgs();
+        int preArgsSize = preArgs == null ? 0 : preArgs.size();
+        if (preArgsSize > 0) {
+            for (int i = 0; i < preArgsSize; i++) {
+                Variable elt = call(temp(), deconstructed, "[]", fix(i));
+                Node arg = preArgs.get(i);
+
+                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
+                buildPatternEach(testEnd, result, dd, elt, arg, inAlteration);
+                cond_ne(testEnd, result, tru());
+            }
+        }
+
+        if (pattern.hasRestArg()) {
+            addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
+
+            if (pattern.isNamedRestArg()) {
+                Variable min = addResultInstr(new CopyInstr(temp(), fix(preArgsSize)));
+                Variable max = addResultInstr(new AsFixnumInstr(temp(), restNum));
+                Variable elt = call(temp(), deconstructed, "[]", min, max);
+                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
+                buildPatternMatch(result, dd, pattern.getRestArg(), elt, inAlteration);
+                cond_ne(testEnd, result, tru());
+            }
+        }
+
+        ListNode postArgs = pattern.getPostArgs();
+        if (postArgs != null) {
+            for (int i = 0; i < postArgs.size(); i++) {
+                Label matchElementCheck = getNewLabel();
+                Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
+                Variable k = addResultInstr(new AsFixnumInstr(temp(), j));
+                Variable elt = addResultInstr(CallInstr.create(scope, temp(), symbol("[]"), deconstructed, new Operand[]{k}, NullBlock.INSTANCE));
+                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
+                buildPatternEach(testEnd, result, dd, elt, postArgs.get(i), inAlteration);
+                addInstr(BNEInstr.create(matchElementCheck, result, buildFalse()));
+                addInstr(new JumpInstr(testEnd));
+                addInstr(new LabelInstr(matchElementCheck));
+            }
+        }
+    }
+
+    private Variable deconstructHashPatternKeys(Label testEnd, HashPatternNode pattern, Variable result, Operand obj) {
+        Operand keys;
+
+        if (pattern.hasKeywordArgs() && !pattern.hashNamedKeywordRestArg()) {
+            List<Node> keyNodes = pattern.getKeys();
+            int length = keyNodes.size();
+            Operand[] builtKeys = new Operand[length];
+
+            for (int i = 0; i < length; i++) {
+                builtKeys[i] = build(keyNodes.get(i));
+            }
+            keys = new Array(builtKeys);
+        } else {
+            keys = manager.getNil();
+        }
+
+        if (pattern.getConstant() != null) {
+            Operand constant = build(pattern.getConstant());
+            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
+            cond_ne(testEnd, result, tru());
+        }
+
+        call(result, obj, "respond_to?", new Symbol(symbol("deconstruct_keys")));
+        cond_ne(testEnd, result, tru());
+
+        return call(createTemporaryVariable(), obj, "deconstruct_keys", keys);
+    }
+
+    private void buildHashPattern(Label testEnd, Variable result, Variable deconstructed, HashPatternNode pattern,
+                                  Operand obj, boolean inAlteration) {
+        Variable d = deconstructHashPatternKeys(testEnd, pattern, result, obj);
+
+        label(endHashCheck -> {
+            addInstr(new EQQInstr(scope, result, manager.getHashClass(), d, false, true));
+            cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
+        });
+
+        // rest args destructively deletes elements from deconstruct_keys and the default impl is 'self'.
+        if (pattern.hasRestArg()) call(d, d, "dup");
+
+        if (pattern.hasKeywordArgs()) {
+            List<KeyValuePair<Node,Node>> kwargs = pattern.getKeywordArgs().getPairs();
+
+            for (KeyValuePair<Node,Node> pair: kwargs) {
+                // FIXME: only build literals (which are guaranteed to build without raising).
+                Operand key = build(pair.getKey());
+                call(result, d, "key?", key);
+                cond_ne(testEnd, result, tru());
+
+                String method = pattern.hasRestArg() ? "delete" : "[]";
+                Operand value = call(d, method, key);
+                buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlteration);
+                cond_ne(testEnd, result, tru());
+            }
+        } else {
+
+        }
+
+        if (pattern.hasRestArg()) {
+            if (pattern.getRestArg() instanceof NilRestArgNode) {
+                call(result, d, "empty?");
+                cond_ne(testEnd, result, tru());
+            } else if (pattern.isNamedRestArg()) {
+                buildPatternEach(testEnd, result, deconstructed, d, pattern.getRestArg(), inAlteration);
+                cond_ne(testEnd, result, tru());
+            }
+        }
+    }
+
+    public interface RunIt {
+        void apply();
+    }
+    public interface Consume2<T, U> {
+        void apply(T t, U u);
+    }
+
+    private void type_error(String message) {
+        addRaiseError("TypeError", message);
+    }
+
+    private Variable temp() {
+        return createTemporaryVariable();
+    }
+
+    private Operand fals() {
+        return manager.getFalse();
+    }
+
+    private Fixnum fix(long value) {
+        return manager.newFixnum(value);
+    }
+
+    private Operand tru() {
+        return manager.getTrue();
+    }
+
+    // if-only
+    private void cond(Label label, Operand value, Operand test) {
+        addInstr(createBranch(value, test, label));
+    }
+
+    // if/else
+    private void cond(Label endLabel, Operand value, Operand test, RunIt body) {
+        addInstr(createBranch(value, test, endLabel));
+        body.apply();
+    }
+
+    // if-only
+    private void cond_ne(Label label, Operand value, Operand test) {
+        addInstr(BNEInstr.create(label, value, test));
+    }
+    // if !test/else
+    private void cond_ne(Label endLabel, Operand value, Operand test, RunIt body) {
+        addInstr(BNEInstr.create(endLabel, value, test));
+        body.apply();
+    }
+
+    private void jump(Label label) {
+        addInstr(new JumpInstr(label));
+    }
+
+    private Variable call(Variable result, Operand object, String name, Operand... args) {
+        addInstr(CallInstr.create(scope, result, symbol(name), object, args, NullBlock.INSTANCE));
+        return result;
+    }
+
+    private Operand call(Operand object, String name, Operand... args) {
+        Operand result = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), symbol(name), object, args, NullBlock.INSTANCE));
+        return result;
+    }
+
+    private void label(Consumer<Label> block) {
+        Label label = getNewLabel();
+        block.accept(label);
+        addInstr(new LabelInstr(label));
+    }
+
+    private void label(Object data, Consume2<Label, Object> block) {
+        Label label = getNewLabel();
+        block.apply(label, data);
+        addInstr(new LabelInstr(label));
+    }
+
+    private void buildPatternMatch(Variable result, Variable deconstructed, Node arg, Operand obj, boolean inAlternation) {
+        label(testEnd -> buildPatternEach(testEnd, result, deconstructed, obj, arg, inAlternation));
+    }
+
+    private Variable buildPatternEach(Label testEnd, Variable result, Variable deconstructed, Operand value,
+                                      Node exprNodes, boolean inAlternation) {
+        if (exprNodes instanceof ArrayPatternNode) {
+            buildArrayPattern(testEnd, result, deconstructed, (ArrayPatternNode) exprNodes, value, inAlternation);
+        } else if (exprNodes instanceof HashPatternNode) {
+            buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value, inAlternation);
+        } else if (exprNodes instanceof FindPatternNode) {
+        } else if (exprNodes instanceof HashNode) {
+            HashNode hash = (HashNode) exprNodes;
+
+            if (hash.getPairs().size() != 1) {
+                throwSyntaxError(hash, "unexpected node");
+            }
+
+            KeyValuePair<Node, Node> pair = hash.getPairs().get(0);
+            buildPatternMatch(result, deconstructed, pair.getKey(), value, inAlternation);
+            buildPatternEach(testEnd, result, deconstructed, value, pair.getValue(), inAlternation);
+        } else if (exprNodes instanceof IfNode) {
+            IfNode ifNode = (IfNode) exprNodes;
+
+            boolean unless; // position of body is how we detect between if/unless
+            if (ifNode.getThenBody() != null) { // if
+                unless = false;
+                buildPatternMatch(result, deconstructed, ifNode.getThenBody(), value, inAlternation);
+            } else {
+                unless = true;
+                buildPatternMatch(result, deconstructed, ifNode.getElseBody(), value, inAlternation);
+            }
+            label(conditionalEnd -> {
+                cond_ne(conditionalEnd, result, tru());
+                Operand ifResult = build(ifNode.getCondition());
+                if (unless) {
+                    call(result, ifResult, "!"); // FIXME: need non-dynamic dispatch to reverse result
+                } else {
+                    addInstr(new CopyInstr(result, ifResult));
+                }
+            });
+        } else if (exprNodes instanceof LocalAsgnNode) {
+            LocalAsgnNode localAsgnNode = (LocalAsgnNode) exprNodes;
+            RubySymbol name = localAsgnNode.getName();
+
+            if (inAlternation && name.idString().charAt(0) != '_') {
+                throwSyntaxError(localAsgnNode, str(manager.getRuntime(), "illegal variable in alternative pattern (", name, ")"));
+            }
+
+            Variable variable  = getLocalVariable(name, localAsgnNode.getDepth());
+            addInstr(new CopyInstr(variable, value));
+        } else if (exprNodes instanceof DAsgnNode) {
+            DAsgnNode localAsgnNode = (DAsgnNode) exprNodes;
+            RubySymbol name = localAsgnNode.getName();
+
+            if (inAlternation && name.idString().charAt(0) != '_') {
+                throwSyntaxError(localAsgnNode, str(manager.getRuntime(), "illegal variable in alternative pattern (", name, ")"));
+            }
+
+            Variable variable = getLocalVariable(name, localAsgnNode.getDepth());
+            addInstr(new CopyInstr(variable, value));
+        } else if (exprNodes instanceof OrNode) {
+            OrNode orNode = (OrNode) exprNodes;
+            label(firstCase -> {
+                buildPatternEach(firstCase, result, deconstructed, value, orNode.getFirstNode(), true);
+            });
+            label(secondCase -> {
+                cond(secondCase, result, tru(), () -> buildPatternEach(testEnd, result, deconstructed, value, orNode.getSecondNode(), true));
+            });
+        } else {
+            Operand expression = build(exprNodes);
+            boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
+
+            addInstr(new EQQInstr(scope, result, expression, value, needsSplat, scope.maybeUsingRefinements()));
+        }
+
+        return result;
+    }
+
+    public Operand buildPatternCase(PatternCaseNode patternCase) {
+        Label     endLabel  = getNewLabel();
+        boolean   hasElse   = patternCase.getElseNode() != null;
+        Label     elseLabel = getNewLabel();
+        Variable  result    = createTemporaryVariable();
+        List<Label> labels = new ArrayList<>();
+        Map<Label, Node> bodies = new HashMap<>();
+
+        Operand value = build(patternCase.getCaseNode());
+
+        // build each "when"
+        Variable deconstructed = addResultInstr(new CopyInstr(temp(), buildNil()));
+        for (Node aCase : patternCase.getCases().children()) {
+            InNode inNode = (InNode) aCase;
+            Label bodyLabel = getNewLabel();
+
+            Variable eqqResult = addResultInstr(new CopyInstr(temp(), tru()));
+            labels.add(bodyLabel);
+            buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false);
+            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
+            bodies.put(bodyLabel, inNode.getBody());
+        }
+
+        // Jump to else in case nothing matches!
+        addInstr(new JumpInstr(elseLabel));
+
+        // Build "else" if it exists
+        if (hasElse) {
+            labels.add(elseLabel);
+            bodies.put(elseLabel, patternCase.getElseNode());
+        }
+
+        // Now, emit bodies while preserving when clauses order
+        for (Label label: labels) {
+            addInstr(new LabelInstr(label));
+            Operand bodyValue = build(bodies.get(label));
+            if (bodyValue != null) addInstr(new CopyInstr(result, bodyValue));
+            addInstr(new JumpInstr(endLabel));
+        }
+
+        if (!hasElse) {
+            addInstr(new LabelInstr(elseLabel));
+            Variable inspect = call(temp(), value, "inspect");
+            addRaiseError("NoMatchingPatternError", inspect);
+            addInstr(new JumpInstr(endLabel));
+        }
+
+        // Close it out
+        addInstr(new LabelInstr(endLabel));
+
+        return result;
+    }
+
     public Operand buildCase(CaseNode caseNode) {
         if (caseNode.getCaseNode() != null) {
             // scan all cases to see if we have a homogeneous literal case/when
@@ -1434,7 +1789,7 @@ public class IRBuilder {
     }
 
     private Operand buildFixnumCase(CaseNode caseNode) {
-        Map<Integer, Label> jumpTable = new HashMap<>();
+        Map<java.lang.Integer, Label> jumpTable = new HashMap<>();
         Map<Node, Label> nodeBodies = new HashMap<>();
 
         // gather fixnum-when bodies or bail
@@ -1444,7 +1799,7 @@ public class IRBuilder {
 
             FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
             long exprLong = expr.getValue();
-            if (exprLong > Integer.MAX_VALUE) throw notCompilable("optimized fixnum case has long-ranged", caseNode);
+            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized fixnum case has long-ranged", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
@@ -1455,11 +1810,11 @@ public class IRBuilder {
         }
 
         // sort the jump table
-        Map.Entry<Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
-        Arrays.sort(jumpEntries, new Comparator<Map.Entry<Integer, Label>>() {
+        Map.Entry<java.lang.Integer, Label>[] jumpEntries = jumpTable.entrySet().toArray(new Map.Entry[jumpTable.size()]);
+        Arrays.sort(jumpEntries, new Comparator<Map.Entry<java.lang.Integer, Label>>() {
             @Override
-            public int compare(Map.Entry<Integer, Label> o1, Map.Entry<Integer, Label> o2) {
-                return Integer.compare(o1.getKey(), o2.getKey());
+            public int compare(Map.Entry<java.lang.Integer, Label> o1, Map.Entry<java.lang.Integer, Label> o2) {
+                return java.lang.Integer.compare(o1.getKey(), o2.getKey());
             }
         });
 
@@ -1467,7 +1822,7 @@ public class IRBuilder {
         int[] jumps = new int[jumpTable.size()];
         Label[] targets = new Label[jumps.length];
         int i = 0;
-        for (Map.Entry<Integer, Label> jumpEntry : jumpEntries) {
+        for (Map.Entry<java.lang.Integer, Label> jumpEntry : jumpEntries) {
             jumps[i] = jumpEntry.getKey();
             targets[i] = jumpEntry.getValue();
             i++;
@@ -1674,7 +2029,7 @@ public class IRBuilder {
     }
 
     private Operand putConstant(Colon3Node node, Operand value) {
-        addInstr(new PutConstInstr(new ObjectClass(), node.getName(), value));
+        addInstr(new PutConstInstr(manager.getObjectClass(), node.getName(), value));
 
         return value;
     }
@@ -1712,7 +2067,7 @@ public class IRBuilder {
     }
 
     public Operand buildColon3(Colon3Node node) {
-        return searchModuleForConst(new ObjectClass(), node.getName());
+        return searchModuleForConst(manager.getObjectClass(), node.getName());
     }
 
     public Operand buildComplex(ComplexNode node) {
@@ -1764,7 +2119,7 @@ public class IRBuilder {
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         addInstr(new LabelInstr(rescueLabel));
         addInstr(new ReceiveRubyExceptionInstr(exc));
-        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(),
+        addInstr(new InheritanceSearchConstInstr(excType, manager.getObjectClass(),
                 manager.runtime.newSymbol(CommonByteLists.EXCEPTION)));
         outputExceptionCheck(excType, exc, caughtLabel);
 
@@ -1959,7 +2314,7 @@ public class IRBuilder {
                                         createTemporaryVariable(),
                                         IS_DEFINED_CONSTANT_OR_METHOD,
                                         new Operand[] {
-                                                new ObjectClass(),
+                                                manager.getObjectClass(),
                                                 new FrozenString(name),
                                                 new FrozenString(DefinedMessage.CONSTANT.getText()),
                                                 new FrozenString(DefinedMessage.METHOD.getText())
@@ -3342,7 +3697,7 @@ public class IRBuilder {
                 container = findContainerModule();
             }
         } else { //::Bar
-            container = new ObjectClass();
+            container = manager.getObjectClass();
         }
 
         return container;
@@ -3474,7 +3829,7 @@ public class IRBuilder {
             Operand leftValue = build(colon2Node.getLeftNode());
             copy(leftModule, leftValue);
         } else { // colon3
-            copy(leftModule, new ObjectClass());
+            copy(leftModule, manager.getObjectClass());
             name = ((Colon3Node) lhs).getName();
         }
 
@@ -4285,15 +4640,13 @@ public class IRBuilder {
     }
 
     private void addRaiseError(String id, String message) {
-        Ruby runtime = scope.getManager().getRuntime();
-        Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol(id));
-        Operand kernel = searchModuleForConst(new ObjectClass(), runtime.newSymbol("Kernel"));
-        addResultInstr(CallInstr.create(scope,
-                createTemporaryVariable(),
-                runtime.newSymbol("raise"),
-                kernel,
-                new Operand[] { exceptionClass, new MutableString(message) },
-                null));
+        addRaiseError(id, new MutableString(message));
+    }
+
+    private void addRaiseError(String id, Operand message) {
+        Operand exceptionClass = searchModuleForConst(manager.getObjectClass(), symbol(id));
+        Operand kernel = searchModuleForConst(manager.getObjectClass(), symbol("Kernel"));
+        call(temp(), kernel, "raise", exceptionClass, message);
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode) {

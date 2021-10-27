@@ -111,7 +111,6 @@ public class RubyMatchData extends RubyObject {
         this.charOffsetUpdated = false;
 
         this.str = str.newFrozen();
-        this.infectBy(str);
     }
 
     final void initMatchData(RubyString str, int beg, RubyString pattern) {
@@ -126,7 +125,6 @@ public class RubyMatchData extends RubyObject {
         this.charOffsetUpdated = false;
 
         this.str = str.newFrozen();
-        this.infectBy(str);
     }
 
     @Override
@@ -311,7 +309,7 @@ public class RubyMatchData extends RubyObject {
                 return runtime.newArray(nil);
             } else {
                 RubyString ss = makeShared(runtime, str, begin, end - begin);
-                return runtime.newArray( ss.infectBy(this) );
+                return runtime.newArray(ss);
             }
         } else {
             RubyArray arr = RubyArray.newBlankArray(runtime, regs.numRegs - start);
@@ -321,7 +319,7 @@ public class RubyMatchData extends RubyObject {
                     arr.storeInternal(index++, nil);
                 } else {
                     RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
-                    arr.storeInternal(index++, ss.infectBy(this));
+                    arr.storeInternal(index++, ss);
                 }
             }
             return arr;
@@ -709,7 +707,7 @@ public class RubyMatchData extends RubyObject {
         check();
         if (begin == -1) return context.nil;
 
-        return makeShared(context.runtime, str, 0, begin).infectBy(this);
+        return makeShared(context.runtime, str, 0, begin);
     }
 
     /** match_post_match
@@ -721,7 +719,7 @@ public class RubyMatchData extends RubyObject {
         if (begin == -1) return context.nil;
 
         final int strLen = str.getByteList().length();
-        return makeShared(context.runtime, str, end, strLen - end).infectBy(this);
+        return makeShared(context.runtime, str, end, strLen - end);
     }
 
     /** match_to_s
@@ -733,7 +731,6 @@ public class RubyMatchData extends RubyObject {
         check();
         IRubyObject ss = RubyRegexp.last_match(this);
         if (ss.isNil()) ss = RubyString.newEmptyString(metaClass.runtime);
-        if (isTaint()) ss.setTaint(true);
         return ss;
     }
 

@@ -29,8 +29,12 @@ class TestThread < Test::Unit::TestCase
   end
 
   def test_inspect
+    line = __LINE__+1
     th = Module.new {break module_eval("class C\u{30b9 30ec 30c3 30c9} < Thread; self; end")}.start{}
-    assert_match(/::C\u{30b9 30ec 30c3 30c9}:/, th.inspect)
+    s = th.inspect
+    assert_include(s, "::C\u{30b9 30ec 30c3 30c9}:")
+    assert_include(s, " #{__FILE__}:#{line} ")
+    assert_equal(s, th.to_s)
   ensure
     th.join
   end
@@ -226,9 +230,9 @@ class TestThread < Test::Unit::TestCase
     assert_equal(t1, t3.value)
 
   ensure
-    t1&.kill
-    t2&.kill
-    t3&.kill
+    t1&.kill&.join
+    t2&.kill&.join
+    t3&.kill&.join
   end
 
   { 'FIXNUM_MAX' => RbConfig::LIMITS['FIXNUM_MAX'],
@@ -305,7 +309,7 @@ class TestThread < Test::Unit::TestCase
       s += 1
     end
     Thread.pass until t.stop?
-    # sleep 1 if RubyVM::MJIT.enabled? # t.stop? behaves unexpectedly with --jit-wait
+    sleep 1 if defined?(RubyVM::MJIT) && RubyVM::MJIT.enabled? # t.stop? behaves unexpectedly with --jit-wait
     assert_equal(1, s)
     t.wakeup
     Thread.pass while t.alive?
@@ -486,6 +490,19 @@ class TestThread < Test::Unit::TestCase
     end;
   end
 
+  def test_ignore_deadlock
+    if /mswin|mingw/ =~ RUBY_PLATFORM
+      skip "can't trap a signal from another process on Windows"
+    end
+    assert_in_out_err([], <<-INPUT, %w(false :sig), [], :signal=>:INT, timeout: 1, timeout_error: nil)
+      p Thread.ignore_deadlock
+      q = Queue.new
+      trap(:INT){q.push :sig}
+      Thread.ignore_deadlock = true
+      p q.pop
+    INPUT
+  end
+
   def test_status_and_stop_p
     a = ::Thread.new {
       Thread.current.report_on_exception = false
@@ -531,23 +548,6 @@ class TestThread < Test::Unit::TestCase
     assert(!flag, bug1402)
   ensure
     waiter&.kill&.join
-  end
-
-  def test_safe_level
-    ok = false
-    t = Thread.new do
-      EnvUtil.suppress_warning do
-        $SAFE = 1
-      end
-      ok = true
-      sleep
-    end
-    Thread.pass until ok
-    assert_equal($SAFE, Thread.current.safe_level)
-    assert_equal($SAFE, t.safe_level)
-  ensure
-    $SAFE = 0
-    t&.kill&.join
   end
 
   def test_thread_local
@@ -630,7 +630,7 @@ class TestThread < Test::Unit::TestCase
     Thread.pass until t.stop?
     assert_predicate(t, :alive?)
   ensure
-    t&.kill
+    t&.kill&.join
   end
 
   def test_mutex_deadlock
@@ -808,14 +808,15 @@ class TestThread < Test::Unit::TestCase
   end
 
   def test_handle_interrupt_blocking
-    r=:ng
-    e=Class.new(Exception)
+    r = nil
+    q = Queue.new
+    e = Class.new(Exception)
     th_s = Thread.current
-    th = Thread.start{
+    th = Thread.start {
       assert_raise(RuntimeError) {
         Thread.handle_interrupt(Object => :on_blocking){
           begin
-            Thread.pass until r == :wait
+            q.pop
             Thread.current.raise RuntimeError, "will raise in sleep"
             r = :ok
             sleep
@@ -825,25 +826,26 @@ class TestThread < Test::Unit::TestCase
         }
       }
     }
-    assert_raise(e) {r = :wait; sleep 0.2}
-    th.join
-    assert_equal(:ok,r)
+    assert_raise(e) {q << true; th.join}
+    assert_equal(:ok, r)
   end
 
   def test_handle_interrupt_and_io
     assert_in_out_err([], <<-INPUT, %w(ok), [])
       th_waiting = true
+      q = Queue.new
 
       t = Thread.new {
         Thread.current.report_on_exception = false
         Thread.handle_interrupt(RuntimeError => :on_blocking) {
+          q << true
           nil while th_waiting
           # async interrupt should be raised _before_ writing puts arguments
           puts "ng"
         }
       }
 
-      Thread.pass while t.stop?
+      q.pop
       t.raise RuntimeError
       th_waiting = false
       t.join rescue nil
@@ -882,15 +884,15 @@ class TestThread < Test::Unit::TestCase
         begin
           begin
             Thread.pass until done
-          rescue => e
+          rescue
             q.push :ng1
           end
           begin
             Thread.handle_interrupt(Object => :immediate){} if Thread.pending_interrupt?
-          rescue RuntimeError => e
+          rescue RuntimeError
             q.push :ok
           end
-        rescue => e
+        rescue
           q.push :ng2
         ensure
           q.push :ng3
@@ -961,13 +963,18 @@ _eom
     cmd = 'Signal.trap(:INT, "DEFAULT"); pipe=IO.pipe; Thread.start {Thread.pass until Thread.main.stop?; puts; STDOUT.flush}; pipe[0].read'
     opt = {}
     opt[:new_pgroup] = true if /mswin|mingw/ =~ RUBY_PLATFORM
-    s, t, _err = EnvUtil.invoke_ruby(['-e', cmd], "", true, true, opt) do |in_p, out_p, err_p, cpid|
+    s, t, _err = EnvUtil.invoke_ruby(['-e', cmd], "", true, true, **opt) do |in_p, out_p, err_p, cpid|
       assert IO.select([out_p], nil, nil, 10), 'subprocess not ready'
       out_p.gets
       pid = cpid
       t0 = Time.now.to_f
       Process.kill(:SIGINT, pid)
-      Timeout.timeout(10) { Process.wait(pid) }
+      begin
+        Timeout.timeout(10) { Process.wait(pid) }
+      rescue Timeout::Error
+        EnvUtil.terminate(pid)
+        raise
+      end
       t1 = Time.now.to_f
       [$?, t1 - t0, err_p.read]
     end
@@ -1112,7 +1119,7 @@ q.pop
       Thread.pass until mutex.locked?
       assert_equal(mutex.owned?, false)
     ensure
-      th&.kill
+      th&.kill&.join
     end
   end
 
@@ -1156,6 +1163,7 @@ q.pop
                     "0 thread_machine_stack_size")
     assert_operator(h_default[:thread_machine_stack_size], :<=, h_large[:thread_machine_stack_size],
                     "large thread_machine_stack_size")
+    assert_equal("ok", invoke_rec('print :ok', 1024 * 1024 * 100, nil, false))
   end
 
   def test_vm_machine_stack_size
@@ -1184,12 +1192,10 @@ q.pop
     bug8433 = '[ruby-core:55102] [Bug #8433]'
 
     mutex = Thread::Mutex.new
-    flag = false
     mutex.lock
 
     th = Thread.new do
       mutex.synchronize do
-        flag = true
         sleep
       end
     end
@@ -1332,9 +1338,9 @@ q.pop
     opts = { timeout: 5, timeout_error: nil }
 
     # prevent SIGABRT from slow shutdown with MJIT
-    # opts[:reprieve] = 3 if RubyVM::MJIT.enabled?
+    opts[:reprieve] = 3 if defined?(RubyVM::MJIT) && RubyVM::MJIT.enabled?
 
-    assert_normal_exit(<<-_end, '[Bug #8996]', opts)
+    assert_normal_exit(<<-_end, '[Bug #8996]', **opts)
       Thread.report_on_exception = false
       trap(:TERM){exit}
       while true

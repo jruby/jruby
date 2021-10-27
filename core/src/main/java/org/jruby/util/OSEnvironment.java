@@ -135,9 +135,7 @@ public class OSEnvironment {
         RubyString valueString = runtime.newString(valueBytes);
 
         keyString.setFrozen(true);
-        keyString.setTaint(true);
         valueString.setFrozen(true);
-        valueString.setTaint(true);
 
         map.put(keyString, valueString);
     }

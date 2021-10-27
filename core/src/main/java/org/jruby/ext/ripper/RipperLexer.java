@@ -227,6 +227,8 @@ public class RipperLexer extends LexingCommon {
     // field since all ident logic should hit sequentially.
     String identValue;
 
+    boolean inKwarg;
+
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
     private RipperParserBase parser = null;
 

@@ -131,8 +131,14 @@ class TestRDocRubygemsHook < Gem::TestCase
   end
 
   def test_generate_default_gem
-    @a.loaded_from =
-      File.join Gem::Specification.default_specifications_dir, 'a.gemspec'
+    Gem::Deprecate.skip_during do
+      if Gem.respond_to?(:default_specifications_dir)
+        klass = Gem
+      else
+        klass = Gem::Specification
+      end
+      @a.loaded_from = File.join klass.default_specifications_dir, 'a.gemspec'
+    end
 
     @hook.generate
 
@@ -205,7 +211,7 @@ class TestRDocRubygemsHook < Gem::TestCase
     FileUtils.mkdir_p @a.base_dir
     FileUtils.chmod 0, @a.base_dir
 
-    e = assert_raises Gem::FilePermissionError do
+    e = assert_raise Gem::FilePermissionError do
       @hook.remove
     end
 
@@ -235,7 +241,7 @@ class TestRDocRubygemsHook < Gem::TestCase
     FileUtils.mkdir_p @a.doc_dir
     FileUtils.chmod 0, @a.doc_dir
 
-    e = assert_raises Gem::FilePermissionError do
+    e = assert_raise Gem::FilePermissionError do
       @hook.setup
     end
 
