@@ -3258,7 +3258,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             // set backref for user
             if (useBackref) context.clearBackRef();
 
-            return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
+            return bang ? context.nil : strDup(runtime, runtime.getString()); /* bang: true, no match, no substitution */
         }
 
         int offset = 0; int cp = spBeg; //int n = 0;
@@ -3349,7 +3349,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             // set backref for user
             if (useBackref) context.clearBackRef();
 
-            return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
+            return bang ? context.nil : strDup(runtime, runtime.getString()); /* bang: true, no match, no substitution */
         }
 
         int offset = 0; int cp = spBeg; //int n = 0;
