@@ -39,7 +39,7 @@ default_gems = [
     ['io-console', '0.5.9'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.10.7'],
+    ['jruby-openssl', '0.11.0'],
     ['json', '2.5.1'],
     ['logger', '1.4.3'],
     ['matrix', '0.3.1'],
