@@ -6505,7 +6505,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod
     public IRubyObject scrub(ThreadContext context, IRubyObject repl, Block block) {
         IRubyObject newStr = strScrub(context, repl, block);
-        if (newStr.isNil()) return strDup(context.runtime);
+        if (newStr.isNil()) return strDup(context.runtime, context.runtime.getString());
         return newStr;
     }
 
