@@ -220,7 +220,7 @@ public class RubyDir extends RubyObject implements Closeable {
     private static final String[] BASE_FLAGS = new String[] { "base", "sort", "flags" };
 
     private static class GlobOptions {
-        String base = "";
+        String base = null;
         int flags = 0;
         boolean sort = true;
     }
@@ -231,11 +231,25 @@ public class RubyDir extends RubyObject implements Closeable {
 
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1]);
+            boolean aref = keys.length == 2; // BASE
             if (tmp == context.nil) {
-                options.flags = RubyNumeric.num2int(args[1]);
+                if (!aref) {
+                    options.flags = RubyNumeric.num2int(args[1]);
+                }
             } else {
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
-                if (rets[0] == null || rets[0].isNil()) return;
+
+                if (!aref && rets[2] != null) {
+                    options.flags = RubyNumeric.num2int(rets[2]);
+                }
+                if (rets[1] != null) {
+                    options.sort = rets[1].isTrue();
+                }
+
+                if (rets[0] == null || rets[0].isNil()) {
+                    options.base = "";
+                    return;  
+                }
 
                 RubyString path = RubyFile.get_path(context, rets[0]);
                 Encoding[] enc = {path.getEncoding()};
@@ -247,12 +261,6 @@ public class RubyDir extends RubyObject implements Closeable {
                 }
 
                 options.base = base;
-
-                if (rets[1] != null) options.flags = RubyNumeric.num2int(rets[1]);
-                if (rets.length >= 2 && rets[2] != null) {
-                    System.out.println("SORT!!!");
-                    options.sort = rets[1].isTrue();
-                }
             }
         }
     }
