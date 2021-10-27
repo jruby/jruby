@@ -78,6 +78,7 @@ public class RubyMatchData extends RubyObject {
         matchDataClass.kindOf = new RubyModule.JavaClassKindOf(RubyMatchData.class);
 
         matchDataClass.getMetaClass().undefineMethod("new");
+        matchDataClass.getMetaClass().undefineMethod("allocate");
         matchDataClass.defineAnnotatedMethods(RubyMatchData.class);
 
         return matchDataClass;
