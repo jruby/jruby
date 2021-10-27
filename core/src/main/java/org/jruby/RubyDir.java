@@ -216,23 +216,27 @@ public class RubyDir extends RubyObject implements Closeable {
         }
     }
 
-    private static final String[] BASE = new String[] { "base" };
-    private static final String[] BASE_FLAGS = new String[] { "base", "flags" };
+    private static final String[] BASE = new String[] { "base", "sort" };
+    private static final String[] BASE_FLAGS = new String[] { "base", "sort", "flags" };
+
+    private static class GlobOptions {
+        String base = "";
+        int flags = 0;
+        boolean sort = true;
+    }
 
     // returns null (no kwargs present), "" kwargs but no base key, "something" kwargs with base key (which might be "").
-    private static String globOptions(ThreadContext context, IRubyObject[] args, int[] flags) {
+    private static void globOptions(ThreadContext context, IRubyObject[] args, String[] keys, GlobOptions options) {
         Ruby runtime = context.runtime;
 
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1]);
             if (tmp == context.nil) {
-                if (flags != null) {
-                    flags[0] = RubyNumeric.num2int(args[1]);
-                }
+                options.flags = RubyNumeric.num2int(args[1]);
             } else {
-                String[] keys = flags != null ? BASE_FLAGS : BASE;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
-                if (rets[0] == null || rets[0].isNil()) return "";
+                if (rets[0] == null || rets[0].isNil()) return;
+
                 RubyString path = RubyFile.get_path(context, rets[0]);
                 Encoding[] enc = {path.getEncoding()};
                 String base = path.getUnicodeValue();
@@ -242,20 +246,24 @@ public class RubyDir extends RubyObject implements Closeable {
                     base = RubyFile.expandPath(context, base, enc, runtime.getCurrentDirectory(), true, false);
                 }
 
-                if (flags != null) flags[0] = rets[1] == null ? 0 : RubyNumeric.num2int(rets[1]);
+                options.base = base;
 
-                return base;
+                if (rets[1] != null) options.flags = RubyNumeric.num2int(rets[1]);
+                if (rets.length >= 2 && rets[2] != null) {
+                    System.out.println("SORT!!!");
+                    options.sort = rets[1].isTrue();
+                }
             }
         }
-
-        return null;
     }
 
     @JRubyMethod(name = "[]", rest = true, meta = true)
     public static IRubyObject aref(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        String base = globOptions(context, args, null);
+        GlobOptions options = new GlobOptions();
+        globOptions(context, args, BASE, options);
         List<ByteList> dirs;
+        String base = options.base;
 
         if (args.length == 1) {
             String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;
@@ -273,6 +281,8 @@ public class RubyDir extends RubyObject implements Closeable {
             dirs = dirGlobs(context, dir, arefArgs, 0);
         }
 
+        if (options.sort) Collections.sort(dirs);
+
         return asRubyStringList(runtime, dirs);
     }
 
@@ -289,9 +299,10 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(required = 1, optional = 2, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-        int[] flags = new int[] { 0 };
-        String base = globOptions(context, args, flags);
+        GlobOptions options = new GlobOptions();
+        globOptions(context, args, BASE_FLAGS, options);
         List<ByteList> dirs;
+        String base = options.base;
 
         if (base != null && !base.isEmpty() && !(JRubyFile.createResource(context, base).exists())){
             dirs = new ArrayList<ByteList>();
@@ -300,11 +311,13 @@ public class RubyDir extends RubyObject implements Closeable {
             String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;
 
             if (tmp.isNil()) {
-                dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), flags[0]);
+                dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), options.flags);
             } else {
-                dirs = dirGlobs(context, dir, ((RubyArray) tmp).toJavaArray(), flags[0]);
+                dirs = dirGlobs(context, dir, ((RubyArray) tmp).toJavaArray(), options.flags);
             }
         }
+
+        if (options.sort) Collections.sort(dirs);
 
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
