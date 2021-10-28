@@ -279,6 +279,9 @@ public class RubyRange extends RubyObject {
         this.isEndless = end.isNil();
         this.isBeginless = begin.isNil();
         this.isInited = true;
+        if (metaClass.getClassIndex() == ClassIndex.RANGE) {
+            this.setFrozen(true);
+        }
     }
 
     @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
