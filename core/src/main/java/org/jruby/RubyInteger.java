@@ -867,6 +867,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
         if (m instanceof RubyFixnum) {
             long mm = ((RubyFixnum) m).value;
+            if (mm == 1) return RubyFixnum.zero(runtime);
             RubyFixnum modulo = (RubyFixnum) modulo(context, m);
             if (mm <= HALF_LONG_MSB) {
                 return modulo.intPowTmp1(context, (RubyInteger) b, mm, negaFlg);
@@ -875,6 +876,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
         }
         if (m instanceof RubyBignum) {
+            if (((RubyBignum) m).value == BigInteger.ONE) return RubyFixnum.zero(runtime);
             return ((RubyInteger) modulo(context, m)).intPowTmp3(context, (RubyInteger) b, (RubyBignum) m, negaFlg);
         }
         // not reached
