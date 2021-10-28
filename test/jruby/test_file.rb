@@ -1342,16 +1342,6 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
-  # JRUBY-5286
-  def test_file_path_is_tainted
-    filename = 'test.txt'
-    io = File.new(filename, 'w')
-    assert io.path.tainted?
-  ensure
-    io.close
-    File.unlink(filename)
-  end
-
   # jruby/jruby#2331
   def test_classpath_realpath
     assert_equal("classpath:/java/lang/String.class", File.realpath("classpath:/java/lang/String.class"))
