@@ -37,6 +37,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.Helpers;
 
 /**
@@ -129,9 +130,14 @@ public class ArgsNode extends Node {
         return NodeType.ARGSNODE;
     }
 
+    public boolean cannotAcceptKwargs() {
+        return keyRest.equals(LexingCommon.NIL);
+    }
+
     public boolean hasKwargs() {
         boolean keywords = getKeywordCount() > 0;
-        return keywords || keyRest != null;
+        return keywords ||
+                keyRest != null && !cannotAcceptKwargs();
     }
 
     /**

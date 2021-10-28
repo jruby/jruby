@@ -2007,7 +2007,7 @@ f_rest_marg     : tSTAR f_norm_arg {
 
 f_any_kwrest    : f_kwrest
                 | f_no_kwarg {
-                    $$ = NilImplicitNode.NIL;
+                    $$ = LexingCommon.NIL;
                 }
  
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
