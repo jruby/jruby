@@ -13,10 +13,9 @@
 # if you're writing a server in Ruby.  For the details of the syslog(8)
 # architecture and constants, see the syslog(3) manual page of your
 # platform.
-begin
-  require 'ffi'
-  require "#{File.join('syslog/ffi/', FFI::Platform::NAME, 'syslog.rb')}"
-rescue LoadError => ex
+require 'ffi'
+JRuby::Util.load_ext("org.jruby.ext.syslog.SyslogLibrary")
+if FFI::Platform::IS_WINDOWS
   raise LoadError, "Syslog not supported on this platform"
 end
 

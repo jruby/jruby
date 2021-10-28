@@ -89,40 +89,15 @@ public class RubyPathname extends RubyObject {
         IRubyObject[] addArg(IRubyObject[] args, RubyString path);
     }
 
-    private static final ReturnValueMapper IDENTITY_MAPPER = new ReturnValueMapper() {
-        @Override
-        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
-            return value;
-        }
-    };
+    private static final ReturnValueMapper IDENTITY_MAPPER = (context, klazz, value) -> value;
 
-    private static final ReturnValueMapper SINGLE_PATH_MAPPER = new ReturnValueMapper() {
-        @Override
-        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
-            return newInstance(context, klazz, value);
-        }
-    };
+    private static final ReturnValueMapper SINGLE_PATH_MAPPER = (context, klazz, value) -> newInstance(context, klazz, value);
 
-    private static final ReturnValueMapper ARRAY_OF_PATHS_MAPPER = new ReturnValueMapper() {
-        @Override
-        public IRubyObject map(ThreadContext context, RubyClass klazz, IRubyObject value) {
-            return mapToPathnames(context, klazz, value);
-        }
-    };
+    private static final ReturnValueMapper ARRAY_OF_PATHS_MAPPER = (context, klazz, value) -> mapToPathnames(context, klazz, value);
 
-    private static final AddArg UNSHIFT_PATH = new AddArg() {
-        @Override
-        public IRubyObject[] addArg(IRubyObject[] args, RubyString path) {
-            return insert(args, 0, path);
-        }
-    };
+    private static final AddArg UNSHIFT_PATH = (args, path) -> insert(args, 0, path);
 
-    private static final AddArg APPEND_PATH = new AddArg() {
-        @Override
-        public IRubyObject[] addArg(IRubyObject[] args, RubyString path) {
-            return insert(args, args.length, path);
-        }
-    };
+    private static final AddArg APPEND_PATH = (args, path) -> insert(args, args.length, path);
 
     private static void defineDelegateMethodsGeneric(RubyClass cPathname, final RubyModule klass,
             final ReturnValueMapper mapper, final AddArg addArg, String... methods) {
