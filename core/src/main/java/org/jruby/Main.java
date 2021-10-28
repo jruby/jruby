@@ -46,6 +46,7 @@ import org.jruby.exceptions.ThreadKill;
 import org.jruby.main.DripMain;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.OutputStrings;
@@ -524,7 +525,20 @@ public class Main {
             }
             return 0;
         }
-        System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
+
+        TraceType traceType = runtime.getInstanceConfig().getTraceType();
+        boolean isatty = runtime.getPosix().isatty(FileDescriptor.err);
+
+        System.err.print(traceType.printBacktrace(raisedException, isatty));
+
+        for (
+                Object cause = raisedException.getCause();
+                cause != null && cause instanceof RubyException;
+                cause = ((RubyException) cause).getCause()) {
+
+            System.err.print(traceType.printBacktrace((RubyException) cause, isatty));
+        }
+
         return 1;
     }
 
