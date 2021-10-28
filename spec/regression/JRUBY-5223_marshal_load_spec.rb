@@ -9,20 +9,11 @@ describe "Marshal load behavior: JRUBY-5223" do
   it "should load string" do
     obj = Marshal.load(@src)
     expect(obj).to eq(@obj)
-    expect(obj.tainted?).to eq(false)
-  end
-
-  it "should propagate taintness" do
-    @src.taint
-    obj = Marshal.load(@src)
-    expect(obj).to eq(@obj)
-    expect(obj.tainted?).to eq(true)
   end
 
   it "should load IO" do
     obj = Marshal.load(StringIO.new(@src))
     expect(obj).to eq(@obj)
-    expect(obj.tainted?).to eq(true)
   end
 
   it "should load string if it responds to :read" do
