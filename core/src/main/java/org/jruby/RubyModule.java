@@ -3458,8 +3458,16 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
+    /**
+     * Add an alias under the name newId pointing at the method under the name oldId.
+     *
+     * @param context the current context
+     * @param newId the new name for the alias
+     * @param oldId the current name of the method
+     * @return the new name
+     */
     @JRubyMethod(name = "alias_method", required = 2)
-    public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
+    public IRubyObject aliasMethod(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
         RubySymbol newSym = TypeConverter.checkID(newId);
         RubySymbol oldSym = TypeConverter.checkID(oldId); //  MRI uses rb_to_id but we return existing symbol
 
@@ -3470,6 +3478,22 @@ public class RubyModule extends RubyObject {
         } else {
             callMethod(context, "method_added", newSym);
         }
+
+        return newSym;
+    }
+
+    /**
+     * Old version of {@link #aliasMethod(ThreadContext, IRubyObject, IRubyObject)} that returns this module. The Ruby
+     * alias_method method was updated in 3.0 to return the new name.
+     *
+     * @param context the current context
+     * @param newId the new name for the alias
+     * @param oldId the current name of the method
+     * @return this module
+     */
+    public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
+        aliasMethod(context, newId, oldId);
+
         return this;
     }
 
