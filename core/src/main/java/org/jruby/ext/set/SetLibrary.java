@@ -39,7 +39,6 @@ public final class SetLibrary implements Library {
 
     public static void load(Ruby runtime) {
         RubySet.createSetClass(runtime);
-        RubySortedSet.createSortedSetClass(runtime);
         runtime.getModule("Enumerable").defineAnnotatedMethods(EnumerableExt.class);
     }
 
