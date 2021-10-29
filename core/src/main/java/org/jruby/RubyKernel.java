@@ -1486,7 +1486,13 @@ public class RubyKernel {
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
         // existing procs remain procs vs becoming lambdas.
-        Block.Type type = block.type == Block.Type.PROC ? block.type : Block.Type.LAMBDA;
+        Block.Type type = block.type;
+
+        if (type == Block.Type.PROC) {
+            context.runtime.getWarnings().warning("lambda without a literal block is deprecated; use the proc without lambda instead");
+        } else {
+            type = Block.Type.LAMBDA;
+        }
 
         return context.runtime.newProc(type, block);
     }
