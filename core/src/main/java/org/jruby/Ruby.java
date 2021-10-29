@@ -438,7 +438,6 @@ public final class Ruby implements Constantizable {
         } else {
             bignumClass = null;
             randomClass = null;
-            defaultRand = null;
         }
         ioClass = RubyIO.createIOClass(this);
 
@@ -2453,17 +2452,32 @@ public final class Ruby implements Constantizable {
         return invalidByteSequenceError;
     }
 
+    @Deprecated
     RubyRandom.RandomType defaultRand;
+
+    /** The default Ruby Random object for this runtime */
+    private RubyRandom defaultRandom;
+
+    public RubyRandom getDefaultRandom() {
+        return defaultRandom;
+    }
+
+    public void setDefaultRandom(RubyRandom random) {
+        this.defaultRandom = random;
+        this.defaultRand = random.getRandomType();
+    }
 
     /**
      * @deprecated internal API, to be hidden
      */
     public RubyRandom.RandomType getDefaultRand() {
-        return defaultRand;
+        return getDefaultRandom().getRandomType();
     }
 
+    /**
+     * @deprecated the modified field is now unused and deprecated and the set is ignored
+     */
     public void setDefaultRand(RubyRandom.RandomType defaultRand) {
-        this.defaultRand = defaultRand;
     }
 
     private RubyHash charsetMap;

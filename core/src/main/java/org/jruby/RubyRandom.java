@@ -228,19 +228,33 @@ public class RubyRandom extends RubyObject {
                 .defineClass("Random", runtime.getObject(), RubyRandom::new);
 
         randomClass.defineAnnotatedMethods(RubyRandom.class);
+        randomClass.defineConstant("DEFAULT", randomClass);
 
-        RubyRandom defaultRand = new RubyRandom(runtime, randomClass);
-        defaultRand.random = new RandomType(randomSeed(runtime));
-        randomClass.setConstant("DEFAULT", defaultRand);
-        runtime.setDefaultRand(defaultRand.random);
+        runtime.setDefaultRandom(newRandom(runtime, randomClass, randomSeed(runtime)));
 
         return randomClass;
     }
 
+    public static RubyRandom newRandom(Ruby runtime, RubyClass randomClass, IRubyObject seed) {
+        RubyRandom random = new RubyRandom(runtime, randomClass, new RandomType(seed));
+
+        return random;
+    }
+
     private RandomType random = null;
+
+    public RandomType getRandomType() {
+        return random;
+    }
 
     RubyRandom(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
+    }
+
+    RubyRandom(Ruby runtime, RubyClass rubyClass, RandomType randomType) {
+        super(runtime, rubyClass);
+
+        this.random = randomType;
     }
 
     @JRubyMethod(visibility = PRIVATE, optional = 1)
@@ -310,6 +324,11 @@ public class RubyRandom extends RubyObject {
     @JRubyMethod(name = "rand")
     public IRubyObject rand(ThreadContext context, IRubyObject arg) {
         return randomRand(context, arg, random);
+    }
+
+    @JRubyMethod(name = "default", meta = true)
+    public static IRubyObject rbDefault(ThreadContext context, IRubyObject self) {
+        return context.runtime.getDefaultRandom();
     }
 
     // c: rand_int
@@ -427,7 +446,11 @@ public class RubyRandom extends RubyObject {
     }
 
     private static RandomType getDefaultRand(ThreadContext context) {
-        return context.runtime.defaultRand;
+        return context.runtime.getDefaultRandom().random;
+    }
+
+    private static RubyRandom getDefaultRandom(Ruby runtime) {
+        return runtime.getDefaultRandom();
     }
 
     // c: random_rand
@@ -586,13 +609,15 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: rb_f_srand
-    @SuppressWarnings("deprecation")
     public static IRubyObject srandCommon(ThreadContext context, IRubyObject recv, IRubyObject newSeed) {
-        RandomType defaultRand = getDefaultRand(context);
-        IRubyObject previousSeed = defaultRand.getSeed();
-        defaultRand = new RandomType(newSeed);
-        context.runtime.setDefaultRand(defaultRand);
-        ((RubyRandom) (context.runtime.getRandomClass()).getConstant("DEFAULT")).setRandomType(defaultRand);
+        Ruby runtime = context.runtime;
+
+        RubyRandom defaultRandom = getDefaultRandom(runtime);
+        RubyInteger previousSeed = defaultRandom.getRandomType().getSeed();
+
+        defaultRandom = newRandom(runtime, runtime.getRandomClass(), newSeed);
+        context.runtime.setDefaultRandom(defaultRandom);
+
         return previousSeed;
     }
 
