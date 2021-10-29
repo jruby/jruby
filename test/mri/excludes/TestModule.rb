@@ -1,4 +1,3 @@
-exclude :test_alias, "needs investigation"
 exclude :test_attr, "needs investigation"
 exclude :test_classpath, "needs investigation"
 exclude :test_const_get_invalid_name, "UTF-16 invalid name is accepted as ok, unfinished in initial 2.6 work, #6161"
