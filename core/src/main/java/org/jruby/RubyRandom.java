@@ -685,8 +685,6 @@ public class RubyRandom extends RubyObject {
     // c: marshal_load
     @JRubyMethod()
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
-        checkFrozen();
-
         RubyArray load = arg.convertToArray();
         if (load.size() != 3) {
             throw context.runtime.newArgumentError("wrong dump data");
@@ -697,6 +695,9 @@ public class RubyRandom extends RubyObject {
         RubyBignum state = (RubyBignum) load.eltInternal(0);
         int left = RubyNumeric.num2int(load.eltInternal(1));
         IRubyObject seed = load.eltInternal(2);
+        
+        checkFrozen();
+
         random = new RandomType(seed, state, left);
         if (load.hasVariables()) {
             syncVariables((IRubyObject) load);
