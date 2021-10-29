@@ -469,7 +469,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(metaClass.runtime);
     }
 
-    @JRubyMethod(name = "to_s", alias = "name")
+    @JRubyMethod(name = {"to_s", "name"})
     public IRubyObject to_s(ThreadContext context) {
         return to_s(context.runtime);
     }
