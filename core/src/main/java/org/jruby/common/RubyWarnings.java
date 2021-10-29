@@ -89,6 +89,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warn(ID id, String fileName, int lineNumber, String message) {
+        warn(fileName, lineNumber, message);
+    }
+
+    public void warn(String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled()) return;
 
         String buffer = fileName + ':' + (lineNumber + 1) + ": warning: " + message + '\n';
@@ -197,9 +201,13 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
+        warning(fileName, lineNumber, message);
+    }
+
+    public void warning(String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
-        warn(id, fileName, lineNumber, message);
+        warn(fileName, lineNumber, message);
     }
 
     @JRubyMethod(name = "[]")

@@ -105,6 +105,7 @@ import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -2002,6 +2003,17 @@ public class RubyModule extends RubyObject {
         Ruby runtime = getRuntime();
 
         CacheEntry entry = searchForAliasMethod(runtime, oldName);
+
+        DynamicMethod method = getMethods().get(name);
+        if (method != null) {
+            // warn if overwriting an existing method on this module
+            runtime.getWarnings().warning("warning: method redefined; discarding old " + name);
+
+            if (method instanceof PositionAware) {
+                PositionAware posAware = (PositionAware) method;
+                runtime.getWarnings().warning(posAware.getFile(), posAware.getLine(), "previous definition of bar " + name);
+            }
+        }
 
         checkAliasFrameAccesses(runtime, oldName, name, entry.method);
         putAlias(name, entry, oldName);

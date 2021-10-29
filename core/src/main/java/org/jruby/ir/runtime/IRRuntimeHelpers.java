@@ -903,7 +903,7 @@ public class IRRuntimeHelpers {
             throw context.runtime.newTypeError("no class to make alias");
         }
 
-        findInstanceMethodContainer(context, currDynScope, self).alias_method(context, newName, oldName);
+        findInstanceMethodContainer(context, currDynScope, self).aliasMethod(context, newName, oldName);
     }
 
     /**
