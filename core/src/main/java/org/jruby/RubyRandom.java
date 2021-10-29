@@ -259,7 +259,12 @@ public class RubyRandom extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE, optional = 1)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
+
         random = new RandomType((args.length == 0) ? randomSeed(context.runtime) : args[0]);
+
+        setFrozen(true);
+
         return this;
     }
 
@@ -675,6 +680,8 @@ public class RubyRandom extends RubyObject {
     // c: marshal_load
     @JRubyMethod()
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
+        checkFrozen();
+
         RubyArray load = arg.convertToArray();
         if (load.size() != 3) {
             throw context.runtime.newArgumentError("wrong dump data");
@@ -689,6 +696,9 @@ public class RubyRandom extends RubyObject {
         if (load.hasVariables()) {
             syncVariables((IRubyObject) load);
         }
+
+        setFrozen(true);
+
         return this;
     }
 
