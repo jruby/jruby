@@ -229,6 +229,7 @@ public class RubyRandom extends RubyObject {
 
         randomClass.defineAnnotatedMethods(RubyRandom.class);
         randomClass.defineConstant("DEFAULT", randomClass);
+        randomClass.deprecateConstant(runtime, "DEFAULT");
 
         runtime.setDefaultRandom(newRandom(runtime, randomClass, randomSeed(runtime)));
 
@@ -695,7 +696,7 @@ public class RubyRandom extends RubyObject {
         RubyBignum state = (RubyBignum) load.eltInternal(0);
         int left = RubyNumeric.num2int(load.eltInternal(1));
         IRubyObject seed = load.eltInternal(2);
-        
+
         checkFrozen();
 
         random = new RandomType(seed, state, left);
