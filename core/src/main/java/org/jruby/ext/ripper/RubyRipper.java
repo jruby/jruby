@@ -333,7 +333,12 @@ public class RubyRipper extends RubyObject {
 
         return state == 0 ? context.nil : context.runtime.newFixnum(parser.getState());
     }
-    
+
+    @JRubyMethod
+    public IRubyObject token(ThreadContext context) {
+        return context.runtime.newString(parser.lexer.tokenByteList());
+    }
+
     @JRubyMethod
     public IRubyObject parse(ThreadContext context) {
         parseStarted = true;

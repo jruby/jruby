@@ -627,6 +627,13 @@ public class RipperLexer extends LexingCommon {
         flush();
         return term == '`' ? RipperParser.tXSTRING_BEG : RipperParser.tSTRING_BEG;
     }
+
+    public ByteList tokenByteList() {
+        int pos = tokp - lex_pbeg;
+        int len = lex_p - tokp;
+
+        return lexb.makeShared(pos, len);
+    }
     
     private boolean arg_ambiguous() {
         parser.dispatch("on_arg_ambiguous");
