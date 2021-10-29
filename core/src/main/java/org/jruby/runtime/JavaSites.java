@@ -520,6 +520,11 @@ public class JavaSites {
     public static class SetSites {
         public final SuperCallSite initialize_dup_super = new SuperCallSite();
         public final SuperCallSite initialize_clone_super = new SuperCallSite();
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CallSite proper_subset = new FunctionalCachingCallSite("proper_subset?");
+        public final CallSite proper_superset = new FunctionalCachingCallSite("proper_superset?");
+        public final CallSite to_a = new FunctionalCachingCallSite("to_a");
+        public final CallSite ary_join = new FunctionalCachingCallSite("join");
     }
 
     public static class CheckedSites {

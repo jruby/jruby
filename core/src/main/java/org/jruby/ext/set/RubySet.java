@@ -1091,6 +1091,57 @@ public class RubySet extends RubyObject implements Set {
 
     }
 
+    @JRubyMethod(name = "<=>")
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
+        /*
+          def <=>(set)
+            return unless set.is_a?(Set)
+
+            case size <=> set.size
+            when -1 then -1 if proper_subset?(set)
+            when +1 then +1 if proper_superset?(set)
+            else 0 if self.==(set)
+            end
+          end
+         */
+        if (!(other instanceof RubySet)) return context.nil;
+
+        RubySet otherSet = (RubySet) other;
+
+        int size = size();
+        int otherSize = otherSet.size();
+
+        if (size < otherSize) {
+            if (sites(context).proper_subset.call(context, this, this, other).isTrue()) {
+                return RubyFixnum.minus_one(context.runtime);
+            }
+        } else if (size > otherSize){
+            if (sites(context).proper_superset.call(context, this, this, other).isTrue()) {
+                return RubyFixnum.one(context.runtime);
+            }
+        } else {
+            if (sites(context).op_equal.call(context, this, this, other).isTrue()) {
+                return RubyFixnum.zero(context.runtime);
+            }
+        }
+
+        return context.nil;
+    }
+
+    @JRubyMethod(name = "join")
+    public IRubyObject join(ThreadContext context, IRubyObject sep) {
+        return sites(context).ary_join.call(
+                context,
+                this,
+                sites(context).to_a.call(context, this, this),
+                sep);
+    }
+
+    @JRubyMethod(name = "join")
+    public IRubyObject join(ThreadContext context) {
+        return join(context, context.nil);
+    }
+
     static RubyModule getTSort(final Ruby runtime) {
         if ( ! runtime.getObject().hasConstant("TSort") ) {
             runtime.getLoadService().require("tsort");
