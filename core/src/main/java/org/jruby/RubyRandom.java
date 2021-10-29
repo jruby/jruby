@@ -273,6 +273,11 @@ public class RubyRandom extends RubyObject {
         return random.getSeed();
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject seed(ThreadContext context, IRubyObject self) {
+        return getDefaultRand(context).getSeed();
+    }
+
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject orig) {
