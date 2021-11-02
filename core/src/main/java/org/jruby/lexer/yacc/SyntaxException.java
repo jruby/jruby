@@ -106,7 +106,7 @@ public class SyntaxException extends RuntimeException {
         if (line != null && line.length() > 5) {
             boolean addNewline = message != null && !message.endsWith("\n");
             message += (addNewline ? "\n" : "") + line;
-            if (column >= 0) {
+            if (column > 0) {
                 addNewline = !line.endsWith("\n");
                 return message += (addNewline ? "\n" : "") + new String(new char[column - 1]).replace("\0", " ") + "^";
             }
