@@ -886,7 +886,7 @@ public final class ThreadContext {
     public static String createRawBacktraceStringFromThrowable(final Throwable ex, final boolean color) {
         return WALKER.walk(ex.getStackTrace(), stream ->
             TraceType.printBacktraceJRuby(null,
-                    new BacktraceData(stream, Stream.empty(), true, false, false).getBacktraceWithoutRuby(),
+                    new BacktraceData(stream, Stream.empty(), true, true, false, false).getBacktraceWithoutRuby(),
                     ex.getClass().getName(),
                     ex.getLocalizedMessage(),
                     color));
