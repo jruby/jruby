@@ -124,7 +124,7 @@ public class TestRuby extends Base {
             runtime.evalScriptlet("require 'tempfile'; file = Tempfile.open(['foo', '" + extensionSuffix + "']); file.close; require file.path");
             fail();
         } catch (RaiseException re) {
-            assertEquals(re.getException().getType(), runtime.getLoadError());
+            assertEquals(runtime.getLoadError(), re.getException().getType());
         }
     }
     
