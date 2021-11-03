@@ -575,4 +575,12 @@ public class TypeConverter {
 
         return false;
     }
+
+    // MRI: rb_bool_expected
+    public static boolean booleanExpected(ThreadContext context, IRubyObject object, String id) {
+        if (object == context.tru) return true;
+        if (object == context.fals) return false;
+
+        throw context.runtime.newArgumentError(str(context.runtime, "true or false is expected as ", context.runtime.newSymbol(id), ": ", object));
+    }
 }

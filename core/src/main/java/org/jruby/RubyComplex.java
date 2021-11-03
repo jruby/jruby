@@ -44,6 +44,7 @@ import org.jruby.util.TypeConverter;
 
 import java.util.function.BiFunction;
 
+import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
@@ -440,21 +441,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        Ruby runtime = context.runtime;
-
-        boolean raise = true;
-
-        if (a2 != null) {
-            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
-
-            if (!maybeKwargs.isNil()) {
-                a2 = null;
-
-                IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
-
-                raise = exception.isNil() ? true : exception.isTrue();
-            }
-        }
+        boolean raise = a2 != null ? hasExceptionOption(context, a2, true) : true;
 
         return convertCommon(context, recv, a1, a2, raise);
     }

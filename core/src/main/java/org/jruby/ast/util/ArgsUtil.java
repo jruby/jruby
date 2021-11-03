@@ -42,6 +42,8 @@ import org.jruby.util.TypeConverter;
 
 import java.util.HashMap;
 
+import static org.jruby.util.TypeConverter.booleanExpected;
+
 /**
  *
  * @author  jpetersen
@@ -85,6 +87,19 @@ public final class ArgsUtil {
     
     public static int arrayLength(IRubyObject node) {
         return node instanceof RubyArray ? ((RubyArray) node).getLength() : 0;
+    }
+
+    // MRI: rb_opts_exception_p
+    public static boolean hasExceptionOption(ThreadContext context, IRubyObject options, boolean defaultValue) {
+        IRubyObject opts = getOptionsArg(context.runtime, options, false);
+
+        if (!opts.isNil()) {
+            IRubyObject value = extractKeywordArg(context, "exception", (RubyHash) opts);
+
+            if (value != null) return booleanExpected(context, value, "exception");
+        }
+
+        return defaultValue;
     }
     
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject... args) {
