@@ -241,10 +241,6 @@ end
 DEPS
 
     require 'test/jruby/test_loading_behavior'
-
-    res = File.expand_path($loading_behavior_result)
-
-    assert_equal File.expand_path(File.join('test', 'jruby', 'test_loading_behavior.rb')), res
   ensure
     Object.class_eval { alias require old_require; undef :old_require }
   end
