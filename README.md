@@ -36,7 +36,7 @@ version is very old.
 An alternative is to use one of the [Ruby version managers](https://www.ruby-lang.org/en/documentation/installation/#managers).
 
 For [`rbenv`](https://github.com/sstephenson/rbenv) you will need the
-[`ruby-build`](https://githubcom/sstephenson/ruby-build) plugin. You may find that your system
+[`ruby-build`](https://github.com/sstephenson/ruby-build) plugin. You may find that your system
 package manager can provide these. To see which versions of JRuby are available you should run:
 
 ```
