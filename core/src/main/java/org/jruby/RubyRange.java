@@ -675,7 +675,9 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
-        if (begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) {
+        if ((begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) ||
+                (end instanceof RubyNumeric && (begin.isNil() || end instanceof RubyNumeric))){
+            
             if (!(step instanceof RubyNumeric)) {
                 step = step.convertToInteger();
             }
