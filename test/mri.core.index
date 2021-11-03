@@ -73,7 +73,6 @@ ruby/test_not.rb
 ruby/test_numeric.rb
 ruby/test_object.rb
 ruby/test_objectspace.rb
-ruby/test_optimization.rb
 ruby/test_pack.rb
 ruby/test_parse.rb
 ruby/test_path.rb
@@ -124,6 +123,7 @@ ruby/test_yield.rb
 #ruby/test_iseq.rb
 #ruby/test_jit.rb
 #ruby/test_jit_debug.rb
+#ruby/test_optimization.rb
 #ruby/test_rubyvm.rb
 #ruby/test_rubyvm_mjit.rb
 
