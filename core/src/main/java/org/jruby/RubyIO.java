@@ -110,6 +110,7 @@ import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
+import static org.jruby.util.TypeConverter.booleanExpected;
 import static org.jruby.util.io.ChannelHelper.*;
 import static org.jruby.util.io.EncodingUtils.vmodeVperm;
 import static org.jruby.util.io.EncodingUtils.vperm;

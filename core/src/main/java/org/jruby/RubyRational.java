@@ -50,6 +50,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
@@ -399,10 +400,7 @@ public class RubyRational extends RubyNumeric {
             }
         } else {
             a2 = nil;
-
-            IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
-
-            raise = exception.isNil() ? true : exception.isTrue();
+            raise = hasExceptionOption(context, maybeKwargs, raise);
 
             if (a1 == nil) {
                 if (raise) throw runtime.newTypeError("can't convert nil into Rational");
