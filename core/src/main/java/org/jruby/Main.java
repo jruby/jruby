@@ -41,7 +41,6 @@ package org.jruby;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.SignalException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.main.DripMain;
 import org.jruby.platform.Platform;
@@ -53,23 +52,14 @@ import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class used to launch the interpreter.
@@ -469,9 +459,41 @@ public class Main {
 
     private void doPrintUsage(boolean force) {
         if (config.getShouldPrintUsage() || force) {
-            config.getOutput().print(OutputStrings.getBasicUsageHelp());
-            config.getOutput().print(OutputStrings.getFeaturesHelp());
+            String rubyPager = getRubyPagerEnv();
+
+            if (rubyPager == null) {
+                config.getOutput().print(OutputStrings.getBasicUsageHelp());
+                config.getOutput().print(OutputStrings.getFeaturesHelp());
+            } else {
+                try {
+                    ProcessBuilder builder = new ProcessBuilder(rubyPager);
+                    builder.environment().put("LESS", "-R");
+
+                    builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                    builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                    Process process = builder.start();
+                    OutputStream in = process.getOutputStream();
+
+                    String fullHelp = OutputStrings.getBasicUsageHelp() + OutputStrings.getFeaturesHelp();
+                    in.write(fullHelp.getBytes(StandardCharsets.UTF_8));
+
+                    in.flush();
+                    in.close();
+                    process.waitFor();
+                } catch (InterruptedException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
+    }
+
+    private String getRubyPagerEnv() {
+        String rubyPager = System.getenv("RUBY_PAGER");
+        if (rubyPager == null)
+            rubyPager = System.getenv("PAGER");
+
+        return rubyPager;
     }
 
     private void doShowCopyright() {
