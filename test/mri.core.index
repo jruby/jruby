@@ -91,8 +91,6 @@ ruby/test_regexp.rb
 ruby/test_require.rb
 ruby/test_require_lib.rb
 ruby/test_rubyoptions.rb
-ruby/test_rubyvm.rb
-ruby/test_rubyvm_mjit.rb
 ruby/test_signal.rb
 ruby/test_sleep.rb
 ruby/test_sprintf.rb
@@ -126,6 +124,8 @@ ruby/test_yield.rb
 #ruby/test_iseq.rb
 #ruby/test_jit.rb
 #ruby/test_jit_debug.rb
+#ruby/test_rubyvm.rb
+#ruby/test_rubyvm_mjit.rb
 
 # Disabled due to https://github.com/jruby/jruby/issues/6867
 #ruby/test_refinement.rb
