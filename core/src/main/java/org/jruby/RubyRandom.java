@@ -264,8 +264,6 @@ public class RubyRandom extends RubyObject {
 
         random = new RandomType((args.length == 0) ? randomSeed(context.runtime) : args[0]);
 
-        setFrozen(true);
-
         return this;
     }
 
