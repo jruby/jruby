@@ -43,7 +43,6 @@ ruby/test_float.rb
 ruby/test_fnmatch.rb
 ruby/test_frozen_error.rb
 ruby/test_gc.rb
-ruby/test_gc_compact.rb
 ruby/test_hash.rb
 ruby/test_ifunless.rb
 ruby/test_inlinecache.rb
@@ -121,6 +120,7 @@ ruby/test_yield.rb
 
 # accesses RubyVM during load
 #ruby/test_iseq.rb
+#ruby/test_gc_compact.rb # also we don't support explicit compaction as API
 #ruby/test_jit.rb
 #ruby/test_jit_debug.rb
 #ruby/test_optimization.rb
