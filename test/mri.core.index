@@ -6,7 +6,6 @@ ruby/test_arithmetic_sequence.rb
 ruby/test_arity.rb
 ruby/test_array.rb
 ruby/test_assignment.rb
-ruby/test_ast.rb
 ruby/test_autoload.rb
 ruby/test_backtrace.rb
 ruby/test_basicinstructions.rb
@@ -119,6 +118,7 @@ ruby/test_yield.rb
 # Tests below are disabled for various reasons
 
 # accesses RubyVM during load
+#ruby/test_ast.rb # This is also currently experimental (3.0.2)
 #ruby/test_iseq.rb
 #ruby/test_gc_compact.rb # also we don't support explicit compaction as API
 #ruby/test_jit.rb
