@@ -168,7 +168,11 @@ public class StringTerm extends StrTerm {
         lexer.pushback(c);
 
         if (parseStringIntoBuffer(lexer, src, buffer, lexer.getEncoding()) == EOF) {
-            if ((flags & STR_FUNC_REGEXP) != 0) {
+            if ((flags & STR_FUNC_QWORDS) != 0) {
+                lexer.compile_error("unterminated list meets end of file");
+                lexer.setStrTerm(null);
+                return RipperParser.tSTRING_END;
+            } else if ((flags & STR_FUNC_REGEXP) != 0) {
                 lexer.compile_error("unterminated regexp meets end of file");
             } else {
                 lexer.compile_error("unterminated string meets end of file");

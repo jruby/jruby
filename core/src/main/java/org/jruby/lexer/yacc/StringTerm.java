@@ -32,6 +32,7 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ext.ripper.RipperParser;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
@@ -140,6 +141,11 @@ public class StringTerm extends StrTerm {
 
         if (parseStringIntoBuffer(lexer, buffer, lexer.getEncoding(), encodingDetermined) == EOF) {
             lexer.setRubySourceline(startLine);
+            if ((flags & STR_FUNC_QWORDS) != 0) {
+                lexer.compile_error("unterminated list meets end of file");
+                lexer.setStrTerm(null);
+                return RipperParser.tSTRING_END;
+            }
             lexer.compile_error("unterminated " + ((flags & STR_FUNC_REGEXP) != 0 ? "regexp" : "string") +  " meets end of file");
         }
 
