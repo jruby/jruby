@@ -2,7 +2,6 @@ package org.jruby.util;
 
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ThreadContext;
@@ -568,6 +567,7 @@ public class SprintfParser {
                 case 'A': // Equivalent to `a', but use uppercase `X' and `P'.
                     token.exponent = 'P';
                     token.format = 'A';
+                    break;
                 case 'i': // Same as 'd'
                     token.format = 'd';
                     break;
@@ -578,7 +578,7 @@ public class SprintfParser {
                 case -1: // Why can't I use EOF
                     break;
                 default:
-                    error("unexpected: " + (char) current); // illegal format character.
+                    error("unexpected: '" + (char) current + "'. Format: \"" + format + "\""); // illegal format character.
             }
 
             return token;
@@ -626,9 +626,6 @@ public class SprintfParser {
 
         // FIXME: multiple names should error
         private void processModifiers(FormatToken token) {
-            boolean inPrecision = false;  // Are we processing precision part of the format modifier (e.g. after the '.').
-            boolean inWidth = false;
-            int lastCharacter = 0;
 
             for (int character = current; character != EOF; character = nextChar()) {
                 switch (character) {
@@ -653,61 +650,32 @@ public class SprintfParser {
                         token.hexZero = true;
                         break;
                     case '0':    // zero pad
-                        if (inPrecision) {  // %5.0d
-                            token.precision = 0;
-                            inPrecision = false;
-                        } else if (!token.rightPad) { // '-' takes precedence over '0'
+                        if (!token.rightPad) { // '-' takes precedence over '0'
                             token.zeroPad = true;
                         }
                         break;
                     case '*':    // use arg list to calculate pad ('%1$*2$d', '%1$*2$d')
-                        if (inPrecision && lastCharacter == '*') error("width after precision"); // %.**d
-                        if (!token.hasPrecision) { // initial '*'.
-                            if (token.hasWidth) error("width given twice");
-
-                            token.hasWidth = true; // hasWidth with no width == bare '*'. Otherwise specific index.
-                            inWidth = true;
-                        } // Otherwise: '*' for '{width}.*'  [nothing to do here as it will got to 0-9 next.
+                        if (token.hasWidth) error("width given twice");
+                        processWidth(token);
                         break;
                     case '1': case '2': case '3': case '4': case '5':  // numbers representing specific field values '%3d'
                     case '6': case '7': case '8': case '9': {          // OR indices '%*1$2$d'
-                        int amount = processDigits(inWidth, inPrecision);
+                        int amount = processDigits(false, false);
 
-                        if (inPrecision) {
-                            inPrecision = false;
-                            if (token.hasPrecisionIndex) {          // index of value for format '%3.*1$2$d'
-                                if (current != '$') error("width given twice");
-                                token.index = amount;
-                            } else {                          // index of precision '%3.*1$'.
-                                if (current == '$') token.hasPrecisionIndex = true;
-                                token.precision = amount;
-                            }
-                        } else if (inWidth) {
-                            inWidth = false;
-                            if (current != '$') error("width given twice");
-                            token.width = amount;
+                        if (current == '$') {
+                            if (token.index > 0) error("value given twice");
+                            token.index = amount;
+                        } else if (current == EOF) {
+                            return;
                         } else {
-                            if (current == '$') {
-                                if (token.index > 0) error("value given twice");
-                                token.index = amount;
-                            } else {
-                                token.width = amount;
-                            }
-                        }
-
-                        if (current != '$') {
-                            if (token.isWidthIndexed()) error("width given twice");
-                            if (current == EOF) return;
+                            token.width = amount;
                             unread();
                         }
-
                         break;
                     }
                     case '.':
                         if (token.hasPrecision) error("precision given twice");
-
-                        token.hasPrecision = true;
-                        inPrecision = true;
+                        processPrecision(token);
                         break;
                     case '<': {
                         token.angled = true;
@@ -726,8 +694,88 @@ public class SprintfParser {
                     default:
                         return;
                 }
+            }
+        }
 
-                lastCharacter = character;
+        private void processPrecision(FormatToken token) {
+            token.hasPrecision = true;
+            int lastCharacter = 0;
+            for (int character = nextChar(); character != EOF; character = nextChar()) {
+                switch (character) {
+                    case ' ':    // space pad values
+                    case '+':    // + prefix positive values
+                    case '-':    // right pad space
+                    case '#':    // first 0 digit in hex/binary display
+                        error("flag after precision");
+                    case '0':    // zero pad
+                        token.precision = 0;
+                        break;
+                    case '*':    // use arg list to calculate pad ('%1$*2$d', '%1$*2$d')
+                        if (lastCharacter == '*') error("width after precision"); // %.**d
+                        break;
+                    case '1':  case '2':  case '3': case '4': case '5':
+                    case '6': case '7': case '8': case '9': {          // OR indices '%*1$2$d'
+                        int amount = processDigits(false, true);
+
+                        if (token.hasPrecisionIndex) {          // index of value for format '%3.*1$2$d'
+                            if (current != '$') error("width given twice");
+                            token.index = amount;
+                        } else {                          // index of precision '%3.*1$'.
+                            if (current == '$') token.hasPrecisionIndex = true;
+                            token.precision = amount;
+                        }
+
+                        if (current != '$') {
+                            if (token.isWidthIndexed()) error("width given twice");
+                            if (current == EOF) return;
+                            unread();
+                        }
+
+                        break;
+                    }
+                    case '.':
+                        error("precision given twice");
+                    case '<':
+                    case '{':
+                    default:
+                        unread();
+                        return;
+                }
+
+                lastCharacter = current;
+            }
+        }
+
+        private void processWidth(FormatToken token) {
+            token.hasWidth = true;
+            for (int character = nextChar(); character != EOF; character = nextChar()) {
+                switch (character) {
+                    case ' ':    // space pad values
+                    case '+':    // + prefix positive values
+                    case '-':    // right pad space
+                    case '#':    // first 0 digit in hex/binary display
+                        error("flag after width");
+                    case '0':    // zero pad
+                        // '-' takes precedence over '0'
+                        if (!token.rightPad) token.zeroPad = true;
+                        break;
+                    case '*':    // use arg list to calculate pad ('%1$*2$d', '%1$*2$d')
+                        error("width given twice");
+                    case '1': case '2': case '3': case '4': case '5':  // numbers representing specific field values '%3d'
+                    case '6': case '7': case '8': case '9':            // OR indices '%*1$2$d'
+                        token.width = processDigits(true, false);
+
+                        if (current != '$') unread();
+                        break;
+                    case '.':
+                        processPrecision(token);
+                        break;
+                    case '<':
+                    case '{':
+                    default:
+                        unread();
+                        return;
+                }
             }
         }
 
