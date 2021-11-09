@@ -530,6 +530,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case NIL: return manager.getNil();
             case NTH_REF: return NthRef.decode(this);
             case NULL_BLOCK: return NullBlock.decode(this);
+            case RANGE: return Range.decode(this);
             case RATIONAL: return Rational.decode(this);
             case REGEXP: return Regexp.decode(this);
             case SCOPE_MODULE: return ScopeModule.decode(this);

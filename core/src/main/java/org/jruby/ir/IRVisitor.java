@@ -187,6 +187,7 @@ public abstract class IRVisitor {
     public void Nil(Nil nil) { error(nil); }
     public void NthRef(NthRef nthref) { error(nthref); }
     public void NullBlock(NullBlock nullblock) { error(nullblock); }
+    public void Range(Range range) { error(range); }
     public void Rational(Rational rational) { error(rational); }
     public void Regexp(Regexp regexp) { error(regexp); }
     public void Scope(Scope scope) { error(scope); }

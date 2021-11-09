@@ -2684,6 +2684,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Range(Range range) {
+        jvmMethod().getValueCompiler().pushRange(
+                () -> visit(range.getBegin()),
+                () -> visit(range.getEnd()),
+                range.isExclusive());
+    }
+
+    @Override
     public void Regexp(Regexp regexp) {
         jvmMethod().getValueCompiler().pushRegexp(regexp.getSource(), regexp.options.toEmbeddedOptions());
     }
