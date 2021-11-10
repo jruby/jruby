@@ -550,6 +550,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case WRAPPED_IR_CLOSURE: return WrappedIRClosure.decode(this);
         }
 
-        return null;
+        throw new RuntimeException("failed to deserialize operand of type: " + type);
     }
 }
