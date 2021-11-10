@@ -130,11 +130,11 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: bootstrap
         run: mvn -Pbootstrap clean package
-      - name: bundle
-        run: bundle install
-        env: 
-          PATH: "$GITHUB_WORKSPACE/bin:$PATH"
-      - name: run tests
-        run: jruby -S rake test:mri:core:jit
-        env: 
-          PATH: "$GITHUB_WORKSPACE/bin:$PATH"
+      - name: install bundler
+        run: bin/jruby -S gem install bundler
+      - name: bundle install
+        run: bin/jruby -S bundle install
+      - name: rake test:mri:core:jit
+        run: bin/jruby -S rake test:mri:core:jit
+        env:
+          JRUBY_OPTS: ''
