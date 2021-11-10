@@ -2666,10 +2666,13 @@ public class JVMVisitor extends IRVisitor {
         switch (builtinClass.getType()) {
             case ARRAY:
                 jvmMethod().getValueCompiler().pushArrayClass();
+                return;
             case HASH:
                 jvmMethod().getValueCompiler().pushHashClass();
+                return;
             case OBJECT:
                 jvmMethod().getValueCompiler().pushObjectClass();
+                return;
             default:
                 throw new RuntimeException("BuiltinClass has unknown type");
         }
