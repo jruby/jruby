@@ -530,6 +530,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case NIL: return manager.getNil();
             case NTH_REF: return NthRef.decode(this);
             case NULL_BLOCK: return NullBlock.decode(this);
+            case RANGE: return Range.decode(this);
             case RATIONAL: return Rational.decode(this);
             case REGEXP: return Regexp.decode(this);
             case SCOPE_MODULE: return ScopeModule.decode(this);
@@ -549,6 +550,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case WRAPPED_IR_CLOSURE: return WrappedIRClosure.decode(this);
         }
 
-        return null;
+        throw new RuntimeException("failed to deserialize operand of type: " + type);
     }
 }
