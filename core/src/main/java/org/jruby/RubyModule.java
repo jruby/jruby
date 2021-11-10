@@ -2252,8 +2252,13 @@ public class RubyModule extends RubyObject {
      *
      */
     public void setMethodVisibility(IRubyObject[] methods, Visibility visibility) {
-        for (int i = 0; i < methods.length; i++) {
-            exportMethod(TypeConverter.checkID(methods[i]).idString(), visibility);
+        if (methods.length == 1 && methods[0] instanceof RubyArray) {
+            setMethodVisibility(((RubyArray<?>) methods[0]).toJavaArray(), visibility);
+            return;
+        }
+
+        for (IRubyObject method : methods) {
+            exportMethod(TypeConverter.checkID(method).idString(), visibility);
         }
     }
 
@@ -3309,8 +3314,6 @@ public class RubyModule extends RubyObject {
             // Note: we change current frames visibility here because the methods which call
             // this method are all "fast" (e.g. they do not created their own frame).
             context.setCurrentVisibility(visibility);
-        } else if (args.length == 1 && args[0] instanceof RubyArray) {
-            setMethodVisibility(((RubyArray) args[0]).toJavaArray(), visibility);
         } else {
             setMethodVisibility(args, visibility);
         }
