@@ -690,7 +690,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      * mri: rb_io_getline_1 (mostly)
      */
-    private IRubyObject getlineImpl(ThreadContext context, IRubyObject rs, final int limit, final boolean chomp) {
+    IRubyObject getlineImpl(ThreadContext context, IRubyObject rs, final int limit, final boolean chomp) {
         Ruby runtime = context.runtime;
 
         final OpenFile fptr = getOpenFileChecked();

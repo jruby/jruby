@@ -55,6 +55,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.Getline;
 
 public class RubyArgsFile extends RubyObject {
 
@@ -304,22 +305,43 @@ public class RubyArgsFile extends RubyObject {
 
     // MRI: argf_getline
     private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+        Ruby runtime = context.runtime;
+
+        IRubyObject line;
+
+        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
 
         while (true) {
             if (!data.next_argv(context)) return context.nil;
 
-            IRubyObject line = data.currentFile.callMethod(context, "gets", args);
+            RubyIO currentFile = (RubyIO) data.currentFile;
 
-            if (line.isNil() && data.next_p != -1) {
-                argf_close(context, data.currentFile);
-                data.next_p = 1;
-                continue;
+            if (isGenericInput(runtime, data)) {
+                line = data.currentFile.callMethod(context, "gets", args);
+            } else {
+                if (args.length == 0 && runtime.getRecordSeparatorVar().get() == runtime.getGlobalVariables().getDefaultSeparator()) {
+                    line = (currentFile).gets(context);
+                } else {
+                    line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), args);
+                }
+
+                if (line.isNil() && data.next_p != -1) {
+                    argf_close(context, data.currentFile);
+                    data.next_p = 1;
+                    continue;
+                }
             }
 
             return line;
         }
     }
+
+    private static boolean isGenericInput(Ruby runtime, ArgsFileData data) {
+        return data.currentFile == runtime.getGlobalVariables().get("$stdin") && !(data.currentFile instanceof RubyFile);
+    }
+
+    private static final Getline.Callback<RubyIO, IRubyObject> GETLINE =
+            (context, self, rs, limit, chomp, block) -> self.getlineImpl(context, rs, limit, chomp);
 
     // ARGF methods
 
