@@ -108,3 +108,33 @@ jobs:
         env:
           PHASE: 'install -Pmain -Dinvoker.test=GH-6081*'
 
+  mri-core-int:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        java-version: [8, 11]
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: ${{ matrix.java-version }}
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle
+        run: bundle install
+        env: 
+          PATH: "$GITHUB_WORKSPACE/bin:$PATH"
+      - name: run tests
+        run: jruby -S rake test:mri:core:jit
+        env: 
+          PATH: "$GITHUB_WORKSPACE/bin:$PATH"
