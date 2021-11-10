@@ -1641,7 +1641,7 @@ public class EncodingUtils {
     }
 
     // MRI: io_set_encoding_by_bom
-    public static void ioSetEncodingByBOM(ThreadContext context, RubyIO io) {
+    public static Encoding ioSetEncodingByBOM(ThreadContext context, RubyIO io) {
         Ruby runtime = context.runtime;
         Encoding bomEncoding = ioStripBOM(context, io);
 
@@ -1654,6 +1654,7 @@ public class EncodingUtils {
         } else {
             io.setEnc2(null);
         }
+        return bomEncoding;
     }
 
     // MRI: io_strip_bom

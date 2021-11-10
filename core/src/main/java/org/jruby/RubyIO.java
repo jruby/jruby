@@ -1072,6 +1072,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return this;
     }
 
+    // MRI: rb_io_set_encoding_by_bom
+    @JRubyMethod
+    public IRubyObject set_encoding_by_bom(ThreadContext context) {
+        OpenFile fptr;
+
+        fptr = getOpenFile();
+        if (!fptr.isBinmode()) {
+            throw context.runtime.newArgumentError("ASCII incompatible encoding needs binmode");
+        }
+
+        if (getEnc2() != null) {
+            throw context.runtime.newArgumentError("encoding conversion is set");
+        } else if (getEnc() != null && getEnc() != ASCIIEncoding.INSTANCE) {
+            throw context.runtime.newArgumentError("encoding is set to " + getEnc() + " already");
+        }
+
+        if (EncodingUtils.ioSetEncodingByBOM(context, this) == null) return context.nil;
+
+        return context.runtime.getEncodingService().getEncoding(getEnc());
+    }
+
     // mri: io_encoding_set
     public void setEncoding(ThreadContext context, IRubyObject v1, IRubyObject v2, IRubyObject opt) {
         final IRubyObject nil = context.nil;
