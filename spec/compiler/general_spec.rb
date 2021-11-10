@@ -94,7 +94,7 @@ module JITSpecUtils
     method = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
     method.prepareForCompilation
 
-    compiler = org.jruby.ir.targets.JVMVisitor.newForJIT(runtime)
+    compiler = new_visitor(runtime)
     compiled = compiler.compile(method, org.jruby.util.OneShotClassLoader.new(runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod("RUBY$script",
         org.jruby.runtime.ThreadContext.java_class,
@@ -119,6 +119,10 @@ module JITSpecUtils
         descriptors)
   end
 
+  def new_visitor(runtime)
+    org.jruby.ir.targets.JVMVisitor.newForJIT(runtime)
+  end
+
   def compile_run(src, filename, line)
     cls = compile_to_method(src, filename, line - 1) # compiler expects zero-based lines
 
@@ -132,10 +136,21 @@ module JITSpecUtils
   end
 end
 
+module AOTSpecUtils
+  include JITSpecUtils
+
+  def new_visitor(runtime)
+    org.jruby.ir.targets.JVMVisitor.newForAOT(runtime)
+  end
+
+  def self.name; "aot"; end
+end
+
 modes = []
 modes << InterpreterSpecUtils unless (ENV['INTERPRETER_TEST'] == 'false')
 modes << PersistenceSpecUtils unless (ENV['PERSISTENCE_TEST'] == 'false')
 modes << JITSpecUtils unless (ENV['COMPILER_TEST'] == 'false')
+modes << AOTSpecUtils unless (ENV['AOT_TEST'] == 'false')
 
 Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
