@@ -170,6 +170,7 @@ modes.each do |mode|
       run("a = {:foo => {:bar => 5.5}}; a") {|result| expect(result).to eq({:foo => {:bar => 5.5}}) }
       run("a = /foo/; a") {|result| expect(result).to eq(/foo/) }
       run("1..2") {|result| expect(result).to eq (1..2) }
+      run("1...2") {|result| expect(result).to eq (1...2) }
       run("1r") {|result| expect(result).to eq (Rational(1, 1))}
       run("1.1r") {|result| expect(result).to eq (Rational(11, 10))}
       run("1i") {|result| expect(result).to eq (Complex(0, 1))}
