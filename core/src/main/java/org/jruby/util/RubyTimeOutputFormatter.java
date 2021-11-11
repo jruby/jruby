@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -32,12 +33,12 @@ import org.jruby.util.RubyDateFormatter.FieldType;
  * Support for GNU-C output formatters, see: http://www.gnu.org/software/libc/manual/html_node/Formatting-Calendar-Time.html
  */
 public class RubyTimeOutputFormatter {
-    final String flags;
+    final ByteList flags;
     final int width;
 
-    public final static RubyTimeOutputFormatter DEFAULT_FORMATTER = new RubyTimeOutputFormatter("", 0);
+    public final static RubyTimeOutputFormatter DEFAULT_FORMATTER = new RubyTimeOutputFormatter(ByteList.EMPTY_BYTELIST, 0);
 
-    public RubyTimeOutputFormatter(String flags, int width) {
+    public RubyTimeOutputFormatter(ByteList flags, int width) {
         this.flags = flags;
         this.width = width;
     }
@@ -67,15 +68,17 @@ public class RubyTimeOutputFormatter {
         return padder;
     }
 
-    public String format(CharSequence sequence, long value, FieldType type) {
+    public void format(ByteList out, long value, FieldType type) {
         int width = getWidth(type.defaultWidth);
         char padder = getPadder(type.defaultPadder);
 
-        if (sequence == null) {
-            sequence = formatNumber(value, width, padder);
-        } else {
-            sequence = padding(sequence, width, padder);
-        }
+        formatNumber(out, value, width, padder);
+    }
+
+    // FIXME: I think this should not be done with CharSequence but ByteList but I didn't want to mess with it
+    public void format(ByteList out, CharSequence sequence, FieldType type) {
+        int width = getWidth(type.defaultWidth);
+        char padder = getPadder(type.defaultPadder);
 
         for (int i = 0; i < flags.length(); i++) {
             switch (flags.charAt(i)) {
@@ -93,58 +96,64 @@ public class RubyTimeOutputFormatter {
             }
         }
 
-        return sequence.toString();
-    }
-
-    static CharSequence formatNumber(long value, int width, char padder) {
-        if (value >= 0 || padder != '0') {
-            return padding(Long.toString(value), width, padder);
+        padding(out, sequence, width, padder);
+        if (sequence instanceof ByteList) {
+            out.append((ByteList) sequence);
+        } else {
+            out.append(sequence.toString().getBytes());
         }
-        return padding(new StringBuilder().append('-'), Long.toString(-value), width - 1, padder);
     }
 
-    static StringBuilder formatSignedNumber(long value, int width, char padder) {
-        StringBuilder out = new StringBuilder();
+    static void formatNumber(ByteList out, long value, int width, char padder) {
+        if (value >= 0 || padder != '0') {
+            String num = Long.toString(value);
+            padding(out, num, width, padder);
+            out.append(num.getBytes());
+        } else {
+            String num = Long.toString(-value);
+            padding(out, num, width - 1, padder);
+            out.append('-');
+            out.append(num.getBytes());
+        }
+    }
+
+    static void formatSignedNumber(ByteList out, long value, long second, int width, char padder) {
         if (padder == '0') {
             if (value >= 0) {
-                return padding(out.append('+'), Long.toString(value), width - 1, padder);
+                String num = Long.toString(value);
+                out.append(value == 0 && second < 0 ? '-' : '+'); // -0 needs to be -0
+                padding(out, num, width - 1, padder);
+                out.append(num.getBytes());
             } else {
-                return padding(out.append('-'), Long.toString(-value), width - 1, padder);
+                String num = Long.toString(-value);
+                out.append('-');
+                padding(out, num, width - 1, padder);
+                out.append(num.getBytes());
             }
         } else {
             if (value >= 0) {
-                final StringBuilder str = new StringBuilder().append('+').append(Long.toString(value));
-                return padding(out, str, width, padder);
+                String num = Long.toString(value);
+                padding(out, num, width - 1, padder);
+                out.append(value == 0 && second < 0 ? '-' : '+'); // -0 needs to be -0
+                out.append(num.getBytes());
             } else {
-                return padding(out, Long.toString(value), width, padder);
+                String num = Long.toString(value);
+                padding(out, num, width, padder);
+                out.append(num.getBytes());
             }
         }
     }
 
     private static final int SMALLBUF = 100;
 
-    private static CharSequence padding(CharSequence sequence, int width, char padder) {
+    // sequence is assumed to be clean 7bit ASCII
+    private static void padding(ByteList out, CharSequence sequence, final int width, final char padder) {
         final int len = sequence.length();
-        if (len >= width) return sequence;
+        if (len >= width) return;
 
         if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
 
-        StringBuilder out = new StringBuilder(width + len);
+        // can pre-calc common pads like ' ' or '0'.
         for (int i = len; i < width; i++) out.append(padder);
-        out.append(sequence);
-        return out;
     }
-
-    private static StringBuilder padding(final StringBuilder out, CharSequence sequence,
-                                         final int width, final char padder) {
-        final int len = sequence.length();
-        if (len >= width) return out.append(sequence);
-
-        if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
-
-        out.ensureCapacity(width + len);
-        for (int i = len; i < width; i++) out.append(padder);
-        return out.append(sequence);
-    }
-
 }
