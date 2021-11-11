@@ -33,11 +33,11 @@ jobs:
         run: mvn -Pbootstrap clean package
       - name: main profile
         run: tool/maven-ci-script.sh
-        env: 
+        env:
           PHASE: 'package -Pmain'
       - name: dist profile
         run: tool/maven-ci-script.sh
-        env: 
+        env:
           PHASE: 'package -Pdist'
       - name: complete profile
         run: tool/maven-ci-script.sh
@@ -110,7 +110,7 @@ jobs:
 
   mri-core-int:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         java-version: [8, 11]
@@ -137,4 +137,36 @@ jobs:
       - name: rake test:mri:core:jit
         run: bin/jruby -S rake test:mri:core:jit
         env:
-          JRUBY_OPTS: ''
+          JRUBY_OPTS: '-J-Xmx1G'
+
+  spec-ruby-fast:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        java-version: [8, 11]
+
+    env:
+      JRUBY_OPTS: '-J-Xmx1G'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: ${{ matrix.java-version }}
+      - name: cache dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: install bundler
+        run: bin/jruby -S gem install bundler
+      - name: bundle install
+        run: bin/jruby -S bundle install
+      - name: rake spec:ruby:fast
+        run: bin/jruby -S rake spec:ruby:fast
