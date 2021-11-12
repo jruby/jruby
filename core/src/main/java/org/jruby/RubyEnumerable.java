@@ -2296,7 +2296,7 @@ public class RubyEnumerable {
             } else {
                 value = RubyArray.newArrayNoCopy(context.runtime, largs);
             }
-            
+
             IRubyObject count = result.fastARef(value);
             if (count == null) {
                 result.fastASet(value, RubyFixnum.one(context.runtime));
