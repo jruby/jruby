@@ -2288,7 +2288,15 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
-            IRubyObject value = largs[0];
+            IRubyObject value;
+            if (largs.length == 0) {
+                value = context.nil;
+            } else if (largs.length == 1) {
+                value = largs[0];
+            } else {
+                value = RubyArray.newArrayNoCopy(context.runtime, largs);
+            }
+            
             IRubyObject count = result.fastARef(value);
             if (count == null) {
                 result.fastASet(value, RubyFixnum.one(context.runtime));
