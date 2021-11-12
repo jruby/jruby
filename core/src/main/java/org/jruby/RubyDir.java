@@ -295,7 +295,13 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static ByteList globArgumentAsByteList(ThreadContext context, IRubyObject arg) {
-        return RubyFile.get_path(context, arg).getByteList();
+        RubyString checked = StringSupport.strNullCheck(arg);
+
+        if (checked == null) {
+            throw context.runtime.newArgumentError("nul-separated glob pattern is unsupported");
+        }
+
+        return RubyFile.get_path(context, checked).getByteList();
     }
 
     /**

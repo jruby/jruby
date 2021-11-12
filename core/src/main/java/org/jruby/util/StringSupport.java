@@ -870,8 +870,19 @@ public final class StringSupport {
         return -1;
     }
 
-    // StringValueCStr, rb_string_value_cstr without trailing null addition
+    // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
+        RubyString checked = strNullCheck(ptr);
+
+        if (checked == null) {
+            throw runtime.newArgumentError("string contains null char");
+        }
+
+        return checked;
+    }
+
+    // MRI: str_null_check without trailing null check (JVM arrays do not null terminate)
+    public static RubyString strNullCheck(IRubyObject ptr) {
         final RubyString s = ptr.convertToString();
         ByteList sByteList = s.getByteList();
         byte[] sBytes = sByteList.unsafeBytes();
@@ -882,16 +893,15 @@ public final class StringSupport {
 
         if (minlen > 1) {
             if (strNullChar(sBytes, beg, len, minlen, enc) != -1) {
-                throw runtime.newArgumentError("string contains null char");
+                return null;
             }
             return strFillTerm(s, sBytes, beg, len, minlen);
         }
+
         if (memchr(sBytes, beg, '\0', len) != -1) {
-            throw runtime.newArgumentError("string contains null byte");
+            return null;
         }
-        //if (s[len]) {
-        //    s = str_fill_term(str, s, len, minlen);
-        //}
+
         return s;
     }
 

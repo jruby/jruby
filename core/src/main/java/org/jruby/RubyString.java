@@ -315,6 +315,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return enc;
     }
 
+    // rb_enc_check but only supports strings
     public static Encoding checkEncoding(final Ruby runtime, ByteList str1, ByteList str2) {
         Encoding enc = StringSupport.areCompatible(str1, str2);
         if (enc == null) {
