@@ -120,4 +120,14 @@ public class RubyYielder extends RubyObject {
         this.yield(context, args);
         return this;
     }
+
+    @JRubyMethod(name = "to_proc")
+    public IRubyObject to_proc(ThreadContext context) {
+        return RubyProc.newProc(context.runtime, CallBlock19.newCallClosure(this, this.getMetaClass(), Signature.OPTIONAL, new BlockCallback() {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+                return yield(context, args);
+            }
+        }, context), Block.Type.PROC);
+    }
 }
