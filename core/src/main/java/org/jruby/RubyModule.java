@@ -239,15 +239,22 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "autoload?")
     public IRubyObject autoload_p(ThreadContext context, IRubyObject symbol) {
-        final String name = TypeConverter.checkID(symbol).idString();
+        return hasAutoload(context, TypeConverter.checkID(symbol).idString(), true);
+    }
 
+    @JRubyMethod(name = "autoload?")
+    public IRubyObject autoload_p(ThreadContext context, IRubyObject symbol, IRubyObject inherit) {
+        return hasAutoload(context, TypeConverter.checkID(symbol).idString(), inherit.isTrue());
+    }
+
+    public IRubyObject hasAutoload(ThreadContext context, String idString, boolean inherit) {
         for (RubyModule mod = this; mod != null; mod = mod.getSuperClass()) {
-            final IRubyObject loadedValue = mod.fetchConstant(name);
+            final IRubyObject loadedValue = mod.fetchConstant(idString);
 
             if (loadedValue == UNDEF) {
                 final RubyString file;
 
-                Autoload autoload = mod.getAutoloadMap().get(name);
+                Autoload autoload = mod.getAutoloadMap().get(idString);
 
                 // autoload has been evacuated
                 if (autoload == null) return context.nil;
@@ -263,7 +270,10 @@ public class RubyModule extends RubyObject {
                 // file load is in progress or file is already loaded
                 if (!getRuntime().getLoadService().featureAlreadyLoaded(file.asJavaString())) return file;
             }
+
+            if (!inherit) break;
         }
+
         return context.nil;
     }
 
