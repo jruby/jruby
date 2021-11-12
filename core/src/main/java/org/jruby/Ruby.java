@@ -383,8 +383,6 @@ public final class Ruby implements Constantizable {
         context.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
-        dataClass = initDataClass();
-
         comparableModule = RubyComparable.createComparable(this);
         enumerableModule = RubyEnumerable.createEnumerableModule(this);
         stringClass = RubyString.createStringClass(this);
@@ -655,15 +653,6 @@ public final class Ruby implements Constantizable {
             if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
             setDefaultInternalEncoding(loadedEncoding);
         }
-    }
-
-    private RubyClass initDataClass() {
-        RubyClass dataClass = null;
-        if (profile.allowClass("Data")) {
-            dataClass = defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-            getObject().deprecateConstant(this, "Data");
-        }
-        return dataClass;
     }
 
     private Random initRandom() {
@@ -5028,10 +5017,6 @@ public final class Ruby implements Constantizable {
         return filenoUtil;
     }
 
-    public RubyClass getData() {
-        return dataClass;
-    }
-
     /**
      * @return Class -> extension initializer map
      * @note Internal API, subject to change!
@@ -5327,6 +5312,11 @@ public final class Ruby implements Constantizable {
     void setException(RubyClass exceptionClass) {
     }
 
+    @Deprecated
+    public RubyClass getData() {
+        return null;
+    }
+
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
         new ConcurrentHashMap<String, Invalidator>(
             16    /* default initial capacity */,
@@ -5427,7 +5417,6 @@ public final class Ruby implements Constantizable {
     private final RubyClass exceptionClass;
     private final RubyClass dummyClass;
     private final RubyClass randomClass;
-    private final RubyClass dataClass;
     private final RubyClass mutexClass;
     private final RubyClass conditionVariableClass;
     private final RubyClass queueClass;

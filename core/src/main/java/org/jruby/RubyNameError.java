@@ -62,7 +62,7 @@ public class RubyNameError extends RubyStandardError {
      *
      * TODO: this class should not be lookupable
      */
-    @JRubyClass(name = "NameError::Message", parent = "Data")
+    @JRubyClass(name = "NameError::Message", parent = "Object")
     public static final class RubyNameErrorMessage extends RubyObject {
 
         private final String message;
@@ -89,7 +89,7 @@ public class RubyNameError extends RubyStandardError {
         }
 
         static RubyClass define(Ruby runtime, RubyClass NameError) {
-            RubyClass Message = NameError.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage::new);
+            RubyClass Message = NameError.defineClassUnder("Message", runtime.getObject(), RubyNameErrorMessage::new);
             NameError.setConstantVisibility(runtime, "Message", true);
             Message.defineAnnotatedMethods(RubyNameErrorMessage.class);
             return Message;

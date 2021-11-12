@@ -56,7 +56,7 @@ public class Addrinfo extends RubyObject {
     public static void createAddrinfo(Ruby runtime) {
         RubyClass addrinfo = runtime.defineClass(
                 "Addrinfo",
-                runtime.getData(),
+                runtime.getObject(),
                 Addrinfo::new);
 
         addrinfo.defineAnnotatedMethods(Addrinfo.class);
