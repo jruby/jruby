@@ -5377,6 +5377,13 @@ float_loop:
         return min(context, block);
     }
 
+    @JRubyMethod
+    public IRubyObject minmax(ThreadContext context, Block block) {
+        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+
+        return RubyArray.newArray(context.runtime, callMethod("min"), callMethod("max"));
+    }
+
     private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b, int token, CachingCallSite op_cmp, CallSite op_gt, CallSite op_lt) {
         if (token == ((RubyBasicObject) a).metaClass.generation) {
             if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
