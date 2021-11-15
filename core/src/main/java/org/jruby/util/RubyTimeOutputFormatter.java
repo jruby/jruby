@@ -32,15 +32,17 @@ import org.jruby.util.RubyDateFormatter.FieldType;
 /**
  * Support for GNU-C output formatters, see: http://www.gnu.org/software/libc/manual/html_node/Formatting-Calendar-Time.html
  */
-public class RubyTimeOutputFormatter {
+public class RubyTimeOutputFormatter extends RubyDateFormatter.Token {
     final ByteList flags;
     final int width;
 
     public final static RubyTimeOutputFormatter DEFAULT_FORMATTER = new RubyTimeOutputFormatter(ByteList.EMPTY_BYTELIST, 0);
 
     public RubyTimeOutputFormatter(ByteList flags, int width) {
+        super(RubyDateFormatter.Format.FORMAT_OUTPUT, null);
         this.flags = flags;
         this.width = width;
+        this.data = this;
     }
 
     public int getWidth(int defaultWidth) {
@@ -76,9 +78,9 @@ public class RubyTimeOutputFormatter {
     }
 
     // FIXME: I think this should not be done with CharSequence but ByteList but I didn't want to mess with it
-    public void format(ByteList out, CharSequence sequence, FieldType type) {
-        int width = getWidth(type.defaultWidth);
-        char padder = getPadder(type.defaultPadder);
+    public void format(ByteList out, CharSequence sequence) {
+        int width = getWidth(0);
+        char padder = getPadder(' ');
 
         for (int i = 0; i < flags.length(); i++) {
             switch (flags.charAt(i)) {
@@ -96,7 +98,7 @@ public class RubyTimeOutputFormatter {
             }
         }
 
-        padding(out, sequence, width, padder);
+        padding(out, sequence.length(), width, padder);
         if (sequence instanceof ByteList) {
             out.append((ByteList) sequence);
         } else {
@@ -104,56 +106,98 @@ public class RubyTimeOutputFormatter {
         }
     }
 
+    static void outputLong(ByteList out, int length, long value) {
+        out.ensure(out.length() + length);
+        if (value < 0) {
+            out.append('-');
+            length -= 1;
+            value = -value;
+        } else if (value == 0) {
+            out.append('0');
+            return;
+        }
+
+        byte[] unsafe = out.unsafeBytes();
+        int begin = out.getBegin() + out.realSize() - 1;
+        for (int i = begin + length; i > begin; i--) {
+            unsafe[i] = (byte) ('0' + (value % 10));
+            value /= 10;
+        }
+        out.setRealSize(out.realSize() + length);
+    }
+
+    private static final int MAX_DIGITS = 19;  // 9,223,372,036,854,775,807
+
+    static int longSize(long number) {
+        return number < 0 ? longSizeInner(-number) + 1 /* for '-' */ : longSizeInner(number);
+    }
+
+    static int longSizeInner(long number) {
+        long largerNumber = 10;
+        for (int digits = 1; digits < MAX_DIGITS; digits++, largerNumber *= 10) {
+            if (number < largerNumber) return digits;
+        }
+
+        return MAX_DIGITS;
+    }
+
+    // FIXME: longSize and width gives us mechanism to combine padding and outputLong
     static void formatNumber(ByteList out, long value, int width, char padder) {
         if (value >= 0 || padder != '0') {
-            String num = Long.toString(value);
-            padding(out, num, width, padder);
-            out.append(num.getBytes());
+            int size = longSize(value);
+            padding(out, size, width, padder);
+            outputLong(out, size, value);
         } else {
-            String num = Long.toString(-value);
-            padding(out, num, width - 1, padder);
+            int size = longSize(-value);
             out.append('-');
-            out.append(num.getBytes());
+            padding(out, size, width-1, padder);
+            outputLong(out, size, -value);
         }
     }
 
     static void formatSignedNumber(ByteList out, long value, long second, int width, char padder) {
         if (padder == '0') {
-            if (value >= 0) {
-                String num = Long.toString(value);
+            if (value == 0) {
                 out.append(value == 0 && second < 0 ? '-' : '+'); // -0 needs to be -0
-                padding(out, num, width - 1, padder);
+                padding(out, 0, width - 1, padder);
+            } else if (value > 0) {
+                String num = Long.toString(value);
+                out.append('+');
+                padding(out, num.length(), width - 1, padder);
                 out.append(num.getBytes());
             } else {
                 String num = Long.toString(-value);
                 out.append('-');
-                padding(out, num, width - 1, padder);
+                padding(out, num.length(), width - 1, padder);
                 out.append(num.getBytes());
             }
         } else {
-            if (value >= 0) {
-                String num = Long.toString(value);
-                padding(out, num, width - 1, padder);
+            String num = Long.toString(value);
+            if (value == 0) {
                 out.append(value == 0 && second < 0 ? '-' : '+'); // -0 needs to be -0
-                out.append(num.getBytes());
+            } else if (value > 0) {
+                padding(out, num.length(), width - 1, padder);
+                out.append('+');
             } else {
-                String num = Long.toString(value);
-                padding(out, num, width, padder);
-                out.append(num.getBytes());
+                padding(out, num.length(), width, padder);
             }
+            out.append(num.getBytes());
         }
     }
 
     private static final int SMALLBUF = 100;
 
     // sequence is assumed to be clean 7bit ASCII
-    private static void padding(ByteList out, CharSequence sequence, final int width, final char padder) {
-        final int len = sequence.length();
+    private static void padding(ByteList out, int len, final int width, final char padder) {
         if (len >= width) return;
 
         if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
 
         // can pre-calc common pads like ' ' or '0'.
         for (int i = len; i < width; i++) out.append(padder);
+    }
+
+    public String toString() {
+        return "RTOF - flags: " + flags + ", width: " + width;
     }
 }

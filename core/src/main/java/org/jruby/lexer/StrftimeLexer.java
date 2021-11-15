@@ -10,12 +10,15 @@
 package org.jruby.lexer;
 
 import org.jruby.util.ByteList;
+import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.RubyDateFormatter.Token;
 import org.jruby.util.RubyTimeOutputFormatter;
 
 import static org.jruby.lexer.LexingCommon.PERCENT;
+import static org.jruby.util.ByteList.EMPTY_BYTELIST;
 
 public class StrftimeLexer {
+  static Token SIX = new Token(RubyDateFormatter.Format.FORMAT_OUTPUT, new RubyTimeOutputFormatter(EMPTY_BYTELIST, 6));
   public char EOF = 0;
 
   private ByteList input;
@@ -43,15 +46,19 @@ public class StrftimeLexer {
       width = widthString;
     }
 
-    return Token.formatter(new RubyTimeOutputFormatter(flags, width));
+    if (flags == EMPTY_BYTELIST) {
+      if (width == 6) return SIX; // %6 is common for logger.
+    }
+
+    return new RubyTimeOutputFormatter(flags, width);
   }
 
   private char current() {
-    return n >= length ? EOF : input.charAt(n); // FIXME: m17n broken
+    return n >= length ? EOF : input.charAt(n);
   }
 
   private char peek() {
-    return n + 1 >= length ? EOF : input.charAt(n + 1); // FIXME: m17n broken.
+    return n + 1 >= length ? EOF : input.charAt(n + 1);
   }
 
   private boolean consume(char c) {
@@ -119,7 +126,7 @@ public class StrftimeLexer {
     } else if ((width = parseWidth()) != null) {
       if ((directive = parseConversion()) != null) {
         next = directive;
-        return formatter(ByteList.EMPTY_BYTELIST, width);
+        return formatter(EMPTY_BYTELIST, width);
       }
     }
 

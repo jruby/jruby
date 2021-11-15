@@ -14,6 +14,7 @@ public class CommonByteLists {
     public static final ByteList COLON_COLON = new ByteList(new byte[] {':', ':'});
     public static final ByteList CONSTANTS = new ByteList(new byte[] {'c', 'o', 'n', 's', 't', 'a', 'n', 't', 's'});
     public static final ByteList DASH = new ByteList(new byte[] {'-'});
+    public static final ByteList DOT = new ByteList(new byte[] {'.'});
     public static final ByteList DEFINE_METHOD_METHOD = new ByteList(new byte[] {'d', 'e', 'f', 'i', 'n', 'e', '_', 'm', 'e', 't', 'h', 'o', 'd'});
     public static final ByteList DOLLAR_SLASH = new ByteList(new byte[] {'$', '/'});
     public static final ByteList DOLLAR_BACKSLASH = new ByteList(new byte[] {'$', '\\'});
@@ -32,6 +33,7 @@ public class CommonByteLists {
     public static final ByteList PERCENT_PLUS = new ByteList(new byte[] {'%', '+'});
     public static final ByteList PERCENT_Q = new ByteList(new byte[] {'%', 'Q'});
     public static final ByteList SINGLE_QUOTE = new ByteList(new byte[] {'\''});
+    public static final ByteList SLASH = new ByteList(new byte[] {'/'});
     public static final ByteList STAR = new ByteList(new byte[] {'*'});
     public static final ByteList TAB = new ByteList(new byte[] {'\t'});
     public static final ByteList UNDERSCORE = new ByteList(new byte[] {'_'});

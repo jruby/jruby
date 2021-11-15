@@ -46,9 +46,9 @@ public class RubyTimeOutputFormatterTest extends TestCase {
         return new RubyTimeOutputFormatter(flags, width);
     }
 
-    private String format(RubyTimeOutputFormatter formatter, CharSequence sequence, FieldType type) {
+    private String format(RubyTimeOutputFormatter formatter, CharSequence sequence) {
         ByteList out = new ByteList();
-        formatter.format(out, sequence, type);
+        formatter.format(out, sequence);
         return out.toString();
     }
 
@@ -60,47 +60,47 @@ public class RubyTimeOutputFormatterTest extends TestCase {
 
     public void testFormatUpperCase() {
         RubyTimeOutputFormatter formatter = getFormatter(CARET, 0);
-        assertEquals("UP", format(formatter, "up", FieldType.TEXT));
+        assertEquals("UP", format(formatter, "up"));
     }
 
     public void testFormatPaddingBlank() {
         RubyTimeOutputFormatter formatter = getFormatter(UNDERSCORE, 5);
-        assertEquals("   up", format(formatter, "up", FieldType.TEXT));
+        assertEquals("   up", format(formatter, "up"));
     }
 
     public void testFormatPaddingZeros() {
         RubyTimeOutputFormatter formatter = getFormatter(ZERO, 5);
-        assertEquals("000up", format(formatter, "up", FieldType.TEXT));
+        assertEquals("000up", format(formatter, "up"));
     }
 
     public void testFormatNoPadding() {
         RubyTimeOutputFormatter formatter = getFormatter(DASH, 5);
-        assertEquals("up", format(formatter, "up", FieldType.TEXT));
+        assertEquals("up", format(formatter, "up"));
     }
 
     public void testFormatPaddingBlankAndUpperCase() {
         RubyTimeOutputFormatter formatter = getFormatter(CARET_UNDERSCORE, 5);
-        assertEquals("   UP", format(formatter, "up", FieldType.TEXT));
+        assertEquals("   UP", format(formatter, "up"));
     }
 
     public void testPaddingWithoutFormat() {
         RubyTimeOutputFormatter formatter = getFormatter(ByteList.EMPTY_BYTELIST, 5);
-        assertEquals("   up", format(formatter, "up", FieldType.TEXT));
+        assertEquals("   up", format(formatter, "up"));
     }
 
     public void testPaddingZeroFirstOption() {
         RubyTimeOutputFormatter formatter = getFormatter(ZERO_UNDERSCORE, 5);
-        assertEquals("   up", format(formatter, "up", FieldType.TEXT));
+        assertEquals("   up", format(formatter, "up"));
     }
 
     public void testPaddingBlankFirstOption() {
         RubyTimeOutputFormatter formatter = getFormatter(UNDERSCORE_ZERO, 5);
-        assertEquals("000up", format(formatter, "up", FieldType.TEXT));
+        assertEquals("000up", format(formatter, "up"));
     }
 
     public void testPaddingWithUpperCase() {
         RubyTimeOutputFormatter formatter = getFormatter(CARET, 5);
-        assertEquals("   UP", format(formatter, "up", FieldType.TEXT));
+        assertEquals("   UP", format(formatter, "up"));
     }
 
     public void testFormatNoPaddingForBlankPaddedNumericValues() {
