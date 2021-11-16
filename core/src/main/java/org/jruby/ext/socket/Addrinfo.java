@@ -177,7 +177,7 @@ public class Addrinfo extends RubyObject {
             if (_sockaddrAry != context.nil) {
                 RubyArray sockaddAry = (RubyArray)_sockaddrAry;
 
-                family = sockaddAry.eltOk(0).convertToString();
+                family = sockaddAry.entry(0).convertToString();
                 AddressFamily af = SocketUtils.addressFamilyFromArg(family);
                 ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(family);
 
@@ -195,15 +195,17 @@ public class Addrinfo extends RubyObject {
                                 || af == AF_INET6 || pf == PF_INET6  /* ["AF_INET6", 42304, "ip6-localhost", "::1"] */
                         ) {
 
-                    IRubyObject service = sockaddAry.eltOk(1).convertToInteger();
-                    IRubyObject nodename = sockaddAry.eltOk(2);
-                    IRubyObject numericnode = sockaddAry.eltOk(3);
-
-                    InetAddress inetAddress = null;
+                    IRubyObject service = sockaddAry.entry(1).convertToInteger();
+                    IRubyObject nodename = sockaddAry.entry(2);
+                    String numericnode = sockaddAry.entry(3).convertToString().toString();
                     int _port = service.convertToInteger().getIntValue();
 
-                    if (!nodename.isNil()) inetAddress = getRubyInetAddress(nodename);
-                    if (inetAddress == null) inetAddress = getRubyInetAddress(numericnode);
+                    InetAddress inetAddress;
+                    if (!nodename.isNil()) {
+                        inetAddress = getRubyInetAddress(nodename.convertToString().toString(), numericnode);
+                    } else {
+                        inetAddress = getRubyInetAddress(numericnode);
+                    }
 
                     this.socketAddress = new InetSocketAddress(inetAddress, _port);
                     this.pfamily = pf;
@@ -710,6 +712,22 @@ public class Addrinfo extends RubyObject {
                 return SocketUtils.getRubyInetAddress(bytes);
             }
             return SocketUtils.getRubyInetAddress(node.convertToString().toString());
+        } catch (UnknownHostException uhe) {
+            return null;
+        }
+    }
+
+    private static InetAddress getRubyInetAddress(String node) {
+        try {
+            return SocketUtils.getRubyInetAddress(node);
+        } catch (UnknownHostException uhe) {
+            return null;
+        }
+    }
+
+    private static InetAddress getRubyInetAddress(String hostname, String node) {
+        try {
+            return SocketUtils.getRubyInetAddress(hostname, node);
         } catch (UnknownHostException uhe) {
             return null;
         }
