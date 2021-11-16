@@ -108,7 +108,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     sleep 2
 
     # This should delete the /glob_target and /glob_target/bar.txt entries
-    `zip -d #{jar_path} glob_target/bar.txt`
+    `jar uf #{jar_path} glob_target/bar.txt`
 
     puts File.mtime(jar_path)
 
