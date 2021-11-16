@@ -113,7 +113,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     puts File.mtime(jar_path)
 
     # Explicitly touch the file in case mtime and zip don't agree
-    `touch #{jar_path}`
+    FileUtils.touch jar_path
 
     after = Dir.glob("#{jar_path}!/**/*").size
 
@@ -179,14 +179,14 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
     FileUtils.mkpath("jruby-4396/top/builtin/B")
     FileUtils.mkpath("jruby-4396/top/builtin/C")
     FileUtils.mkpath("jruby-4396/top/dir2/dir2a")
-    `touch            jruby-4396/top/dir2/dir2a/1`
-    `touch            jruby-4396/top/dir2/dir2a/2`
-    `touch            jruby-4396/top/dir2/dir2a/3`
+    FileUtils.touch("jruby-4396/top/dir2/dir2a/1")
+    FileUtils.touch("jruby-4396/top/dir2/dir2a/2")
+    FileUtils.touch("jruby-4396/top/dir2/dir2a/3")
     FileUtils.mkpath("jruby-4396/top/dir2/dir2b")
-    `touch            jruby-4396/top/dir2/dir2b/4`
-    `touch            jruby-4396/top/dir2/dir2b/5`
+    FileUtils.touch("jruby-4396/top/dir2/dir2b/4")
+    FileUtils.touch("jruby-4396/top/dir2/dir2b/5")
     FileUtils.mkpath("jruby-4396/top/dir2/dir2c")
-    `touch            jruby-4396/top/dir2/dir2c/6`
+    FileUtils.touch("jruby-4396/top/dir2/dir2c/6")
     FileUtils.cd('jruby-4396') { `jar -cvf top.jar top` }
   end
 
