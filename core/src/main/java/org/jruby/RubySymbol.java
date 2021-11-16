@@ -1482,12 +1482,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         private final CallSite site;
 
         public SymbolProcBody(Ruby runtime, String symbol) {
-            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.ONE_REQUIRED);
+            super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
             this.site = MethodIndex.getFunctionalCallSite(symbol);
         }
 
         public SymbolProcBody(Ruby runtime, String symbol, StaticScope scope) {
-            super(scope, Signature.ONE_REQUIRED);
+            super(scope, Signature.OPTIONAL);
             this.site = new RefinedCachingCallSite(symbol, scope, CallType.FUNCTIONAL);
         }
 
