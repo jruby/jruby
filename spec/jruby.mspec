@@ -89,8 +89,8 @@ class MSpecScript
 
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
 
-  if (ENV["TRAVIS"] == "true")
-    get(:ci_xtags) << "travis" # Failing only on Travis
+  unless $stdin.tty?
+    get(:ci_xtags) << "tty" # Specs that require a tty and may fail in CI environments
   end
 
   get(:ci_xtags) << HOST_OS
