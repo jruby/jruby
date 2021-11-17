@@ -6,7 +6,7 @@
 # See #4122.
 describe "#4122 Stdio streams in a simple non-native JRuby instance" do
   it "should have sane fileno" do
-    output = `jruby -Xnative.enabled=false -e 'p [$stdin.fileno,$stdout.fileno,$stderr.fileno]'`
+    output = `jruby -Xnative.enabled=false -e 'p [$stdin.fileno,$stdout.fileno,$stderr.fileno]' 2>& 1`
     filenos = eval output
     unless Array === filenos && filenos.size = 3
       fail "non-native JRuby launch failed with output:\n" + output
