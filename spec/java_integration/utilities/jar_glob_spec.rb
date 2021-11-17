@@ -19,14 +19,14 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     begin
       FileUtils.rm_rf 'glob_test'
     rescue Errno::ENOENT; end
-    
+
     FileUtils.mkdir_p 'glob_target'
     File.open('glob_target/bar.txt', 'w') {|file| file << 'Some text.'}
     `jar -cf glob-test.jar glob_target/bar.txt`
     FileUtils.mkdir_p 'glob_test'
     FileUtils.cp "glob-test.jar", 'glob_test/'
   end
-  
+
   after :all do
     FileUtils.rm    'glob_target/bar.txt',     :force => true
     FileUtils.rmdir 'glob_target'
@@ -39,7 +39,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     end
     FileUtils.rmdir 'glob_test'
   end
-  
+
   it "finds the contents inside a jar with Dir.[] in a dir inside the jar" do
     FileUtils.cd('glob_test') do
       expect(Dir["file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/glob_target/**/*"]).to have_jar_entries([
@@ -47,7 +47,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
       ])
     end
   end
-  
+
   it "finds the contents inside a jar with Dir.glob in a dir inside the jar" do
     FileUtils.cd('glob_test') do
       expect(Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/glob_target/**/*")).to have_jar_entries([
@@ -66,7 +66,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
       ])
     end
   end
-    
+
   it "finds the contents inside a jar with Dir.glob at the root of the jar" do
     FileUtils.cd('glob_test') do
       expect(Dir.glob("file:#{File.expand_path(Dir.pwd)}/glob-test.jar!/**/*")).to have_jar_entries([
@@ -108,7 +108,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     sleep 2
 
     # This should delete the /glob_target and /glob_target/bar.txt entries
-    `jar uf #{jar_path} glob_target/bar.txt`
+    `zip -d #{jar_path} glob_target/bar.txt`
 
     puts File.mtime(jar_path)
 
@@ -201,9 +201,8 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
   end
 
   it "iterates over directories when there are more than one magic modifier" do
-    FileUtils.cd('jruby-4396') do      
+    FileUtils.cd('jruby-4396') do
       Dir.glob("file:#{File.expand_path(Dir.pwd)}/top.jar!top/dir2/**/*/**").size.should == 6
     end
   end
 end
-
