@@ -296,8 +296,9 @@ public class SprintfParser {
 
         encoding = buf.getEncoding();
 
-        if (arg instanceof RubyString) {
-            final RubyString rs = ((RubyString) arg);
+        IRubyObject tmp = arg.checkStringType();
+        if (!tmp.isNil()) {
+            final RubyString rs = ((RubyString) tmp);
             ByteList bl = rs.getByteList();
             if (rs.strLength() != 1) {
                 throw context.runtime.newArgumentError("%c requires a character");

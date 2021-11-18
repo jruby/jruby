@@ -23,3 +23,4 @@ fails:String#% flags * raises ArgumentError when is mixed with width
 fails:String#% width specifies the minimum number of characters that will be written to the result
 fails:String#% precision float types controls the number of decimal places displayed in fraction part
 fails:String#% reference by name %{name} style supports flags, width and precision
+fails:String#% taints result for %p when argument.inspect is tainted
