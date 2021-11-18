@@ -282,6 +282,8 @@ jobs:
         run: bin/jruby -S bundle install
       - name: rake spec:ruby:slow
         run: bin/jruby -S rake spec:ruby:slow
+      - name: rake spec:ruby:debug
+        run: bin/jruby -S rake spec:ruby:debug
 
   test-versions:
     runs-on: ubuntu-latest

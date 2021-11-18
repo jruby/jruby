@@ -46,12 +46,14 @@ class MSpecScript
       SPEC_DIR + '/core/kernel/at_exit_spec.rb',
       SPEC_DIR + '/language/predefined_spec.rb',
       SPEC_DIR + '/language/predefined/data_spec.rb',
-      SPEC_DIR + '/language/magic_comment_spec.rb',
       SPEC_DIR + '/library/net/http',
-      # This requires --debug which slows down or changes other spec results
-      SPEC_DIR + '/core/tracepoint',
       *get(:command_line),
       *get(:security),
+  ]
+
+  # Specs that require JRuby's --debug flag, which alters some behaviors
+  debug_specs = [
+    SPEC_DIR + '/core/tracepoint'
   ]
 
   set :fast, [
@@ -61,9 +63,11 @@ class MSpecScript
 
       # These all spawn sub-rubies, making them very slow to run
       *slow_specs.map {|name| '^' + name},
+      *debug_specs.map {|name| '^' + name},
   ]
 
   set :slow, slow_specs
+  set :debug, debug_specs
 
   # Filter out ObjectSpace specs if ObjectSpace is disabled
   unless JRuby.objectspace
