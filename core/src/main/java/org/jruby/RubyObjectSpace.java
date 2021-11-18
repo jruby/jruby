@@ -216,13 +216,6 @@ public class RubyObjectSpace {
         public IRubyObject op_aref(ThreadContext context, IRubyObject key, IRubyObject value) {
             Ruby runtime = context.runtime;
 
-            if (key.isImmediate() || value.isImmediate()) {
-                throw runtime.newArgumentError("cannot store immediate values in WeakMap");
-            }
-            if (key.isFrozen() || value.isFrozen()) {
-                throw runtime.newFrozenError("cannot store frozen values in WeakMap");
-            }
-
             map.put(key, value);
 
             return runtime.newFixnum(System.identityHashCode(value));
