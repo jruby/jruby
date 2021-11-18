@@ -118,12 +118,14 @@ class Rake::Ant
   end
 end
 
-def hide_ant_from_path
-  env=[]
-  ENV['PATH'].split(File::PATH_SEPARATOR).each do |dir|
-    if ! File.executable?(File.join(dir, 'ant'))
-      env << dir
-    end
-  end
-  ENV['PATH'] = env.join(File::PATH_SEPARATOR)
+def with_hidden_ant_path
+  original_env_path = ENV['PATH']
+  hidden_path = ENV['PATH'].split(File::PATH_SEPARATOR).reject { |dir|
+    File.executable?(File.join(dir, 'ant'))
+  }.join(File::PATH_SEPARATOR)
+  ENV['PATH'] = hidden_path
+
+  yield
+ensure
+  ENV['PATH'] = original_env_path
 end

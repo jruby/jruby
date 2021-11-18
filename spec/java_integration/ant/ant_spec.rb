@@ -137,9 +137,10 @@ end
 describe Ant, '.ant' do
   it "prefers $ANT_HOME to $PATH" do
     if ENV['ANT_HOME']
-      hide_ant_from_path
-      expect { Ant.ant(:basedir => File.join(File.dirname(__FILE__), '..', '..', '..')) }.
+      with_hidden_ant_path do
+        expect { Ant.ant(:basedir => File.join(File.dirname(__FILE__), '..', '..', '..')) }.
         to_not raise_error
+      end
     else
       skip '$ANT_HOME is not set'
     end

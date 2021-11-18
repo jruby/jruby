@@ -105,9 +105,9 @@ public class Sockaddr {
     }
 
     public static UnixSocketAddress addressFromSockaddr_un(ThreadContext context, ByteList bl) {
-        String pathStr = pathFromSockaddr_un(context, bl.bytes());
+        RubyString pathStr = pathFromSockaddr_un(context, bl.bytes());
 
-        return new UnixSocketAddress(new File(pathStr));
+        return new UnixSocketAddress(new File(pathStr.toString()));
     }
 
     public static IRubyObject packSockaddrFromAddress(ThreadContext context, InetSocketAddress sock) {
@@ -306,8 +306,7 @@ public class Sockaddr {
             throw runtime.newArgumentError("not an AF_UNIX sockaddr");
         }
 
-        String filename = pathFromSockaddr_un(context, val.bytes());
-        return context.runtime.newString(filename);
+        return pathFromSockaddr_un(context, val.bytes());
     }
 
     public static void writeSockaddrHeader(AddressFamily family, DataOutputStream ds) throws IOException {
@@ -377,13 +376,13 @@ public class Sockaddr {
         return ((high & 0xFF) << 8) + (low & 0xFF);
     }
 
-    private static String pathFromSockaddr_un(ThreadContext context, byte[] raw) {
+    private static RubyString pathFromSockaddr_un(ThreadContext context, byte[] raw) {
         int end = 2;
         for (; end < raw.length; end++) {
             if (raw[end] == 0) break;
         }
 
-        return new String(raw, 2, (end - 2));
+        return RubyString.newString(context.runtime, raw, 2, (end - 2));
     }
 
     // sizeof(sockaddr_un) on Linux

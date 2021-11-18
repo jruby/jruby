@@ -49,6 +49,17 @@ describe :dir_glob, shared: true do
       result.should == result.sort
     end
 
+    it "result is sorted with any non false value of sort:" do
+      result = Dir.send(@method, '*', sort: 0)
+      result.should == result.sort
+
+      result = Dir.send(@method, '*', sort: nil)
+      result.should == result.sort
+
+      result = Dir.send(@method, '*', sort: 'false')
+      result.should == result.sort
+    end
+
     it "sort: false returns same files" do
       result = Dir.send(@method,'*', sort: false)
       result.sort.should == Dir.send(@method, '*').sort

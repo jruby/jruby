@@ -194,7 +194,7 @@ mvn -Pdist -Dinvoker.skip=false
 
 #### Just Like CI
 
-JRuby runs CI tests on TravisCI. See [.travis.yml](https://github.com/jruby/jruby/blob/master/.travis.yml).
+JRuby runs CI tests on GitHub CI. See [.github/workflows](https://github.com/jruby/jruby/blob/master/.github/workflows).
 
 #### Maven integration tests - -Pjruby-complete or -Pmain
 
