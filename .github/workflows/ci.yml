@@ -676,7 +676,6 @@ jobs:
 
     env:
       JRUBY_OPTS: '-J-Xmx1G'
-      PATH="`pwd`/bin:$PATH"
 
     steps:
       - name: checkout
@@ -704,7 +703,6 @@ jobs:
 
     env:
       JRUBY_OPTS: '-Xjit.threshold=0 -J-Xmx1G'
-      PATH="`pwd`/bin:$PATH"
 
     steps:
       - name: checkout
