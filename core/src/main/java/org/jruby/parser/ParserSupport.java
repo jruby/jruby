@@ -70,6 +70,7 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.lexer.LexingCommon.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
+import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
