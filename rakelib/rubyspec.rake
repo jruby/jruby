@@ -40,7 +40,15 @@ namespace :spec do
     mspec :compile_mode => "OFF",
           :format => "s",
           :spec_target => ":slow",
-          :jruby_opts => "--dev --debug"
+          :jruby_opts => "--dev"
+  end
+
+  desc "Run debug specs"
+  task :'ruby:debug' do
+    mspec :compile_mode => "OFF",
+          :format => "s",
+          :spec_target => ":debug",
+          :jruby_opts => "--debug"
   end
 
   desc "Run rubyspecs expected to pass"
