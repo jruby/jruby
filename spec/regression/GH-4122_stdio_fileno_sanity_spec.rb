@@ -9,7 +9,7 @@ describe "#4122 Stdio streams in a simple non-native JRuby instance" do
     jruby_path = File.join(ENV_JAVA['jruby.home'], "bin", "jruby")
     output = `#{jruby_path} -Xnative.enabled=false -e 'p [$stdin.fileno,$stdout.fileno,$stderr.fileno]' 2>& 1`
     filenos = eval output
-    unless Array === filenos && filenos.size = 3
+    unless Array === filenos && filenos.size == 3
       fail "non-native JRuby launch failed with output:\n" + output
     end
     expect(filenos[0]).to eq 0
