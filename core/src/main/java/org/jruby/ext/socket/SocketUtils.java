@@ -467,6 +467,15 @@ public class SocketUtils {
         }
     }
 
+    public static InetAddress getRubyInetAddress(String host, String node) throws UnknownHostException {
+        InetAddress specialAddress = specialAddress(host);
+        if (specialAddress != null) {
+            return specialAddress;
+        } else {
+            return InetAddress.getByAddress(host, InetAddress.getByName(node).getAddress());
+        }
+    }
+
     public static InetAddress getRubyInetAddress(byte[] addressBytes) throws UnknownHostException {
         return InetAddress.getByAddress(addressBytes);
     }
