@@ -124,6 +124,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>debug</artifactId>
+      <version>0.2.1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>delegate</artifactId>
       <version>0.2.0</version>
       <type>gem</type>
@@ -761,6 +774,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/bundler-2.2.29*</include>
           <include>specifications/cgi-0.2.0*</include>
           <include>specifications/csv-3.1.9*</include>
+          <include>specifications/debug-0.2.1*</include>
           <include>specifications/delegate-0.2.0*</include>
           <include>specifications/did_you_mean-1.5.0*</include>
           <include>specifications/digest-3.1.0.pre2*</include>
@@ -815,6 +829,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/bundler-2.2.29*/**/*</include>
           <include>gems/cgi-0.2.0*/**/*</include>
           <include>gems/csv-3.1.9*/**/*</include>
+          <include>gems/debug-0.2.1*/**/*</include>
           <include>gems/delegate-0.2.0*/**/*</include>
           <include>gems/did_you_mean-1.5.0*/**/*</include>
           <include>gems/digest-3.1.0.pre2*/**/*</include>
@@ -869,6 +884,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/bundler-2.2.29*</include>
           <include>cache/cgi-0.2.0*</include>
           <include>cache/csv-3.1.9*</include>
+          <include>cache/debug-0.2.1*</include>
           <include>cache/delegate-0.2.0*</include>
           <include>cache/did_you_mean-1.5.0*</include>
           <include>cache/digest-3.1.0.pre2*</include>

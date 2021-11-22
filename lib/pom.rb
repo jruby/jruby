@@ -24,6 +24,7 @@ default_gems = [
     ['bundler', '2.2.29'],
     ['cgi', '0.2.0'],
     ['csv', '3.1.9'],
+    ['debug', '0.2.1'],
     ['delegate', '0.2.0'],
     ['did_you_mean', '1.5.0'],
     ['digest', '3.1.0.pre2'], 
