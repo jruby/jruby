@@ -1283,6 +1283,107 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return subseq(getRuntime().getArray(), beg, len, true);
     }
 
+    /** rb_ary_subseq_step
+     *
+     */
+    public IRubyObject subseq_step(RubyArithmeticSequence arg0) {
+        long beg, len, step, end;
+
+        step = getStep(arg0);
+        IRubyObject aseqBeg = getBegin(arg0);
+        IRubyObject aseqEnd = getEnd(arg0);
+        boolean aseqExcl = arg0.exclude_end(getRuntime().getCurrentContext()).isTrue();
+        len = realLength;
+
+        if (step < 0) {
+            IRubyObject tmp = aseqBeg;
+            aseqBeg = aseqEnd;
+            aseqEnd = tmp;
+        }
+
+        if (aseqBeg.isNil()) {
+            beg = 0;
+        } else {
+            beg = aseqBeg.convertToFloat().getLongValue();
+        }
+
+        if (aseqEnd.isNil()) {
+            end = -1;
+        } else {
+            end = aseqEnd.convertToFloat().getLongValue();
+        }
+        if (aseqEnd.isNil()) {  aseqExcl = false; }
+
+        if (beg < 0) {
+            beg += len;
+            if (beg < 0) {
+                throw getRuntime().newRangeError("integer " + beg + " out of range of fixnum");
+            }
+        }
+        if (end < 0) {  end += len; }
+
+        if (!aseqExcl) {  end++; }
+
+        len = end - beg;
+
+        if (len < 0) {  len = 0;  }
+
+        long alen = realLength;
+        if (beg > alen)  return getRuntime().getCurrentContext().nil;
+        if (beg < 0 || len < 0) return getRuntime().getCurrentContext().nil;
+
+        if (alen < len || alen < beg + len) {
+            len = alen - beg;
+        }
+
+        if (len == 0) {
+            return newArray(metaClass.runtime, 0);
+        }
+
+        if (step == 0) {
+            throw getRuntime().newRangeError("slice step cannot be zero");
+        }
+
+        if (step == 1) {
+            return subseq(beg, len);
+        }
+
+        long orig_len = len;
+        if ((step > 0 && step >= len) || (step < 0 && (step < -len))) {
+            RubyArray result = newArray(metaClass.runtime, 1);
+            result.append(this.values[(int) beg]);
+        }
+
+        long ustep = (step < 0) ? -step : step;
+        len = (len + ustep - 1) / ustep;
+
+        long j = beg + ((step > 0) ? 0 : (orig_len - 1));
+        RubyArray result = newArray(metaClass.runtime, len);
+
+        for(long i =0; i < len; ++i) {
+            result.append(this.values[(int) j]);
+            j = j + step;
+        }
+
+        return result;
+    }
+
+    private IRubyObject getBegin(RubyArithmeticSequence arg0) {
+      return arg0.begin(getRuntime().getCurrentContext());
+    }
+
+    private IRubyObject getEnd(RubyArithmeticSequence arg0) {
+        return arg0.end(getRuntime().getCurrentContext());
+    }
+
+    private Long getStep(RubyArithmeticSequence arg0) {
+        if(!arg0.step(getRuntime().getCurrentContext()).isNil()){
+            return arg0.step(getRuntime().getCurrentContext()).convertToInteger().getLongValue();
+        }
+
+        return null;
+    }
+
     /** rb_ary_subseq
      *
      */
@@ -1539,7 +1640,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject aref(IRubyObject arg0) {
-        return arg0 instanceof RubyFixnum ? entry(((RubyFixnum) arg0).value) : arefCommon(arg0);
+        if(arg0 instanceof RubyArithmeticSequence) {
+            return subseq_step((RubyArithmeticSequence) arg0);
+        }else {
+            return arg0 instanceof RubyFixnum ? entry(((RubyFixnum) arg0).value) : arefCommon(arg0);
+        }
     }
 
     @Deprecated
