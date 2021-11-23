@@ -6,7 +6,6 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
@@ -338,7 +337,7 @@ public class SprintfParser {
         boolean negative;
         byte[] bytes;
 
-        if (width < 0) { // Negative widths pad from the right.
+        if (width < 0) { // if '*' width from argument and negative vs determined by explicit width in format string.
             width *= -1;
             rightPad = true;
         }
@@ -445,7 +444,7 @@ public class SprintfParser {
         boolean plusPrefix;     // '%+d' (FLAG_PLUS in MRI)
         boolean rightPad;       // (FLAG_MINUS in MRI)
         boolean hexZero;        // (FLAG_SHARP in MRI)
-        boolean zeroPad;
+        boolean zeroPad;        // (FLAG_ZERO in MRI)
         int format;
         boolean hasWidth;          // width part expressed as syntax '%3d', '%*3d', '%3.1d' ...
         boolean hasPrecision;      // precision part expressed as syntax '%.3d', '%3.1d', '%3.*1$d' ...
@@ -865,6 +864,11 @@ public class SprintfParser {
                     case '1': case '2': case '3': case '4': case '5':  // numbers representing specific field values '%3d'
                     case '6': case '7': case '8': case '9':            // OR indices '%*1$2$d'
                         token.width = processDigits(true, false);
+
+                        if (token.width < 0) {
+                            token.width *= -1;
+                            token.rightPad = true;
+                        }
 
                         if (current != '$') unread();
                         break;
