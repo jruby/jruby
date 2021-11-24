@@ -245,7 +245,7 @@ public class RubyDir extends RubyObject implements Closeable {
                 if (!aref && rets[2] != null) options.flags |= RubyNumeric.num2int(rets[2]);
 
                 if (rets[1] != null) {
-                    options.sort = rets[1].isTrue();
+                    options.sort = !runtime.getFalse().equals(rets[1]); // weirdly only explicit false is honored for sort.
                 }
 
                 if (rets[0] == null || rets[0].isNil()) {
