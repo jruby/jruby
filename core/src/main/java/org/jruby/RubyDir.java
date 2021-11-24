@@ -239,9 +239,9 @@ public class RubyDir extends RubyObject implements Closeable {
             } else {
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
 
-                if (!aref && rets[2] != null) {
-                    options.flags = RubyNumeric.num2int(rets[2]);
-                }
+                if (args.length == 3) options.flags = RubyNumeric.num2int(args[1]);
+                if (!aref && rets[2] != null) options.flags |= RubyNumeric.num2int(rets[2]);
+                
                 if (rets[1] != null) {
                     options.sort = rets[1].isTrue();
                 }

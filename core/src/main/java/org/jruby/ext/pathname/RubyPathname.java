@@ -303,7 +303,7 @@ public class RubyPathname extends RubyObject {
         return newInstance(context, context.runtime.getDir().callMethod("getwd"));
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 2, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args,
             Block block) {
         // TODO: yield block while iterating
