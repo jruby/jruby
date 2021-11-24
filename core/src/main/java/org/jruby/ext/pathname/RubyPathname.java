@@ -137,6 +137,8 @@ public class RubyPathname extends RubyObject {
     public static class PathnameKernelMethods {
         @JRubyMethod(name = "Pathname", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject newPathname(IRubyObject recv, IRubyObject path) {
+            if (path instanceof RubyPathname) return path;
+
             return RubyPathname.newInstance(recv.getRuntime().getCurrentContext(), path);
         }
     }
