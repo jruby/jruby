@@ -63,6 +63,7 @@ import org.jruby.util.*;
 import org.jruby.ast.util.ArgsUtil;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
@@ -241,7 +242,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
                 if (args.length == 3) options.flags = RubyNumeric.num2int(args[1]);
                 if (!aref && rets[2] != null) options.flags |= RubyNumeric.num2int(rets[2]);
-                
+
                 if (rets[1] != null) {
                     options.sort = rets[1].isTrue();
                 }
@@ -295,13 +296,11 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static ByteList globArgumentAsByteList(ThreadContext context, IRubyObject arg) {
-        RubyString checked = StringSupport.strNullCheck(arg);
+        if (!(arg instanceof RubyString) && arg.respondsTo("to_path")) arg = arg.callMethod(context, "to_path");
 
-        if (checked == null) {
-            throw context.runtime.newArgumentError("nul-separated glob pattern is unsupported");
-        }
+        RubyString checked = StringSupport.checkEmbeddedNulls(context.runtime, arg, "nul-separated glob pattern is unsupported");
 
-        return RubyFile.get_path(context, checked).getByteList();
+        return filePathConvert(context, checked).getByteList();
     }
 
     /**

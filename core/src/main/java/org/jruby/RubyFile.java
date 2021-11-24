@@ -1492,7 +1492,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.
     // mri: file_path_convert
-    private static RubyString filePathConvert(ThreadContext context, RubyString path) {
+    protected static RubyString filePathConvert(ThreadContext context, RubyString path) {
         StringSupport.checkEmbeddedNulls(context.runtime, path.convertToString());
 
         if (!Platform.IS_WINDOWS) {

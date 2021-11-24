@@ -870,15 +870,17 @@ public final class StringSupport {
         return -1;
     }
 
-    // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
-    public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
+    public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr, String errorMessage) {
         RubyString checked = strNullCheck(ptr);
 
-        if (checked == null) {
-            throw runtime.newArgumentError("string contains null char");
-        }
+        if (checked == null) throw runtime.newArgumentError(errorMessage);
 
         return checked;
+    }
+
+    // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
+    public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
+        return checkEmbeddedNulls(runtime, ptr, "string contains null char");
     }
 
     // MRI: str_null_check without trailing null check (JVM arrays do not null terminate)
