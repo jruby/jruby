@@ -63,6 +63,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
+import org.jruby.util.Sprintf;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.time.TimeArgs;
 
@@ -70,6 +71,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.text.NumberFormat;
 import java.time.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -106,6 +108,8 @@ public class RubyTime extends RubyObject {
     private final static DateTimeFormatter ONE_DAY_CTIME_FORMATTER = DateTimeFormat.forPattern("EEE MMM  d HH:mm:ss yyyy").withLocale(Locale.ENGLISH);
     private final static DateTimeFormatter TWO_DAY_CTIME_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss yyyy").withLocale(Locale.ENGLISH);
 
+    private final static DateTimeFormatter INSPECT_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.ENGLISH);
+    private final static DateTimeFormatter TZ_FORMATTER = DateTimeFormat.forPattern(" Z").withLocale(Locale.ENGLISH);
     private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss Z").withLocale(Locale.ENGLISH);
     private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withLocale(Locale.ENGLISH);
     // There are two different popular TZ formats: legacy (AST+3:00:00, GMT-3), and
@@ -599,7 +603,7 @@ public class RubyTime extends RubyObject {
     }
 
     public boolean isUTC() {
-        return !isTzRelative && dt.getZone().getID().equals("UTC");
+        return !isTzRelative && dt.getZone() == DateTimeZone.UTC;
     }
 
     @JRubyMethod(name = {"getgm", "getutc"})
@@ -661,7 +665,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(required = 1)
     public RubyString strftime(ThreadContext context, IRubyObject format) {
         final RubyDateFormatter rdf = context.getRubyDateFormatter();
-        return rdf.compileAndFormat(format.convertToString(), false, dt, nsec, null);
+        return rdf.compileAndFormat(format.convertToString().getByteList(), false, dt, nsec, null);
     }
 
     @JRubyMethod(name = "==", required = 1)
@@ -872,40 +876,56 @@ public class RubyTime extends RubyObject {
     }
 
     @Override
-    @JRubyMethod(name = {"to_s", "inspect"})
+    @JRubyMethod
     public IRubyObject to_s() {
-        final String str = inspectCommon(TO_S_FORMATTER, TO_S_UTC_FORMATTER);
-        return RubyString.newString(getRuntime(), str, USASCIIEncoding.INSTANCE);
+        DateTimeFormatter simpleDateFormat = isUTC() ? TO_S_UTC_FORMATTER : TO_S_FORMATTER;
+
+        return RubyString.newString(getRuntime(), simpleDateFormat.print(getInspectDateTime()), USASCIIEncoding.INSTANCE);
     }
 
+    @JRubyMethod
+    public IRubyObject inspect() {
+        DateTime dtz = getInspectDateTime();
+        StringBuilder builder = new StringBuilder(INSPECT_FORMATTER.print(dtz));
+        long nanos = getNanos();
+
+        if (nanos != 0) {
+            ByteList buf = new ByteList(9);
+            Sprintf.sprintf(buf, ".%09d", getRuntime().newFixnum(nanos));
+
+            // Remove trailing zeroes
+            int len = buf.realSize();
+            while (buf.charAt(len - 1) == '0' && len > 0) {
+                len--;
+            }
+            buf.setRealSize(len);
+            builder.append(buf);
+        }
+
+        builder.append(isUTC() ? " UTC" : TZ_FORMATTER.print(dtz));
+
+        return RubyString.newString(getRuntime(), builder.toString(), USASCIIEncoding.INSTANCE);
+    }
+
+    @Deprecated
     public final IRubyObject to_s19() {
         return to_s();
     }
 
-    private String inspectCommon(final DateTimeFormatter formatter, final DateTimeFormatter utcFormatter) {
-        DateTimeFormatter simpleDateFormat;
-        if (dt.getZone() == DateTimeZone.UTC && !isTzRelative) {
-            simpleDateFormat = utcFormatter;
-        } else {
-            simpleDateFormat = formatter;
-        }
-
+    private DateTime getInspectDateTime() {
         if (isTzRelative) {
             // display format needs to invert the UTC offset if this object was
             // created with a specific offset in the 7-arg form of #new
-            DateTimeZone dtz = dt.getZone();
-            int offset = dtz.toTimeZone().getOffset(dt.getMillis());
-            DateTimeZone invertedDTZ = DateTimeZone.forOffsetMillis(offset);
-            DateTime invertedDT = dt.withZone(invertedDTZ);
-            return simpleDateFormat.print(invertedDT);
+            int offset = dt.getZone().toTimeZone().getOffset(dt.getMillis());
+            return dt.withZone(DateTimeZone.forOffsetMillis(offset));
         }
 
-        return simpleDateFormat.print(dt);
+        return dt;
     }
 
     @Override
     public String toString() {
-        return inspectCommon(TO_S_FORMATTER, TO_S_UTC_FORMATTER);
+        return to_s().asJavaString();
     }
 
     @JRubyMethod

@@ -270,10 +270,6 @@ public class RubyDateFormatter {
         }
     }
 
-    public void compilePattern(RubyString format, boolean dateLibrary) {
-        compilePattern(format.getByteList(), dateLibrary);
-    }
-
     private Token[] compiledPattern = new Token[256];
     private int compiledPatternLength = 0;
     private Encoding patternEncoding;
@@ -420,7 +416,7 @@ public class RubyDateFormatter {
     }
 
     /** Convenience method when using no pattern caching */
-    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
+    public RubyString compileAndFormat(ByteList pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
         compilePattern(pattern, dateLibrary);
         RubyString out = format(compiledPattern, dt, nsec, sub_millis);
         return out;

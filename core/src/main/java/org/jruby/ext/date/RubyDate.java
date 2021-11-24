@@ -1665,7 +1665,7 @@ public class RubyDate extends RubyObject {
         RubyRational subMillis = this.subMillisNum == 0 ? null :
                 RubyRational.newRational(context.runtime, this.subMillisNum, this.subMillisDen);
         RubyString format = context.getRubyDateFormatter().compileAndFormat(
-                fmt.convertToString(), true, this.dt, 0, subMillis
+                fmt.convertToString().getByteList(), true, this.dt, 0, subMillis
         );
         return format;
     }
