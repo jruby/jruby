@@ -603,7 +603,7 @@ public class RubyRange extends RubyObject {
         } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, block);
         } else if (begin instanceof RubySymbol && end instanceof RubySymbol) {
-            ((RubySymbol) begin).asString().uptoCommon(context, ((RubySymbol) end).asString(), isExclusive, block, true);
+            begin.asString().uptoCommon(context, end.asString(), isExclusive, block, true);
         } else {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
@@ -616,7 +616,13 @@ public class RubyRange extends RubyObject {
                 if (!discreteObject(context, begin)) {
                     throw context.runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
                 }
-                rangeEach(context, (ThreadContext ctx, IRubyObject arg) -> block.yield(ctx, arg));
+                if (!end.isNil()) {
+                    rangeEach(context, (ThreadContext ctx, IRubyObject arg) -> block.yield(ctx, arg));
+                } else {
+                    for (IRubyObject beg = begin;; beg = beg.callMethod(context, "succ")) {
+                        block.yield(context, beg);
+                    }
+                }
             }
         }
         return this;
@@ -1053,7 +1059,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject minmax(ThreadContext context, Block block) {
-        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+        if (block.isGiven()) return Helpers.invokeSuper(context, this, context.runtime.getRange(), "minmax", NULL_ARRAY, block);
 
         return RubyArray.newArray(context.runtime, callMethod("min"), callMethod("max"));
     }
