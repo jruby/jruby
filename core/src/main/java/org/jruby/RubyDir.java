@@ -52,6 +52,7 @@ import jnr.posix.Passwd;
 import jnr.posix.util.Platform;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
@@ -299,6 +300,11 @@ public class RubyDir extends RubyObject implements Closeable {
         if (!(arg instanceof RubyString) && arg.respondsTo("to_path")) arg = arg.callMethod(context, "to_path");
 
         RubyString checked = StringSupport.checkEmbeddedNulls(context.runtime, arg, "nul-separated glob pattern is unsupported");
+
+        // FIXME: It is possible this can just be EncodingUtils.strCompatAndValid() but the spec says specifically it must be ascii compat which is more constrained than that method.
+        if (!checked.getEncoding().isAsciiCompatible()) {
+            throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + checked.getEncoding() + " and " + USASCIIEncoding.INSTANCE);
+        }
 
         return filePathConvert(context, checked).getByteList();
     }
