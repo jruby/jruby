@@ -22,7 +22,7 @@ public class ArefCallSite extends MonomorphicCallSite {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
         if (getMetaClass(self) == context.runtime.getArray()) {
-            return ((RubyArray) self).aref(arg);
+            return ((RubyArray) self).aref(context, arg);
         }
         return super.call(context, caller, self, arg);
     }

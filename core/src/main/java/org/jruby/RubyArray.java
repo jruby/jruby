@@ -1286,13 +1286,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_subseq_step
      *
      */
-    public IRubyObject subseq_step(RubyArithmeticSequence arg0) {
-        long beg, len, step, end;
-
-        step = getStep(arg0);
-        IRubyObject aseqBeg = getBegin(arg0);
-        IRubyObject aseqEnd = getEnd(arg0);
-        boolean aseqExcl = arg0.exclude_end(getRuntime().getCurrentContext()).isTrue();
+    public IRubyObject subseq_step(ThreadContext context, RubyArithmeticSequence arg0) {
+        Ruby runtime = context.runtime;
+        long beg, len, end;
+        long step = getStep(context, arg0);
+        IRubyObject aseqBeg = getBegin(context, arg0);
+        IRubyObject aseqEnd = getEnd(context, arg0);
+        boolean aseqExcl = arg0.exclude_end(context).isTrue();
         len = realLength;
 
         if (step < 0) {
@@ -1316,9 +1316,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (beg < 0) {
             beg += len;
-            if (beg < 0) {
-                throw getRuntime().newRangeError("integer " + beg + " out of range of fixnum");
-            }
+            if (beg < 0) throw runtime.newRangeError("integer " + beg + " out of range of fixnum");
         }
         if (end < 0) {  end += len; }
 
@@ -1329,59 +1327,48 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (len < 0) {  len = 0;  }
 
         long alen = realLength;
-        if (beg > alen)  return getRuntime().getCurrentContext().nil;
-        if (beg < 0 || len < 0) return getRuntime().getCurrentContext().nil;
+        if (beg > alen)  return context.nil;
+        if (beg < 0 || len < 0) return context.nil;
 
         if (alen < len || alen < beg + len) {
             len = alen - beg;
         }
 
-        if (len == 0) {
-            return newArray(metaClass.runtime, 0);
-        }
-
-        if (step == 0) {
-            throw getRuntime().newRangeError("slice step cannot be zero");
-        }
-
-        if (step == 1) {
-            return subseq(beg, len);
-        }
+        if (len == 0) return newArray(runtime, 0);
+        if (step == 0) throw runtime.newRangeError("slice step cannot be zero");
+        if (step == 1) return subseq(beg, len);
 
         long orig_len = len;
         if ((step > 0 && step >= len) || (step < 0 && (step < -len))) {
-            RubyArray result = newArray(metaClass.runtime, 1);
-            result.append(this.values[(int) beg]);
+            RubyArray result = newArray(runtime, 1);
+            result.append(eltOk(beg));
+            return result;
         }
 
         long ustep = (step < 0) ? -step : step;
         len = (len + ustep - 1) / ustep;
 
         long j = beg + ((step > 0) ? 0 : (orig_len - 1));
-        RubyArray result = newArray(metaClass.runtime, len);
+        RubyArray result = newArray(runtime, len);
 
-        for(long i =0; i < len; ++i) {
-            result.append(this.values[(int) j]);
+        for(long i = 0; i < len; ++i) {
+            result.append(eltOk(j));
             j = j + step;
         }
 
         return result;
     }
 
-    private IRubyObject getBegin(RubyArithmeticSequence arg0) {
-      return arg0.begin(getRuntime().getCurrentContext());
+    private IRubyObject getBegin(ThreadContext context, RubyArithmeticSequence arg0) {
+      return arg0.begin(context);
     }
 
-    private IRubyObject getEnd(RubyArithmeticSequence arg0) {
-        return arg0.end(getRuntime().getCurrentContext());
+    private IRubyObject getEnd(ThreadContext context, RubyArithmeticSequence arg0) {
+        return arg0.end(context);
     }
 
-    private Long getStep(RubyArithmeticSequence arg0) {
-        if(!arg0.step(getRuntime().getCurrentContext()).isNil()){
-            return arg0.step(getRuntime().getCurrentContext()).convertToInteger().getLongValue();
-        }
-
-        return null;
+    private Long getStep(ThreadContext context, RubyArithmeticSequence arg0) {
+        return arg0.step(context).isNil() ? null: arg0.step(context).convertToInteger().getLongValue();
     }
 
     /** rb_ary_subseq
@@ -1624,10 +1611,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * Variable arity version for compatibility. Not bound to a Ruby method.
      * @deprecated Use the versions with zero, one, or two args.
      */
+    @Deprecated
     public IRubyObject aref(IRubyObject[] args) {
         switch (args.length) {
         case 1:
-            return aref(args[0]);
+            return aref(getRuntime().getCurrentContext(), args[0]);
         case 2:
             return aref(args[0], args[1]);
         default:
@@ -1636,20 +1624,25 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
+    @Deprecated
+    public IRubyObject aref(IRubyObject arg0) {
+        return aref(getRuntime().getCurrentContext(), arg0);
+    }
+
     /** rb_ary_aref
      */
     @JRubyMethod(name = {"[]", "slice"})
-    public IRubyObject aref(IRubyObject arg0) {
-        if(arg0 instanceof RubyArithmeticSequence) {
-            return subseq_step((RubyArithmeticSequence) arg0);
-        }else {
+    public IRubyObject aref(ThreadContext context, IRubyObject arg0) {
+        if (arg0 instanceof RubyArithmeticSequence) {
+            return subseq_step(context, (RubyArithmeticSequence) arg0);
+        } else {
             return arg0 instanceof RubyFixnum ? entry(((RubyFixnum) arg0).value) : arefCommon(arg0);
         }
     }
 
     @Deprecated
     public IRubyObject aref19(IRubyObject arg0) {
-        return aref(arg0);
+        return aref(getRuntime().getCurrentContext(), arg0);
     }
 
     private IRubyObject arefCommon(IRubyObject arg0) {
@@ -2649,19 +2642,25 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return runtime.getNil();
     }
 
+    @Deprecated
+    public IRubyObject indexes(IRubyObject[] args) {
+        return indexes(getRuntime().getCurrentContext(), args);
+    }
+
     /** rb_ary_indexes
      *
      */
     @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true)
-    public IRubyObject indexes(IRubyObject[] args) {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Array#indexes is deprecated; use Array#values_at");
+    public IRubyObject indexes(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "Array#indexes is deprecated; use Array#values_at");
 
-        if (args.length == 1) return newArray(getRuntime(), args[0]);
+        if (args.length == 1) return newArray(runtime, args[0]);
 
-        RubyArray ary = newBlankArrayInternal(getRuntime(), args.length);
+        RubyArray ary = newBlankArrayInternal(runtime, args.length);
 
         for (int i = 0; i < args.length; i++) {
-            ary.storeInternal(i, aref(args[i]));
+            ary.storeInternal(i, aref(context, args[i]));
         }
         ary.realLength = args.length;
 

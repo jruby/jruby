@@ -221,7 +221,7 @@ public abstract class JavaUtilRegex {
                 final int group = ((RubyInteger) idx).getIntValue();
                 return context.runtime.newString( matcher.group(group) );
             }
-            return to_a(context, self).aref(idx); // Range
+            return to_a(context, self).aref(context, idx); // Range
         }
 
         @JRubyMethod(name = "[]", required = 2)

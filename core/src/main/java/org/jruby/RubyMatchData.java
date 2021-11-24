@@ -573,7 +573,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject op_aref(ThreadContext context, IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? to_a(context).aref(idx) : result;
+        return result == null ? to_a(context).aref(context, idx) : result;
     }
 
     /** match_aref
