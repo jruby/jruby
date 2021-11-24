@@ -503,8 +503,8 @@ public class Dir {
 
         // No, mismatched or escaped braces..Move along..nothing to see here
         if (lbrace == -1 || rbrace == -1 ||
-                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' ||
-                rbrace > 0 && pattern.bytes[rbrace-1] == '\\') {
+                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' && (lbrace <= 1 || pattern.bytes[lbrace-2] != '\\') ||
+                rbrace > 0 && pattern.bytes[rbrace-1] == '\\' && (rbrace <= 1 || pattern.bytes[rbrace-2] != '\\')) {
             ByteList unescaped = new ByteList(pattern.bytes.length - 1);
             unescaped.setEncoding(pattern.enc);
             for (int i = pattern.begin; i < pattern.end; i++) {
