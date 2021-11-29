@@ -209,14 +209,49 @@ public class RubyHash extends RubyObject implements Map {
         return new RubyHash(runtime, 1);
     }
 
+    public static final KeywordHash newKeywordHash(Ruby runtime) {
+        return new KeywordHash(runtime, 1);
+    }
+
     public static RubyHash newKwargs(Ruby runtime, String key, IRubyObject value) {
-        return newHash(runtime, runtime.newSymbol(key), value);
+        return newKwargs(runtime, runtime.newSymbol(key), value);
+    }
+
+    public static RubyHash newKwargs(Ruby runtime, IRubyObject key, IRubyObject value) {
+        RubyHash kwargs = newKeywordHash(runtime);
+        kwargs.fastASetSmall(key, value);
+        return kwargs;
     }
 
     public static RubyHash newHash(Ruby runtime, IRubyObject key, IRubyObject value) {
         RubyHash kwargs = newSmallHash(runtime);
         kwargs.fastASetSmall(key, value);
         return kwargs;
+    }
+
+    public static class KeywordHash extends RubyHash {
+        public KeywordHash(Ruby runtime, int buckets) {
+            super(runtime, buckets);
+        }
+
+        private KeywordHash(Ruby runtime, RubyClass klass, RubyHash other) {
+            super(runtime, klass, other);
+        }
+
+        public boolean isLiteral() {
+            return false;
+        }
+
+        @Override
+        public IRubyObject dup() {
+            RubyClass mc = metaClass.getRealClass();
+
+            return new KeywordHash(mc.getClassRuntime(), mc, this);
+        }
+    }
+
+    public boolean isLiteral() {
+        return true;
     }
 
     /** rb_hash_new
@@ -1079,6 +1114,10 @@ public class RubyHash extends RubyObject implements Map {
     @Override
     public RubyHash convertToHash() {
         return this;
+    }
+
+    public RubyHash convertToKwargs() {
+        return new KeywordHash(getRuntime(), getRuntime().getHash(), this);
     }
 
     public final void fastASet(IRubyObject key, IRubyObject value) {
@@ -2303,7 +2342,13 @@ public class RubyHash extends RubyObject implements Map {
      */
     public RubyHash dupFast(final ThreadContext context) {
         final Ruby runtime = context.runtime;
-        RubyHash dup = new RubyHash(runtime, metaClass, this);
+        RubyHash dup;
+
+        if (this instanceof KeywordHash) {
+            dup = new KeywordHash(runtime, metaClass, this);
+        } else {
+            dup = new RubyHash(runtime, metaClass, this);
+        }
 
         dup.setComparedByIdentity(this.isComparedByIdentity());
 

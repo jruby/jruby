@@ -32,23 +32,21 @@ public class CallInstr extends CallBase implements ResultInstr {
     public static CallInstr createWithKwargs(IRScope scope, CallType callType, Variable result, RubySymbol name,
                                              Operand receiver, Operand[] args, Operand closure,
                                              List<KeyValuePair<Operand, Operand>> kwargs) {
-        // FIXME: This is obviously total nonsense but this will be on an optimized path and we will not be constructing
-        // a new hash like this unless the eventual caller needs an ordinary hash.
-        Operand[] newArgs = new Operand[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 0, args.length);
-        newArgs[args.length] = new Hash(kwargs, false);
-
-        return create(scope, callType, result, name, receiver, newArgs, closure);
+        return create(scope, callType, result, name, receiver, args, new Hash(kwargs, false), closure);
     }
 
     public static CallInstr create(IRScope scope, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure) {
-        return create(scope, CallType.NORMAL, result, name, receiver, args, closure);
+        return create(scope, CallType.NORMAL, result, name, receiver, args, null, closure);
     }
 
     public static CallInstr create(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure) {
+        return create(scope, callType, result, name, receiver, args, null, closure);
+    }
+
+    public static CallInstr create(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand kwargs, Operand closure) {
         boolean isPotentiallyRefined = scope.maybeUsingRefinements();
 
-        if (!containsArgSplat(args)) {
+        if (!containsArgSplat(args) && kwargs == null) {
             boolean hasClosure = closure != null;
 
             if (args.length == 0 && !hasClosure) {
@@ -71,19 +69,23 @@ public class CallInstr extends CallBase implements ResultInstr {
             }
         }
 
-        return new CallInstr(scope, callType, result, name, receiver, args, closure, isPotentiallyRefined);
+        return new CallInstr(scope, callType, result, name, receiver, args, kwargs, closure, isPotentiallyRefined);
     }
-
 
     public CallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                      boolean potentiallyRefined) {
-        this(scope, Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
+        this(scope, Operation.CALL, callType, result, name, receiver, args, null, closure, potentiallyRefined);
+    }
+
+    public CallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand kwargs, Operand closure,
+                     boolean potentiallyRefined) {
+        this(scope, Operation.CALL, callType, result, name, receiver, args, kwargs, closure, potentiallyRefined);
     }
 
     // clone constructor
     protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
                                 Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, op, callType, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
+        super(scope, op, callType, name, receiver, args, null, closure, potentiallyRefined, callSite, callSiteId);
 
         assert result != null;
 
@@ -94,6 +96,15 @@ public class CallInstr extends CallBase implements ResultInstr {
     protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
                         Operand[] args, Operand closure, boolean potentiallyRefined) {
         super(scope, op, callType, name, receiver, args, closure, potentiallyRefined);
+
+        assert result != null;
+
+        this.result = result;
+    }
+
+    protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
+                        Operand[] args, Operand kwargs, Operand closure, boolean potentiallyRefined) {
+        super(scope, op, callType, name, receiver, args, kwargs, closure, potentiallyRefined);
 
         assert result != null;
 
@@ -118,8 +129,10 @@ public class CallInstr extends CallBase implements ResultInstr {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - receiver:  " + receiver);
         int argsCount = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - # of args:  " + argsCount);
+        boolean hasKwargs = d.decodeBoolean();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - has kwargs:  " + hasKwargs);
         boolean hasClosureArg = argsCount < 0;
-        int argsLength = hasClosureArg ? (-1 * (argsCount + 1)) : argsCount;
+        int argsLength = hasKwargs ? (hasClosureArg ? (-1 * (argsCount + 2)) : (-1 * (argsCount + 1))) : (hasClosureArg ? (-1 * (argsCount + 1)) : argsCount);
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - # of args(2): " + argsLength);
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - hasClosure: " + hasClosureArg);
         Operand[] args = new Operand[argsLength];
@@ -128,12 +141,13 @@ public class CallInstr extends CallBase implements ResultInstr {
             args[i] = d.decodeOperand();
         }
 
+        Hash kwargs = hasKwargs ? (Hash) d.decodeOperand() : null;
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  "+ result);
 
-        return create(d.getCurrentScope(), callType, result, name, receiver, args, closure);
+        return create(d.getCurrentScope(), callType, result, name, receiver, args, kwargs, closure);
     }
 
     public Variable getResult() {

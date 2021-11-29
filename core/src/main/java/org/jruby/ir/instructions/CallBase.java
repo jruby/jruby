@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
 import org.jruby.anno.FrameField;
 import org.jruby.ir.IRFlags;
@@ -33,6 +34,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     protected final RubySymbol name;
     protected final transient CallSite callSite;
     protected final transient int argsCount;
+    protected final transient Operand kwargs;
     protected final transient boolean hasClosure;
 
     private transient boolean flagsComputed;
@@ -49,16 +51,27 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     // main constructor
     protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
                        Operand[] args, Operand closure, boolean potentiallyRefined) {
-        this(scope, op, callType, name, receiver, args, closure, potentiallyRefined, null, callSiteCounter++);
+        this(scope, op, callType, name, receiver, args, null, closure, potentiallyRefined, null, callSiteCounter++);
+    }
+
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                       Operand[] args, Operand kwargs, Operand closure, boolean potentiallyRefined) {
+        this(scope, op, callType, name, receiver, args, kwargs, closure, potentiallyRefined, null, callSiteCounter++);
     }
 
     // clone constructor
     protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
                        Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(op, arrayifyOperands(receiver, args, closure));
+        this(scope, op, callType, name, receiver, args, null, closure, potentiallyRefined, callSite, callSiteId);
+    }
+
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                       Operand[] args, Operand kwargs, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
+        super(op, arrayifyOperands(receiver, args, kwargs, closure));
 
         this.callSiteId = callSiteId;
         argsCount = args.length;
+        this.kwargs = kwargs;
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
@@ -88,6 +101,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             e.encode(arg);
         }
 
+        if (kwargs != null) e.encode(kwargs);
         if (hasClosure) e.encode(getClosureArg(null));
     }
 
@@ -519,8 +533,12 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     private final static int REQUIRED_OPERANDS = 1;
-    private static Operand[] arrayifyOperands(Operand receiver, Operand[] callArgs, Operand closure) {
-        Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != null ? 1 : 0)];
+    private static Operand[] arrayifyOperands(Operand receiver, Operand[] callArgs, Operand kwargs, Operand closure) {
+        Operand[] allArgs = new Operand[
+                callArgs.length
+                        + REQUIRED_OPERANDS
+                        + (kwargs != null ? 1 : 0)
+                        + (closure != null ? 1 : 0)];
 
         assert receiver != null : "RECEIVER is null";
 
@@ -531,7 +549,12 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             allArgs[i + REQUIRED_OPERANDS] = callArgs[i];
         }
 
-        if (closure != null) allArgs[callArgs.length + REQUIRED_OPERANDS] = closure;
+        if (kwargs == null) {
+            if (closure != null) allArgs[callArgs.length + REQUIRED_OPERANDS] = closure;
+        } else {
+            allArgs[callArgs.length + REQUIRED_OPERANDS] = kwargs;
+            if (closure != null) allArgs[callArgs.length + REQUIRED_OPERANDS + 1] = closure;
+        }
 
         return allArgs;
     }
@@ -556,11 +579,13 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     protected IRubyObject[] prepareArgumentsSimple(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        IRubyObject[] newArgs = new IRubyObject[argsCount];
+        IRubyObject[] newArgs = new IRubyObject[argsCount + ((kwargs == null) ? 0 : 1)];
 
         for (int i = 0; i < argsCount; i++) { // receiver is operands[0]
             newArgs[i] = (IRubyObject) operands[i+1].retrieve(context, self, currScope, currDynScope, temp);
         }
+
+        if (kwargs != null) newArgs[newArgs.length - 1] = (IRubyObject) kwargs.retrieve(context, self, currScope, currDynScope, temp);
 
         return newArgs;
     }

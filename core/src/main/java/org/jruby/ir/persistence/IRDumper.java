@@ -311,9 +311,9 @@ public class IRDumper extends IRVisitor {
             print("=>");
             visit(pair.getValue());
         }
-        if (hash.isKWArgsHash) {
+        if (hash.isLiteral()) {
             if (comma) print(',');
-            print("kwargs=true");
+            print("literal=true");
         }
     }
     public void Integer(org.jruby.ir.operands.Integer integer) { print(integer.getValue()); }

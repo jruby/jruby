@@ -3149,7 +3149,7 @@ public class IRBuilder {
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
         addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
 
-        return addResultInstr(CallInstr.create(scope, FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
+        return addResultInstr(CallInstr.create(scope, FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null, null));
     }
 
     /* ****************************************************************
@@ -3330,7 +3330,7 @@ public class IRBuilder {
                 determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
                 if_else(test, manager.getTrue(),
                         () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block)),
-                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), addArg(args, splatValue), block)));
+                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, splatValue, block)));
             } else {  // {a: 1, b: 2}
                 List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
                 Operand block = setupCallClosure(fcallNode.getIterNode());

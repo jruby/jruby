@@ -50,6 +50,10 @@ public class Hash extends Operand {
         return pairs == null || pairs.length == 0;
     }
 
+    public boolean isLiteral() {
+        return literal;
+    }
+
     @Override
     public boolean hasKnownValue() {
         for (KeyValuePair<Operand, Operand> pair : pairs) {
@@ -123,8 +127,10 @@ public class Hash extends Operand {
             hash = ((RubyHash) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
             // Skip the first pair
             index++;
-        } else {
+        } else if (literal) {
             hash = RubyHash.newHash(runtime);
+        } else {
+            hash = RubyHash.newKeywordHash(runtime);
         }
 
         for (int i = index; i < pairs.length; i++) {

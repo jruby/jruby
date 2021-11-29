@@ -605,12 +605,15 @@ public class IRRuntimeHelpers {
                 return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
             }
 
-            RubyHash kwargs = (RubyHash) maybeKwargs;
+            if (maybeKwargs instanceof RubyHash.KeywordHash) {
 
-            if (kwargs.allSymbols()) {
-                args[length - 1] = kwargs.dupFast(context);
-            } else {
-                args = homogenizeKwargs(context, args, kwargs);
+                RubyHash.KeywordHash kwargs = (RubyHash.KeywordHash) maybeKwargs;
+
+                if (kwargs.allSymbols()) {
+                    args[length - 1] = kwargs.dupFast(context);
+                } else {
+                    args = homogenizeKwargs(context, args, kwargs);
+                }
             }
         }
 
@@ -625,7 +628,7 @@ public class IRRuntimeHelpers {
 
         if (visitor.syms == null) {
             // no symbols, use empty kwargs hash
-            visitor.syms = RubyHash.newSmallHash(context.runtime);
+            visitor.syms = RubyHash.newKeywordHash(context.runtime);
         }
 
         if (visitor.others != null) { // rest args exists too expand args
@@ -707,7 +710,7 @@ public class IRRuntimeHelpers {
 
         if (lastArg instanceof IRubyObject) {
             IRubyObject returnValue = toHash(context, (IRubyObject) lastArg);
-            if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
+            if (returnValue instanceof RubyHash.KeywordHash) return (RubyHash) returnValue;
         }
 
         return null;
@@ -950,9 +953,10 @@ public class IRRuntimeHelpers {
     @JIT @Interp
     public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
+        hash = hash.convertToKwargs();
 
         hash.modify();
-        final RubyHash otherHash = explicitKwarg.convertToHash();
+        final RubyHash otherHash = explicitKwarg.convertToHash().convertToKwargs();
 
         if (otherHash.empty_p(context).isTrue()) return hash;
 
