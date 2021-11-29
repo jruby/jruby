@@ -23,20 +23,18 @@ import java.util.Map;
 // that actually build the hash
 public class Hash extends Operand {
     final public KeyValuePair<Operand, Operand>[] pairs;
+    /** Is this a literal Hash */
+    final public boolean literal;
 
-    // Is this a hash used to represent a keyword hash to be setup for ZSuper?
-    // SSS FIXME: Quick hack for now - this should probably be done with an overloaded operand.
-    final public boolean isKWArgsHash;
-
-    public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean isKWArgsHash) {
-        this(pairs.toArray(new KeyValuePair[pairs.size()]), isKWArgsHash);
+    public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean literal) {
+        this(pairs.toArray(new KeyValuePair[pairs.size()]), literal);
     }
 
-    protected Hash(KeyValuePair<Operand, Operand>[] pairs, boolean isKWArgsHash) {
+    protected Hash(KeyValuePair<Operand, Operand>[] pairs, boolean literal) {
         super();
 
         this.pairs = pairs;
-        this.isKWArgsHash = isKWArgsHash;
+        this.literal = literal;
     }
 
     @Override
@@ -45,7 +43,7 @@ public class Hash extends Operand {
     }
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
-        this(pairs, false);
+        this(pairs, true);
     }
 
     public boolean isBlank() {
@@ -71,7 +69,7 @@ public class Hash extends Operand {
                                 pair.getValue().getSimplifiedOperand(valueMap, force)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, isKWArgsHash);
+        return new Hash(newPairs, literal);
     }
 
     /** Append the list of variables used in this operand to the input list */
@@ -91,7 +89,7 @@ public class Hash extends Operand {
                                 ((DepthCloneable) pair.getValue()).cloneForDepth(newDepth)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, isKWArgsHash);
+        return new Hash(newPairs, literal);
     }
 
     @Override
@@ -106,11 +104,11 @@ public class Hash extends Operand {
                                 pair.getValue().cloneForInlining(ii)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, isKWArgsHash);
+        return new Hash(newPairs, !literal);
     }
 
     public boolean isKeywordRest() {
-        return isKWArgsHash && pairs.length > 0 && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY);
+        return !literal && pairs.length > 0 && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY);
     }
 
     @Override
@@ -153,7 +151,7 @@ public class Hash extends Operand {
             e.encode(pair.getKey());
             e.encode(pair.getValue());
         }
-        e.encode(isKWArgsHash);
+        e.encode(literal);
     }
 
     public static Hash decode(IRReaderDecoder d) {
