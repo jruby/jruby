@@ -1962,9 +1962,6 @@ public class IRRuntimeHelpers {
         Ruby runtime = context.runtime;
         IRubyObject result = (IRubyObject)accessor.get(self);
         if (result == null) {
-            if (runtime.isVerbose()) {
-                runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, str(runtime, "instance variable ", ids(runtime, name)," not initialized"));
-            }
             result = context.nil;
         }
         return result;

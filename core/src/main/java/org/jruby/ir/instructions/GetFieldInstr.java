@@ -53,10 +53,6 @@ public class GetFieldInstr extends GetInstr implements FixedArityInstr {
         VariableAccessor a = getAccessor(object);
         Object result = a == null ? null : (IRubyObject)a.get(object);
         if (result == null) {
-            Ruby runtime = context.runtime;
-            if (runtime.isVerbose()) {
-                runtime.getWarnings().warning(IVAR_NOT_INITIALIZED, str(runtime, "instance variable ", ids(runtime, getId()), " not initialized"));
-            }
             result = context.nil;
         }
         return result;

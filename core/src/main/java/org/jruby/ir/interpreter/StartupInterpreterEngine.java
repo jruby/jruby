@@ -144,10 +144,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 VariableAccessor a = gfi.getAccessor(object);
                 Object result = a == null ? null : (IRubyObject)a.get(object);
                 if (result == null) {
-                    if (context.runtime.isVerbose()) {
-                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED,
-                                str(context.runtime, "instance variable ", ids(context.runtime, gfi.getId()), " not initialized"));
-                    }
                     result = context.nil;
                 }
                 setResult(temp, currDynScope, gfi.getResult(), result);
