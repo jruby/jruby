@@ -50,6 +50,9 @@ public class HashNode extends Node implements ILiteralNode {
     // contains at least one **k {a: 1, **k}, {**{}, **{}}
     private boolean hasRestKwarg = false;
 
+    // Is this a hash literal foo({a: 1}) vs a keyword hash foo(a: 1)
+    private boolean isLiteral = false;
+
     public HashNode(int line) {
         super(line, false);
 
@@ -60,6 +63,14 @@ public class HashNode extends Node implements ILiteralNode {
         this(line);
 
         add(pair);
+    }
+
+    public void setIsLiteral() {
+        isLiteral = true;
+    }
+
+    public boolean isLiteral() {
+        return isLiteral;
     }
 
     /**

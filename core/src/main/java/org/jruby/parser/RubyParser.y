@@ -3370,6 +3370,7 @@ singleton       : var_ref {
 // HashNode: [!null]
 assoc_list      : none {
                     $$ = new HashNode(lexer.getRubySourceline());
+                    $<HashNode>$.setIsLiteral();
                 }
                 | assocs trailer {
                     $$ = support.remove_duplicate_keys($1);

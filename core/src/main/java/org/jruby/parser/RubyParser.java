@@ -5371,6 +5371,7 @@ states[765] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[766] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = new HashNode(lexer.getRubySourceline());
+                    ((HashNode)yyVal).setIsLiteral();
   return yyVal;
 };
 states[767] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5492,7 +5493,7 @@ states[805] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 }
-					// line 3489 "RubyParser.y"
+					// line 3490 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5507,4 +5508,4 @@ states[805] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
         return support.getResult();
     }
 }
-					// line 12990 "-"
+					// line 12991 "-"
