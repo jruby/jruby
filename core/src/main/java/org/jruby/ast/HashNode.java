@@ -166,4 +166,9 @@ public class HashNode extends Node implements ILiteralNode {
 
         return children;
     }
+
+    @Override
+    public String toStringExtraInfo() {
+        return isLiteral() ? "literal" : "kwarg";
+    }
 }
