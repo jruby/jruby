@@ -3536,6 +3536,7 @@ states[345] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[346] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((HashNode)yyVals[-1+yyTop].value);
+                    ((HashNode)yyVal).setIsLiteral();
   return yyVal;
 };
 states[347] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5371,7 +5372,6 @@ states[765] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[766] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = new HashNode(lexer.getRubySourceline());
-                    ((HashNode)yyVal).setIsLiteral();
   return yyVal;
 };
 states[767] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {

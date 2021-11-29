@@ -1712,6 +1712,7 @@ primary         : literal
                 }
                 | tLBRACE assoc_list '}' {
                     $$ = $2;
+                    $<HashNode>$.setIsLiteral();
                 }
                 | k_return {
                     $$ = new ReturnNode($1, NilImplicitNode.NIL);
@@ -3370,7 +3371,6 @@ singleton       : var_ref {
 // HashNode: [!null]
 assoc_list      : none {
                     $$ = new HashNode(lexer.getRubySourceline());
-                    $<HashNode>$.setIsLiteral();
                 }
                 | assocs trailer {
                     $$ = support.remove_duplicate_keys($1);
