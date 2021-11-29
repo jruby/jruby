@@ -49,6 +49,13 @@ describe :dir_glob, shared: true do
       result.should == result.sort
     end
 
+    it "sort: false returns same files" do
+      result = Dir.send(@method,'*', sort: false)
+      result.sort.should == Dir.send(@method, '*').sort
+    end
+  end
+
+  ruby_version_is "3.0"..."3.1" do
     it "result is sorted with any non false value of sort:" do
       result = Dir.send(@method, '*', sort: 0)
       result.should == result.sort
@@ -59,10 +66,13 @@ describe :dir_glob, shared: true do
       result = Dir.send(@method, '*', sort: 'false')
       result.should == result.sort
     end
+  end
 
-    it "sort: false returns same files" do
-      result = Dir.send(@method,'*', sort: false)
-      result.sort.should == Dir.send(@method, '*').sort
+  ruby_version_is "3.1" do
+    it "raises an ArgumentError if sort: is not true or false" do
+      -> { Dir.send(@method, '*', sort: 0) }.should raise_error ArgumentError, /expected true or false/
+      -> { Dir.send(@method, '*', sort: nil) }.should raise_error ArgumentError, /expected true or false/
+      -> { Dir.send(@method, '*', sort: 'false') }.should raise_error ArgumentError, /expected true or false/
     end
   end
 
