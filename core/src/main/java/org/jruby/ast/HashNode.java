@@ -45,8 +45,6 @@ import org.jruby.util.KeyValuePair;
  */
 public class HashNode extends Node implements ILiteralNode {
     private final List<KeyValuePair<Node,Node>> pairs;
-    // contains only symbols.  Presence of kwrest will make this false.
-    private boolean hasOnlySymbolKeys = true;
     // contains at least one **k {a: 1, **k}, {**{}, **{}}
     private boolean hasRestKwarg = false;
 
@@ -71,23 +69,6 @@ public class HashNode extends Node implements ILiteralNode {
 
     public boolean isLiteral() {
         return isLiteral;
-    }
-
-    /**
-     * @return true if all elements of this hash uses symbol keys (might end up representing a kwarg).
-     */
-    public boolean hasOnlySymbolKeys() {
-        return hasOnlySymbolKeys;
-    }
-
-    /**
-     * Is this hash looking like a keyword argument hash?
-     * Technically we do not know at the callsite
-     *
-     * @return true is it looks like one.
-     */
-    public boolean isMaybeKwargs() {
-        return hasOnlySymbolKeys() || hasOnlyRestKwargs();
     }
 
     /**
@@ -130,9 +111,6 @@ public class HashNode extends Node implements ILiteralNode {
 
         if (key == null) {
             hasRestKwarg = true;
-            hasOnlySymbolKeys = false;
-        } else if (!(pair.getKey() instanceof SymbolNode)) {
-            hasOnlySymbolKeys = false;
         }
 
         pairs.add(pair);
@@ -170,5 +148,15 @@ public class HashNode extends Node implements ILiteralNode {
     @Override
     public String toStringExtraInfo() {
         return isLiteral() ? "literal" : "kwarg";
+    }
+
+    @Deprecated
+    public boolean hasOnlySymbolKeys() {
+        return false;
+    }
+
+    @Deprecated
+    public boolean isMaybeKwargs() {
+        return !isLiteral;
     }
 }

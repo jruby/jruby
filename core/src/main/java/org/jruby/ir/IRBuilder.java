@@ -1166,7 +1166,7 @@ public class IRBuilder {
 
         if (callNode.isLazy()) addInstr(new BNilInstr(lazyLabel, receiver));
 
-        HashNode keywordArgs = getPossibleKeywordArgument(callNode.getArgsNode());
+        HashNode keywordArgs = getKeywordArguments(callNode.getArgsNode());
         if (keywordArgs != null) {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
 
@@ -1234,7 +1234,7 @@ public class IRBuilder {
      * This will ignore complexity of a hash which contains restkwargs and only return simple
      * last argument which happens to be all key symbol hashnode which is not empty
      */
-    private HashNode getPossibleKeywordArgument(Node argsNode) {
+    private HashNode getKeywordArguments(Node argsNode) {
         // Block pass wraps itself around the main args list so don't hold that against it.
         if (argsNode instanceof BlockPassNode) {
             return null; //getPossibleKeywordArgument(((BlockPassNode) argsNode).getArgsNode());
@@ -1249,7 +1249,7 @@ public class IRBuilder {
 
             if (lastNode instanceof HashNode) {
                 HashNode hash = (HashNode) lastNode;
-                if (hash.isMaybeKwargs()) return (HashNode) lastNode;
+                if (!hash.isLiteral()) return (HashNode) lastNode;
             }
         }
 
@@ -3318,7 +3318,7 @@ public class IRBuilder {
         Node callArgsNode = fcallNode.getArgsNode();
         final Variable result = aResult == null ? createTemporaryVariable() : aResult;
 
-        HashNode keywordArgs = getPossibleKeywordArgument(fcallNode.getArgsNode());
+        HashNode keywordArgs = getKeywordArguments(fcallNode.getArgsNode());
         if (keywordArgs != null) {
             Operand[] args = buildCallArgsExcept(fcallNode.getArgsNode(), keywordArgs);
 
@@ -4803,7 +4803,7 @@ public class IRBuilder {
             for (Operand arg: callArgs) {
                 args[i++] = arg;
             }
-            args[i] = new Hash(keywordArgs, true);
+            args[i] = new Hash(keywordArgs, false);
             return args;
         }
 

@@ -36,7 +36,7 @@ public class CallInstr extends CallBase implements ResultInstr {
         // a new hash like this unless the eventual caller needs an ordinary hash.
         Operand[] newArgs = new Operand[args.length + 1];
         System.arraycopy(args, 0, newArgs, 0, args.length);
-        newArgs[args.length] = new Hash(kwargs, true);
+        newArgs[args.length] = new Hash(kwargs, false);
 
         return create(scope, callType, result, name, receiver, newArgs, closure);
     }
