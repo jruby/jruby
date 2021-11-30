@@ -1801,7 +1801,7 @@ public class RubyDate extends RubyObject {
             if (s2 != null) hash.fastASet(runtime.newSymbol("zone"), s2);
 
             re = newRegexpFromCache(runtime, _parse_time2, RE_OPTION_IGNORECASE | RE_OPTION_EXTENDED);
-            sub = re.match_m(context, s1, false);
+            sub = re.match_m(context, s1, false, true);
             if (sub != context.nil) {
                 match = (RubyMatchData) sub;
                 RubyInteger hour;
@@ -2145,7 +2145,7 @@ public class RubyDate extends RubyObject {
     private static final ByteList SPACE = new ByteList(new byte[] { ' ' }, false);
 
     private static IRubyObject subSpace(ThreadContext context, RubyString str, RubyRegexp reg) {
-        return str.subBangFast(context, reg, RubyString.newStringShared(context.runtime, SPACE));
+        return str.subBangFast(context, reg, RubyString.newStringShared(context.runtime, SPACE), true);
     }
 
     // NOTE: still in .rb
