@@ -601,7 +601,18 @@ class Date
   private_class_method :set_zone
 
   def self.check_limit(str, limit)
-    return if limit.nil?
+    return if str.nil?
+
+    if String === str
+      # ok
+    elsif Symbol === str
+      str = str.to_s
+    else
+      raise TypeError.new("no implicit conversion of #{str.class} into String") unless str.respond_to?(:to_str)
+      str = str.to_str
+    end
+
+    limit = 2 ** 64 if limit.nil?
 
     slen = str.length
     if slen > limit
