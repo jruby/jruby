@@ -56,12 +56,19 @@ import org.jruby.runtime.builtin.Variable;
  * @see org.jruby.RubyModule
  */
 public class IncludedModuleWrapper extends IncludedModule {
+    /**
+     * @param runtime the runtime
+     * @param superClass the superclass
+     * @param origin the actual module not a wrapper from a prepend or include.
+     */
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin) {
+        this(runtime, superClass, origin, origin); // FIXME: include passes in methodLocation but refinements calls this several places.  Determined what we should really be passing.
+    }
+
+    public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin, RubyModule methodsHolder) {
         super(runtime, superClass, origin);
         origin.addIncludingHierarchy(this);
-        // FIXME: Is this ok if we are including a prepended module?
-        methods = origin.getMethodsForWrite();
-        //cachedMethods = origin.cachedMethods;
+        methods = methodsHolder.getMethodsForWrite();
     }
 
     /**
