@@ -83,7 +83,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
               'asm.version' => '9.2',
-              'jffi.version' => '1.3.7',
+              'jffi.version' => '1.3.8',
               'joda.time.version' => '2.10.5' )
 
   plugin_management do
