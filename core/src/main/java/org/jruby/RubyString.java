@@ -3002,7 +3002,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject subBangNoIter(ThreadContext context, RubyRegexp regexp, RubyString repl) {
-        RubyMatchData match = subBangMatch(context, regexp, repl);
+        RubyMatchData match = subBangMatch(context, regexp, false);
         if (match != null) {
             repl = RubyRegexp.regsub(context, repl, this, regexp.pattern, match.regs, match.begin, match.end);
             context.setBackRef(match);
@@ -3021,7 +3021,20 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @return sub result
      */
     public final IRubyObject subBangFast(ThreadContext context, RubyRegexp regexp, RubyString repl) {
-        RubyMatchData match = subBangMatch(context, regexp, repl);
+        return subBangFast(context, regexp, repl, false);
+    }
+
+    /**
+     * Version of subBangFast that allows specifying that the match should be done interruptibly.
+     *
+     * @param context
+     * @param regexp
+     * @param repl
+     * @param interruptible
+     * @return
+     */
+    public final IRubyObject subBangFast(ThreadContext context, RubyRegexp regexp, RubyString repl, boolean interruptible) {
+        RubyMatchData match = subBangMatch(context, regexp, interruptible);
         if (match != null) {
             repl = RubyRegexp.regsub(context, repl, this, regexp.pattern, match.regs, match.begin, match.end);
             subBangCommon(context, match.begin, match.end, repl, repl.flags);
@@ -3030,7 +3043,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.nil;
     }
 
-    private RubyMatchData subBangMatch(ThreadContext context, RubyRegexp regexp, RubyString repl) {
+    private RubyMatchData subBangMatch(ThreadContext context, RubyRegexp regexp, boolean interruptible) {
         Regex pattern = regexp.getPattern();
         Regex prepared = regexp.preparePattern(this);
 
@@ -3038,7 +3051,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int range = begin + value.getRealSize();
         final Matcher matcher = prepared.matcher(value.getUnsafeBytes(), begin, range);
 
-        if (RubyRegexp.matcherSearch(context, matcher, begin, range, Option.NONE) >= 0) {
+        if (RubyRegexp.matcherSearch(context, matcher, begin, range, Option.NONE, interruptible) >= 0) {
             RubyMatchData match = RubyRegexp.createMatchData(context, this, matcher, pattern);
             match.regexp = regexp;
             return match;

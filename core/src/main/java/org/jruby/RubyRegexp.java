@@ -230,14 +230,20 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     };
 
     public static int matcherSearch(ThreadContext context, Matcher matcher, int start, int range, int option) {
-        if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.search(start, range, option);
+        return matcherSearch(context, matcher, start, range, option, false);
+    }
 
-        try {
-            RubyThread thread = context.getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, false);
-            return thread.executeTask(context, matcher, task);
-        } catch (InterruptedException e) {
-            throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
+    public static int matcherSearch(ThreadContext context, Matcher matcher, int start, int range, int option, boolean interruptible) {
+        if (!context.runtime.getInstanceConfig().isInterruptibleRegexps() && !interruptible) {
+            return matcher.search(start, range, option);
+        } else {
+            try {
+                RubyThread thread = context.getThread();
+                SearchMatchTask task = new SearchMatchTask(thread, start, range, option, false);
+                return thread.executeTask(context, matcher, task);
+            } catch (InterruptedException e) {
+                throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
+            }
         }
     }
 
@@ -1137,7 +1143,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "=~", required = 1, writes = BACKREF, reads = BACKREF)
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         final RubyString[] strp = { null };
-        int pos = matchPos(context, str, strp, null, 0);
+        int pos = matchPos(context, str, strp, null, 0, false);
         if (pos < 0) return context.nil;
         pos = ((RubyString) strp[0]).subLength(pos);
         return RubyFixnum.newFixnum(context.runtime, pos);
@@ -1153,7 +1159,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = "match", reads = BACKREF)
     public IRubyObject match_m(ThreadContext context, IRubyObject str, Block block) {
-        return matchCommon(context, str, 0, true, block);
+        return matchCommon(context, str, 0, true, block, false);
     }
 
     @Deprecated
@@ -1162,17 +1168,30 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public final IRubyObject match_m(ThreadContext context, IRubyObject str, boolean useBackref) {
-        return matchCommon(context, str, 0, useBackref, Block.NULL_BLOCK);
+        return match_m(context, str, useBackref, false);
+    }
+
+    /**
+     * Version of match_m that allows specifying that the match should be interruptible.
+     *
+     * @param context
+     * @param str
+     * @param useBackref
+     * @param interruptible
+     * @return
+     */
+    public final IRubyObject match_m(ThreadContext context, IRubyObject str, boolean useBackref, boolean interruptible) {
+        return matchCommon(context, str, 0, useBackref, Block.NULL_BLOCK, interruptible);
     }
 
     @Deprecated
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, boolean useBackref, Block block) {
-        return matchCommon(context, str, 0, useBackref, block);
+        return matchCommon(context, str, 0, useBackref, block, false);
     }
 
     @JRubyMethod(name = "match", reads = BACKREF)
     public IRubyObject match_m(ThreadContext context, IRubyObject str, IRubyObject pos, Block block) {
-        return matchCommon(context, str, RubyNumeric.num2int(pos), true, block);
+        return matchCommon(context, str, RubyNumeric.num2int(pos), true, block, false);
     }
 
     @JRubyMethod(name = "match?")
@@ -1185,9 +1204,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return matchP(context, str, RubyNumeric.num2int(pos));
     }
 
-    private IRubyObject matchCommon(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
+    private IRubyObject matchCommon(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block, boolean interruptible) {
         IRubyObject[] holder = setBackref ? null : new IRubyObject[1];
-        if (matchPos(context, str, null, holder, pos) < 0) {
+        if (matchPos(context, str, null, holder, pos, interruptible) < 0) {
             return context.nil;
         }
 
@@ -1205,7 +1224,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      * @param holder an out param to hold the resulting match object; ignored if null
      * @param pos the position from which to start matching
      */
-    private int matchPos(ThreadContext context, IRubyObject arg, RubyString[] strp, IRubyObject[] holder, int pos) {
+    private int matchPos(ThreadContext context, IRubyObject arg, RubyString[] strp, IRubyObject[] holder, int pos, boolean interruptible) {
         if (arg == context.nil) {
             setBackRefInternal(context, holder, context.nil);
             return -1;
@@ -1219,7 +1238,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             }
             pos = str.rbStrOffset(pos);
         }
-        return search(context, str, pos, false, holder);
+        return search(context, str, pos, false, holder, interruptible);
     }
 
     private RubyBoolean matchP(ThreadContext context, IRubyObject arg, int pos) {
@@ -1308,6 +1327,21 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      * Holder, if non-null, will receive the backref result rather than setting it into context.
      */
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder) {
+        return search(context, str, pos, reverse, holder, false);
+    }
+
+    /**
+     * Version of search that allows specifying that the match should be interruptible.
+     *
+     * @param context
+     * @param str
+     * @param pos
+     * @param reverse
+     * @param holder
+     * @param interruptible
+     * @return
+     */
+    public final int search(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder, boolean interruptible) {
         final ByteList strBL = str.getByteList();
         final int beg = strBL.begin();
         int range = beg;
@@ -1330,7 +1364,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         final Matcher matcher = reg.matcher(strBL.unsafeBytes(), beg, beg + strBL.realSize());
 
         try {
-            int result = matcherSearch(context, matcher, beg + pos, range, RE_OPTION_NONE);
+            int result = matcherSearch(context, matcher, beg + pos, range, RE_OPTION_NONE, interruptible);
             if (result == -1) {
                 setBackRefInternal(context, holder, context.nil);
                 return -1;
