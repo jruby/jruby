@@ -62,9 +62,13 @@ public class IncludedModuleWrapper extends IncludedModule {
      * @param origin the actual module not a wrapper from a prepend or include.
      */
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin) {
+        this(runtime, superClass, origin, origin); // FIXME: include passes in methodLocation but refinements calls this several places.  Determined what we should really be passing.
+    }
+
+    public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin, RubyModule methodsHolder) {
         super(runtime, superClass, origin);
         origin.addIncludingHierarchy(this);
-        methods = origin.getMethodLocation().getMethodsForWrite();
+        methods = methodsHolder.getMethodsForWrite();
     }
 
     /**

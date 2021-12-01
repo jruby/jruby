@@ -3605,7 +3605,7 @@ public class RubyModule extends RubyObject {
         // In the current logic, if we getService here we know that module is not an
         // IncludedModuleWrapper, so there's no need to fish out the delegate. But just
         // in case the logic should change later, let's do it anyway
-        RubyClass wrapper = new IncludedModuleWrapper(getRuntime(), insertAbove.getSuperClass(), moduleToInclude);
+        RubyClass wrapper = new IncludedModuleWrapper(getRuntime(), insertAbove.getSuperClass(), moduleToInclude, moduleToInclude.getMethodLocation());
 
         // if the insertion point is a class, update subclass lists
         if (insertAbove instanceof RubyClass) {
@@ -3624,7 +3624,7 @@ public class RubyModule extends RubyObject {
         insertAbove = insertAbove.getSuperClass();
 
         if (isRefinement()) {
-            moduleToInclude.getMethods().forEach((name, method) -> addRefinedMethodEntry(name, method));
+            wrapper.getMethods().forEach((name, method) -> addRefinedMethodEntry(name, method));
             wrapper.setFlag(INCLUDED_INTO_REFINEMENT, true);
         }
 
