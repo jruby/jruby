@@ -202,7 +202,7 @@ public class SprintfParser {
             leadChar = f.leadChar;
             len++; // for f.leadChar we will be adding
         }
-        int numlen = bytes.length - first;
+        int numlen = (zero && precision == 0 ? 0 : bytes.length) - first;
         len += numlen;
 
         if (f.zeroPad && !f.hasPrecision) {
@@ -335,6 +335,7 @@ public class SprintfParser {
         boolean rightPad = f.rightPad; // args can modify rightPad so we use a local instead.
         IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
         boolean negative;
+        boolean zero;
         byte[] bytes;
 
         if (width < 0) { // if '*' width from argument and negative vs determined by explicit width in format string.
@@ -344,6 +345,7 @@ public class SprintfParser {
 
         if (arg instanceof RubyFixnum) {
             final long v = ((RubyFixnum) arg).getLongValue();
+            zero = v == 0;
             negative = v < 0;
             if (negative && f.unsigned) {
                 bytes = getUnsignedNegativeBytes(v);
@@ -354,6 +356,7 @@ public class SprintfParser {
             }
         } else {
             final BigInteger v = ((RubyBignum) arg).getValue();
+            zero = v.signum() == 0;
             negative = v.signum() < 0;
             if (negative && f.unsigned && usePrefixForZero) {
                 bytes = getUnsignedNegativeBytes(v);
@@ -377,7 +380,7 @@ public class SprintfParser {
             width--;
         }
 
-        int numlen = bytes.length - first;
+        int numlen = (zero && precision == 0 ? 0 : bytes.length) - first;
 
         if (f.zeroPad && f.width != 0) {
             precision = width;
@@ -799,8 +802,9 @@ public class SprintfParser {
 
         private void processPrecision(FormatToken token) {
             token.hasPrecision = true;
+            int first = nextChar();
             int lastCharacter = 0;
-            for (int character = nextChar(); character != EOF; character = nextChar()) {
+            for (int character = first; character != EOF; character = nextChar()) {
                 switch (character) {
                     case ' ':    // space pad values
                     case '+':    // + prefix positive values
@@ -838,6 +842,10 @@ public class SprintfParser {
                     case '<':
                     case '{':
                     default:
+                        // We have a situation like %5.d.  This will just be precision 0.
+                        if (character == first) {
+                            token.precision = 0;
+                        }
                         unread();
                         return;
                 }
