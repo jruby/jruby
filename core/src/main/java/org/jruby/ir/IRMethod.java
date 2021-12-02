@@ -152,7 +152,7 @@ public class IRMethod extends IRScope {
                 if (instr instanceof CallBase && ((CallBase) instr).getCallType() == CallType.SUPER) {
                     // We have already found one super call already.  No analysis yet to figure out if this is
                     // still ok or not so we will error.
-                    if (superCall != null) throw getManager().getRuntime().newRuntimeError("Found multiple supers in java ctor");
+                    if (superCall != null) throw getManager().getRuntime().newRuntimeError("Found multiple supers in Java-calling constructor. See https://github.com/jruby/jruby/wiki/CallingJavaFromJRuby#subclassing-a-java-class");
                     superCall = ((CallBase) instr);
                     superIPC = ipc;
                 } else if (instr instanceof JumpTargetInstr) {
@@ -161,7 +161,7 @@ public class IRMethod extends IRScope {
 
                     if (superIPC != -1) { // after super
                         if (labelIPC != null && labelIPC < superIPC) { // is label before super
-                            throw getManager().getRuntime().newRuntimeError("backward control flow found around super");
+                            throw getManager().getRuntime().newRuntimeError("Backward control flow found around Java-calling super. See https://github.com/jruby/jruby/wiki/CallingJavaFromJRuby#subclassing-a-java-class");
                         }
                     } else if (labelIPC == null) { // forward jump since we have not seen label yet.
                         earlyJumps.add(label);
@@ -179,7 +179,7 @@ public class IRMethod extends IRScope {
                 ipc++;
             }
 
-            if (!earlyJumps.isEmpty()) throw getManager().getRuntime().newRuntimeError("forward control flow found around super");
+            if (!earlyJumps.isEmpty()) throw getManager().getRuntime().newRuntimeError("Forward control flow found around Java-calling super. See https://github.com/jruby/jruby/wiki/CallingJavaFromJRuby#subclassing-a-java-class");
 
             if (superIPC != -1) {
                 return new ExitableInterpreterContext(interpreterContext, superCall, superIPC);
