@@ -382,7 +382,7 @@ public class SprintfParser {
 
         int numlen = (zero && precision == 0 ? 0 : bytes.length) - first;
 
-        if (f.zeroPad && f.width != 0) {
+        if (f.zeroPad && !f.hasPrecision) {
             precision = width;
             width = 0;
         } else {
