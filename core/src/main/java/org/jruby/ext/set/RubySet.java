@@ -307,18 +307,16 @@ public class RubySet extends RubyObject implements Set {
 
     }
 
-    @JRubyMethod
+    @JRubyMethod(frame = true)
     public IRubyObject initialize_dup(ThreadContext context, IRubyObject orig) {
-        RubyClass superClass = orig.getMetaClass().getSuperClass();
-        sites(context).initialize_dup_super.call(context, this, this, superClass, "initialize_dup", orig);
+        sites(context).initialize_dup_super.call(context, this, this, orig);
         setHash((RubyHash) (((RubySet) orig).hash).dup(context));
         return this;
     }
 
-    @JRubyMethod
+    @JRubyMethod(frame = true)
     public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
-        RubyClass superClass = orig.getMetaClass().getSuperClass();
-        sites(context).initialize_clone_super.call(context, this, this, superClass, "initialize_clone", orig);
+        sites(context).initialize_clone_super.call(context, this, this, orig);
         setHash((RubyHash) (((RubySet) orig).hash).rbClone(context));
         return this;
     }
