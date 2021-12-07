@@ -48,7 +48,7 @@ default_gems = [
     ['observer', '0.1.1'],
     ['open-uri', '0.1.0'],
     ['optparse', '0.1.0'],
-    ['ostruct', '0.3.3'],
+    ['ostruct', '0.5.1'],
     # https://github.com/ruby/pp/pull/4
     #['pp', '0.1.0'],
     ['prettyprint', '0.1.0'],

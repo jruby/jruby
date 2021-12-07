@@ -326,7 +326,9 @@ class Date
 
   private_class_method :_parse_iso2, :_parse_jis, :_parse_vms, :_parse_ddd
 
-  def self._parse(str, comp=true)
+  def self._parse(str, comp=true, limit: 128)
+    check_limit(str, limit)
+
     if str.kind_of?(::String)
       # no-op
     elsif str.respond_to?(:to_str)
@@ -338,7 +340,9 @@ class Date
     return _parse_impl(str, :_comp => comp)
   end
 
-  def self._iso8601(str) # :nodoc:
+  def self._iso8601(str, limit: 128) # :nodoc:
+    check_limit(str, limit)
+
     h = {}
     if m = match(/\A\s*
       (?:
@@ -457,7 +461,9 @@ class Date
     h
   end
 
-  def self._rfc3339(str) # :nodoc:
+  def self._rfc3339(str, limit: 128) # :nodoc:
+    check_limit(str, limit)
+
     if /\A\s*-?\d{4}-\d{2}-\d{2} # allow minus, anyway
         (t|\s)
         \d{2}:\d{2}:\d{2}(\.\d+)?
@@ -468,7 +474,9 @@ class Date
     end
   end
 
-  def self._xmlschema(str) # :nodoc:
+  def self._xmlschema(str, limit: 128) # :nodoc:
+    check_limit(str, limit)
+
     if m = match(/\A\s*(-?\d{4,})(?:-(\d{2})(?:-(\d{2}))?)?
         (?:t
           (\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?
@@ -518,7 +526,9 @@ class Date
     end
   end
 
-  def self._rfc2822(str) # :nodoc:
+  def self._rfc2822(str, limit: 128) # :nodoc:
+    check_limit(str, limit)
+
     if m = match(/\A\s*(?:(?:#{Format::ABBR_DAYS.keys.join('|')})\s*,\s+)?
         \d{1,2}\s+
         (?:#{Format::ABBR_MONTHS.keys.join('|')})\s+
@@ -567,7 +577,9 @@ class Date
     end
   end
 
-  def self._jisx0301(str) # :nodoc:
+  def self._jisx0301(str, limit: 128) # :nodoc:
+    check_limit(str, limit)
+
     if /\A\s*[mtsh]?\d{2}\.\d{2}\.\d{2}
         (t
         (\d{2}:\d{2}(:\d{2}([,.]\d*)?)?
@@ -587,6 +599,27 @@ class Date
     hash[:offset] = zone_to_diff(zone)
   end
   private_class_method :set_zone
+
+  def self.check_limit(str, limit)
+    return if str.nil?
+
+    if String === str
+      # ok
+    elsif Symbol === str
+      str = str.to_s
+    else
+      raise TypeError.new("no implicit conversion of #{str.class} into String") unless str.respond_to?(:to_str)
+      str = str.to_str
+    end
+
+    limit = 2 ** 64 if limit.nil?
+
+    slen = str.length
+    if slen > limit
+      raise ArgumentError.new("string length #{slen} exceeds the limit #{limit}")
+    end
+  end
+  private_class_method :check_limit
 
 end
 

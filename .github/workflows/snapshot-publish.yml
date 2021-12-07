@@ -2,6 +2,7 @@ name: JRuby snapshot deploy
 
 on:
   workflow_call:
+    branches: ["master", "jruby-9.3"]
     secrets:
       SONATYPE_USERNAME:
         required: true
