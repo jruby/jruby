@@ -108,7 +108,7 @@ public class Hash extends Operand {
     }
 
     public boolean isKeywordRest() {
-        return !literal && pairs.length > 0 && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY);
+        return pairs.length > 0 && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY);
     }
 
     @Override
