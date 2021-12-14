@@ -301,6 +301,9 @@ public class RubyModule extends RubyObject {
         public boolean isKindOf(IRubyObject obj, RubyModule type) {
             RubyModule cl = obj.getMetaClass();
 
+            // Not sure how but this happens in test_objects_are_released_by_cache_map
+            if (cl == null) return false;
+
             return cl.searchAncestor(type.getDelegate().getOrigin()) != null;
         }
     }
