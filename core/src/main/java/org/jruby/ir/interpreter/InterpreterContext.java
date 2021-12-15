@@ -241,6 +241,10 @@ public class InterpreterContext {
         return scope.receivesKeywordArgs();
     }
 
+    public boolean isRuby2Keywords() {
+        return scope.isRuby2Keywords();
+    }
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();

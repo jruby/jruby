@@ -116,9 +116,10 @@ public class InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
         boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
+        boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
 
         if (acceptsKeywordArgument) {
-            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
+            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount(), ruby2Keywords);
         }
 
         StaticScope currScope = interpreterContext.getStaticScope();
@@ -153,7 +154,7 @@ public class InterpreterEngine {
                         interpretFloatOp((AluInstr) instr, operation, floats, booleans);
                         break;
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, ruby2Keywords, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -191,7 +192,7 @@ public class InterpreterEngine {
                             args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
                             break;
                         case PREPARE_BLOCK_ARGS:
-                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument, ruby2Keywords);
                             break;
                         default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -262,7 +263,7 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
+    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, boolean ruby2Keywords, DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
 

@@ -65,7 +65,11 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
         Object exception = null;
 
         boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
-        if (acceptsKeywordArgument) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
+        boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
+
+        if (acceptsKeywordArgument) {
+            args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount(), ruby2Keywords);
+        }
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
@@ -105,7 +109,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
             try {
                 switch (operation.opClass) {
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, ruby2Keywords, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);

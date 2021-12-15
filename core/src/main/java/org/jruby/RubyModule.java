@@ -2915,7 +2915,6 @@ public class RubyModule extends RubyObject {
                 throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), name);
             }
 
-
             // FIXME: missing origin_class module
             if (method.getDefinedClass() == this) {
                 if (!method.isNative()) {

@@ -125,6 +125,7 @@ public class Hash extends Operand {
             index++;
         } else {
             hash = RubyHash.newHash(runtime);
+            hash.setKeywordArguments(!literal);
         }
 
         for (int i = index; i < pairs.length; i++) {

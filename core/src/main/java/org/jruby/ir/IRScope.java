@@ -127,6 +127,7 @@ public abstract class IRScope implements ParseResult {
     private boolean hasNonLocalReturns;
     private boolean receivesClosureArg;
     private boolean receivesKeywordArgs;
+    private boolean ruby2Keywords;
     private boolean accessesParentsLocalVariables;
     private boolean maybeUsingRefinements;
     private boolean canCaptureCallersBinding;
@@ -411,6 +412,14 @@ public abstract class IRScope implements ParseResult {
     
     public boolean receivesKeywordArgs() {
         return receivesKeywordArgs;
+    }
+
+    public void setRuby2Keywords() {
+        ruby2Keywords = true;
+    }
+
+    public boolean isRuby2Keywords() {
+        return ruby2Keywords;
     }
 
     public void setReceivesClosureArg() {

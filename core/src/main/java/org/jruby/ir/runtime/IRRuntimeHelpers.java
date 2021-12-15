@@ -588,6 +588,29 @@ public class IRRuntimeHelpers {
         }
     }
 
+    /**
+     * Process incoming args, preparing keyword arguments if given.
+     *
+     * @param context
+     * @param args
+     * @param requiredArgsCount
+     * @return
+     */
+    @JIT
+    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount, boolean ruby2Keywords) {
+        if (ruby2Keywords) return frobnicateKwargsArgument(context, args, requiredArgsCount);
+
+        return args;
+    }
+
+    /**
+     * Process the incoming arguments list according to Ruby 2.x keyword arguments behavior.
+     *
+     * @param context
+     * @param args
+     * @param requiredArgsCount
+     * @return
+     */
     @JIT
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
         // FIXME: JIT on block circular args test in spec:compiler is passing in a null value for args.  It does not do this for methods so a bandaid for now.
@@ -2121,10 +2144,10 @@ public class IRRuntimeHelpers {
 
     // This is the placeholder for scenarios not handled by specialized instructions.
     @Interp @JIT
-    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs) {
+    public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs, boolean ruby2Keywords) {
         args = prepareBlockArgsInternal(context, block, args);
         if (usesKwArgs) {
-            args = frobnicateKwargsArgument(context, args, block.getBody().getSignature().required());
+            args = frobnicateKwargsArgument(context, args, block.getBody().getSignature().required(), ruby2Keywords);
         }
         return args;
     }

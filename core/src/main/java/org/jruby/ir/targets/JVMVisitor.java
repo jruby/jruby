@@ -1818,7 +1818,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelfBlock();
         jvmMethod().loadArgs();
         jvmAdapter().ldc(((IRClosure)jvm.methodData().scope).receivesKeywordArgs());
-        jvmMethod().invokeIRHelper("prepareBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class, boolean.class));
+        jvmAdapter().ldc(((IRClosure)jvm.methodData().scope).isRuby2Keywords());
+        jvmMethod().invokeIRHelper("prepareBlockArgs", sig(IRubyObject[].class, ThreadContext.class, Block.class, IRubyObject[].class, boolean.class, boolean.class));
         jvmMethod().storeArgs();
     }
 
