@@ -288,12 +288,14 @@ public class RubyMethod extends AbstractRubyMethod {
         str.catString(this.methodName);
         if (!methodName.equals(method.getName())) {
             str.catString("(");
-            str.catString(method.getName());
+            str.catString(method.getRealMethod().getName());
             str.catString(")");
         }
         if (method.isNotImplemented()) {
             str.catString(" (not-implemented)");
         }
+        str.catString("() ");
+        str.catString(getFilename()).cat(':').catString(""+getLine());
         str.catString(">");
 
         return str;
