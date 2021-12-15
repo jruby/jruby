@@ -3509,7 +3509,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 r = StringSupport.preciseLength(enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
                 if (StringSupport.MBCLEN_CHARFOUND_P(r) &&
                         (n = StringSupport.MBCLEN_CHARFOUND_LEN(r)) <= fptr.rbuf.len) {
-                    c = StringSupport.codePoint(runtime, fptr.encs.enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
+                    c = StringSupport.codePoint(runtime, enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
                     fptr.rbuf.off += n;
                     fptr.rbuf.len -= n;
                     block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
