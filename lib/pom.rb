@@ -56,7 +56,7 @@ default_gems = [
     ['pstore', '0.1.1'],
     ['psych', '3.3.2'],
     ['racc', '1.5.2'],
-    ['rake-ant', '1.0.4'],
+    ['rake-ant', '1.0.5'],
     ['rdoc', '6.3.1'],
     ['reline', '0.2.5'],
     ['resolv-replace', '0.1.0'],
