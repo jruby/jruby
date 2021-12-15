@@ -62,7 +62,14 @@ import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -1576,32 +1583,41 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "transform_keys", optional =  1, rest = true)
-    public IRubyObject transform_keys(final ThreadContext context, IRubyObject[] arg0, final Block block) {
+    public IRubyObject transform_keys(final ThreadContext context, IRubyObject[] args0, final Block block) {
         RubyArray transformKeys = null;
         RubyHash result = newHash(context.runtime);
 
-        if((arg0.length > 0) && (arg0 [0] != null))
-            transformKeys = ((RubyHash) arg0[0]).keys();
+        if (args0.length > 0 && args0[0] != null) {
+            IRubyObject maybeHash = args0[0];
+            args0[0] = TypeConverter.convertToTypeWithCheck(maybeHash, context.runtime.getHash(), "to_hash");
 
-        if(block.isGiven())
+            if(args0[0].isNil()) {
+                throw context.runtime.newTypeError("no implicit conversion of " + maybeHash.getMetaClass() + " into to Hash");
+            }
+
+            transformKeys = ((RubyHash) args0[0]).keys();
+        }
+
+        if (block.isGiven()) {
             visitAll(context, new TransformKeysVisitor(block, transformKeys), result);
-        else
+        } else {
             result = this;
+        }
 
-        if(transformKeys != null) {
+        if (transformKeys != null) {
             for (int i = 0; i < transformKeys.size(); i++) {
                 RubySymbol orignalKey = (RubySymbol) transformKeys.get(i);
-                IRubyObject newKeySym = (IRubyObject) ((RubyHash) arg0[0]).get(orignalKey);
-
+                IRubyObject newKey = ((RubyHash) args0[0]).fastARef(orignalKey);
                 IRubyObject value = JavaUtil.convertJavaToRuby(getRuntime(), result.get(orignalKey));
+
                 if (value != null) {
-                    result.fastASet(newKeySym, value);
+                    result.fastASet(newKey, value);
                     result.remove(orignalKey);
                 }
             }
         }
 
-        if((transformKeys != null) || block.isGiven()) return result;
+        if (transformKeys != null || block.isGiven()) return result;
 
         return enumeratorizeWithSize(context, this, "transform_keys", RubyHash::size);
     }
@@ -1617,7 +1633,7 @@ public class RubyHash extends RubyObject implements Map {
 
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyHash result) {
-            if ((this.keysToIgnore != null)) {
+            if (this.keysToIgnore != null) {
                 if (!this.keysToIgnore.contains(key)) {
                     IRubyObject newKey = block.yield(context, key);
                     result.fastASet(newKey, value);
@@ -1641,11 +1657,19 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "transform_keys!", optional =  1, rest = true)
-    public IRubyObject transform_keys_bang(final ThreadContext context, IRubyObject[] arg0, final Block block) {
+    public IRubyObject transform_keys_bang(final ThreadContext context, IRubyObject[] args0, final Block block) {
         RubyArray transformKeys = null;
 
-        if((arg0.length > 0) && (arg0 [0] != null))
-            transformKeys = ((RubyHash) arg0[0]).keys();
+        if (args0.length > 0 && args0[0] != null) {
+            IRubyObject maybeHash = args0[0];
+            args0[0] = TypeConverter.convertToTypeWithCheck(maybeHash, context.runtime.getHash(), "to_hash");
+
+            if (args0[0].isNil()) {
+                throw context.runtime.newTypeError("no implicit conversion of " + maybeHash.getMetaClass() + " into to Hash");
+            }
+
+            transformKeys = ((RubyHash) args0[0]).keys();
+        }
 
         if (block.isGiven()) {
             testFrozen("Hash");
@@ -1658,29 +1682,29 @@ public class RubyHash extends RubyObject implements Map {
                 IRubyObject newKey = block.yield(context, key);
                 IRubyObject value = pairs.eltOk(i + 1);
 
-                if(!newKeys.contains(key)) this.remove(key);
+                if (!newKeys.contains(key)) this.remove(key);
 
                 op_aset(context, newKey, value);
                 newKeys.add(newKey);
             }
         }
 
-        if(transformKeys != null) {
+        if (transformKeys != null) {
             testFrozen("Hash");
 
             for (int i = 0; i < transformKeys.size(); i++) {
                 RubySymbol orignalKey = (RubySymbol) transformKeys.get(i);
-                IRubyObject newKeySym = (IRubyObject) ((RubyHash) arg0[0]).get(orignalKey);
+                IRubyObject newKey = (IRubyObject) ((RubyHash) args0[0]).get(orignalKey);
 
-                IRubyObject value = JavaUtil.convertJavaToRuby(getRuntime(), this.get(orignalKey));
+                IRubyObject value = this.fastARef(orignalKey);
                 if (value != null) {
-                    this.fastASet(newKeySym, value);
+                    this.fastASet(newKey, value);
                     this.remove(orignalKey);
                 }
             }
         }
 
-        if((transformKeys != null) || block.isGiven()) { return this; }
+        if (transformKeys != null || block.isGiven())  return this;
 
         return enumeratorizeWithSize(context, this, "transform_keys!", RubyHash::size);
     }
