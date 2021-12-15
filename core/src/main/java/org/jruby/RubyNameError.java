@@ -28,6 +28,8 @@
 
 package org.jruby;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ast.util.ArgsUtil;
@@ -143,7 +145,7 @@ public class RubyNameError extends RubyStandardError {
 
             RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
 
-            ByteList msgBytes = new ByteList(message.length() + description.size() + 16); // name.size()
+            ByteList msgBytes = new ByteList(message.length() + description.size() + 16, USASCIIEncoding.INSTANCE); // name.size()
             Sprintf.sprintf(msgBytes, message, arr);
 
             return runtime.newString(msgBytes);

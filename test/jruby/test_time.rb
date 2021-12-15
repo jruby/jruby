@@ -198,7 +198,7 @@ class TestTimeNilOps < Test::Unit::TestCase
       fail "bleh"
     rescue NoMethodError=>x
       assert x
-      assert_equal "undefined method `*' for #{t}:Time", x.message
+      assert_equal "undefined method `*' for #{t.inspect}:Time", x.message
     end
   end
 
@@ -209,7 +209,7 @@ class TestTimeNilOps < Test::Unit::TestCase
       fail "bleh"
     rescue NoMethodError=>x
       assert x
-      assert_equal "undefined method `/' for #{t}:Time", x.message
+      assert_equal "undefined method `/' for #{t.inspect}:Time", x.message
     end
   end
 
