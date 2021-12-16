@@ -792,8 +792,14 @@ public final class StringSupport {
      * @param runtime
      * @param value
      */
-    public static final void checkStringSafety(Ruby runtime, IRubyObject value) {
+    public static void checkStringSafety(Ruby runtime, IRubyObject value) {
         RubyString s = value.asString();
+
+        if (s.getCodeRange() != CR_7BIT) {
+            checkStringSafetyMBC(runtime, s);
+            return;
+        }
+
         ByteList bl = s.getByteList();
         final byte[] array = bl.getUnsafeBytes();
         final int end = bl.length();
@@ -801,6 +807,21 @@ public final class StringSupport {
             if (array[i] == (byte) 0) {
                 throw runtime.newArgumentError("string contains null byte");
             }
+        }
+    }
+
+    public static void checkStringSafetyMBC(Ruby runtime, RubyString value) {
+        ByteList bl = value.getByteList();
+        final byte[] bytes = bl.getUnsafeBytes();
+        int len = bl.realSize();
+        int end = bl.begin() + len;
+        Encoding enc = bl.getEncoding();
+        int cl;
+
+        for (int p = bl.begin(); p < end; p += cl) {
+            cl = preciseLength(enc, bytes, p, end);
+            if (cl <= 0) return;
+            if (codePoint(enc, bytes, p, end) == 0) throw runtime.newArgumentError("string contains null byte");
         }
     }
 

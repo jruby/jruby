@@ -55,6 +55,7 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Getline;
 
@@ -131,6 +132,7 @@ public class RubyArgsFile extends RubyObject {
         private boolean inited = false;
         public Next next_p = NextFile;
         public boolean binmode = false;
+        private IRubyObject inPlace; // false, nil, String
 
         public ArgsFileData(Ruby runtime, RubyArray argv) {
             this.runtime = runtime;
@@ -147,6 +149,7 @@ public class RubyArgsFile extends RubyObject {
         void setArgs(RubyArray argv) {
             inited = false;
             this.argv = argv;
+            this.inPlace = runtime.getFalse();
         }
 
         public boolean next_argv(ThreadContext context) {
@@ -166,7 +169,8 @@ public class RubyArgsFile extends RubyObject {
 
             if (next_p == NextFile) {
                 if (argv.getLength() > 0) {
-                    final RubyString filename = argv.shift(context).convertToString();
+                    RubyString filename = TypeConverter.convertToType(argv.shift(context), context.runtime.getString(), "to_path").convertToString();
+                    StringSupport.checkStringSafety(runtime, filename);
                     if ( ! filename.op_equal(context, $FILENAME).isTrue() ) {
                         runtime.defineReadonlyVariable("$FILENAME", filename, GlobalVariable.Scope.GLOBAL);
                     }
@@ -175,7 +179,9 @@ public class RubyArgsFile extends RubyObject {
                         currentFile = runtime.getGlobalVariables().get("$stdin");
                     } else {
                         currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{ filename }, Block.NULL_BLOCK);
-                        String extension = runtime.getInstanceConfig().getInPlaceBackupExtension();
+                        String extension = null;
+                        if (inPlace.isTrue()) extension = inPlace.asJavaString();
+                        if (extension == null) extension = runtime.getInstanceConfig().getInPlaceBackupExtension();
                         if (extension != null) {
                             if (Platform.IS_WINDOWS) {
                                 inplaceEditWindows(context, filename.asJavaString(), extension);
@@ -270,6 +276,45 @@ public class RubyArgsFile extends RubyObject {
     @Deprecated
     public static void setCurrentLineNumber(IRubyObject recv, int newLineNumber) {
         recv.getRuntime().setCurrentLine(newLineNumber);
+    }
+
+    @JRubyMethod
+    public static IRubyObject inplace_mode(ThreadContext context, IRubyObject recv) {
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        if (data.inPlace == null) return context.nil;
+        if (data.inPlace.isNil()) return context.runtime.newString("");
+
+        return data.inPlace.dup();
+    }
+
+    @JRubyMethod(name = "inplace_mode=")
+    public static IRubyObject inplace_mode_set(ThreadContext context, IRubyObject recv, IRubyObject test) {
+        return setInplaceMode(context, recv, test);
+    }
+
+    private static IRubyObject setInplaceMode(ThreadContext context, IRubyObject recv, IRubyObject test) {
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        if (!test.isTrue()) {
+            data.inPlace = context.fals;
+        } else {
+            test = TypeConverter.convertToType(test, context.runtime.getString(), "to_str", false);
+            if (test.isNil() || ((RubyString) test).length() == 0) {
+                data.inPlace = context.nil;
+            } else {
+                StringSupport.checkStringSafety(context.runtime, test);
+                test.setFrozen(true);
+                data.inPlace = test;
+            }
+        }
+
+        return recv;
+    }
+
+    @JRubyMethod(name = "inplace_mode=")
+    public IRubyObject inplace_mode_set(ThreadContext context, IRubyObject test) {
+        return setInplaceMode(context, this, test);
     }
 
     @JRubyMethod(name = "argv")
