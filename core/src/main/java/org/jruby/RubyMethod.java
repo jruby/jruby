@@ -294,8 +294,12 @@ public class RubyMethod extends AbstractRubyMethod {
         if (method.isNotImplemented()) {
             str.catString(" (not-implemented)");
         }
-        str.catString("() ");
-        str.catString(getFilename()).cat(':').catString(""+getLine());
+        str.catString("()");
+        String fileName = getFilename();
+        if (fileName != null) { // Only Ruby Methods will have this info.
+            str.catString(" ");
+            str.catString(fileName).cat(':').catString("" + getLine());
+        }
         str.catString(">");
 
         return str;
