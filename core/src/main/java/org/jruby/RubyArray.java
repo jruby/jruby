@@ -3303,7 +3303,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         safeArrayCopy(values, begin, result.values, result.begin, i);
         result.realLength = i;
 
-        if (i == realLength) return true;
+        if (i == realLength) return false;
 
         Stack<Object> stack = new Stack<>();
         stack.push(this);
@@ -3354,10 +3354,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(context.runtime, ex);
-        }
-
-        if (realLength != 0 && result.realLength == 0) {
-            System.out.println("Hmm");
         }
 
         return stack != null;
