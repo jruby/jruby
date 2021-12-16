@@ -2144,24 +2144,22 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             len += sepString.size() * (realLength - 1);
         }
 
-        boolean[] first = null;
         for (int i = 0; i < realLength; i++) {
             IRubyObject val = eltOk(i);
             IRubyObject tmp = val.checkStringType();
             if (tmp == context.nil || tmp != val) {
-                if (first == null) first = new boolean[] {false};
-                else first[0] = false;
+                if (i > realLength) i = realLength;
                 len += (realLength - i) * 10;
-                RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE);
+                RubyString result = RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE);
                 joinStrings(sepString, i, result);
-                first[0] = i == 0;
+                boolean[] first = new boolean[] { i == 0 };
                 return joinAny(context, sepString, i, result, first);
             }
 
             len += ((RubyString) tmp).getByteList().length();
         }
 
-        return joinStrings(sepString, realLength, (RubyString) RubyString.newStringLight(runtime, len));
+        return joinStrings(sepString, realLength, RubyString.newStringLight(runtime, len));
     }
 
     @JRubyMethod(name = "join")
