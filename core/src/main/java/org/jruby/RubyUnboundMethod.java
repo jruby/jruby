@@ -165,8 +165,11 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         if ( realName != null && ! methodName.equals(realName) ) {
             str.append('(').append(realName).append(')');
         }
-        str.append('(').append(')').append(' ');
-        str.append(getFilename()).append(':').append(getLine());
+        str.append('(').append(')');
+        String filename = getFilename();
+        if (filename != null) {
+            str.append(' ').append(getFilename()).append(':').append(getLine());
+        }
         str.append('>');
 
         RubyString res = RubyString.newString(getRuntime(), str);
