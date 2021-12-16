@@ -3300,12 +3300,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if (!tmp.isNil()) break;
         }
 
-        if (i == realLength) return false;
+        safeArrayCopy(values, begin, result.values, result.begin, i);
+        result.realLength = i;
 
-        // FIXME: I tried SafeArrayCopy and it was not right...I wonder if unpack is wrong for arity 2?
-        for (int j = 0; j < i; j++) {
-            result.append(eltOk(j));
-        }
+        if (i == realLength) return true;
 
         Stack<Object> stack = new Stack<>();
         stack.push(this);
@@ -3356,6 +3354,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(context.runtime, ex);
+        }
+
+        if (realLength != 0 && result.realLength == 0) {
+            System.out.println("Hmm");
         }
 
         return stack != null;
