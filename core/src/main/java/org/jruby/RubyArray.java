@@ -51,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
+import java.util.Stack;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
@@ -3291,44 +3292,72 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack();
         final Ruby runtime = context.runtime;
 
-        ArrayList<Object> stack = null;
-        IdentityHashMap<RubyArray, IRubyObject> memo = null; // used as an IdentityHashSet
-
-        RubyArray ary = this;
+        IRubyObject tmp = null;
         int i = 0;
+        for (; i < realLength; i++) {
+            IRubyObject elt = eltOk(i);
+            tmp = TypeConverter.checkArrayType(runtime, elt);
+            if (!tmp.isNil()) break;
+        }
+
+        if (i == realLength) return false;
+
+        // FIXME: I tried SafeArrayCopy and it was not right...I wonder if unpack is wrong for arity 2?
+        for (int j = 0; j < i; j++) {
+            result.append(eltOk(j));
+        }
+
+        Stack<Object> stack = new Stack<>();
+        stack.push(this);
+        stack.push(i + 1);
+        IdentityHashMap<RubyArray, IRubyObject> memo; // used as an IdentityHashSet
+
+        RubyArray ary = (RubyArray) tmp;
+
+        if (level < 0) {
+            memo = new IdentityHashMap<>(4 + 1);
+            memo.put(this, NEVER);
+            memo.put((RubyArray) tmp, NEVER);
+        } else {
+            memo = null;
+        }
+
+        i = 0;
 
         try {
             while (true) {
                 while (i < ary.realLength) {
                     IRubyObject elt = ary.eltOk(i++);
-                    if (level >= 0 && (stack == null ? 0 : stack.size()) / 2 >= level) {
+                    if (level >= 0 && stack.size() / 2 >= level) {
                         result.append(elt);
                         continue;
                     }
-                    IRubyObject tmp = TypeConverter.checkArrayType(context, elt);
-                    if (tmp == context.nil) result.append(elt);
-                    else { // nested array element
-                        if (memo == null) {
-                            memo = new IdentityHashMap<>(4 + 1);
-                            memo.put(this, NEVER);
+                    tmp = TypeConverter.checkArrayType(context, elt);
+                    if (tmp.isNil()) {
+                        result.append(elt);
+                    } else { // nested array element
+                        if (memo != null) {
+                            if (memo.get(tmp) != null) {
+                                throw runtime.newArgumentError("tried to flatten recursive array");
+                            }
+                            memo.put(ary, NEVER);
                         }
-                        if (memo.get(tmp) != null) throw runtime.newArgumentError("tried to flatten recursive array");
-                        if (stack == null) stack = new ArrayList<>(8); // fine hold 4-level deep nesting
-                        stack.add(ary); stack.add(i); // add (ary, i) pair
+                        stack.push(ary);
+                        stack.push(i); // add (ary, i) pair
                         ary = (RubyArray) tmp;
-                        memo.put(ary, NEVER);
                         i = 0;
                     }
                 }
-                if (stack == null || stack.size() == 0) break;
-                memo.remove(ary); // memo != null since stack != null
-                final int s = stack.size(); // pop (ary, i)
-                i = (Integer) stack.remove(s - 1);
-                ary = (RubyArray) stack.remove(s - 2);
+                if (stack.isEmpty()) break;
+                if (memo != null) memo.remove(ary);
+
+                i = (Integer) stack.pop();
+                ary = (RubyArray) stack.pop();
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(context.runtime, ex);
         }
+
         return stack != null;
     }
 
