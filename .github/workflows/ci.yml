@@ -30,7 +30,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: main profile
@@ -52,12 +51,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: '8'
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: jruby-jars profile
@@ -75,12 +79,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java 8
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: '8'
-          cache: 'maven'
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
@@ -100,12 +109,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -127,12 +141,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -154,12 +173,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -181,12 +205,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -208,12 +237,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -235,12 +269,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -262,12 +301,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -291,12 +335,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
@@ -316,12 +365,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
@@ -354,12 +408,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: sequel
@@ -379,12 +438,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: concurrent-ruby
@@ -404,12 +468,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -431,12 +500,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -458,12 +532,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -485,12 +564,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -512,12 +596,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -539,12 +628,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -566,12 +660,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -593,12 +692,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -620,12 +724,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -647,12 +756,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -674,12 +788,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -701,12 +820,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -728,12 +852,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -755,12 +884,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -782,12 +916,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
@@ -804,12 +943,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
           distribution: 'adopt-openj9'
           java-version: '8'
-          cache: 'maven'
       - name: test profile
         run: tool/maven-ci-script.sh
         env:
