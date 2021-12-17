@@ -191,7 +191,7 @@ public class SprintfParser {
         int signChar = 0;
 
         int len = 0;
-        if (sign) {
+        if (sign) { // FIXME: ACK this is how signchar of '-' gets skipped
             if (negative) {
                 signChar = '-';
                 width--;
@@ -367,13 +367,13 @@ public class SprintfParser {
             }
         }
 
-        int first = 0;
+        int startOfNumberIndex = 0; // The index of first digits in bytes (1 for "-123", 0 for "123").
         int signChar = 0;
 
         if (negative) {
             signChar = '-';
             width--;
-            first = 1; // skip '-' in bytes, will add where appropriate
+            startOfNumberIndex = 1; // skip '-' in bytes, will add where appropriate
         } else if (f.plusPrefix) {
             signChar = '+';
             width--;
@@ -382,7 +382,7 @@ public class SprintfParser {
             width--;
         }
 
-        int numlen = (zero && precision == 0 ? 0 : bytes.length) - first;
+        int numlen = (zero && precision == 0 ? 0 : bytes.length) - startOfNumberIndex;
 
         if (f.zeroPad && !f.hasPrecision) {
             precision = width;
@@ -402,9 +402,10 @@ public class SprintfParser {
         if (numlen < precision) {
             if (!negative || f.width != 0 || f.hasPrecision || (f.zeroPad && !rightPad)) {
                 buf.fill('0', precision - numlen);
+                precision = numlen; // we removed all but the nunlen up.  Let's record it so rightPad will not happen.
             }
         }
-        buf.append(bytes, first, numlen);
+        buf.append(bytes, startOfNumberIndex, numlen);
 
         if (width > 0) buf.fill(' ', width);
         if (numlen < precision && negative && rightPad) {
