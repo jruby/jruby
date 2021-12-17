@@ -16,6 +16,8 @@ jobs:
         package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
       fail-fast: false
 
+    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
+
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -46,6 +48,8 @@ jobs:
         package-flags: ['-Pjruby-jars', '-Pjruby-jars,test -Dinvoker.test=extended', '-Pjruby_complete_jar_extended -Dinvoker.skip=true']
       fail-fast: false
 
+    name: mvn ${{ matrix.package-flags }} (Java 8)
+
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -74,6 +78,8 @@ jobs:
       matrix:
         java-version: [11]
       fail-fast: false
+
+    name: mvn -Ptest, rake test:jruby (Windows, Java 1)
 
     steps:
       - name: checkout
@@ -105,6 +111,8 @@ jobs:
   dependency-check:
     runs-on: ubuntu-latest
 
+    name: Dependency check
+
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -132,6 +140,8 @@ jobs:
         java-version: ['8', '11', '16']
         target: ['test:mri:core:jit', 'spec:ruby:fast', 'spec:ruby:fast:jit', 'spec:ji', 'spec:ffi']
       fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
 
     steps:
       - name: checkout
@@ -162,6 +172,8 @@ jobs:
         java-version: ['8', '11', '16']
         target: ['test:jruby', 'spec:compiler']
       fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
 
     env:
       JRUBY_OPTS: '-Xcompile.invokedynamic'
@@ -195,6 +207,8 @@ jobs:
         target: ['test:mri:core:int', 'test:mri:extra', 'test:jruby:int', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
       fail-fast: false
 
+    name: rake ${{ matrix.target }} (Java 8)
+
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -224,6 +238,7 @@ jobs:
         java-version: ['8']
       fail-fast: false
 
+    name: Verify build artifacts
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -408,6 +423,8 @@ jobs:
 
   maven-test-openj9-8:
     runs-on: ubuntu-latest
+
+    name: mvn -Ptest (OpenJ9 Java 8)
 
     steps:
       - name: checkout
