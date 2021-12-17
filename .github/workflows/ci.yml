@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         java-version: ['8', '11']
+        maven-target: ['main', 'dist', 'complete', 'osgi', 'test']
       fail-fast: false
 
     steps:
@@ -29,27 +30,12 @@ jobs:
       - name: main profile
         run: tool/maven-ci-script.sh
         env:
-          PHASE: 'package -Pmain'
-      - name: dist profile
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: 'package -Pdist'
-      - name: complete profile
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: 'package -Pcomplete'
-      - name: osgi profile
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: 'package -Posgi'
-      - name: main extended
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: 'package -Pmain,test -Dinvoker.test=extended'
-      - name: test profile
-        run: tool/maven-ci-script.sh
-        env:
-          PHASE: 'package -Ptest'
+          PHASE: 'package -P${{ matrix.maven-target }}'
+  #      - name: main extended
+  #        run: tool/maven-ci-script.sh
+  #        env:
+  #          PHASE: 'package -Pmain,test -Dinvoker.test=extended'
+
   # Maven test suites that don't pass on Java 11
   maven-test-8:
     runs-on: ubuntu-latest
