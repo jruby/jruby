@@ -70,7 +70,7 @@ jobs:
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
-        run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
+        run: bin/jruby --dev -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
           JRUBY_OPTS: ''
       - name: mvn -P test
@@ -158,9 +158,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:mri:core:int
-        run: bin/jruby -S rake test:mri:core:int
+        run: bin/jruby --dev -S rake test:mri:core:int
 
   mri-core-jit:
     runs-on: ubuntu-latest
@@ -190,9 +190,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:mri:core:jit
-        run: bin/jruby -S rake test:mri:core:jit
+        run: bin/jruby --dev -S rake test:mri:core:jit
 
   mri-extra:
     runs-on: ubuntu-latest
@@ -222,9 +222,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:mri:extra
-        run: bin/jruby -S rake test:mri:extra
+        run: bin/jruby --dev -S rake test:mri:extra
 
   mri-stdlib:
     runs-on: ubuntu-latest
@@ -254,9 +254,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:mri:stdlib
-        run: bin/jruby -S rake test:mri:stdlib
+        run: bin/jruby --dev -S rake test:mri:stdlib
 
   spec-ruby-fast:
     runs-on: ubuntu-latest
@@ -286,9 +286,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:ruby:fast
-        run: bin/jruby -S rake spec:ruby:fast
+        run: bin/jruby --dev -S rake spec:ruby:fast
 
   spec-ruby-fast-jit:
     runs-on: ubuntu-latest
@@ -318,9 +318,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:ruby:fast:jit
-        run: bin/jruby -S rake spec:ruby:fast:jit
+        run: bin/jruby --dev -S rake spec:ruby:fast:jit
 
   spec-ruby-slow:
     runs-on: ubuntu-latest
@@ -350,11 +350,11 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:ruby:slow
-        run: bin/jruby -S rake spec:ruby:slow
+        run: bin/jruby --dev -S rake spec:ruby:slow
       - name: rake spec:ruby:debug
-        run: bin/jruby -S rake spec:ruby:debug
+        run: bin/jruby --dev -S rake spec:ruby:debug
 
   test-versions:
     runs-on: ubuntu-latest
@@ -517,9 +517,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby:int
-        run: bin/jruby -S rake test:jruby:int
+        run: bin/jruby --dev -S rake test:jruby:int
 
   jruby-tests-dev:
     runs-on: ubuntu-latest
@@ -549,9 +549,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
-        run: bin/jruby -S rake test:jruby
+        run: bin/jruby --dev -S rake test:jruby
 
   jruby-tests-jit-indy:
     runs-on: ubuntu-latest
@@ -581,9 +581,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
-        run: bin/jruby -S rake test:jruby
+        run: bin/jruby --dev -S rake test:jruby
 
   jruby-tests-aot:
     runs-on: ubuntu-latest
@@ -613,9 +613,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby:aot
-        run: bin/jruby -S rake test:jruby:aot
+        run: bin/jruby --dev -S rake test:jruby:aot
 
   jruby-tests-slow:
     runs-on: ubuntu-latest
@@ -645,9 +645,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:slow_suites
-        run: bin/jruby -S rake test:slow_suites
+        run: bin/jruby --dev -S rake test:slow_suites
 
   ji-specs:
     runs-on: ubuntu-latest
@@ -677,9 +677,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:ji
-        run: bin/jruby -S rake spec:ji
+        run: bin/jruby --dev -S rake spec:ji
 
   ji-specs-indy:
     runs-on: ubuntu-latest
@@ -709,9 +709,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:ji
-        run: bin/jruby -S rake spec:ji
+        run: bin/jruby --dev -S rake spec:ji
 
   compiler-specs:
     runs-on: ubuntu-latest
@@ -741,9 +741,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:compiler
-        run: bin/jruby -S rake spec:compiler
+        run: bin/jruby --dev -S rake spec:compiler
 
   compiler-specs-indy:
     runs-on: ubuntu-latest
@@ -773,9 +773,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:compiler
-        run: bin/jruby -S rake spec:compiler
+        run: bin/jruby --dev -S rake spec:compiler
 
   ffi-specs:
     runs-on: ubuntu-latest
@@ -805,9 +805,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:ffi
-        run: bin/jruby -S rake spec:ffi
+        run: bin/jruby --dev -S rake spec:ffi
 
   regression-specs:
     runs-on: ubuntu-latest
@@ -837,9 +837,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:regression
-        run: bin/jruby -S rake spec:regression
+        run: bin/jruby --dev -S rake spec:regression
 
   regression-specs-jit:
     runs-on: ubuntu-latest
@@ -869,9 +869,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:regression
-        run: bin/jruby -S rake spec:regression
+        run: bin/jruby --dev -S rake spec:regression
 
   jruby-specs:
     runs-on: ubuntu-latest
@@ -901,9 +901,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:jruby
-        run: bin/jruby -S rake spec:jruby
+        run: bin/jruby --dev -S rake spec:jruby
 
   jrubyc-specs:
     runs-on: ubuntu-latest
@@ -933,9 +933,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:jrubyc
-        run: bin/jruby -S rake spec:jrubyc
+        run: bin/jruby --dev -S rake spec:jrubyc
 
   profiler-specs:
     runs-on: ubuntu-latest
@@ -965,9 +965,9 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:profiler
-        run: bin/jruby -S rake spec:profiler
+        run: bin/jruby --dev -S rake spec:profiler
 
   openj9-jdk8-maven:
     runs-on: ubuntu-latest
