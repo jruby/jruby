@@ -46,28 +46,39 @@ public class SprintfParser {
         if (tokens.isEmpty() && args.length > 0) tooManyArguments(args);
 
         for (Token token: tokens) {
+            // FIXME: {} does not get width.  Also maybe separate out %c as special Token so we can then have all precisions at top in else.
             if (token instanceof ByteToken) {
                 buf.append(((ByteToken) token).getBytes());
             } else {
+                IRubyObject arg;
                 FormatToken f = (FormatToken) token;
+                int width = getWidthArg(context, f, args);
+                int precision;
 
                 switch (f.format) {
                     case 'd': // (%i, %u) %i is an alias for %d.  %u is largely %d.
-                        format_idu(context, buf, args, f, usePrefixForZero);
+                        precision = getPrecisionArg(context, f, args);
+                        arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
+                        format_idu(buf, arg, width, precision, f, usePrefixForZero);
                         break;
                     case 'c':
-                        format_c(context, buf, args, f, usePrefixForZero);
+                        arg = getArg(f, args);
+                        format_c(context, buf, arg, width, f);
                         break;
                     case 'p':
                     case 's':
-                        format_ps(context, buf, args, f, usePrefixForZero);
+                        precision = getPrecisionArg(context, f, args);
+                        arg = getArg(f, args);
+                        format_ps(context, buf, arg, width, precision, f);
                         break;
                     case 'b':
                     case 'B':
                     case 'o':
                     case 'x':
                     case 'X':
-                        format_bBxX(context, buf, args, f, usePrefixForZero);
+                        precision = getPrecisionArg(context, f, args);
+                        arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
+                        format_bBxX(buf, arg, width, precision, f, usePrefixForZero);
                         break;
                     default:
                         return false;
@@ -144,11 +155,8 @@ public class SprintfParser {
         return starWidth == null ? f.width : args.intValue(starWidth);
     }
 
-    private static void format_bBxX(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
-        int width = getWidthArg(context, f, args);
-        int precision = getPrecisionArg(context, f, args);
+    private static void format_bBxX(ByteList buf, IRubyObject arg, int width, int precision, FormatToken f, boolean usePrefixForZero) {
         boolean rightPad = f.rightPad; // args can modify rightPad so we use a local instead.
-        IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
         boolean negative;
         boolean zero;
         byte[] bytes;
@@ -239,13 +247,10 @@ public class SprintfParser {
         if (width > 0) buf.fill(' ', width);
     }
 
-    private static void format_ps(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
-        int width = getWidthArg(context, f, args);
-        int precision = getPrecisionArg(context, f, args);
+    private static void format_ps(ThreadContext context, ByteList buf, IRubyObject arg, int width, int precision, FormatToken f) {
         boolean hasPrecision = precision >= 0;
         boolean hasWidth = width > 0;
         boolean rightPad = f.rightPad;
-        IRubyObject arg = getArg(f, args);
 
         if (width < 0) {
             throw context.runtime.newArgumentError("width to %s too big");
@@ -286,10 +291,8 @@ public class SprintfParser {
         buf.setEncoding(encoding);
     }
 
-    private static void format_c(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
-        int width = getWidthArg(context, f, args);
+    private static void format_c(ThreadContext context, ByteList buf, IRubyObject arg, int width, FormatToken f) {
         boolean rightPad = f.rightPad;
-        IRubyObject arg = getArg(f, args);
         Encoding encoding;
         int codePoint, codeLen;
 
@@ -299,6 +302,8 @@ public class SprintfParser {
         if (!tmp.isNil()) {
             final RubyString rs = ((RubyString) tmp);
             ByteList bl = rs.getByteList();
+            // FIXME: We are literally codepoint walking to determine length.  This can be combined with actual codepoint calculation
+            // to err if we are not at realSize after getting the codepoint.
             if (rs.strLength() != 1) {
                 throw context.runtime.newArgumentError("%c requires a character");
             }
@@ -329,11 +334,8 @@ public class SprintfParser {
         if (width > 0) buf.fill(' ', width-1);
     }
 
-    private static void format_idu(ThreadContext context, ByteList buf, Sprintf.Args args, FormatToken f, boolean usePrefixForZero) {
-        int width = getWidthArg(context, f, args);
-        int precision = getPrecisionArg(context, f, args);
+    private static void format_idu(ByteList buf, IRubyObject arg, int width, int precision, FormatToken f, boolean usePrefixForZero) {
         boolean rightPad = f.rightPad; // args can modify rightPad so we use a local instead.
-        IRubyObject arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
         boolean negative;
         boolean zero;
         byte[] bytes;
