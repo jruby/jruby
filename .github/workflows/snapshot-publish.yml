@@ -2,7 +2,6 @@ name: JRuby snapshot deploy
 
 on:
   workflow_call:
-    branches: ["master", "jruby-9.3"]
     secrets:
       SONATYPE_USERNAME:
         required: true
@@ -20,7 +19,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: '11'
+          java-version: '8'
           server-id: sonatype-nexus-snapshots
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
