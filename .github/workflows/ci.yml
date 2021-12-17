@@ -3,7 +3,7 @@ name: JRuby CI
 on: [push, pull_request]
 
 env:
-  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx720M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
 
 jobs:
   maven-package-all-javas:
@@ -133,9 +133,6 @@ jobs:
         target: ['test:mri:core:jit', 'spec:ruby:fast', 'spec:ruby:fast:jit', 'spec:ji', 'spec:ffi']
       fail-fast: false
 
-    env:
-      JRUBY_OPTS: '-J-Xmx1G'
-
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -167,7 +164,7 @@ jobs:
       fail-fast: false
 
     env:
-      JRUBY_OPTS: '-Xcompile.invokedynamic -J-Xmx1G'
+      JRUBY_OPTS: '-Xcompile.invokedynamic'
 
     steps:
       - name: checkout
@@ -199,9 +196,6 @@ jobs:
         target: ['test:mri:core:int', 'test:mri:extra', 'test:jruby:int', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
       fail-fast: false
 
-    env:
-      JRUBY_OPTS: '-J-Xmx1G'
-
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -231,9 +225,6 @@ jobs:
         java-version: ['8']
       fail-fast: false
 
-    env:
-      JRUBY_OPTS: '-J-Xmx1G'
-
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -260,9 +251,6 @@ jobs:
       matrix:
         java-version: ['8']
       fail-fast: false
-
-    env:
-      JRUBY_OPTS: '-J-Xmx1G'
 
     services:
       postgres:
@@ -304,9 +292,6 @@ jobs:
         java-version: ['8']
       fail-fast: false
 
-    env:
-      JRUBY_OPTS: '-J-Xmx1G'
-
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -335,7 +320,7 @@ jobs:
       fail-fast: false
 
     env:
-      JRUBY_OPTS: '--dev -J-Xmx1G'
+      JRUBY_OPTS: '--dev'
 
     steps:
       - name: checkout
@@ -367,7 +352,7 @@ jobs:
       fail-fast: false
 
     env:
-      JRUBY_OPTS: '-Xcompile.invokedynamic -J-Xmx1G'
+      JRUBY_OPTS: '-Xcompile.invokedynamic'
 
     steps:
       - name: checkout
@@ -399,7 +384,7 @@ jobs:
       fail-fast: false
 
     env:
-      JRUBY_OPTS: '-Xjit.threshold=0 -J-Xmx1G'
+      JRUBY_OPTS: '-Xjit.threshold=0'
 
     steps:
       - name: checkout
@@ -424,9 +409,6 @@ jobs:
 
   openj9-jdk8-maven:
     runs-on: ubuntu-latest
-
-    env:
-      JRUBY_OPTS: '-J-Xmx1G'
 
     steps:
       - name: checkout
