@@ -19,6 +19,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
