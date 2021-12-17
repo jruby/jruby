@@ -11,9 +11,9 @@ jobs:
 
     strategy:
       matrix:
+        package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
         # dist, complete, and osgi do not pass on 16 yet
         java-version: ['8', '11']
-        package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
@@ -75,20 +75,18 @@ jobs:
     runs-on: windows-latest
 
     strategy:
-      matrix:
-        java-version: [11]
       fail-fast: false
 
-    name: mvn -Ptest, rake test:jruby (Windows, Java 1)
+    name: mvn -Ptest, rake test:jruby (Windows, Java 11)
 
     steps:
       - name: checkout
         uses: actions/checkout@v2
-      - name: set up java ${{ matrix.java-version }}
+      - name: set up java 11
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
+          java-version: 11
       - name: cache dependencies
         uses: actions/cache@v2
         with:
@@ -137,8 +135,8 @@ jobs:
 
     strategy:
       matrix:
-        java-version: ['8', '11', '16']
         target: ['test:mri:core:jit', 'spec:ruby:fast', 'spec:ruby:fast:jit', 'spec:ji', 'spec:ffi']
+        java-version: ['8', '11', '16']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -169,8 +167,8 @@ jobs:
 
     strategy:
       matrix:
-        java-version: ['8', '11', '16']
         target: ['test:jruby', 'spec:compiler']
+        java-version: ['8', '11', '16']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
@@ -234,8 +232,6 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        java-version: ['8']
       fail-fast: false
 
     name: Verify build artifacts
@@ -248,11 +244,11 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: set up java ${{ matrix.java-version }}
+      - name: set up java 8
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
+          java-version: 8
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
