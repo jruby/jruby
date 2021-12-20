@@ -1698,30 +1698,28 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "transform_values!")
     public IRubyObject transform_values_bang(final ThreadContext context, final Block block) {
-        if (block.isGiven()) {
-            testFrozen("Hash");
-            iteratorVisitAll(context, (ctxt, self, key, value, index) -> self.op_aset(ctxt, key, block.yield(ctxt, value)));
-            return this;
-        }
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "transform_values!", RubyHash::size);
 
-        return enumeratorizeWithSize(context, this, "transform_values!", RubyHash::size);
+        testFrozen("Hash");
+        iteratorVisitAll(context, (ctxt, self, key, value, index) -> self.op_aset(ctxt, key, block.yield(ctxt, value)));
+
+        return this;
     }
 
     @JRubyMethod(name = "select!", alias = "filter!")
     public IRubyObject select_bang(final ThreadContext context, final Block block) {
-        if (block.isGiven()) return keep_ifCommon(context, block) ? this : context.nil;
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select!", RubyHash::size);
 
-        return enumeratorizeWithSize(context, this, "select!", RubyHash::size);
+        return keep_ifCommon(context, block) ? this : context.nil;
     }
 
     @JRubyMethod
     public IRubyObject keep_if(final ThreadContext context, final Block block) {
-        if (block.isGiven()) {
-            keep_ifCommon(context, block);
-            return this;
-        }
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "keep_if", RubyHash::size);
 
-        return enumeratorizeWithSize(context, this, "keep_if", RubyHash::size);
+        keep_ifCommon(context, block);
+
+        return this;
     }
 
     public boolean keep_ifCommon(final ThreadContext context, final Block block) {
@@ -1901,9 +1899,9 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "select", alias = "filter")
     public IRubyObject select(final ThreadContext context, final Block block) {
-        final Ruby runtime = context.runtime;
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select", RubyHash::size);
 
+        final Ruby runtime = context.runtime;
         final RubyHash result = newHash(runtime);
 
         iteratorVisitAll(context, (ctxt, self, key, value, index) -> {
