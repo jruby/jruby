@@ -1583,19 +1583,20 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "transform_keys", optional =  1, rest = true)
-    public IRubyObject transform_keys(final ThreadContext context, IRubyObject[] args0, final Block block) {
+    public IRubyObject transform_keys(final ThreadContext context, IRubyObject[] args, final Block block) {
+        Ruby runtime = context.runtime;
         RubyArray transformKeys = null;
         RubyHash result = newHash(context.runtime);
 
-        if (args0.length > 0 && args0[0] != null) {
-            IRubyObject maybeHash = args0[0];
-            args0[0] = TypeConverter.convertToTypeWithCheck(maybeHash, context.runtime.getHash(), "to_hash");
+        if (args.length > 0 && args[0] != null) {
+            IRubyObject maybeHash = args[0];
+            args[0] = TypeConverter.convertToTypeWithCheck(maybeHash, runtime.getHash(), "to_hash");
 
-            if(args0[0].isNil()) {
-                throw context.runtime.newTypeError("no implicit conversion of " + maybeHash.getMetaClass() + " into to Hash");
+            if (args[0].isNil()) {
+                throw runtime.newTypeError("no implicit conversion of " + maybeHash.getMetaClass() + " into to Hash");
             }
 
-            transformKeys = ((RubyHash) args0[0]).keys();
+            transformKeys = ((RubyHash) args[0]).keys();
         }
 
         if (block.isGiven()) {
@@ -1606,9 +1607,9 @@ public class RubyHash extends RubyObject implements Map {
 
         if (transformKeys != null) {
             for (int i = 0; i < transformKeys.size(); i++) {
-                RubySymbol orignalKey = (RubySymbol) transformKeys.get(i);
-                IRubyObject newKey = ((RubyHash) args0[0]).fastARef(orignalKey);
-                IRubyObject value = JavaUtil.convertJavaToRuby(getRuntime(), result.get(orignalKey));
+                RubySymbol orignalKey = (RubySymbol) transformKeys.eltOk(i);
+                IRubyObject newKey = ((RubyHash) args[0]).fastARef(orignalKey);
+                IRubyObject value = result.fastARef(orignalKey);
 
                 if (value != null) {
                     result.fastASet(newKey, value);
