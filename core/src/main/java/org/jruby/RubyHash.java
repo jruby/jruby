@@ -1584,66 +1584,55 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "transform_keys", optional =  1, rest = true)
     public IRubyObject transform_keys(final ThreadContext context, IRubyObject[] args, final Block block) {
-        Ruby runtime = context.runtime;
-        RubyArray transformKeys = null;
+        if (args.length == 0 && !block.isGiven()) {
+            return enumeratorizeWithSize(context, this, "transform_keys", RubyHash::size);
+        }
+
+        IRubyObject transformHash = args.length > 0 ?
+                TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getHash(), "to_hash") :
+                context.nil;
         RubyHash result = newHash(context.runtime);
 
-        if (args.length > 0 && args[0] != null) {
-            IRubyObject maybeHash = args[0];
-            args[0] = TypeConverter.convertToTypeWithCheck(maybeHash, runtime.getHash(), "to_hash");
-
-            if (args[0].isNil()) {
-                throw runtime.newTypeError("no implicit conversion of " + maybeHash.getMetaClass() + " into to Hash");
-            }
-
-            transformKeys = ((RubyHash) args[0]).keys();
-        }
-
-        if (block.isGiven()) {
-            visitAll(context, new TransformKeysVisitor(block, transformKeys), result);
-        } else {
-            result = this;
-        }
-
-        if (transformKeys != null) {
-            for (int i = 0; i < transformKeys.size(); i++) {
-                RubySymbol orignalKey = (RubySymbol) transformKeys.eltOk(i);
-                IRubyObject newKey = ((RubyHash) args[0]).fastARef(orignalKey);
-                IRubyObject value = result.fastARef(orignalKey);
-
-                if (value != null) {
-                    result.fastASet(newKey, value);
-                    result.remove(orignalKey);
-                }
+        if (!isEmpty()) {
+            if (!transformHash.isNil()) {
+                visitAll(context, new TransformKeysVisitor(block, (RubyHash) transformHash), result);
+            } else {
+                visitAll(context, new TransformKeysVisitor(block, null), result);
             }
         }
 
-        if (transformKeys != null || block.isGiven()) return result;
-
-        return enumeratorizeWithSize(context, this, "transform_keys", RubyHash::size);
+        return result;
     }
 
+    // MRI: transform_keys_i AND transform_keys_hash_i
     private static class TransformKeysVisitor extends VisitorWithState<RubyHash> {
         private final Block block;
-        private final RubyArray keysToIgnore;
+        private final RubyHash transformHash;
 
-        public TransformKeysVisitor(Block block, RubyArray keysToIgnore) {
+        public TransformKeysVisitor(Block block, RubyHash transformHash) {
             this.block = block;
-            this.keysToIgnore = keysToIgnore;
+            this.transformHash = transformHash;
         }
 
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyHash result) {
-            if (this.keysToIgnore != null) {
-                if (!this.keysToIgnore.contains(key)) {
-                    IRubyObject newKey = block.yield(context, key);
-                    result.fastASet(newKey, value);
-                } else {
-                    result.fastASet(key, value);
-                }
-            } else {
+            if (transformHash == null) {
                 IRubyObject newKey = block.yield(context, key);
                 result.fastASet(newKey, value);
+            } else {
+                RubyHashEntry entry = transformHash.internalGetEntry(key);
+                IRubyObject newKey;
+                if (entry != NO_ENTRY) {
+                    newKey = entry.value;
+                } else {
+                    if (block.isGiven()) {
+                        newKey = block.yield(context, key);
+                    } else {
+                        newKey = key;
+                    }
+                }
+                result.fastASet(newKey, value);
+
             }
         }
     }
