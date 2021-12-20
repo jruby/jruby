@@ -1620,11 +1620,8 @@ public class RubyHash extends RubyObject implements Map {
                 IRubyObject newKey = block.yield(context, key);
                 result.fastASet(newKey, value);
             } else {
-                RubyHashEntry entry = transformHash.internalGetEntry(key);
-                IRubyObject newKey;
-                if (entry != NO_ENTRY) {
-                    newKey = entry.value;
-                } else {
+                IRubyObject newKey = transformHash.internalGet(key);
+                if (newKey == null) {
                     if (block.isGiven()) {
                         newKey = block.yield(context, key);
                     } else {
