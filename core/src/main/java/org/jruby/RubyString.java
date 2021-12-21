@@ -5167,7 +5167,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             pos = regex.search(context, this, 0, false);
             if (pos < 0) return partitionMismatch(runtime);
             sep = (RubyString) subpat(context, regex);
-            if (pos == 0 && sep.value.getRealSize() == 0) return partitionMismatch(runtime);
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
