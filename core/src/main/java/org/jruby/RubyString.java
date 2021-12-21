@@ -5159,14 +5159,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject partition(ThreadContext context, IRubyObject arg, Block block) {
         Ruby runtime = context.runtime;
-        final int pos;
+        int pos;
         final RubyString sep;
         if (arg instanceof RubyRegexp) {
-            RubyRegexp regex = (RubyRegexp) arg;
+            if (((RubyRegexp) arg).search(context, this, 0, false) < 0) return partitionMismatch(runtime);
 
-            pos = regex.search(context, this, 0, false);
-            if (pos < 0) return partitionMismatch(runtime);
-            sep = (RubyString) subpat(context, regex);
+            RubyMatchData match = context.getLocalMatch();
+            pos = match.begin;
+            sep = makeSharedString(runtime, pos, match.end - pos);
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
