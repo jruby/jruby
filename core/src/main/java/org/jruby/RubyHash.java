@@ -1730,6 +1730,7 @@ public class RubyHash extends RubyObject implements Map {
         boolean[] modified = new boolean[] { false };
         iteratorVisitAll(context, (ctxt, self, key, value, index) -> {
             if (!block.yieldArray(ctxt, ctxt.runtime.newArray(key, value), null).isTrue()) {
+                testFrozen();
                 modified[0] = true;
                 self.remove(key);
             }
