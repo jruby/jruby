@@ -4510,8 +4510,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int end, beg = 0;
         boolean lastNull = false;
         int start = beg;
-        while ((end = pattern.searchString(context, this, start, false)) >= 0) {
+        while (pattern.searchString(context, this, start, false) >= 0) {
             RubyMatchData match = context.getLocalMatch();
+            end = match.begin(0);
             if (start == end && match.begin(0) == match.end(0)) {
                 if (len == 0 && start != 0) {
                     result.append(newEmptyString(runtime, metaClass));
@@ -5165,8 +5166,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (((RubyRegexp) arg).search(context, this, 0, false) < 0) return partitionMismatch(runtime);
 
             RubyMatchData match = context.getLocalMatch();
-            pos = match.begin;
-            sep = makeSharedString(runtime, pos, match.end - pos);
+            pos = match.begin(0);
+            sep = makeSharedString(runtime, pos, match.end(0) - pos);
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
