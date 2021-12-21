@@ -44,6 +44,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -1644,56 +1645,58 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "transform_keys!", optional =  1, rest = true)
-    public IRubyObject transform_keys_bang(final ThreadContext context, IRubyObject[] args0, final Block block) {
-        RubyArray transformKeys = null;
-
-        if (args0.length > 0 && args0[0] != null) {
-            IRubyObject maybeHash = args0[0];
-            args0[0] = TypeConverter.convertToTypeWithCheck(maybeHash, context.runtime.getHash(), "to_hash");
-
-            if (args0[0].isNil()) {
-                throw context.runtime.newTypeError("no implicit conversion of " + maybeHash.getMetaClass() + " into to Hash");
-            }
-
-            transformKeys = ((RubyHash) args0[0]).keys();
+    public IRubyObject transform_keys_bang(final ThreadContext context, IRubyObject[] args, final Block block) {
+        if (args.length == 0 && !block.isGiven()) {
+            return enumeratorizeWithSize(context, this, "transform_keys!", RubyHash::size);
         }
 
-        if (block.isGiven()) {
-            testFrozen("Hash");
+        IRubyObject transformHash = args.length > 0 ?
+                TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getHash(), "to_hash") :
+                context.nil;
+        modify();
 
+        if (!isEmpty()) {
             RubyArray pairs = (RubyArray) flatten(context);
-            ArrayList<IRubyObject> newKeys = new ArrayList<>();
+            int length = pairs.size();
+            boolean aborted = false; // If break happens in blocks we stop transforming but still leave rest as-is.
+            clear();
+            for (int i = 0; i < length; i += 2) {
+                IRubyObject oldKey = pairs.eltOk(i);
+                IRubyObject newKey;
 
-            for (int i = 0; i < pairs.size(); i += 2) {
-                IRubyObject key = pairs.eltOk(i);
-                IRubyObject newKey = block.yield(context, key);
-                IRubyObject value = pairs.eltOk(i + 1);
+                if (aborted) {
+                    newKey = oldKey;
+                } else {
+                    if (transformHash.isNil()) {
+                        try {
+                            newKey = block.yield(context, oldKey);
+                        } catch (IRBreakJump e) {
+                            aborted = true;
+                            newKey = oldKey;
+                        }
+                    } else {
+                        newKey = ((RubyHash) transformHash).internalGet(oldKey);
 
-                if (!newKeys.contains(key)) this.remove(key);
-
-                op_aset(context, newKey, value);
-                newKeys.add(newKey);
-            }
-        }
-
-        if (transformKeys != null) {
-            testFrozen("Hash");
-
-            for (int i = 0; i < transformKeys.size(); i++) {
-                RubySymbol orignalKey = (RubySymbol) transformKeys.get(i);
-                IRubyObject newKey = (IRubyObject) ((RubyHash) args0[0]).get(orignalKey);
-
-                IRubyObject value = this.fastARef(orignalKey);
-                if (value != null) {
-                    this.fastASet(newKey, value);
-                    this.remove(orignalKey);
+                        if (newKey == null) {
+                            if (block.isGiven()) {
+                                try {
+                                    newKey = block.yield(context, oldKey);
+                                } catch (IRBreakJump e) {
+                                    aborted = true;
+                                    newKey = oldKey;
+                                }
+                            } else {
+                                newKey = oldKey;
+                            }
+                        }
+                    }
                 }
+
+                fastASet(newKey, pairs.eltOk(i + 1));
             }
         }
 
-        if (transformKeys != null || block.isGiven())  return this;
-
-        return enumeratorizeWithSize(context, this, "transform_keys!", RubyHash::size);
+        return this;
     }
 
     @JRubyMethod(name = "transform_values!")
