@@ -3467,7 +3467,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                                       pos) - value.getBegin();
             pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search(context, this, pos, false);
-            pos = subLength(pos);
+            if (pos >= 0) {
+                RubyMatchData match = context.getLocalMatch();
+                pos = subLength(match.begin(0));
+            }
         } else if (sub instanceof RubyString) {
             pos = StringSupport.index(this, (RubyString) sub, pos, this.checkEncoding((RubyString) sub));
             pos = subLength(pos);
