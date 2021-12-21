@@ -5426,7 +5426,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject singleByteLStrip(ThreadContext context, byte[] bytes, int s, int end) {
         int p = s;
-        while (p < end && ASCII.isSpace(bytes[p] & 0xff)) p++;
+        while (p < end && (bytes[p] == 0 || ASCII.isSpace(bytes[p] & 0xff))) p++;
         if (p > s) {
             view(p - s, end - p);
             return this;
@@ -5440,7 +5440,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         while (p < end) {
             int c = codePoint(runtime, enc, bytes, p, end);
-            if (!ASCII.isSpace(c)) break;
+            if (!ASCII.isSpace(c) && c != 0) break;
             p += codeLength(enc, c);
         }
 
