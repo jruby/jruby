@@ -162,7 +162,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         IRubyObject[] args;
         if (value == null) { // no args case from BlockBody.yieldSpecific
             args = IRubyObject.NULL_ARRAY;
-        } else if (!signature.hasKwargs() && !signature.isSpreadable()) {
+        } else if (!signature.isSpreadable()) {
             args = new IRubyObject[] { value };
         } else {
             args = toAry(context, value);
