@@ -182,6 +182,7 @@ public class Hash extends Operand {
             }
         }
         builder.append("}");
+        if (literal) builder.append("(literal)");
         return builder.toString();
     }
 
