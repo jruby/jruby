@@ -3468,7 +3468,7 @@ public class IRBuilder {
         }
 
         if (hash == null) {           // non-**arg ordinary hash
-            hash = copyAndReturnValue(new Hash(args));
+            hash = copyAndReturnValue(new Hash(args, hashNode.isLiteral()));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
         }
@@ -4575,6 +4575,7 @@ public class IRBuilder {
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();
+        // FIXME: This is likely wrong. single argnode array may only be the kwarg
         // Get rid of one level of array wrapping
         if (argNode != null && (argNode instanceof ArrayNode) && ((ArrayNode)argNode).size() == 1) {
             argNode = ((ArrayNode)argNode).getLast();
