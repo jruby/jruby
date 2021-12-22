@@ -232,7 +232,8 @@ public class JVMVisitor extends IRVisitor {
             m.loadContext();
             m.loadArgs();
             m.adapter.pushInt(staticScope.getSignature().required());
-            m.invokeIRHelper("frobnicateKwargsArgument", sig(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, int.class));
+            m.adapter.ldc(scope.isRuby2Keywords());
+            m.invokeIRHelper("frobnicateKwargsArgument", sig(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, int.class, boolean.class));
             m.storeArgs();
         }
 
@@ -2585,6 +2586,8 @@ public class JVMVisitor extends IRVisitor {
             jvmAdapter().checkcast(p(RubyHash.class));
 
             iter.next();
+        } else {
+            jvmMethod().adapter.ldc(hash.pairs);
         }
 
         for (; iter.hasNext() ;) {

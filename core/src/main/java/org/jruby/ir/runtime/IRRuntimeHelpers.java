@@ -728,6 +728,10 @@ public class IRRuntimeHelpers {
 
         Object lastArg = args[args.length - 1];
 
+        if (lastArg instanceof RubyHash && !((RubyHash) lastArg).isKeywordArguments()) {
+            return null;
+        }
+
         if (lastArg instanceof IRubyObject) {
             IRubyObject returnValue = toHash(context, (IRubyObject) lastArg);
             if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
@@ -975,6 +979,7 @@ public class IRRuntimeHelpers {
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
 
         hash.modify();
+        hash.setKeywordArguments(true);
         final RubyHash otherHash = explicitKwarg.convertToHash();
 
         if (otherHash.empty_p(context).isTrue()) return hash;
@@ -993,9 +998,6 @@ public class IRRuntimeHelpers {
 
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
-            // All kwargs keys must be symbols.
-            TypeConverter.checkType(context, key, context.runtime.getSymbol());
-
             target.op_aset(context, key, value);
         }
     }
@@ -1502,6 +1504,7 @@ public class IRRuntimeHelpers {
     public static RubyHash dupKwargsHashAndPopulateFromArray(ThreadContext context, RubyHash dupHash, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = dupHash.dupFast(context);
+        hash.setKeywordArguments(true);
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }

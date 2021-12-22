@@ -336,7 +336,7 @@ public class Bootstrap {
     public static CallSite hash(Lookup lookup, String name, MethodType type) {
         MethodHandle handle = Binder
                 .from(lookup, type)
-                .collect(1, IRubyObject[].class)
+                .collect(2, IRubyObject[].class)
                 .invoke(HASH_HANDLE);
 
         return new ConstantCallSite(handle);
@@ -344,7 +344,7 @@ public class Bootstrap {
 
     private static final MethodHandle HASH_HANDLE =
             Binder
-                    .from(RubyHash.class, ThreadContext.class, IRubyObject[].class)
+                    .from(RubyHash.class, ThreadContext.class, boolean.class, IRubyObject[].class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "hash");
 
     public static CallSite kwargsHash(Lookup lookup, String name, MethodType type) {
@@ -584,9 +584,10 @@ public class Bootstrap {
         return rubyEncoding;
     }
 
-    public static RubyHash hash(ThreadContext context, IRubyObject[] pairs) {
+    public static RubyHash hash(ThreadContext context, boolean isKeyword, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = new RubyHash(runtime, pairs.length / 2 + 1);
+        hash.setKeywordArguments(isKeyword);
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }

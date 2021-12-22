@@ -106,7 +106,7 @@ public class NormalDynamicValueCompiler implements DynamicValueCompiler {
         if (length > IRBytecodeAdapter.MAX_ARGUMENTS / 2) throw new NotCompilableException("literal hash has more than " + (IRBytecodeAdapter.MAX_ARGUMENTS / 2) + " pairs");
 
         SkinnyMethodAdapter adapter2;
-        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2));
+        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, boolean.class, JVM.OBJECT, length * 2));
 
         final String methodName = "hash:" + length;
         final ClassData classData = compiler.getClassData();
