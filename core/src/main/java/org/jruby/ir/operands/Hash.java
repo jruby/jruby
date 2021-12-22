@@ -104,7 +104,7 @@ public class Hash extends Operand {
                                 pair.getValue().cloneForInlining(ii)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs, !literal);
+        return new Hash(newPairs, literal);
     }
 
     public boolean isKeywordRest() {
@@ -121,12 +121,14 @@ public class Hash extends Operand {
         if (isKeywordRest()) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
             hash = ((RubyHash) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
+            hash.setKeywordArguments(true);
             // Skip the first pair
             index++;
         } else {
             hash = RubyHash.newHash(runtime);
             hash.setKeywordArguments(!literal);
         }
+
 
         for (int i = index; i < pairs.length; i++) {
             KeyValuePair<Operand, Operand> pair = pairs[i];
