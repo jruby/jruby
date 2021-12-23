@@ -91,6 +91,13 @@ public final class TopSelfFactory {
             }
         });
 
+        singletonClass.addMethod("ruby2_keywords", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+                return context.runtime.getObject().ruby2_keywords(context, args);
+            }
+        });
+
         final RubyClass klass = wrapper ? singletonClass : runtime.getObject();
         singletonClass.addMethod("define_method", new JavaMethod.JavaMethodOneOrTwoBlock(singletonClass, Visibility.PRIVATE, "define_method") {
             @Override
