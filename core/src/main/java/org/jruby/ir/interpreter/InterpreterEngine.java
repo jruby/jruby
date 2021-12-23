@@ -3,6 +3,7 @@ package org.jruby.ir.interpreter;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
@@ -120,6 +121,8 @@ public class InterpreterEngine {
 
         if (acceptsKeywordArgument) {
             args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount(), ruby2Keywords);
+        } else if (ruby2Keywords) {
+            IRRuntimeHelpers.markAsRuby2KeywordArg(args);
         }
 
         StaticScope currScope = interpreterContext.getStaticScope();
