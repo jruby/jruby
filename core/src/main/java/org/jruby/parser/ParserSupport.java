@@ -245,7 +245,7 @@ public class ParserSupport {
             if (currentScope.isBlockScope() && slot != -1) {
                 if (isNumParamId(id) && isNumParamNested()) return null;
                 if (name.getBytes().equals(lexer.getCurrentArg())) {
-                    warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
+                    compile_error(str(getConfiguration().getRuntime(), "circular argument reference - ", name));
                 }
 
                 Node newNode = new DVarNode(node.getLine(), slot, name);
@@ -259,7 +259,7 @@ public class ParserSupport {
             StaticScope.Type type = currentScope.getType();
             if (type == StaticScope.Type.LOCAL) {
                 if (name.getBytes().equals(lexer.getCurrentArg())) {
-                    warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
+                    compile_error(str(getConfiguration().getRuntime(), "circular argument reference - ", name));
                 }
 
                 Node newNode = new LocalVarNode(node.getLine(), slot, name);
@@ -338,8 +338,7 @@ public class ParserSupport {
     public Node declareIdentifier(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
         if (byteName.equals(lexer.getCurrentArg())) {
-            warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), lexer.getRubySourceline(),
-                    str(getConfiguration().getRuntime(), "circular argument reference - ", name));
+            compile_error(str(getConfiguration().getRuntime(), "circular argument reference - ", name));
         }
 
         String id = name.idString();
