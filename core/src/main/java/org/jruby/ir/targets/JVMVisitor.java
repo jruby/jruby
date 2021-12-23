@@ -238,6 +238,11 @@ public class JVMVisitor extends IRVisitor {
             m.storeArgs();
         }
 
+        // FIXME: We would prefer a reference to live method vs staticscope.
+        m.adapter.aload(1);
+        m.loadArgs();
+        m.invokeIRHelper("markAsRuby2KeywordArg", sig(void.class, StaticScope.class, IRubyObject[].class));
+
         for (BasicBlock bb: bbs) {
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);

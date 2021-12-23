@@ -695,11 +695,13 @@ public class IRRuntimeHelpers {
                 context.tru : context.fals;
     }
 
-    public static void markAsRuby2KeywordArg(IRubyObject[] args) {
-        IRubyObject last = args[args.length - 1];
+    public static void markAsRuby2KeywordArg(StaticScope scope, IRubyObject[] args) {
+        if (scope.getIRScope().isRuby2Keywords()) {
+            IRubyObject last = args[args.length - 1];
 
-        // FIXME: Should this to_hash if not a hash?
-        if (last instanceof RubyHash) ((RubyHash) last).setRuby2KeywordHash(true);
+            // FIXME: Should this to_hash if not a hash?
+            if (last instanceof RubyHash) ((RubyHash) last).setRuby2KeywordHash(true);
+        }
     }
 
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {

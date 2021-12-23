@@ -69,9 +69,8 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
 
         if (acceptsKeywordArgument) {
             args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount(), ruby2Keywords);
-        } else if (ruby2Keywords) {
-            IRRuntimeHelpers.markAsRuby2KeywordArg(args);
         }
+        IRRuntimeHelpers.markAsRuby2KeywordArg(interpreterContext.getStaticScope(), args);
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
