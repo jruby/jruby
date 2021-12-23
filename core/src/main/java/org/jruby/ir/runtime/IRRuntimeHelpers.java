@@ -695,6 +695,13 @@ public class IRRuntimeHelpers {
                 context.tru : context.fals;
     }
 
+    public static void markAsRuby2KeywordArg(IRubyObject[] args) {
+        IRubyObject last = args[args.length - 1];
+
+        // FIXME: Should this to_hash if not a hash?
+        if (last instanceof RubyHash) ((RubyHash) last).setRuby2KeywordHash(true);
+    }
+
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
         RubyHash syms;
         RubyHash others;
@@ -1483,11 +1490,12 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
+    public static RubyHash constructHashFromArray(Ruby runtime, boolean literal, IRubyObject[] pairs) {
         int length = pairs.length / 2;
         boolean useSmallHash = length <= 10;
 
         RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
+        hash.setKeywordArguments(!literal);
 
         for (int i = 0; i < pairs.length;) {
             if (useSmallHash) {

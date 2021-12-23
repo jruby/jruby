@@ -5,6 +5,7 @@ import org.jruby.*;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
@@ -2587,7 +2588,7 @@ public class JVMVisitor extends IRVisitor {
 
             iter.next();
         } else {
-            jvmMethod().adapter.ldc(hash.pairs);
+            jvmMethod().adapter.ldc(hash.literal);
         }
 
         for (; iter.hasNext() ;) {
