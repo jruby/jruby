@@ -696,7 +696,7 @@ public class IRRuntimeHelpers {
     }
 
     public static void markAsRuby2KeywordArg(StaticScope scope, IRubyObject[] args) {
-        if (scope.getIRScope().isRuby2Keywords()) {
+        if (scope.getIRScope().isRuby2Keywords() && args.length >= 1) {
             IRubyObject last = args[args.length - 1];
 
             // FIXME: Should this to_hash if not a hash?
