@@ -406,6 +406,22 @@ public class TestRaiseException extends Base {
         }
     }
 
+    public void testPreviousRaisedNotConsideredCause() {
+        try {
+            runtime.evalScriptlet("raise 'foo'");
+            fail("expected to throw");
+        } catch (StandardError ex1) {
+            assertNull("ex1 has a cause", ex1.getCause());
+        }
+
+        try {
+            runtime.evalScriptlet("raise 'bar'");
+            fail("expected to throw");
+        } catch (StandardError ex2) {
+            assertNull("ex2 has a cause: " + ex2.getCause(), ex2.getCause());
+        }
+    }
+
     private static String printStackTrace(final Throwable ex) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ex.printStackTrace(new PrintStream(baos));
