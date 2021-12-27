@@ -212,8 +212,6 @@ public class RaiseException extends JumpException {
         context.runtime.incrementExceptionCount();
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
-        doSetLastError(context);
-
         if (backtrace == null) {
             if (capture) { // only false to support legacy RaiseException construction (not setting trace)
                 if (requiresBacktrace(context)) exception.captureBacktrace(context);
@@ -272,12 +270,8 @@ public class RaiseException extends JumpException {
         if (newTrace != curTrace) setStackTrace(newTrace);
     }
 
-    private void doSetLastError(final ThreadContext context) {
-        context.setErrorInfo(exception); // $!
-    }
-
     /**
-     * Sets the exception
+      * Sets the exception
      * @param newException The exception to set
      */
     protected final void setException(RubyException newException) {
