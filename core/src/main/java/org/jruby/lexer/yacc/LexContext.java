@@ -14,6 +14,7 @@ public class LexContext {
     public boolean in_kwarg;
 
     public ShareableConstantValue shareable_constant_value;
+    public boolean in_argdef;
 
     public void reset() {
         in_def = false;

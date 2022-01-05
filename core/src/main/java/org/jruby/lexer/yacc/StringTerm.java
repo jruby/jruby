@@ -36,6 +36,7 @@ import org.jruby.ext.ripper.RipperParser;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.Sprintf;
 
 import static org.jruby.lexer.LexingCommon.*;
 
@@ -251,6 +252,19 @@ public class StringTerm extends StrTerm {
                     }
 
                     if (regexp) {
+                        switch (c) {
+                            case 'c':
+                            case 'C':
+                            case 'M': {
+                                lexer.pushback(c);
+                                c = lexer.readEscape();
+
+                                ByteList escbuf = new ByteList(5);
+                                Sprintf.sprintf(lexer.getRuntime(), escbuf, "\\x%02X", c);
+                                continue;
+                            }
+                        }
+
                         if (c == end && !simple_re_meta(c)) {
                             buffer.append(c);
                             continue;
@@ -381,26 +395,6 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
                 lexer.pushback(c);
             }
             break;
-        case 'M':
-            if ((lexer.nextc()) != '-') {
-                lexer.compile_error("Invalid escape character syntax");
-            }
-            buffer.append(new byte[] { '\\', 'M', '-' });
-            escaped(lexer, buffer);
-            break;
-        case 'C':
-            if ((lexer.nextc()) != '-') {
-                lexer.compile_error("Invalid escape character syntax");
-            }
-            buffer.append(new byte[] { '\\', 'C', '-' });
-            escaped(lexer, buffer);
-            break;
-        case 'c':
-            buffer.append(new byte[] { '\\', 'c' });
-            escaped(lexer, buffer);
-            break;
-        case EOF:
-            lexer.compile_error("Invalid escape character syntax");
         default:
             if (c != '\\' || c != end) buffer.append('\\');
 

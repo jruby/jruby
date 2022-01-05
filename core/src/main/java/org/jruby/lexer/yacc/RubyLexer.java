@@ -277,11 +277,14 @@ public class RubyLexer extends LexingCommon {
     // What handles warnings
     private IRubyWarnings warnings;
 
+    public Ruby getRuntime() {
+        return parserSupport.getConfiguration().getRuntime();
+    }
+
     public int tokenize_ident(int result) {
         // FIXME: Get token from newtok index to lex_p?
         ByteList value = createTokenByteList();
-        Ruby runtime = parserSupport.getConfiguration().getRuntime();
-        String id = runtime.newSymbol(value).idString();
+        String id = getRuntime().newSymbol(value).idString();
 
         if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(id) >= 0) {
             setState(EXPR_END);
@@ -587,7 +590,7 @@ public class RubyLexer extends LexingCommon {
     }
 
     protected void setEncoding(ByteList name) {
-        Ruby runtime = parserSupport.getConfiguration().getRuntime();
+        Ruby runtime = getRuntime();
         Encoding newEncoding = runtime.getEncodingService().loadEncoding(name);
 
         if (newEncoding == null) throw runtime.newArgumentError("unknown encoding name: " + name.toString());
@@ -701,6 +704,7 @@ public class RubyLexer extends LexingCommon {
         boolean shortHand;
         
         // Short-hand (e.g. %{,%.,%!,... versus %Q{).
+        if (c == EOF) compile_error("unterminated quoted string meets end of file");
         if (!Character.isLetterOrDigit(c)) {
             begin = c;
             c = 'Q';
@@ -711,7 +715,7 @@ public class RubyLexer extends LexingCommon {
             begin = nextc();
             if (Character.isLetterOrDigit(begin) /* no mb || ismbchar(term)*/) compile_error("unknown type of %string");
         }
-        if (c == EOF || begin == EOF) compile_error("unterminated quoted string meets end of file");
+        if (begin == EOF) compile_error("unterminated quoted string meets end of file");
 
         // Figure end-char.  '\0' is special to indicate begin=end and that no nesting?
         switch(begin) {
@@ -1184,8 +1188,7 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int identifierToken(int result, ByteList value) {
-        Ruby runtime = parserSupport.getConfiguration().getRuntime();
-        RubySymbol symbol = runtime.newSymbol(value);
+        RubySymbol symbol = getRuntime().newSymbol(value);
         String id = symbol.idString();
 
         if (result == RubyParser.tCONSTANT && !symbol.validConstantName()) result = RubyParser.tIDENTIFIER;
@@ -1517,6 +1520,11 @@ public class RubyLexer extends LexingCommon {
         if ((c = nextc()) == '.') {
             if ((c = nextc()) == '.') {
                 yaccValue = DOT_DOT_DOT;
+
+                if (getLexContext().in_argdef) {
+                    setState(EXPR_ENDARG);
+                    return RubyParser.tBDOT3;
+                }
 
                 if (parenNest == 0 && isLookingAtEOL()) {
                     warnings.warn(ID.MISCELLANEOUS, "... at EOL, should be parenthesized?");

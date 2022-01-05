@@ -1323,7 +1323,7 @@ public class ParserSupport {
     }
     
     public Node newEvStrNode(int line, Node node) {
-        if (node instanceof StrNode || node instanceof DStrNode || node instanceof EvStrNode) return node;
+        if (node instanceof StrNode || node instanceof EvStrNode) return node;
 
         return new EvStrNode(line, node);
     }
@@ -1382,6 +1382,19 @@ public class ParserSupport {
         if (tail == null) {
             argsNode = new ArgsNode(line, pre, optional, rest, post, null);
         } else {
+            if (FWD_BLOCK.equals(tail.getBlockArg())) {
+                if (rest != null) {
+                    yyerror("... after rest argument");
+                    argsNode = new ArgsNode(line, null, null, null, null,
+                            tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
+
+                    getCurrentScope().setSignature(Signature.from(argsNode));
+
+                    return argsNode;
+                }
+                rest = new RestArgNode(arg_var(FWD_REST));
+            }
+
             argsNode = new ArgsNode(line, pre, optional, rest, post,
                     tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
         }
@@ -1796,13 +1809,6 @@ public class ParserSupport {
         }
 
         return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
-    }
-
-    public void warn_one_line_pattern_matching(int line, Node pattern, boolean rightAssign) {
-        // FIXME: Prune out on warning categories once it is more wired in.
-        if (!(rightAssign && (pattern instanceof LocalAsgnNode || pattern instanceof DAsgnNode))) {
-            warn_experimental(line, "One-line pattern matching is experimental, and the behavior may change in future versions of Ruby!");
-        }
     }
 
     public void warn_experimental(int line, String message) {
