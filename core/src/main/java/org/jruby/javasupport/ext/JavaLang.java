@@ -476,8 +476,7 @@ public abstract class JavaLang {
             proxy.defineAlias("resource", "get_resource");
             proxy.defineAlias("declared_field", "get_declared_field");
             proxy.defineAlias("field", "get_field");
-            proxy.defineAlias("annotation", "get_annotation");
-            proxy.defineAlias("annotation_present?", "is_annotation_present");
+
             return proxy;
         }
 
