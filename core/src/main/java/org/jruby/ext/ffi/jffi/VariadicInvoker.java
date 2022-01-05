@@ -28,6 +28,7 @@ public class VariadicInvoker extends RubyObject {
     private final Pointer address;
     private final FunctionInvoker functionInvoker;
     private final com.kenai.jffi.Type returnType;
+    private final int fixedParamCount;
     private final IRubyObject enums;
     private final boolean saveError;
     private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;
@@ -44,12 +45,13 @@ public class VariadicInvoker extends RubyObject {
     }
 
     private VariadicInvoker(Ruby runtime, IRubyObject klazz, Pointer address,
-            FunctionInvoker functionInvoker, com.kenai.jffi.Type returnType,
+            FunctionInvoker functionInvoker, com.kenai.jffi.Type returnType, int fixedParamCount,
             CallingConvention convention, IRubyObject enums, boolean saveError) {
         super(runtime, (RubyClass) klazz);
         this.address = address;
         this.functionInvoker = functionInvoker;
         this.returnType = returnType;
+        this.fixedParamCount = fixedParamCount;
         this.convention = convention;
         this.enums = enums;
         this.saveError = saveError;
@@ -117,15 +119,18 @@ public class VariadicInvoker extends RubyObject {
 
         RubyArray paramTypes = (RubyArray) rbParameterTypes;
         RubyArray fixed = RubyArray.newArray(context.runtime);
+        int fixedParamCount = 0;
         for (int i = 0; i < paramTypes.getLength(); ++i) {
             Type type = (Type)paramTypes.entry(i);
-            if (type.getNativeType() != org.jruby.ext.ffi.NativeType.VARARGS)
+            if (type.getNativeType() != org.jruby.ext.ffi.NativeType.VARARGS) {
                 fixed.append(type);
+                fixedParamCount++;
+            }
         }
 
         FunctionInvoker functionInvoker = DefaultMethodFactory.getFunctionInvoker(returnType);
 
-        VariadicInvoker varInvoker = new VariadicInvoker(context.runtime, klass, address, functionInvoker, FFIUtil.getFFIType(returnType), callConvention, enums, saveError);
+        VariadicInvoker varInvoker = new VariadicInvoker(context.runtime, klass, address, functionInvoker, FFIUtil.getFFIType(returnType), fixedParamCount, callConvention, enums, saveError);
 
         varInvoker.setInstanceVariable("@fixed", fixed);
         varInvoker.setInstanceVariable("@type_map", typeMap);
@@ -169,7 +174,7 @@ public class VariadicInvoker extends RubyObject {
         }
 
         Invocation invocation = new Invocation(context);
-        Function function = new Function(address.getAddress(), returnType, ffiParamTypes, convention, saveError);
+        Function function = new Function(address.getAddress(), returnType, fixedParamCount, ffiParamTypes, convention, saveError);
         try {
             HeapInvocationBuffer args = new HeapInvocationBuffer(function);
             for (int i = 0; i < marshallers.length; ++i) {
