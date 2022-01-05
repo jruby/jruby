@@ -101,7 +101,7 @@ public abstract class JavaLangReflect {
         }
 
         // NOTE: (legacy) JavaConstructor compat - converting arguments
-        @JRubyMethod(name = "newInstance", alias = "new_instance", rest = true)
+        @JRubyMethod(name = {"newInstance", "new_instance"}, rest = true)
         public static IRubyObject new_instance(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
             final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
             final Object[] javaArgs;

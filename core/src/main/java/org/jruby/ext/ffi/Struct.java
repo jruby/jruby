@@ -237,7 +237,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         return obj instanceof RubyFixnum ? (RubyFixnum) obj : RubyFixnum.zero(context.runtime);
     }
 
-    @JRubyMethod(name = { "alignment", "align" }, meta = true)
+    @JRubyMethod(name = "alignment", meta = true)
     public static IRubyObject alignment(ThreadContext context, IRubyObject structClass) {
         return getStructLayout(context.runtime, structClass).alignment(context);
     }
