@@ -431,10 +431,10 @@ jobs:
         env:
           PHASE: 'package -Ptest'
 
-#  publish-snapshot:
-#    if: endsWith('master', github.ref) || endsWith('jruby-9.3', github.ref)
-#    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, ji-specs-indy, regression-specs-jit, maven-test-openj9-8]
-#    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@b2c3f2fa05f89ece7949e435eca770be20c7666a
-#    secrets:
-#      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-#      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  publish-snapshot:
+    if: endsWith('master', github.ref) || endsWith('jruby-9.3', github.ref)
+    needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, ji-specs-indy, regression-specs-jit, maven-test-openj9-8]
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@ce35e38848abe0a5f9a7991f43d622319f4344de
+    secrets:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
@@ -29,6 +30,8 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     }
 
     public ByteList getBytes() {
+        if (symbol == null) return ByteList.EMPTY_BYTELIST;
+
         return symbol.getBytes();
     }
 
@@ -49,6 +52,8 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     }
 
     public Encoding getEncoding() {
+        if (symbol == null) return UTF8Encoding.INSTANCE;
+
         return symbol.getEncoding();
     }
 
