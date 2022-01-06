@@ -671,11 +671,13 @@ expr            : command_call
                     LexContext ctxt = lexer.getLexContext();
                     $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
+                } {
+                    $$ = support.push_pvtbl();
                 } p_top_expr_body {
-                    support.pop_pvtbl($<Set>3);
+                    support.pop_pvtbl($<Set>4);
                     LexContext ctxt = lexer.getLexContext();
-                    ctxt.in_kwarg = $<Boolean>2;
-                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $4, null, null));
+                    ctxt.in_kwarg = $<Boolean>3;
+                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, null, null));
                 }
                 | arg keyword_in {
                     support.value_expr(lexer, $1);
@@ -684,11 +686,13 @@ expr            : command_call
                     LexContext ctxt = lexer.getLexContext();
                     $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
+                } {
+                    $$ = support.push_pvtbl();
                 } p_top_expr_body {
-                    support.pop_pvtbl($<Set>3);
+                    support.pop_pvtbl($<Set>4);
                     LexContext ctxt = lexer.getLexContext();
-                    ctxt.in_kwarg = $<Boolean>2;
-                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $4, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
+                    ctxt.in_kwarg = $<Boolean>3;
+                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
                 }
 		| arg %prec tLBRACE_ARG
 

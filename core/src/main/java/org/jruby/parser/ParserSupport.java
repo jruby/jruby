@@ -1833,6 +1833,8 @@ public class ParserSupport {
     }
 
     public void error_duplicate_pattern_key(ByteList key) {
+        // This is for bare one-line matches ({a: 1} => a:).
+        if (keyTable == null) keyTable = new HashSet<>();
         if (keyTable.contains(key)) yyerror("duplicated key name");
 
         keyTable.add(key);
