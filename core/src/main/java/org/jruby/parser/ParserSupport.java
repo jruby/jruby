@@ -1382,7 +1382,7 @@ public class ParserSupport {
         if (tail == null) {
             argsNode = new ArgsNode(line, pre, optional, rest, post, null);
         } else {
-            if (FWD_BLOCK.equals(tail.getBlockArg())) {
+            if (tail.getBlockArg() != null && FWD_BLOCK.equals(tail.getBlockArg().getName().getBytes())) {
                 if (rest != null) {
                     yyerror("... after rest argument");
                     argsNode = new ArgsNode(line, null, null, null, null,
@@ -1392,7 +1392,8 @@ public class ParserSupport {
 
                     return argsNode;
                 }
-                rest = new RestArgNode(arg_var(FWD_REST));
+                int slot = getCurrentScope().addVariableThisScope(FWD_REST.toString());
+                rest = new UnnamedRestArgNode(line, null, slot);
             }
 
             argsNode = new ArgsNode(line, pre, optional, rest, post,
@@ -1895,16 +1896,6 @@ public class ParserSupport {
         Node args = leadingArgs != null ? rest_arg_append(leadingArgs, splatNode) : splatNode;
         args = arg_append(args, new HashNode(line, new KeyValuePair<>(null, restNode)));
         return arg_blk_pass(args, block);
-    }
-
-    public ArgsNode new_args_forward_def(int line, ListNode leading) {
-        BlockArgNode blockArg = new BlockArgNode(arg_var(FWD_BLOCK));
-        // FIXME: signature issue doing the right thing.  Just treat this as '*' for now.
-        //ArgsTailHolder tail = new_args_tail(line, null, FWD_KWREST, blockArg);
-        //RestArgNode forwordRestArg  = new RestArgNode(arg_var(FWD_REST));
-        int slot = getCurrentScope().addVariableThisScope(FWD_REST.toString());
-        RestArgNode forwordRestArg  = new UnnamedRestArgNode(line, null, slot);
-        return new_args(line, leading, null, forwordRestArg, null, null);
     }
 
     public void check_literal_when(Node one) {

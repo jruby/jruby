@@ -157,6 +157,7 @@ import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
+import static org.jruby.util.CommonByteLists.FWD_KWREST;
 import static org.jruby.parser.ParserSupport.arg_blk_pass;
 import static org.jruby.parser.ParserSupport.node_assign;
 
@@ -188,7 +189,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 192 "-"
+					// line 193 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -5227,7 +5228,7 @@ states[731] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[732] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = ((ByteList)yyVals[0+yyTop].value);
+                    yyVal = FWD_KWREST;
   return yyVal;
 };
 states[733] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5571,7 +5572,7 @@ states[817] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 }
-					// line 3555 "RubyParser.y"
+					// line 3556 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5586,4 +5587,4 @@ states[817] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
         return support.getResult();
     }
 }
-					// line 13333 "-"
+					// line 13334 "-"

@@ -154,6 +154,7 @@ import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
 import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
+import static org.jruby.util.CommonByteLists.FWD_KWREST;
 import static org.jruby.parser.ParserSupport.arg_blk_pass;
 import static org.jruby.parser.ParserSupport.node_assign;
 
@@ -3225,7 +3226,7 @@ f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail {
 
 // [!null] - ByteList
 args_forward    : tBDOT3 {
-                    $$ = $1;
+                    $$ = FWD_KWREST;
                 }
 
 f_bad_arg       : tCONSTANT {

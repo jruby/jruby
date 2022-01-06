@@ -1112,7 +1112,23 @@ public class IRRuntimeHelpers {
     }
 
     private static IRubyObject constructRestArg(ThreadContext context, IRubyObject[] args, RubyHash keywordArguments, int required, int argIndex) {
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+        int argsLength = args.length;
+        if (keywordArguments != null) {
+            argsLength = args.length - 1;
+        } else if (args.length >= 1) {
+            // FIXME: maybe? vvvvv
+            // This is gross.  rest args will accept passed in kwargs as last ordinary argument if the method itself
+            // does not accept kwargs...unless the last arg is an empty kwargs hash.  It seems we cannot know until
+            // we reach the calling method whether there is a kwarg or not.
+            //
+            // This is a big comment because I am wondering if on empty kwargs at callside we just never pass it to
+            // begin with?  That would eliminate this code.
+            IRubyObject lastArg = args[args.length - 1];
+            if (lastArg instanceof RubyHash && ((RubyHash) lastArg).isKeywordArguments() && ((RubyHash) lastArg).isEmpty()) {
+                argsLength = args.length - 1;
+            }
+        }
+
         if ( required == 0 && argsLength == args.length ) {
             return RubyArray.newArray(context.runtime, args);
         }
@@ -1209,7 +1225,12 @@ public class IRRuntimeHelpers {
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
         RubyHash keywordArguments = extractKwargsHash(context, args, required, keywordArgumentSupplied);
 
-        return keywordArguments == null ? RubyHash.newSmallHash(context.runtime) : keywordArguments;
+        if (keywordArguments == null) {
+            keywordArguments = RubyHash.newSmallHash(context.runtime);
+            keywordArguments.setKeywordArguments(true);
+        }
+
+        return keywordArguments;
     }
 
     public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String id) {
