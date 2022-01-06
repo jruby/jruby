@@ -1166,7 +1166,7 @@ public class IRBuilder {
 
         if (callNode.isLazy()) addInstr(new BNilInstr(lazyLabel, receiver));
 
-        HashNode keywordArgs = getKeywordArguments(callNode.getArgsNode());
+        HashNode keywordArgs = getSimpleKeywordArguments(callNode.getArgsNode());
         if (keywordArgs != null) {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
 
@@ -1231,10 +1231,14 @@ public class IRBuilder {
     }
 
     /*
-     * This will ignore complexity of a hash which contains restkwargs and only return simple
-     * last argument which happens to be all key symbol hashnode which is not empty
+     * In the case of kwargs which are: a) only a restkwarg (**kw) or b) only symbol pairs it will
+     * return the last hash argument (so long as it is not an explicit real hash ({a: 1}).
+     *
+     * A heterogeneous mix os kwrest and symbol pairs will be built as an ordinary hash which
+     * has logic for performing explicit hash merging.  This more complicated handling has to
+     * exist since explicit hashes also can use **other_hash.
      */
-    private HashNode getKeywordArguments(Node argsNode) {
+    private HashNode getSimpleKeywordArguments(Node argsNode) {
         // Block pass wraps itself around the main args list so don't hold that against it.
         if (argsNode instanceof BlockPassNode) {
             return null; //getPossibleKeywordArgument(((BlockPassNode) argsNode).getArgsNode());
@@ -1249,7 +1253,7 @@ public class IRBuilder {
 
             if (lastNode instanceof HashNode) {
                 HashNode hash = (HashNode) lastNode;
-                if (!hash.isLiteral()) return (HashNode) lastNode;
+                if (!hash.isLiteral() && (hash.hasOnlyRestKwargs() || hash.hasOnlySymbolKeys())) return (HashNode) lastNode;
             }
         }
 
@@ -3318,7 +3322,7 @@ public class IRBuilder {
         Node callArgsNode = fcallNode.getArgsNode();
         final Variable result = aResult == null ? createTemporaryVariable() : aResult;
 
-        HashNode keywordArgs = getKeywordArguments(fcallNode.getArgsNode());
+        HashNode keywordArgs = getSimpleKeywordArguments(fcallNode.getArgsNode());
         if (keywordArgs != null) {
             Operand[] args = buildCallArgsExcept(fcallNode.getArgsNode(), keywordArgs);
 
@@ -3451,7 +3455,7 @@ public class IRBuilder {
 
             if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
-                    hash = copyAndReturnValue(new Hash(args));
+                    hash = copyAndReturnValue(new Hash(args, hashNode.isLiteral()));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));

@@ -48,6 +48,9 @@ public class HashNode extends Node implements ILiteralNode {
     // contains at least one **k {a: 1, **k}, {**{}, **{}}
     private boolean hasRestKwarg = false;
 
+    // Is this hash made up of only symbol characters (only of interest if this is !literal - simple kwargs processing)
+    private boolean hasOnlySymbolKeys = true;
+
     // Is this a hash literal foo({a: 1}) vs a keyword hash foo(a: 1)
     private boolean isLiteral = false;
 
@@ -111,6 +114,9 @@ public class HashNode extends Node implements ILiteralNode {
 
         if (key == null) {
             hasRestKwarg = true;
+            hasOnlySymbolKeys = false;
+        } else if (!(pair.getKey() instanceof SymbolNode)) {
+            hasOnlySymbolKeys = false;
         }
 
         pairs.add(pair);
@@ -150,9 +156,8 @@ public class HashNode extends Node implements ILiteralNode {
         return isLiteral() ? "literal" : "kwarg";
     }
 
-    @Deprecated
     public boolean hasOnlySymbolKeys() {
-        return false;
+        return hasOnlySymbolKeys;
     }
 
     @Deprecated
