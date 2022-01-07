@@ -800,30 +800,31 @@ public class IRRuntimeHelpers {
     private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            String javaName = key.asJavaString();
-            if (!scope.keywordExists(javaName)) {
-                throw INVALID_KEY_EXCEPTION;
-            }
+            if (!isValidKeyword(scope, key)) throw INVALID_KEY_EXCEPTION;
         }
     };
 
+    private static boolean isValidKeyword(StaticScope scope, IRubyObject key) {
+        return key instanceof RubySymbol && scope.keywordExists(((RubySymbol) key).idString());
+    }
+
     private static class GatherUnwantedKeywordsVisitor extends RubyHash.VisitorWithState<StaticScope> {
-        ArrayList invalidKwargs;
+        RubyArray invalidKwargs;
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            String javaName = key.asJavaString();
-            if (!scope.keywordExists(javaName)) {
-                if (invalidKwargs == null) invalidKwargs = new ArrayList();
-                invalidKwargs.add(javaName);
+            if (!isValidKeyword(scope, key)) {
+                if (invalidKwargs == null) invalidKwargs = context.runtime.newArray();
+                invalidKwargs.add(key.inspect());
             }
         }
 
         public void raiseIfError(ThreadContext context) {
             if (invalidKwargs != null) {
-                String invalidKwargs = this.invalidKwargs.toString();
-                throw context.runtime.newArgumentError(
-                        (this.invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ")
-                                + invalidKwargs.substring(1, invalidKwargs.length() - 1));
+                Block inspect = null;
+                RubyString errorMessage = (RubyString) invalidKwargs.join(context, context.runtime.newString(", "));
+                String prefix = invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ";
+
+                throw context.runtime.newArgumentError(prefix + errorMessage);
             }
         }
     }
@@ -1227,7 +1228,8 @@ public class IRRuntimeHelpers {
 
         if (keywordArguments == null) {
             keywordArguments = RubyHash.newSmallHash(context.runtime);
-            keywordArguments.setKeywordArguments(true);
+        } else {
+            keywordArguments.setKeywordArguments(false);
         }
 
         return keywordArguments;
