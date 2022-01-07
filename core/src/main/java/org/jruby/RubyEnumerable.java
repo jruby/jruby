@@ -432,9 +432,17 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "tally")
+    @JRubyMethod
     public static IRubyObject tally(ThreadContext context, IRubyObject self) {
         RubyHash result = RubyHash.newHash(context.runtime);
+        callEach(context, eachSite(context), self, Signature.NO_ARGUMENTS, new TallyCallback(result));
+        return result;
+    }
+
+    @JRubyMethod
+    public static IRubyObject tally(ThreadContext context, IRubyObject self, IRubyObject hashArg) {
+        RubyHash result = (RubyHash) TypeConverter.convertToTypeWithCheck(hashArg, context.runtime.getHash(), "to_hash");
+        result.checkFrozen();
         callEach(context, eachSite(context), self, Signature.NO_ARGUMENTS, new TallyCallback(result));
         return result;
     }
@@ -2300,8 +2308,11 @@ public class RubyEnumerable {
             IRubyObject count = result.fastARef(value);
             if (count == null) {
                 result.fastASet(value, RubyFixnum.one(context.runtime));
-            } else {
+            } else if (count instanceof RubyFixnum) {
                 result.fastASetSmall(value, ((RubyInteger)count).succ(context));
+            } else {
+                TypeConverter.checkType(context, value, context.runtime.getBignum());
+                result.fastASetSmall(value, ((RubyBignum) count).op_plus(context, 1L));
             }
             return context.nil;
         }
