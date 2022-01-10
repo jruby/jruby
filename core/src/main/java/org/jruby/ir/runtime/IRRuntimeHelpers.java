@@ -573,19 +573,26 @@ public class IRRuntimeHelpers {
         return block;
     }
 
+    public static RubyHash kwargsArg(Object[] args, boolean receivesKwargs) {
+        // We will continue to treat the kwarg as an ordinary hash if we are not expecting kwargs.
+        // FIXME: I think we should unmark the hash as a kwarg at this point???
+        if (!receivesKwargs) return null;
+        if (args.length < 1) return null;
+
+        Object last = args[args.length - 1];
+        return last instanceof RubyHash && ((RubyHash) last).isKeywordArguments() ? (RubyHash) last : null;
+    }
+
     public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, int required, int opt, boolean rest,
                                   boolean receivesKwargs, int restKey, Block block) {
-        int argsLength = args.length;
-        RubyHash keywordArgs = extractKwargsHash(context, args, required, receivesKwargs);
-
-        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, scope, keywordArgs);
-
-        // keyword arguments value is not used for arity checking.
-        if (keywordArgs != null) argsLength -= 1;
+        RubyHash keywordArgs = kwargsArg(args, receivesKwargs);
+        int argsLength = args.length - (keywordArgs != null ? 1: 0);
 
         if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
             Arity.raiseArgumentError(context.runtime, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
         }
+
+        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, scope, keywordArgs);
     }
 
     /**
@@ -820,7 +827,6 @@ public class IRRuntimeHelpers {
 
         public void raiseIfError(ThreadContext context) {
             if (invalidKwargs != null) {
-                Block inspect = null;
                 RubyString errorMessage = (RubyString) invalidKwargs.join(context, context.runtime.newString(", "));
                 String prefix = invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ";
 
