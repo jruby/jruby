@@ -107,7 +107,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, acceptsKeywordArgument);
                         break;
                 }
 
@@ -135,7 +135,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
     }
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
-                                         StaticScope currScope, Object[] temp, IRubyObject self) {
+                                         StaticScope currScope, Object[] temp, IRubyObject self, boolean acceptsKwargs) {
         switch(operation) {
             case RECV_SELF:
                 break;
@@ -158,7 +158,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, block));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block, acceptsKwargs));
                 break;
             }
             case CHECK_FOR_LJE:

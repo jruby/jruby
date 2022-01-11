@@ -991,7 +991,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
+    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg, boolean _acceptsKwargs) {
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
 
         hash.modify();
@@ -1100,12 +1100,12 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArguments);
+        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArguments);
         return constructRestArg(context, args, keywordArguments, required, argIndex);
     }
 
     public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArguments);
+        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArguments);
         return constructRestArg(context, args, keywordArguments, required, argIndex);
     }
 
@@ -1152,7 +1152,7 @@ public class IRRuntimeHelpers {
                                                  int argIndex, boolean acceptsKeywordArgument) {
         int required = pre + post;
         // FIXME: Once we extract kwargs from rest of args processing we can delete this extract and n calc.
-        boolean kwargs = extractKwargsHash(context, args, required, acceptsKeywordArgument) != null;
+        boolean kwargs = kwargsArg(args, acceptsKeywordArgument) != null;
         int n = kwargs ? args.length - 1 : args.length;
         int remaining = n - pre;       // we know we have received all pre args by post receives.
 
@@ -1178,7 +1178,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject receiveOptArg(ThreadContext context, IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
         int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
-        RubyHash keywordArguments = extractKwargsHash(context, args, requiredArgs, acceptsKeywordArgument);
+        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArgument);
         int argsLength = keywordArguments != null ? args.length - 1 : args.length;
 
         if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
@@ -1204,7 +1204,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String id, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArgument);
+        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArgument);
 
         if (keywordArguments == null) return UndefinedValue.UNDEFINED;
 
@@ -1218,7 +1218,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, RubySymbol key, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArgument);
+        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArgument);
 
         if (keywordArguments == null) return UndefinedValue.UNDEFINED;
 
@@ -1230,7 +1230,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
-        RubyHash keywordArguments = extractKwargsHash(context, args, required, keywordArgumentSupplied);
+        RubyHash keywordArguments = kwargsArg(args, keywordArgumentSupplied);
 
         if (keywordArguments == null) {
             keywordArguments = RubyHash.newSmallHash(context.runtime);

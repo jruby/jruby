@@ -202,7 +202,7 @@ public class InterpreterEngine {
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans, acceptsKeywordArgument);
                         break;
                 }
             } catch (Throwable t) {
@@ -462,7 +462,7 @@ public class InterpreterEngine {
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
                                          StaticScope currScope, Object[] temp, IRubyObject self,
-                                         double[] floats, long[] fixnums, boolean[] booleans) {
+                                         double[] floats, long[] fixnums, boolean[] booleans, boolean acceptsKwargs) {
         Object result;
         switch(operation) {
             case RECV_SELF:
@@ -484,7 +484,7 @@ public class InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, block));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block, acceptsKwargs));
                 break;
             }
 

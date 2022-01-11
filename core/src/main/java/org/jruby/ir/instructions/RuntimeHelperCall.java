@@ -90,7 +90,8 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         return new String[] { "method: " + helperMethod};
     }
 
-    public Object callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self,
+                             Object[] temp, Block block, boolean acceptsKwargs) {
         Operand[] operands = getOperands();
 
         if (helperMethod == Methods.IS_DEFINED_BACKREF) {
@@ -159,7 +160,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,
-                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));
+                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp), acceptsKwargs);
             case IS_HASH_EMPTY:
                 return IRRuntimeHelpers.isHashEmpty(context, (IRubyObject) arg1);
             case ARRAY_LENGTH:
