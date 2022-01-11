@@ -1433,19 +1433,23 @@ public class RubyModule extends RubyObject {
         return RubyBoolean.newBoolean(context, isSingleton());
     }
 
+    private String frozenType() {
+        return isClass() ? "class" : "module";
+    }
+
     public void addMethod(String id, DynamicMethod method) {
-        testFrozen("class/module");
+        if (this instanceof MetaClass) {
+            // FIXME: Gross and not quite right. See MRI's rb_frozen_class_p logic
+            ((MetaClass) this).getAttached().testFrozen();
+        } else {
+            testFrozen(frozenType());
+        }
 
         RubyModule location = this;
 
         if (methodLocation != this) {
             methodLocation.addMethod(id, method);
             return;
-        }
-
-        if (this instanceof MetaClass) {
-            // FIXME: Gross and not quite right. See MRI's rb_frozen_class_p logic
-            ((MetaClass) this).getAttached().testFrozen();
         }
 
         if (isRefinement()) {
