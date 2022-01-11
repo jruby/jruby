@@ -1229,12 +1229,21 @@ public class IRRuntimeHelpers {
         return keywordArguments.delete(context, key, Block.NULL_BLOCK);
     }
 
-    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
-        RubyHash keywordArguments = kwargsArg(args, keywordArgumentSupplied);
+    public static IRubyObject markAsKwarg(ThreadContext context, IRubyObject arg) {
+        // FIXME: Can this also happen in more elaborate merge_kwargs scenarios?
+        // **foo where foo is an object which responds to to_hash or dies tryin.
+        if (!(arg instanceof RubyHash)) arg = TypeConverter.convertToType(arg, context.runtime.getHash(), "to_hash");
+        ((RubyHash) arg).setKeywordArguments(true);
+        return arg;
+    }
+
+    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, boolean usesKeywords) {
+        RubyHash keywordArguments = kwargsArg(args, usesKeywords);
 
         if (keywordArguments == null) {
             keywordArguments = RubyHash.newSmallHash(context.runtime);
         } else {
+            keywordArguments = (RubyHash) keywordArguments.dup();
             keywordArguments.setKeywordArguments(false);
         }
 

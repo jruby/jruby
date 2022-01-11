@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyArray;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -27,7 +28,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         HANDLE_PROPAGATED_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, ARRAY_LENGTH;
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, ARRAY_LENGTH, MARK_KWARG;
 
         public static Methods fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
@@ -98,6 +99,8 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
             return IRRuntimeHelpers.isDefinedBackref(
                     context,
                     (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
+        } else if (helperMethod == Methods.MARK_KWARG) {
+            return IRRuntimeHelpers.markAsKwarg(context, (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
         }
 
         switch (helperMethod) {

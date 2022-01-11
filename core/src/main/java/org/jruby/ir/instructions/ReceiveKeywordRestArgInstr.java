@@ -15,16 +15,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.EnumSet;
 
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
-    public final int required;
 
-    public ReceiveKeywordRestArgInstr(Variable result, int required) {
+    public ReceiveKeywordRestArgInstr(Variable result) {
         super(Operation.RECV_KW_REST_ARG, result, -1);
-        this.required = required;
-    }
-
-    @Override
-    public String[] toStringNonOperandArgs() {
-        return new String[] { "req: " + required };
     }
 
     @Override
@@ -35,22 +28,21 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), required);
+        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result));
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(required);
     }
 
     public static ReceiveKeywordRestArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeInt());
+        return new ReceiveKeywordRestArgInstr(d.decodeVariable());
     }
 
     @Override
-    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
-        return IRRuntimeHelpers.receiveKeywordRestArg(context, args, required, keywordArgumentSupplied);
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean usesKeywords) {
+        return IRRuntimeHelpers.receiveKeywordRestArg(context, args, usesKeywords);
     }
 
     @Override

@@ -1171,7 +1171,7 @@ public class IRBuilder {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
 
             if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
-                Variable splatValue = buildRestKeywordArgs(keywordArgs);
+                Operand splatValue = buildRestKeywordArgs(keywordArgs);
                 Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
                 Operand block = setupCallClosure(callNode.getIterNode());
 
@@ -2883,7 +2883,7 @@ public class IRBuilder {
 
             Variable av = getNewLocalVariable(key, 0);
             if (scope instanceof IRMethod) addArgumentDescription(type, key);
-            addInstr(new ReceiveKeywordRestArgInstr(av, required));
+            addInstr(new ReceiveKeywordRestArgInstr(av));
         }
 
         // Block arg
@@ -3306,9 +3306,17 @@ public class IRBuilder {
         addInstr(new LabelInstr(endLabel));
     }
 
-    private Variable buildRestKeywordArgs(HashNode keywordArgs) {
+    private Operand buildRestKeywordArgs(HashNode keywordArgs) {
+        List<KeyValuePair<Node, Node>> pairs = keywordArgs.getPairs();
+
+        if (pairs.size() == 1) { // Only a single rest arg here.  Do not bother to merge.
+            Operand kwargRestValue = buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
+            Variable result = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), MARK_KWARG, new Operand[] { kwargRestValue }));
+            return result;
+        }
+
         Variable splatValue = copyAndReturnValue(new Hash(new ArrayList<>()));
-        for (KeyValuePair<Node, Node> pair: keywordArgs.getPairs()) {
+        for (KeyValuePair<Node, Node> pair: pairs) {
             Operand splat = buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment());
             addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat }));
         }
@@ -3327,7 +3335,7 @@ public class IRBuilder {
             Operand[] args = buildCallArgsExcept(fcallNode.getArgsNode(), keywordArgs);
 
             if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
-                Variable splatValue = buildRestKeywordArgs(keywordArgs);
+                Operand splatValue = buildRestKeywordArgs(keywordArgs);
                 Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
                 Operand block = setupCallClosure(fcallNode.getIterNode());
 

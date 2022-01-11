@@ -116,10 +116,10 @@ public class InterpreterEngine {
         int       n         = instrs.length;
         int       ipc       = 0;
         Object    exception = null;
-        boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
+        boolean   usesKeywords = interpreterContext.receivesKeywordArguments();
         boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
 
-        if (acceptsKeywordArgument) {
+        if (usesKeywords) {
             args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount(), ruby2Keywords);
         }
         IRRuntimeHelpers.markAsRuby2KeywordArg(interpreterContext.getStaticScope(), args);
@@ -156,7 +156,7 @@ public class InterpreterEngine {
                         interpretFloatOp((AluInstr) instr, operation, floats, booleans);
                         break;
                     case ARG_OP:
-                        receiveArg(context, instr, operation, args, acceptsKeywordArgument, ruby2Keywords, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, args, usesKeywords, ruby2Keywords, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -194,7 +194,7 @@ public class InterpreterEngine {
                             args = IRRuntimeHelpers.prepareFixedBlockArgs(context, block, args);
                             break;
                         case PREPARE_BLOCK_ARGS:
-                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument, ruby2Keywords);
+                            args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, usesKeywords, ruby2Keywords);
                             break;
                         default:
                             processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -202,7 +202,7 @@ public class InterpreterEngine {
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans, acceptsKeywordArgument);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans, usesKeywords);
                         break;
                 }
             } catch (Throwable t) {
@@ -265,7 +265,7 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, boolean ruby2Keywords, DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
+    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean usesKeywords, boolean ruby2Keywords, DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
 
@@ -276,7 +276,7 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_POST_REQD_ARG:
-                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, args, acceptsKeywordArgument);
+                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, args, usesKeywords);
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_RUBY_EXC:
@@ -289,7 +289,7 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), blockArg);
                 return;
             default:
-                result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
+                result = ((ReceiveArgBase)instr).receiveArg(context, args, usesKeywords);
                 setResult(temp, currDynScope, instr.getResult(), result);
         }
     }
@@ -462,7 +462,7 @@ public class InterpreterEngine {
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
                                          StaticScope currScope, Object[] temp, IRubyObject self,
-                                         double[] floats, long[] fixnums, boolean[] booleans, boolean acceptsKwargs) {
+                                         double[] floats, long[] fixnums, boolean[] booleans, boolean usesKeywords) {
         Object result;
         switch(operation) {
             case RECV_SELF:
@@ -484,7 +484,7 @@ public class InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, block, acceptsKwargs));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block, usesKeywords));
                 break;
             }
 
