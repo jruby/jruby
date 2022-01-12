@@ -824,7 +824,11 @@ public class Pack {
      * @see RubyArray#pack
      **/
     public static RubyArray unpackWithBlock(ThreadContext context, RubyString encoded, ByteList formatString, Block block) {
-        return (RubyArray) unpackInternal(context, encoded, formatString, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY, block);
+        return (RubyArray) unpackInternal(context, encoded, formatString, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY, 0, block);
+    }
+
+    public static RubyArray unpackWithBlock(ThreadContext context, RubyString encoded, ByteList formatString, long offset, Block block) {
+        return (RubyArray) unpackInternal(context, encoded, formatString, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY, offset, block);
     }
 
     private static RubyString unpackBase46Strict(Ruby runtime, ByteList input) {
@@ -907,16 +911,27 @@ public class Pack {
             }
         }
 
-        return unpackInternal(context, encoded, formatString, UNPACK_1, block);
+        return unpackInternal(context, encoded, formatString, UNPACK_1, 0, block);
     }
 
-    private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, Block block) {
+    private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, long offset, Block block) {
         final Ruby runtime = context.runtime;
         final RubyArray result = (mode == UNPACK_BLOCK) || (mode == UNPACK_1) ? null : runtime.newArray();
         final ByteList encodedString = encoded.getByteList();
+
+        int len = encodedString.realSize();
+        int beg = encodedString.begin();
+        if (offset < 0) throw context.runtime.newArgumentError("offset can't be negative");
+        if (offset > 0) {
+            if (offset > len) throw context.runtime.newArgumentError("offset outside of string");
+            beg += offset;
+            len -= offset;
+        }
+
+
         // FIXME: potentially could just use ByteList here?
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
-        ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), encodedString.begin(), encodedString.length());
+        ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), beg, len);
         int next = safeGet(format);
         IRubyObject value = null; // UNPACK_1
 
