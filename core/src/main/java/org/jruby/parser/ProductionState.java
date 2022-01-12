@@ -3,16 +3,32 @@ package org.jruby.parser;
 public class ProductionState {
     int state;
     Object value;
-    public int start;
-    public int end;
+    public long start;
+    public long end;
 
     public String toString() {
-        int start_line = start >> 16;
-        int start_col = start % 0xffff;
-        int end_line = end >> 16;
-        int end_col = end % 0xffff;
-
         return "STATE: " + state + ", VALUE: " + value +
-                ", COLS: (" + start_col + ", " + end_col + "), ROW: (" + start_line + ", " + end_line + ")";
+                ", COLS: (" + column(start) + ", " + column(end) +
+                "), ROW: (" + line(start) + ", " + line(end) + ")";
+    }
+
+    public int start() {
+        return line(start);
+    }
+
+    public static int line(long packed) {
+        return (int) (packed >> 32);
+    }
+
+    public static long shift_line(long packed) {
+        return packed << 32;
+    }
+
+    public static long pack(int line, int column) {
+        return shift_line(line) | (long) column;
+    }
+
+    public static int column(long packed) {
+        return (int) (packed % 0xffff);
     }
 }
