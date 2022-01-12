@@ -153,6 +153,11 @@ public abstract class RubyInteger extends RubyNumeric {
         return num.convertToInteger().sqrt(context);
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject try_convert(ThreadContext context, IRubyObject self, IRubyObject num) {
+        return TypeConverter.checkIntegerType(context, num);
+    }
+
     public abstract IRubyObject sqrt(ThreadContext context);
 
     // floorSqrt :: unsigned long -> unsigned long
