@@ -119,8 +119,8 @@ t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
 .  private static void printstates(int yytop, ProductionState[] yystates) {
 .     for (int i = 0; i <= yytop; i++) {
 .         System.out.println("yytop: " + i + ", S/E: " +
-.             (yystates[i].start % 0xff) + "/" +
-.             (yystates[i].end % 0xff) +
+.             ProductionState.column(yystates[i].start) + "/" +
+.             ProductionState.column(yystates[i].end) +
 .             yystates[i].value);
 .     }
 .  }
@@ -141,8 +141,8 @@ t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
 .    initializeStates(yystates, 0, yystates.length);
 .    int yytoken = NEEDS_TOKEN;     // current token
 .    int yyErrorFlag = 0;           // #tokens to shift
-.    int start = 0;
-.    int end = 0;
+.    long start = 0;
+.    long end = 0;
 .
  local		## %{ ... %} after the first %%
 

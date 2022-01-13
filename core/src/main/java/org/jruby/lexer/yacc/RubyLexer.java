@@ -45,8 +45,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
@@ -66,6 +64,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.parser.ParserSupport;
+import org.jruby.parser.ProductionState;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
@@ -382,7 +381,7 @@ public class RubyLexer extends LexingCommon {
         }
     }
 
-    public void compile_error(String message, int start, int end) {
+    public void compile_error(String message, long start, long end) {
         throw new SyntaxException(getFile(), ruby_sourceline, prepareMessage(message, lexb, start, end));
     }
 
@@ -394,13 +393,13 @@ public class RubyLexer extends LexingCommon {
     // I added an extra check on length of ptr_end because some times we end up being off by one and index past
     // the end of the string.  I thought this was because lex_pend tends to reflect chars and not bytes (this is
     // really confusing to me as it should be bytes) but I saw off by one in streams with no mbcs.
-    private String prepareMessage(String message, ByteList line, int start, int end) {
+    private String prepareMessage(String message, ByteList line, long start, long end) {
         if (line != null && line.length() > 5) {
             int max_line_margin = 30;
-            int start_line = start >> 16;
-            int start_column = start & 0xffff;
-            int end_line = end >> 16;
-            int end_column = end & 0xffff;
+            int start_line = ProductionState.line(start);
+            int start_column = ProductionState.column(start);
+            int end_line = ProductionState.line(end);
+            int end_column = ProductionState.column(end);
 
             if ((start_line != ruby_sourceline && end_line != ruby_sourceline) ||
                     (start_line == end_line && start_column == end_column)) {
@@ -468,18 +467,17 @@ public class RubyLexer extends LexingCommon {
             //System.out.println("ptr: " + ptr + ", ptr_end: " + ptr_end);
             //System.out.println("line: " + line);
             lim = pt < pend ? pt : pend;
-            int i = lim - ptr;
 
             boolean addNewline = message != null && !message.endsWith("\n");
 
-            if (ptr - 1 < 0) ptr = 1;
-            if (ptr_end - 1 < 0) ptr_end = 1;
+            if (ptr - 1 < 0) ptr = 0;
+            if (ptr_end - 1 < 0) ptr_end = 0;
             String shortLine = createAsEncodedString(line.unsafeBytes(), line.begin(), line.length());
-            if (ptr_end > shortLine.length()) ptr_end = shortLine.length() + 1;
-            shortLine = shortLine.substring(ptr - 1, ptr_end - 1);
+            if (ptr_end > shortLine.length()) ptr_end = shortLine.length() - 1;
+            shortLine = shortLine.substring(ptr, ptr_end);
 
             message += (addNewline ? "\n" : "") + pre + shortLine + post;
-            addNewline = !line.endsWith(new ByteList(new byte[] {'\n'}));
+            addNewline = !message.endsWith("\n");
             String highlightLine = new String(new char[pb + (pre.length() == 3 ? -4 : 0)]);
             highlightLine = highlightLine.replace("\0", " ") + "^";
             if (end_column - start_column > 1) {
@@ -501,17 +499,15 @@ public class RubyLexer extends LexingCommon {
     }
 
     private void updateTokenPosition() {
-        int start_line = ruby_sourceline;
         int start_column = this.tokp - lex_pbeg;
-        int end_line = ruby_sourceline;
         int end_column = this.lex_p - lex_pbeg;
 
-        this.start = (start_line << 16) | start_column;
-        this.end = (end_line << 16) | end_column;
+        this.start = ProductionState.pack(ruby_sourceline, start_column);
+        this.end = ProductionState.pack(ruby_sourceline, end_column);
     }
 
     private void updateStartPosition(int column) {
-        this.start = (ruby_sourceline << 16) | column;
+        this.start = ProductionState.shift_line(ruby_sourceline) | column;
     }
 
 
@@ -527,8 +523,8 @@ public class RubyLexer extends LexingCommon {
         flush();
     }
 
-    public int start = 0;
-    public int end = 0;
+    public long start = 0;
+    public long end = 0;
 
     public int nextToken() throws IOException {
         token = yylex();
