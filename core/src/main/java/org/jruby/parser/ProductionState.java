@@ -25,10 +25,10 @@ public class ProductionState {
     }
 
     public static long pack(int line, int column) {
-        return shift_line(line) | (long) column;
+        return shift_line(line) | column;
     }
 
     public static int column(long packed) {
-        return (int) (packed % 0xffff);
+        return (int) (packed & 0xffff);
     }
 }

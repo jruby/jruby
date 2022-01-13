@@ -467,19 +467,19 @@ public class RubyLexer extends LexingCommon {
             //System.out.println("ptr: " + ptr + ", ptr_end: " + ptr_end);
             //System.out.println("line: " + line);
             lim = pt < pend ? pt : pend;
-            int i = lim - ptr;
 
             boolean addNewline = message != null && !message.endsWith("\n");
 
-            if (ptr - 1 < 0) ptr = 1;
-            if (ptr_end - 1 < 0) ptr_end = 1;
+            if (ptr - 1 < 0) ptr = 0;
+            if (ptr_end - 1 < 0) ptr_end = 0;
             String shortLine = createAsEncodedString(line.unsafeBytes(), line.begin(), line.length());
-            if (ptr_end > shortLine.length()) ptr_end = shortLine.length() + 1;
-            shortLine = shortLine.substring(ptr - 1, ptr_end - 1);
+            if (ptr_end > shortLine.length()) ptr_end = shortLine.length() - 1;
+            shortLine = shortLine.substring(ptr, ptr_end);
 
             message += (addNewline ? "\n" : "") + pre + shortLine + post;
-            addNewline = !line.endsWith(new ByteList(new byte[] {'\n'}));
+            addNewline = !message.endsWith("\n");
             String highlightLine = new String(new char[pb + (pre.length() == 3 ? -4 : 0)]);
+            if (start_column == 1031) new Exception().printStackTrace();
             highlightLine = highlightLine.replace("\0", " ") + "^";
             if (end_column - start_column > 1) {
                 String underscore = new String(new char[end_column - start_column - 1]);
