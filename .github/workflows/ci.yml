@@ -7,7 +7,7 @@ env:
 
 jobs:
 
-  mvn-test:
+  mvn-test-m1:
     runs-on: [self-hosted, macos, aarch64]
 
     strategy:
@@ -41,7 +41,7 @@ jobs:
         env:
           PHASE: 'package ${{ matrix.package-flags }}'
 
-  spec-ruby-m1:
+  spec-m1:
     runs-on: [self-hosted, macos, aarch64]
     
     strategy:
