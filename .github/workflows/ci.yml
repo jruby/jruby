@@ -68,7 +68,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           architecture: arm
       - name: bootstrap
-        run: ./mvnw -Pbootstrap clean package
+        run: mvn -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
