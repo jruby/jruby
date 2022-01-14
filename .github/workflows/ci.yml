@@ -33,7 +33,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-          archicheture: arm
+          architecture: arm
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: mvn package ${{ matrix.package-flags }}
