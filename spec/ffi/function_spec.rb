@@ -38,12 +38,16 @@ describe FFI::Function do
     expect(FFI::Function.new(:int, []) { }).to be_a_kind_of FFI::Pointer
   end
 
+  DARWIN_AARCH64 = RbConfig::CONFIG['host_os'] =~ /darwin/ && RbConfig::CONFIG['host_cpu'] =~ /aarch64|arm64/
+
   it 'can be used as callback from C passing to it a block' do
+    pending("Apple Silicon callback support #6995") if DARWIN_AARCH64
     function_add = FFI::Function.new(:int, [:int, :int]) { |a, b| a + b }
     expect(LibTest.testFunctionAdd(10, 10, function_add)).to eq(20)
   end
 
   it 'can be used as callback from C passing to it a Proc object' do
+    pending("Apple Silicon callback support #6995") if DARWIN_AARCH64
     function_add = FFI::Function.new(:int, [:int, :int], Proc.new { |a, b| a + b })
     expect(LibTest.testFunctionAdd(10, 10, function_add)).to eq(20)
   end
