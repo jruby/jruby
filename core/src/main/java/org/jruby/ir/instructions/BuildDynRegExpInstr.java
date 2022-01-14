@@ -102,17 +102,33 @@ public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        boolean once = options.isOnce();
+
         // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
-        if (reCache.rubyRegexp == null || !options.isOnce() || context.runtime.getKCode() != reCache.rubyRegexp.getKCode()) {
-            RubyString[] pieces  = retrievePieces(context, self, currScope, currDynScope, temp);
-            RubyString   pattern = RubyRegexp.preprocessDRegexp(context, options, pieces);
-            RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
-            re.setLiteral();
+        if (
+                !once ||
+                 reCache.rubyRegexp == null ||
+                 context.runtime.getKCode() != reCache.rubyRegexp.getKCode()) {
+            
+            RubyRegexp re = buildRegexp(context, currScope, currDynScope, self, temp);
+
+            if (!once) {
+                return re;
+            }
+
             reCache.updateCache(options.isOnce(), re);
         }
 
         return reCache.rubyRegexp;
+    }
+
+    private RubyRegexp buildRegexp(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        RubyString[] pieces  = retrievePieces(context, self, currScope, currDynScope, temp);
+        RubyString   pattern = RubyRegexp.preprocessDRegexp(context, options, pieces);
+        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+        re.setLiteral();
+        return re;
     }
 
     @Override
