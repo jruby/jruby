@@ -182,7 +182,12 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void setupLexicalContainment() {
-        if (lexicalParent != null) lexicalParent.addChildScope(this);
+        // evals are transient and are not usable in persistance or analysis (unless
+        // the analysis was for the eval itself but in that case we would do this
+        // differently).
+        if (!(this instanceof IREvalScript)) {
+            if (lexicalParent != null) lexicalParent.addChildScope(this);
+        }
     }
 
     public int getScopeId() {
@@ -493,7 +498,7 @@ public abstract class IRScope implements ParseResult {
 
         boolean usesEval = usesEval();
 
-        for (IRScope child : getLexicalScopes()) {
+        for (IRScope child : getClosures()) {
             usesEval |= child.anyUsesEval();
         }
 
