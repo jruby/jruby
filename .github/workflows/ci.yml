@@ -17,7 +17,7 @@ jobs:
         java-version: ['11']
       fail-fast: false
 
-    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
+    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
 
     steps:
       - name: checkout
@@ -50,7 +50,7 @@ jobs:
         java-version: ['11']
       fail-fast: false
 
-    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
 
     steps:
       - name: checkout
