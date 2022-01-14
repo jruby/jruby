@@ -3,7 +3,7 @@
 set -e
 set -x
 
-if [[ -v PHASE ]]
+if [[ -n PHASE ]]
 then
   DOWNLOAD_OUTPUT_FILTER='Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$'
   ./mvnw $MAVEN_CLI_OPTS -B -Dinvoker.skip=false $PHASE | egrep -v "$DOWNLOAD_OUTPUT_FILTER"
@@ -16,7 +16,7 @@ then
   fi
 fi
 
-if [[ -v COMMAND ]]
+if [[ -n COMMAND ]]
 then
   $COMMAND
 fi
