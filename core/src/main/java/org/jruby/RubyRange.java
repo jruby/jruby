@@ -652,7 +652,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step")
     public IRubyObject step(final ThreadContext context, final Block block) {
-        return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.runtime), block) : step(context, context.runtime.newFixnum(1), block);
+        return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.runtime), block) : step(context, context.runtime.getNil(), block);
     }
 
     @JRubyMethod(name = "step")
@@ -683,12 +683,8 @@ public class RubyRange extends RubyObject {
     private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
         if ((begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) ||
                 (end instanceof RubyNumeric && (begin.isNil() || end instanceof RubyNumeric))){
-            
-            if (!(step instanceof RubyNumeric)) {
-                step = step.convertToInteger();
-            }
 
-            if (((RubyNumeric) step).isZero()) {
+            if ((step instanceof RubyNumeric) && ((RubyNumeric) step).isZero()) {
                 throw context.runtime.newArgumentError("step can't be 0");
             }
 
