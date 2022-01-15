@@ -298,7 +298,7 @@ public class RubyArithmeticSequence extends RubyObject {
     }
 
     // arith_seq_eq
-    @JRubyMethod(name = "==")
+    @JRubyMethod(name = {"==", "eql?"})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyArithmeticSequence)) {
