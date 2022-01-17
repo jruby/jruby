@@ -6,6 +6,74 @@ env:
   JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
 
 jobs:
+
+  mvn-test-m1:
+    runs-on: [self-hosted, macos, aarch64]
+
+    strategy:
+      matrix:
+        package-flags: ['-Ptest']
+        # dist, complete, and osgi do not pass on 16 yet
+        java-version: ['11']
+      fail-fast: false
+
+    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          architecture: arm
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: mvn package ${{ matrix.package-flags }}
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package ${{ matrix.package-flags }}'
+
+  spec-m1:
+    runs-on: [self-hosted, macos, aarch64]
+    
+    strategy:
+      matrix:
+        target: ['spec:ffi']
+        java-version: ['11']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          architecture: arm
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby --dev -S rake ${{ matrix.target }}
+
   mvn-test:
     runs-on: ubuntu-latest
 
