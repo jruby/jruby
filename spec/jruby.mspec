@@ -19,7 +19,6 @@ end
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 HOST_OS = RbConfig::CONFIG['host_os']
-HOST_CPU = RbConfig::CONFIG['host_cpu']
 WINDOWS = HOST_OS =~ /mswin/
 
 SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
@@ -100,7 +99,6 @@ class MSpecScript
   end
 
   get(:ci_xtags) << HOST_OS
-  get(:ci_xtags) << "#{HOST_OS}-#{HOST_CPU}"
 
   instance_config = JRuby.runtime.instance_config
 

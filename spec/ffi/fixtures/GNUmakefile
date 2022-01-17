@@ -53,7 +53,9 @@ ifneq ($(strip $(findstring $(OS), win32, mingw, cygwin)),)
 endif
 
 ifeq ($(OS), darwin)
-  ARCHFLAGS += -arch x86_64 -arch arm64
+  ifneq ($(findstring $(CPU),ppc),)
+    ARCHFLAGS += -arch ppc
+  endif
   CFLAGS += $(ARCHFLAGS) -DTARGET_RT_MAC_CFM=0
   CFLAGS += -fno-common
   LDFLAGS = $(ARCHFLAGS) -dynamiclib
