@@ -1,2 +1,0 @@
-darwin-aarch64:UNIXServer#accept_nonblock returns :wait_readable in exceptionless mode
-darwin-aarch64:UNIXServer#accept_nonblock without a client raises IO::WaitReadable
