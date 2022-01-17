@@ -4,6 +4,7 @@ java_import "java_integration.fixtures.ClassWithVarargs"
 java_import "java_integration.fixtures.ClassWithPrimitiveVarargs"
 java_import "java_integration.fixtures.CoreTypeMethods"
 java_import "java_integration.fixtures.StaticMethodSelection"
+java_import "java_integration.fixtures.SubclassOfClassWithSimpleMethod"
 java_import "java_integration.fixtures.UsesSingleMethodInterface"
 
 describe "Non-overloaded static Java methods" do
@@ -446,5 +447,20 @@ if TestHelper::JAVA_9
         end.not_to raise_error
       end
     end
+  end
+end
+
+# Reopened Java subclasses should super normally into the parent class, not using reified subclass logic.
+# See jruby/jruby#6968
+describe "A normal Java class reopened to call a super method on its Java parent class" do
+  class SubclassOfClassWithSimpleMethod
+    def foo(s)
+      super(s + 'baz')
+    end
+  end
+
+  it 'calls method defined in Java superclass of reopened class with super()' do
+    obj = SubclassOfClassWithSimpleMethod.new
+    expect(obj.foo('bar')).to eq('foobarbaz')
   end
 end
