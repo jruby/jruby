@@ -67,8 +67,8 @@ public class SprintfParser {
                         break;
                     case 'p':
                     case 's':
-                        precision = getPrecisionArg(context, f, args);
-                        arg = getArg(f, args);
+			precision = getPrecisionArg(context, f, args);
+			arg = getArg(f, args);
                         format_ps(context, buf, arg, width, precision, f);
                         break;
                     case 'b':
@@ -788,6 +788,7 @@ public class SprintfParser {
                         ByteList name = bytelistUpto('>');
                         // MBS for string names
                         if (token.name != null) argumentError("named<" + RubyString.newString(context.runtime, name) + "> after <" + RubyString.newString(context.runtime, token.name) + ">");
+			if (token.index != -1) argumentError("named<" + RubyString.newString(context.runtime, name) + "> after numbered");
                         token.name = name;
                         break;
                     }
