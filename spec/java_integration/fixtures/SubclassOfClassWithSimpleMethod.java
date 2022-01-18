@@ -6,7 +6,4 @@ package java_integration.fixtures;
  * See jruby/jruby#6968
  */
 public class SubclassOfClassWithSimpleMethod extends ClassWithSimpleMethod {
-    public String foo(String s) {
-        return "foo" + s;
-    }
 }
