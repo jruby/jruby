@@ -393,10 +393,12 @@ public class RubyArithmeticSequence extends RubyObject {
                     }
                 }
 
+                int counter = 0;
                 while (argc > 0) {
-                    str.append(RubyObject.inspect(context, args[args.length - argc]).getByteList());
+                    str.append(RubyObject.inspect(context, args[counter]).getByteList());
                     str.append(',').append(' ');
-                    --argc;
+                    argc--;
+                    counter++;
                 }
                 
                 if (!kwds.isNil()) {
