@@ -425,7 +425,7 @@ class Date
   end
   private_class_method :valid_date_frags?
 
-  def self.valid_time_frags? (elem) # :nodoc:
+  def self.valid_time_frags?(elem) # :nodoc:
     h, min, s = elem.values_at(:hour, :min, :sec)
     _valid_time?(h, min, s)
   end
