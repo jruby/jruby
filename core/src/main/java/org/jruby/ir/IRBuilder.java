@@ -3890,9 +3890,7 @@ public class IRBuilder {
                 for (int i = 0; i < exceptionNodes.length; i++) {
                     outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
                 }
-            } else if (exceptionList instanceof SplatNode) { // splatnode, catch
-                outputExceptionCheck(build(((SplatNode)exceptionList).getValue()), exc, caughtLabel);
-            } else { // argscat/argspush
+            } else { // splat/argscat/argspush
                 outputExceptionCheck(build(exceptionList), exc, caughtLabel);
             }
         } else {
