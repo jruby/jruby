@@ -176,6 +176,9 @@ public class RubyArithmeticSequence extends RubyObject {
         boolean x;
 
         if (num == null) {
+            if (b.isNil()) {
+                return context.nil;
+            }
             if (!e.isNil()) {
                 IRubyObject zero = int2fix(runtime, 0);
                 CallSite op_cmp = sites(context).op_cmp;
