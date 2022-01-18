@@ -993,6 +993,15 @@ public class RubyClass extends RubyModule {
         setSuperClass(superClass);
     }
 
+    @JRubyMethod
+    public IRubyObject subclasses(ThreadContext context) {
+        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime);
+
+        concreteSubclasses(subs);
+
+        return subs;
+    }
+
     // introduced solely to provide some level of compatibility with previous
     // Class#subclasses implementation ... `ruby_class.to_java.subclasses`
     public final Collection<RubyClass> subclasses() {
@@ -1019,6 +1028,21 @@ public class RubyClass extends RubyModule {
                 for (RubyClass klass: keys) {
                     klass.subclassesInner(mine, includeDescendants);
                 }
+            }
+        }
+    }
+
+    private void concreteSubclasses(Collection<RubyClass> subs) {
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        if (subclasses != null) {
+            Set<RubyClass> keys = subclasses.keySet();
+            for (RubyClass klass: keys) {
+                if (klass.isSingleton()) continue;
+                if (klass.isIncluded()) {
+                    concreteSubclasses(subs);
+                    continue;
+                }
+                subs.add(klass);
             }
         }
     }
