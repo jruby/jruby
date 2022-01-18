@@ -1899,6 +1899,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 (ctx, lev, len) -> WALKER.walk(getNativeThread().getStackTrace(), stream -> ctx.createCallerLocations(lev, len, stream)));
     }
 
+    @JRubyMethod(meta = true, omit = true)
+    public static IRubyObject each_caller_location(ThreadContext context, IRubyObject self, Block block) {
+        return ThreadContext.WALKER.walk(stream -> context.yieldCallerLocations(context, stream, 1, block));
+    }
+
     public boolean isReportOnException() {
         return reportOnException;
     }

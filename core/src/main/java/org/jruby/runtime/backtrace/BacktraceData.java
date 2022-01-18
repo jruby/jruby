@@ -2,6 +2,11 @@ package org.jruby.runtime.backtrace;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
+import org.jruby.RubyThread;
+import org.jruby.exceptions.StopIteration;
+import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
 
@@ -11,6 +16,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class BacktraceData implements Serializable {
@@ -56,6 +62,20 @@ public class BacktraceData implements Serializable {
         return backtraceElements;
     }
 
+    public final IRubyObject yieldBacktraceElements(ThreadContext context, int level, Block block) {
+        try {
+            int[] skip = {level};
+            generateStackTraceElements(context.runtime.getBoundMethods(), (element) -> {
+                if (skip[0]-- <= 0) block.yield(context, new RubyThread.Location(context.runtime, context.runtime.getLocation(), element));
+                return true;
+            });
+        } catch (IRBreakJump bj) {
+            return bj.breakValue;
+        }
+
+        return context.nil;
+    }
+
     @SuppressWarnings("unchecked")
     public RubyStackTraceElement[] getBacktraceWithoutRuby() {
         return constructBacktrace(Collections.EMPTY_MAP);
@@ -68,8 +88,15 @@ public class BacktraceData implements Serializable {
     private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods, int count) {
         ArrayList<RubyStackTraceElement> trace = new ArrayList<>();
 
+        generateStackTraceElements(boundMethods, (element) -> { trace.add(element); return  trace.size() < count; });
+
+        return trace.toArray(RubyStackTraceElement.EMPTY_ARRAY);
+    }
+
+    private void generateStackTraceElements(Map<String, Map<String, String>> boundMethods, Predicate<RubyStackTraceElement> callback) {
         // used for duplicating the previous Ruby frame when masking native calls
-        boolean dupFrame = false; String dupFrameName = null;
+        boolean dupFrame = false;
+        String dupFrameName = null;
 
         // loop over all elements in the Java stack trace
         Iterator<StackWalker.StackFrame> stackIter = stackStream.iterator();
@@ -77,7 +104,11 @@ public class BacktraceData implements Serializable {
 
         // the previously encountered frame, for condensing varargs and actual
         StackWalker.StackFrame previousElement = null;
-        while (stackIter.hasNext() && trace.size() < count) {
+
+        // true until callback returns false
+        boolean run = true;
+
+        while (run && stackIter.hasNext()) {
             StackWalker.StackFrame element = stackIter.next();
 
             // skip unnumbered frames
@@ -109,9 +140,9 @@ public class BacktraceData implements Serializable {
                         // add duplicate if masking native and previous frame was native (Kernel#caller)
                         if (maskNative && dupFrame) {
                             dupFrame = false;
-                            trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false, type));
+                            callback.test(new RubyStackTraceElement(className, dupFrameName, filename, line, false, type));
                         }
-                        trace.add(rubyElement);
+                        run = callback.test(rubyElement);
                         previousElement = element;
                         continue;
 
@@ -134,7 +165,7 @@ public class BacktraceData implements Serializable {
                 }
 
                 // construct Ruby trace element
-                trace.add(new RubyStackTraceElement(className, rubyName, filename, line, false));
+                run = callback.test(new RubyStackTraceElement(className, rubyName, filename, line, false));
 
                 // if not full trace, we're done; don't check interpreted marker
                 if ( ! fullTrace ) continue;
@@ -166,9 +197,9 @@ public class BacktraceData implements Serializable {
                 // dup if masking native and previous frame was native
                 if (maskNative && dupFrame) {
                     dupFrame = false;
-                    trace.add(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding(), rubyElement.getFrameType()));
+                    callback.test(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding(), rubyElement.getFrameType()));
                 }
-                trace.add(rubyElement);
+                run = callback.test(rubyElement);
 
                 continue;
             }
@@ -176,11 +207,9 @@ public class BacktraceData implements Serializable {
             // if all else fails and this is a non-JRuby element we want to include, add it
             if (includeNonFiltered && !isFilteredClass(className)) {
                 filename = packagedFilenameFromElement(filename, className);
-                trace.add(new RubyStackTraceElement(className, methodName, filename, line, false));
+                run = callback.test(new RubyStackTraceElement(className, methodName, filename, line, false));
             }
         }
-
-        return trace.toArray(RubyStackTraceElement.EMPTY_ARRAY);
     }
 
     public static String getBoundMethodName(Map<String,Map<String,String>> boundMethods, String className, String methodName) {
