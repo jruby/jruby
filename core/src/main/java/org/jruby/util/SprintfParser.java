@@ -4,12 +4,15 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,7 +41,7 @@ public class SprintfParser {
         // For now only allow what is implemented.
         for (Token token: tokens) {
             if (token instanceof FormatToken) {
-                if ("pscbBdoxX".indexOf(((FormatToken) token).format) == -1) return false;
+                if ("fFpscbBdoxX".indexOf(((FormatToken) token).format) == -1) return false;
             }
         }
 
@@ -79,6 +82,12 @@ public class SprintfParser {
                         precision = getPrecisionArg(context, f, args);
                         arg = TypeConverter.convertToInteger(context, getArg(f, args), 0);
                         format_bBxX(buf, arg, width, precision, f, usePrefixForZero);
+                        break;
+		    case 'f':
+		    case 'F':
+			precision = getPrecisionArg(context, f, args);
+                        arg = TypeConverter.toFloat(context.runtime, getArg(f, args));
+                        format_fF(context, buf, arg, width, precision, f);
                         break;
                     default:
                         return false;
@@ -289,6 +298,228 @@ public class SprintfParser {
         }
         buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
         buf.setEncoding(encoding);
+    }
+
+    private static void format_fF(ThreadContext context, ByteList buf, IRubyObject arg, int width, int precision, FormatToken f) {
+	boolean hasPrecision = precision >= 0;
+	boolean hasWidth = width > 0;
+	boolean rightPad = f.rightPad;
+	String value = "";
+	boolean infinite = false;
+	boolean negative = false;
+	boolean nan = false;
+	char signChar = 0;
+	boolean expo = false;
+	boolean repeating = false;
+	double fValue = 0.0;
+
+	if (!hasPrecision) {
+	    precision = 6; // default is 6
+	}
+
+	if (arg instanceof RubyFloat) {
+	    RubyFloat rf = (RubyFloat)arg;
+	    infinite = rf.isInfinite();
+	    nan = rf.isNaN();
+	    if (infinite) {
+		precision = 0;
+		value = "Inf";
+		negative = rf.isNegative();
+	    } else if (nan) {
+		precision = 0;
+		value = "NaN";
+		negative = rf.isNegative();
+	    } else {
+		fValue = rf.getValue();
+		value = arg.toString();
+	        expo = value.contains("e-") || value.contains("E-")
+		    || value.contains("e+") || value.contains("E+");
+	    }
+	} else if (arg instanceof RubyRational) {
+	    RubyRational rr = (RubyRational)arg;
+	    RubyFloat rf = (RubyFloat)rr.to_f(context);
+	    fValue = rf.getValue();
+	    value = rf.to_s().toString();
+	    expo = value.contains("e-") || value.contains("E-")
+		|| value.contains("e+") || value.contains("E+");
+	}
+
+	int previous = -1;
+	int countConsecutive = 0;
+	boolean canCount = false;
+	for (int i = 0; i < value.length(); ++i) {
+	    char c = value.charAt(i);
+	    if (!canCount && c == '.') {
+		canCount = true;
+	    } else {
+		if (c >= '0' && c <= '9') {
+		    int converted = Integer.parseInt(String.valueOf(c));  
+		    if (previous == -1) {
+			previous = converted;
+			countConsecutive = 1;
+		    } else if (converted == previous) {
+			countConsecutive++;
+		    } else {
+			countConsecutive = 1;
+		    }
+		    previous = converted;
+		}
+	    }
+	}
+	repeating = countConsecutive > 4;
+
+	if (negative) {
+	    signChar = '-';
+	    --width;
+	} else if (f.plusPrefix) {
+	    signChar = '+';
+	    --width; 
+	} else if (f.spacePad) {
+	    signChar = ' ';
+	    --width;
+	}	
+
+	if (expo) {
+	    boolean negExpo = false;
+	    int idxE = value.indexOf("e");
+	    if (idxE == -1) {
+		idxE = value.indexOf("E");	    
+	    }
+	    negExpo = value.indexOf("-", 1) != -1;
+	    if (negExpo) {
+		idxE++; idxE++;
+		StringBuilder sb = new StringBuilder(10);
+		for (int i = idxE; i < value.length(); ++i) {
+		    sb.append(value.charAt(i));
+		}
+		int exponent = Integer.parseInt(sb.toString());
+		for (int i = 0; i < exponent; ++i) {
+		    if (negExpo) {
+			fValue *= 10;
+		    }
+		}
+		value = String.valueOf(fValue).replace(".", "");
+		buf.append('0');
+		buf.append('.');
+		int numZeros = Math.min(exponent, precision);
+		buf.fill('0', numZeros);
+		int numNumsToPrint = Math.min(value.length(), precision - numZeros);
+		char lastc = 0;
+		for (int i = 0; i < numNumsToPrint; ++i) {
+		    lastc = value.charAt(i);
+		    buf.append(lastc);
+		}
+		numZeros = Math.max(0, precision - (numZeros + numNumsToPrint));
+		if (lastc == 0 || !repeating) lastc = '0';
+		buf.fill('0', numZeros);
+	    } else {
+		BigInteger bi = BigDecimal.valueOf(fValue).toBigInteger();
+		String s = bi.toString();
+		for (int i = 0; i < s.length(); ++i) {
+		    buf.append(s.charAt(i));
+		}
+		buf.append('.');
+		buf.fill('0', precision);
+	    }
+	} else {
+	    boolean decimalFound = false;
+	    int leftLen = 0,  rightLen = 0, decimalIdx = 0;
+	    if (!infinite) {
+		for (int i = 0; i < value.length(); ++i) {
+		    if (value.charAt(i) == '.') {
+			decimalFound = true;
+			continue;
+		    }
+		    if (!decimalFound) ++leftLen;
+		    else               ++rightLen;
+		}
+	    }
+
+	    width = Math.max(0, width - value.length() - Math.abs(precision - rightLen));
+	    if (!rightPad) {
+		buf.fill(' ', width);
+	    }
+	    if (signChar != 0) buf.append(signChar);
+	    if (infinite || nan) {
+		for (int i = 0; i < value.length(); ++i) {
+		    buf.append(value.charAt(i));
+		}
+	    } else {
+		// calculate string value with carry
+		boolean needToCarry = precision < rightLen;
+		if (needToCarry) {
+		    boolean ignoreEven = false;
+		    StringBuffer sb = new StringBuffer(leftLen+precision);
+		    int aIdx = leftLen+precision;
+		    char a = value.charAt(aIdx); // test for '.'
+		    char b = value.charAt(aIdx+1); // char to test if can round
+		    if (a == '.') --aIdx;
+		    if (b >= '5') needToCarry = true;
+		    else needToCarry = false;
+		    ignoreEven = b == '9';
+		    boolean carry = needToCarry;
+		    boolean pointReached = a == '.';
+		    for (int i = aIdx; i >= 0; --i) {
+			char c = value.charAt(i);
+			if (c == '.') {
+			    if (precision > 0) {
+				sb.append(c);
+			    }
+			    pointReached = true;
+			    continue;
+			}
+			if (carry) {
+			    if (c + 1 > '9') {
+				if (precision > 0 || pointReached) sb.append('0');
+			    } else {
+				if (precision > 0 || pointReached) {
+				    // seems to need to only apply a carry if it is an odd number
+				    if (ignoreEven)      sb.append((char)(c+1));
+				    else if (c % 2 != 0) sb.append((char)(c+1));
+				    else                 sb.append(c);
+				    ignoreEven = false;
+				}
+				carry = false;
+			    }
+			} else {
+			    sb.append(c);
+			}
+		    }
+		    if (carry) {
+			sb.append('1');
+		    }
+		    String out = sb.reverse().toString();
+		    for (int i = 0; i < out.length(); ++i) {
+			buf.append(out.charAt(i));
+		    }
+		} else {
+		    int i;
+		    for (i = 0; i < leftLen; ++i) {
+			buf.append(value.charAt(i));
+		    }
+		    if (precision > 0) {
+			buf.append('.');
+			++i;
+			int newRightLen = rightLen > precision ? precision : rightLen;
+			char lastChar = 0;;
+			for (; i < leftLen+1+newRightLen; ++i) {
+			    lastChar = value.charAt(i);
+			    buf.append(lastChar);
+			}
+			if (precision > newRightLen) {
+			    for (i = 0; i < precision - newRightLen; ++i) {
+				if (repeating) buf.append(lastChar);
+				else           buf.append('0');
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
+	if (rightPad) {
+	    buf.fill(' ', width);
+	}
     }
 
     private static void format_c(ThreadContext context, ByteList buf, IRubyObject arg, int width, FormatToken f) {
