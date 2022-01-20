@@ -12,6 +12,10 @@ cygwin=false
 use_exec=true
 java_opts_from_files=""
 
+NO_BOOTCLASSPATH=false
+VERIFY_JRUBY=false
+print_environment_log=false
+
 if [ -z "$JRUBY_OPTS" ]; then
     JRUBY_OPTS=""
 fi
@@ -54,7 +58,7 @@ process_java_opts() {
 
         # On Java 9+, add an @argument for the given file.
         # On earlier versions the file contents will be read and expanded on the Java command line.
-        if [ "$use_modules" ]; then
+        if $use_modules; then
             java_opts_from_files="$java_opts_from_files @$java_opts_file"
         else
             java_opts_from_files="$java_opts_from_files $(cat "$java_opts_file")"
@@ -224,14 +228,16 @@ if [ -f "$JAVA_HOME"/lib/modules ] \
         && grep -q ^MODULES "$JAVA_HOME"/release
     }
 then
-    use_modules=1
+    use_modules=true
+else
+    use_modules=false
 fi
 readonly use_modules
 
 add_log "  JAVACMD: $JAVACMD"
 add_log "  JAVA_HOME: $JAVA_HOME"
 
-if [ "$use_modules" ]; then
+if $use_modules; then
     add_log
     add_log "Detected Java modules at $JAVA_HOME"
 fi
@@ -270,6 +276,7 @@ JAVA_OPTS="$JAVA_OPTS_TEMP"
 CP_DELIMITER=":"
 
 # add main jruby jar to the classpath
+JRUBY_ALREADY_ADDED=false
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     if [ ! -e "$j" ]; then
         continue
@@ -279,7 +286,7 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     else
         JRUBY_CP="$j"
     fi
-    if [ "$JRUBY_ALREADY_ADDED" ]; then
+    if $JRUBY_ALREADY_ADDED; then
         echo "WARNING: more than one JRuby JAR found in lib directory" 1>&2
     fi
     JRUBY_ALREADY_ADDED=true
@@ -346,7 +353,7 @@ do
             shift
             ;;
         -J-ea*)
-            VERIFY_JRUBY="yes"
+            VERIFY_JRUBY=true
             java_args+=("${1#-J}")
             ;;
         -J-Djava.security.egd=*) JAVA_SECURITY_EGD=${1#-J-Djava.security.egd=} ;;
@@ -400,7 +407,7 @@ do
             echo "Error: Nailgun is no longer supported" 1>&2
             exit 1
             ;;
-        --environment) print_environment_log=1 ;;
+        --environment) print_environment_log=true ;;
         # warn but ignore
         --1.8|--1.9|--2.0) echo "warning: $1 ignored" 1>&2 ;;
         # Abort processing on the double dash
@@ -450,12 +457,12 @@ fi
 
 # ----- Module and Class Data Sharing flags for Java 9+ -----------------------
 
-if [ "$use_modules" ]; then
+if $use_modules; then
     # Use module path instead of classpath for the jruby libs
     classpath_args=(--module-path "$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH")
 
     # Switch to non-boot path since we can't use bootclasspath on 9+
-    NO_BOOTCLASSPATH=1
+    NO_BOOTCLASSPATH=true
 
     # Add base opens we need for Ruby compatibility
     process_java_opts "$jruby_module_opts_file"
@@ -485,7 +492,7 @@ JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
 # Don't quote JAVA_OPTS; we want it to expand
 jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}")
 
-if [ "$NO_BOOTCLASSPATH" ] || [ "$VERIFY_JRUBY" ]; then
+if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
     jvm_command+=("${classpath_args[@]}")
 else
     jvm_command+=(-Xbootclasspath/a:"$JRUBY_CP" \
@@ -501,7 +508,7 @@ add_log
 add_log "Java command line:"
 add_log "  ${jvm_command[*]}"
 
-if [ "$print_environment_log" ]; then
+if $print_environment_log; then
     echo "$environment_log"
     exit 0
 fi
