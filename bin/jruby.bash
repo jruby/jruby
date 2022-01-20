@@ -10,11 +10,11 @@ use_exec=true
 java_opts_from_files=""
 JRUBY_SHELL=/bin/sh
 
-if [ -z "$JRUBY_OPTS" ] ; then
+if [ -z "$JRUBY_OPTS" ]; then
     JRUBY_OPTS=""
 fi
 
-if [ -z "$JAVA_STACK" ] ; then
+if [ -z "$JAVA_STACK" ]; then
     JAVA_STACK=-Xss2048k
 fi
 
@@ -174,15 +174,21 @@ add_log "  JAVA_OPTS: $JAVA_OPTS"
 
 # Detect cygwin and mingw environments
 case "$(uname)" in
-    CYGWIN*) cygwin=true;;
-    MINGW*) jruby.exe "$@"; exit $?;;
+    CYGWIN*) cygwin=true ;;
+    MINGW*)
+        jruby.exe "$@"
+        exit $?
+        ;;
 esac
 
 # Determine where the java command is and ensure we have a good JAVA_HOME
-if [ -z "$JAVACMD" ] ; then
-    if [ -z "$JAVA_HOME" ] ; then
-        java_home_command="/usr/libexec/java_home"
-        if [ -r "$java_home_command" ] && [ -x "$java_home_command" ] && [ ! -d "$java_home_command" ] ; then
+if [ -z "$JAVACMD" ]; then
+    if [ -z "$JAVA_HOME" ]; then
+        readonly java_home_command="/usr/libexec/java_home"
+        if [ -r "$java_home_command" ] \
+            && [ -x "$java_home_command" ] \
+            && [ ! -d "$java_home_command" ]
+        then
             # use java_home command when none is set (on MacOS)
             JAVA_HOME="$("$java_home_command")"
             JAVACMD="$JAVA_HOME"/bin/java
@@ -206,7 +212,7 @@ if [ -z "$JAVACMD" ] ; then
 else
     resolve_symlinks "$(command -v "$JAVACMD")"
     expanded_javacmd="$result"
-    if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ] ; then
+    if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ]; then
         dir_name "$expanded_javacmd"
         dir_name "$result"
         JAVA_HOME="$result"
@@ -214,7 +220,12 @@ else
 fi
 
 # Detect modularized Java if modules file is present or a MODULES line appears in release
-if [ -f "$JAVA_HOME"/lib/modules ] || { [ -f "$JAVA_HOME"/release ] && grep -q ^MODULES "$JAVA_HOME"/release; }; then
+if [ -f "$JAVA_HOME"/lib/modules ] \
+    || {
+        [ -f "$JAVA_HOME"/release ] \
+        && grep -q ^MODULES "$JAVA_HOME"/release
+    }
+then
     use_modules=1
 fi
 
@@ -248,12 +259,9 @@ unset JAVA_OPTS_TEMP
 JAVA_OPTS_TEMP=""
 for opt in $JAVA_OPTS; do
     case $opt in
-        -Xmx*)
-            JAVA_MEM="$opt";;
-        -Xss*)
-            JAVA_STACK="$opt";;
-        *)
-            JAVA_OPTS_TEMP="$JAVA_OPTS_TEMP $opt";;
+        -Xmx*) JAVA_MEM="$opt" ;;
+        -Xss*) JAVA_STACK="$opt" ;;
+        *) JAVA_OPTS_TEMP="$JAVA_OPTS_TEMP $opt" ;;
     esac
 done
 
@@ -323,54 +331,54 @@ while [ $# -gt 0 ]
 do
     case $1 in
         # Stuff after '-J' in this argument goes to JVM
-        -J-Xmx*)
-            JAVA_MEM="${1#-J}" ;;
-        -J-Xss*)
-            JAVA_STACK="${1#-J}" ;;
+        -J-Xmx*) JAVA_MEM="${1#-J}" ;;
+        -J-Xss*) JAVA_STACK="${1#-J}" ;;
         -J)
             "$JAVACMD" -help
             echo "(Prepend -J in front of these options when using 'jruby' command)" 1>&2
-            exit ;;
+            exit
+            ;;
         -J-X)
             "$JAVACMD" -X
             echo "(Prepend -J in front of these options when using 'jruby' command)" 1>&2
-            exit ;;
+            exit
+            ;;
         -J-classpath)
             CP="$CP$CP_DELIMITER$2"
             CLASSPATH=""
-            shift ;;
+            shift
+            ;;
         -J-cp)
             CP="$CP$CP_DELIMITER$2"
             CLASSPATH=""
-            shift ;;
+            shift
+            ;;
         -J-ea*)
             VERIFY_JRUBY="yes"
-            java_args+=("${1#-J}") ;;
-        -J-Djava.security.egd=*)
-            JAVA_SECURITY_EGD=${1#-J-Djava.security.egd=} ;;
+            java_args+=("${1#-J}")
+            ;;
+        -J-Djava.security.egd=*) JAVA_SECURITY_EGD=${1#-J-Djava.security.egd=} ;;
         # This must be the last check for -J
-        -J*)
-            java_args+=("${1#-J}") ;;
+        -J*) java_args+=("${1#-J}") ;;
         # Pass -X... and -X? search options through
-        -X*...|-X*\?)
-            ruby_args+=("$1") ;;
+        -X*...|-X*\?) ruby_args+=("$1") ;;
         # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
-        -X*.*)
-            java_args+=("-Djruby.${1#-X}") ;;
+        -X*.*) java_args+=("-Djruby.${1#-X}") ;;
         # Match switches that take an argument
         -C|-e|-I|-S)
             ruby_args+=("$1" "$2")
-            shift ;;
+            shift
+            ;;
         # Run with JMX management enabled
         --manage)
             java_args+=("-Dcom.sun.management.jmxremote")
-            java_args+=("-Djruby.management.enabled=true") ;;
+            java_args+=("-Djruby.management.enabled=true")
+            ;;
         # Don't launch a GUI window, no matter what
-        --headless)
-            java_args+=("-Djava.awt.headless=true") ;;
+        --headless) java_args+=("-Djava.awt.headless=true") ;;
         # Run under JDB
         --jdb)
-            if [ -z "$JAVA_HOME" ] ; then
+            if [ -z "$JAVA_HOME" ]; then
                 JAVACMD='jdb'
             else
                 if $cygwin; then
@@ -381,36 +389,34 @@ do
             fi
             JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
             java_args+=("-sourcepath" "$JDB_SOURCEPATH")
-            JRUBY_OPTS+=("-X+C") ;;
+            JRUBY_OPTS+=("-X+C")
+            ;;
         --client|--server|--noclient)
-            echo "Warning: the $1 flag is deprecated and has no effect most JVMs" 1>&2 ;;
+            echo "Warning: the $1 flag is deprecated and has no effect most JVMs" 1>&2
+            ;;
         --dev)
             process_java_opts "$dev_mode_opts_file"
             # For OpenJ9 use environment variable to enable quickstart and shareclasses
-            export OPENJ9_JAVA_OPTIONS="-Xquickstart -Xshareclasses" ;;
-        --sample)
-            java_args+=("-Xprof") ;;
+            export OPENJ9_JAVA_OPTIONS="-Xquickstart -Xshareclasses"
+            ;;
+        --sample) java_args+=("-Xprof") ;;
         --record)
-            java_args+=("-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true") ;;
-        --no-bootclasspath)
-            NO_BOOTCLASSPATH=true ;;
+            java_args+=("-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true")
+            ;;
+        --no-bootclasspath) NO_BOOTCLASSPATH=true ;;
         --ng*)
             echo "Error: Nailgun is no longer supported" 1>&2
-            exit 1 ;;
-        --environment)
-            print_environment_log=1 ;;
+            exit 1
+            ;;
+        --environment) print_environment_log=1 ;;
         # warn but ignore
-        --1.8|--1.9|--2.0)
-            echo "warning: $1 ignored" 1>&2 ;;
+        --1.8|--1.9|--2.0) echo "warning: $1 ignored" 1>&2 ;;
         # Abort processing on the double dash
-        --)
-            break ;;
+        --) break ;;
         # Other opts go to ruby
-        -*)
-            ruby_args+=("$1") ;;
+        -*) ruby_args+=("$1") ;;
         # Abort processing on first non-opt arg
-        *)
-            break ;;
+        *) break ;;
     esac
     shift
 done
