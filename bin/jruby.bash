@@ -48,9 +48,11 @@ if [ -r "/dev/urandom" ]; then
 fi
 
 # Gather environment information as we go
-environment_log=$'JRuby Environment\n================='
+cr='
+'
+environment_log="JRuby Environment$cr================="
 add_log() {
-    environment_log+=$'\n'"$1"
+    environment_log="${environment_log}${cr}${1}"
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
