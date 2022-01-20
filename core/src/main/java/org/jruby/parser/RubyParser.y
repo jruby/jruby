@@ -2691,14 +2691,14 @@ p_variable      : tIDENTIFIER {
                 }
 
 p_var_ref       : '^' tIDENTIFIER {
-                    Node n = support.declareIdentifier($2);
+                    Node n = support.gettable($2);
                     if (!(n instanceof LocalVarNode || n instanceof DVarNode)) {
                         support.compile_error("" + $2 + ": no such local variable");
                     }
                     $$ = n;
                 }
                 | '^' nonlocal_var {
-                    $$ = support.declareIdentifier($2);
+                    $$ = support.gettable($2);
                     if ($$ == null) $$ = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
 
                 }

@@ -72,6 +72,8 @@ import static org.jruby.lexer.LexingCommon.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.OR_OR;
+import static org.jruby.lexer.yacc.RubyLexer.Keyword.*;
+import static org.jruby.parser.ParserSupport.IDType.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
 
@@ -738,6 +740,74 @@ public class ParserSupport {
             case DEFINEDNODE:
                 handleUselessWarn(node, "defined?"); return;
         }
+    }
+
+    public Node gettable(ByteList id) {
+        int loc = lexer.getRubySourceline();
+        if (id.equals(SELF)) return new SelfNode(loc);
+        if (id.equals(NIL)) return new NilNode(loc);
+        if (id.equals(TRUE)) return new TrueNode(loc);
+        if (id.equals(FALSE)) return new FalseNode(loc);
+        if (id.equals(__FILE__)) return new FileNode(loc, new ByteList(lexer.getFile().getBytes()));
+        if (id.equals(__LINE__)) return new FixnumNode(loc, loc);
+        if (id.equals(__ENCODING__)) return new EncodingNode(loc, lexer.getEncoding());
+
+        RubySymbol name = symbolID(id);
+
+        switch (id_type(id)) {
+            case Local: {
+                String id2 = name.idString();
+                int slot = currentScope.isDefined(id2);
+
+                if (currentScope.isBlockScope() && slot != -1) {
+                    if (isNumParamId(id2) && isNumParamNested()) return null;
+                    if (name.getBytes().equals(lexer.getCurrentArg())) {
+                        compile_error(str(getConfiguration().getRuntime(), "circular argument reference - ", name));
+                    }
+
+                    Node newNode = new DVarNode(loc, slot, name);
+
+                    if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
+                        scopedParserState.markUsedVariable(name, ((IScopedNode) newNode).getDepth());
+                    }
+                    return newNode;
+                }
+
+                StaticScope.Type type = currentScope.getType();
+                if (type == StaticScope.Type.LOCAL) {
+                    if (name.getBytes().equals(lexer.getCurrentArg())) {
+                        compile_error(str(getConfiguration().getRuntime(), "circular argument reference - ", name));
+                    }
+
+                    Node newNode = new LocalVarNode(loc, slot, name);
+
+                    if (warnOnUnusedVariables && newNode instanceof IScopedNode) {
+                        scopedParserState.markUsedVariable(name, ((IScopedNode) newNode).getDepth());
+                    }
+
+                    return newNode;
+                }
+                if (type == StaticScope.Type.BLOCK && isNumParamId(id2) && numberedParam(id2)) {
+                    if (isNumParamNested()) return null;
+
+                    Node newNode = new DVarNode(loc, slot, name);
+                    if (numParamCurrent == null) numParamCurrent = newNode;
+                    return newNode;
+                }
+                if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+
+                return new VCallNode(loc, name);
+            }
+            case Global: return new GlobalVarNode(loc, name);
+            case Instance: return new InstVarNode(loc, name);
+            case Constant: return new ConstNode(loc, name);
+            case Class: return new ClassVarNode(loc, name);
+            default:
+                compile_error("identifier " + id + " is not valid to get");
+        }
+
+
+        return null;
     }
 
     /**
@@ -1526,6 +1596,25 @@ public class ParserSupport {
         lexer.validateFormalIdentifier(identifier);
 
         return shadowing_lvar(identifier);
+    }
+
+    enum IDType {
+        Local, Global, Instance, AttrSet, Constant, Class;
+    }
+
+    public IDType id_type(ByteList identifier) {
+        char first = identifier.charAt(0);
+
+        if (Character.isUpperCase(first)) return Constant;
+
+        switch(first) {
+            case '@':
+                return identifier.charAt(1) == '@' ? Class : Instance;
+            case '$':
+                return Global;
+        }
+
+        return Local;
     }
 
     public static boolean is_private_local_id(ByteList name) {

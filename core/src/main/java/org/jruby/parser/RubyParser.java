@@ -4644,7 +4644,7 @@ states[601] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[602] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    Node n = support.declareIdentifier(((ByteList)yyVals[0+yyTop].value));
+                    Node n = support.gettable(((ByteList)yyVals[0+yyTop].value));
                     if (!(n instanceof LocalVarNode || n instanceof DVarNode)) {
                         support.compile_error("" + ((ByteList)yyVals[0+yyTop].value) + ": no such local variable");
                     }
@@ -4652,7 +4652,7 @@ states[602] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
   return yyVal;
 };
 states[603] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = support.declareIdentifier(((ByteList)yyVals[0+yyTop].value));
+                    yyVal = support.gettable(((ByteList)yyVals[0+yyTop].value));
                     if (yyVal == null) yyVal = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
 
   return yyVal;
