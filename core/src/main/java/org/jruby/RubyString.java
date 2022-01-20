@@ -6693,6 +6693,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return pp - p;
     }
 
+    /**
+     * Is this a "bare" string, i.e. not tainted, has no instance vars, and class == String.
+     */
+    public boolean isBare(Ruby runtime) {
+        return !isTaint() && !hasInstanceVariables() && metaClass == runtime.getString();
+    }
+
     private static StringSites sites(ThreadContext context) {
         return context.sites.String;
     }

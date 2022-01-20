@@ -4642,11 +4642,10 @@ public final class Ruby implements Constantizable {
      * @return the freeze-duped version of the string
      */
     public RubyString freezeAndDedupString(RubyString string) {
-        if (string.getMetaClass() != stringClass) {
+        if (!string.isBare(this)) {
             // never cache a non-natural String
-            RubyString duped = string.strDup(this);
-            duped.setFrozen(true);
-            return duped;
+            string.setFrozen(true);
+            return string;
         }
 
         // Populate thread-local wrapper

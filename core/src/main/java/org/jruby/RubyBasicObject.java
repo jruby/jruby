@@ -1403,6 +1403,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
+     * Check whether this object has any *set* instance variables unrelated to object_id, FFI, and ObjectSpace (which
+     * also use hidden ivar slots).
+     *
+     * @return true if there are set instance variables, false otherwise
+     */
+    protected boolean hasInstanceVariables() {
+        return metaClass.getVariableTableManager().hasInstanceVariables(this);
+    }
+
+    /**
      * Gets a list of all variables in this object.
      */
     @Override
