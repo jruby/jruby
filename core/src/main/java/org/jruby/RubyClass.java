@@ -1039,7 +1039,7 @@ public class RubyClass extends RubyModule {
             for (RubyClass klass: keys) {
                 if (klass.isSingleton()) continue;
                 if (klass.isIncluded()) {
-                    concreteSubclasses(subs);
+                    klass.concreteSubclasses(subs);
                     continue;
                 }
                 subs.add(klass);
