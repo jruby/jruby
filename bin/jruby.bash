@@ -145,9 +145,14 @@ resolve_symlinks() {
 # ----- Determine JRUBY_HOME based on this executable's path ------------------
 
 # get the absolute path of the executable
-dir_name "$BASH_SOURCE"
+if [ "$BASH" ]; then
+    script_src="$BASH_SOURCE"
+else
+    script_src="$0"
+fi
+dir_name "$script_src"
 BASE_DIR="$(cd -P -- "$result" >/dev/null && pwd -P)"
-base_name "$BASH_SOURCE"
+base_name "$script_src"
 resolve_symlinks "$BASE_DIR/$result"
 SELF_PATH="$result"
 
@@ -173,7 +178,7 @@ readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby.jsa"
 
 add_log
 add_log "JRuby executable:"
-add_log "  $BASH_SOURCE"
+add_log "  $script_src"
 add_log "JRuby command line options:"
 add_log "  $*"
 add_log "Current directory:"
