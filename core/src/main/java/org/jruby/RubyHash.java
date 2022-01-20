@@ -1166,7 +1166,7 @@ public class RubyHash extends RubyObject implements Map {
 
     // MRI: rb_hash_key_str
     private static RubyString hashKeyString(Ruby runtime, RubyString key) {
-        if (key.isBare(runtime)) {
+        if (!key.isTaint() && key.isBare(runtime)) {
             return runtime.freezeAndDedupString(key);
         }
 
