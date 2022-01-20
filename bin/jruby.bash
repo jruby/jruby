@@ -433,6 +433,8 @@ JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
+CLASSPATH="${CP}${CP_DELIMITER}${CLASSPATH}"
+
 # ----- Tweak console environment for cygwin ----------------------------------
 
 if $cygwin; then
@@ -459,7 +461,7 @@ fi
 
 if $use_modules; then
     # Use module path instead of classpath for the jruby libs
-    classpath_args=(--module-path "$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH")
+    classpath_args=(--module-path "$JRUBY_CP" -classpath "$CLASSPATH")
 
     # Switch to non-boot path since we can't use bootclasspath on 9+
     NO_BOOTCLASSPATH=true
@@ -481,7 +483,7 @@ if $use_modules; then
         JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
     fi
 else
-    classpath_args=(-classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH")
+    classpath_args=(-classpath "$JRUBY_CP$CP_DELIMITER$CLASSPATH")
 fi
 
 # ----- Final prepration of the Java command line -----------------------------
@@ -496,7 +498,7 @@ if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
     jvm_command+=("${classpath_args[@]}")
 else
     jvm_command+=(-Xbootclasspath/a:"$JRUBY_CP" \
-        -classpath "$CP$CP_DELIMITER$CLASSPATH" "-Djruby.home=$JRUBY_HOME")
+        -classpath "$CLASSPATH" "-Djruby.home=$JRUBY_HOME")
 fi
 
 jvm_command+=("-Djruby.home=$JRUBY_HOME" \
