@@ -3,7 +3,7 @@
 # jruby.bash - Start Script for the JRuby interpreter
 # -----------------------------------------------------------------------------
 
-# ----- Set variable defaults --------------
+# ----- Set variable defaults -------------------------------------------------
 
 cygwin=false
 use_exec=true
@@ -154,7 +154,7 @@ dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
 # Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
 jruby_jsa_file="$JRUBY_HOME/lib/jruby.jsa"
 
-# ----- Initialize environment log -------------------------
+# ----- Initialize environment log --------------------------------------------
 
 add_log
 add_log "JRuby executable:"
@@ -430,7 +430,7 @@ JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
-# ----- Tweak console environment for cygwin ------------------------------------------
+# ----- Tweak console environment for cygwin ----------------------------------
 
 if $cygwin; then
   use_exec=false
