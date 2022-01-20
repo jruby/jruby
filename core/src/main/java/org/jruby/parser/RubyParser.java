@@ -5469,7 +5469,7 @@ states[782] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 };
 states[783] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     Node label = support.asSymbol(lexer.tokline, ((ByteList)yyVals[0+yyTop].value));
-                    Node var = support.declareIdentifier(((ByteList)yyVals[0+yyTop].value));
+                    Node var = support.gettable(((ByteList)yyVals[0+yyTop].value));
                     if (var == null) var = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
                     yyVal = support.createKeyValue(label, var);
   return yyVal;

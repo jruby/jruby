@@ -3453,7 +3453,7 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tLABEL {
                     Node label = support.asSymbol(lexer.tokline, $1);
-                    Node var = support.declareIdentifier($1);
+                    Node var = support.gettable($1);
                     if (var == null) var = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
                     $$ = support.createKeyValue(label, var);
                 }
