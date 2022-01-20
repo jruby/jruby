@@ -8,7 +8,17 @@
 readonly java_class=org.jruby.Main
 readonly JRUBY_SHELL=/bin/sh
 
+# Detect cygwin and mingw environments
 cygwin=false
+case "$(uname)" in
+    CYGWIN*) cygwin=true ;;
+    MINGW*)
+        jruby.exe "$@"
+        exit $?
+        ;;
+esac
+readonly cygwin
+
 use_exec=true
 java_opts_from_files=""
 
@@ -174,16 +184,6 @@ add_log "  JRUBY_OPTS: $JRUBY_OPTS"
 add_log "  JAVA_OPTS: $JAVA_OPTS"
 
 # ----- Discover JVM and prep environment to run it ---------------------------
-
-# Detect cygwin and mingw environments
-case "$(uname)" in
-    CYGWIN*) cygwin=true ;;
-    MINGW*)
-        jruby.exe "$@"
-        exit $?
-        ;;
-esac
-readonly cygwin
 
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ]; then
