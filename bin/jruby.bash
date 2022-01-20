@@ -450,12 +450,13 @@ if $cygwin; then
     JRUBY_SHELL="$(cygpath --mixed "$JRUBY_SHELL")"
 
     ruby_arg_first="${ruby_args[1]}"
-    if [ "${ruby_arg_first:0:1}" = "/" ] \
-        && [ -f "$ruby_arg_first" ] \
-        || [ -d "$ruby_arg_first" ]
-    then
-        ruby_args=("$(cygpath -w "$ruby_arg_first")" "${ruby_args[@]:1}")
-    fi
+    case $ruby_arg_first in
+        /*)
+            if [ -f "$ruby_arg_first" ] || [ -d "$ruby_arg_first" ]; then
+                ruby_args=("$(cygpath -w "$ruby_arg_first")" "${ruby_args[@]:1}")
+            fi
+            ;;
+    esac
 
     # fix JLine to use UnixTerminal
     if stty -icanon min 1 -echo > /dev/null 2>&1; then
