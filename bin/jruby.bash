@@ -3,6 +3,16 @@
 # jruby.bash - Start Script for the JRuby interpreter
 # -----------------------------------------------------------------------------
 
+# ----- Guarantee local variables are available -------------------------------
+if command -v local >/dev/null; then
+    :
+elif command -v typeset >/dev/null; then
+	# ksh93 has typeset but not local
+    alias local=typeset
+else
+    echo "Error: Your shell does not support local variables. Re-run with one that does (e.g. bash, ksh)"
+fi
+
 # ----- Set variable defaults -------------------------------------------------
 
 readonly java_class=org.jruby.Main
