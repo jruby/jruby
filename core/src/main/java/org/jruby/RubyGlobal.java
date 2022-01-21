@@ -120,10 +120,6 @@ public class RubyGlobal {
 
         runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
 
-        runtime.defineGlobalConstant("TRUE", runtime.getTrue());
-        runtime.defineGlobalConstant("FALSE", runtime.getFalse());
-        runtime.defineGlobalConstant("NIL", runtime.getNil());
-
         runtime.getObject().deprecateConstant(runtime, "TRUE");
         runtime.getObject().deprecateConstant(runtime, "FALSE");
         runtime.getObject().deprecateConstant(runtime, "NIL");
