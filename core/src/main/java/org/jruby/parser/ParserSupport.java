@@ -194,7 +194,8 @@ public class ParserSupport {
         ListNode list = new ArrayNode(lexer.getRubySourceline());
 
         for (int i = 1; i <= paramCount; i++) {
-            list.add(arg_var(new ByteList(("_" + i).getBytes())));
+            RubySymbol name = symbolID(new ByteList(("_" + i).getBytes()));
+            list.add(new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addVariableThisScope(name.idString())));
         }
 
         return list;
@@ -374,7 +375,7 @@ public class ParserSupport {
     public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
         RubySymbol name = symbolID(byteName);
 
-        if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+        numparam_name(name);
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
 
@@ -1582,8 +1583,7 @@ public class ParserSupport {
 
     public ArgumentNode arg_var(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
-
-        if (currentScope.getType() != StaticScope.Type.BLOCK) numparam_name(name);
+        numparam_name(name);
 
         if (warnOnUnusedVariables) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
