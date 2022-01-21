@@ -188,6 +188,8 @@ public class ParserConfiguration {
      * Zero out coverable lines as they're encountered
      */
     public void coverLine(int i) {
+        // We had an overflow so we cannot mark whatever line this is as covered.
+        if (i < 0) return;
         if (isCoverageEnabled()) {
             growCoverageLines(i);
             coverage[i] = 0;

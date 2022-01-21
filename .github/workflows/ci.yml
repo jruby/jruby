@@ -432,9 +432,9 @@ jobs:
           PHASE: 'package -Ptest'
 
   publish-snapshot:
-    if: endsWith('master', github.ref) || endsWith('jruby-9.3', github.ref)
+    if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.3' }}
     needs: [mvn-test, mvn-test-8, mvn-test-windows, dependency-check, rake-test, rake-test-indy, rake-test-8, test-versions, sequel, concurrent-ruby, jruby-tests-dev, ji-specs-indy, regression-specs-jit, maven-test-openj9-8]
-    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@ce35e38848abe0a5f9a7991f43d622319f4344de
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

@@ -57,6 +57,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
+import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -1313,15 +1314,20 @@ public class IRRuntimeHelpers {
 
         JavaMethod javaMethod = (JavaMethod) superMethod.findCallable(self, id, args, args.length);
 
-        // self is a Java subclass, need to do a bit more logic to dispatch the right method
-        JavaProxyClass jpc = JavaProxyClass.getProxyClass(context.runtime, definingModule);
-        JavaProxyMethod jpm;
         Object[] newArgs = RubyToJavaInvoker.convertArguments(javaMethod, args);
-        if ((jpm = jpc.getMethod(id, javaMethod.getParameterTypes())) != null && jpm.hasSuperImplementation()) {
-            return javaMethod.invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, newArgs);
-        } else {
-            return javaMethod.invokeDirectWithExceptionHandling(context, javaMethod.getValue(), javaInvokee, newArgs);
+
+        JavaProxyClass jpc = JavaProxyClass.getProxyClass(context.runtime, definingModule);
+
+        if (jpc != null) {
+            // self is a Java subclass, need to do a bit more logic to dispatch the right method
+            JavaProxyMethod jpm = jpc.getMethod(id, javaMethod.getParameterTypes());
+
+            if (jpm != null && jpm.hasSuperImplementation()) {
+                return javaMethod.invokeDirectSuperWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, newArgs);
+            }
         }
+
+        return javaMethod.invokeDirectWithExceptionHandling(context, javaMethod.getValue(), javaInvokee, newArgs);
     }
 
     @Interp

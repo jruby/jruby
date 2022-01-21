@@ -1754,7 +1754,7 @@ public class IRBuilder {
         Variable eqqResult = createTemporaryVariable();
         Node exprNodes = whenNode.getExpressionNodes();
 
-        if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode)) {
+        if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode) && !(exprNodes instanceof ZArrayNode)) {
             buildWhenValues(eqqResult, (ListNode) exprNodes, testValue, bodyLabel, seenLiterals);
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
             buildWhenSplatValues(eqqResult, exprNodes, testValue, bodyLabel, seenLiterals);
@@ -4269,9 +4269,7 @@ public class IRBuilder {
                 for (int i = 0; i < exceptionNodes.length; i++) {
                     outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
                 }
-            } else if (exceptionList instanceof SplatNode) { // splatnode, catch
-                outputExceptionCheck(build(((SplatNode)exceptionList).getValue()), exc, caughtLabel);
-            } else { // argscat/argspush
+            } else { // splat/argscat/argspush
                 outputExceptionCheck(build(exceptionList), exc, caughtLabel);
             }
         } else {

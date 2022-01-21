@@ -478,8 +478,8 @@ top_stmt      : stmt
               }
 
 begin_block   : '{' top_compstmt '}' {
-                  support.getResult().addBeginNode(new PreExe19Node(@1.startLine(), support.getCurrentScope(), $2, lexer.getRubySourceline()));
-                  //                  $$ = new BeginNode(@1.startLine(), support.makeNullNil($2));
+                  support.getResult().addBeginNode(new PreExe19Node(@1.start(), support.getCurrentScope(), $2, lexer.getRubySourceline()));
+                  //                  $$ = new BeginNode(@1.start(), support.makeNullNil($2));
                   $$ = null;
               }
 
@@ -612,27 +612,27 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
  		| defn_head f_opt_paren_args '=' command {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end);
+                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end());
                     support.popCurrentScope();
                 }
                 | defn_head f_opt_paren_args '=' command modifier_rescue arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.startLine(), $4, $6)));
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @6.end);
+                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.start(), $4, $6)));
+                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @6.end());
                     support.popCurrentScope();
                 }
                 | defs_head f_opt_paren_args '=' command {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end);
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end());
                     support.popCurrentScope();
                 }
                 | defs_head f_opt_paren_args '=' command modifier_rescue arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.startLine(), $4, $6)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @6.end);
+                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.start(), $4, $6)));
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @6.end());
                     support.popCurrentScope();
                 }
                 | backref tOP_ASGN lex_ctxt command_rhs {
@@ -678,7 +678,7 @@ expr            : command_call
                     support.pop_pvtbl($<Set>4);
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
-                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, null, null));
+                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.start(), $5, null, null));
                 }
                 | arg keyword_in {
                     support.value_expr(lexer, $1);
@@ -693,7 +693,7 @@ expr            : command_call
                     support.pop_pvtbl($<Set>4);
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
-                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.startLine(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
+                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.start(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
                 }
 		| arg %prec tLBRACE_ARG
 
@@ -745,7 +745,7 @@ command_call    : command
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
                 | block_call call_op2 operation2 command_args {
-                    $$ = support.new_call($1, $2, $3, $4, null, @3.startLine());
+                    $$ = support.new_call($1, $2, $3, $4, null, @3.start());
                 }
 
 // :brace_block - [!null]
@@ -767,10 +767,10 @@ command        : fcall command_args %prec tLOWEST {
                     $$ = $1;
                 }
                 | primary_value call_op operation2 command_args %prec tLOWEST {
-                    $$ = support.new_call($1, $2, $3, $4, null, @3.startLine());
+                    $$ = support.new_call($1, $2, $3, $4, null, @3.start());
                 }
                 | primary_value call_op operation2 command_args cmd_brace_block {
-                    $$ = support.new_call($1, $2, $3, $4, $5, @3.startLine());
+                    $$ = support.new_call($1, $2, $3, $4, $5, @3.start());
                 }
                 | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
                     $$ = support.new_call($1, $3, $4, null);
@@ -1348,12 +1348,12 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 | tBDOT2 arg {
                     support.value_expr(lexer, $2);
                     boolean isLiteral = $2 instanceof FixnumNode;
-                    $$ = new DotNode(@1.startLine(), NilImplicitNode.NIL, support.makeNullNil($2), false, isLiteral);
+                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, support.makeNullNil($2), false, isLiteral);
                 }
                 | tBDOT3 arg {
                     support.value_expr(lexer, $2);
                     boolean isLiteral = $2 instanceof FixnumNode;
-                    $$ = new DotNode(@1.startLine(), NilImplicitNode.NIL, support.makeNullNil($2), true, isLiteral);
+                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, support.makeNullNil($2), true, isLiteral);
                 }
                 | arg '+' arg {
                     $$ = support.getOperatorCallNode($1, PLUS, $3, lexer.getRubySourceline());
@@ -1443,30 +1443,30 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 | defn_head f_opt_paren_args '=' arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end);
+                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end());
                     if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     support.popCurrentScope();
 		}
                 | defn_head f_opt_paren_args '=' arg modifier_rescue arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.startLine(), $4, $6)));
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @6.end);
+                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.start(), $4, $6)));
+                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @6.end());
                     if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     support.popCurrentScope();
 		}
                 | defs_head f_opt_paren_args '=' arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end);
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end());
                     if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     support.popCurrentScope();
 		}
                 | defs_head f_opt_paren_args '=' arg modifier_rescue arg {
                     support.endless_method_name($1);
                     support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.startLine(), $4, $6)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @6.end);
+                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.start(), $4, $6)));
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @6.end());
                     if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();                    support.popCurrentScope();
                 }
                 | primary {
@@ -1533,14 +1533,14 @@ paren_args      : '(' opt_call_args rparen {
                     if (!support.check_forwarding_args()) {
                         $$ = null;
                     } else {
-                        $$ = support.new_args_forward_call(@1.startLine(), $2);
+                        $$ = support.new_args_forward_call(@1.start(), $2);
                     }
                }
                | '(' args_forward rparen {
                     if (!support.check_forwarding_args()) {
                         $$ = null;
                     } else {
-                        $$ = support.new_args_forward_call(@1.startLine(), null);
+                        $$ = support.new_args_forward_call(@1.start(), null);
                     }
                }
  
@@ -1822,7 +1822,7 @@ primary         : literal
                 } bodystmt k_end {
                     Node body = support.makeNullNil($5);
 
-                    $$ = new ClassNode(@1.startLine(), $<Colon3Node>2, support.getCurrentScope(), body, $3, lexer.getRubySourceline());
+                    $$ = new ClassNode(@1.start(), $<Colon3Node>2, support.getCurrentScope(), body, $3, lexer.getRubySourceline());
                     LexContext ctxt = lexer.getLexContext();
                     support.popCurrentScope();
                     ctxt.in_class = $1.in_class;
@@ -1836,7 +1836,7 @@ primary         : literal
                 } term bodystmt k_end {
                     Node body = support.makeNullNil($6);
 
-                    $$ = new SClassNode(@1.startLine(), $3, support.getCurrentScope(), body, lexer.getRubySourceline());
+                    $$ = new SClassNode(@1.start(), $3, support.getCurrentScope(), body, lexer.getRubySourceline());
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_def = $1.in_def;
                     ctxt.in_class = $1.in_class;
@@ -1853,7 +1853,7 @@ primary         : literal
                 } bodystmt k_end {
                     Node body = support.makeNullNil($4);
 
-                    $$ = new ModuleNode(@1.startLine(), $<Colon3Node>2, support.getCurrentScope(), body, lexer.getRubySourceline());
+                    $$ = new ModuleNode(@1.start(), $<Colon3Node>2, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_class = $1.in_class;
@@ -1862,13 +1862,13 @@ primary         : literal
                 | defn_head f_arglist bodystmt k_end {
                     support.restore_defun($1);
                     Node body = support.reduce_nodes(support.remove_begin(support.makeNullNil($3)));
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @4.end);
+                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @4.end());
                     if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();                    support.popCurrentScope();
                 }
                 | defs_head f_arglist bodystmt k_end {
                     support.restore_defun($1);
                     Node body = support.reduce_nodes(support.remove_begin(support.makeNullNil($3)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @4.end);
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @4.end());
                     if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     support.popCurrentScope();
                 }
@@ -2175,7 +2175,7 @@ lambda          : tLAMBDA {
                     int max_numparam = support.restoreMaxNumParam($<Integer>3);
                     ArgsNode args = support.args_with_numbered($5, max_numparam);
                     lexer.getCmdArgumentState().pop();
-                    $$ = new LambdaNode(@1.startLine(), args, $7, support.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new LambdaNode(@1.start(), args, $7, support.getCurrentScope(), lexer.getRubySourceline());
                     lexer.setLeftParenBegin($<Integer>2);
                     support.numparam_pop($<Node>4);
                     support.popCurrentScope();
@@ -2226,13 +2226,13 @@ block_call      : command do_block {
                     $<Node>$.setLine($1.getLine());
                 }
                 | block_call call_op2 operation2 opt_paren_args {
-                    $$ = support.new_call($1, $2, $3, $4, null, @3.startLine());
+                    $$ = support.new_call($1, $2, $3, $4, null, @3.start());
                 }
                 | block_call call_op2 operation2 opt_paren_args brace_block {
-                    $$ = support.new_call($1, $2, $3, $4, $5, @3.startLine());
+                    $$ = support.new_call($1, $2, $3, $4, $5, @3.start());
                 }
                 | block_call call_op2 operation2 command_args do_block {
-                    $$ = support.new_call($1, $2, $3, $4, $5, @3.startLine());
+                    $$ = support.new_call($1, $2, $3, $4, $5, @3.start());
                 }
 
 // [!null]
@@ -2241,7 +2241,7 @@ method_call     : fcall paren_args {
                     $$ = $1;
                 }
                 | primary_value call_op operation2 opt_paren_args {
-                    $$ = support.new_call($1, $2, $3, $4, null, @3.startLine());
+                    $$ = support.new_call($1, $2, $3, $4, null, @3.start());
                 }
                 | primary_value tCOLON2 operation2 paren_args {
                     $$ = support.new_call($1, $3, $4, null);
@@ -2250,7 +2250,7 @@ method_call     : fcall paren_args {
                     $$ = support.new_call($1, $3, null, null);
                 }
                 | primary_value call_op paren_args {
-                    $$ = support.new_call($1, $2, LexingCommon.CALL, $3, null, @3.startLine());
+                    $$ = support.new_call($1, $2, LexingCommon.CALL, $3, null, @3.start());
                 }
                 | primary_value tCOLON2 paren_args {
                     $$ = support.new_call($1, LexingCommon.CALL, $3, null);
@@ -2286,7 +2286,7 @@ brace_body      : {
                 } opt_block_param compstmt {
                     int max_numparam = support.restoreMaxNumParam($<Integer>2);
                     ArgsNode args = support.args_with_numbered($4, max_numparam);
-                    $$ = new IterNode(@1.startLine(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new IterNode(@1.start(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
                     support.numparam_pop($<Node>3);
                     support.popCurrentScope();
                 }
@@ -2301,7 +2301,7 @@ do_body 	: {
                 } opt_block_param bodystmt {
                     int max_numparam = support.restoreMaxNumParam($<Integer>2);
                     ArgsNode args = support.args_with_numbered($4, max_numparam);
-                    $$ = new IterNode(@1.startLine(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new IterNode(@1.start(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
                     lexer.getCmdArgumentState().pop();
                     support.numparam_pop($<Node>3);
                     support.popCurrentScope();
@@ -2344,7 +2344,7 @@ p_case_body     : keyword_in {
                     support.pop_pvtbl($<Set>2);
                     lexer.getLexContext().in_kwarg = $<Boolean>1;
                 } compstmt p_cases {
-                    $$ = support.newIn(@1.startLine(), $4, $7, $8);
+                    $$ = support.newIn(@1.start(), $4, $7, $8);
                 }
 
 p_cases         : opt_else
@@ -2354,29 +2354,29 @@ p_cases         : opt_else
 
 p_top_expr      : p_top_expr_body
                 | p_top_expr_body modifier_if expr_value {
-                    $$ = support.new_if(@1.startLine(), $3, $1, null);
+                    $$ = support.new_if(@1.start(), $3, $1, null);
                     support.fixpos($<Node>$, $3);
                 }
                 | p_top_expr_body modifier_unless expr_value {
-                    $$ = support.new_if(@1.startLine(), $3, null, $1);
+                    $$ = support.new_if(@1.start(), $3, null, $1);
                     support.fixpos($<Node>$, $3);
                 }
 
 // FindPatternNode, HashPatternNode, ArrayPatternNode + p_expr(a lot)
 p_top_expr_body : p_expr
                 | p_expr ',' {
-                    $$ = support.new_array_pattern(@1.startLine(), null, $1,
-                                                   support.new_array_pattern_tail(@1.startLine(), null, true, null, null));
+                    $$ = support.new_array_pattern(@1.start(), null, $1,
+                                                   support.new_array_pattern_tail(@1.start(), null, true, null, null));
                 }
                 | p_expr ',' p_args {
-                    $$ = support.new_array_pattern(@1.startLine(), null, $1, $3);
-                   support.nd_set_first_loc($<Node>$, @1.startLine());
+                    $$ = support.new_array_pattern(@1.start(), null, $1, $3);
+                   support.nd_set_first_loc($<Node>$, @1.start());
                 }
                 | p_find {
                     $$ = support.new_find_pattern(null, $1);
                 }
                 | p_args_tail {
-                    $$ = support.new_array_pattern(@1.startLine(), null, null, $1);
+                    $$ = support.new_array_pattern(@1.start(), null, null, $1);
                 }
                 | p_kwargs {
                     $$ = support.new_hash_pattern(null, $1);
@@ -2385,7 +2385,7 @@ p_top_expr_body : p_expr
 p_expr          : p_as
 
 p_as            : p_expr tASSOC p_variable {
-                    $$ = new HashNode(@1.startLine(), new KeyValuePair($1, $3));
+                    $$ = new HashNode(@1.start(), new KeyValuePair($1, $3));
                 }
                 | p_alt
 
@@ -2405,51 +2405,51 @@ p_expr_basic    : p_value
                 | p_variable
                 | p_const p_lparen p_args rparen {
                     support.pop_pktbl($<Set>2);
-                    $$ = support.new_array_pattern(@1.startLine(), $1, null, $3);
-                    support.nd_set_first_loc($<Node>$, @1.startLine());
+                    $$ = support.new_array_pattern(@1.start(), $1, null, $3);
+                    support.nd_set_first_loc($<Node>$, @1.start());
                 }
                 | p_const p_lparen p_find rparen {
                      support.pop_pktbl($<Set>2);
                      $$ = support.new_find_pattern($1, $3);
-                     support.nd_set_first_loc($<Node>$, @1.startLine());
+                     support.nd_set_first_loc($<Node>$, @1.start());
                 }
                 | p_const p_lparen p_kwargs rparen {
                      support.pop_pktbl($<Set>2);
                      $$ = support.new_hash_pattern($1, $3);
-                     support.nd_set_first_loc($<Node>$, @1.startLine());
+                     support.nd_set_first_loc($<Node>$, @1.start());
                 }
                 | p_const '(' rparen {
-                     $$ = support.new_array_pattern(@1.startLine(), $1, null,
-                                                    support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
+                     $$ = support.new_array_pattern(@1.start(), $1, null,
+                                                    support.new_array_pattern_tail(@1.start(), null, false, null, null));
                 }
                 | p_const p_lbracket p_args rbracket {
                      support.pop_pktbl($<Set>2);
-                     $$ = support.new_array_pattern(@1.startLine(), $1, null, $3);
-                     support.nd_set_first_loc($<Node>$, @1.startLine());
+                     $$ = support.new_array_pattern(@1.start(), $1, null, $3);
+                     support.nd_set_first_loc($<Node>$, @1.start());
                 }
                 | p_const p_lbracket p_find rbracket {
                     support.pop_pktbl($<Set>2);
                     $$ = support.new_find_pattern($1, $3);
-                    support.nd_set_first_loc($<Node>$, @1.startLine());
+                    support.nd_set_first_loc($<Node>$, @1.start());
                 }
                 | p_const p_lbracket p_kwargs rbracket {
                     support.pop_pktbl($<Set>2);
                     $$ = support.new_hash_pattern($1, $3);
-                    support.nd_set_first_loc($<Node>$, @1.startLine());
+                    support.nd_set_first_loc($<Node>$, @1.start());
                 }
                 | p_const '[' rbracket {
-                    $$ = support.new_array_pattern(@1.startLine(), $1, null,
-                            support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
+                    $$ = support.new_array_pattern(@1.start(), $1, null,
+                            support.new_array_pattern_tail(@1.start(), null, false, null, null));
                 }
                 | tLBRACK p_args rbracket {
-                    $$ = support.new_array_pattern(@1.startLine(), null, null, $2);
+                    $$ = support.new_array_pattern(@1.start(), null, null, $2);
                 }
                 | tLBRACK p_find rbracket {
                     $$ = support.new_find_pattern(null, $2);
                 }
                 | tLBRACK rbracket {
-                    $$ = support.new_array_pattern(@1.startLine(), null, null,
-                            support.new_array_pattern_tail(@1.startLine(), null, false, null, null));
+                    $$ = support.new_array_pattern(@1.start(), null, null,
+                            support.new_array_pattern_tail(@1.start(), null, false, null, null));
                 }
                 | tLBRACE {
                     $$ = support.push_pktbl();
@@ -2462,7 +2462,7 @@ p_expr_basic    : p_value
                     $$ = support.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
-                    $$ = support.new_hash_pattern(null, support.new_hash_pattern_tail(@1.startLine(), null, null));
+                    $$ = support.new_hash_pattern(null, support.new_hash_pattern_tail(@1.start(), null, null));
                 }
                 | tLPAREN {
                     $$ = support.push_pktbl();
@@ -2473,25 +2473,25 @@ p_expr_basic    : p_value
 
 p_args          : p_expr {
                      ListNode preArgs = support.newArrayNode($1.getLine(), $1);
-                     $$ = support.new_array_pattern_tail(@1.startLine(), preArgs, false, null, null);
+                     $$ = support.new_array_pattern_tail(@1.start(), preArgs, false, null, null);
                 }
                 | p_args_head {
-                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, null, null);
+                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, null, null);
                 }
                 | p_args_head p_arg {
-                     $$ = support.new_array_pattern_tail(@1.startLine(), support.list_concat($1, $2), false, null, null);
+                     $$ = support.new_array_pattern_tail(@1.start(), support.list_concat($1, $2), false, null, null);
                 }
                 | p_args_head tSTAR tIDENTIFIER {
-                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, $3, null);
+                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, $3, null);
                 }
                 | p_args_head tSTAR tIDENTIFIER ',' p_args_post {
-                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, $3, $5);
+                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, $3, $5);
                 }
                 | p_args_head tSTAR {
-                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, null, null);
+                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, null, null);
                 }
                 | p_args_head tSTAR ',' p_args_post {
-                     $$ = support.new_array_pattern_tail(@1.startLine(), $1, true, null, $4);
+                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, null, $4);
                 }
                 | p_args_tail {
                      $$ = $1;
@@ -2506,16 +2506,16 @@ p_args_head     : p_arg ',' {
                 }
 
 p_args_tail     : p_rest {
-                     $$ = support.new_array_pattern_tail(@1.startLine(), null, true, $1, null);
+                     $$ = support.new_array_pattern_tail(@1.start(), null, true, $1, null);
                 }
                 | p_rest ',' p_args_post {
-                     $$ = support.new_array_pattern_tail(@1.startLine(), null, true, $1, $3);
+                     $$ = support.new_array_pattern_tail(@1.start(), null, true, $1, $3);
                 }
 
 // FindPatternNode - [!null]
 p_find          : p_rest ',' p_args_post ',' p_rest {
-                     $$ = support.new_find_pattern_tail(@1.startLine(), $1, $3, $5);
-                     support.warn_experimental(@1.startLine(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
+                     $$ = support.new_find_pattern_tail(@1.start(), $1, $3, $5);
+                     support.warn_experimental(@1.start(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
                 }
 
 // ByteList
@@ -2539,21 +2539,21 @@ p_arg           : p_expr {
 
 // HashPatternNode - [!null]
 p_kwargs        : p_kwarg ',' p_any_kwrest {
-                    $$ = support.new_hash_pattern_tail(@1.startLine(), $1, $3);
+                    $$ = support.new_hash_pattern_tail(@1.start(), $1, $3);
                 }
 		| p_kwarg {
-                    $$ = support.new_hash_pattern_tail(@1.startLine(), $1, null);
+                    $$ = support.new_hash_pattern_tail(@1.start(), $1, null);
                 }
                 | p_kwarg ',' {
-                    $$ = support.new_hash_pattern_tail(@1.startLine(), $1, null);
+                    $$ = support.new_hash_pattern_tail(@1.start(), $1, null);
                 }
                 | p_any_kwrest {
-                    $$ = support.new_hash_pattern_tail(@1.startLine(), null, $1);
+                    $$ = support.new_hash_pattern_tail(@1.start(), null, $1);
                 }
 
 // HashNode - [!null]
 p_kwarg         : p_kw {
-                    $$ = new HashNode(@1.start, $1);
+                    $$ = new HashNode(@1.start(), $1);
                 }
                 | p_kwarg ',' p_kw {
                     $1.add($3);
@@ -2564,7 +2564,7 @@ p_kwarg         : p_kw {
 p_kw            : p_kw_label p_expr {
                     support.error_duplicate_pattern_key($1);
 
-                    Node label = support.asSymbol(@1.startLine(), $1);
+                    Node label = support.asSymbol(@1.start(), $1);
 
                     $$ = new KeyValuePair(label, $2);
                 }
@@ -2575,7 +2575,7 @@ p_kw            : p_kw_label p_expr {
                     }
                     support.error_duplicate_pattern_variable($1);
 
-                    Node label = support.asSymbol(@1.startLine(), $1);
+                    Node label = support.asSymbol(@1.start(), $1);
                     $$ = new KeyValuePair(label, support.assignableLabelOrIdentifier($1, null));
                 }
 
@@ -2611,23 +2611,23 @@ p_value         : p_primitive
                     support.value_expr(lexer, $1);
                     support.value_expr(lexer, $3);
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(@1.startLine(), support.makeNullNil($1), support.makeNullNil($3), false, isLiteral);
+                    $$ = new DotNode(@1.start(), support.makeNullNil($1), support.makeNullNil($3), false, isLiteral);
                 }
                 | p_primitive tDOT3 p_primitive {
                     support.value_expr(lexer, $1);
                     support.value_expr(lexer, $3);
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(@1.startLine(), support.makeNullNil($1), support.makeNullNil($3), true, isLiteral);
+                    $$ = new DotNode(@1.start(), support.makeNullNil($1), support.makeNullNil($3), true, isLiteral);
                 }
                 | p_primitive tDOT2 {
                     support.value_expr(lexer, $1);
                     boolean isLiteral = $1 instanceof FixnumNode;
-                    $$ = new DotNode(@1.startLine(), support.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
+                    $$ = new DotNode(@1.start(), support.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
                 }
                 | p_primitive tDOT3 {
                     support.value_expr(lexer, $1);
                     boolean isLiteral = $1 instanceof FixnumNode;
-                    $$ = new DotNode(@1.startLine(), support.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
+                    $$ = new DotNode(@1.start(), support.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
                 }
                 | p_var_ref
                 | p_expr_ref
@@ -2635,12 +2635,12 @@ p_value         : p_primitive
                 | tBDOT2 p_primitive {
                     support.value_expr(lexer, $2);
                     boolean isLiteral = $2 instanceof FixnumNode;
-                    $$ = new DotNode(@1.startLine(), NilImplicitNode.NIL, support.makeNullNil($2), false, isLiteral);
+                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, support.makeNullNil($2), false, isLiteral);
                 }
                 | tBDOT3 p_primitive {
                     support.value_expr(lexer, $2);
                     boolean isLiteral = $2 instanceof FixnumNode;
-                    $$ = new DotNode(@1.startLine(), NilImplicitNode.NIL, support.makeNullNil($2), true, isLiteral);
+                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, support.makeNullNil($2), true, isLiteral);
                 }
 
 p_primitive     : literal
