@@ -4581,7 +4581,7 @@ public class IRBuilder {
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
-        if (scope instanceof IRScriptBody) throwSyntaxError(node, "Invalid yield");
+        if (scope instanceof IRScriptBody || scope instanceof IRModuleBody) throwSyntaxError(node, "Invalid yield");
 
         boolean unwrap = true;
         Node argNode = node.getArgsNode();
