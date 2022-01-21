@@ -120,10 +120,6 @@ public class RubyGlobal {
 
         runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
 
-        runtime.getObject().deprecateConstant(runtime, "TRUE");
-        runtime.getObject().deprecateConstant(runtime, "FALSE");
-        runtime.getObject().deprecateConstant(runtime, "NIL");
-
         initARGV(runtime);
 
         IAccessor d = new ValueAccessor(runtime.newString(
