@@ -5,10 +5,13 @@
 
 # ----- Set variable defaults -------------------------------------------------
 
+readonly JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
+readonly java_class="$JAVA_CLASS_JRUBY_MAIN"
+readonly JRUBY_SHELL=/bin/sh
+
 cygwin=false
 use_exec=true
 java_opts_from_files=""
-JRUBY_SHELL=/bin/sh
 
 if [ -z "$JRUBY_OPTS" ]; then
     JRUBY_OPTS=""
@@ -20,9 +23,6 @@ fi
 
 declare -a java_args
 declare -a ruby_args
-
-JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
-java_class="$JAVA_CLASS_JRUBY_MAIN"
 
 # Force OpenJDK-based JVMs to use /dev/urandom for random number generation
 # See https://github.com/jruby/jruby/issues/4685 among others.
@@ -41,9 +41,8 @@ add_log() {
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
-unset java_opts_from_files
 process_java_opts() {
-    java_opts_file="$1"
+    local java_opts_file="$1"
     if [ -r "$java_opts_file" ]; then
         add_log
         add_log "Adding Java options from: $java_opts_file"
@@ -103,6 +102,7 @@ base_name() {
 
 # Resolve all symlinks in a chain
 resolve_symlinks() {
+    local cur_path sym sym_base dirname basename
     cur_path="$1"
     while [ -h "$cur_path" ]; do
         # 1) cd to directory of the symlink
@@ -141,18 +141,18 @@ JRUBY_HOME="${SELF_PATH%/*/*}"
 # ----- File paths for various options and files we'll process later ----------
 
 # Module options to open up packages we need to reflect
-jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
+readonly jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
 
 # Cascading .java_opts files for localized JVM flags
-installed_jruby_java_opts_file="$JRUBY_HOME/bin/.jruby.java_opts"
-home_jruby_java_opts_file="$HOME/.jruby.java_opts"
-pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
+readonly installed_jruby_java_opts_file="$JRUBY_HOME/bin/.jruby.java_opts"
+readonly home_jruby_java_opts_file="$HOME/.jruby.java_opts"
+readonly pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 
 # Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
-dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
+readonly dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
 
 # Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
-jruby_jsa_file="$JRUBY_HOME/lib/jruby.jsa"
+readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby.jsa"
 
 # ----- Initialize environment log --------------------------------------------
 
@@ -180,6 +180,7 @@ case "$(uname)" in
         exit $?
         ;;
 esac
+readonly cygwin
 
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ]; then
@@ -228,6 +229,7 @@ if [ -f "$JAVA_HOME"/lib/modules ] \
 then
     use_modules=1
 fi
+readonly use_modules
 
 add_log "  JAVACMD: $JAVACMD"
 add_log "  JAVA_HOME: $JAVA_HOME"
@@ -321,6 +323,8 @@ if $cygwin; then
     # switch delimiter only after building Unix style classpaths
     CP_DELIMITER=";"
 fi
+
+readonly CP_DELIMITER
 
 # ----- Continue processing JRuby options into JVM options --------------------
 
