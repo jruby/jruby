@@ -775,7 +775,7 @@ public class ParserSupport {
                 }
 
                 StaticScope.Type type = currentScope.getType();
-                if (type == StaticScope.Type.LOCAL) {
+                if (type == StaticScope.Type.LOCAL && slot != -1) {
                     if (name.getBytes().equals(lexer.getCurrentArg())) {
                         compile_error(str(getConfiguration().getRuntime(), "circular argument reference - ", name));
                     }
