@@ -491,9 +491,6 @@ fi
 # ----- Module and Class Data Sharing flags for Java 9+ -----------------------
 
 if $use_modules; then
-    # Use module path instead of classpath for the jruby libs
-    classpath_args='--module-path $JRUBY_CP -classpath $CLASSPATH'
-
     # Switch to non-boot path since we can't use bootclasspath on 9+
     NO_BOOTCLASSPATH=true
 
@@ -513,8 +510,6 @@ if $use_modules; then
 
         JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
     fi
-else
-    classpath_args='-classpath $JRUBY_CP$CP_DELIMITER$CLASSPATH'
 fi
 
 # ----- Final prepration of the Java command line -----------------------------
@@ -523,7 +518,12 @@ fi
 JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
 
 if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
-    java_args="$java_args $classpath_args"
+    if $use_modules; then
+        # Use module path instead of classpath for the jruby libs
+        java_args="$java_args"' --module-path $JRUBY_CP -classpath $CLASSPATH'
+    else
+        java_args="$java_args"' -classpath $JRUBY_CP$CP_DELIMITER$CLASSPATH'
+    fi
 else
     java_args="$java_args"' -Xbootclasspath/a:$JRUBY_CP
         -classpath $CLASSPATH -Djruby.home=$JRUBY_HOME'
