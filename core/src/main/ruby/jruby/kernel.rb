@@ -14,6 +14,9 @@ rescue Exception # java.lang.ProcessBuilder not available
   # leave old backtick logic in place
 end unless JRuby::Util.native_posix? # native POSIX uses new logic for back-quote
 
+# Generators for Enumerator#next
+load 'jruby/kernel/jruby/generators.rb'
+
 # These are loads so they don't pollute LOADED_FEATURES
 load 'jruby/kernel/signal.rb'
 load 'jruby/kernel/kernel.rb'
