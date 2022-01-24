@@ -222,7 +222,7 @@ public class IRRuntimeHelpers {
         DynamicScope parentScope = dynScope.getParentScope();
 
         if (block.isEscaped()) {
-            throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, breakValue, "unexpected break");
+            throw Helpers.newLocalJumpErrorForBreak(context.runtime, breakValue);
         }
 
         // Raise a break jump so we can bubble back down the stack to the appropriate place to break from.

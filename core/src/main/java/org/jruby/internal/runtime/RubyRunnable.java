@@ -35,7 +35,9 @@ import org.jruby.RubyThread;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -108,6 +110,8 @@ public class RubyRunnable implements ThreadedRunnable {
             } catch (MainExitException mee) {
                 // Someone called exit!, so we need to kill the main thread
                 runtime.getThreadService().getMainThread().kill();
+            } catch (IRBreakJump irbj) {
+                rubyThread.exceptionRaised(Helpers.newLocalJumpErrorForBreak(runtime, irbj.breakValue));
             } catch (Throwable t) {
                 rubyThread.exceptionRaised(t);
             } finally {

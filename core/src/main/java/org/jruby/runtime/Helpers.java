@@ -969,7 +969,11 @@ public class Helpers {
     }
 
     public static IRubyObject breakLocalJumpError(Ruby runtime, IRubyObject value) {
-        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, value, "unexpected break");
+        throw newLocalJumpErrorForBreak(runtime, value);
+    }
+
+    public static RaiseException newLocalJumpErrorForBreak(Ruby runtime, IRubyObject breakValue) {
+        return runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, breakValue, "unexpected break");
     }
 
     public static IRubyObject[] concatObjectArrays(IRubyObject[] array, IRubyObject[] add) {
