@@ -1377,10 +1377,10 @@ public class IRBuilder {
             addInstr(new IntegerMathInstr(SUBTRACT, restNum, length, minArgsCount));
 
             if (pattern.isNamedRestArg()) {
-                Variable min = addResultInstr(new CopyInstr(temp(), fix(preArgsSize)));
-                Variable max = addResultInstr(new AsFixnumInstr(temp(), restNum));
+                Variable min = copy(fix(preArgsSize));
+                Variable max = as_fixnum(restNum);
                 Variable elt = call(temp(), deconstructed, "[]", min, max);
-                Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
+                Variable dd = copy(buildNil());
                 buildPatternMatch(result, dd, pattern.getRestArg(), elt, inAlteration);
                 cond_ne(testEnd, result, tru());
             }
@@ -1391,7 +1391,7 @@ public class IRBuilder {
             for (int i = 0; i < postArgs.size(); i++) {
                 Label matchElementCheck = getNewLabel();
                 Variable j = addResultInstr(new IntegerMathInstr(ADD, temp(), new Integer(i + preArgsSize), restNum));
-                Variable k = addResultInstr(new AsFixnumInstr(temp(), j));
+                Variable k = as_fixnum(j);
                 Variable elt = addResultInstr(CallInstr.create(scope, temp(), symbol("[]"), deconstructed, new Operand[]{k}, NullBlock.INSTANCE));
                 Variable dd = addResultInstr(new CopyInstr(temp(), buildNil()));
                 buildPatternEach(testEnd, result, dd, elt, postArgs.get(i), inAlteration);
