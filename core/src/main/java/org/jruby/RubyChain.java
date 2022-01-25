@@ -130,7 +130,14 @@ public class RubyChain extends RubyObject {
         ByteList str = new ByteList();
         str.append('#').append('<');
         str.append(getMetaClass().getRealClass().getName().getBytes());
-        str.append(':').append(' ').append('[');
+        str.append(':').append(' ');
+
+        if (enums == null) {
+            str.append("uninitialized>".getBytes());
+            return RubyString.newStringLight(context.runtime, str);
+        }
+
+        str.append('[');
         for (int i = 0; i < enums.length - 1; i++) {
             str.append(RubyObject.inspect(context, enums[i]).getByteList());
             str.append(',').append(' ');
