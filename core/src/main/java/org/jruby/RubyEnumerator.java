@@ -182,6 +182,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     // used internally to create lazy without block (from Enumerator/Enumerable)
+    // and used internally to create enum from Enumerator::Lazy#eager
     @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, visibility = PRIVATE)
     public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
         // Lazy.__from(enum, method, *args, size)
@@ -653,5 +654,24 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject obj) {
         return RubyChain.newChain(context, new IRubyObject[] {this, obj});
+    }
+
+    /** MRI: enumerator_s_produce
+     *
+     */
+    @JRubyMethod(meta = true, optional = 1)
+    public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        IRubyObject init;
+
+        if (!block.isGiven()) throw context.runtime.newArgumentError("no block given");
+
+        if (args.length == 0) {
+            init = null;
+        } else {
+            init = args[0];
+        }
+
+        RubyProducer producer = RubyProducer.newProducer(context, init, block);
+        return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
     }
 }

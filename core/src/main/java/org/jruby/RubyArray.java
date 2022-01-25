@@ -364,6 +364,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public static final int ARRAY_DEFAULT_SIZE = 16;
+    private static final int SMALL_ARRAY_LEN = 16;
 
     private static final int TMPLOCK_ARR_F = 1 << 9;
     private static final int TMPLOCK_OR_FROZEN_ARR_F = TMPLOCK_ARR_F | FROZEN_F;
@@ -3737,6 +3738,40 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
+    /** MRI: rb_ary_intersect_p
+     *
+     */
+    @JRubyMethod(name = "intersect?")
+    public IRubyObject intersect_p(ThreadContext context, IRubyObject other) {
+
+        RubyArray ary2 = other.convertToArray();
+        final int len = realLength;
+
+        if (len == 0 || ary2.realLength == 0) return context.fals;
+
+        if (len <= SMALL_ARRAY_LEN && ary2.realLength <= SMALL_ARRAY_LEN) {
+            for (int i = 0; i < len; i++) {
+                if (ary2.include_p(context, elt(i)).isTrue()) return context.tru;
+            }
+            return context.fals;
+        }
+
+        RubyArray shorter = this;
+        RubyArray longer = ary2;
+
+        if (len > ary2.realLength) {
+            longer = this;
+            shorter = ary2;
+        }
+
+        RubyHash hash = shorter.makeHash(context.runtime);
+        for (int i = 0; i < longer.realLength; i++) {
+            IRubyObject val = longer.eltOk(i);
+            if (hash.fastARef(val) != null) return context.tru;
+        }
+
+        return context.fals;
+    }
 
     /** MRI: rb_ary_and
      *
