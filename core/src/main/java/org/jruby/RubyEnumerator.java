@@ -182,6 +182,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     // used internally to create lazy without block (from Enumerator/Enumerable)
+    // and used internally to create enum from Enumerator::Lazy#eager
     @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, visibility = PRIVATE)
     public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
         // Lazy.__from(enum, method, *args, size)

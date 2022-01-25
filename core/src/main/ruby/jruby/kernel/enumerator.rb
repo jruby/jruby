@@ -419,6 +419,10 @@ class Enumerator
       end
     end
 
+    def eager
+      Enumerator.send :__from, self, :each, [], self.size
+    end
+
     protected
     def __set_inspect(method, args = nil, receiver = nil)
       @method = method
