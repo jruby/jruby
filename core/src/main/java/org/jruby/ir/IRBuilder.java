@@ -1619,6 +1619,8 @@ public class IRBuilder {
 
             Variable variable  = getLocalVariable(name, localAsgnNode.getDepth());
             addInstr(new CopyInstr(variable, value));
+        } else if (exprNodes instanceof StarNode) {
+            // Do nothing.
         } else if (exprNodes instanceof DAsgnNode) {
             DAsgnNode localAsgnNode = (DAsgnNode) exprNodes;
             RubySymbol name = localAsgnNode.getName();
