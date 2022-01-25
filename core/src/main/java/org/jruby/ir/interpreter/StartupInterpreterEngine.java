@@ -9,6 +9,7 @@ import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
+import org.jruby.ir.instructions.NopInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;

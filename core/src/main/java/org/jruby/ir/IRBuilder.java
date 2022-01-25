@@ -1260,6 +1260,74 @@ public class IRBuilder {
         return null;
     }
 
+    private void buildFindPattern(Label testEnd, Variable result, Variable deconstructed, FindPatternNode pattern,
+                                  Operand obj, boolean inAlteration) {
+        if (pattern.hasConstant()) {
+            Operand constant = build(pattern.getConstant());
+            addInstr(new EQQInstr(scope, result, constant, obj, false, true));
+            cond_ne(testEnd, result, tru());
+        }
+
+        label(deconstructCheck -> {
+            cond_ne(deconstructCheck, deconstructed, buildNil(), () -> {
+                call(result, obj, "respond_to?", new Symbol(symbol("deconstruct")));
+                cond_ne(testEnd, result, tru());
+
+                call(deconstructed, obj, "deconstruct");
+                label(arrayCheck -> {
+                    addInstr(new EQQInstr(scope, result, manager.getArrayClass(), deconstructed, false, false));
+                    cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
+                });
+            });
+        });
+
+        Variable length = addResultInstr(new RuntimeHelperCall(temp(), ARRAY_LENGTH, new Operand[]{deconstructed}));
+        Operand argsNum = new Integer(pattern.getArgs().size());
+
+        label(sizeCheck -> {
+            addInstr(new BIntInstr(sizeCheck, BIntInstr.Op.LTE, argsNum, length));
+            copy(result, fals());
+            jump(testEnd);
+        });
+
+        Variable limit = addResultInstr(new IntegerMathInstr(SUBTRACT, temp(), length, argsNum));
+        Variable i = copy(new Integer(0));
+
+        for_loop(after -> addInstr(new BIntInstr(after, BIntInstr.Op.GTE, i, limit)),
+                after -> addInstr(new IntegerMathInstr(ADD, i, i, new Integer(1))),
+                (after, bottom) -> {
+                    int argsLength = pattern.getArgs().size();
+                    times(argsLength, (end_times, j) -> {
+                        Node pat = pattern.getArgs().get(j.value);
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, temp(), i, new Integer(j.value)));
+                        Operand deconstructFixnum = as_fixnum(deconstructIndex);
+                        Operand test = call(temp(), deconstructed, "[]", deconstructFixnum);
+                        buildPatternMatch(result, deconstructed, pat, test, false);
+                        cond_ne(bottom, result, tru());
+                    });
+
+                    Node pre = pattern.getPreRestArg();
+                    if (pre != null) {
+                        Operand iFixnum = as_fixnum(i);
+                        Operand test = call(temp(), deconstructed, "[]", manager.newFixnum(0), iFixnum);
+                        buildPatternMatch(result, deconstructed, pre, test, false);
+                        cond_ne(bottom, result, tru());
+                    }
+
+                    Node post = pattern.getPostRestArg();
+                    if (post != null) {
+                        Operand deconstructIndex = addResultInstr(new IntegerMathInstr(ADD, createTemporaryVariable(), i, argsNum));
+                        Operand deconstructFixnum = as_fixnum(deconstructIndex);
+                        Operand lengthFixnum = as_fixnum(length);
+                        Operand test = call(temp(), deconstructed, "[]", deconstructFixnum, lengthFixnum);
+                        buildPatternMatch(result, deconstructed, post, test, false);
+                        cond_ne(bottom, result, tru());
+                    }
+                    jump(after);
+                });
+        addInstr(NopInstr.NOP);
+    }
+
     private void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, ArrayPatternNode pattern,
                                    Operand obj, boolean inAlteration) {
         Variable restNum = addResultInstr(new CopyInstr(temp(), new Integer(0)));
@@ -1465,6 +1533,28 @@ public class IRBuilder {
         return result;
     }
 
+    // Standard for loop in IR.  'test' is responsible for jumping if it fails.
+    private void for_loop(Consumer<Label> test, Consumer<Label> increment, Consume2<Label, Label> body) {
+        Label top = getNewLabel();
+        Label bottom = getNewLabel();
+        label(after -> {
+            addInstr(new LabelInstr(top));
+            test.accept(after);
+            body.apply(after, bottom);
+            addInstr(new LabelInstr(bottom));
+            increment.accept(after);
+            jump(top);
+        });
+    }
+
+    // Create an unrolled loop of expressions passing in the label which marks the end of these tests.
+    private void times(int times, Consume2<Label, Integer> body) {
+        label(end -> {
+            for (int i = 0; i < times; i++) {
+                body.apply(end, new Integer(i));
+            }
+        });
+    }
     private void label(Consumer<Label> block) {
         Label label = getNewLabel();
         block.accept(label);
@@ -1488,6 +1578,7 @@ public class IRBuilder {
         } else if (exprNodes instanceof HashPatternNode) {
             buildHashPattern(testEnd, result, deconstructed, (HashPatternNode) exprNodes, value, inAlternation);
         } else if (exprNodes instanceof FindPatternNode) {
+            buildFindPattern(testEnd, result, deconstructed, (FindPatternNode) exprNodes, value, inAlternation);
         } else if (exprNodes instanceof HashNode) {
             HashNode hash = (HashNode) exprNodes;
 
@@ -4600,11 +4691,15 @@ public class IRBuilder {
         return ret;
     }
 
-    public Operand copy(Operand value) {
+    public Variable as_fixnum(Operand value) {
+        return addResultInstr(new AsFixnumInstr(temp(), value));
+    }
+
+    public Variable copy(Operand value) {
         return copy(null, value);
     }
 
-    public Operand copy(Variable result, Operand value) {
+    public Variable copy(Variable result, Operand value) {
         return addResultInstr(new CopyInstr(result == null ? createTemporaryVariable() : result, value));
     }
 

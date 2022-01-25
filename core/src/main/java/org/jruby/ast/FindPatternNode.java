@@ -36,4 +36,24 @@ public class FindPatternNode extends Node {
     public void setConstant(Node constant) {
         this.constant = constant;
     }
+
+    public boolean hasConstant() {
+        return constant != null;
+    }
+
+    public Node getConstant() {
+        return constant;
+    }
+
+    public ListNode getArgs() {
+        return args;
+    }
+
+    public Node getPreRestArg() {
+        return preRestArg;
+    }
+
+    public Node getPostRestArg() {
+        return postRestArg;
+    }
 }
