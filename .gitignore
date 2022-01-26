@@ -68,7 +68,9 @@ lib/ruby/stdlib/delegate*
 lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/digest*
 lib/ruby/stdlib/drb*
+lib/ruby/stdlib/English*
 lib/ruby/stdlib/erb*
+lib/ruby/stdlib/error_highlight*
 lib/ruby/stdlib/ffi*
 lib/ruby/stdlib/fileutils*
 lib/ruby/stdlib/find*
@@ -97,8 +99,7 @@ lib/ruby/stdlib/optionparser*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
 lib/ruby/stdlib/ostruct*
-# https://github.com/ruby/pp/pull/4
-#lib/ruby/stdlib/pp*
+lib/ruby/stdlib/pp*
 lib/ruby/stdlib/prettyprint*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/prime*
@@ -112,6 +113,7 @@ lib/ruby/stdlib/reline*
 lib/ruby/stdlib/resolv-replace*
 lib/ruby/stdlib/rinda*
 lib/ruby/stdlib/ripper.jar
+lib/ruby/stdlib/ruby2_keywords*
 lib/ruby/stdlib/rubygems*
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
 lib/ruby/stdlib/shellwords*
@@ -120,6 +122,8 @@ lib/ruby/stdlib/time.rb
 lib/ruby/stdlib/tracer*
 lib/ruby/stdlib/tsort*
 lib/ruby/stdlib/un*
+lib/ruby/stdlib/uri*
+lib/ruby/stdlib/yaml*
 
 release.properties
 share
