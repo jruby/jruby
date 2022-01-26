@@ -5543,7 +5543,7 @@ float_loop:
 
     @JRubyMethod
     public IRubyObject minmax(ThreadContext context, Block block) {
-        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+        if (block.isGiven()) return RubyEnumerable.minmax(context, this, block);
 
         return RubyArray.newArray(context.runtime, callMethod("min"), callMethod("max"));
     }
