@@ -66,6 +66,7 @@ import org.jruby.ast.util.ArgsUtil;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
 /**
@@ -245,6 +246,9 @@ public class RubyDir extends RubyObject implements Closeable {
                 if (!aref && rets[2] != null) options.flags |= RubyNumeric.num2int(rets[2]);
 
                 if (rets[1] != null) {
+                    if (!(rets[1] instanceof RubyBoolean)) {
+                        throw context.runtime.newArgumentError(str(runtime, "expected true or false as sort:", rets[1]));
+                    }
                     options.sort = !runtime.getFalse().equals(rets[1]); // weirdly only explicit false is honored for sort.
                 }
 
