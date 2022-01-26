@@ -60,6 +60,8 @@ public class Dir {
     public final static int FNM_DOTMATCH = 0x04;
     public final static int FNM_CASEFOLD = 0x08;
 
+    public final static int FNM_GLOB_SKIPDOT = 0x80;
+
     public final static int FNM_SYSCASE = CASEFOLD_FILESYSTEM ? FNM_CASEFOLD : 0;
 
     public final static int FNM_NOMATCH = 1;
@@ -792,7 +794,7 @@ public class Dir {
 
     private static int glob_helper(Ruby runtime, String cwd,
         byte[] path, int begin, int end, Encoding enc, int sub,
-        final int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int status = 0;
 
         int ptr = sub != -1 ? sub : begin;
@@ -869,11 +871,24 @@ public class Dir {
                         break mainLoop;
                     }
 
+                    boolean skipdot = (flags & FNM_GLOB_SKIPDOT) != 0;
+                    flags |= FNM_GLOB_SKIPDOT;
+
                     final String[] files = files(resource);
 
                     for ( int i = 0; i < files.length; i++ ) {
                         final String file = files[i];
                         final byte[] fileBytes = getBytesInUTF8(file);
+
+                        if (file.charAt(0) == '.') {
+                            int length = file.length();
+                            if (length == 1) {
+                                if (recursive && (flags & FNM_DOTMATCH) == 0) continue;
+                                if (skipdot) continue;
+                            } else if (length == 2 && file.charAt(1) == '.') {
+                                continue;
+                            }
+                        }
                         if (recursive) {
                             if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
                                 continue;
