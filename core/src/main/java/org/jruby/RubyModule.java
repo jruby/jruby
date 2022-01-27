@@ -3339,7 +3339,7 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "public", rest = true, visibility = PRIVATE, writes = VISIBILITY)
-    public RubyModule rbPublic(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject _public(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PUBLIC);
 
@@ -3350,11 +3350,17 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    @Deprecated
+    public IRubyObject rbPublic(ThreadContext context, IRubyObject[] args) {
+        _public(context, args);
+        return this;
+    }
+
     /** rb_mod_protected
      *
      */
     @JRubyMethod(name = "protected", rest = true, visibility = PRIVATE, writes = VISIBILITY)
-    public RubyModule rbProtected(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject _protected(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PROTECTED);
 
@@ -3365,11 +3371,17 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    @Deprecated
+    public IRubyObject rbProtected(ThreadContext context, IRubyObject[] args) {
+        _protected(context, args);
+        return this;
+    }
+
     /** rb_mod_private
      *
      */
     @JRubyMethod(name = "private", rest = true, visibility = PRIVATE, writes = VISIBILITY)
-    public RubyModule rbPrivate(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject _private(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PRIVATE);
 
@@ -3380,11 +3392,17 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    @Deprecated
+    public IRubyObject rbPrivate(ThreadContext context, IRubyObject[] args) {
+        _private(context, args);
+        return this;
+    }
+
     /** rb_mod_modfunc
      *
      */
     @JRubyMethod(name = "module_function", rest = true, visibility = PRIVATE, writes = VISIBILITY)
-    public RubyModule module_function(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject _module_function(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
         if (!isModule()) {
@@ -3411,6 +3429,11 @@ public class RubyModule extends RubyObject {
             case 1: return args[0];
             default: return RubyArray.newArray(context.runtime, args);
         }
+    }
+
+    public IRubyObject module_function(ThreadContext context, IRubyObject[] args) {
+        _module_function(context, args);
+        return this;
     }
 
     @JRubyMethod(name = "method_added", required = 1, visibility = PRIVATE)

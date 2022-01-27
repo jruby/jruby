@@ -80,14 +80,14 @@ public final class TopSelfFactory {
         singletonClass.addMethod("public", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "public") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                return context.runtime.getObject().rbPublic(context, args);
+                return context.runtime.getObject()._public(context, args);
             }
         });
         
         singletonClass.addMethod("private", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                return context.runtime.getObject().rbPrivate(context, args);
+                return context.runtime.getObject()._private(context, args);
             }
         });
 
