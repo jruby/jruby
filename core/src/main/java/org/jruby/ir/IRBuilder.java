@@ -1325,7 +1325,6 @@ public class IRBuilder {
                     }
                     jump(after);
                 });
-        addInstr(NopInstr.NOP);
     }
 
     private void buildArrayPattern(Label testEnd, Variable result, Variable deconstructed, ArrayPatternNode pattern,
@@ -1457,7 +1456,8 @@ public class IRBuilder {
                 cond_ne(testEnd, result, tru());
             }
         } else {
-
+            call(result, d, "empty?");
+            cond_ne(testEnd, result, tru());
         }
 
         if (pattern.hasRestArg()) {
@@ -1650,54 +1650,52 @@ public class IRBuilder {
     }
 
     public Operand buildPatternCase(PatternCaseNode patternCase) {
-        Label     endLabel  = getNewLabel();
-        boolean   hasElse   = patternCase.getElseNode() != null;
-        Label     elseLabel = getNewLabel();
-        Variable  result    = createTemporaryVariable();
-        List<Label> labels = new ArrayList<>();
-        Map<Label, Node> bodies = new HashMap<>();
-
+        Variable result = temp();
         Operand value = build(patternCase.getCaseNode());
 
-        // build each "when"
-        Variable deconstructed = addResultInstr(new CopyInstr(temp(), buildNil()));
-        for (Node aCase : patternCase.getCases().children()) {
-            InNode inNode = (InNode) aCase;
-            Label bodyLabel = getNewLabel();
+        label(end -> {
+            List<Label> labels = new ArrayList<>();
+            Map<Label, Node> bodies = new HashMap<>();
 
-            Variable eqqResult = addResultInstr(new CopyInstr(temp(), tru()));
-            labels.add(bodyLabel);
-            buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false);
-            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
-            bodies.put(bodyLabel, inNode.getBody());
-        }
+            // build each "when"
+            Variable deconstructed = copy(buildNil());
+            for (Node aCase : patternCase.getCases().children()) {
+                InNode inNode = (InNode) aCase;
+                Label bodyLabel = getNewLabel();
 
-        // Jump to else in case nothing matches!
-        addInstr(new JumpInstr(elseLabel));
+                Variable eqqResult = copy(tru());
+                labels.add(bodyLabel);
+                buildPatternMatch(eqqResult, deconstructed, inNode.getExpression(), value, false);
+                addInstr(createBranch(eqqResult, tru(), bodyLabel));
+                bodies.put(bodyLabel, inNode.getBody());
+            }
 
-        // Build "else" if it exists
-        if (hasElse) {
-            labels.add(elseLabel);
-            bodies.put(elseLabel, patternCase.getElseNode());
-        }
+            Label elseLabel = getNewLabel();
+            addInstr(new JumpInstr(elseLabel));      // Jump to else in case nothing matches!
 
-        // Now, emit bodies while preserving when clauses order
-        for (Label label: labels) {
-            addInstr(new LabelInstr(label));
-            Operand bodyValue = build(bodies.get(label));
-            if (bodyValue != null) addInstr(new CopyInstr(result, bodyValue));
-            addInstr(new JumpInstr(endLabel));
-        }
+            boolean hasElse = patternCase.getElseNode() != null;
 
-        if (!hasElse) {
-            addInstr(new LabelInstr(elseLabel));
-            Variable inspect = call(temp(), value, "inspect");
-            addRaiseError("NoMatchingPatternError", inspect);
-            addInstr(new JumpInstr(endLabel));
-        }
+            // Build "else" if it exists
+            if (hasElse) {
+                labels.add(elseLabel);
+                bodies.put(elseLabel, patternCase.getElseNode());
+            }
 
-        // Close it out
-        addInstr(new LabelInstr(endLabel));
+            // Now, emit bodies while preserving when clauses order
+            for (Label label : labels) {
+                addInstr(new LabelInstr(label));
+                Operand bodyValue = build(bodies.get(label));
+                if (bodyValue != null) copy(result, bodyValue);
+                jump(end);
+            }
+
+            if (!hasElse) {
+                addInstr(new LabelInstr(elseLabel));
+                Variable inspect = call(temp(), value, "inspect");
+                addRaiseError("NoMatchingPatternError", inspect);
+                jump(end);
+            }
+        });
 
         return result;
     }
