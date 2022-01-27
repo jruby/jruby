@@ -119,6 +119,21 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return context.nil;
     }
 
+    @JRubyMethod(name = "public?")
+    public RubyBoolean public_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isPublic());
+    }
+
+    @JRubyMethod(name = "protected?")
+    public RubyBoolean protected_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isProtected());
+    }
+
+    @JRubyMethod(name = "private?")
+    public RubyBoolean private_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isPrivate());
+    }
+
     public String getFilename() {
         DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
         if (realMethod instanceof PositionAware) {
