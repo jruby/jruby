@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
+require_relative 'helper'
 require 'rubygems/commands/update_command'
 
 class TestGemCommandsUpdateCommand < Gem::TestCase
@@ -579,7 +579,7 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
 
     expected = {
       :args     => [],
-      :document => %w[rdoc ri],
+      :document => %w[ri],
       :force    => false,
       :system   => true,
     }
@@ -598,7 +598,7 @@ class TestGemCommandsUpdateCommand < Gem::TestCase
 
     expected = {
       :args     => [],
-      :document => %w[rdoc ri],
+      :document => %w[ri],
       :force    => false,
       :system   => "1.3.7",
     }

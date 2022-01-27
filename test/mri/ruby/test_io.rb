@@ -394,6 +394,24 @@ class TestIO < Test::Unit::TestCase
     }
   end
 
+  def test_each_byte_closed
+    pipe(proc do |w|
+      w << "abc def"
+      w.close
+    end, proc do |r|
+      assert_raise(IOError) do
+        r.each_byte {|byte| r.close if byte == 32 }
+      end
+    end)
+    make_tempfile {|t|
+      File.open(t, 'rt') {|f|
+        assert_raise(IOError) do
+          f.each_byte {|c| f.close if c == 10}
+        end
+      }
+    }
+  end
+
   def test_each_codepoint
     make_tempfile {|t|
       bug2959 = '[ruby-core:28650]'
@@ -402,6 +420,24 @@ class TestIO < Test::Unit::TestCase
         f.each_codepoint {|c| a << c}
       }
       assert_equal("foo\nbar\nbaz\n", a, bug2959)
+    }
+  end
+
+  def test_each_codepoint_closed
+    pipe(proc do |w|
+      w.print("abc def")
+      w.close
+    end, proc do |r|
+      assert_raise(IOError) do
+        r.each_codepoint {|c| r.close if c == 32}
+      end
+    end)
+    make_tempfile {|t|
+      File.open(t, 'rt') {|f|
+        assert_raise(IOError) do
+          f.each_codepoint {|c| f.close if c == 10}
+        end
+      }
     }
   end
 
@@ -436,6 +472,18 @@ class TestIO < Test::Unit::TestCase
         ret = IO.copy_stream(src, dst)
         assert_equal(content.bytesize, ret)
         assert_equal(content, File.read("dst"))
+      end
+    }
+  end
+
+  def test_copy_stream_append_to_nonempty
+    with_srccontent("foobar") {|src, content|
+      preface = 'preface'
+      File.write('dst', preface)
+      File.open('dst', 'ab') do |dst|
+        ret = IO.copy_stream(src, dst)
+        assert_equal(content.bytesize, ret)
+        assert_equal(preface + content, File.read("dst"))
       end
     }
   end
@@ -1446,6 +1494,13 @@ class TestIO < Test::Unit::TestCase
     end)
   end
 
+  def test_readpartial_zero_size
+    File.open(IO::NULL) do |r|
+      assert_empty(r.readpartial(0, s = "01234567"))
+      assert_empty(s)
+    end
+  end
+
   def test_readpartial_buffer_error
     with_pipe do |r, w|
       s = ""
@@ -1491,6 +1546,13 @@ class TestIO < Test::Unit::TestCase
     end)
   end
 
+  def test_read_zero_size
+    File.open(IO::NULL) do |r|
+      assert_empty(r.read(0, s = "01234567"))
+      assert_empty(s)
+    end
+  end
+
   def test_read_buffer_error
     with_pipe do |r, w|
       s = ""
@@ -1526,6 +1588,13 @@ class TestIO < Test::Unit::TestCase
       r.read_nonblock(5, s = "01234567")
       assert_equal("foob", s)
     }
+  end
+
+  def test_read_nonblock_zero_size
+    File.open(IO::NULL) do |r|
+      assert_empty(r.read_nonblock(0, s = "01234567"))
+      assert_empty(s)
+    end
   end
 
   def test_write_nonblock_simple_no_exceptions
@@ -3316,11 +3385,17 @@ __END__
     data = "a" * 100
     with_pipe do |r,w|
       th = Thread.new {r.sysread(100, buf)}
+
       Thread.pass until th.stop?
-      buf.replace("")
-      assert_empty(buf, bug6099)
+
+      assert_equal 100, buf.bytesize
+
+      msg = /can't modify string; temporarily locked/
+      assert_raise_with_message(RuntimeError, msg) do
+        buf.replace("")
+      end
+      assert_predicate(th, :alive?)
       w.write(data)
-      Thread.pass while th.alive?
       th.join
     end
     assert_equal(data, buf, bug6099)
@@ -3694,7 +3769,7 @@ __END__
     begin;
       bug13158 = '[ruby-core:79262] [Bug #13158]'
       closed = nil
-      q = Queue.new
+      q = Thread::Queue.new
       IO.pipe do |r, w|
         thread = Thread.new do
           begin
@@ -3804,30 +3879,6 @@ __END__
         end
       end
       end;
-    end
-
-    def test_write_no_garbage
-      skip "multiple threads already active" if Thread.list.size > 1
-      res = {}
-      ObjectSpace.count_objects(res) # creates strings on first call
-      [ 'foo'.b, '*' * 24 ].each do |buf|
-        with_pipe do |r, w|
-          GC.disable
-          begin
-            before = ObjectSpace.count_objects(res)[:T_STRING]
-            n = w.write(buf)
-            s = w.syswrite(buf)
-            after = ObjectSpace.count_objects(res)[:T_STRING]
-          ensure
-            GC.enable
-          end
-          assert_equal before, after,
-            "no strings left over after write [ruby-core:78898] [Bug #13085]: #{ before } strings before write -> #{ after } strings after write"
-          assert_not_predicate buf, :frozen?, 'no inadvertent freeze'
-          assert_equal buf.bytesize, n, 'IO#write wrote expected size'
-          assert_equal s, n, 'IO#syswrite wrote expected size'
-        end
-      end
     end
   end
 
@@ -3947,6 +3998,18 @@ __END__
       assert_raise(TypeError) {Marshal.dump(r)}
       assert_raise(TypeError) {Marshal.dump(w)}
     }
+  end
+
+  def test_marshal_closed_io
+    bug18077 = '[ruby-core:104927] [Bug #18077]'
+    r, w = IO.pipe
+    r.close; w.close
+    assert_raise(TypeError, bug18077) {Marshal.dump(r)}
+
+    class << r
+      undef_method :closed?
+    end
+    assert_raise(TypeError, bug18077) {Marshal.dump(r)}
   end
 
   def test_stdout_to_closed_pipe

@@ -261,6 +261,8 @@ class TestTimeTZ < Test::Unit::TestCase
     assert_predicate(Time.new(2019, 1, 1, 0, 0, 0, "UTC"), :utc?)
     assert_predicate(Time.new(2019, 1, 1, 0, 0, 0, "utc"), :utc?)
     assert_predicate(Time.new(2019, 1, 1, 0, 0, 0, "Z"), :utc?)
+    assert_predicate(Time.new(2019, 1, 1, 0, 0, 0, "-00:00"), :utc?)
+    assert_not_predicate(Time.new(2019, 1, 1, 0, 0, 0, "+00:00"), :utc?)
   end
 
   def test_military_names
@@ -606,6 +608,8 @@ module TestTimeTZ::WithTZ
     assert_equal(time_class.utc(2018, 9, 1, 12+h, m, 0).to_i, t.to_i)
     assert_equal(6, t.wday)
     assert_equal(244, t.yday)
+    assert_equal(t, time_class.new(2018, 9, 1, 12, in: tzarg))
+    assert_raise(ArgumentError) {time_class.new(2018, 9, 1, 12, 0, 0, tzarg, in: tzarg)}
   end
 
   def subtest_now(time_class, tz, tzarg, tzname, abbr, utc_offset)

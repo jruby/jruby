@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'rubygems/test_case'
+require_relative 'helper'
 require 'rubygems/commands/signin_command'
 require 'rubygems/installer'
 
@@ -80,7 +80,7 @@ class TestGemCommandsSigninCommand < Gem::TestCase
     assert_equal api_key, credentials[:rubygems_api_key]
   end
 
-  def test_excute_with_key_name_and_scope
+  def test_execute_with_key_name_and_scope
     email     = 'you@example.com'
     password  = 'secret'
     api_key   = '1234'

@@ -14,6 +14,14 @@ rescue LoadError
 end
 
 class Scheduler
+  experimental = Warning[:experimental]
+  begin
+    Warning[:experimental] = false
+    IO::Buffer.new(0)
+  ensure
+    Warning[:experimental] = experimental
+  end
+
   def initialize
     @readable = {}
     @writable = {}
@@ -21,7 +29,7 @@ class Scheduler
 
     @closed = false
 
-    @lock = Mutex.new
+    @lock = Thread::Mutex.new
     @blocking = 0
     @ready = []
 
@@ -47,6 +55,8 @@ class Scheduler
   end
 
   def run
+    # $stderr.puts [__method__, Fiber.current].inspect
+
     while @readable.any? or @writable.any? or @waiting.any? or @blocking.positive?
       # Can only handle file descriptors up to 1024...
       readable, writable = IO.select(@readable.keys + [@urgent.first], @writable.keys, [], next_timeout)
@@ -54,9 +64,12 @@ class Scheduler
       # puts "readable: #{readable}" if readable&.any?
       # puts "writable: #{writable}" if writable&.any?
 
+      selected = {}
+
       readable&.each do |io|
         if fiber = @readable.delete(io)
-          fiber.resume
+          @writable.delete(io) if @writable[io] == fiber
+          selected[fiber] = IO::READABLE
         elsif io == @urgent.first
           @urgent.first.read_nonblock(1024)
         end
@@ -64,8 +77,13 @@ class Scheduler
 
       writable&.each do |io|
         if fiber = @writable.delete(io)
-          fiber.resume
+          @readable.delete(io) if @readable[io] == fiber
+          selected[fiber] = selected.fetch(fiber, 0) | IO::WRITABLE
         end
+      end
+
+      selected.each do |fiber, events|
+        fiber.resume(events)
       end
 
       if @waiting.any?
@@ -73,10 +91,12 @@ class Scheduler
         waiting, @waiting = @waiting, {}
 
         waiting.each do |fiber, timeout|
-          if timeout <= time
-            fiber.resume
-          else
-            @waiting[fiber] = timeout
+          if fiber.alive?
+            if timeout <= time
+              fiber.resume
+            else
+              @waiting[fiber] = timeout
+            end
           end
         end
       end
@@ -95,15 +115,31 @@ class Scheduler
     end
   end
 
-  def close
-    raise "Scheduler already closed!" if @closed
+  def scheduler_close
+    close(true)
+  end
+
+  def close(internal = false)
+    # $stderr.puts [__method__, Fiber.current].inspect
+
+    unless internal
+      if Fiber.scheduler == self
+        return Fiber.set_scheduler(nil)
+      end
+    end
+
+    if @closed
+      raise "Scheduler already closed!"
+    end
 
     self.run
   ensure
-    @urgent.each(&:close)
-    @urgent = nil
+    if @urgent
+      @urgent.each(&:close)
+      @urgent = nil
+    end
 
-    @closed = true
+    @closed ||= true
 
     # We freeze to detect any unintended modifications after the scheduler is closed:
     self.freeze
@@ -117,7 +153,27 @@ class Scheduler
     Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end
 
+  def timeout_after(duration, klass, message, &block)
+    fiber = Fiber.current
+
+    self.fiber do
+      sleep(duration)
+
+      if fiber&.alive?
+        fiber.raise(klass, message)
+      end
+    end
+
+    begin
+      yield(duration)
+    ensure
+      fiber = nil
+    end
+  end
+
   def process_wait(pid, flags)
+    # $stderr.puts [__method__, pid, flags, Fiber.current].inspect
+
     # This is a very simple way to implement a non-blocking wait:
     Thread.new do
       Process::Status.wait(pid, flags)
@@ -125,6 +181,8 @@ class Scheduler
   end
 
   def io_wait(io, events, duration)
+    # $stderr.puts [__method__, io, events, duration, Fiber.current].inspect
+
     unless (events & IO::READABLE).zero?
       @readable[io] = Fiber.current
     end
@@ -134,18 +192,22 @@ class Scheduler
     end
 
     Fiber.yield
-
-    return true
+  ensure
+    @readable.delete(io)
+    @writable.delete(io)
   end
 
-  # Used for Kernel#sleep and Mutex#sleep
+  # Used for Kernel#sleep and Thread::Mutex#sleep
   def kernel_sleep(duration = nil)
+    # $stderr.puts [__method__, duration, Fiber.current].inspect
+
     self.block(:sleep, duration)
 
     return true
   end
 
-  # Used when blocking on synchronization (Mutex#lock, Queue#pop, SizedQueue#push, ...)
+  # Used when blocking on synchronization (Thread::Mutex#lock,
+  # Thread::Queue#pop, Thread::SizedQueue#push, ...)
   def block(blocker, timeout = nil)
     # $stderr.puts [__method__, blocker, timeout].inspect
 
@@ -167,10 +229,13 @@ class Scheduler
     end
   end
 
-  # Used when synchronization wakes up a previously-blocked fiber (Mutex#unlock, Queue#push, ...).
+  # Used when synchronization wakes up a previously-blocked fiber
+  # (Thread::Mutex#unlock, Thread::Queue#push, ...).
   # This might be called from another thread.
   def unblock(blocker, fiber)
     # $stderr.puts [__method__, blocker, fiber].inspect
+    # $stderr.puts blocker.backtrace.inspect
+    # $stderr.puts fiber.backtrace.inspect
 
     @lock.synchronize do
       @ready << fiber
@@ -186,5 +251,108 @@ class Scheduler
     fiber.resume
 
     return fiber
+  end
+
+  def address_resolve(hostname)
+    Thread.new do
+      Addrinfo.getaddrinfo(hostname, nil).map(&:ip_address).uniq
+    end.value
+  end
+end
+
+class IOBufferScheduler < Scheduler
+  EAGAIN = Errno::EAGAIN::Errno
+
+  def io_read(io, buffer, length)
+    offset = 0
+
+    while true
+      maximum_size = buffer.size - offset
+      result = blocking{io.read_nonblock(maximum_size, exception: false)}
+
+      # blocking{pp read: maximum_size, result: result, length: length}
+
+      case result
+      when :wait_readable
+        if length > 0
+          self.io_wait(io, IO::READABLE, nil)
+        else
+          return -EAGAIN
+        end
+      when :wait_writable
+        if length > 0
+          self.io_wait(io, IO::WRITABLE, nil)
+        else
+          return -EAGAIN
+        end
+      else
+        break unless result
+
+        buffer.set_string(result, offset)
+
+        size = result.bytesize
+        offset += size
+        break if size >= length
+        length -= size
+      end
+    end
+
+    return offset
+  end
+
+  def io_write(io, buffer, length)
+    offset = 0
+
+    while true
+      maximum_size = buffer.size - offset
+
+      chunk = buffer.get_string(offset, maximum_size)
+      result = blocking{io.write_nonblock(chunk, exception: false)}
+
+      # blocking{pp write: maximum_size, result: result, length: length}
+
+      case result
+      when :wait_readable
+        if length > 0
+          self.io_wait(io, IO::READABLE, nil)
+        else
+          return -EAGAIN
+        end
+      when :wait_writable
+        if length > 0
+          self.io_wait(io, IO::WRITABLE, nil)
+        else
+          return -EAGAIN
+        end
+      else
+        offset += result
+        break if result >= length
+        length -= result
+      end
+    end
+
+    return offset
+  end
+
+  def blocking(&block)
+    Fiber.new(blocking: true, &block).resume
+  end
+end
+
+class BrokenUnblockScheduler < Scheduler
+  def unblock(blocker, fiber)
+    super
+
+    raise "Broken unblock!"
+  end
+end
+
+class SleepingUnblockScheduler < Scheduler
+  # This method is invoked when the thread is exiting.
+  def unblock(blocker, fiber)
+    super
+
+    # This changes the current thread state to `THREAD_RUNNING` which causes `thread_join_sleep` to hang.
+    sleep(0.1)
   end
 end

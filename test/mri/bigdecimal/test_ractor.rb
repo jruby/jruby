@@ -1,12 +1,12 @@
 # frozen_string_literal: true
-require_relative "testbase"
+require_relative "helper"
 
 class TestBigDecimalRactor < Test::Unit::TestCase
   include TestBigDecimalBase
 
   def setup
     super
-    skip unless defined? Ractor
+    omit unless defined? Ractor
   end
 
   def test_ractor_shareable

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'rubygems/installer_test_case'
+require_relative 'installer_test_case'
 require 'rubygems/install_update_options'
 require 'rubygems/command'
 require 'rubygems/dependency_installer'
@@ -104,7 +104,7 @@ class TestGemInstallUpdateOptions < Gem::InstallerTestCase
 
     @cmd.add_install_update_options
 
-    e = assert_raise OptionParser::InvalidArgument do
+    e = assert_raise Gem::OptionParser::InvalidArgument do
       @cmd.handle_options %w[-P UnknownSecurity]
     end
     assert_includes e.message, "UnknownSecurity"
@@ -169,7 +169,7 @@ class TestGemInstallUpdateOptions < Gem::InstallerTestCase
 
   def test_vendor_missing
     vendordir(nil) do
-      e = assert_raise OptionParser::InvalidOption do
+      e = assert_raise Gem::OptionParser::InvalidOption do
         @cmd.handle_options %w[--vendor]
       end
 
