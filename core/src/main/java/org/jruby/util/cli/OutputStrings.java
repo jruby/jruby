@@ -63,7 +63,7 @@ public class OutputStrings {
                 {"--manage", "enable remote JMX management and monitoring of JVM and JRuby"},
                 {"--bytecode", "show the JVM bytecode produced by compiling specified code"},
                 {"--version", "print the version"},
-                {"--disable-gems", "do not load RubyGems on startup"},
+                {"--disable-gems", "do not load RubyGems on startup (only for debugging)"},
                 {"--enable=feature[,...], --disable=feature[,...]", "enable or disable features"}
         };
 
