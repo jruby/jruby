@@ -1,5 +1,4 @@
 STDLIB_FILES = %w[
-  resolv.rb
   tmpdir.rb
   unicode_normalize
   weakref.rb
