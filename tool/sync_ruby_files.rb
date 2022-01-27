@@ -1,6 +1,4 @@
 STDLIB_FILES = %w[
-  date
-  date.rb
   net
   resolv.rb
   tmpdir.rb
