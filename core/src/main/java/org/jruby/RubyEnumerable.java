@@ -1255,7 +1255,7 @@ public class RubyEnumerable {
         });
 
         if (result[0].size() > 0) block.yield(context, result[0]);
-        return context.nil;
+        return self;
     }
 
     /**
@@ -1297,7 +1297,7 @@ public class RubyEnumerable {
             return ctx.nil;
         });
 
-        return context.nil;
+        return self;
     }
 
     /**
