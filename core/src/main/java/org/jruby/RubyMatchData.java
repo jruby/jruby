@@ -297,10 +297,6 @@ public class RubyMatchData extends RubyObject {
         return this.regexp = RubyRegexp.newRegexp(metaClass.runtime, (ByteList) pattern.getUserObject(), pattern);
     }
 
-    private static RubyString makeShared(Ruby runtime, RubyString str, int index, int length) {
-        return str.makeShared(runtime, index, length);
-    }
-
     private RubyArray match_array(Ruby runtime, int start) {
         check();
         IRubyObject nil = runtime.getNil();
@@ -309,7 +305,7 @@ public class RubyMatchData extends RubyObject {
             if (begin == -1) {
                 return runtime.newArray(nil);
             } else {
-                RubyString ss = makeShared(runtime, str, begin, end - begin);
+                RubyString ss = str.makeSharedString(runtime, begin, end - begin);
                 return runtime.newArray(ss);
             }
         } else {
@@ -319,7 +315,7 @@ public class RubyMatchData extends RubyObject {
                 if (regs.beg[i] == -1) {
                     arr.storeInternal(index++, nil);
                 } else {
-                    RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
+                    RubyString ss = str.makeSharedString(runtime, regs.beg[i], regs.end[i] - regs.beg[i]);
                     arr.storeInternal(index++, ss);
                 }
             }
@@ -708,7 +704,7 @@ public class RubyMatchData extends RubyObject {
         check();
         if (begin == -1) return context.nil;
 
-        return makeShared(context.runtime, str, 0, begin);
+        return str.makeSharedString(context.runtime, 0, begin);
     }
 
     /** match_post_match
@@ -720,7 +716,7 @@ public class RubyMatchData extends RubyObject {
         if (begin == -1) return context.nil;
 
         final int strLen = str.getByteList().length();
-        return makeShared(context.runtime, str, end, strLen - end);
+        return str.makeSharedString(context.runtime, end, strLen - end);
     }
 
     /** match_to_s
