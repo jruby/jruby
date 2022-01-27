@@ -432,7 +432,7 @@ public class RubyMatchData extends RubyObject {
             if (arg instanceof RubyFixnum) {
                 result.append(RubyRegexp.nth_match(arg.convertToInteger().getIntValue(), this));
             } else {
-                int num = namevToBacktraceNumber(context, arg);
+                int num = namevToBackrefNumber(context, arg);
                 if (num >= 0) {
                     result.append(RubyRegexp.nth_match(num, this));
                 } else {
@@ -487,7 +487,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     // MRI: namev_to_backref_number
-    private int namevToBacktraceNumber(ThreadContext context, IRubyObject name) {
+    private int namevToBackrefNumber(ThreadContext context, IRubyObject name) {
         int num = -1;
 
         switch (name.getType().getClassIndex()) {
@@ -619,9 +619,7 @@ public class RubyMatchData extends RubyObject {
         final Ruby runtime = context.runtime;
         final int i = backrefNumber(runtime, index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
-            throw runtime.newIndexError("index " + i + " out of matches");
-        }
+        backrefNumberCheck(runtime, i);
 
         int b = regs == null ? begin : regs.beg[i];
 
@@ -642,9 +640,7 @@ public class RubyMatchData extends RubyObject {
         final Ruby runtime = context.runtime;
         final int i = backrefNumber(runtime, index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
-            throw runtime.newIndexError("index " + i + " out of matches");
-        }
+        backrefNumberCheck(runtime, i);
 
         int e = regs == null ? end : regs.end[i];
 
@@ -672,9 +668,7 @@ public class RubyMatchData extends RubyObject {
         final Ruby runtime = context.runtime;
         final int i = backrefNumber(runtime, index);
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
-            throw runtime.newIndexError("index " + i + " out of matches");
-        }
+        backrefNumberCheck(runtime, i);
 
         int b, e;
         if (regs == null) {
@@ -705,6 +699,68 @@ public class RubyMatchData extends RubyObject {
         if (begin == -1) return context.nil;
 
         return str.makeSharedString(context.runtime, 0, begin);
+    }
+
+    @JRubyMethod
+    public IRubyObject match(ThreadContext context, IRubyObject nth) {
+        Ruby runtime = context.runtime;
+
+        int index = nthToIndex(context, nth);
+
+        Region regs = this.regs;
+
+        backrefNumberCheck(runtime, index);
+
+        int start = regs.beg[index];
+
+        if (start < 0) return context.nil;
+
+        int end = regs.end[index];
+
+        return str.makeSharedString(runtime, start, end - start);
+    }
+
+    @JRubyMethod
+    public IRubyObject match_length(ThreadContext context, IRubyObject nth) {
+        Ruby runtime = context.runtime;
+
+        int index = nthToIndex(context, nth);
+
+        Region regs = this.regs;
+
+        backrefNumberCheck(runtime, index);
+
+        int start = regs.beg[index];
+
+        if (start < 0) return context.nil;
+
+        int end = regs.end[index];
+
+        ByteList strBytes = str.getByteList();
+
+        int length = StringSupport.strLength(
+                strBytes.getEncoding(),
+                strBytes.unsafeBytes(),
+                start,
+                end,
+                str.getCodeRange());
+
+        return RubyFixnum.newFixnum(runtime, length);
+    }
+
+    private int nthToIndex(ThreadContext context, IRubyObject id) {
+        int index = namevToBackrefNumber(context, id);
+
+        if (index == -1 && id instanceof RubyInteger) {
+            index = id.convertToInteger().getIntValue();
+        }
+        return index;
+    }
+
+    private void backrefNumberCheck(Ruby runtime, int i) {
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+            throw runtime.newIndexError("index " + i + " out of matches");
+        }
     }
 
     /** match_post_match
