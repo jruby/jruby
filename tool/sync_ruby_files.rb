@@ -1,6 +1,5 @@
 STDLIB_FILES = %w[
   unicode_normalize
-  weakref.rb
 ]
 
 EXT_FILES = {

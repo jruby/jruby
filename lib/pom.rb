@@ -120,8 +120,7 @@ default_gems = [
     ['tsort', '0.1.0'],
     ['un', '0.2.0'],
     ['uri', '0.11.0'],
-    # https://github.com/ruby/weakref/issues/6
-    # ['weakref', '0.1.1'],
+    ['weakref', '0.1.1'],
     # https://github.com/ruby/win32ole/issues/12
     # ['win32ole', '1.8.8'],
     ['yaml', '0.2.0'],

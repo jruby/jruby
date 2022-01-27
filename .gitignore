@@ -124,6 +124,7 @@ lib/ruby/stdlib/tsort*
 lib/ruby/stdlib/un*
 lib/ruby/stdlib/uri*
 lib/ruby/stdlib/yaml*
+lib/ruby/stdlib/weakref*
 
 release.properties
 share

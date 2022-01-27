@@ -683,6 +683,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>weakref</artifactId>
+      <version>0.1.1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>yaml</artifactId>
       <version>0.2.0</version>
       <type>gem</type>
@@ -869,6 +882,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/tsort-0.1.0*</include>
           <include>specifications/un-0.2.0*</include>
           <include>specifications/uri-0.11.0*</include>
+          <include>specifications/weakref-0.1.1*</include>
           <include>specifications/yaml-0.2.0*</include>
           <include>specifications/matrix-0.4.2*</include>
           <include>specifications/minitest-5.15.0*</include>
@@ -928,6 +942,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/tsort-0.1.0*/**/*</include>
           <include>gems/un-0.2.0*/**/*</include>
           <include>gems/uri-0.11.0*/**/*</include>
+          <include>gems/weakref-0.1.1*/**/*</include>
           <include>gems/yaml-0.2.0*/**/*</include>
           <include>gems/matrix-0.4.2*/**/*</include>
           <include>gems/minitest-5.15.0*/**/*</include>
@@ -987,6 +1002,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/tsort-0.1.0*</include>
           <include>cache/un-0.2.0*</include>
           <include>cache/uri-0.11.0*</include>
+          <include>cache/weakref-0.1.1*</include>
           <include>cache/yaml-0.2.0*</include>
           <include>cache/matrix-0.4.2*</include>
           <include>cache/minitest-5.15.0*</include>
