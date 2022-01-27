@@ -30,10 +30,10 @@ class Pathname
 
   if File::ALT_SEPARATOR
     SEPARATOR_LIST = "#{Regexp.quote File::ALT_SEPARATOR}#{Regexp.quote File::SEPARATOR}"
-    SEPARATOR_PAT = /[#{SEPARATOR_LIST}]|.+!\/|[a-z:]+:\/\/?/
+    SEPARATOR_PAT = /[#{SEPARATOR_LIST}]/
   else
     SEPARATOR_LIST = "#{Regexp.quote File::SEPARATOR}"
-    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}|.+!\/|[a-z:]+:\/\/?/
+    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}/
   end
 
   if File.dirname('A:') == 'A:.' # DOSish drive letter
@@ -576,13 +576,14 @@ end
 
 
 class Pathname    # * FileUtils *
+  autoload(:FileUtils, 'fileutils')
+
   # Creates a full path, including any intermediate directories that don't yet
   # exist.
   #
   # See FileUtils.mkpath and FileUtils.mkdir_p
-  def mkpath
-    require 'fileutils'
-    FileUtils.mkpath(@path)
+  def mkpath(mode: nil)
+    FileUtils.mkpath(@path, mode: mode)
     nil
   end
 
@@ -592,7 +593,6 @@ class Pathname    # * FileUtils *
   def rmtree
     # The name "rmtree" is borrowed from File::Path of Perl.
     # File::Path provides "mkpath" and "rmtree".
-    require 'fileutils'
     FileUtils.rm_r(@path)
     nil
   end
