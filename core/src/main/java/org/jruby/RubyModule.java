@@ -3342,7 +3342,12 @@ public class RubyModule extends RubyObject {
     public RubyModule rbPublic(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PUBLIC);
-        return this;
+
+        switch (args.length) {
+            case 0: return context.nil;
+            case 1: return args[0];
+            default: return RubyArray.newArray(context.runtime, args);
+        }
     }
 
     /** rb_mod_protected
@@ -3352,7 +3357,12 @@ public class RubyModule extends RubyObject {
     public RubyModule rbProtected(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PROTECTED);
-        return this;
+
+        switch (args.length) {
+            case 0: return context.nil;
+            case 1: return args[0];
+            default: return RubyArray.newArray(context.runtime, args);
+        }
     }
 
     /** rb_mod_private
@@ -3362,7 +3372,12 @@ public class RubyModule extends RubyObject {
     public RubyModule rbPrivate(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PRIVATE);
-        return this;
+
+        switch (args.length) {
+            case 0: return context.nil;
+            case 1: return args[0];
+            default: return RubyArray.newArray(context.runtime, args);
+        }
     }
 
     /** rb_mod_modfunc
@@ -3390,7 +3405,12 @@ public class RubyModule extends RubyObject {
                 callMethod(context, "singleton_method_added", name);
             }
         }
-        return this;
+
+        switch (args.length) {
+            case 0: return context.nil;
+            case 1: return args[0];
+            default: return RubyArray.newArray(context.runtime, args);
+        }
     }
 
     @JRubyMethod(name = "method_added", required = 1, visibility = PRIVATE)
