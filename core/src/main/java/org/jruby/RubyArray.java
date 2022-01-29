@@ -2133,11 +2133,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject join19(final ThreadContext context, IRubyObject sep) {
         final Ruby runtime = context.runtime;
 
-        if (realLength == 0) return RubyString.newEmptyString(runtime, USASCIIEncoding.INSTANCE);
-
         if (sep == context.nil) {
             sep = getDefaultSeparator(runtime);
         }
+
+        if (realLength == 0) return RubyString.newEmptyString(runtime, USASCIIEncoding.INSTANCE);
 
         int len = 1;
         RubyString sepString = null;
