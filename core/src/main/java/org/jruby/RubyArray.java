@@ -1303,6 +1303,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             aseqEnd = tmp;
         }
 
+        if (step < -1 || step > 1) {
+            int [] ret = RubyRange.newRange(context, aseqBeg, aseqEnd, aseqExcl).begLenInt((int)len, 1);
+            if (ret != null && (ret[0] > len || ret[1] > len)) throw runtime.newRangeError(arg0.inspect(context) + " out of range");
+        }
+
         if (aseqBeg.isNil()) {
             beg = 0;
         } else {
