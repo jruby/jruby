@@ -580,7 +580,9 @@ public class RubyEnumerable {
                 }
                 @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject arg, Block unused) {
-                    if (((RubyRegexp) pattern).match_p(ctx, arg).isTrue() == isPresent) {
+                    IRubyObject converted = arg instanceof RubySymbol ? arg : TypeConverter.checkStringType(ctx.runtime, arg);
+
+                    if (((RubyRegexp) pattern).match_p(ctx, converted).isTrue() == isPresent) {
                         synchronized (result) { result.append(arg); }
                     }
                     return ctx.nil;
