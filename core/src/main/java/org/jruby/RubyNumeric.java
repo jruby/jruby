@@ -1367,6 +1367,7 @@ public class RubyNumeric extends RubyObject {
     public static double floatStepSize(double beg, double end, double unit, boolean excludeLast) {
         double n = (end - beg)/unit;
         double err = (Math.abs(beg) + Math.abs(end) + Math.abs(end - beg)) / Math.abs(unit) * DBL_EPSILON;
+        double d;
 
         if (Double.isInfinite(unit)) {
             if (unit > 0) {
@@ -1389,6 +1390,16 @@ public class RubyNumeric extends RubyObject {
                 n = 0;
             } else {
                 n = Math.floor(n - err);
+            }
+            d = +((n + 1) * unit) + beg;
+            if (beg < end) {
+                if (d < end) {
+                    n++;
+                }
+            } else if (beg > end) {
+                if (d > end) {
+                    n++;
+                }
             }
         } else {
             if (n < 0) {
