@@ -1327,8 +1327,8 @@ public class RubyNumeric extends RubyObject {
     public static boolean floatStep(ThreadContext context, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, boolean allowEndless, Block block) {
         if (from instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
             double beg = num2dbl(from);
-            double end = (allowEndless && to.isNil()) ? Double.POSITIVE_INFINITY : num2dbl(to);
             double unit = num2dbl(step);
+            double end = (allowEndless && to.isNil()) ? (unit < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY) : num2dbl(to);
             double n = floatStepSize(beg, end, unit, excl);
 
             if (Double.isInfinite(unit)) {
