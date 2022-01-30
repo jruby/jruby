@@ -1307,6 +1307,41 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(optional = 1)
     public RubyTime round(ThreadContext context, IRubyObject[] args) {
+        int ndigits = getNdigits(context, args);
+
+        int _nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
+        int pow = (int) Math.pow(10, 9 - ndigits);
+        int rounded = ((_nsec + pow/2) / pow) * pow;
+        DateTime _dt = this.dt.withMillisOfSecond(0).plusMillis(rounded / 1000000);
+        return newTime(context.runtime, _dt, rounded % 1000000);
+    }
+
+    @JRubyMethod(optional = 1)
+    public RubyTime floor(ThreadContext context, IRubyObject[] args) {
+        int ndigits = getNdigits(context, args);
+
+        int _nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
+        int pow = (int) Math.pow(10, 9 - ndigits);
+        int floored = ((_nsec) / pow) * pow;
+        DateTime _dt = this.dt.withMillisOfSecond(0).plusMillis(floored / 1000000);
+        return newTime(context.runtime, _dt, floored % 1000000);
+    }
+
+    @JRubyMethod(optional = 1)
+    public RubyTime ceil(ThreadContext context, IRubyObject[] args) {
+        int ndigits = getNdigits(context, args);
+
+        int _nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
+        int pow = (int) Math.pow(10, 9 - ndigits);
+        int ceiled = _nsec;
+        if (pow > 1) {
+            ceiled = ((_nsec + pow) / pow) * pow;
+        }
+        DateTime _dt = this.dt.withMillisOfSecond(0).plusMillis(ceiled / 1000000);
+        return newTime(context.runtime, _dt, ceiled % 1000000);
+    }
+
+    private int getNdigits(ThreadContext context, IRubyObject[] args) {
         int ndigits = args.length == 0 ? 0 : RubyNumeric.num2int(args[0]);
         // There are only 1_000_000_000 nanoseconds in 1 second,
         // so there is no need to keep more than 9 digits
@@ -1316,11 +1351,7 @@ public class RubyTime extends RubyObject {
             throw context.getRuntime().newArgumentError("negative ndigits given");
         }
 
-        int _nsec = this.dt.getMillisOfSecond() * 1000000 + (int) (this.nsec);
-        int pow = (int) Math.pow(10, 9 - ndigits);
-        int rounded = ((_nsec + pow/2) / pow) * pow;
-        DateTime _dt = this.dt.withMillisOfSecond(0).plusMillis(rounded / 1000000);
-        return newTime(context.runtime, _dt, rounded % 1000000);
+        return ndigits;
     }
 
     /* Time class methods */
