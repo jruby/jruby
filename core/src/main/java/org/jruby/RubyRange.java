@@ -681,12 +681,15 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
-        if ((begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) ||
-                (end instanceof RubyNumeric && (begin.isNil() || end instanceof RubyNumeric))){
+        if (!step.isNil() && !(step instanceof RubyNumeric)) {
+            step = step.convertToInteger("to_int");
+        }
+        if ((step instanceof RubyNumeric) && ((RubyNumeric) step).isZero()) {
+            throw context.runtime.newArgumentError("step can't be 0");
+        }
 
-            if ((step instanceof RubyNumeric) && ((RubyNumeric) step).isZero()) {
-                throw context.runtime.newArgumentError("step can't be 0");
-            }
+        if ((begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) ||
+                (end instanceof RubyNumeric && begin.isNil())) {
 
             return RubyArithmeticSequence.newArithmeticSequence(
                     context,
