@@ -1453,7 +1453,7 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 1, reads = VISIBILITY)
+    @JRubyMethod(required = 1, optional = 1)
     public static IRubyObject define_singleton_method(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) {
             throw context.runtime.newArgumentError(0, 1);
@@ -1471,9 +1471,9 @@ public class RubyKernel {
                     throw context.runtime.newTypeError("can't bind singleton method to a different class");
                 }
             }
-            return singleton_class.define_method(context, args[0], args[1], block);
+            return singleton_class.defineMethodFromCallable(context, args[0], args[1], PUBLIC);
         } else {
-            return singleton_class.define_method(context, args[0], block);
+            return singleton_class.defineMethodFromBlock(context, args[0], block, PUBLIC);
         }
     }
 
