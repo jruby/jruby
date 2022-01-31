@@ -1118,13 +1118,13 @@ DO NOT MODIFIY - GENERATED CODE
             </configuration>
           </execution>
           <execution>
-            <id>copy bin/jruby.bash to bin/jruby</id>
+            <id>copy bin/jruby.sh to bin/jruby</id>
             <phase>process-resources</phase>
             <goals>
               <goal>execute</goal>
             </goals>
             <configuration>
-              <taskId>copy bin/jruby.bash to bin/jruby</taskId>
+              <taskId>copy bin/jruby.sh to bin/jruby</taskId>
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>

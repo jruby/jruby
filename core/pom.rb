@@ -283,7 +283,7 @@ project 'JRuby Base' do
                   ])
   end
 
-  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby']]
+  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby']]
 
   profile :clean do
     activation do
@@ -300,7 +300,7 @@ project 'JRuby Base' do
     end
   end
 
-  profile 'jruby.bash' do
+  profile 'jruby.sh' do
 
     activation do
       file( :missing => '../bin/jruby' )
