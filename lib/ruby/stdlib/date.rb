@@ -221,9 +221,11 @@ class Date
     xs.each { |x| x.freeze unless x.nil? }.freeze
   end
 
-  class Infinity < Numeric # :nodoc:
+  def infinite?
+    false
+  end
 
-    include Comparable
+  class Infinity < Numeric # :nodoc:
 
     def initialize(d=1) @d = d <=> 0 end
 
@@ -243,23 +245,25 @@ class Date
 
     def <=>(other)
       case other
-        when Infinity; return d <=> other.d
-        when Numeric; return d
-        else
-          begin
-            l, r = other.coerce(self)
-            return l <=> r
-          rescue NoMethodError
-          end
+      when Infinity; return d <=> other.d
+      when Float::INFINITY; return d <=> 1
+      when -Float::INFINITY; return d <=> -1
+      when Numeric; return d
+      else
+        begin
+          l, r = other.coerce(self)
+          return l <=> r
+        rescue NoMethodError
+        end
       end
       nil
     end
 
     def coerce(other)
       case other
-        when Numeric; return -d, d
-        else
-          super
+      when Numeric; return -d, d
+      else
+        super
       end
     end
 

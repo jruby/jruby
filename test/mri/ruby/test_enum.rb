@@ -134,6 +134,12 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal([1, 2, 3, 1, 2], @obj.to_a)
   end
 
+  def test_to_a_keywords
+    @obj.singleton_class.remove_method(:each)
+    def @obj.each(foo:) yield foo end
+    assert_equal([1], @obj.to_a(foo: 1))
+  end
+
   def test_to_a_size_symbol
     sym = Object.new
     class << sym
@@ -394,6 +400,45 @@ class TestEnumerable < Test::Unit::TestCase
   def test_tally
     h = {1 => 2, 2 => 2, 3 => 1}
     assert_equal(h, @obj.tally)
+
+    h = {1 => 5, 2 => 2, 3 => 1, 4 => "x"}
+    assert_equal(h, @obj.tally({1 => 3, 4 => "x"}))
+
+    assert_raise(TypeError) do
+      @obj.tally({1 => ""})
+    end
+
+    h = {1 => 2, 2 => 2, 3 => 1}
+    assert_same(h, @obj.tally(h))
+
+    h = {1 => 2, 2 => 2, 3 => 1}.freeze
+    assert_raise(FrozenError) do
+      @obj.tally(h)
+    end
+    assert_equal({1 => 2, 2 => 2, 3 => 1}, h)
+
+    hash_convertible = Object.new
+    def hash_convertible.to_hash
+      {1 => 3, 4 => "x"}
+    end
+    assert_equal({1 => 5, 2 => 2, 3 => 1, 4 => "x"}, @obj.tally(hash_convertible))
+
+    hash_convertible = Object.new
+    def hash_convertible.to_hash
+      {1 => 3, 4 => "x"}.freeze
+    end
+    assert_raise(FrozenError) do
+      @obj.tally(hash_convertible)
+    end
+    assert_equal({1 => 3, 4 => "x"}, hash_convertible.to_hash)
+
+    assert_raise(TypeError) do
+      @obj.tally(BasicObject.new)
+    end
+
+    h = {1 => 2, 2 => 2, 3 => 1}
+    assert_equal(h, @obj.tally(Hash.new(100)))
+    assert_equal(h, @obj.tally(Hash.new {100}))
   end
 
   def test_first
@@ -692,6 +737,9 @@ class TestEnumerable < Test::Unit::TestCase
     ary.clear
     (1..10).each_slice(11) {|a| ary << a}
     assert_equal([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]], ary)
+
+    assert_equal(1..10, (1..10).each_slice(3) { })
+    assert_equal([], [].each_slice(3) { })
   end
 
   def test_each_cons
@@ -711,6 +759,9 @@ class TestEnumerable < Test::Unit::TestCase
     ary.clear
     (1..5).each_cons(6) {|a| ary << a}
     assert_empty(ary)
+
+    assert_equal(1..5, (1..5).each_cons(3) { })
+    assert_equal([], [].each_cons(3) { })
   end
 
   def test_zip
@@ -1229,6 +1280,21 @@ class TestEnumerable < Test::Unit::TestCase
                  olympics.uniq{|k,v| v})
     assert_equal([1, 2, 3, 4, 5, 10], (1..100).uniq{|x| (x**2) % 10 }.first(6))
     assert_equal([1, [1, 2]], Foo.new.to_enum.uniq)
+  end
+
+  def test_compact
+    class << (enum = Object.new)
+      include Enumerable
+      def each
+        yield 3
+        yield nil
+        yield 7
+        yield 9
+        yield nil
+      end
+    end
+
+    assert_equal([3, 7, 9], enum.compact)
   end
 
   def test_transient_heap_sort_by

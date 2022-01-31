@@ -10,6 +10,7 @@ class TestJIT < Test::Unit::TestCase
   IGNORABLE_PATTERNS = [
     /\AJIT recompile: .+\n\z/,
     /\AJIT inline: .+\n\z/,
+    /\AJIT cancel: .+\n\z/,
     /\ASuccessful MJIT finish\n\z/,
   ]
   MAX_CACHE_PATTERNS = [
@@ -52,8 +53,9 @@ class TestJIT < Test::Unit::TestCase
 
     # ruby -w -Itest/lib test/ruby/test_jit.rb
     if $VERBOSE
+      pid = $$
       at_exit do
-        unless TestJIT.untested_insns.empty?
+        if pid == $$ && !TestJIT.untested_insns.empty?
           warn "you may want to add tests for following insns, when you have a chance: #{TestJIT.untested_insns.join(' ')}"
         end
       end
@@ -241,8 +243,8 @@ class TestJIT < Test::Unit::TestCase
     end;
   end
 
-  def test_compile_insn_putstring_concatstrings_tostring
-    assert_compile_once('"a#{}b" + "c"', result_inspect: '"abc"', insns: %i[putstring concatstrings tostring])
+  def test_compile_insn_putstring_concatstrings_objtostring
+    assert_compile_once('"a#{}b" + "c"', result_inspect: '"abc"', insns: %i[putstring concatstrings objtostring])
   end
 
   def test_compile_insn_toregexp
@@ -316,10 +318,6 @@ class TestJIT < Test::Unit::TestCase
 
   def test_compile_insn_swap_topn
     assert_compile_once('{}["true"] = true', result_inspect: 'true', insns: %i[swap topn])
-  end
-
-  def test_compile_insn_reverse
-    assert_compile_once('q, (w, e), r = 1, [2, 3], 4; [q, w, e, r]', result_inspect: '[1, 2, 3, 4]', insns: %i[reverse])
   end
 
   def test_compile_insn_reput
@@ -484,8 +482,8 @@ class TestJIT < Test::Unit::TestCase
     end;
   end
 
-  def test_compile_insn_checktype
-    assert_compile_once("#{<<~"begin;"}\n#{<<~'end;'}", result_inspect: '"42"', insns: %i[checktype])
+  def test_compile_insn_objtostring
+    assert_compile_once("#{<<~"begin;"}\n#{<<~'end;'}", result_inspect: '"42"', insns: %i[objtostring])
     begin;
       a = '2'
       "4#{a}"
@@ -501,7 +499,7 @@ class TestJIT < Test::Unit::TestCase
   end
 
   def test_compile_insn_checkmatch_opt_case_dispatch
-    assert_compile_once("#{<<~"begin;"}\n#{<<~"end;"}", result_inspect: '"world"', insns: %i[checkmatch opt_case_dispatch])
+    assert_compile_once("#{<<~"begin;"}\n#{<<~"end;"}", result_inspect: '"world"', insns: %i[opt_case_dispatch])
     begin;
       case 'hello'
       when 'hello'
@@ -609,6 +607,17 @@ class TestJIT < Test::Unit::TestCase
     insns = collect_insns(iseq)
     mark_tested_insn(:opt_invokebuiltin_delegate_leave, used_insns: insns)
     assert_eval_with_jit('print "\x00".unpack("c")', stdout: '[0]', success_count: 1)
+  end
+
+  def test_compile_insn_checkmatch
+    assert_compile_once("#{<<~"begin;"}\n#{<<~"end;"}", result_inspect: '"world"', insns: %i[checkmatch])
+    begin;
+      ary = %w(hello good-bye)
+      case 'hello'
+      when *ary
+        'world'
+      end
+    end;
   end
 
   def test_jit_output
@@ -774,6 +783,20 @@ class TestJIT < Test::Unit::TestCase
       end
 
       print wrapper(['1'], ['2'])
+    end;
+  end
+
+  def test_inlined_builtin_methods
+    assert_eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", stdout: '', success_count: 1, min_calls: 2)
+    begin;
+      def test
+        float = 0.0
+        float.abs
+        float.-@
+        float.zero?
+      end
+      test
+      test
     end;
   end
 
@@ -1082,6 +1105,30 @@ class TestJIT < Test::Unit::TestCase
     end;
   end
 
+  def test_mjit_pause_wait
+    assert_eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", stdout: '', success_count: 0, min_calls: 1)
+    begin;
+      RubyVM::MJIT.pause
+      proc {}.call
+    end;
+  end
+
+  def test_not_cancel_by_tracepoint_class
+    assert_eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", success_count: 1, min_calls: 2)
+    begin;
+      TracePoint.new(:class) {}.enable
+      2.times {}
+    end;
+  end
+
+  def test_cancel_by_tracepoint
+    assert_eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", success_count: 0, min_calls: 2)
+    begin;
+      TracePoint.new(:line) {}.enable
+      2.times {}
+    end;
+  end
+
   def test_caller_locations_without_catch_table
     out, _ = eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", min_calls: 1)
     begin;
@@ -1147,8 +1194,8 @@ class TestJIT < Test::Unit::TestCase
     out, err = eval_with_jit(script, verbose: 1, min_calls: min_calls, max_cache: max_cache)
     success_actual = err.scan(/^#{JIT_SUCCESS_PREFIX}:/).size
     recompile_actual = err.scan(/^#{JIT_RECOMPILE_PREFIX}:/).size
-    # Add --jit-verbose=2 logs for cl.exe because compiler's error message is suppressed
-    # for cl.exe with --jit-verbose=1. See `start_process` in mjit_worker.c.
+    # Add --mjit-verbose=2 logs for cl.exe because compiler's error message is suppressed
+    # for cl.exe with --mjit-verbose=1. See `start_process` in mjit_worker.c.
     if RUBY_PLATFORM.match?(/mswin/) && success_count != success_actual
       out2, err2 = eval_with_jit(script, verbose: 2, min_calls: min_calls, max_cache: max_cache)
     end
@@ -1184,7 +1231,9 @@ class TestJIT < Test::Unit::TestCase
   end
 
   def mark_tested_insn(insn, used_insns:, uplevel: 1)
-    unless used_insns.include?(insn)
+    # Currently, this check emits a false-positive warning against opt_regexpmatch2,
+    # so the insn is excluded explicitly. See https://bugs.ruby-lang.org/issues/18269
+    if !used_insns.include?(insn) && insn != :opt_regexpmatch2
       $stderr.puts
       warn "'#{insn}' insn is not included in the script. Actual insns are: #{used_insns.join(' ')}\n", uplevel: uplevel
     end

@@ -1,6 +1,5 @@
 # frozen_string_literal: false
 require 'bigdecimal'
-require 'bigdecimal/util'
 
 #
 #--

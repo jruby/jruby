@@ -17,66 +17,141 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.2.29', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.3.3', { bin: false, require_paths: ['lib'] }],
     ['abbrev', '0.1.0'],
-    ['base64', '0.1.0'],
-    ['benchmark', '0.1.1'],
-    ['bundler', '2.2.29'],
+    ['base64', '0.1.1'],
+    ['benchmark', '0.2.0'],
+    # https://github.com/ruby/bigdecimal/issues/169
+    # ['bigdecimal', '3.1.1'],
+    ['bundler', '2.3.3'],
+    # https://github.com/ruby/cgi/pull/9
+    # ['cgi', '0.3.1'],
     ['cgi', '0.2.0'],
     ['csv', '3.1.9'],
+    # https://github.com/ruby/date/issues/48
+    # ['date', '3.2.2'],
     ['debug', '0.2.1'],
     ['delegate', '0.2.0'],
-    ['did_you_mean', '1.5.0'],
+    ['did_you_mean', '1.6.1'],
     ['digest', '3.1.0'], 
-    ['drb', '2.0.4'],
-    ['erb', '2.2.0'],
+    ['drb', '2.1.0'],
+    ['english', '0.7.1'],
+    ['erb', '2.2.3'],
+    ['error_highlight', '0.3.0'],
+    # https://github.com/ruby/etc/issues/19
+    # ['etc', '1.3.0'],
+    # https://github.com/ruby/fcntl/issues/9
+    # ['fcntl', '1.0.1'],
     ['ffi', '1.15.4'],
-    ['fileutils', '1.5.0'],
-    ['find', '0.1.0'],
+    # ['fiddle', '1.1.0'],
+    ['fileutils', '1.6.0'],
+    ['find', '0.1.1'],
     ['forwardable', '1.3.2'],
+    # ['gdbm', '2.1.0'],
     ['getoptlong', '0.1.1'],
-    ['ipaddr', '1.2.2'],
-    ['irb', '1.3.5'],
-    ['io-console', '0.5.9'],
+    ['io-console', '0.5.11'],
+    # https://github.com/ruby/io-nonblock/issues/4
+    # ['io-nonblock', '0.1.0'],
+    # https://github.com/ruby/io-wait/pull/2
+    # ['io-wait', '0.1.0'],
+    ['ipaddr', '1.2.3'],
+    ['irb', '1.4.1'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.11.0'],
-    ['json', '2.5.1'],
-    ['logger', '1.4.3'],
-    ['matrix', '0.3.1'],
+    ['json', '2.6.1'],
+    ['logger', '1.5.0'],
     ['mutex_m', '0.1.1'],
+    # Depends on io-wait via net-protocol
+    # ['net-http', '0.2.0'],
+    # Depends on io-wait, https://github.com/ruby/io-wait/pull/2
+    # ['net-protocol', '0.1.1'],
+    # Partial implementation in JRuby, unsure whether this is important
+    # ['nkf', '0.1.1'],
     ['observer', '0.1.1'],
+    # ['open3', '0.1.1'],
+    # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
+    # ['openssl', '3.0.0'],
+    # Depends on stringio gem, https://github.com/ruby/stringio/pull/21
+    # ['open-uri', '0.2.0'],
     ['open-uri', '0.1.0'],
-    ['optparse', '0.1.0'],
-    ['ostruct', '0.5.1'],
-    # https://github.com/ruby/pp/pull/4
-    #['pp', '0.1.0'],
-    ['prettyprint', '0.1.0'],
-    ['prime', '0.1.2'],
+    ['optparse', '0.2.0'],
+    ['ostruct', '0.5.2'],
+    # https://github.com/ruby/pathname/issues/17
+    # ['pathname', '0.2.0'],
+    ['pp', '0.3.0'],
+    ['prettyprint', '0.1.1'],
     ['pstore', '0.1.1'],
-    ['psych', '3.3.2'],
-    ['racc', '1.5.2'],
+    ['psych', '4.0.3'],
+    ['racc', '1.6.0'],
     ['rake-ant', '1.0.5'],
-    ['rdoc', '6.3.1'],
-    ['reline', '0.2.5'],
+    ['rdoc', '6.4.0'],
+    # https://github.com/ruby/readline/issues/5
+    # ['readline', '0.0.3'],
+    # Will be solved with readline
+    # ['readline-ext', '0.1.4'],
+    ['reline', '0.3.0'],
+    # https://github.com/ruby/resolv/issues/19
+    # ['resolv', '0.2.1'],
     ['resolv-replace', '0.1.0'],
-    ['rinda', '0.1.0'],
+    ['rinda', '0.1.1'],
+    ['ruby2_keywords', '0.0.5'],
+    # https://github.com/ruby/securerandom/issues/9
+    # ['securerandom', '0.1.1'],
+    # https://github.com/ruby/set/issues/21
+    # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
+    # https://github.com/ruby/stringio/pull/21
+    # ['stringio', '3.0.1'],
+    # https://github.com/ruby/strscan/pull/25
+    # ['strscan', '3.0.1'],
+    # https://github.com/ruby/syslog/issues/1
+    # ['syslog', '0.1.0'],
+    # https://github.com/ruby/tempfile/issues/7
+    # ['tempfile', '0.1.2'],
+    # Depends on date gem
+    # ['time', '0.2.0'],
     ['time', '0.1.0'],
-    ['tracer', '0.1.1'],
+    # https://github.com/ruby/timeout/issues/11
+    # ['timeout', '0.2.0'],
+    # https://github.com/ruby/tmpdir/issues/13
+    # ['tmpdir', '0.1.2'],
     ['tsort', '0.1.0'],
-    ['un', '0.1.0'],
+    ['un', '0.2.0'],
+    ['uri', '0.11.0'],
+    ['weakref', '0.1.1'],
+    # https://github.com/ruby/win32ole/issues/12
+    # ['win32ole', '1.8.8'],
+    ['yaml', '0.2.0'],
+    # https://github.com/ruby/zlib/issues/38
+    # ['zlib', '2.1.1'],
 ]
 
 bundled_gems = [
-    ['minitest', '5.14.2'],
-    ['net-telnet', '0.1.1'],
-    ['power_assert', '1.2.0'],
+    # Depends on many CRuby internals
+    # ['debug', '1.4.0'],
+    ['matrix', '0.4.2'],
+    ['minitest', '5.15.0'],
+    # Depends on io-wait via net-protocol
+    # ['net-ftp', '0.1.3'],
+    # Depends on io-wait via net-protocol
+    # ['net-imap', '0.2.2'],
+    # Depends on io-wait via net-protocol
+    # ['net-pop', '0.1.1'],
+    # Depends on io-wait via net-protocol
+    # ['net-smtp', '0.3.1'],
+    # Depends on io-wait via net-protocol
+    ['prime', '0.1.2'],
+    ['power_assert', '2.0.1'],
     ['rake', '${rake.version}'],
+    # Depends on many CRuby internals
+    # ['rbs', '2.0.0'],
     ['rexml', '3.2.5'],
     ['rss', '0.2.9'],
-    ['test-unit', '3.3.7'],
+    ['test-unit', '3.5.3'],
+    # Depends on many CRuby internals
+    # ['typeprof', '0.21.1'],
 ]
 
 project 'JRuby Lib Setup' do

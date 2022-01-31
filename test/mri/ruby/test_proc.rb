@@ -159,6 +159,15 @@ class TestProc < Test::Unit::TestCase
     assert_equal(*m_nest{}, "[ruby-core:84583] Feature #14627")
   end
 
+  def test_hash
+    def self.capture(&block)
+      block
+    end
+
+   procs = Array.new(1000){capture{:foo }}
+   assert_operator(procs.map(&:hash).uniq.size, :>=, 500)
+  end
+
   def test_block_par
     assert_equal(10, Proc.new{|&b| b.call(10)}.call {|x| x})
     assert_equal(12, Proc.new{|a,&b| b.call(a)}.call(12) {|x| x})
@@ -1588,18 +1597,24 @@ class TestProc < Test::Unit::TestCase
   def test_isolate
     assert_raise_with_message ArgumentError, /\(a\)/ do
       a = :a
-      Proc.new{p a}.isolate.call
+      Proc.new{p a}.isolate
     end
 
     assert_raise_with_message ArgumentError, /\(a\)/ do
       a = :a
       1.times{
-        Proc.new{p a}.isolate.call
+        Proc.new{p a}.isolate
       }
     end
 
     assert_raise_with_message ArgumentError, /yield/ do
-      Proc.new{yield}.isolate.call
+      Proc.new{yield}.isolate
+    end
+
+
+    name = "\u{2603 26a1}"
+    assert_raise_with_message(ArgumentError, /\(#{name}\)/) do
+      eval("#{name} = :#{name}; Proc.new {p #{name}}").isolate
     end
 
     # binding

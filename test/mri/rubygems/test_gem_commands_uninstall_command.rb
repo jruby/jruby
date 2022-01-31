@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'rubygems/installer_test_case'
+require_relative 'installer_test_case'
 require 'rubygems/commands/uninstall_command'
 
 class TestGemCommandsUninstallCommand < Gem::InstallerTestCase
@@ -436,7 +436,7 @@ WARNING:  Use your OS package manager to uninstall vendor gems
 
   def test_handle_options_vendor_missing
     vendordir(nil) do
-      e = assert_raise OptionParser::InvalidOption do
+      e = assert_raise Gem::OptionParser::InvalidOption do
         @cmd.handle_options %w[--vendor]
       end
 
