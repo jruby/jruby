@@ -664,7 +664,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <executable>/bin/sh</executable>
                   <arguments>
                     <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby</argument>
+                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby</argument>
                   </arguments>
                 </configuration>
               </execution>
@@ -674,7 +674,7 @@ DO NOT MODIFIY - GENERATED CODE
       </build>
     </profile>
     <profile>
-      <id>jruby.bash</id>
+      <id>jruby.sh</id>
       <activation>
         <os>
           <family>unix</family>
@@ -695,7 +695,7 @@ DO NOT MODIFIY - GENERATED CODE
                   <executable>/bin/sh</executable>
                   <arguments>
                     <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.bash ${jruby.basedir}/bin/jruby</argument>
+                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby</argument>
                   </arguments>
                 </configuration>
               </execution>

@@ -44,7 +44,7 @@ rvm use system
 
 After building lib/jruby.jar, JRuby can be run with the `bin/jruby` executable. If the `jruby-launcher` gem installed successfully, this will be a native
 executable for your platform; otherwise, it will be a copy of the
-`bin/jruby.bash` bash script.
+`bin/jruby.sh` shell script.
 
 RubyGems is installed by default, and available in `bin/gem`. It will
 attempt to locate the `jruby` executable using `/usr/bin/env`, so you

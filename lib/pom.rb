@@ -413,11 +413,11 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  execute( 'copy bin/jruby.bash to bin/jruby',
+  execute( 'copy bin/jruby.sh to bin/jruby',
            'process-resources' ) do |ctx|
     require 'fileutils'
     jruby_complete = ctx.project.properties.get_property( 'jruby.complete.home' )
-    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.bash' ),
+    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.sh' ),
                   File.join( jruby_complete, 'bin', 'jruby' ) )
   end
 
