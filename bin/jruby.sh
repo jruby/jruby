@@ -409,7 +409,7 @@ do
             fi
             JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
             java_args="$java_args -sourcepath \$JDB_SOURCEPATH"
-            #JRUBY_OPTS+=("-X+C")
+            ruby_args="$ruby_args -X+C"
             ;;
         --client|--server|--noclient)
             echo "Warning: the $flag flag is deprecated and has no effect most JVMs" 1>&2
