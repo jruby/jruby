@@ -217,12 +217,14 @@ public class IRRuntimeHelpers {
         // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
         if (inLambda(block.type)) throw new IRWrappedLambdaReturnValue(breakValue, true);
 
-        if (block.isEscaped()) {
+        Frame targetFrame = block.getFrame();
+
+        if (block.isEscaped() || targetFrame.getThreadID() != context.threadID) {
             throw Helpers.newLocalJumpErrorForBreak(context.runtime, breakValue);
         }
 
         // Raise a break jump so we can bubble back down the stack to the appropriate place to break from.
-        throw IRBreakJump.create(block.getFrame(), breakValue, scope.getStaticScope().getScopeType().isEval()); // weirdly evals are impld as closures...yes yes.
+        throw IRBreakJump.create(targetFrame, breakValue, scope.getStaticScope().getScopeType().isEval()); // weirdly evals are impld as closures...yes yes.
     }
 
     // Are we within the scope where we want to return the value we are passing down the stack?

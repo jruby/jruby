@@ -30,10 +30,10 @@ public class MethodBlockBody extends ContextAwareBlockBody {
         this.line = line;
     }
 
-    public static Block createMethodBlock(MethodBlockBody body) {
+    public static Block createMethodBlock(ThreadContext context, MethodBlockBody body) {
         DynamicMethod method = body.entry.method;
         RubyModule module = method.getImplementationClass();
-        Frame frame = new Frame();
+        Frame frame = new Frame(context.threadID);
 
         frame.setKlazz(module);
         frame.setName(method.getName());
