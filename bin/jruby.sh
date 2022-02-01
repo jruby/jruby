@@ -7,10 +7,11 @@
 if command -v local >/dev/null; then
     :
 elif command -v typeset >/dev/null; then
-	# ksh93 has typeset but not local
+    # ksh93 has typeset but not local
     alias local=typeset
 else
     echo "Error: Your shell does not support local variables. Re-run with one that does (e.g. bash, ksh)"
+    exit 1
 fi
 
 # ----- Set variable defaults -------------------------------------------------
@@ -381,12 +382,12 @@ do
         # This must be the last check for -J
         -J*) java_args="$java_args \${$i#-J}" ;;
         # Pass -X... and -X? search options through
-        -X*...|-X*\?) ruby_args="$ruby_args \$$i" ;;
+        -X*...|-X*\?) ruby_args="$ruby_args \${$i}" ;;
         # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
         -X*.*) java_args="$java_args -Djruby.\${$i#-X}" ;;
         # Match switches that take an argument
         -C|-e|-I|-S)
-            ruby_args="$ruby_args \$$i \$$((i + 1))"
+            ruby_args="$ruby_args \${$i} \${$((i + 1))}"
             cycle
             ;;
         # Run with JMX management enabled
@@ -409,7 +410,7 @@ do
             fi
             JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
             java_args="$java_args -sourcepath \$JDB_SOURCEPATH"
-            #JRUBY_OPTS+=("-X+C")
+            ruby_args="$ruby_args -X+C"
             ;;
         --client|--server|--noclient)
             echo "Warning: the $flag flag is deprecated and has no effect most JVMs" 1>&2
@@ -434,7 +435,7 @@ do
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
-        -*) ruby_args="$ruby_args \$$i" ;;
+        -*) ruby_args="$ruby_args \${$i}" ;;
         # Abort processing on first non-opt arg
         *) break ;;
     esac
