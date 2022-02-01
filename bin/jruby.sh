@@ -11,6 +11,7 @@ elif command -v typeset >/dev/null; then
     alias local=typeset
 else
     echo "Error: Your shell does not support local variables. Re-run with one that does (e.g. bash, ksh)"
+    exit 1
 fi
 
 # ----- Set variable defaults -------------------------------------------------
