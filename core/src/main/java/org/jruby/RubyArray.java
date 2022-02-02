@@ -58,6 +58,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
@@ -1304,7 +1305,20 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         if (step < -1 || step > 1) {
-            int [] ret = RubyRange.newRange(context, aseqBeg, aseqEnd, aseqExcl).begLenInt((int)len, 1);
+            int [] ret = null;
+            try {
+                ret = RubyRange.newRange(context, aseqBeg, aseqEnd, aseqExcl).begLenInt((int)len, 1);
+            } catch(RaiseException ex){
+                if (ex.getException() instanceof RubyRangeError) {
+                    // convert exception message using an ArithsemeticSequece arg.
+                    // e.g.
+                    // [1].slice((-101..-1)%2) shoud throw "((-101..-1).%(2)) out of range".
+                    // The original exception message is "-1..-1 out of range".
+                    throw runtime.newRangeError(arg0.inspect(context) + " out of range");
+                } else {
+                    throw ex;
+                }
+            }
             if (ret != null && (ret[0] > len || ret[1] > len)) throw runtime.newRangeError(arg0.inspect(context) + " out of range");
         }
 
