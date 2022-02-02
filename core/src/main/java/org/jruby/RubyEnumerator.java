@@ -651,11 +651,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return context.sites.Fiber;
     }
 
-    @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus(ThreadContext context, IRubyObject obj) {
-        return RubyChain.newChain(context, new IRubyObject[] {this, obj});
-    }
-
     /** MRI: enumerator_s_produce
      *
      */
