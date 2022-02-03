@@ -2102,6 +2102,24 @@ public class RubyEnumerable {
         }
     }
 
+    @JRubyMethod
+    public static IRubyObject compact(ThreadContext context, IRubyObject self) {
+        RubyArray array = RubyArray.newEmptyArray(context.runtime);
+
+        final CachingCallSite each = eachSite(context);
+        callEach(context, each, self, Signature.OPTIONAL, new BlockCallback() {
+            public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                return call(ctx, packEnumValues(ctx, largs), blk);
+            }
+            @Override
+            public IRubyObject call(ThreadContext ctx, IRubyObject obj, Block blk) {
+                if (!obj.isNil()) array.append(obj);
+                return obj;
+            }
+        });
+        return array;
+    }
+
     /**
      * A size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
      *
