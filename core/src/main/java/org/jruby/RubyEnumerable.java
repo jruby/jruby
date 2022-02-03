@@ -441,7 +441,7 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject tally(ThreadContext context, IRubyObject self, IRubyObject hashArg) {
-        RubyHash result = (RubyHash) TypeConverter.convertToTypeWithCheck(hashArg, context.runtime.getHash(), "to_hash");
+        RubyHash result = (RubyHash) TypeConverter.convertToType(hashArg, context.runtime.getHash(), "to_hash");
         result.checkFrozen();
         callEach(context, eachSite(context), self, Signature.NO_ARGUMENTS, new TallyCallback(result));
         return result;
@@ -2331,7 +2331,7 @@ public class RubyEnumerable {
             } else if (count instanceof RubyFixnum) {
                 result.fastASetSmall(value, ((RubyInteger)count).succ(context));
             } else {
-                TypeConverter.checkType(context, value, context.runtime.getBignum());
+                TypeConverter.checkType(context, count, context.runtime.getBignum());
                 result.fastASetSmall(value, ((RubyBignum) count).op_plus(context, 1L));
             }
             return context.nil;
