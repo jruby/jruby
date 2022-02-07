@@ -820,6 +820,12 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
+    // MRI: rb_method_basic_definition_p
+    public boolean checkMethodBasicDefinition(String name) {
+        DynamicMethod method = searchMethod(name);
+        return method != null && method.isBuiltin();
+    }
+
     private void dumpReifiedClass(String dumpDir, String javaPath, byte[] classBytes) {
         if (dumpDir != null) {
             if (dumpDir.length() == 0) dumpDir = ".";

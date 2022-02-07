@@ -573,7 +573,7 @@ public class RubyEnumerable {
                     return ctx.nil;
                 }
             });
-        } else if (pattern instanceof RubyRegexp) {
+        } else if ((pattern instanceof RubyRegexp) && pattern.getMetaClass().checkMethodBasicDefinition("===")) {
             callEach(context, each, self, Signature.ONE_REQUIRED, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block unused) {
                     return call(ctx, packEnumValues(ctx, args), unused);
