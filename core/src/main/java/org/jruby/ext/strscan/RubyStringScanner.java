@@ -46,6 +46,7 @@ import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
@@ -59,39 +60,40 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
  * @author kscott
- *
  */
-@JRubyClass(name="StringScanner")
+@JRubyClass(name = "StringScanner")
 public class RubyStringScanner extends RubyObject {
 
     private RubyString str;
-    private int pos = 0;
-    private int lastPos = -1;
+    private int curr = 0;
+    private int prev = -1;
 
     private Region regs;
     private Regex pattern;
-    private int beg = -1;
-    private int end = -1;
-    // not to be confused with RubyObject's flags
     private int scannerFlags;
+    private boolean fixedAnchor;
 
     private static final int MATCHED_STR_SCN_F = 1 << 11;
 
     public static RubyClass createScannerClass(final Ruby runtime) {
-        RubyClass scannerClass = runtime.defineClass("StringScanner", runtime.getObject(), RubyStringScanner::new);
-        scannerClass.defineAnnotatedMethods(RubyStringScanner.class);
-        ThreadContext context = runtime.getCurrentContext();
-        scannerClass.setConstant("Version", runtime.newString("0.7.0").freeze(context));
-        scannerClass.setConstant("Id", runtime.newString("$Id: strscan.c 13506 2007-09-24 08:56:24Z nobu $").freeze(context));
+        RubyClass Object = runtime.getObject();
+
+        RubyClass scannerClass = runtime.defineClass("StringScanner", Object, RubyStringScanner::new);
 
         RubyClass standardError = runtime.getStandardError();
-        RubyClass error = scannerClass.defineClassUnder(
-                "Error", standardError, standardError.getAllocator());
-
-        RubyClass objClass = runtime.getObject();
-        if (!objClass.isConstantDefined("ScanError")) {
-            objClass.defineConstant("ScanError", error);
+        RubyClass error = scannerClass.defineClassUnder("Error", standardError, standardError.getAllocator());
+        if (!Object.isConstantDefined("ScanError")) {
+            Object.defineConstant("ScanError", error);
         }
+
+        RubyString version = runtime.newString("3.0.2");
+        version.setFrozen(true);
+        scannerClass.setConstant("Version", version);
+        RubyString id = runtime.newString("$Id$");
+        id.setFrozen(true);
+        scannerClass.setConstant("Id", id);
+
+        scannerClass.defineAnnotatedMethods(RubyStringScanner.class);
 
         return scannerClass;
     }
@@ -108,68 +110,77 @@ public class RubyStringScanner extends RubyObject {
         return (scannerFlags & MATCHED_STR_SCN_F) != 0;
     }
 
-    private void check() {
-        if (str == null) throw getRuntime().newArgumentError("uninitialized StringScanner object");
+    private void check(ThreadContext context) {
+        if (str == null) throw context.runtime.newArgumentError("uninitialized StringScanner object");
     }
 
     protected RubyStringScanner(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
-    // second argument is allowed, but ignored (MRI)
-    @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        str = args[0].convertToString();
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject string) {
+        return initialize(context, string, context.nil);
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject string, IRubyObject dupOrOpts) {
+        this.str = string.convertToString();
+        this.fixedAnchor = ArgsUtil.extractKeywordArg(context, "fixed_anchor", dupOrOpts).isTrue();
+        this.regs = new Region(0, 0);
+
         return this;
     }
 
     @JRubyMethod(visibility = PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject other) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject string, IRubyObject dup, IRubyObject opts) {
+        return initialize(context, string, opts);
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
         if (this == other) return this;
         if (!(other instanceof RubyStringScanner)) {
-            throw getRuntime().newTypeError("wrong argument type "
-                    + other.getMetaClass() + " (expected StringScanner)");
+            throw context.runtime.newTypeError("wrong argument type " + other.getMetaClass() + " (expected StringScanner)");
         }
 
-        RubyStringScanner otherScanner = (RubyStringScanner)other;
+        RubyStringScanner otherScanner = (RubyStringScanner) other;
         str = otherScanner.str;
-        pos = otherScanner.pos;
-        lastPos = otherScanner.lastPos;
+        curr = otherScanner.curr;
+        prev = otherScanner.prev;
         scannerFlags = otherScanner.scannerFlags;
 
-        regs = otherScanner.regs != null ? otherScanner.regs.clone() : null;
+        regs = otherScanner.regs.clone();
         pattern = otherScanner.pattern;
-        beg = otherScanner.beg;
-        end = otherScanner.end;
+        fixedAnchor = otherScanner.fixedAnchor;
 
         return this;
     }
 
     @JRubyMethod(name = "reset")
-    public IRubyObject reset() {
-        check();
-        pos = 0;
+    public IRubyObject reset(ThreadContext context) {
+        check(context);
+        curr = 0;
         clearMatched();
         return this;
     }
 
     @JRubyMethod(name = "terminate")
-    public IRubyObject terminate() {
-        check();
-        pos = str.getByteList().getRealSize();
+    public IRubyObject terminate(ThreadContext context) {
+        check(context);
+        curr = str.getByteList().getRealSize();
         clearMatched();
         return this;
     }
 
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context) {
-        check();
+        check(context);
         Ruby runtime = context.runtime;
         if (runtime.isVerbose()) {
             runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#clear is obsolete; use #terminate instead");
         }
-        return terminate();
+        return terminate(context);
     }
 
     @JRubyMethod(name = "string")
@@ -177,57 +188,69 @@ public class RubyStringScanner extends RubyObject {
         return str;
     }
 
-    @JRubyMethod(name = "string=", required = 1)
+    @JRubyMethod(name = "string=")
     public IRubyObject set_string(ThreadContext context, IRubyObject str) {
         this.str = RubyString.stringValue(str);
-        pos = 0;
+        curr = 0;
         clearMatched();
         return str;
     }
 
-    @JRubyMethod(name = {"concat", "<<"}, required = 1)
-    public IRubyObject concat(IRubyObject obj) {
-        check();
+    @JRubyMethod(name = {"concat", "<<"})
+    public IRubyObject concat(ThreadContext context, IRubyObject obj) {
+        check(context);
         str.append(obj.convertToString());
         return this;
     }
 
     @JRubyMethod(name = {"pos", "pointer"})
-    public RubyFixnum pos() {
-        check();
-        return RubyFixnum.newFixnum(getRuntime(), pos);
+    public RubyFixnum pos(ThreadContext context) {
+        check(context);
+        return RubyFixnum.newFixnum(context.runtime, curr);
     }
 
     @JRubyMethod(name = {"pos=", "pointer="})
-    public IRubyObject set_pos(IRubyObject pos) {
-        check();
+    public IRubyObject set_pos(ThreadContext context, IRubyObject pos) {
+        check(context);
+
+        Ruby runtime = context.runtime;
+
         int i = RubyNumeric.num2int(pos);
         int size = str.getByteList().getRealSize();
         if (i < 0) i += size;
-        if (i < 0 || i > size) throw getRuntime().newRangeError("index out of range.");
-        this.pos = i;
-        return RubyFixnum.newFixnum(getRuntime(), i);
+        if (i < 0 || i > size) throw runtime.newRangeError("index out of range.");
+        this.curr = i;
+
+        return RubyFixnum.newFixnum(runtime, i);
     }
 
     @JRubyMethod(name = "charpos")
     public IRubyObject charpos(ThreadContext context) {
         Ruby runtime = context.runtime;
-        RubyString sub = (RubyString)Helpers.invoke(context, str, "byteslice", runtime.newFixnum(0), runtime.newFixnum(pos));
-        return runtime.newFixnum(sub.strLength());
+
+        ByteList strBL = str.getByteList();
+        int strBeg = strBL.begin();
+
+        return runtime.newFixnum(StringSupport.strLength(strBL.getEncoding(), strBL.unsafeBytes(), strBeg, strBeg + curr));
     }
 
     private IRubyObject extractRange(Ruby runtime, int beg, int end) {
         int size = str.getByteList().getRealSize();
+
         if (beg > size) return runtime.getNil();
         if (end > size) end = size;
+
         return str.makeSharedString(runtime, beg, end - beg);
     }
 
     private IRubyObject extractBegLen(Ruby runtime, int beg, int len) {
         assert len >= 0;
+
         int size = str.getByteList().getRealSize();
+
         if (beg > size) return runtime.getNil();
-        if (beg + len > size) len = size - beg;
+        len = Math.min(len, size - beg);
+
         return str.makeSharedString(runtime, beg, len);
     }
 
@@ -236,7 +259,7 @@ public class RubyStringScanner extends RubyObject {
         @Override
         public Integer run(ThreadContext context, RubyStringScanner rubyStringScanner) throws InterruptedException {
             ByteList value = str.getByteList();
-            return currentMatcher.get().matchInterruptible(value.begin() + pos, value.begin() + value.realSize(), Option.NONE);
+            return currentMatcher.get().matchInterruptible(value.begin() + curr, value.begin() + value.realSize(), Option.NONE);
         }
 
         @Override
@@ -245,175 +268,251 @@ public class RubyStringScanner extends RubyObject {
         }
     };
 
+    // MRI: strscan_do_scan
     private IRubyObject scan(ThreadContext context, IRubyObject regex, boolean succptr, boolean getstr, boolean headonly) {
-        final Ruby runtime = getRuntime();
-        if (!(regex instanceof RubyRegexp)) throw runtime.newTypeError("wrong argument type " + regex.getMetaClass() + " (expected Regexp)");
-        check();
+        final Ruby runtime = context.runtime;
 
-        pattern = ((RubyRegexp)regex).preparePattern(str);
-
-        clearMatched();
-        int rest = str.getByteList().getRealSize() - pos;
-        if (rest < 0) return runtime.getNil();
-
-        ByteList value = str.getByteList();
-        int beg = value.getBegin() + pos;
-        int range = value.getBegin() + value.getRealSize();
-
-        Matcher matcher = pattern.matcher(value.getUnsafeBytes(), beg, range);
-        final int ret;
         if (headonly) {
-            if (runtime.getInstanceConfig().isInterruptibleRegexps()) {
-                currentMatcher.set(matcher);
-                try {
-                    ret = runtime.getCurrentContext().getThread().executeTask(context, this, task);
-                } catch (InterruptedException ie) {
-                    throw runtime.newInterruptedRegexpError("Regexp Interrupted");
-                }
-            } else {
-                ret = matcher.match(beg, range, Option.NONE);
+            if (!(regex instanceof RubyRegexp)) {
+                regex = regex.convertToString();
             }
         } else {
-            ret = RubyRegexp.matcherSearch(context, matcher, beg, range, Option.NONE);
+            if (!(regex instanceof RubyRegexp)) {
+                throw runtime.newTypeError("wrong argument type " + regex.getMetaClass() + " (expected Regexp)");
+            }
         }
 
-        regs = matcher.getRegion();
-        if (regs == null) {
-            this.beg = matcher.getBegin();
-            this.end = matcher.getEnd();
+        check(context);
+
+        ByteList strBL = str.getByteList();
+        int strBeg = strBL.getBegin();
+
+        clearMatched();
+
+        if (restLen() < 0) {
+            return context.nil;
+        }
+
+        if (regex instanceof RubyRegexp) {
+            pattern = ((RubyRegexp) regex).preparePattern(str);
+
+            int currPtr = currPtr();
+            int range = currPtr + restLen();
+
+            Matcher matcher = pattern.matcher(strBL.getUnsafeBytes(), matchTarget(), range);
+            final int ret;
+            if (headonly) {
+                ret = RubyRegexp.matcherMatch(context, matcher, currPtr, range, Option.NONE);
+            } else {
+                ret = RubyRegexp.matcherSearch(context, matcher, currPtr, range, Option.NONE);
+            }
+
+            Region matchRegion = matcher.getRegion();
+            if (matchRegion == null) {
+                regs.beg[0] = matcher.getBegin();
+                regs.end[0] = matcher.getEnd();
+            } else {
+                regs = matchRegion;
+            }
+
+            if  (ret == -2) {
+                throw runtime.newRaiseException((RubyClass) getMetaClass().getConstant("ScanError"), "regexp buffer overflow");
+            }
+            if (ret < 0) return context.nil;
         } else {
-            this.beg = regs.beg[0];
-            this.end = regs.end[0];
+            RubyString pattern = (RubyString) regex;
+
+            str.checkEncoding(pattern);
+
+            if (restLen() < pattern.size()) {
+                return context.nil;
+            }
+
+            ByteList patternBL = pattern.getByteList();
+            int patternSize = patternBL.realSize();
+
+            if (ByteList.memcmp(strBL.unsafeBytes(), strBeg + curr, patternBL.unsafeBytes(), patternBL.begin(), patternSize) != 0) {
+                return context.nil;
+            }
+
+            setRegisters(patternSize);
         }
 
-        if (ret < 0) return context.nil;
         setMatched();
+        prev = curr;
 
-        lastPos = pos;
-        if (succptr) pos += end;
-        return  getstr ? extractBegLen(runtime, lastPos, end) : RubyFixnum.newFixnum(runtime, end);
+        if (succptr) {
+            succ();
+        }
+
+        int length = lastMatchLength();
+
+        if (getstr) {
+            return extractBegLen(runtime, prev, length);
+        }
+
+        return RubyFixnum.newFixnum(runtime, length);
     }
 
-    @JRubyMethod(name = "scan", required = 1)
+    private int lastMatchLength() {
+        if (fixedAnchor) {
+            return regs.end[0] - prev;
+        } else {
+            return regs.end[0];
+        }
+    }
+
+    private void succ() {
+        if (fixedAnchor) {
+            this.curr = this.regs.end[0];
+        } else {
+            this.curr += this.regs.end[0];
+        }
+    }
+
+    private int currPtr() {
+        return str.getByteList().getBegin() + curr;
+    }
+
+    private int matchTarget() {
+        if (fixedAnchor) {
+            return str.getByteList().getBegin();
+        } else {
+            return str.getByteList().getBegin() + curr;
+        }
+    }
+
+    private int restLen() {
+        return str.size() - curr;
+    }
+
+    // MRI: set_registers
+    private void setRegisters(int length) {
+        if (fixedAnchor) {
+            regs = new Region(curr, curr + length);
+        } else {
+            regs = new Region(0, length);
+        }
+    }
+
+    @JRubyMethod(name = "scan")
     public IRubyObject scan(ThreadContext context, IRubyObject regex) {
         return scan(context, regex, true, true, true);
     }
 
-    @JRubyMethod(name = "match?", required = 1)
+    @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject regex) {
         return scan(context, regex, false, false, true);
     }
 
-    @JRubyMethod(name = "skip", required = 1)
+    @JRubyMethod(name = "skip")
     public IRubyObject skip(ThreadContext context, IRubyObject regex) {
         return scan(context, regex, true, false, true);
     }
 
-    @JRubyMethod(name = "check", required = 1)
+    @JRubyMethod(name = "check")
     public IRubyObject check(ThreadContext context, IRubyObject regex) {
         return scan(context, regex, false, true, true);
     }
 
-    @JRubyMethod(name = "scan_full", required = 3)
+    @JRubyMethod(name = "scan_full")
     public IRubyObject scan_full(ThreadContext context, IRubyObject regex, IRubyObject s, IRubyObject f) {
         return scan(context, regex, s.isTrue(), f.isTrue(), true);
     }
 
-    @JRubyMethod(name = "scan_until", required = 1)
+    @JRubyMethod(name = "scan_until")
     public IRubyObject scan_until(ThreadContext context, IRubyObject regex) {
         return scan(context, regex, true, true, false);
     }
 
-    @JRubyMethod(name = "exist?", required = 1)
+    @JRubyMethod(name = "exist?")
     public IRubyObject exist_p(ThreadContext context, IRubyObject regex) {
         return scan(context, regex, false, false, false);
     }
 
-    @JRubyMethod(name = "skip_until", required = 1)
+    @JRubyMethod(name = "skip_until")
     public IRubyObject skip_until(ThreadContext context, IRubyObject regex) {
         return scan(context, regex, true, false, false);
     }
 
-    @JRubyMethod(name = "check_until", required = 1)
+    @JRubyMethod(name = "check_until")
     public IRubyObject check_until(ThreadContext context, IRubyObject regex) {
         return scan(context, regex, false, true, false);
     }
 
-    @JRubyMethod(name = "search_full", required = 3)
+    @JRubyMethod(name = "search_full")
     public IRubyObject search_full(ThreadContext context, IRubyObject regex, IRubyObject s, IRubyObject f) {
         return scan(context, regex, s.isTrue(), f.isTrue(), false);
     }
 
+    // MRI: adjust_register_to_matched
     private void adjustRegisters() {
-        beg = 0;
-        end = pos - lastPos;
-        regs = null;
-    }
-
-    public IRubyObject getch(ThreadContext context) {
-        return getch19(context);
+        if (fixedAnchor) {
+            regs = new Region(prev, curr);
+        } else {
+            regs = new Region(0, curr - prev);
+        }
     }
 
     @JRubyMethod(name = "getch")
-    public IRubyObject getch19(ThreadContext context) {
-        return getchCommon(context, true);
+    public IRubyObject getch(ThreadContext context) {
+        return getchCommon(context);
     }
 
-    public IRubyObject getchCommon(ThreadContext context, boolean is1_9) {
-        check();
+    public IRubyObject getchCommon(ThreadContext context) {
+        check(context);
         clearMatched();
+        ByteList strBL = str.getByteList();
+        int strSize = strBL.getRealSize();
+
+        if (curr >= strSize) return context.nil;
 
         Ruby runtime = context.runtime;
-        ByteList value = str.getByteList();
 
-        if (pos >= value.getRealSize()) return context.nil;
-        int len;
-        if (is1_9) {
-            Encoding enc = str.getEncoding();
-            len = enc.isSingleByte() ? 1 : StringSupport.length(enc, value.getUnsafeBytes(), value.getBegin() + pos, value.getBegin() + value.getRealSize());
-        } else {
-            Encoding enc = runtime.getKCode().getEncoding();
-            len = enc.isSingleByte() ? 1 : enc.length(value.getUnsafeBytes(), value.getBegin() + pos, value.getBegin() + value.getRealSize());
-        }
+        Encoding strEnc = strBL.getEncoding();
+        int setBeg = strBL.getBegin();
 
-        if (pos + len > value.getRealSize()) len = value.getRealSize() - pos;
-        lastPos = pos;
-        pos += len;
+        int len = strEnc.isSingleByte() ? 1 : StringSupport.length(strEnc, strBL.getUnsafeBytes(), setBeg + curr, setBeg + strSize);
+        len = Math.min(len, restLen());
+
+        prev = curr;
+        curr += len;
 
         setMatched();
         adjustRegisters();
 
-        return extractRange(runtime, lastPos + beg, lastPos + end);
+        return extractRange(runtime,
+                prev + regs.beg[0],
+                prev + regs.end[0]);
     }
 
     @JRubyMethod(name = "get_byte")
     public IRubyObject get_byte(ThreadContext context) {
-        check();
+        check(context);
         clearMatched();
-        if (pos >= str.getByteList().getRealSize()) return context.nil;
+        if (curr >= str.getByteList().getRealSize()) return context.nil;
 
-        lastPos = pos;
-        pos++;
+        prev = curr;
+        curr++;
 
         setMatched();
         adjustRegisters();
 
-        return extractRange(context.runtime, lastPos + beg, lastPos + end);
+        return extractRange(context.runtime, prev + regs.beg[0], prev + regs.end[0]);
     }
 
     @JRubyMethod(name = "getbyte")
     public IRubyObject getbyte(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.DEPRECATED_METHOD,
-                    "StringScanner#getbyte is obsolete; use #get_byte instead");
+            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#getbyte is obsolete; use #get_byte instead");
         }
         return get_byte(context);
     }
 
-    @JRubyMethod(name = "peek", required = 1)
+    @JRubyMethod(name = "peek")
     public IRubyObject peek(ThreadContext context, IRubyObject length) {
-        check();
+        check(context);
 
         int len = RubyNumeric.num2int(length);
         if (len < 0) {
@@ -421,51 +520,52 @@ public class RubyStringScanner extends RubyObject {
         }
 
         ByteList value = str.getByteList();
-        if (pos >= value.getRealSize()) return RubyString.newEmptyString(context.runtime);
-        if (pos + len > value.getRealSize()) len = value.getRealSize() - pos;
+        if (curr >= value.getRealSize()) return RubyString.newEmptyString(context.runtime);
+        if (curr + len > value.getRealSize()) len = value.getRealSize() - curr;
 
-        return extractBegLen(context.runtime, pos, len);
+        return extractBegLen(context.runtime, curr, len);
     }
 
-    @JRubyMethod(name = "peep", required = 1)
+    @JRubyMethod(name = "peep")
     public IRubyObject peep(ThreadContext context, IRubyObject length) {
         Ruby runtime = context.runtime;
         if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(
-                    ID.DEPRECATED_METHOD, "StringScanner#peep is obsolete; use #peek instead");
+            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#peep is obsolete; use #peek instead");
         }
         return peek(context, length);
     }
 
     @JRubyMethod(name = "unscan")
-    public IRubyObject unscan() {
-        check();
-        Ruby runtime = getRuntime();
+    public IRubyObject unscan(ThreadContext context) {
+        check(context);
 
         if (!isMatched()) {
+            Ruby runtime = context.runtime;
+
             RubyClass errorClass = runtime.getClass("StringScanner").getClass("Error");
             throw RaiseException.from(runtime, errorClass, "unscan failed: previous match had failed");
         }
-        pos = lastPos;
+
+        curr = prev;
         clearMatched();
+
         return this;
     }
 
     @JRubyMethod(name = "beginning_of_line?", alias = "bol?")
-    public IRubyObject bol_p() {
-        check();
-        Ruby runtime = getRuntime();
+    public IRubyObject bol_p(ThreadContext context) {
+        check(context);
 
         ByteList value = str.getByteList();
-        if (pos > value.getRealSize()) return runtime.getNil();
-        if (pos == 0) return runtime.getTrue();
-        return value.getUnsafeBytes()[(value.getBegin() + pos) - 1] == (byte)'\n' ? runtime.getTrue() : runtime.getFalse();
+        if (curr > value.getRealSize()) return context.nil;
+        if (curr == 0) return context.tru;
+        return value.getUnsafeBytes()[(value.getBegin() + curr) - 1] == (byte) '\n' ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "eos?")
     public RubyBoolean eos_p(ThreadContext context) {
-        check();
-        return pos >= str.getByteList().getRealSize() ? context.tru : context.fals;
+        check(context);
+        return curr >= str.getByteList().getRealSize() ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "empty?")
@@ -479,28 +579,28 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "rest?")
     public RubyBoolean rest_p(ThreadContext context) {
-        check();
-        return pos >= str.getByteList().getRealSize() ? context.fals : context.tru;
+        check(context);
+        return curr >= str.getByteList().getRealSize() ? context.fals : context.tru;
     }
 
     @JRubyMethod(name = "matched?")
     public RubyBoolean matched_p(ThreadContext context) {
-        check();
+        check(context);
         return isMatched() ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "matched")
     public IRubyObject matched(ThreadContext context) {
-        check();
+        check(context);
         if (!isMatched()) return context.nil;
-        return extractRange(context.runtime, lastPos + beg, lastPos + end);
+        return extractRange(context.runtime, prev + regs.beg[0], prev + regs.end[0]);
     }
 
     @JRubyMethod(name = "matched_size")
-    public IRubyObject matched_size() {
-        check();
-        if (!isMatched()) return getRuntime().getNil();
-        return RubyFixnum.newFixnum(getRuntime(), end - beg);
+    public IRubyObject matched_size(ThreadContext context) {
+        check(context);
+        if (!isMatched()) return context.nil;
+        return RubyFixnum.newFixnum(context.runtime, regs.end[0] - regs.beg[0]);
     }
 
     @JRubyMethod(name = "matchedsize")
@@ -512,10 +612,10 @@ public class RubyStringScanner extends RubyObject {
         return matched_size();
     }
 
-    @JRubyMethod(name = "[]", required = 1)
+    @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject idx) {
-        Ruby runtime = context.runtime;
-        check();
+        check(context);
+
         if (!isMatched()) {
             return context.nil;
         }
@@ -523,58 +623,64 @@ public class RubyStringScanner extends RubyObject {
         if (idx instanceof RubySymbol || idx instanceof RubyString) {
             if (pattern == null) return context.nil;
         }
+
+        Ruby runtime = context.runtime;
+
         int i = RubyMatchData.backrefNumber(runtime, pattern, regs, idx);
-        int numRegs = regs == null ? 1 : regs.numRegs;
+        int numRegs = regs.numRegs;
 
         if (i < 0) i += numRegs;
-        if (i < 0 || i >= numRegs) {
+        if (i < 0 || i >= numRegs || regs.beg[i] == -1) {
             return context.nil;
         }
 
-        if (regs == null) {
-            assert i == 0;
-            if (beg == -1) return context.nil;
-            return extractRange(runtime, lastPos + beg, lastPos + end);
-        } else {
-            if (regs.beg[i] == -1) return context.nil;
-            return extractRange(context.runtime, lastPos + regs.beg[i], lastPos + regs.end[i]);
-        }
+        return extractRange(context.runtime, prev + regs.beg[i], prev + regs.end[i]);
     }
 
     @JRubyMethod(name = "pre_match")
     public IRubyObject pre_match(ThreadContext context) {
-        check();
+        check(context);
         if (!isMatched()) {
             return context.nil;
         }
-        return extractRange(context.runtime, 0, lastPos + beg);
+        return extractRange(context.runtime, 0, prev + regs.beg[0]);
     }
 
     @JRubyMethod(name = "post_match")
     public IRubyObject post_match(ThreadContext context) {
-        check();
+        check(context);
+
         if (!isMatched()) {
             return context.nil;
         }
-        return extractRange(context.runtime, lastPos + end, str.getByteList().getRealSize());
+
+        return extractRange(context.runtime, prev + regs.end[0], str.getByteList().getRealSize());
     }
 
     @JRubyMethod(name = "rest")
     public IRubyObject rest(ThreadContext context) {
-        check();
+        check(context);
+        Ruby runtime = context.runtime;
+
         ByteList value = str.getByteList();
-        if (pos >= value.getRealSize()) {
-            return RubyString.newEmptyString(context.runtime);
+
+        if (curr >= value.getRealSize()) {
+            return RubyString.newEmptyString(runtime);
         }
-        return extractRange(context.runtime, pos, value.getRealSize());
+
+        return extractRange(runtime, curr, value.getRealSize());
     }
 
     @JRubyMethod(name = "rest_size")
-    public RubyFixnum rest_size() {
-        check();
+    public RubyFixnum rest_size(ThreadContext context) {
+        check(context);
+        Ruby runtime = context.runtime;
+
         ByteList value = str.getByteList();
-        if (pos >= value.getRealSize()) return RubyFixnum.zero(getRuntime());
-        return RubyFixnum.newFixnum(getRuntime(), value.getRealSize() - pos);
+
+        if (curr >= value.getRealSize()) return RubyFixnum.zero(runtime);
+
+        return RubyFixnum.newFixnum(runtime, value.getRealSize() - curr);
     }
 
     @JRubyMethod(name = "restsize")
@@ -583,16 +689,21 @@ public class RubyStringScanner extends RubyObject {
         if (runtime.isVerbose()) {
             runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#restsize is obsolete; use #rest_size instead");
         }
-        return rest_size();
+        return rest_size(context);
     }
 
     @JRubyMethod(name = "inspect")
     @Override
     public IRubyObject inspect() {
         if (str == null) return inspect("(uninitialized)");
-        if (pos >= str.getByteList().getRealSize()) return inspect("fin");
-        if (pos == 0) return inspect(pos + "/" + str.getByteList().getRealSize() + " @ " + inspect2());
-        return inspect(pos + "/" + str.getByteList().getRealSize() + " " + inspect1() + " @ " + inspect2());
+        if (curr >= str.getByteList().getRealSize()) return inspect("fin");
+        if (curr == 0) return inspect(curr + "/" + str.getByteList().getRealSize() + " @ " + inspect2());
+        return inspect(curr + "/" + str.getByteList().getRealSize() + " " + inspect1() + " @ " + inspect2());
+    }
+
+    @JRubyMethod(name = "fixed_anchor?")
+    public IRubyObject fixed_anchor_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, fixedAnchor);
     }
 
     private IRubyObject inspect(String msg) {
@@ -606,27 +717,21 @@ public class RubyStringScanner extends RubyObject {
 
     private IRubyObject inspect1() {
         final Ruby runtime = getRuntime();
-        if (pos == 0) return RubyString.newEmptyString(runtime);
-        if (pos > INSPECT_LENGTH) {
-            return RubyString.newStringNoCopy(runtime, DOT_BYTES).
-                append(str.substr(runtime, pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
+        if (curr == 0) return RubyString.newEmptyString(runtime);
+        if (curr > INSPECT_LENGTH) {
+            return RubyString.newStringNoCopy(runtime, DOT_BYTES).append(str.substr(runtime, curr - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
         }
-        return str.substr(runtime, 0, pos).inspect();
+        return str.substr(runtime, 0, curr).inspect();
     }
 
     private IRubyObject inspect2() {
         final Ruby runtime = getRuntime();
-        if (pos >= str.getByteList().getRealSize()) return RubyString.newEmptyString(runtime);
-        int len = str.getByteList().getRealSize() - pos;
+        if (curr >= str.getByteList().getRealSize()) return RubyString.newEmptyString(runtime);
+        int len = str.getByteList().getRealSize() - curr;
         if (len > INSPECT_LENGTH) {
-            return ((RubyString) str.substr(runtime, pos, INSPECT_LENGTH)).cat(DOT_BYTES).inspect();
+            return ((RubyString) str.substr(runtime, curr, INSPECT_LENGTH)).cat(DOT_BYTES).inspect();
         }
-        return str.substr(runtime, pos, len).inspect();
-    }
-
-    @JRubyMethod(name = "must_C_version", meta = true)
-    public static IRubyObject mustCversion(IRubyObject recv) {
-        return recv;
+        return str.substr(runtime, curr, len).inspect();
     }
 
     @JRubyMethod(name = "size")
@@ -645,11 +750,10 @@ public class RubyStringScanner extends RubyObject {
         Ruby runtime = context.runtime;
 
         numRegs = regs.numRegs;
-        newAry  = RubyArray.newArray(runtime, numRegs);
+        newAry = RubyArray.newArray(runtime, numRegs);
 
         for (i = 1; i < numRegs; i++) {
-            IRubyObject str = extractRange(runtime, lastPos + regs.beg[i],
-                    lastPos + regs.end[i]);
+            IRubyObject str = extractRange(runtime, prev + regs.beg[i], prev + regs.end[i]);
             newAry.push(str);
         }
 
@@ -671,5 +775,75 @@ public class RubyStringScanner extends RubyObject {
         }
 
         return newAry;
+    }
+
+    @Deprecated
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
+        str = args[0].convertToString();
+        return this;
+    }
+
+    @Deprecated
+    public IRubyObject initialize_copy(IRubyObject other) {
+        return initialize_copy(getRuntime().getCurrentContext(), other);
+    }
+
+    @Deprecated
+    public IRubyObject concat(IRubyObject obj) {
+        return concat(getRuntime().getCurrentContext(), obj);
+    }
+
+    @Deprecated
+    public RubyFixnum pos() {
+        return pos(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject set_pos(IRubyObject pos) {
+        return set_pos(getRuntime().getCurrentContext(), pos);
+    }
+
+    @Deprecated
+    public IRubyObject getch19(ThreadContext context) {
+        return getch(context);
+    }
+
+    @Deprecated
+    public IRubyObject reset() {
+        return reset(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject unscan() {
+        return unscan(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject matched_size() {
+        return matched_size(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject bol_p() {
+        return bol_p(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public RubyFixnum rest_size() {
+        return rest_size(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject getchCommon(ThreadContext context, boolean is1_9) {
+        return getchCommon(context);
+    }
+
+    /**
+     * @deprecated Only defined for backward compatibility in CRuby.
+     */
+    @Deprecated
+    @JRubyMethod(name = "must_C_version", meta = true)
+    public static IRubyObject mustCversion(IRubyObject recv) {
+        return recv;
     }
 }
