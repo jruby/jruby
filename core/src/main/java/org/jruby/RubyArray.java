@@ -2008,7 +2008,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             window.realLength = realLength;
             block.yield(context, window);
         }
-        return context.nil;
+        return this;
     }
 
     @JRubyMethod
