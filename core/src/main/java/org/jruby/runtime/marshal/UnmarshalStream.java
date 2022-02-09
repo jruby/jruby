@@ -68,9 +68,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.runtime.marshal.MarshalStream.RUBY2_KEYWORDS_FLAG;
 import static org.jruby.runtime.marshal.MarshalStream.SYMBOL_ENCODING_SPECIAL;
+import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -625,7 +628,11 @@ public class UnmarshalStream extends InputStream {
 
                         if (encoding != null) {
                             sym.getBytes().setEncoding(encoding);
-                            // FIXME: we need invalud byte seq check here
+
+                            if (StringSupport.codeRangeScan(encoding, sym.getBytes()) == StringSupport.CR_BROKEN) {
+                                throw runtime.newArgumentError(str(runtime, "invalid byte sequence in " + encoding + ": ",
+                                        inspectIdentifierByteList(runtime, sym.getBytes())));
+                            }
                         }
                     } catch (IOException e) {
                     }
