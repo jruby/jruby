@@ -5314,13 +5314,11 @@ float_loop:
     }
 
     public static RubyArray unmarshalFrom(UnmarshalStream input) throws IOException {
-        Ruby runtime = input.getRuntime();
         int size = input.unmarshalInt();
 
+        // FIXME: We used to use newArrayBlankInternal but this will not hash into a HashSet without an NPE.
         // we create this now with an empty, nulled array so it's available for links in the marshal data
-        RubyArray result = newBlankArrayInternal(runtime, size);
-
-        input.registerLinkTarget(result);
+        RubyArray result = (RubyArray) input.entry(newArray(input.getRuntime(), size));
 
         for (int i = 0; i < size; i++) {
             result.storeInternal(i, input.unmarshalObject());

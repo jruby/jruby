@@ -2442,12 +2442,13 @@ public class RubyHash extends RubyObject implements Map {
     };
 
     public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
-        RubyHash result = newHash(input.getRuntime());
-        input.registerLinkTarget(result);
+        RubyHash result = (RubyHash) input.entry(newHash(input.getRuntime()));
         int size = input.unmarshalInt();
+
         for (int i = 0; i < size; i++) {
             result.fastASetCheckString(input.getRuntime(), input.unmarshalObject(), input.unmarshalObject());
         }
+
         if (defaultValue) result.default_value_set(input.unmarshalObject());
         return result;
     }

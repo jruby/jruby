@@ -87,6 +87,7 @@ public class MarshalStream extends FilterOutputStream {
     private final static char TYPE_UCLASS = 'C';
     public final static String SYMBOL_ENCODING_SPECIAL = "E";
     private final static String SYMBOL_ENCODING = "encoding";
+    public final static String RUBY2_KEYWORDS_FLAG = "K";
 
     public MarshalStream(Ruby runtime, OutputStream out, int depthLimit) throws IOException {
         super(out);

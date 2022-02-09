@@ -148,14 +148,10 @@ public class RubySystemCallError extends RubyStandardError {
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-            UnmarshalStream unmarshalStream) throws IOException {
-            RubySystemCallError exc = (RubySystemCallError) type.allocate();
-            
-            unmarshalStream.registerLinkTarget(exc);
-            // FIXME: Can't just pull these off the wire directly? Or maybe we should
-            // just use real vars all the time for these?
-            unmarshalStream.defaultVariablesUnmarshal(exc);
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            RubySystemCallError exc = (RubySystemCallError) input.entry(type.allocate());
+
+            input.ivar(null, exc, null);
             
             exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
             exc.errno = (IRubyObject)exc.removeInternalVariable("errno");

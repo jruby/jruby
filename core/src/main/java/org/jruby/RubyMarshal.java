@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -112,11 +113,23 @@ public class RubyMarshal {
         return dump(recv.getRuntime().getCurrentContext(), recv, args, unusedBlock);
     }
 
-    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         IRubyObject in = args[0];
-        IRubyObject proc = args.length == 2 ? args[1] : context.nil;
+        boolean frozen = false;
+        IRubyObject proc = null;
+
+        if (args.length > 1) {
+            RubyHash kwargs = ArgsUtil.extractKeywords(args[args.length - 1]);
+            if (kwargs != null) {
+                IRubyObject[] options = ArgsUtil.extractKeywordArgs(context, kwargs, "freeze");
+                frozen = options[0] != null ? options[0].isTrue(): false;
+                if (args.length > 2) proc = args[1];
+            } else {
+                proc = args[1];
+            }
+        }
 
         final IRubyObject str = in.checkStringType();
         try {
@@ -131,7 +144,7 @@ public class RubyMarshal {
                 throw runtime.newTypeError("instance of IO needed");
             }
 
-            return new UnmarshalStream(runtime, rawInput, proc).unmarshalObject();
+            return new UnmarshalStream(runtime, rawInput, frozen, proc).unmarshalObject();
         } catch (EOFException e) {
             if (str != context.nil) throw runtime.newArgumentError("marshal data too short");
 

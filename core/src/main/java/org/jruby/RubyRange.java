@@ -1117,14 +1117,10 @@ public class RubyRange extends RubyObject {
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                UnmarshalStream unmarshalStream) throws IOException {
-            RubyRange range = (RubyRange) type.allocate();
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            RubyRange range = (RubyRange) input.entry(type.allocate());
 
-            unmarshalStream.registerLinkTarget(range);
-
-            // FIXME: Maybe we can just gank these off the line directly?
-            unmarshalStream.defaultVariablesUnmarshal(range);
+            input.ivar(null, range, null);
 
             IRubyObject excl = (IRubyObject) range.removeInternalVariable("excl");
             IRubyObject begin = (IRubyObject) range.removeInternalVariable("begin");

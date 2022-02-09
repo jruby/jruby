@@ -870,10 +870,8 @@ public class RubyStruct extends RubyObject {
         final int len = input.unmarshalInt();
 
         // FIXME: This could all be more efficient, but it's how struct works
-        final RubyStruct result;
         // 1.9 does not appear to call initialize (JRUBY-5875)
-        result = new RubyStruct(runtime, rbClass);
-        input.registerLinkTarget(result);
+        final RubyStruct result = (RubyStruct) input.entry(new RubyStruct(runtime, rbClass));
 
         for (int i = 0; i < len; i++) {
             IRubyObject slot = input.unmarshalObject(false);
