@@ -33,6 +33,12 @@ package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
+import org.jcodings.specific.UTF32BEEncoding;
+import org.jcodings.specific.UTF32LEEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
@@ -52,16 +58,19 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.Getline;
+import org.jruby.util.io.IOEncodable;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
 import java.util.Arrays;
 
+import static java.lang.Byte.toUnsignedInt;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name="StringIO")
 public class StringIO extends RubyObject implements EncodingCapable, DataType {
+
     static class StringIOData {
         /**
          * ATTN: the value of internal might be reset to null
@@ -72,6 +81,68 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         int pos;
         int lineno;
         int flags;
+        
+        private Encoding setEncodingByBOM() {
+            Encoding extenc = detectBOM();
+
+            if (extenc != null) {
+                if ((flags & OpenFile.WRITABLE) != 0) {
+                    string.setEncoding(extenc);
+                }
+            }
+            enc = extenc;
+            return extenc;
+        }
+
+        private Encoding detectBOM() {
+            ByteList strBL = string.getByteList();
+            byte[] strBytes = strBL.unsafeBytes();
+            int beg = strBL.begin();
+            int len = strBL.realSize();
+
+            if (len < 2) return null;
+
+            int byte0 = toUnsignedInt(strBytes[0]);
+            int byte1 = toUnsignedInt(strBytes[beg + 1]);
+
+            switch (byte0) {
+                case 0xEF:
+                    if (byte1 == 0xBB && len > 2) {
+                        if (toUnsignedInt(strBytes[beg + 2]) == 0xBF) {
+                            pos = 3;
+                            return UTF8Encoding.INSTANCE;
+                        }
+                    }
+                    break;
+
+                case 0xFE:
+                    if (byte1 == 0xFF) {
+                        pos = 2;
+                        return UTF16BEEncoding.INSTANCE;
+                    }
+                    break;
+
+                case 0xFF:
+                    if (byte1 == 0xFE) {
+                        if (len >= 4 && toUnsignedInt(strBytes[beg + 2]) == 0 && toUnsignedInt(strBytes[beg + 3]) == 0) {
+                            pos = 4;
+                            return UTF32LEEncoding.INSTANCE;
+                        }
+                        pos = 2;
+                        return UTF16LEEncoding.INSTANCE;
+                    }
+                    break;
+
+                case 0:
+                    if (len < 4) break;
+                    if (byte1 == 0 && toUnsignedInt(strBytes[beg + 2]) == 0xFE && toUnsignedInt(strBytes[beg + 3]) == 0xFF) {
+                        pos = 4;
+                        return UTF32BEEncoding.INSTANCE;
+                    }
+                    break;
+            }
+            return null;
+        }
     }
     StringIOData ptr;
 
@@ -135,67 +206,87 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         super(runtime, klass);
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context) {
+        IRubyObject nil = context.nil;
+        return initialize(context, nil, nil, nil);
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject _string) {
+        IRubyObject nil = context.nil;
+        return initialize(context, _string.convertToString(), nil, nil);
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject _string, IRubyObject modeOrOpts) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, modeOrOpts);
+
+        if (opts.isNil()) {
+            return initialize(context, _string, modeOrOpts, context.nil);
+        } else {
+            return initialize(context, _string, context.nil, opts);
+        }
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject _string, IRubyObject mode, IRubyObject _opts) {
+        Ruby runtime = context.runtime;
+
+        RubyString string;
+
         if (ptr == null) {
             ptr = new StringIOData();
         }
 
+        int[] oflags = {0};
+        int[] strioFlags = {0};
+
+        Object vmodeVperm = EncodingUtils.vmodeVperm(mode, null);
+        IOEncodable.ConvConfig config = new IOEncodable.ConvConfig();
+        EncodingUtils.extractModeEncoding(context, config, vmodeVperm, _opts, oflags, strioFlags);
+        ptr.flags = strioFlags[0];
+
+        if (_string.isNil()) {
+            string = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
+        } else {
+            string = _string.convertToString();
+        }
+
+        if (string.isFrozen()) {
+            if ((ptr.flags & OpenFile.WRITABLE) != 0) {
+                throw runtime.newErrnoEACCESError("Permission denied");
+            }
+        } else {
+            if (EncodingUtils.vmode(vmodeVperm).isNil()) {
+                ptr.flags |= OpenFile.WRITABLE;
+            }
+        }
+
+        if ((ptr.flags & OpenFile.TRUNC) != 0) {
+            string.resize(0);
+        }
+
+        ptr.string = string;
+
+        if (!_string.isNil() && mode.isNil() && _opts.isNil()) {
+            ptr.enc = string.getEncoding();
+        } else {
+            ptr.enc = config.enc;
+        }
+
+        ptr.pos = 0;
+        ptr.lineno = 0;
+        if ((ptr.flags & OpenFile.SETENC_BY_BOM) != 0) ptr.setEncodingByBOM();
+        // funky way of shifting readwrite flags into object flags
+        flags |= (ptr.flags & OpenFile.READWRITE) * (STRIO_READABLE / OpenFile.READABLE);
+
         // does not dispatch quite right and is not really necessary for us
         //Helpers.invokeSuper(context, this, metaClass, "initialize", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-        strioInit(context, args);
+
         return this;
-    }
-
-    // MRI: strio_init
-    private void strioInit(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        RubyString string;
-        IRubyObject mode;
-
-        StringIOData ptr = this.ptr;
-
-        synchronized (ptr) {
-            switch (args.length) {
-                case 2:
-                    mode = args[1];
-                    final boolean trunc;
-                    if (mode instanceof RubyFixnum) {
-                        int flags = RubyFixnum.fix2int(mode);
-                        ptr.flags = ModeFlags.getOpenFileFlagsFor(flags);
-                        trunc = (flags & ModeFlags.TRUNC) != 0;
-                    } else {
-                        String m = args[1].convertToString().toString();
-                        ptr.flags = OpenFile.ioModestrFmode(runtime, m);
-                        trunc = m.length() > 0 && m.charAt(0) == 'w';
-                    }
-                    string = args[0].convertToString();
-                    if ((ptr.flags & OpenFile.WRITABLE) != 0 && string.isFrozen()) {
-                        throw runtime.newErrnoEACCESError("Permission denied");
-                    }
-                    if (trunc) {
-                        string.resize(0);
-                    }
-                    break;
-                case 1:
-                    string = args[0].convertToString();
-                    ptr.flags = string.isFrozen() ? OpenFile.READABLE : OpenFile.READWRITE;
-                    break;
-                case 0:
-                    string = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
-                    ptr.flags = OpenFile.READWRITE;
-                    break;
-                default:
-                    throw runtime.newArgumentError(args.length, 2);
-            }
-
-            ptr.string = string;
-            ptr.enc = null;
-            ptr.pos = 0;
-            ptr.lineno = 0;
-            // funky way of shifting readwrite flags into object flags
-            flags |= (ptr.flags & OpenFile.READWRITE) * (STRIO_READABLE / OpenFile.READABLE);
-        }
     }
 
     // MRI: strio_copy
@@ -421,12 +512,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
             // Check the length every iteration, since
             // the block can modify this string.
-            while (ptr.pos < bytes.length()) {
+            while (stringIOToRead()) {
                 block.yield(context, runtime.newFixnum(bytes.get(ptr.pos++) & 0xFF));
             }
         }
 
         return this;
+    }
+
+    private boolean stringIOToRead() {
+        checkReadable();
+        StringIOData ptr = this.ptr;
+        return ptr.pos < ptr.string.size();
     }
 
     @JRubyMethod
@@ -930,16 +1027,39 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     // MRI: strio_reopen
-    @JRubyMethod(name = "reopen", required = 0, optional = 2)
-    public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "reopen")
+    public IRubyObject reopen(ThreadContext context) {
         checkFrozen();
 
-        if (args.length == 1 && !(args[0] instanceof RubyString)) {
-            return initialize_copy(context, args[0]);
+        // reset the state
+        initialize(context);
+
+        return this;
+    }
+
+    // MRI: strio_reopen
+    @JRubyMethod(name = "reopen")
+    public IRubyObject reopen(ThreadContext context, IRubyObject string) {
+        checkFrozen();
+
+        if (!(string instanceof RubyString)) {
+            return initialize_copy(context, string);
         }
 
         // reset the state
-        strioInit(context, args);
+        initialize(context, string);
+
+        return this;
+    }
+
+    // MRI: strio_reopen
+    @JRubyMethod(name = "reopen")
+    public IRubyObject reopen(ThreadContext context, IRubyObject string, IRubyObject mode) {
+        checkFrozen();
+
+        // reset the state
+        initialize(context, mode);
+
         return this;
     }
 
@@ -1182,11 +1302,13 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         synchronized (ptr) {
             final Encoding enc = getEncoding();
-            final Encoding encStr = str.getEncoding();
-            if (enc != encStr && enc != EncodingUtils.ascii8bitEncoding(runtime)
-                    // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
-                    && encStr != ASCIIEncoding.INSTANCE) {
-                str = EncodingUtils.strConvEnc(context, str, encStr, enc);
+            final Encoding enc2 = str.getEncoding();
+            if (enc != enc2 && enc != EncodingUtils.ascii8bitEncoding(runtime)) {
+                RubyString converted = EncodingUtils.strConvEnc(context, str, enc2, enc);
+                if (converted == str && enc2 != ASCIIEncoding.INSTANCE && enc2 != USASCIIEncoding.INSTANCE) {
+                    ptr.string.checkEncoding(str);
+                }
+                str = converted;
             }
             final ByteList strByteList = str.getByteList();
             len = str.size();
@@ -1197,7 +1319,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 ptr.pos = olen;
             }
             if (ptr.pos == olen) {
-                if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
+                if (enc == EncodingUtils.ascii8bitEncoding(runtime) || enc2 == EncodingUtils.ascii8bitEncoding(runtime)) {
                     EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
                 } else {
                     ptr.string.cat19(str);
@@ -1274,12 +1396,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             final byte[] stringBytes = string.getUnsafeBytes();
             int begin = string.getBegin();
             for (; ; ) {
-                if (ptr.pos >= ptr.string.size()) return this;
+                if (!stringIOToRead()) return this;
 
                 int c = StringSupport.codePoint(runtime, enc, stringBytes, begin + ptr.pos, stringBytes.length);
                 int n = StringSupport.codeLength(enc, c);
-                block.yield(context, runtime.newFixnum(c));
                 ptr.pos += n;
+                block.yield(context, runtime.newFixnum(c));
             }
         }
     }
@@ -1292,6 +1414,17 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (!block.isGiven()) return enumeratorize(runtime, this, "each_codepoint");
 
         return each_codepoint(context, block);
+    }
+
+    @JRubyMethod(name = "set_encoding_by_bom")
+    public IRubyObject set_encoding_by_bom(ThreadContext context) {
+        checkReadable();
+
+        StringIOData ptr = this.ptr;
+
+        if (ptr.setEncodingByBOM() == null) return context.nil;
+
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.enc);
     }
 
     public static class GenericReadable {
@@ -1502,6 +1635,34 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private void checkOpen() {
         if (closed()) {
             throw getRuntime().newIOError(RubyIO.CLOSED_STREAM_MSG);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return initialize(context);
+            case 1:
+                return initialize(context, args[0]);
+            case 2:
+                return initialize(context, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 2);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return reopen(context);
+            case 1:
+                return reopen(context, args[0]);
+            case 2:
+                return reopen(context, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 2);
         }
     }
 }
