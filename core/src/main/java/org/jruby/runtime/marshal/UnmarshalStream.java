@@ -69,8 +69,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.runtime.marshal.MarshalStream.RUBY2_KEYWORDS_FLAG;
-import static org.jruby.runtime.marshal.MarshalStream.SYMBOL_ENCODING_SPECIAL;
+import static org.jruby.runtime.marshal.MarshalCommon.*;
 import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -80,31 +79,6 @@ import static org.jruby.util.RubyStringBuilder.str;
  * @author Anders
  */
 public class UnmarshalStream extends InputStream {
-    private static final char TYPE_NIL = '0';
-    private static final char TYPE_TRUE = 'T';
-    private static final char TYPE_FALSE = 'F';
-    private static final char TYPE_FIXNUM = 'i';
-    private static final char TYPE_EXTENDED	= 'e';
-    private static final char TYPE_UCLASS = 'C';
-    private static final char TYPE_OBJECT = 'o';
-    private static final char TYPE_DATA = 'd';
-    private static final char TYPE_USERDEF = 'u';
-    private static final char TYPE_USRMARSHAL = 'U';
-    private static final char TYPE_FLOAT = 'f';
-    private static final char TYPE_BIGNUM = 'l';
-    private static final char TYPE_STRING = '"';
-    private static final char TYPE_REGEXP = '/';
-    private static final char TYPE_ARRAY = '[';
-    private static final char TYPE_HASH = '{';
-    private static final char TYPE_HASH_DEF = '}';
-    private static final char TYPE_STRUCT = 'S';
-    private static final char TYPE_MODULE_OLD = 'M';
-    private static final char TYPE_CLASS = 'c';
-    private static final char TYPE_MODULE = 'm';
-    private static final char TYPE_SYMBOL = ':';
-    private static final char TYPE_SYMLINK = ';';
-    private static final char TYPE_IVAR	= 'I';
-    private static final char TYPE_LINK	= '@';
 
     protected final Ruby runtime;
     private final UnmarshalCache cache;
