@@ -859,7 +859,7 @@ public class RubyStruct extends RubyObject {
     public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         final Ruby runtime = input.getRuntime();
 
-        RubySymbol className = (RubySymbol) input.unmarshalObject(false);
+        RubySymbol className = input.unique();
         RubyClass rbClass = pathToClass(runtime, className.asJavaString());
         if (rbClass == null) {
             throw runtime.newNameError(UNINITIALIZED_CONSTANT, runtime.getStructClass(), className);
@@ -874,10 +874,10 @@ public class RubyStruct extends RubyObject {
         final RubyStruct result = (RubyStruct) input.entry(new RubyStruct(runtime, rbClass));
 
         for (int i = 0; i < len; i++) {
-            IRubyObject slot = input.unmarshalObject(false);
-            final IRubyObject elem = member.eltInternal(i); // RubySymbol
-            if ( ! elem.toString().equals( slot.toString() ) ) {
-                throw runtime.newTypeError("struct " + rbClass.getName() + " not compatible (:" + slot + " for :" + elem + ")");
+            RubySymbol slot = input.symbol();
+            RubySymbol elem = (RubySymbol) member.eltInternal(i);
+            if (!elem.equals(slot)) {
+                throw runtime.newTypeError(str(runtime, "struct ", rbClass, " not compatible (:", slot, " for :", elem, ")"));
             }
             result.aset(i, input.unmarshalObject());
         }
