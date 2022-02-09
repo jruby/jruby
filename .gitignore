@@ -79,6 +79,7 @@ lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/getoptlong*
 lib/ruby/stdlib/hoe*
 lib/ruby/stdlib/io/console*
+lib/ruby/stdlib/io/wait*
 lib/ruby/stdlib/ipaddr*
 lib/ruby/stdlib/irb*
 lib/ruby/stdlib/jar*
