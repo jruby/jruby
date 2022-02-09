@@ -117,14 +117,14 @@ public class RubyMarshal {
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         IRubyObject in = args[0];
-        boolean frozen = false;
+        boolean freeze = false;
         IRubyObject proc = null;
 
         if (args.length > 1) {
             RubyHash kwargs = ArgsUtil.extractKeywords(args[args.length - 1]);
             if (kwargs != null) {
                 IRubyObject[] options = ArgsUtil.extractKeywordArgs(context, kwargs, "freeze");
-                frozen = options[0] != null ? options[0].isTrue(): false;
+                freeze = options[0] != null ? options[0].isTrue(): false;
                 if (args.length > 2) proc = args[1];
             } else {
                 proc = args[1];
@@ -144,7 +144,7 @@ public class RubyMarshal {
                 throw runtime.newTypeError("instance of IO needed");
             }
 
-            return new UnmarshalStream(runtime, rawInput, frozen, proc).unmarshalObject();
+            return new UnmarshalStream(runtime, rawInput, freeze, proc).unmarshalObject();
         } catch (EOFException e) {
             if (str != context.nil) throw runtime.newArgumentError("marshal data too short");
 
