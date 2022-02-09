@@ -1952,6 +1952,15 @@ public class RubyTime extends RubyObject {
         return OffsetDateTime.of(toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
     }
 
+    /**
+     * Used from Ruby to convert a numeric seconds to a double
+     * @param sec
+     * @return
+     */
+    public static double convertTimeInterval(IRubyObject sec) {
+        return convertTimeInterval(sec.getRuntime().getCurrentContext(), sec);
+    }
+
     // MRI: time.c ~ rb_time_interval 1.9 ... invokes time_timespec(VALUE num, TRUE)
     public static double convertTimeInterval(ThreadContext context, IRubyObject sec) {
         double seconds;
