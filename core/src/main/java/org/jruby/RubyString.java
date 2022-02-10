@@ -6292,10 +6292,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public RubySymbol intern() {
         final Ruby runtime = getRuntime();
 
-        if (scanForCodeRange() == CR_BROKEN) {
-            throw runtime.newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
-        }
-
         RubySymbol symbol = runtime.getSymbolTable().getSymbol(value);
         if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
         return symbol;
