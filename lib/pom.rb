@@ -61,10 +61,8 @@ default_gems = [
     ['json', '2.6.1'],
     ['logger', '1.5.0'],
     ['mutex_m', '0.1.1'],
-    # Depends on io-wait via net-protocol
-    # ['net-http', '0.2.0'],
-    # Depends on io-wait, https://github.com/ruby/io-wait/pull/2
-    # ['net-protocol', '0.1.1'],
+    ['net-http', '0.2.0'],
+    ['net-protocol', '0.1.1'],
     # Partial implementation in JRuby, unsure whether this is important
     # ['nkf', '0.1.1'],
     ['observer', '0.1.1'],
@@ -132,15 +130,11 @@ bundled_gems = [
     # ['debug', '1.4.0'],
     ['matrix', '0.4.2'],
     ['minitest', '5.15.0'],
-    # Depends on io-wait via net-protocol
-    # ['net-ftp', '0.1.3'],
-    # Depends on io-wait via net-protocol
+    ['net-ftp', '0.1.3'],
+    # Depends on strscan
     # ['net-imap', '0.2.2'],
-    # Depends on io-wait via net-protocol
-    # ['net-pop', '0.1.1'],
-    # Depends on io-wait via net-protocol
-    # ['net-smtp', '0.3.1'],
-    # Depends on io-wait via net-protocol
+    ['net-pop', '0.1.1'],
+    ['net-smtp', '0.3.1'],
     ['prime', '0.1.2'],
     ['power_assert', '2.0.1'],
     ['rake', '${rake.version}'],
