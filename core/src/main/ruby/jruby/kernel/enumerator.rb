@@ -431,6 +431,13 @@ class Enumerator
       Enumerator.send :__from, self, :each, [], self.size
     end
 
+    def compact
+      Lazy.new(self) do |yielder, *values|
+        values = values.first unless values.size > 1
+        yielder.yield(values) unless values.nil?
+      end.__set_inspect :compact
+    end
+
     protected
     def __set_inspect(method, args = nil, receiver = nil)
       @method = method
