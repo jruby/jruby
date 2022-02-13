@@ -32,6 +32,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites.FiberSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -190,5 +191,27 @@ public class RubyChain extends RubyObject {
         copy.pos = this.pos;
 
         return copy;
+    }
+
+    @JRubyMethod(name = "with_index")
+    public IRubyObject with_index(ThreadContext context, final Block block) {
+        return with_index(context, context.nil, block);
+    }
+
+    @JRubyMethod(name = "with_index")
+    public IRubyObject with_index(ThreadContext context, IRubyObject arg, final Block block) {
+        final Ruby runtime = context.runtime;
+        final int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
+        if ( ! block.isGiven() ) {
+            return arg.isNil() ?
+                enumeratorizeWithSize(context, this, "with_index", RubyChain::size) :
+                    enumeratorizeWithSize(context, this, "with_index", new IRubyObject[]{runtime.newFixnum(index)}, RubyChain::size);
+        }
+
+        return RubyEnumerable.callEach(context, fiberSites(context).each, this, new RubyEnumerable.EachWithIndex(block, index));
+    }
+
+    private static FiberSites fiberSites(ThreadContext context) {
+        return context.sites.Fiber;
     }
 }
