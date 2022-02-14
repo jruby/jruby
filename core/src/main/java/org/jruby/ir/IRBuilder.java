@@ -3135,8 +3135,7 @@ public class IRBuilder {
         }
 
         // must be built every time
-        return addResultInstr(new BuildRangeInstr(createTemporaryVariable(), build(dotNode.getBeginNode()),
-                build(dotNode.getEndNode()), dotNode.isExclusive()));
+        return addResultInstr(new BuildRangeInstr(createTemporaryVariable(), begin, end, dotNode.isExclusive()));
     }
 
     private int dynamicPiece(Operand[] pieces, int i, Node pieceNode) {
