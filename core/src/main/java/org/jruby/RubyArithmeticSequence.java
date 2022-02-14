@@ -611,7 +611,7 @@ public class RubyArithmeticSequence extends RubyObject {
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
 
         return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :
-                enumeratorize(context.runtime, this, "each_slice", arg);
+                enumeratorizeWithSize(context, this, "each_slice", new IRubyObject[]{arg}, RubyArithmeticSequence::size);
     }
 
     @JRubyMethod(required = 1)
