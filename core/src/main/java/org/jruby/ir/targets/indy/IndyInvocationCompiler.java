@@ -164,6 +164,14 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         }
     }
 
+    public void invokeModuleSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
+        if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
+            throw new NotCompilableException("call to unresolved super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+
+        String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
+        compiler.adapter.invokedynamic("invokeModuleSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, compiler.getLastLine());
+    }
+
     public void invokeUnresolvedSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to unresolved super has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");

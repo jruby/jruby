@@ -4083,6 +4083,8 @@ public class IRBuilder {
             } else {
                 superInstr = new ClassSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             }
+        } else if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRModuleBody) {
+            superInstr = new ModuleSuperInstr(scope, ret, getName(), buildSelf(), args, block, scope.maybeUsingRefinements());
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
             // This is because the super can be part of a block that will be used by 'define_method' to define
