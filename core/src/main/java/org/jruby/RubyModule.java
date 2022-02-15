@@ -3647,9 +3647,8 @@ public class RubyModule extends RubyObject {
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
-        RubyModule result = UnmarshalStream.getModuleFromPath(input.getRuntime(), name);
-        input.registerLinkTarget(result);
-        return result;
+
+        return UnmarshalStream.getModuleFromPath(input.getRuntime(), name);
     }
 
     /* Module class methods */

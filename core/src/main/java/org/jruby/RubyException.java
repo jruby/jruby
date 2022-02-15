@@ -177,14 +177,10 @@ public class RubyException extends RubyObject {
         }
 
         @Override
-        public RubyException unmarshalFrom(Ruby runtime, RubyClass type,
-                                           UnmarshalStream unmarshalStream) throws IOException {
-            RubyException exc = (RubyException) type.allocate();
+        public RubyException unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            RubyException exc = (RubyException) input.entry(type.allocate());
 
-            unmarshalStream.registerLinkTarget(exc);
-            // FIXME: Can't just pull these off the wire directly? Or maybe we should
-            // just use real vars all the time for these?
-            unmarshalStream.defaultVariablesUnmarshal(exc);
+            input.ivar(null, exc, null);
 
             exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
             exc.set_backtrace((IRubyObject) exc.removeInternalVariable("bt"));

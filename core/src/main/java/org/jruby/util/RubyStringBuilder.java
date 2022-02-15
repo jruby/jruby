@@ -229,6 +229,19 @@ public class RubyStringBuilder {
         return buf.toString();
     }
 
+    public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2,
+                             String messageMiddle2, IRubyObject value3, String messageEnd) {
+        RubyString buf = runtime.newString(messageBegin);
+
+        buf.cat19(value.asString());
+        cat(runtime, buf, messageMiddle);
+        buf.cat19(value2.asString());
+        cat(runtime, buf, messageMiddle2);
+        buf.cat19(value3.asString());
+        cat(runtime, buf, messageEnd);
+
+        return buf.toString();
+    }
 
     public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, RubyString value2,
                               String messageMiddle2, IRubyObject value3, String messageMiddle3, RubyString value4, String messageEnd) {

@@ -244,4 +244,15 @@ public final class ArgsUtil {
         return extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
+    public static RubyHash extractKeywords(IRubyObject possiblyKeywordArg) {
+        if (possiblyKeywordArg instanceof RubyHash) {
+            RubyHash maybeKwarg = (RubyHash) possiblyKeywordArg;
+            if (maybeKwarg.isKeywordArguments()) {
+                maybeKwarg.setKeywordArguments(false);
+                return maybeKwarg;
+            }
+        }
+
+        return null;
+    }
 }

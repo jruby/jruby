@@ -1252,29 +1252,23 @@ public class RubyClass extends RubyModule {
 
     public static RubyClass unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
-        RubyClass result = UnmarshalStream.getClassFromPath(input.getRuntime(), name);
-        input.registerLinkTarget(result);
-        return result;
+        return UnmarshalStream.getClassFromPath(input.getRuntime(), name);
     }
 
     protected static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
         @Override
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
-                              MarshalStream marshalStream) throws IOException {
-            IRubyObject object = (IRubyObject)obj;
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException {
+            IRubyObject object = (IRubyObject) obj;
 
             marshalStream.registerLinkTarget(object);
             marshalStream.dumpVariables(object.getVariableList());
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
-            IRubyObject result = type.allocate();
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            IRubyObject result = input.entry(type.allocate());
 
-            unmarshalStream.registerLinkTarget(result);
-
-            unmarshalStream.defaultVariablesUnmarshal(result);
+            input.ivar(null, result, null);
 
             return result;
         }
