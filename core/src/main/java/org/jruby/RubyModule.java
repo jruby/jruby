@@ -4783,11 +4783,13 @@ public class RubyModule extends RubyObject {
             boolean notAutoload = oldValue != UNDEF;
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
-                    if (this.equals(getRuntime().getObject())) {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
-                    } else {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
-                    }
+                    //if(!value.isNil()) {
+                        if (this.equals(getRuntime().getObject())) {
+                            getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                        } else {
+                            getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
+                        }
+                    //}
                 }
 
                 storeConstant(name, value, hidden, file, line);
