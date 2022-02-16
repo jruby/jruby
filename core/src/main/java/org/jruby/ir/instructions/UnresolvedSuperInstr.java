@@ -26,34 +26,38 @@ import java.util.EnumSet;
 
 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
 
-public class UnresolvedSuperInstr extends CallInstr {
+public class UnresolvedSuperInstr extends SuperInstr {
+    // Used for rewriting to more specific super instructions in define_method
+    private final Variable definingModule;
     private final boolean isLiteralBlock;
 
     private static final ByteList DYNAMIC_SUPER_TARGET =
             new ByteList("-dynamic-super_target-".getBytes(), USASCIIEncoding.INSTANCE, false);
 
     // clone constructor
-    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args,
+    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Variable definingModule, Operand receiver, Operand[] args,
                                 Operand closure, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
-                receiver, args, closure, isPotentiallyRefined, callSite, callSiteId);
+        super(scope, op, result, receiver, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
+                args, closure, isPotentiallyRefined, callSite, callSiteId);
 
+        this.definingModule = definingModule;
         isLiteralBlock = closure instanceof WrappedIRClosure;
     }
 
     // normal constructor
-    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args, Operand closure,
+    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Variable definingModule, Operand receiver, Operand[] args, Operand closure,
                                 boolean isPotentiallyRefined) {
-        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
-                receiver, args, closure, isPotentiallyRefined);
+        super(scope, op, result, receiver, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
+                args, closure, isPotentiallyRefined);
 
+        this.definingModule = definingModule;
         isLiteralBlock = closure instanceof WrappedIRClosure;
     }
 
     // specific instr constructor
-    public UnresolvedSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure,
+    public UnresolvedSuperInstr(IRScope scope, Variable result, Variable definingModule, Operand receiver, Operand[] args, Operand closure,
                                 boolean isPotentiallyRefined) {
-        this(scope, Operation.UNRESOLVED_SUPER, result, receiver, args, closure, isPotentiallyRefined);
+        this(scope, Operation.UNRESOLVED_SUPER, result, definingModule, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
@@ -67,7 +71,8 @@ public class UnresolvedSuperInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new UnresolvedSuperInstr(ii.getScope(), Operation.UNRESOLVED_SUPER, ii.getRenamedVariable(getResult()),
+        return new UnresolvedSuperInstr(ii.getScope(), Operation.UNRESOLVED_SUPER,
+                ii.getRenamedVariable(getResult()), ii.getRenamedVariable(definingModule),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
                 isPotentiallyRefined(), getCallSite(), getCallSiteId());
@@ -95,7 +100,9 @@ public class UnresolvedSuperInstr extends CallInstr {
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
 
-        return new UnresolvedSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        Variable definingModule = d.decodeVariable();
+
+        return new UnresolvedSuperInstr(d.getCurrentScope(), d.decodeVariable(), definingModule, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
     /*
@@ -116,6 +123,10 @@ public class UnresolvedSuperInstr extends CallInstr {
         } else {
             return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
         }
+    }
+
+    public Variable getDefiningModule() {
+        return definingModule;
     }
 
     @Override

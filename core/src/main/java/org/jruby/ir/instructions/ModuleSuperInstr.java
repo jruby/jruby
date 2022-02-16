@@ -26,14 +26,13 @@ import java.util.EnumSet;
 
 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
 
-public class ModuleSuperInstr extends CallInstr {
+public class ModuleSuperInstr extends SuperInstr {
     private final boolean isLiteralBlock;
 
     // clone constructor
     public ModuleSuperInstr(IRScope scope, Operation op, Variable result, RubySymbol name, Operand receiver, Operand[] args,
                             Operand closure, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, op, CallType.SUPER, result, name,
-                receiver, args, closure, isPotentiallyRefined, callSite, callSiteId);
+        super(scope, op, result, receiver, name, args, closure, isPotentiallyRefined, callSite, callSiteId);
 
         isLiteralBlock = closure instanceof WrappedIRClosure;
     }
@@ -41,8 +40,7 @@ public class ModuleSuperInstr extends CallInstr {
     // normal constructor
     public ModuleSuperInstr(IRScope scope, Operation op, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                             boolean isPotentiallyRefined) {
-        super(scope, op, CallType.SUPER, result, name,
-                receiver, args, closure, isPotentiallyRefined);
+        super(scope, op, result, receiver, name, args, closure, isPotentiallyRefined);
 
         isLiteralBlock = closure instanceof WrappedIRClosure;
     }
@@ -51,6 +49,11 @@ public class ModuleSuperInstr extends CallInstr {
     public ModuleSuperInstr(IRScope scope, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                             boolean isPotentiallyRefined) {
         this(scope, Operation.MODULE_SUPER, result, name, receiver, args, closure, isPotentiallyRefined);
+    }
+
+    @Override
+    public Operand getDefiningModule() {
+        return getReceiver();
     }
 
     @Override
