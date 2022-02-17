@@ -2406,44 +2406,45 @@ public class RubyModule extends RubyObject {
             body = new MixedModeIRBlockBody(closure, body.getSignature());
             block = new Block(body, block.getBinding(), block.type);
 
+            // FIXME: We need nested closures to look for same thing.
             InterpreterContext ic = closure.prepareFullBuild();
-            for (BasicBlock bb : ic.getCFG().getBasicBlocks()) {
-                ArrayList<Instr> newList = new ArrayList<>();
-                for (Instr instr : bb.getInstrs()) {
+            for (BasicBlock bb: ic.getCFG().getBasicBlocks()) {
+                List<Instr> instrs = bb.getInstrs();
+                for (int i = 0; i < instrs.size(); i++) {
+                    Instr instr = instrs.get(i);
                     if (instr instanceof SuperInstr) {
                         SuperInstr superInstr = (SuperInstr) instr;
+                        instrs.remove(i);
 
                         if (this.isSingleton()) {
-                            instr = new ClassSuperInstr(
+                            instrs.add(i, new ClassSuperInstr(
                                     closure,
                                     superInstr.getResult(),
                                     superInstr.getDefiningModule(),
                                     name,
                                     superInstr.getCallArgs(),
                                     superInstr.getClosureArg(),
-                                    superInstr.isPotentiallyRefined());
+                                    superInstr.isPotentiallyRefined()));
                         } else if (this.isModule()) {
-                            instr = new ModuleSuperInstr(
+                            instrs.add(i, new ModuleSuperInstr(
                                     closure,
                                     superInstr.getResult(),
                                     name,
                                     superInstr.getReceiver(),
                                     superInstr.getCallArgs(),
                                     superInstr.getClosureArg(),
-                                    superInstr.isPotentiallyRefined());
+                                    superInstr.isPotentiallyRefined()));
                         } else {
-                            instr = new InstanceSuperInstr(
+                            instrs.add(i, new InstanceSuperInstr(
                                     closure,
                                     superInstr.getResult(),
                                     superInstr.getDefiningModule(),
                                     name,
                                     superInstr.getCallArgs(),
                                     superInstr.getClosureArg(),
-                                    superInstr.isPotentiallyRefined());
+                                    superInstr.isPotentiallyRefined()));
                         }
                     }
-
-                    newList.add(instr);
                 }
             }
 

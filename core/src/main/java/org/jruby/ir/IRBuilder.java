@@ -4105,7 +4105,7 @@ public class IRBuilder {
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            superInstr = new UnresolvedSuperInstr(scope, getCurrentModuleVariable(), ret, buildSelf(), args, block, scope.maybeUsingRefinements());
+            superInstr = new UnresolvedSuperInstr(scope, ret, getCurrentModuleVariable(), buildSelf(), args, block, scope.maybeUsingRefinements());
         }
 
         receiveBreakException(block, superInstr);
