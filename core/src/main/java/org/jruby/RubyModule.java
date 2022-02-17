@@ -2401,48 +2401,51 @@ public class RubyModule extends RubyObject {
             IRBlockBody body = (IRBlockBody) block.getBody();
             IRClosure closure = body.getScope();
 
-            // clone for rewriting and optimization specific to define_method
-            closure = closure.cloneForInlining(new SimpleCloneInfo(closure, false));
-            body = new MixedModeIRBlockBody(closure, body.getSignature());
-            block = new Block(body, block.getBinding(), block.type);
+            if (closure.usesSuper()) {
 
-            // FIXME: We need nested closures to look for same thing.
-            InterpreterContext ic = closure.prepareFullBuild();
-            for (BasicBlock bb: ic.getCFG().getBasicBlocks()) {
-                List<Instr> instrs = bb.getInstrs();
-                for (int i = 0; i < instrs.size(); i++) {
-                    Instr instr = instrs.get(i);
-                    if (instr instanceof SuperInstr) {
-                        SuperInstr superInstr = (SuperInstr) instr;
-                        instrs.remove(i);
+                // clone for rewriting and optimization specific to define_method
+                closure = closure.cloneForInlining(new SimpleCloneInfo(closure, false));
+                body = new MixedModeIRBlockBody(closure, body.getSignature());
+                block = new Block(body, block.getBinding(), block.type);
 
-                        if (this.isSingleton()) {
-                            instrs.add(i, new ClassSuperInstr(
-                                    closure,
-                                    superInstr.getResult(),
-                                    superInstr.getDefiningModule(),
-                                    name,
-                                    superInstr.getCallArgs(),
-                                    superInstr.getClosureArg(),
-                                    superInstr.isPotentiallyRefined()));
-                        } else if (this.isModule()) {
-                            instrs.add(i, new ModuleSuperInstr(
-                                    closure,
-                                    superInstr.getResult(),
-                                    name,
-                                    superInstr.getReceiver(),
-                                    superInstr.getCallArgs(),
-                                    superInstr.getClosureArg(),
-                                    superInstr.isPotentiallyRefined()));
-                        } else {
-                            instrs.add(i, new InstanceSuperInstr(
-                                    closure,
-                                    superInstr.getResult(),
-                                    superInstr.getDefiningModule(),
-                                    name,
-                                    superInstr.getCallArgs(),
-                                    superInstr.getClosureArg(),
-                                    superInstr.isPotentiallyRefined()));
+                // FIXME: We need nested closures to look for same thing.
+                InterpreterContext ic = closure.prepareFullBuild();
+                for (BasicBlock bb: ic.getCFG().getBasicBlocks()) {
+                    List<Instr> instrs = bb.getInstrs();
+                    for (int i = 0; i < instrs.size(); i++) {
+                        Instr instr = instrs.get(i);
+                        if (instr instanceof SuperInstr) {
+                            SuperInstr superInstr = (SuperInstr) instr;
+                            instrs.remove(i);
+
+                            if (this.isSingleton()) {
+                                instrs.add(i, new ClassSuperInstr(
+                                        closure,
+                                        superInstr.getResult(),
+                                        superInstr.getDefiningModule(),
+                                        name,
+                                        superInstr.getCallArgs(),
+                                        superInstr.getClosureArg(),
+                                        superInstr.isPotentiallyRefined()));
+                            } else if (this.isModule()) {
+                                instrs.add(i, new ModuleSuperInstr(
+                                        closure,
+                                        superInstr.getResult(),
+                                        name,
+                                        superInstr.getReceiver(),
+                                        superInstr.getCallArgs(),
+                                        superInstr.getClosureArg(),
+                                        superInstr.isPotentiallyRefined()));
+                            } else {
+                                instrs.add(i, new InstanceSuperInstr(
+                                        closure,
+                                        superInstr.getResult(),
+                                        superInstr.getDefiningModule(),
+                                        name,
+                                        superInstr.getCallArgs(),
+                                        superInstr.getClosureArg(),
+                                        superInstr.isPotentiallyRefined()));
+                            }
                         }
                     }
                 }
