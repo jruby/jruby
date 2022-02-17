@@ -4097,6 +4097,8 @@ public class IRBuilder {
                 } else {
                     superInstr = new ClassSuperInstr(scope, ret, getCurrentModuleVariable(), superName, args, block, scope.maybeUsingRefinements());
                 }
+            } else if (lexicalParent instanceof IRScriptBody) {
+                superInstr = new UnresolvedSuperInstr(scope, ret, getCurrentModuleVariable(), buildSelf(), args, block, scope.maybeUsingRefinements());
             } else {
                 superInstr = new ModuleSuperInstr(scope, ret, superName, buildSelf(), args, block, scope.maybeUsingRefinements());
             }
