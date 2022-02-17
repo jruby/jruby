@@ -323,6 +323,21 @@ public class IRClosure extends IRScope {
     private static final ByteList CLOSURE_CLONE =
             new ByteList(new byte[] {'_', 'C', 'L', 'O', 'S', 'U', 'R', 'E', '_', 'C', 'L', 'O', 'N', 'E', '_'}, false);
 
+    // FIXME: We should be cloning children scopes
+    // FIXME: IRScope should be keeping booleans
+    /**
+     * This is for cloning when you know you are still within startup interpreter
+     * @return a new copy of this scope
+     */
+    public IRClosure cloneStartup() {
+        assert this.getFullInterpreterContext() == null : "Trying to clone startup and full has already been made";
+        IRClosure clonedClosure = new IRClosure(this, this.getLexicalParent(), getLexicalParent().getNextClosureId(), getByteName());
+
+        clonedClosure.interpreterContext = new InterpreterContext(this);
+
+        return clonedClosure;
+    }
+
     public IRClosure cloneForInlining(CloneInfo ii) {
         IRClosure clonedClosure;
         IRScope lexicalParent = ii.getScope();

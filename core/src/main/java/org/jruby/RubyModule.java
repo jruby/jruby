@@ -2401,54 +2401,59 @@ public class RubyModule extends RubyObject {
             IRBlockBody body = (IRBlockBody) block.getBody();
             IRClosure closure = body.getScope();
 
-            if (closure.usesSuper()) {
+            // FIXME: This should be somewhere within IRClosure or at least within .ir package space.
+            // If we have a super containing closure but it has been built it means we have already been here.
+            if (closure.usesSuper() && closure.getFullInterpreterContext() == null) {
+                // We depend on using startup because ACP has not been called and the method rewriting opto below depends
+                // on us still having AST available which would not be the case by the time we made it to full.
+                closure = closure.cloneStartup();
 
-                // clone for rewriting and optimization specific to define_method
-                closure = closure.cloneForInlining(new SimpleCloneInfo(closure, false));
                 body = new MixedModeIRBlockBody(closure, body.getSignature());
                 block = new Block(body, block.getBinding(), block.type);
 
-                // FIXME: We need nested closures to look for same thing.
-                InterpreterContext ic = closure.prepareFullBuild();
-                for (BasicBlock bb: ic.getCFG().getBasicBlocks()) {
-                    List<Instr> instrs = bb.getInstrs();
-                    for (int i = 0; i < instrs.size(); i++) {
-                        Instr instr = instrs.get(i);
-                        if (instr instanceof SuperInstr) {
-                            SuperInstr superInstr = (SuperInstr) instr;
-                            instrs.remove(i);
+                InterpreterContext ic = closure.getInterpreterContext();
+                Instr[] list = ic.getInstructions();
 
-                            if (this.isSingleton()) {
-                                instrs.add(i, new ClassSuperInstr(
-                                        closure,
-                                        superInstr.getResult(),
-                                        superInstr.getDefiningModule(),
-                                        name,
-                                        superInstr.getCallArgs(),
-                                        superInstr.getClosureArg(),
-                                        superInstr.isPotentiallyRefined()));
-                            } else if (this.isModule()) {
-                                instrs.add(i, new ModuleSuperInstr(
-                                        closure,
-                                        superInstr.getResult(),
-                                        name,
-                                        superInstr.getReceiver(),
-                                        superInstr.getCallArgs(),
-                                        superInstr.getClosureArg(),
-                                        superInstr.isPotentiallyRefined()));
-                            } else {
-                                instrs.add(i, new InstanceSuperInstr(
-                                        closure,
-                                        superInstr.getResult(),
-                                        superInstr.getDefiningModule(),
-                                        name,
-                                        superInstr.getCallArgs(),
-                                        superInstr.getClosureArg(),
-                                        superInstr.isPotentiallyRefined()));
-                            }
+                List<Instr> instrs = new ArrayList<>(Arrays.asList(list));
+                // FIXME: We need nested closures to look for same thing.
+                for (int i = 0; i < instrs.size(); i++) {
+                    Instr instr = instrs.get(i);
+                    if (instr instanceof SuperInstr) {
+                        SuperInstr superInstr = (SuperInstr) instr;
+                        instrs.remove(i);
+
+                        if (this.isSingleton()) {
+                            instrs.add(i, new ClassSuperInstr(
+                                    closure,
+                                    superInstr.getResult(),
+                                    superInstr.getDefiningModule(),
+                                    name,
+                                    superInstr.getCallArgs(),
+                                    superInstr.getClosureArg(),
+                                    superInstr.isPotentiallyRefined()));
+                        } else if (this.isModule()) {
+                            instrs.add(i, new ModuleSuperInstr(
+                                    closure,
+                                    superInstr.getResult(),
+                                    name,
+                                    superInstr.getReceiver(),
+                                    superInstr.getCallArgs(),
+                                    superInstr.getClosureArg(),
+                                    superInstr.isPotentiallyRefined()));
+                        } else {
+                            instrs.add(i, new InstanceSuperInstr(
+                                    closure,
+                                    superInstr.getResult(),
+                                    superInstr.getDefiningModule(),
+                                    name,
+                                    superInstr.getCallArgs(),
+                                    superInstr.getClosureArg(),
+                                    superInstr.isPotentiallyRefined()));
                         }
                     }
                 }
+
+                ic.setInstructionsRaw(instrs);
             }
 
             if (runtime.getInstanceConfig().getCompileMode().shouldJIT()) { // FIXME: Once Interp and Mixed Methods are one class we can fix this to work in interp mode too.
