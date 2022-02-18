@@ -14,6 +14,102 @@ else
     exit 1
 fi
 
+# ----- Helper functions ------------------------------------------------------
+
+# esceval [ARGUMENT...]
+#
+# Escape ARGUMENT for safe use with eval
+# Returns escaped arguments via $result
+# Thanks to @mentalisttraceur for original implementation:
+# https://github.com/mentalisttraceur/esceval
+esceval()
+{
+    local escaped unescaped output
+
+    [ $# -gt 0 ] || return 0
+    while true; do
+        escaped=\'
+        unescaped=$1
+        while true; do
+            case $unescaped in
+                (*\'*)
+                    escaped="$escaped${unescaped%%\'*}'\''"
+                    unescaped=${unescaped#*\'}
+                    ;;
+                (*) break ;;
+            esac
+        done
+        escaped=$escaped$unescaped\'
+        shift
+        [ $# -gt 0 ] || break
+        output="$output $escaped"
+    done
+    result="$output $escaped"
+}
+
+# assign LISTNAME ELEMENT [ELEMENT...]
+#
+# Assign ELEMENT to the list named by LISTNAME.
+assign() {
+    local listname="$1"
+    local result
+    shift
+
+    esceval "$@"
+    eval "$listname=\"\${result}\""
+}
+
+# append LISTNAME ELEMENT [ELEMENT...]
+#
+# Append ELEMENT to the list named by LISTNAME.
+append() {
+    local listname="$1"
+    local result
+    shift
+
+    esceval "$@"
+    eval "$listname=\"\${$listname} \${result}\""
+}
+
+# prepend LISTNAME ELEMENT [ELEMENT...]
+#
+# Prepend ELEMENT to the list named by LISTNAME, preserving order.
+prepend() {
+    local listname="$1"
+    local result
+    shift
+
+    esceval "$@"
+    eval "$listname=\"\${result} \${$listname}\""
+}
+
+# map FUNCNAME LISTNAME1 LISTNAME2
+#
+# Run FUNCNAME on LISTNAME1 and the list named by LISTNAME2
+map() {
+    local funcname="$1"
+    local listname="$2"
+    # Load contents of array named by $3
+    eval eval set -- "\${$3}"
+    "$funcname" "$listname" "$@"
+}
+
+# extend LISTNAME1 LISTNAME2
+#
+# Append the elements stored in the list named by LISTNAME2
+# to the list named by LISTNAME1.
+extend() {
+    map append "$@"
+}
+
+# preextend LISTNAME1 LISTNAME2
+#
+# Prepend the elements stored in the list named by LISTNAME2
+# to the named by LISTNAME1, preserving order.
+preextend() {
+    map prepend "$@"
+}
+
 # ----- Set variable defaults -------------------------------------------------
 
 readonly java_class=org.jruby.Main
