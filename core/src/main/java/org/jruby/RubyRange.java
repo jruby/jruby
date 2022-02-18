@@ -935,6 +935,11 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, Block block) {
+        return min(context, null, block);
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
         if (begin.isNil()) {
             throw context.runtime.newRangeError("cannot get the minimum of beginless range");
         }
@@ -943,15 +948,18 @@ public class RubyRange extends RubyObject {
             if (end.isNil()) {
                 throw context.runtime.newRangeError("cannot get the minimum of endless range with custom comparison method");
             }
-            return Helpers.invokeSuper(context, this, block);
-        }
 
-        int cmp = isEndless ? -1 : RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-        if (cmp > 0 || (cmp == 0 && isExclusive)) {
-            return context.nil;
-        }
+            return arg != null ? Helpers.invokeSuper(context, this, arg, block) : Helpers.invokeSuper(context, this, block);
+        } else if (arg != null) {
+            return first(context, arg);
+        } else {
+            int cmp = isEndless ? -1 : RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+            if (cmp > 0 || (cmp == 0 && isExclusive)) {
+                return context.nil;
+            }
 
-        return begin;
+            return begin;
+        }
     }
 
     @JRubyMethod(frame = true)
@@ -992,13 +1000,6 @@ public class RubyRange extends RubyObject {
         }
 
         return end;
-    }
-
-    @JRubyMethod(frame = true)
-    public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
-        if (isEndless && block.isGiven()) throw context.runtime.newRangeError("cannot get the minimum of endless range with custom comparison method");
-        if (isEndless) return first(context, arg);
-        return Helpers.invokeSuper(context, this, arg, block);
     }
 
     @JRubyMethod(frame = true)
