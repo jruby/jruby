@@ -157,6 +157,7 @@ resolve_symlinks() {
 
 # get the absolute path of the executable
 if [ "$BASH" ]; then
+    # shellcheck disable=2128,3028
     script_src="$BASH_SOURCE"
 else
     script_src="$0"
@@ -348,8 +349,10 @@ readonly CP_DELIMITER
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
+# shellcheck disable=2086
 set -- $JRUBY_OPTS "$@"
 i=1
+# shellcheck disable=354
 [ "$BASH" ] && shopt -s expand_aliases
 # increment pointer, permute arguments
 alias cycle='i=$((i + 1)); set -- "$@" "$1"; shift'
@@ -535,6 +538,7 @@ java_args="$java_args"' -Djruby.home=$JRUBY_HOME
     -Djruby.shell=$JRUBY_SHELL
     $java_class '"$ruby_args"
 
+# shellcheck disable=2086
 jvm_command_line="$JAVACMD $JAVA_OPTS $JFFI_OPTS"
 for arg in $java_args; do
     eval "jvm_command_line=\"\$jvm_command_line $arg\""
