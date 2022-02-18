@@ -413,7 +413,7 @@ do
             ruby_args="$ruby_args -X+C"
             ;;
         --client|--server|--noclient)
-            echo "Warning: the $flag flag is deprecated and has no effect most JVMs" 1>&2
+            echo "Warning: the $1 flag is deprecated and has no effect most JVMs" 1>&2
             ;;
         --dev)
             process_java_opts "$dev_mode_opts_file"
