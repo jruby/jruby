@@ -202,7 +202,12 @@ public class ConvertBytes {
     }
 
     private static int sizeWithDecimalString(long i, boolean neg, int baseSize) {
-        int newSize = baseSize + ((int) Math.log10(i)) + 1;
+        int count = 0;
+        while (i > 9) {
+            i /= 10;
+            count++;
+        }
+        int newSize = baseSize + count + 1;
 
         if (neg) newSize++;
 
