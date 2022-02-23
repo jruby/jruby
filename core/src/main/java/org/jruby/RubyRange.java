@@ -71,6 +71,7 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -564,28 +565,7 @@ public class RubyRange extends RubyObject {
 
         if (isEndless) throw runtime.newRangeError("cannot convert endless range to an array");
 
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            long lim = ((RubyFixnum) end).getLongValue();
-            if (!isExclusive) {
-                lim++;
-            }
-
-            long base = ((RubyFixnum) begin).getLongValue();
-            long size = lim - base;
-            if (size > Integer.MAX_VALUE) {
-                throw runtime.newRangeError("Range size too large for to_a");
-            }
-            if (size < 0) {
-                return RubyArray.newEmptyArray(runtime);
-            }
-            IRubyObject[] array = new IRubyObject[(int) size];
-            for (int i = 0; i < size; i++) {
-                array[i] = RubyFixnum.newFixnum(runtime, base + i);
-            }
-            return RubyArray.newArrayMayCopy(runtime, array);
-        } else {
-            return RubyEnumerable.to_a(context, this);
-        }
+        return RubyEnumerable.to_a(context, this);
     }
 
     @Deprecated
@@ -1077,7 +1057,53 @@ public class RubyRange extends RubyObject {
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject arg) {
         if (isEndless) throw context.runtime.newRangeError("cannot get the last element of endless range");
+
+        if ((begin instanceof RubyInteger) && (end instanceof RubyInteger)
+            && this.getMetaClass().checkMethodBasicDefinition("each")) {
+                return intRangeLast(context, arg);
+        }
+
         return ((RubyArray) RubyKernel.new_array(context, this, this)).last(arg);
+    }
+
+    // MRI rb_int_range_last
+    private RubyArray intRangeLast(ThreadContext context, IRubyObject arg) {
+        IRubyObject one = RubyInteger.int2fix(context.runtime, 1);
+        IRubyObject len1, len, nv, b;
+
+        len1 = ((RubyInteger)end).op_minus(context, begin);
+
+        if (((RubyInteger)len1).isZero() || Numeric.f_negative_p(context, (RubyInteger)len1)) {
+            return RubyArray.newEmptyArray(context.runtime);
+        }
+
+        if (isExclusive) {
+            end = ((RubyInteger)end).op_minus(context, one);
+            len = len1;
+        } else {
+            len = ((RubyInteger)len1).op_plus(context, one);
+        }
+
+        long n = RubyNumeric.num2long(arg);
+        if (n < 0) {
+            throw context.runtime.newArgumentError("negative array size");
+        }
+
+        nv = RubyInteger.int2fix(context.runtime, n);
+        if (Numeric.f_gt_p(context, nv, len)) {
+             nv = len;
+             n = RubyNumeric.num2long(nv);
+        }
+
+        RubyArray array = RubyArray.newArray(context.runtime, n);
+        b = ((RubyInteger)end).op_minus(context, nv);
+        while (n > 0) {
+            b = ((RubyInteger)b).op_plus(context, one);
+            array.push(b);
+            n--;
+        }
+
+        return array;
     }
 
     @JRubyMethod
