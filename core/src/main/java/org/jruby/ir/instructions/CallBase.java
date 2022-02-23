@@ -125,6 +125,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return hasClosure ? operands[argsCount + 1] : null;
     }
 
+    public void setClosureArg(WrappedIRClosure closureArg) {
+        operands[argsCount + 1] = closureArg;
+    }
+
     public Operand getClosureArg(Operand ifUnspecified) {
         return hasClosure ? getClosureArg() : ifUnspecified;
     }
