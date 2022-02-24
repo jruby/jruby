@@ -3851,6 +3851,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EDOM"), "Domain error - " + message);
     }
 
+    public RaiseException newErrnoEDOMError() {
+        return newRaiseException(getErrno().getClass("EDOM"), "Numerical argument out of domain");
+    }
+
     public RaiseException newErrnoECHILDError() {
         return newRaiseException(getErrno().getClass("ECHILD"), "No child processes");
     }

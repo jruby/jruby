@@ -1722,7 +1722,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
     public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return RubyRandom.randKernel(context, arg);
+        return RubyRandom.randKernel(context, recv, arg);
     }
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
@@ -2460,7 +2460,7 @@ public class RubyKernel {
             case 0:
                 return RubyRandom.randFloat(context);
             case 1:
-                return RubyRandom.randKernel(context, args[0]);
+                return RubyRandom.randKernel(context, recv, args[0]);
             default:
                 throw context.runtime.newArgumentError(args.length, 0, 1);
         }

@@ -1260,6 +1260,36 @@ public class RubyRange extends RubyObject {
         return context.nil;
     }
 
+    public static class RangeLike {
+        final IRubyObject begin;
+        final IRubyObject end;
+        final boolean excl;
+
+        RangeLike(IRubyObject begin, IRubyObject end, boolean excl) {
+            this.begin = begin;
+            this.end = end;
+            this.excl = excl;
+        }
+
+        IRubyObject getRange(ThreadContext context) {
+            return Helpers.invoke(context, end, "-", begin);
+        }
+    }
+
+    // MRI: rb_range_values
+    public static RangeLike rangeValues(ThreadContext context, IRubyObject range) {
+        if (range instanceof RubyRange) {
+            RubyRange vrange = (RubyRange) range;
+            return new RangeLike(vrange.begin(context), vrange.end(context), vrange.isExcludeEnd());
+        } else if (range instanceof RubyArithmeticSequence) {
+            return null;
+        } else if (range.respondsTo("begin") && range.respondsTo("end") && range.respondsTo("exclude_end?")) {
+            return new RangeLike(Helpers.invoke(context, range, "begin"), Helpers.invoke(context, range, "end"), Helpers.invoke(context, range, "exclude_end?").isTrue());
+        }
+
+        return null;
+    }
+
     public static class BSearch {
         @JRubyMethod(meta = true)
         public static IRubyObject double_to_long_bits(ThreadContext context, IRubyObject bsearch, IRubyObject flote) {
