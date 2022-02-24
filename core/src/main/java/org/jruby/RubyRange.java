@@ -871,7 +871,6 @@ public class RubyRange extends RubyObject {
     }
 
     private static boolean discreteObject(ThreadContext context, IRubyObject obj) {
-        if (obj instanceof RubyTime) return false;
         return sites(context).respond_to_succ.respondsTo(context, obj, obj, false);
     }
 
