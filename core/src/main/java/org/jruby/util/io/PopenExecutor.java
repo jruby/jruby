@@ -886,7 +886,7 @@ public class PopenExecutor {
                     return -1;
 
                 // This always succeeds because we just defer it to posix_spawn.
-                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
+                redirectDup2(runtime, eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
                 pairs[j].oldfd = -1;
                 j = (int) pairs[j].older_index;
                 if (j != -1) pairs[j].num_newer--;
@@ -926,14 +926,14 @@ public class PopenExecutor {
             }
             else {
                 // This always succeeds because we just defer it to posix_spawn.
-                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
+                redirectDup2(runtime, eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
             }
             pairs[i].oldfd = extra_fd;
             j = pairs[i].older_index;
             pairs[i].older_index = -1;
             while (j != -1) {
                 // This always succeeds because we just defer it to posix_spawn.
-                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
+                redirectDup2(runtime, eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
                 pairs[j].oldfd = -1;
                 j = pairs[j].older_index;
             }
@@ -965,8 +965,20 @@ public class PopenExecutor {
         return ret;
     }
 
-    static void redirectDup2(ExecArg eargp, int oldfd, int newfd)
+    static int redirectClearCloexec(Ruby runtime, int oldfd)
     {
+        int flags = runtime.getPosix().fcntl(oldfd, Fcntl.F_GETFD);
+        runtime.getPosix().fcntlInt(oldfd, Fcntl.F_SETFD, flags & ~FcntlLibrary.FD_CLOEXEC);
+
+        return oldfd;
+    }
+
+    static void redirectDup2(Ruby runtime, ExecArg eargp, int oldfd, int newfd)
+    {
+        // Clear cloexec for the oldfd if it is the same as newfd (inherit, no dup2 needed)
+        if (oldfd == newfd) {
+            redirectClearCloexec(runtime, oldfd);
+        }
         eargp.fileActions.add(SpawnFileAction.dup(oldfd, newfd));
     }
 
@@ -1098,7 +1110,7 @@ public class PopenExecutor {
                 redirectOpen(eargp, fd, vpath.toString(), flags, perm);
                 param.store(3, elt.eltOk(0));
             } else {
-                redirectDup2(eargp, RubyNumeric.num2int(fd2v), fd);
+                redirectDup2(runtime, eargp, RubyNumeric.num2int(fd2v), fd);
             }
         }
     }
@@ -1112,7 +1124,7 @@ public class PopenExecutor {
             int newfd = RubyNumeric.fix2int(elt.eltOk(0));
             int oldfd = RubyNumeric.fix2int(elt.eltOk(1));
 
-            redirectDup2(eargp, oldfd, newfd);
+            redirectDup2(runtime, eargp, oldfd, newfd);
         }
     }
 
