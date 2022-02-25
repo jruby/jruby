@@ -95,8 +95,7 @@ default_gems = [
     ['resolv-replace', '0.1.0'],
     ['rinda', '0.1.1'],
     ['ruby2_keywords', '0.0.5'],
-    # https://github.com/ruby/securerandom/issues/9
-    # ['securerandom', '0.1.1'],
+    ['securerandom', '0.2.0'],
     # https://github.com/ruby/set/issues/21
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
@@ -317,7 +316,7 @@ project 'JRuby Lib Setup' do
 
           # copy in new ones and mark writable for future updates (e.g. minitest)
           stdlib_locs = Dir[ require_files ].map do |f|
-            log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
+            log " copying: #{f} to #{stdlib_dir}"# if $VERBOSE
             FileUtils.cp_r( f, stdlib_dir )
 
             stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
