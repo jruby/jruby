@@ -544,14 +544,6 @@ public class RubyTime extends RubyObject {
         return this;
     }
 
-    @JRubyMethod
-    public RubyTime succ() {
-        RubyTime time = newTime(getRuntime(), dt.plusSeconds(1));
-        time.setIsTzRelative(isTzRelative);
-        time.setZoneObject(zone);
-        return time;
-    }
-
     @JRubyMethod(name = {"gmtime", "utc", "to_time"})
     public RubyTime gmtime() {
         return adjustTimeZone(getRuntime(), DateTimeZone.UTC, false);
