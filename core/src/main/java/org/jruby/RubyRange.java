@@ -990,8 +990,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject first(ThreadContext context) {
-        if (isBeginless) throw context.runtime.newRangeError("cannot get the first element of beginless range");
-        return begin;
+        return first(context, null);
     }
 
     @JRubyMethod
@@ -1001,6 +1000,10 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject first(ThreadContext context, IRubyObject arg) {
+        if (isBeginless) throw context.runtime.newRangeError("cannot get the first element of beginless range");
+
+        if (arg == null) return begin;
+
         final Ruby runtime = context.runtime;
         final int num = RubyNumeric.num2int(arg);
         if (num < 0) {
