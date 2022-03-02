@@ -257,10 +257,7 @@ public class StringTerm extends StrTerm {
                             case 'C':
                             case 'M': {
                                 lexer.pushback(c);
-                                c = lexer.readEscape();
-
-                                ByteList escbuf = new ByteList(5);
-                                Sprintf.sprintf(lexer.getRuntime(), escbuf, "\\x%02X", c);
+                                Sprintf.sprintf(lexer.getRuntime(), buffer, "\\x%02X", lexer.readEscape());
                                 continue;
                             }
                         }
