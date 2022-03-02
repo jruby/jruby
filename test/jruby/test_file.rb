@@ -489,8 +489,8 @@ class TestFile < Test::Unit::TestCase
     assert_equal("", File.extname("."))
     assert_equal("", File.extname("/."))
     assert_equal("", File.extname(".."))
-    assert_equal("", File.extname(".foo."))
-    assert_equal("", File.extname("foo."))
+    assert_equal(".", File.extname(".foo."))
+    assert_equal(".", File.extname("foo."))
   end
 
   def test_fnmatch
