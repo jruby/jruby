@@ -1,0 +1,1 @@
+wip:String#valid_encoding? returns true for IBM720 encoding self is valid in

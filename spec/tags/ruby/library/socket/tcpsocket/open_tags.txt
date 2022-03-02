@@ -1,0 +1,2 @@
+wip:TCPSocket.open raises Errno::ETIMEDOUT with :connect_timeout when no server is listening on the given address
+wip:TCPSocket.open with a running server connects to a server when passed connect_timeout argument

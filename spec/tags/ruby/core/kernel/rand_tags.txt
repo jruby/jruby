@@ -1,1 +1,2 @@
 fails:Kernel.rand returns nil when range is backwards
+wip:Kernel#rand returns nil when range is backwards

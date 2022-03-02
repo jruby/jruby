@@ -1,0 +1,2 @@
+wip:IO#nonblock? returns true for pipe by default
+wip:IO#nonblock? returns true for socket by default

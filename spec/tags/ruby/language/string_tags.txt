@@ -1,0 +1,1 @@
+wip:Ruby String interpolation creates a non-frozen String when # frozen-string-literal: true is used
