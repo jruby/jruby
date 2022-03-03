@@ -113,7 +113,7 @@ preextend() {
 # ----- Set variable defaults -------------------------------------------------
 
 readonly java_class=org.jruby.Main
-readonly JRUBY_SHELL=/bin/sh
+JRUBY_SHELL=/bin/sh
 
 # Detect cygwin and mingw environments
 cygwin=false
