@@ -90,7 +90,7 @@ map() {
     local funcname="$1"
     local listname="$2"
     # Load contents of array named by $3
-    eval eval set -- "\${$3}"
+    eval eval set -- "\"\${$3}\""
     "$funcname" "$listname" "$@"
 }
 
