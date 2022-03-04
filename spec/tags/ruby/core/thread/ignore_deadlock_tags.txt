@@ -1,0 +1,2 @@
+wip:Thread.ignore_deadlock returns false by default
+wip:Thread.ignore_deadlock= changes the value of Thread.ignore_deadlock

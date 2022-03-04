@@ -1,0 +1,1 @@
+wip:Range#each supports Time objects that respond to #succ

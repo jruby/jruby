@@ -1,0 +1,2 @@
+wip:Accessing a class variable raises a RuntimeError when accessed from the toplevel scope (not in some module or class)
+wip:Accessing a class variable raises a RuntimeError when a class variable is overtaken in an ancestor class

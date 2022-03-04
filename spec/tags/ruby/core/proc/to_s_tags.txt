@@ -4,3 +4,4 @@ fails:Proc#to_s for a proc created with lambda has a binary encoding
 fails:Proc#to_s for a proc created with proc has a binary encoding
 fails:Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding
 fails:Proc#to_s for a proc created with Symbol#to_proc has a binary encoding
+wip:Proc#to_s for a proc created with proc returns a description including file and line number

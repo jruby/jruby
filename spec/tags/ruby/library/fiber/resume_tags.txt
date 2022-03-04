@@ -1,0 +1,2 @@
+wip:Fiber#resume can work with Fiber#transfer
+wip:Fiber#resume raises a FiberError if the Fiber attempts to resume a resuming fiber
