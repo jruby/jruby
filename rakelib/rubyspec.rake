@@ -52,7 +52,7 @@ namespace :spec do
           :jruby_opts => "--debug"
   end
 
-  desc "Run specs for work-in-prorgess features"
+  desc "Run specs for work-in-progess features"
   task :'ruby:wip' do
     mspec :command => "run",
           :compile_mode => "OFF",
