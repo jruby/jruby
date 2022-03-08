@@ -107,6 +107,10 @@ public class RubyParserBase {
     private Node numParamInner = null;
     private Node numParamOuter = null;
 
+    public RubyParserBase(IRubyWarnings warnings) {
+        this.warnings = warnings;
+    }
+
     public void reset() {
         lexer.getLexContext().reset();
     }
@@ -1290,11 +1294,6 @@ public class RubyParserBase {
      */
     public void setConfiguration(ParserConfiguration configuration) {
         this.configuration = configuration;
-    }
-
-    public void setWarnings(IRubyWarnings warnings) {
-        this.warnings = warnings;
-        lexer.setWarnings(warnings);
     }
 
     public void setLexer(RubyLexer lexer) {

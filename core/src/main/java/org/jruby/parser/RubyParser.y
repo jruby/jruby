@@ -162,9 +162,8 @@ import static org.jruby.parser.RubyParserBase.node_assign;
  
 public class RubyParser extends RubyParserBase {
     public RubyParser(LexerSource source, IRubyWarnings warnings) {
-        super();
+        super(warnings);
         setLexer(new RubyLexer(this, source, warnings));
-        setWarnings(warnings);
     }
 %}
 
@@ -421,27 +420,27 @@ public class RubyParser extends RubyParserBase {
 %%
 program       : {
                   lexer.setState(EXPR_BEG);
-                  support.initTopLocalVariables();
+                  p.initTopLocalVariables();
               } top_compstmt {
                   /*%%%*/
                   Node expr = $2;
-                  if (expr != null && !support.getConfiguration().isEvalParse()) {
+                  if (expr != null && !p.getConfiguration().isEvalParse()) {
                       /* last expression should not be void */
                       if ($2 instanceof BlockNode) {
                         expr = $<BlockNode>2.getLast();
                       } else {
                         expr = $2;
                       }
-                      expr = support.remove_begin(expr);
-                      support.void_expr(expr);
+                      expr = p.remove_begin(expr);
+                      p.void_expr(expr);
                   }
-                  support.getResult().setAST(support.addRootNode($2));
+                  p.getResult().setAST(p.addRootNode($2));
                   /*% %*/
                   /*% ripper[final]: program!($2) %*/
               }
 
 top_compstmt  : top_stmts opt_terms {
-                  $$ = support.void_stmts($1);
+                  $$ = p.void_stmts($1);
               }
 
 top_stmts     : none {
@@ -452,18 +451,18 @@ top_stmts     : none {
               }
               | top_stmt {
                   /*%%%*/
-                  $$ = support.newline_node($1, support.getPosition($1));
+                  $$ = p.newline_node($1, p.getPosition($1));
                   /*% %*/
                   /*% ripper: stmts_add!(stmts_new!, $1) %*/
               }
               | top_stmts terms top_stmt {
                   /*%%%*/
-                  $$ = support.appendToBlock($1, support.newline_node($3, support.getPosition($3)));
+                  $$ = p.appendToBlock($1, p.newline_node($3, p.getPosition($3)));
                   /*% %*/
                   /*% ripper: stmts_add!($1, $3) %*/
               }
               | error top_stmt {
-                  $$ = support.remove_begin($2);
+                  $$ = p.remove_begin($2);
               }
 
 top_stmt      : stmt
@@ -473,30 +472,30 @@ top_stmt      : stmt
 
 begin_block   : '{' top_compstmt '}' {
                   /*%%%*/
-                  support.getResult().addBeginNode(new PreExe19Node(@1.start(), support.getCurrentScope(), $2, lexer.getRubySourceline()));
-                  //                  $$ = new BeginNode(@1.start(), support.makeNullNil($2));
+                  p.getResult().addBeginNode(new PreExe19Node(@1.start(), p.getCurrentScope(), $2, lexer.getRubySourceline()));
+                  //                  $$ = new BeginNode(@1.start(), p.makeNullNil($2));
                   $$ = null;
                   /*% %*/
                   /*% ripper: BEGIN!($2) %*/
               }
 
 bodystmt      : compstmt opt_rescue k_else {
-                   if ($2 == null) support.yyerror("else without rescue is useless"); 
+                   if ($2 == null) p.yyerror("else without rescue is useless"); 
               } compstmt opt_ensure {
                   /*%%%*/
-                   $$ = support.new_bodystmt($1, $2, $5, $6);
+                   $$ = p.new_bodystmt($1, $2, $5, $6);
                   /*% %*/
                   /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($2), escape_Qundef($5), escape_Qundef($6)) %*/
               }
               | compstmt opt_rescue opt_ensure {
                   /*%%%*/
-                   $$ = support.new_bodystmt($1, $2, null, $3);
+                   $$ = p.new_bodystmt($1, $2, null, $3);
                   /*% %*/
                   /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($2), Qnil, escape_Qundef($3)) %*/
               }
 
 compstmt        : stmts opt_terms {
-                    $$ = support.void_stmts($1);
+                    $$ = p.void_stmts($1);
                 }
 
 stmts           : none {
@@ -507,13 +506,13 @@ stmts           : none {
                 }
                 | stmt_or_begin {
                    /*%%%*/
-                    $$ = support.newline_node($1, support.getPosition($1));
+                    $$ = p.newline_node($1, p.getPosition($1));
                    /*% %*/
                    /*% ripper: stmts_add!(stmts_new!, $1) %*/
                 }
                 | stmts terms stmt_or_begin {
                    /*%%%*/
-                    $$ = support.appendToBlock($1, support.newline_node($3, support.getPosition($3)));
+                    $$ = p.appendToBlock($1, p.newline_node($3, p.getPosition($3)));
                    /*% %*/
                    /*% ripper: stmts_add!($1, $3) %*/
                 }
@@ -525,7 +524,7 @@ stmt_or_begin   : stmt {
                     $$ = $1;
                 }
                 | keyword_BEGIN {
-                   support.yyerror("BEGIN is permitted only at toplevel");
+                   p.yyerror("BEGIN is permitted only at toplevel");
                 } begin_block {
                    $$ = $3;
                 }
@@ -540,19 +539,19 @@ stmt            : keyword_alias fitem {
                 }
                 | keyword_alias tGVAR tGVAR {
                     /*%%%*/
-                    $$ = new VAliasNode($1, support.symbolID($2), support.symbolID($3));
+                    $$ = new VAliasNode($1, p.symbolID($2), p.symbolID($3));
                     /*% %*/
                     /*% ripper: var_alias!($2, $3) %*/
                 }
                 | keyword_alias tGVAR tBACK_REF {
                     /*%%%*/
-                    $$ = new VAliasNode($1, support.symbolID($2), support.symbolID($<BackRefNode>3.getByteName()));
+                    $$ = new VAliasNode($1, p.symbolID($2), p.symbolID($<BackRefNode>3.getByteName()));
                     /*% %*/
                     /*% ripper: var_alias!($2, $3) %*/
                 }
                 | keyword_alias tGVAR tNTH_REF {
                     /*%%%*/
-                    support.yyerror("can't make alias for the number variables");
+                    p.yyerror("can't make alias for the number variables");
                     /*% %*/
                     /*% ripper[error]: alias_error!(ERR_MESG(), $3) %*/
                 }
@@ -564,24 +563,24 @@ stmt            : keyword_alias fitem {
                 }
                 | stmt modifier_if expr_value {
                     /*%%%*/
-                    $$ = support.new_if(support.getPosition($1), support.cond($3), support.remove_begin($1), null);
-                    support.fixpos($<Node>$, $3);
+                    $$ = p.new_if(p.getPosition($1), p.cond($3), p.remove_begin($1), null);
+                    p.fixpos($<Node>$, $3);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
                 }
                 | stmt modifier_unless expr_value {
                     /*%%%*/
-                    $$ = support.new_if(support.getPosition($1), support.cond($3), null, support.remove_begin($1));
-                    support.fixpos($<Node>$, $3);
+                    $$ = p.new_if(p.getPosition($1), p.cond($3), null, p.remove_begin($1));
+                    p.fixpos($<Node>$, $3);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
                 }
                 | stmt modifier_while expr_value {
                     /*%%%*/
                     if ($1 != null && $1 instanceof BeginNode) {
-                        $$ = new WhileNode(support.getPosition($1), support.cond($3), $<BeginNode>1.getBodyNode(), false);
+                        $$ = new WhileNode(p.getPosition($1), p.cond($3), $<BeginNode>1.getBodyNode(), false);
                     } else {
-                        $$ = new WhileNode(support.getPosition($1), support.cond($3), $1, true);
+                        $$ = new WhileNode(p.getPosition($1), p.cond($3), $1, true);
                     }
                     /*% %*/
                     /*% ripper: while_mod!($3, $1) %*/
@@ -589,22 +588,22 @@ stmt            : keyword_alias fitem {
                 | stmt modifier_until expr_value {
                     /*%%%*/
                     if ($1 != null && $1 instanceof BeginNode) {
-                        $$ = new UntilNode(support.getPosition($1), support.cond($3), $<BeginNode>1.getBodyNode(), false);
+                        $$ = new UntilNode(p.getPosition($1), p.cond($3), $<BeginNode>1.getBodyNode(), false);
                     } else {
-                        $$ = new UntilNode(support.getPosition($1), support.cond($3), $1, true);
+                        $$ = new UntilNode(p.getPosition($1), p.cond($3), $1, true);
                     }
                     /*% %*/
                     /*% ripper: until_mod!($3, $1) %*/
                 }
                 | stmt modifier_rescue stmt {
                     /*%%%*/
-                    $$ = support.newRescueModNode($1, $3);
+                    $$ = p.newRescueModNode($1, $3);
                     /*% %*/
                     /*% ripper: rescue_mod!($1, $3) %*/
                 }
                 | keyword_END '{' compstmt '}' {
                    if (lexer.getLexContext().in_def) {
-                       support.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
+                       p.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
                     }
                     /*%%%*/
                     $$ = new PostExeNode($1, $3, lexer.getRubySourceline());
@@ -620,14 +619,14 @@ stmt            : keyword_alias fitem {
                 }
                 | lhs '=' lex_ctxt mrhs {
                     /*%%%*/
-                    support.value_expr(lexer, $4);
+                    p.value_expr(lexer, $4);
                     $$ = node_assign($1, $4);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 }
                 | mlhs '=' lex_ctxt mrhs_arg modifier_rescue stmt {
                     /*%%%*/
-                    $$ = node_assign($1, support.newRescueModNode($4, $6));
+                    $$ = node_assign($1, p.newRescueModNode($4, $6));
                     /*% %*/
                     /*% ripper: massign!($1, rescue_mod!($4, $6)) %*/
                 }
@@ -641,115 +640,115 @@ stmt            : keyword_alias fitem {
 
 command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $4);
+                    p.value_expr(lexer, $4);
                     $$ = node_assign($1, $4);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 }
                 | var_lhs tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $4);
-                    $$ = support.new_op_assign($1, $2, $4);
+                    p.value_expr(lexer, $4);
+                    $$ = p.new_op_assign($1, $2, $4);
                     /*% %*/
                     /*% ripper: opassign!($1, $2, $4) %*/
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $7);
-                    $$ = support.new_ary_op_assign($1, $5, $3, $7);
+                    p.value_expr(lexer, $7);
+                    $$ = p.new_ary_op_assign($1, $5, $3, $7);
                     /*% %*/
                     /*% ripper: opassign!(aref_field!($1, escape_Qundef($3)), $5, $7) %*/
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $6);
-                    $$ = support.new_attr_op_assign($1, $2, $6, $3, $4);
+                    p.value_expr(lexer, $6);
+                    $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $6);
-                    $$ = support.new_attr_op_assign($1, $2, $6, $3, $4);
+                    p.value_expr(lexer, $6);
+                    $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
                     int line = $1.getLine();
-                    $$ = support.new_const_op_assign(line, support.new_colon2(line, $1, $3), $4, $6);
+                    $$ = p.new_const_op_assign(line, p.new_colon2(line, $1, $3), $4, $6);
                     /*% %*/
                     /*% ripper: opassign!(const_path_field!($1, $3), $4, $6) %*/
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $6);
-                    $$ = support.new_attr_op_assign($1, $2, $6, $3, $4);
+                    p.value_expr(lexer, $6);
+                    $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, ID2VAL(idCOLON2), $3), $4, $6) %*/
                 }
  		| defn_head f_opt_paren_args '=' command {
-                    support.endless_method_name($1);
-                    support.restore_defun($1);
+                    p.endless_method_name($1);
+                    p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end());
+                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     /*% %*/
                     /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
                     /*% ripper: def!(get_value($1), $2, $4) %*/
-                    support.popCurrentScope();
+                    p.popCurrentScope();
                 }
                 | defn_head f_opt_paren_args '=' command modifier_rescue arg {
-                    support.endless_method_name($1);
-                    support.restore_defun($1);
+                    p.endless_method_name($1);
+                    p.restore_defun($1);
                     /*%%%*/
-                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.start(), $4, $6)));
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @6.end());
+                    Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
+                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     /*% %*/
                     /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
                     /*% ripper: def!(get_value($1), $2, $4) %*/
 
-                    support.popCurrentScope();
+                    p.popCurrentScope();
                 }
                 | defs_head f_opt_paren_args '=' command {
-                    support.endless_method_name($1);
-                    support.restore_defun($1);
+                    p.endless_method_name($1);
+                    p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     /*% 
                        $1 = get_value($1);
                     %*/
                     /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
-                    support.popCurrentScope();
+                    p.popCurrentScope();
                 }
                 | defs_head f_opt_paren_args '=' command modifier_rescue arg {
-                    support.endless_method_name($1);
-                    support.restore_defun($1);
+                    p.endless_method_name($1);
+                    p.restore_defun($1);
                     /*%%%*/
-                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.start(), $4, $6)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @6.end());
+                    Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     /*% 
                        $1 = get_value($1);
                     %*/
                     /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
-                    support.popCurrentScope();
+                    p.popCurrentScope();
                 }
                 | backref tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    support.backrefAssignError($1);
+                    p.backrefAssignError($1);
                     /*% %*/
                     /*% ripper[error]: backref_error(p, RNODE($1), assign!(var_field(p, $1), $4)) %*/
                 }
 
 command_rhs     : command_call %prec tOP_ASGN {
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                     $$ = $1;
                 }
 		| command_call modifier_rescue stmt {
-                    support.value_expr(lexer, $1);
-                    $$ = support.newRescueModNode($1, $3);
+                    p.value_expr(lexer, $1);
+                    $$ = p.newRescueModNode($1, $3);
                 }
 		| command_asgn
  
@@ -757,19 +756,19 @@ command_rhs     : command_call %prec tOP_ASGN {
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr keyword_and expr {
-                    $$ = support.newAndNode($1, $3);
+                    $$ = p.newAndNode($1, $3);
                 }
                 | expr keyword_or expr {
-                    $$ = support.newOrNode($1, $3);
+                    $$ = p.newOrNode($1, $3);
                 }
                 | keyword_not opt_nl expr {
-                    $$ = support.getOperatorCallNode(support.method_cond($3), lexer.BANG);
+                    $$ = p.getOperatorCallNode(p.method_cond($3), lexer.BANG);
                 }
                 | '!' command_call {
-                    $$ = support.getOperatorCallNode(support.method_cond($2), BANG);
+                    $$ = p.getOperatorCallNode(p.method_cond($2), BANG);
                 }
                 | arg tASSOC {
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     // MRI 3.1 uses $2 but we want tASSOC typed?
@@ -777,31 +776,31 @@ expr            : command_call
                     $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                 } {
-                    $$ = support.push_pvtbl();
+                    $$ = p.push_pvtbl();
                 } p_top_expr_body {
-                    support.pop_pvtbl($<Set>4);
+                    p.pop_pvtbl($<Set>4);
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
-                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.start(), $5, null, null));
+                    $$ = p.newPatternCaseNode($1.getLine(), $1, p.newIn(@1.start(), $5, null, null));
                     /*% %*/
                     /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
                 }
                 | arg keyword_in {
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     LexContext ctxt = lexer.getLexContext();
                     $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                 } {
-                    $$ = support.push_pvtbl();
+                    $$ = p.push_pvtbl();
                 } p_top_expr_body {
-                    support.pop_pvtbl($<Set>4);
+                    p.pop_pvtbl($<Set>4);
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
-                    $$ = support.newPatternCaseNode($1.getLine(), $1, support.newIn(@1.start(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
+                    $$ = p.newPatternCaseNode($1.getLine(), $1, p.newIn(@1.start(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
                     /*% %*/
                     /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
                 }
@@ -810,11 +809,11 @@ expr            : command_call
 // FIXME:  If we ever want to match MRI's AST mode we may need to make a node
 // [!null] - RubySymbol
 def_name        : fname {
-                    support.pushLocalScope();
+                    p.pushLocalScope();
                     LexContext ctxt = lexer.getLexContext();
-                    RubySymbol name = support.symbolID($1);
-                    support.numparam_name(name);
-                    $$ = new DefHolder(support.symbolID($1), lexer.getCurrentArg(), (LexContext) ctxt.clone());
+                    RubySymbol name = p.symbolID($1);
+                    p.numparam_name(name);
+                    $$ = new DefHolder(p.symbolID($1), lexer.getCurrentArg(), (LexContext) ctxt.clone());
                     ctxt.in_def = true;
                     lexer.setCurrentArg(null);
                     /*%%%*/
@@ -843,7 +842,7 @@ defs_head       : k_def singleton dot_or_colon {
                 }
 
 expr_value      : expr {
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                 }
 
 expr_value_do   : {
@@ -861,7 +860,7 @@ command_call    : command
 block_command   : block_call
                 | block_call call_op2 operation2 command_args {
                     /*%%%*/
-                    $$ = support.new_call($1, $2, $3, $4, null, @3.start());
+                    $$ = p.new_call($1, $2, $3, $4, null, @3.start());
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, $3), $4) %*/
                 }
@@ -876,7 +875,7 @@ cmd_brace_block : tLBRACE_ARG brace_body '}' {
 
 fcall           : operation {
                     /*%%%*/
-                    $$ = support.new_fcall($1);
+                    $$ = p.new_fcall($1);
                     /*% %*/
                     /*% ripper: $1 %*/
                 }
@@ -884,69 +883,69 @@ fcall           : operation {
 // Node:command - fcall/call/yield/super [!null]
 command        : fcall command_args %prec tLOWEST {
                     /*%%%*/
-                    support.frobnicate_fcall_args($1, $2, null);
+                    p.frobnicate_fcall_args($1, $2, null);
                     $$ = $1;
                     /*% %*/
                     /*% ripper: command!($1, $2) %*/
                 }
                 | fcall command_args cmd_brace_block {
                     /*%%%*/
-                    support.frobnicate_fcall_args($1, $2, $3);
+                    p.frobnicate_fcall_args($1, $2, $3);
                     $$ = $1;
                     /*% %*/
                     /*% ripper: method_add_block!(command!($1, $2), $3) %*/
                 }
                 | primary_value call_op operation2 command_args %prec tLOWEST {
                     /*%%%*/
-                    $$ = support.new_call($1, $2, $3, $4, null, @3.start());
+                    $$ = p.new_call($1, $2, $3, $4, null, @3.start());
                     /*% %*/
                     /*% ripper: command_call!($1, $2, $3, $4) %*/
                 }
                 | primary_value call_op operation2 command_args cmd_brace_block {
                     /*%%%*/
-                    $$ = support.new_call($1, $2, $3, $4, $5, @3.start());
+                    $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 }
                 | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
                     /*%%%*/
-                    $$ = support.new_call($1, $3, $4, null);
+                    $$ = p.new_call($1, $3, $4, null);
                     /*% %*/
                     /*% ripper: command_call!($1, ID2VAL(idCOLON2), $3, $4) %*/
                 }
                 | primary_value tCOLON2 operation2 command_args cmd_brace_block {
                     /*%%%*/
-                    $$ = support.new_call($1, $3, $4, $5);
+                    $$ = p.new_call($1, $3, $4, $5);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, ID2VAL(idCOLON2), $3, $4), $5) %*/
                 }
                 | keyword_super command_args {
                     /*%%%*/
-                    $$ = support.new_super($1, $2);
+                    $$ = p.new_super($1, $2);
                     /*% %*/
                     /*% ripper: super!($2) %*/
                 }
                 | keyword_yield command_args {
                     /*%%%*/
-                    $$ = support.new_yield($1, $2);
+                    $$ = p.new_yield($1, $2);
                     /*% %*/
                     /*% ripper: yield!($2) %*/
                 }
                 | k_return call_args {
                     /*%%%*/
-                    $$ = new ReturnNode($1, support.ret_args($2, $1));
+                    $$ = new ReturnNode($1, p.ret_args($2, $1));
                     /*% %*/
                     /*% ripper: return!($2) %*/
                 }
                 | keyword_break call_args {
                     /*%%%*/
-                    $$ = new BreakNode($1, support.ret_args($2, $1));
+                    $$ = new BreakNode($1, p.ret_args($2, $1));
                     /*% %*/
                     /*% ripper: break!($2) %*/
                 }
                 | keyword_next call_args {
                     /*%%%*/
-                    $$ = new NextNode($1, support.ret_args($2, $1));
+                    $$ = new NextNode($1, p.ret_args($2, $1));
                     /*% %*/
                     /*% ripper: next!($2) %*/
                 }
@@ -966,7 +965,7 @@ mlhs_inner      : mlhs_basic {
                 }
                 | tLPAREN mlhs_inner rparen {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1, support.newArrayNode($1, $2), null, null);
+                    $$ = new MultipleAsgnNode($1, p.newArrayNode($1, $2), null, null);
                     /*% %*/
                     /*% ripper: mlhs_paren!($2) %*/
                 }
@@ -1044,7 +1043,7 @@ mlhs_item       : mlhs_node
 // Set of mlhs terms at front of mlhs (a, *b, d, e = arr  # a is head)
 mlhs_head       : mlhs_item ',' {
                     /*%%%*/
-                    $$ = support.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode($1.getLine(), $1);
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
                 }
@@ -1058,7 +1057,7 @@ mlhs_head       : mlhs_item ',' {
 // Set of mlhs terms at end of mlhs (a, *b, d, e = arr  # d,e is post)
 mlhs_post       : mlhs_item {
                     /*%%%*/
-                    $$ = support.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode($1.getLine(), $1);
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
                 }
@@ -1071,139 +1070,139 @@ mlhs_post       : mlhs_item {
 
 mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     /*%%%*/
-                   $$ = support.assignableLabelOrIdentifier($1, null);
+                   $$ = p.assignableLabelOrIdentifier($1, null);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tIVAR {
                     /*%%%*/
-                   $$ = new InstAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                   $$ = new InstAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                   $$ = new GlobalAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                   $$ = new GlobalAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) support.compile_error("dynamic constant assignment");
-                    $$ = new ConstDeclNode(lexer.tokline, support.symbolID($1), null, NilImplicitNode.NIL);
+                    if (lexer.getLexContext().in_def) p.compile_error("dynamic constant assignment");
+                    $$ = new ConstDeclNode(lexer.tokline, p.symbolID($1), null, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     /*%%%*/
-                    support.compile_error("Can't assign to nil");
+                    p.compile_error("Can't assign to nil");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_self {
                     /*%%%*/
-                    support.compile_error("Can't change the value of self");
+                    p.compile_error("Can't change the value of self");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_true {
                     /*%%%*/
-                    support.compile_error("Can't assign to true");
+                    p.compile_error("Can't assign to true");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_false {
                     /*%%%*/
-                    support.compile_error("Can't assign to false");
+                    p.compile_error("Can't assign to false");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __FILE__");
+                    p.compile_error("Can't assign to __FILE__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __LINE__");
+                    p.compile_error("Can't assign to __LINE__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __ENCODING__");
+                    p.compile_error("Can't assign to __ENCODING__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     /*%%%*/
-                    $$ = support.aryset($1, $3);
+                    $$ = p.aryset($1, $3);
                     /*% %*/
                     /*% ripper: aref_field!($1, escape_Qundef($3)) %*/
                 }
                 | primary_value call_op tIDENTIFIER {
                     if ($2 == AMPERSAND_DOT) {
-                        support.compile_error("&. inside multiple assignment destination");
+                        p.compile_error("&. inside multiple assignment destination");
                     }
                     /*%%%*/
-                    $$ = support.attrset($1, $2, $3);
+                    $$ = p.attrset($1, $2, $3);
                     /*% %*/
                     /*% ripper: field!($1, $2, $3) %*/
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
                     /*%%%*/
-                    $$ = support.attrset($1, $3);
+                    $$ = p.attrset($1, $3);
                     /*% %*/
                     /*% ripper: const_path_field!($1, $3) %*/
                 }
                 | primary_value call_op tCONSTANT {
                     if ($2 == AMPERSAND_DOT) {
-                        support.compile_error("&. inside multiple assignment destination");
+                        p.compile_error("&. inside multiple assignment destination");
                     }
                     /*%%%*/
-                    $$ = support.attrset($1, $2, $3);
+                    $$ = p.attrset($1, $2, $3);
                     /*% %*/
                     /*% ripper: field!($1, $2, $3) %*/
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) support.yyerror("dynamic constant assignment");
+                    if (lexer.getLexContext().in_def) p.yyerror("dynamic constant assignment");
 
-                    Integer position = support.getPosition($1);
+                    Integer position = p.getPosition($1);
 
-                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, $1, $3), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: const_decl(p, const_path_field!($1, $3)) %*/
                 }
                 | tCOLON3 tCONSTANT {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) {
-                        support.yyerror("dynamic constant assignment");
+                        p.yyerror("dynamic constant assignment");
                     }
 
                     Integer position = lexer.tokline;
 
-                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon3(position, $2), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon3(position, $2), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: const_decl(p, top_const_field!($2)) %*/
                 }
                 | backref {
                     /*%%%*/
-                    support.backrefAssignError($1);
+                    p.backrefAssignError($1);
                     /*% %*/
                     /*% ripper[error]: backref_error(p, RNODE($1), var_field(p, $1)) %*/
                 }
@@ -1211,143 +1210,143 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
 // [!null or throws]
 lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     /*%%%*/
-                    $$ = support.assignableLabelOrIdentifier($1, null);
+                    $$ = p.assignableLabelOrIdentifier($1, null);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new InstAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new GlobalAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) support.compile_error("dynamic constant assignment");
+                    if (lexer.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.tokline, support.symbolID($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.tokline, p.symbolID($1), null, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     /*%%%*/
-                    support.compile_error("Can't assign to nil");
+                    p.compile_error("Can't assign to nil");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_self {
                     /*%%%*/
-                    support.compile_error("Can't change the value of self");
+                    p.compile_error("Can't change the value of self");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_true {
                     /*%%%*/
-                    support.compile_error("Can't assign to true");
+                    p.compile_error("Can't assign to true");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_false {
                     /*%%%*/
-                    support.compile_error("Can't assign to false");
+                    p.compile_error("Can't assign to false");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __FILE__");
+                    p.compile_error("Can't assign to __FILE__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __LINE__");
+                    p.compile_error("Can't assign to __LINE__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __ENCODING__");
+                    p.compile_error("Can't assign to __ENCODING__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     /*%%%*/
-                    $$ = support.aryset($1, $3);
+                    $$ = p.aryset($1, $3);
                     /*% %*/
                     /*% ripper: aref_field!($1, escape_Qundef($3)) %*/
                 }
                 | primary_value call_op tIDENTIFIER {
                     /*%%%*/
-                    $$ = support.attrset($1, $2, $3);
+                    $$ = p.attrset($1, $2, $3);
                     /*% %*/
                     /*% ripper: field!($1, $2, $3) %*/
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
                     /*%%%*/
-                    $$ = support.attrset($1, $3);
+                    $$ = p.attrset($1, $3);
                     /*% %*/
                     /*% ripper: field!($1, ID2VAL(idCOLON2), $3) %*/
                 }
                 | primary_value call_op tCONSTANT {
                     /*%%%*/
-                    $$ = support.attrset($1, $2, $3);
+                    $$ = p.attrset($1, $2, $3);
                     /*% %*/
                     /*% ripper: field!($1, $2, $3) %*/
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) {
-                        support.yyerror("dynamic constant assignment");
+                        p.yyerror("dynamic constant assignment");
                     }
 
-                    Integer position = support.getPosition($1);
+                    Integer position = p.getPosition($1);
 
-                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, $1, $3), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: const_decl(p, const_path_field!($1, $3)) %*/
                 }
                 | tCOLON3 tCONSTANT {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) {
-                        support.yyerror("dynamic constant assignment");
+                        p.yyerror("dynamic constant assignment");
                     }
 
                     Integer position = lexer.tokline;
 
-                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon3(position, $2), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon3(position, $2), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: const_decl(p, top_const_field!($2)) %*/
                 }
                 | backref {
                     /*%%%*/
-                    support.backrefAssignError($1);
+                    p.backrefAssignError($1);
                     /*% %*/
                     /*% ripper[error]: backref_error(p, RNODE($1), var_field(p, $1)) %*/
                 }
 
 cname           : tIDENTIFIER {
                     /*%%%*/
-                    support.yyerror("class/module name must be CONSTANT", @1);
+                    p.yyerror("class/module name must be CONSTANT", @1);
                     /*% %*/
                     /*% ripper[error]: class_name_error!(ERR_MESG(), $1) %*/
                 }
@@ -1357,19 +1356,19 @@ cname           : tIDENTIFIER {
 
 cpath           : tCOLON3 cname {
                     /*%%%*/
-                    $$ = support.new_colon3(lexer.tokline, $2);
+                    $$ = p.new_colon3(lexer.tokline, $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
                 | cname {
                     /*%%%*/
-                    $$ = support.new_colon2(lexer.tokline, null, $1);
+                    $$ = p.new_colon2(lexer.tokline, null, $1);
                     /*% %*/
                     /*% ripper: const_ref!($1) %*/
                 }
                 | primary_value tCOLON2 cname {
                     /*%%%*/
-                    $$ = support.new_colon2(support.getPosition($1), $1, $3);
+                    $$ = p.new_colon2(p.getPosition($1), $1, $3);
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
                 }
@@ -1395,7 +1394,7 @@ fname          : tIDENTIFIER {
 // Node:fitem
 fitem           : fname {  // LiteralNode
                     /*%%%*/
-                    $$ =  new LiteralNode(lexer.getRubySourceline(), support.symbolID($1));
+                    $$ =  new LiteralNode(lexer.getRubySourceline(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: symbol_literal!($1) %*/
 
@@ -1414,7 +1413,7 @@ undef_list      : fitem {
                     lexer.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     /*%%%*/
-                    $$ = support.appendToBlock($1, newUndef($1.getLine(), $4));
+                    $$ = p.appendToBlock($1, newUndef($1.getLine(), $4));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($4)) %*/
                 }
@@ -1786,177 +1785,177 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | var_lhs tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    $$ = support.new_op_assign($1, $2, $4);
+                    $$ = p.new_op_assign($1, $2, $4);
                     /*% %*/
                     /*% ripper: opassign!($1, $2, $4) %*/
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $7);
-                    $$ = support.new_ary_op_assign($1, $5, $3, $7);
+                    p.value_expr(lexer, $7);
+                    $$ = p.new_ary_op_assign($1, $5, $3, $7);
                     /*% %*/
                     /*% ripper: opassign!(aref_field!($1, escape_Qundef($3)), $5, $7) %*/
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $6);
-                    $$ = support.new_attr_op_assign($1, $2, $6, $3, $4);
+                    p.value_expr(lexer, $6);
+                    $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $6);
-                    $$ = support.new_attr_op_assign($1, $2, $6, $3, $4);
+                    p.value_expr(lexer, $6);
+                    $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    support.value_expr(lexer, $6);
-                    $$ = support.new_attr_op_assign($1, $2, $6, $3, $4);
+                    p.value_expr(lexer, $6);
+                    $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, ID2VAL(idCOLON2), $3), $4, $6) %*/
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    Integer pos = support.getPosition($1);
-                    $$ = support.new_const_op_assign(pos, support.new_colon2(pos, $1, $3), $4, $6);
+                    Integer pos = p.getPosition($1);
+                    $$ = p.new_const_op_assign(pos, p.new_colon2(pos, $1, $3), $4, $6);
                     /*% %*/
                     /*% ripper: opassign!(const_path_field!($1, $3), $4, $6) %*/
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
                     Integer pos = lexer.getRubySourceline();
-                    $$ = support.new_const_op_assign(pos, new Colon3Node(pos, support.symbolID($2)), $3, $5);
+                    $$ = p.new_const_op_assign(pos, new Colon3Node(pos, p.symbolID($2)), $3, $5);
                     /*% %*/
                     /*% ripper: opassign!(top_const_field!($2), $3, $5) %*/
                 }
                 | backref tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    support.backrefAssignError($1);
+                    p.backrefAssignError($1);
                     /*% %*/
                     /*% ripper[error]: backref_error(p, RNODE($1), opassign!(var_field(p, $1), $2, $4)) %*/
                 }
                 | arg tDOT2 arg {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
-                    support.value_expr(lexer, $3);
+                    p.value_expr(lexer, $1);
+                    p.value_expr(lexer, $3);
     
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), support.makeNullNil($3), false, isLiteral);
+                    $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), p.makeNullNil($3), false, isLiteral);
                     /*% %*/
                     /*% ripper: dot2!($1, $3) %*/
                 }
                 | arg tDOT3 arg {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
-                    support.value_expr(lexer, $3);
+                    p.value_expr(lexer, $1);
+                    p.value_expr(lexer, $3);
 
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), support.makeNullNil($3), true, isLiteral);
+                    $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), p.makeNullNil($3), true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!($1, $3) %*/
                 }
                 | arg tDOT2 {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
 
                     boolean isLiteral = $1 instanceof FixnumNode;
-                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
+                    $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
                     /*% %*/
                     /*% ripper: dot2!($1, Qnil) %*/
                 }
                 | arg tDOT3 {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
 
                     boolean isLiteral = $1 instanceof FixnumNode;
-                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
+                    $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!($1, Qnil) %*/
                 }
                 | tBDOT2 arg {
                     /*%%%*/
-                    support.value_expr(lexer, $2);
+                    p.value_expr(lexer, $2);
                     boolean isLiteral = $2 instanceof FixnumNode;
-                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, support.makeNullNil($2), false, isLiteral);
+                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, p.makeNullNil($2), false, isLiteral);
                     /*% %*/
                     /*% ripper: dot2!(Qnil, $2) %*/
                 }
                 | tBDOT3 arg {
                     /*%%%*/
-                    support.value_expr(lexer, $2);
+                    p.value_expr(lexer, $2);
                     boolean isLiteral = $2 instanceof FixnumNode;
-                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, support.makeNullNil($2), true, isLiteral);
+                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, p.makeNullNil($2), true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!(Qnil, $2) %*/
                 }
                 | arg '+' arg {
   // FIXME: call_bin_op() here so ripper/non-ripper call their thing
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, PLUS, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, PLUS, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg '-' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, MINUS, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, MINUS, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg '*' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, STAR, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, STAR, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg '/' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, SLASH, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, SLASH, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg '%' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, PERCENT, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, PERCENT, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg tPOW arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | tUMINUS_NUM simple_numeric tPOW arg {
   // FIXME: call_uni_op() here so ripper/non-ripper call their thing
                     /*%%%*/
-                    $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, $3, $4, lexer.getRubySourceline()), $1);
+                    $$ = p.getOperatorCallNode(p.getOperatorCallNode($2, $3, $4, lexer.getRubySourceline()), $1);
                     /*% %*/
                 }
                 | tUPLUS arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($2, $1);
+                    $$ = p.getOperatorCallNode($2, $1);
                     /*% %*/
                 }
                 | tUMINUS arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($2, $1);
+                    $$ = p.getOperatorCallNode($2, $1);
                     /*% %*/
                 }
                 | arg '|' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, OR, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, OR, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg '^' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, CARET, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, CARET, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg '&' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, AMPERSAND, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, AMPERSAND, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg tCMP arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | rel_expr   %prec tCMP {
@@ -1966,57 +1965,57 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | arg tEQ arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg tEQQ arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg tNEQ arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg tMATCH arg {
                     /*%%%*/
-                    $$ = support.getMatchNode($1, $3);
+                    $$ = p.getMatchNode($1, $3);
                     /*% %*/
                 }
                 | arg tNMATCH arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | '!' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode(support.method_cond($2), BANG);
+                    $$ = p.getOperatorCallNode(p.method_cond($2), BANG);
                     /*% %*/
                 }
                 | '~' arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($2, TILDE);
+                    $$ = p.getOperatorCallNode($2, TILDE);
                     /*% %*/
                 }
                 | arg tLSHFT arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg tRSHFT arg {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                     /*% %*/
                 }
                 | arg tANDOP arg {
                     /*%%%*/
-                    $$ = support.newAndNode($1, $3);
+                    $$ = p.newAndNode($1, $3);
                     /*% %*/
                 }
                 | arg tOROP arg {
                     /*%%%*/
-                    $$ = support.newOrNode($1, $3);
+                    $$ = p.newOrNode($1, $3);
                     /*% %*/
                 }
                 | keyword_defined opt_nl {
@@ -2029,41 +2028,41 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | arg '?' arg opt_nl ':' arg {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
-                    $$ = support.new_if(support.getPosition($1), support.cond($1), $3, $6);
+                    p.value_expr(lexer, $1);
+                    $$ = p.new_if(p.getPosition($1), p.cond($1), $3, $6);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
                 }
                 | defn_head f_opt_paren_args '=' arg {
-                    support.endless_method_name($1);
-                    support.restore_defun($1);
+                    p.endless_method_name($1);
+                    p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end());
-                    if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();
-                    support.popCurrentScope();
+                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
+                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
                     /*% ripper: def!(get_value($1), $2, $4) %*/
 		}
                 | defn_head f_opt_paren_args '=' arg modifier_rescue arg {
-                    support.endless_method_name($1);
-                    support.restore_defun($1);
+                    p.endless_method_name($1);
+                    p.restore_defun($1);
                     /*%%%*/
-                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.start(), $4, $6)));
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @6.end());
-                    if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();
-                    support.popCurrentScope();
+                    Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
+                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @6.end());
+                    if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
+                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
                     /*% ripper: def!(get_value($1), $2, $4) %*/
 		}
                 | defs_head f_opt_paren_args '=' arg {
-                    support.endless_method_name($1);
-                    support.restore_defun($1);
+                    p.endless_method_name($1);
+                    p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), support.reduce_nodes(support.remove_begin($4)), @4.end());
-                    if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();
-                    support.popCurrentScope();
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
+                    p.popCurrentScope();
                     /*% 
                         $1 = get_value($1);
                     %*/
@@ -2072,11 +2071,11 @@ arg             : lhs '=' lex_ctxt arg_rhs {
 		}
                 | defs_head f_opt_paren_args '=' arg modifier_rescue arg {
                     /*%%%*/
-                    support.endless_method_name($1);
-                    support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.remove_begin(support.rescued_expr(@1.start(), $4, $6)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @6.end());
-                    if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();                    support.popCurrentScope();
+                    p.endless_method_name($1);
+                    p.restore_defun($1);
+                    Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
+                    if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();                    p.popCurrentScope();
                     /*% 
                         $1 = get_value($1);
                     %*/
@@ -2108,12 +2107,12 @@ relop           : '>' {
 
 rel_expr        : arg relop arg   %prec '>' {
                     /*%%%*/
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                 }
 		| rel_expr relop arg   %prec '>' {
                     /*%%%*/
-                    support.warning(ID.MISCELLANEOUS, lexer.getRubySourceline(), "comparison '" + $2 + "' after comparison");
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    p.warning(ID.MISCELLANEOUS, lexer.getRubySourceline(), "comparison '" + $2 + "' after comparison");
+                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
                 }
 
 lex_ctxt        : tSP {
@@ -2127,8 +2126,8 @@ lex_ctxt        : tSP {
  
 arg_value       : arg {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
-                    $$ = support.makeNullNil($1);
+                    p.value_expr(lexer, $1);
+                    $$ = p.makeNullNil($1);
                 }
 
 aref_args       : none
@@ -2137,25 +2136,25 @@ aref_args       : none
                 }
                 | args ',' assocs trailer {
                     /*%%%*/
-                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
+                    $$ = p.arg_append($1, p.remove_duplicate_keys($3));
                     /*% %*/
                     /*% ripper: args_add!($1, bare_assoc_hash!($3)) %*/
                 }
                 | assocs trailer {
                     /*%%%*/
-                    $$ = support.newArrayNode($1.getLine(), support.remove_duplicate_keys($1));
+                    $$ = p.newArrayNode($1.getLine(), p.remove_duplicate_keys($1));
                     /*% %*/
                     /*% ripper: args_add!(args_new!, bare_assoc_hash!($1)) %*/
                 }
 
 arg_rhs         : arg %prec tOP_ASGN {
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                     $$ = $1;
                 }
                 | arg modifier_rescue arg {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
-                    $$ = support.newRescueModNode($1, $3);
+                    p.value_expr(lexer, $1);
+                    $$ = p.newRescueModNode($1, $3);
                     /*% %*/
                     /*% ripper: rescue_mod!($1, $3) %*/
                 }
@@ -2167,21 +2166,21 @@ paren_args      : '(' opt_call_args rparen {
                     /*% ripper: arg_paren!(escape_Qundef($2)) %*/
                 }
                 | '(' args ',' args_forward rparen {
-                    if (!support.check_forwarding_args()) {
+                    if (!p.check_forwarding_args()) {
                         $$ = null;
                     } else {
                     /*%%%*/
-                        $$ = support.new_args_forward_call(@1.start(), $2);
+                        $$ = p.new_args_forward_call(@1.start(), $2);
                     /*% %*/
                     /*% ripper: arg_paren!(args_add!($2, $4)) %*/
                     }
                }
                | '(' args_forward rparen {
-                    if (!support.check_forwarding_args()) {
+                    if (!p.check_forwarding_args()) {
                         $$ = null;
                     } else {
                     /*%%%*/
-                        $$ = support.new_args_forward_call(@1.start(), null);
+                        $$ = p.new_args_forward_call(@1.start(), null);
                     /*% %*/
                     /*% ripper: arg_paren!($2) %*/
                     }
@@ -2196,13 +2195,13 @@ opt_call_args   : none
                 }
                 | args ',' assocs ',' {
                     /*%%%*/
-                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
+                    $$ = p.arg_append($1, p.remove_duplicate_keys($3));
                     /*% %*/
                     /*% ripper: args_add!($1, bare_assoc_hash!($3)) %*/
                 }
                 | assocs ',' {
                     /*%%%*/
-                    $$ = support.newArrayNode($1.getLine(), support.remove_duplicate_keys($1));
+                    $$ = p.newArrayNode($1.getLine(), p.remove_duplicate_keys($1));
                     /*% %*/
                     /*% ripper: args_add!(args_new!, bare_assoc_hash!($1)) %*/
                 }
@@ -2211,8 +2210,8 @@ opt_call_args   : none
 // [!null] - ArgsCatNode, SplatNode, ArrayNode, HashNode, BlockPassNode
 call_args       : command {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
-                    $$ = support.newArrayNode(support.getPosition($1), $1);
+                    p.value_expr(lexer, $1);
+                    $$ = p.newArrayNode(p.getPosition($1), $1);
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
                 }
@@ -2224,14 +2223,14 @@ call_args       : command {
                 }
                 | assocs opt_block_arg {
                     /*%%%*/
-                    $$ = support.newArrayNode($1.getLine(), support.remove_duplicate_keys($1));
+                    $$ = p.newArrayNode($1.getLine(), p.remove_duplicate_keys($1));
                     $$ = arg_blk_pass($<Node>$, $2);
                     /*% %*/
                     /*% ripper: args_add_block!(args_add!(args_new!, bare_assoc_hash!($1)), $2) %*/
                 }
                 | args ',' assocs opt_block_arg {
                     /*%%%*/
-                    $$ = support.arg_append($1, support.remove_duplicate_keys($3));
+                    $$ = p.arg_append($1, p.remove_duplicate_keys($3));
                     $$ = arg_blk_pass($<Node>$, $4);
                     /*% %*/
                     /*% ripper: args_add_block!(args_add!($1, bare_assoc_hash!($3)), $4) %*/
@@ -2267,14 +2266,14 @@ command_args    :  {
 
 block_arg       : tAMPER arg_value {
                     /*%%%*/
-                    $$ = new BlockPassNode(support.getPosition($2), $2);
+                    $$ = new BlockPassNode(p.getPosition($2), $2);
                     /*% %*/
                     /*% ripper: $2 %*/
                 }
                 | tAMPER {
                     /*%%%*/
-                    if (!support.local_id(FWD_BLOCK)) support.compile_error("no anonymous block parameter");
-                    $$ = new BlockPassNode(lexer.tokline, support.arg_var(FWD_BLOCK));
+                    if (!p.local_id(FWD_BLOCK)) p.compile_error("no anonymous block parameter");
+                    $$ = new BlockPassNode(lexer.tokline, p.arg_var(FWD_BLOCK));
                     /*%
                     $$ = Qnil;
                     %*/
@@ -2290,24 +2289,24 @@ opt_block_arg   : ',' block_arg {
 args            : arg_value { // ArrayNode
                     /*%%%*/
                     int line = $1 instanceof NilImplicitNode ? lexer.getRubySourceline() : $1.getLine();
-                    $$ = support.newArrayNode(line, $1);
+                    $$ = p.newArrayNode(line, $1);
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
                 }
                 | tSTAR arg_value { // SplatNode
                     /*%%%*/
-                    $$ = support.newSplatNode($2);
+                    $$ = p.newSplatNode($2);
                     /*% %*/
                     /*% ripper: args_add_star!(args_new!, $2) %*/
                 }
                 | args ',' arg_value { // ArgsCatNode, SplatNode, ArrayNode
                     /*%%%*/
-                    Node node = support.splat_array($1);
+                    Node node = p.splat_array($1);
 
                     if (node != null) {
-                        $$ = support.list_append(node, $3);
+                        $$ = p.list_append(node, $3);
                     } else {
-                        $$ = support.arg_append($1, $3);
+                        $$ = p.arg_append($1, $3);
                     }
                     /*% %*/
                     /*% ripper: args_add!($1, $3) %*/
@@ -2318,8 +2317,8 @@ args            : arg_value { // ArrayNode
 
                     // FIXME: lose syntactical elements here (and others like this)
                     if ($4 instanceof ArrayNode &&
-                        (node = support.splat_array($1)) != null) {
-                        $$ = support.list_concat(node, $4);
+                        (node = p.splat_array($1)) != null) {
+                        $$ = p.list_concat(node, $4);
                     } else {
                         $$ = arg_concat($1, $4);
                     }
@@ -2338,12 +2337,12 @@ mrhs_arg	: mrhs {
 mrhs            : args ',' arg_value {
                     /*%%%*/
 
-                    Node node = support.splat_array($1);
+                    Node node = p.splat_array($1);
 
                     if (node != null) {
-                        $$ = support.list_append(node, $3);
+                        $$ = p.list_append(node, $3);
                     } else {
-                        $$ = support.arg_append($1, $3);
+                        $$ = p.arg_append($1, $3);
                     }
                     /*% %*/
                     /*% ripper: mrhs_add!(mrhs_new_from_args!($1), $3) %*/
@@ -2353,8 +2352,8 @@ mrhs            : args ',' arg_value {
                     Node node = null;
 
                     if ($4 instanceof ArrayNode &&
-                        (node = support.splat_array($1)) != null) {
-                        $$ = support.list_concat(node, $4);
+                        (node = p.splat_array($1)) != null) {
+                        $$ = p.list_concat(node, $4);
                     } else {
                         $$ = arg_concat($1, $4);
                     }
@@ -2363,7 +2362,7 @@ mrhs            : args ',' arg_value {
                 }
                 | tSTAR arg_value {
                     /*%%%*/
-                    $$ = support.newSplatNode($2);
+                    $$ = p.newSplatNode($2);
                     /*% %*/
                     /*% ripper: mrhs_add_star!(mrhs_new!, $2) %*/
                 }
@@ -2388,7 +2387,7 @@ primary         : literal
                 | backref
                 | tFID {
                     /*%%%*/
-                    $$ = support.new_fcall($1);
+                    $$ = p.new_fcall($1);
                     /*% %*/
                     /*% ripper: method_add_arg!(fcall!($1), args_new!) %*/
                 }
@@ -2397,7 +2396,7 @@ primary         : literal
                 } bodystmt k_end {
                     lexer.getCmdArgumentState().pop();
                     /*%%%*/
-                    $$ = new BeginNode($1, support.makeNullNil($3));
+                    $$ = new BeginNode($1, p.makeNullNil($3));
                     /*% %*/
                     /*% ripper: begin!($3) %*/
                 }
@@ -2431,19 +2430,19 @@ primary         : literal
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     /*%%%*/
-                    $$ = support.new_colon2(support.getPosition($1), $1, $3);
+                    $$ = p.new_colon2(p.getPosition($1), $1, $3);
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
                 }
                 | tCOLON3 tCONSTANT {
                     /*%%%*/
-                    $$ = support.new_colon3(lexer.tokline, $2);
+                    $$ = p.new_colon3(lexer.tokline, $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
                 | tLBRACK aref_args ']' {
                     /*%%%*/
-                    Integer position = support.getPosition($2);
+                    Integer position = p.getPosition($2);
                     if ($2 == null) {
                         $$ = new ZArrayNode(position); /* zero length array */
                     } else {
@@ -2467,7 +2466,7 @@ primary         : literal
                 }
                 | keyword_yield '(' call_args rparen {
                     /*%%%*/
-                    $$ = support.new_yield($1, $3);
+                    $$ = p.new_yield($1, $3);
                     /*% %*/
                     /*% ripper: yield!(paren!($3)) %*/
                 }
@@ -2490,14 +2489,14 @@ primary         : literal
                     $$ = new DefinedNode($1, $5);
                 }
                 | keyword_not '(' expr rparen {
-                    $$ = support.getOperatorCallNode(support.method_cond($3), lexer.BANG);
+                    $$ = p.getOperatorCallNode(p.method_cond($3), lexer.BANG);
                 }
                 | keyword_not '(' rparen {
-                    $$ = support.getOperatorCallNode(support.method_cond(NilImplicitNode.NIL), lexer.BANG);
+                    $$ = p.getOperatorCallNode(p.method_cond(NilImplicitNode.NIL), lexer.BANG);
                 }
                 | fcall brace_block {
                     /*%%%*/
-                    support.frobnicate_fcall_args($1, null, $2);
+                    p.frobnicate_fcall_args($1, null, $2);
                     $$ = $1;                    
                     /*% %*/
                     /*% ripper: method_add_block!(method_add_arg!(fcall!($1), args_new!), $2) %*/
@@ -2519,75 +2518,75 @@ primary         : literal
                 }
                 | k_if expr_value then compstmt if_tail k_end {
                     /*%%%*/
-                    $$ = support.new_if($1, support.cond($2), $4, $5);
+                    $$ = p.new_if($1, p.cond($2), $4, $5);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_unless expr_value then compstmt opt_else k_end {
                     /*%%%*/
-                    $$ = support.new_if($1, support.cond($2), $5, $4);
+                    $$ = p.new_if($1, p.cond($2), $5, $4);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_while expr_value_do compstmt k_end {
                     /*%%%*/
-                    $$ = new WhileNode($1, support.cond($2), support.makeNullNil($3));
+                    $$ = new WhileNode($1, p.cond($2), p.makeNullNil($3));
                     /*% %*/
                     /*% ripper: while!($2, $3) %*/
                 }
                 | k_until expr_value_do compstmt k_end {
                     /*%%%*/
-                    $$ = new UntilNode($1, support.cond($2), support.makeNullNil($3));
+                    $$ = new UntilNode($1, p.cond($2), p.makeNullNil($3));
                     /*% %*/
                     /*% ripper: until!($2, $3) %*/
                 }
                 | k_case expr_value opt_terms {
-                    $$ = support.case_labels;
-                    support.case_labels = support.getConfiguration().getRuntime().getNil();
+                    $$ = p.case_labels;
+                    p.case_labels = p.getConfiguration().getRuntime().getNil();
                 } case_body k_end {
                     /*%%%*/
-                    $$ = support.newCaseNode($1, $2, $5);
-                    support.fixpos($<Node>$, $2);
+                    $$ = p.newCaseNode($1, $2, $5);
+                    p.fixpos($<Node>$, $2);
                     /*% %*/
                     /*% ripper: case!($2, $5) %*/
                 }
                 | k_case opt_terms {
-                    $$ = support.case_labels;
-                    support.case_labels = null;
+                    $$ = p.case_labels;
+                    p.case_labels = null;
                 } case_body k_end {
                     /*%%%*/
-                    $$ = support.newCaseNode($1, null, $4);
+                    $$ = p.newCaseNode($1, null, $4);
                     /*% %*/
                     /*% ripper: case!(Qnil, $4) %*/
                 }
 		| k_case expr_value opt_terms p_case_body k_end {
                     /*%%%*/
-                    $$ = support.newPatternCaseNode($1, $2, $4);
+                    $$ = p.newPatternCaseNode($1, $2, $4);
                     /*% %*/
                     /*% ripper: case!($2, $4) %*/
                 }
                 | k_for for_var keyword_in expr_value_do compstmt k_end {
                     /*%%%*/
-                    $$ = new ForNode($1, $2, $5, $4, support.getCurrentScope(), 111);
+                    $$ = new ForNode($1, $2, $5, $4, p.getCurrentScope(), 111);
                     /*% %*/
                     /*% ripper: for!($2, $4, $5) %*/
                 }
                 | k_class cpath superclass {
                     LexContext ctxt = lexer.getLexContext();
                     if (ctxt.in_def) {
-                        support.yyerror("class definition in method body");
+                        p.yyerror("class definition in method body");
                     }
                     ctxt.in_class = true;
-                    support.pushLocalScope();
+                    p.pushLocalScope();
                 } bodystmt k_end {
                     /*%%%*/
-                    Node body = support.makeNullNil($5);
+                    Node body = p.makeNullNil($5);
 
-                    $$ = new ClassNode(@1.start(), $<Colon3Node>2, support.getCurrentScope(), body, $3, lexer.getRubySourceline());
+                    $$ = new ClassNode(@1.start(), $<Colon3Node>2, p.getCurrentScope(), body, $3, lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: class!($2, $3, $5) %*/
                     LexContext ctxt = lexer.getLexContext();
-                    support.popCurrentScope();
+                    p.popCurrentScope();
                     ctxt.in_class = $1.in_class;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
@@ -2595,55 +2594,55 @@ primary         : literal
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_def = false;
                     ctxt.in_class = false;
-                    support.pushLocalScope();
+                    p.pushLocalScope();
                 } term bodystmt k_end {
                     /*%%%*/
-                    Node body = support.makeNullNil($6);
+                    Node body = p.makeNullNil($6);
 
-                    $$ = new SClassNode(@1.start(), $3, support.getCurrentScope(), body, lexer.getRubySourceline());
+                    $$ = new SClassNode(@1.start(), $3, p.getCurrentScope(), body, lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: sclass!($3, $6) %*/
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_def = $1.in_def;
                     ctxt.in_class = $1.in_class;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
-                    support.popCurrentScope();
+                    p.popCurrentScope();
                 }
                 | k_module cpath {
                     LexContext ctxt = lexer.getLexContext();
                     if (ctxt.in_def) { 
-                        support.yyerror("module definition in method body");
+                        p.yyerror("module definition in method body");
                     }
                     ctxt.in_class = true;
-                    support.pushLocalScope();
+                    p.pushLocalScope();
                 } bodystmt k_end {
                     /*%%%*/
-                    Node body = support.makeNullNil($4);
+                    Node body = p.makeNullNil($4);
 
-                    $$ = new ModuleNode(@1.start(), $<Colon3Node>2, support.getCurrentScope(), body, lexer.getRubySourceline());
+                    $$ = new ModuleNode(@1.start(), $<Colon3Node>2, p.getCurrentScope(), body, lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: module!($2, $4) %*/
-                    support.popCurrentScope();
+                    p.popCurrentScope();
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_class = $1.in_class;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | defn_head f_arglist bodystmt k_end {
                     /*%%%*/
-                    support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.remove_begin(support.makeNullNil($3)));
-                    $$ = new DefnNode($1.line, $1.name, $2, support.getCurrentScope(), body, @4.end());
-                    if (support.isNextBreak) $<DefnNode>$.setContainsNextBreak();                    support.popCurrentScope();
+                    p.restore_defun($1);
+                    Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($3)));
+                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @4.end());
+                    if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, $3) %*/
                 }
                 | defs_head f_arglist bodystmt k_end {
                     /*%%%*/
-                    support.restore_defun($1);
-                    Node body = support.reduce_nodes(support.remove_begin(support.makeNullNil($3)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, support.getCurrentScope(), body, @4.end());
-                    if (support.isNextBreak) $<DefsNode>$.setContainsNextBreak();
-                    support.popCurrentScope();
+                    p.restore_defun($1);
+                    Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($3)));
+                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), body, @4.end());
+                    if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
+                    p.popCurrentScope();
                     /*%
                         $1 = get_value($1);
                     %*/
@@ -2651,14 +2650,14 @@ primary         : literal
                 }
                 | keyword_break {
                     /*%%%*/
-                    support.isNextBreak = true;
+                    p.isNextBreak = true;
                     $$ = new BreakNode($1, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: break!(args_new!) %*/
                 }
                 | keyword_next {
                     /*%%%*/
-                    support.isNextBreak = true;
+                    p.isNextBreak = true;
                     $$ = new NextNode($1, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: next!(args_new!) %*/
@@ -2677,7 +2676,7 @@ primary         : literal
                 }
 
 primary_value   : primary {
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                     $$ = $1;
                     if ($$ == null) $$ = NilImplicitNode.NIL;
                 }
@@ -2758,7 +2757,7 @@ k_end           : keyword_end {
 
 k_return        : keyword_return {
                     LexContext ctxt = lexer.getLexContext();
-                    if (ctxt.in_class && !ctxt.in_def && !support.getCurrentScope().isBlockScope()) {
+                    if (ctxt.in_class && !ctxt.in_def && !p.getCurrentScope().isBlockScope()) {
                         lexer.compile_error("Invalid return in class/module body");
                     }
                     $$ = $1;
@@ -2774,7 +2773,7 @@ do              : term
 if_tail         : opt_else
                 | k_elsif expr_value then compstmt if_tail {
                     /*%%%*/
-                    $$ = support.new_if($1, support.cond($2), $4, $5);
+                    $$ = p.new_if($1, p.cond($2), $4, $5);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -2794,7 +2793,7 @@ for_var         : lhs
 
 f_marg          : f_norm_arg {
                     /*%%%*/
-                    $$ = support.assignableInCurr($1, NilImplicitNode.NIL);
+                    $$ = p.assignableInCurr($1, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, $1) %*/
                 }
@@ -2808,7 +2807,7 @@ f_marg          : f_norm_arg {
 // [!null]
 f_marg_list     : f_marg {
                     /*%%%*/
-                    $$ = support.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode($1.getLine(), $1);
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
                 }
@@ -2852,7 +2851,7 @@ f_margs         : f_marg_list {
 
 f_rest_marg     : tSTAR f_norm_arg {
                     /*%%%*/
-                    $$ = support.assignableInCurr($2, null);
+                    $$ = p.assignableInCurr($2, null);
                     /*% %*/
                     /*% ripper: assignable(p, $2) %*/
                 }
@@ -2874,23 +2873,23 @@ f_eq            : {
 
  
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail($1.getLine(), $1, $3, $4);
+                    $$ = p.new_args_tail($1.getLine(), $1, $3, $4);
                 }
                 | f_block_kwarg opt_f_block_arg {
-                    $$ = support.new_args_tail($1.getLine(), $1, (ByteList) null, $2);
+                    $$ = p.new_args_tail($1.getLine(), $1, (ByteList) null, $2);
                 }
                 | f_any_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail(lexer.getRubySourceline(), null, $1, $2);
+                    $$ = p.new_args_tail(lexer.getRubySourceline(), null, $1, $2);
                 }
                 | f_block_arg {
-                    $$ = support.new_args_tail($1.getLine(), null, (ByteList) null, $1);
+                    $$ = p.new_args_tail($1.getLine(), null, (ByteList) null, $1);
                 }
 
 opt_block_args_tail : ',' block_args_tail {
                     $$ = $2;
                 }
                 | {
-                    $$ = support.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null);
+                    $$ = p.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null);
                 }
 
 excessed_comma  : ',' { // no need for this other than to look similar to MRI. 
@@ -2902,54 +2901,54 @@ excessed_comma  : ',' { // no need for this other than to look similar to MRI.
 
 // [!null]
 block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, $3, $5, null, $6);
+                    $$ = p.new_args($1.getLine(), $1, $3, $5, null, $6);
                 }
                 | f_arg ',' f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, $3, $5, $7, $8);
+                    $$ = p.new_args($1.getLine(), $1, $3, $5, $7, $8);
                 }
                 | f_arg ',' f_block_optarg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, $3, null, null, $4);
+                    $$ = p.new_args($1.getLine(), $1, $3, null, null, $4);
                 }
                 | f_arg ',' f_block_optarg ',' f_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, $3, null, $5, $6);
+                    $$ = p.new_args($1.getLine(), $1, $3, null, $5, $6);
                 }
                 | f_arg ',' f_rest_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, null, $3, null, $4);
+                    $$ = p.new_args($1.getLine(), $1, null, $3, null, $4);
                 }
                 | f_arg excessed_comma {
-                    RestArgNode rest = new UnnamedRestArgNode($1.getLine(), null, support.getCurrentScope().addVariable("*"));
-                    $$ = support.new_args($1.getLine(), $1, null, rest, null, (ArgsTailHolder) null);
+                    RestArgNode rest = new UnnamedRestArgNode($1.getLine(), null, p.getCurrentScope().addVariable("*"));
+                    $$ = p.new_args($1.getLine(), $1, null, rest, null, (ArgsTailHolder) null);
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, null, $3, $5, $6);
+                    $$ = p.new_args($1.getLine(), $1, null, $3, $5, $6);
                 }
                 | f_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, null, null, null, $2);
+                    $$ = p.new_args($1.getLine(), $1, null, null, null, $2);
                 }
                 | f_block_optarg ',' f_rest_arg opt_block_args_tail {
-                    $$ = support.new_args(support.getPosition($1), null, $1, $3, null, $4);
+                    $$ = p.new_args(p.getPosition($1), null, $1, $3, null, $4);
                 }
                 | f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = support.new_args(support.getPosition($1), null, $1, $3, $5, $6);
+                    $$ = p.new_args(p.getPosition($1), null, $1, $3, $5, $6);
                 }
                 | f_block_optarg opt_block_args_tail {
-                    $$ = support.new_args(support.getPosition($1), null, $1, null, null, $2);
+                    $$ = p.new_args(p.getPosition($1), null, $1, null, null, $2);
                 }
                 | f_block_optarg ',' f_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), null, $1, null, $3, $4);
+                    $$ = p.new_args($1.getLine(), null, $1, null, $3, $4);
                 }
                 | f_rest_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), null, null, $1, null, $2);
+                    $$ = p.new_args($1.getLine(), null, null, $1, null, $2);
                 }
                 | f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = support.new_args($1.getLine(), null, null, $1, $3, $4);
+                    $$ = p.new_args($1.getLine(), null, null, $1, $3, $4);
                 }
                 | block_args_tail {
-                    $$ = support.new_args($1.getLine(), null, null, null, null, $1);
+                    $$ = p.new_args($1.getLine(), null, null, null, null, $1);
                 }
 
 opt_block_param : none {
-                    $$ = support.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
+                    $$ = p.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | block_param_def {
                     lexer.commandStart = true;
@@ -2958,16 +2957,16 @@ opt_block_param : none {
 
 block_param_def : '|' opt_bv_decl '|' {
                     lexer.setCurrentArg(null);
-                    support.ordinalMaxNumParam();
+                    p.ordinalMaxNumParam();
                     lexer.getLexContext().in_argdef = false;
                     /*%%%*/
-                    $$ = support.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
+                    $$ = p.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
                     /*% %*/
                     /*% ripper: block_var!(params!(Qnil,Qnil,Qnil,Qnil,Qnil,Qnil,Qnil), escape_Qundef($2)) %*/
                 }
                 | '|' block_param opt_bv_decl '|' {
                     lexer.setCurrentArg(null);
-                    support.ordinalMaxNumParam();
+                    p.ordinalMaxNumParam();
                     lexer.getLexContext().in_argdef = false;
                     /*%%%*/
                     $$ = $2;
@@ -2997,7 +2996,7 @@ bv_decls        : bvar {
                 }
 
 bvar            : tIDENTIFIER {
-                    support.new_bv($1);
+                    p.new_bv($1);
                     /*% ripper: get_value($1) %*/
                 }
                 | f_bad_arg {
@@ -3005,41 +3004,41 @@ bvar            : tIDENTIFIER {
                 }
 
 lambda          : tLAMBDA {
-                    support.pushBlockScope();
+                    p.pushBlockScope();
                     $$ = lexer.getLeftParenBegin();
                     lexer.setLeftParenBegin(lexer.getParenNest());
                 } {
-                    $$ = support.resetMaxNumParam();
+                    $$ = p.resetMaxNumParam();
                 } {
-                    $$ = support.numparam_push();
+                    $$ = p.numparam_push();
                 } f_larglist {
                     lexer.getCmdArgumentState().push0();
                 } lambda_body {
-                    int max_numparam = support.restoreMaxNumParam($<Integer>3);
-                    ArgsNode args = support.args_with_numbered($5, max_numparam);
+                    int max_numparam = p.restoreMaxNumParam($<Integer>3);
+                    ArgsNode args = p.args_with_numbered($5, max_numparam);
                     lexer.getCmdArgumentState().pop();
                     /*%%%*/
-                    $$ = new LambdaNode(@1.start(), args, $7, support.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new LambdaNode(@1.start(), args, $7, p.getCurrentScope(), lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
                     lexer.setLeftParenBegin($<Integer>2);
-                    support.numparam_pop($<Node>4);
-                    support.popCurrentScope();
+                    p.numparam_pop($<Node>4);
+                    p.popCurrentScope();
                 }
 
 f_larglist      : '(' f_args opt_bv_decl ')' {
                     lexer.getLexContext().in_argdef = false;
                     /*%%%*/
                     $$ = $2;
-                    support.ordinalMaxNumParam();
+                    p.ordinalMaxNumParam();
                     /*% %*/
                     /*% ripper: paren!($2) %*/
                 }
                 | f_args {
                     lexer.getLexContext().in_argdef = false;
                     /*%%%*/
-                    if (!support.isArgsInfoEmpty($1)) {
-                        support.ordinalMaxNumParam();
+                    if (!p.isArgsInfoEmpty($1)) {
+                        p.ordinalMaxNumParam();
                     }
                     /*% %*/
                     $$ = $1;
@@ -3083,19 +3082,19 @@ block_call      : command do_block {
                 }
                 | block_call call_op2 operation2 opt_paren_args {
                     /*%%%*/
-                    $$ = support.new_call($1, $2, $3, $4, null, @3.start());
+                    $$ = p.new_call($1, $2, $3, $4, null, @3.start());
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
                 }
                 | block_call call_op2 operation2 opt_paren_args brace_block {
                     /*%%%*/
-                    $$ = support.new_call($1, $2, $3, $4, $5, @3.start());
+                    $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
                 }
                 | block_call call_op2 operation2 command_args do_block {
                     /*%%%*/
-                    $$ = support.new_call($1, $2, $3, $4, $5, @3.start());
+                    $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 }
@@ -3103,44 +3102,44 @@ block_call      : command do_block {
 // [!null]
 method_call     : fcall paren_args {
                     /*%%%*/
-                    support.frobnicate_fcall_args($1, $2, null);
+                    p.frobnicate_fcall_args($1, $2, null);
                     $$ = $1;
                     /*% %*/
                     /*% ripper: method_add_arg!(fcall!($1), $2) %*/
                 }
                 | primary_value call_op operation2 opt_paren_args {
                     /*%%%*/
-                    $$ = support.new_call($1, $2, $3, $4, null, @3.start());
+                    $$ = p.new_call($1, $2, $3, $4, null, @3.start());
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
                 }
                 | primary_value tCOLON2 operation2 paren_args {
                     /*%%%*/
-                    $$ = support.new_call($1, $3, $4, null);
+                    $$ = p.new_call($1, $3, $4, null);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, ID2VAL(idCOLON2), $3), $4) %*/
                 }
                 | primary_value tCOLON2 operation3 {
                     /*%%%*/
-                    $$ = support.new_call($1, $3, null, null);
+                    $$ = p.new_call($1, $3, null, null);
                     /*% %*/
                     /*% ripper: call!($1, ID2VAL(idCOLON2), $3) %*/
                 }
                 | primary_value call_op paren_args {
                     /*%%%*/
-                    $$ = support.new_call($1, $2, LexingCommon.CALL, $3, null, @3.start());
+                    $$ = p.new_call($1, $2, LexingCommon.CALL, $3, null, @3.start());
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
                 }
                 | primary_value tCOLON2 paren_args {
                     /*%%%*/
-                    $$ = support.new_call($1, LexingCommon.CALL, $3, null);
+                    $$ = p.new_call($1, LexingCommon.CALL, $3, null);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, ID2VAL(idCOLON2), ID2VAL(idCall)), $3) %*/
                 }
                 | keyword_super paren_args {
                     /*%%%*/
-                    $$ = support.new_super($1, $2);
+                    $$ = p.new_super($1, $2);
                     /*% %*/
                     /*% ripper: super!($2) %*/
                 }
@@ -3153,10 +3152,10 @@ method_call     : fcall paren_args {
                 | primary_value '[' opt_call_args rbracket {
                     /*%%%*/
                     if ($1 instanceof SelfNode) {
-                        $$ = support.new_fcall(LexingCommon.LBRACKET_RBRACKET);
-                        support.frobnicate_fcall_args($<FCallNode>$, $3, null);
+                        $$ = p.new_fcall(LexingCommon.LBRACKET_RBRACKET);
+                        p.frobnicate_fcall_args($<FCallNode>$, $3, null);
                     } else {
-                        $$ = support.new_call($1, lexer.LBRACKET_RBRACKET, $3, null);
+                        $$ = p.new_call($1, lexer.LBRACKET_RBRACKET, $3, null);
                     }
                     /*% %*/
                     /*% ripper: aref!($1, escape_Qundef($3)) %*/
@@ -3175,71 +3174,71 @@ brace_block     : '{' brace_body '}' {
                 }
 
 brace_body      : {
-                    support.pushBlockScope();
+                    p.pushBlockScope();
                 } {
-                    $$ = support.resetMaxNumParam();
+                    $$ = p.resetMaxNumParam();
                 } {
-                    $$ = support.numparam_push();
+                    $$ = p.numparam_push();
                 } opt_block_param compstmt {
-                    int max_numparam = support.restoreMaxNumParam($<Integer>2);
-                    ArgsNode args = support.args_with_numbered($4, max_numparam);
+                    int max_numparam = p.restoreMaxNumParam($<Integer>2);
+                    ArgsNode args = p.args_with_numbered($4, max_numparam);
                     /*%%%*/
-                    $$ = new IterNode(@1.start(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new IterNode(@1.start(), args, $5, p.getCurrentScope(), lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: brace_block!(escape_Qundef($4), $5) %*/
-                    support.numparam_pop($<Node>3);
-                    support.popCurrentScope();                    
+                    p.numparam_pop($<Node>3);
+                    p.popCurrentScope();                    
                 }
 
 do_body 	: {
-                    support.pushBlockScope();
+                    p.pushBlockScope();
                 } {
-                    $$ = support.resetMaxNumParam();
+                    $$ = p.resetMaxNumParam();
                 } {
-                    $$ = support.numparam_push();
+                    $$ = p.numparam_push();
                     lexer.getCmdArgumentState().push0();
                 } opt_block_param bodystmt {
-                    int max_numparam = support.restoreMaxNumParam($<Integer>2);
-                    ArgsNode args = support.args_with_numbered($4, max_numparam);
+                    int max_numparam = p.restoreMaxNumParam($<Integer>2);
+                    ArgsNode args = p.args_with_numbered($4, max_numparam);
                     /*%%%*/
-                    $$ = new IterNode(@1.start(), args, $5, support.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new IterNode(@1.start(), args, $5, p.getCurrentScope(), lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: do_block!(escape_Qundef($4), $5) %*/
                     lexer.getCmdArgumentState().pop();
-                    support.numparam_pop($<Node>3);
-                    support.popCurrentScope();
+                    p.numparam_pop($<Node>3);
+                    p.popCurrentScope();
                 }
 
 case_args	: arg_value {
                     /*%%%*/
-                    support.check_literal_when($1);
-                    $$ = support.newArrayNode($1.getLine(), $1);
+                    p.check_literal_when($1);
+                    $$ = p.newArrayNode($1.getLine(), $1);
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
                 }
                 | tSTAR arg_value {
                     /*%%%*/
-                    $$ = support.newSplatNode($2);
+                    $$ = p.newSplatNode($2);
                     /*% %*/
                     /*% ripper: args_add_star!(args_new!, $2) %*/
                 }
                 | case_args ',' arg_value {
                     /*%%%*/
-                    support.check_literal_when($3);
-                    $$ = support.last_arg_append($1, $3);
+                    p.check_literal_when($3);
+                    $$ = p.last_arg_append($1, $3);
                     /*% %*/
                     /*% ripper: args_add!($1, $3) %*/
                 }
                 | case_args ',' tSTAR arg_value {
                     /*%%%*/
-                    $$ = support.rest_arg_append($1, $4);
+                    $$ = p.rest_arg_append($1, $4);
                     /*% %*/
                     /*% ripper: args_add_star!($1, $4) %*/
                 }
  
 case_body       : k_when case_args then compstmt cases {
                     /*%%%*/
-                    $$ = support.newWhenNode($1, $2, $4, $5);
+                    $$ = p.newWhenNode($1, $2, $4, $5);
                     /*% %*/
                     /*% ripper: when!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -3254,16 +3253,16 @@ p_case_body     : keyword_in {
                     LexContext ctxt = (LexContext) lexer.getLexContext();
                     $1 = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
-                    $$ = support.push_pvtbl();
+                    $$ = p.push_pvtbl();
                 } {
-                    $$ = support.push_pktbl();
+                    $$ = p.push_pktbl();
                 } p_top_expr then {
-                    support.pop_pktbl($<Set>3);
-                    support.pop_pvtbl($<Set>2);
+                    p.pop_pktbl($<Set>3);
+                    p.pop_pvtbl($<Set>2);
                     lexer.getLexContext().in_kwarg = $<Boolean>1;
                 } compstmt p_cases {
                     /*%%%*/
-                    $$ = support.newIn(@1.start(), $4, $7, $8);
+                    $$ = p.newIn(@1.start(), $4, $7, $8);
                     /*% %*/
                     /*% ripper: in!($4, $7, escape_Qundef($8)) %*/
                 }
@@ -3276,15 +3275,15 @@ p_cases         : opt_else
 p_top_expr      : p_top_expr_body
                 | p_top_expr_body modifier_if expr_value {
                     /*%%%*/
-                    $$ = support.new_if(@1.start(), $3, $1, null);
-                    support.fixpos($<Node>$, $3);
+                    $$ = p.new_if(@1.start(), $3, $1, null);
+                    p.fixpos($<Node>$, $3);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
                 }
                 | p_top_expr_body modifier_unless expr_value {
                     /*%%%*/
-                    $$ = support.new_if(@1.start(), $3, null, $1);
-                    support.fixpos($<Node>$, $3);
+                    $$ = p.new_if(@1.start(), $3, null, $1);
+                    p.fixpos($<Node>$, $3);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
                 }
@@ -3292,23 +3291,23 @@ p_top_expr      : p_top_expr_body
 // FindPatternNode, HashPatternNode, ArrayPatternNode + p_expr(a lot)
 p_top_expr_body : p_expr
                 | p_expr ',' {
-                    $$ = support.new_array_pattern(@1.start(), null, $1,
-                                                   support.new_array_pattern_tail(@1.start(), null, true, null, null));
+                    $$ = p.new_array_pattern(@1.start(), null, $1,
+                                                   p.new_array_pattern_tail(@1.start(), null, true, null, null));
                 }
                 | p_expr ',' p_args {
-                    $$ = support.new_array_pattern(@1.start(), null, $1, $3);
+                    $$ = p.new_array_pattern(@1.start(), null, $1, $3);
                     /*%%%*/
-                    support.nd_set_first_loc($<Node>$, @1.start());
+                    p.nd_set_first_loc($<Node>$, @1.start());
                     /*% %*/
                 }
                 | p_find {
-                    $$ = support.new_find_pattern(null, $1);
+                    $$ = p.new_find_pattern(null, $1);
                 }
                 | p_args_tail {
-                    $$ = support.new_array_pattern(@1.start(), null, null, $1);
+                    $$ = p.new_array_pattern(@1.start(), null, null, $1);
                 }
                 | p_kwargs {
-                    $$ = support.new_hash_pattern(null, $1);
+                    $$ = p.new_hash_pattern(null, $1);
                 }
 
 p_expr          : p_as
@@ -3323,131 +3322,131 @@ p_as            : p_expr tASSOC p_variable {
 
 p_alt           : p_alt '|' p_expr_basic {
                     /*%%%*/
-                    $$ = support.newOrNode($1, $3);
+                    $$ = p.newOrNode($1, $3);
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
                 }
                 | p_expr_basic
 
 p_lparen        : '(' {
-                    $$ = support.push_pktbl();
+                    $$ = p.push_pktbl();
                 }
 p_lbracket      : '[' {
-                    $$ = support.push_pktbl();
+                    $$ = p.push_pktbl();
                 }
 
 p_expr_basic    : p_value
                 | p_variable
                 | p_const p_lparen p_args rparen {
-                    support.pop_pktbl($<Set>2);
-                    $$ = support.new_array_pattern(@1.start(), $1, null, $3);
+                    p.pop_pktbl($<Set>2);
+                    $$ = p.new_array_pattern(@1.start(), $1, null, $3);
                     /*%%%*/
-                    support.nd_set_first_loc($<Node>$, @1.start());
+                    p.nd_set_first_loc($<Node>$, @1.start());
                     /*% %*/
                 }
                 | p_const p_lparen p_find rparen {
-                    support.pop_pktbl($<Set>2);
-                    $$ = support.new_find_pattern($1, $3);
+                    p.pop_pktbl($<Set>2);
+                    $$ = p.new_find_pattern($1, $3);
                     /*%%%*/
-                    support.nd_set_first_loc($<Node>$, @1.start());
+                    p.nd_set_first_loc($<Node>$, @1.start());
                     /*% %*/
                 }
                 | p_const p_lparen p_kwargs rparen {
-                    support.pop_pktbl($<Set>2);
-                    $$ = support.new_hash_pattern($1, $3);
+                    p.pop_pktbl($<Set>2);
+                    $$ = p.new_hash_pattern($1, $3);
                     /*%%%*/
-                    support.nd_set_first_loc($<Node>$, @1.start());
+                    p.nd_set_first_loc($<Node>$, @1.start());
                     /*% %*/
                 }
                 | p_const '(' rparen {
-                     $$ = support.new_array_pattern(@1.start(), $1, null,
-                                                    support.new_array_pattern_tail(@1.start(), null, false, null, null));
+                     $$ = p.new_array_pattern(@1.start(), $1, null,
+                                                    p.new_array_pattern_tail(@1.start(), null, false, null, null));
                 }
                 | p_const p_lbracket p_args rbracket {
-                    support.pop_pktbl($<Set>2);
-                    $$ = support.new_array_pattern(@1.start(), $1, null, $3);
+                    p.pop_pktbl($<Set>2);
+                    $$ = p.new_array_pattern(@1.start(), $1, null, $3);
                     /*%%%*/
-                    support.nd_set_first_loc($<Node>$, @1.start());
+                    p.nd_set_first_loc($<Node>$, @1.start());
                     /*% %*/
                 }
                 | p_const p_lbracket p_find rbracket {
-                    support.pop_pktbl($<Set>2);
-                    $$ = support.new_find_pattern($1, $3);
+                    p.pop_pktbl($<Set>2);
+                    $$ = p.new_find_pattern($1, $3);
                     /*%%%*/
-                    support.nd_set_first_loc($<Node>$, @1.start());
+                    p.nd_set_first_loc($<Node>$, @1.start());
                     /*% %*/
                 }
                 | p_const p_lbracket p_kwargs rbracket {
-                    support.pop_pktbl($<Set>2);
-                    $$ = support.new_hash_pattern($1, $3);
+                    p.pop_pktbl($<Set>2);
+                    $$ = p.new_hash_pattern($1, $3);
                     /*%%%*/
-                    support.nd_set_first_loc($<Node>$, @1.start());
+                    p.nd_set_first_loc($<Node>$, @1.start());
                     /*% %*/
                 }
                 | p_const '[' rbracket {
-                    $$ = support.new_array_pattern(@1.start(), $1, null,
-                            support.new_array_pattern_tail(@1.start(), null, false, null, null));
+                    $$ = p.new_array_pattern(@1.start(), $1, null,
+                            p.new_array_pattern_tail(@1.start(), null, false, null, null));
                 }
                 | tLBRACK p_args rbracket {
-                    $$ = support.new_array_pattern(@1.start(), null, null, $2);
+                    $$ = p.new_array_pattern(@1.start(), null, null, $2);
                 }
                 | tLBRACK p_find rbracket {
-                    $$ = support.new_find_pattern(null, $2);
+                    $$ = p.new_find_pattern(null, $2);
                 }
                 | tLBRACK rbracket {
-                    $$ = support.new_array_pattern(@1.start(), null, null,
-                            support.new_array_pattern_tail(@1.start(), null, false, null, null));
+                    $$ = p.new_array_pattern(@1.start(), null, null,
+                            p.new_array_pattern_tail(@1.start(), null, false, null, null));
                 }
                 | tLBRACE {
-                    $$ = support.push_pktbl();
+                    $$ = p.push_pktbl();
                     LexContext ctxt = lexer.getLexContext();
                     $1 = ctxt.in_kwarg;
                     ctxt.in_kwarg = false;
                 } p_kwargs rbrace {
-                    support.pop_pktbl($<Set>2);
+                    p.pop_pktbl($<Set>2);
                     lexer.getLexContext().in_kwarg = $<Boolean>1;
-                    $$ = support.new_hash_pattern(null, $3);
+                    $$ = p.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
-                    $$ = support.new_hash_pattern(null, support.new_hash_pattern_tail(@1.start(), null, null));
+                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), null, null));
                 }
                 | tLPAREN {
-                    $$ = support.push_pktbl();
+                    $$ = p.push_pktbl();
                  } p_expr rparen {
-                    support.pop_pktbl($<Set>2);
+                    p.pop_pktbl($<Set>2);
                     $$ = $3;
                 }
 
 p_args          : p_expr {
                     /*%%%*/
-                    ListNode preArgs = support.newArrayNode($1.getLine(), $1);
-                    $$ = support.new_array_pattern_tail(@1.start(), preArgs, false, null, null);
+                    ListNode preArgs = p.newArrayNode($1.getLine(), $1);
+                    $$ = p.new_array_pattern_tail(@1.start(), preArgs, false, null, null);
                     /*% 
                         $$ = new_array_pattern_tail(p, rb_ary_new_from_args(1, get_value($1)), 0, 0, Qnone, &@$);
                     %*/
                 }
                 | p_args_head {
-                    $$ = support.new_array_pattern_tail(@1.start(), $1, true, null, null);
+                    $$ = p.new_array_pattern_tail(@1.start(), $1, true, null, null);
                 }
                 | p_args_head p_arg {
                     /*%%%*/
-                    $$ = support.new_array_pattern_tail(@1.start(), support.list_concat($1, $2), false, null, null);
+                    $$ = p.new_array_pattern_tail(@1.start(), p.list_concat($1, $2), false, null, null);
                     /*%
 			VALUE pre_args = rb_ary_concat($1, get_value($2));
 			$$ = new_array_pattern_tail(p, pre_args, 0, 0, Qnone, &@$);
                     %*/
                 }
                 | p_args_head tSTAR tIDENTIFIER {
-                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, $3, null);
+                     $$ = p.new_array_pattern_tail(@1.start(), $1, true, $3, null);
                 }
                 | p_args_head tSTAR tIDENTIFIER ',' p_args_post {
-                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, $3, $5);
+                     $$ = p.new_array_pattern_tail(@1.start(), $1, true, $3, $5);
                 }
                 | p_args_head tSTAR {
-                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, null, null);
+                     $$ = p.new_array_pattern_tail(@1.start(), $1, true, null, null);
                 }
                 | p_args_head tSTAR ',' p_args_post {
-                     $$ = support.new_array_pattern_tail(@1.start(), $1, true, null, $4);
+                     $$ = p.new_array_pattern_tail(@1.start(), $1, true, null, $4);
                 }
                 | p_args_tail {
                      $$ = $1;
@@ -3459,22 +3458,22 @@ p_args_head     : p_arg ',' {
                 }
                 | p_args_head p_arg ',' {
                     /*%%%*/
-                    $$ = support.list_concat($1, $2);
+                    $$ = p.list_concat($1, $2);
                     /*% %*/
                     /*% ripper: rb_ary_concat($1, get_value($2)) %*/
                 }
 
 p_args_tail     : p_rest {
-                     $$ = support.new_array_pattern_tail(@1.start(), null, true, $1, null);
+                     $$ = p.new_array_pattern_tail(@1.start(), null, true, $1, null);
                 }
                 | p_rest ',' p_args_post {
-                     $$ = support.new_array_pattern_tail(@1.start(), null, true, $1, $3);
+                     $$ = p.new_array_pattern_tail(@1.start(), null, true, $1, $3);
                 }
 
 // FindPatternNode - [!null]
 p_find          : p_rest ',' p_args_post ',' p_rest {
-                     $$ = support.new_find_pattern_tail(@1.start(), $1, $3, $5);
-                     support.warn_experimental(@1.start(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
+                     $$ = p.new_find_pattern_tail(@1.start(), $1, $3, $5);
+                     p.warn_experimental(@1.start(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
                 }
 
 // ByteList
@@ -3489,7 +3488,7 @@ p_rest          : tSTAR tIDENTIFIER {
 p_args_post     : p_arg
                 | p_args_post ',' p_arg {
                     /*%%%*/
-                    $$ = support.list_concat($1, $3);
+                    $$ = p.list_concat($1, $3);
                     /*% %*/
                     /*% ripper: rb_ary_concat($1, get_value($3)) %*/
                 }
@@ -3497,23 +3496,23 @@ p_args_post     : p_arg
 // ListNode - [!null]
 p_arg           : p_expr {
                     /*%%%*/
-                    $$ = support.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode($1.getLine(), $1);
                     /*% %*/
                     /*% ripper: rb_ary_new_from_args(1, get_value($1)) %*/
                 }
 
 // HashPatternNode - [!null]
 p_kwargs        : p_kwarg ',' p_any_kwrest {
-                    $$ = support.new_hash_pattern_tail(@1.start(), $1, $3);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, $3);
                 }
 		| p_kwarg {
-                    $$ = support.new_hash_pattern_tail(@1.start(), $1, null);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null);
                 }
                 | p_kwarg ',' {
-                    $$ = support.new_hash_pattern_tail(@1.start(), $1, null);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null);
                 }
                 | p_any_kwrest {
-                    $$ = support.new_hash_pattern_tail(@1.start(), null, $1);
+                    $$ = p.new_hash_pattern_tail(@1.start(), null, $1);
                 }
 
 // HashNode - [!null]
@@ -3533,24 +3532,24 @@ p_kwarg         : p_kw {
 
 // KeyValuePair - [!null]
 p_kw            : p_kw_label p_expr {
-                    support.error_duplicate_pattern_key($1);
+                    p.error_duplicate_pattern_key($1);
                     /*%%%*/
-                    Node label = support.asSymbol(@1.start(), $1);
+                    Node label = p.asSymbol(@1.start(), $1);
 
                     $$ = new KeyValuePair(label, $2);
                     /*% %*/
                     /*% ripper: rb_ary_new_from_args(2, get_value($1), get_value($2)) %*/
                 }
                 | p_kw_label {
-                    support.error_duplicate_pattern_key($1);
-                    if ($1 != null && !support.is_local_id($1)) {
-                        support.yyerror("key must be valid as local variables");
+                    p.error_duplicate_pattern_key($1);
+                    if ($1 != null && !p.is_local_id($1)) {
+                        p.yyerror("key must be valid as local variables");
                     }
-                    support.error_duplicate_pattern_variable($1);
+                    p.error_duplicate_pattern_variable($1);
                     /*%%%*/
 
-                    Node label = support.asSymbol(@1.start(), $1);
-                    $$ = new KeyValuePair(label, support.assignableLabelOrIdentifier($1, null));
+                    Node label = p.asSymbol(@1.start(), $1);
+                    $$ = new KeyValuePair(label, p.assignableLabelOrIdentifier($1, null));
                     /*% %*/
                     /*% ripper: rb_ary_new_from_args(2, get_value($1), Qnil) %*/
                 }
@@ -3572,7 +3571,7 @@ p_kw_label      : tLABEL
 		    %*/
 
                     else {
-                        support.yyerror("symbol literal with interpolation is not allowed");
+                        p.yyerror("symbol literal with interpolation is not allowed");
                         $$ = null;
                     }
                 }
@@ -3590,41 +3589,41 @@ p_kwnorest      : kwrest_mark keyword_nil {
 
 p_any_kwrest    : p_kwrest
                 | p_kwnorest {
-                    $$ = support.KWNOREST;
+                    $$ = p.KWNOREST;
                 }
 
 p_value         : p_primitive
                 | p_primitive tDOT2 p_primitive {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
-                    support.value_expr(lexer, $3);
+                    p.value_expr(lexer, $1);
+                    p.value_expr(lexer, $3);
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(@1.start(), support.makeNullNil($1), support.makeNullNil($3), false, isLiteral);
+                    $$ = new DotNode(@1.start(), p.makeNullNil($1), p.makeNullNil($3), false, isLiteral);
                     /*% %*/
                     /*% ripper: dot2!($1, $3) %*/
                 }
                 | p_primitive tDOT3 p_primitive {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
-                    support.value_expr(lexer, $3);
+                    p.value_expr(lexer, $1);
+                    p.value_expr(lexer, $3);
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(@1.start(), support.makeNullNil($1), support.makeNullNil($3), true, isLiteral);
+                    $$ = new DotNode(@1.start(), p.makeNullNil($1), p.makeNullNil($3), true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!($1, $3) %*/
                 }
                 | p_primitive tDOT2 {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                     boolean isLiteral = $1 instanceof FixnumNode;
-                    $$ = new DotNode(@1.start(), support.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
+                    $$ = new DotNode(@1.start(), p.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
                     /*% %*/
                     /*% ripper: dot2!($1, Qnil) %*/
                 }
                 | p_primitive tDOT3 {
                     /*%%%*/
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                     boolean isLiteral = $1 instanceof FixnumNode;
-                    $$ = new DotNode(@1.start(), support.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
+                    $$ = new DotNode(@1.start(), p.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!($1, Qnil) %*/
                 }
@@ -3633,17 +3632,17 @@ p_value         : p_primitive
                 | p_const
                 | tBDOT2 p_primitive {
                     /*%%%*/
-                    support.value_expr(lexer, $2);
+                    p.value_expr(lexer, $2);
                     boolean isLiteral = $2 instanceof FixnumNode;
-                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, support.makeNullNil($2), false, isLiteral);
+                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, p.makeNullNil($2), false, isLiteral);
                     /*% %*/
                     /*% ripper: dot2!(Qnil, $2) %*/
                 }
                 | tBDOT3 p_primitive {
                     /*%%%*/
-                    support.value_expr(lexer, $2);
+                    p.value_expr(lexer, $2);
                     boolean isLiteral = $2 instanceof FixnumNode;
-                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, support.makeNullNil($2), true, isLiteral);
+                    $$ = new DotNode(@1.start(), NilImplicitNode.NIL, p.makeNullNil($2), true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!(Qnil, $2) %*/
                 }
@@ -3691,7 +3690,7 @@ p_primitive     : literal
                 | keyword__FILE__ {
                     /*%%%*/
                     $$ = new FileNode(lexer.tokline, new ByteList(lexer.getFile().getBytes(),
-                    support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
+                    p.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -3713,17 +3712,17 @@ p_primitive     : literal
 
 p_variable      : tIDENTIFIER {
                     /*%%%*/
-                    support.error_duplicate_pattern_variable($1);
-                    $$ = support.assignableInCurr($1, null);
+                    p.error_duplicate_pattern_variable($1);
+                    $$ = p.assignableInCurr($1, null);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
 
 p_var_ref       : '^' tIDENTIFIER {
                     /*%%%*/
-                    Node n = support.gettable($2);
+                    Node n = p.gettable($2);
                     if (!(n instanceof LocalVarNode || n instanceof DVarNode)) {
-                        support.compile_error("" + $2 + ": no such local variable");
+                        p.compile_error("" + $2 + ": no such local variable");
                     }
                     $$ = n;
                     /*% %*/
@@ -3731,7 +3730,7 @@ p_var_ref       : '^' tIDENTIFIER {
                 }
                 | '^' nonlocal_var {
                     /*%%%*/
-                    $$ = support.gettable($2);
+                    $$ = p.gettable($2);
                     if ($$ == null) $$ = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: var_ref!($2) %*/
@@ -3746,19 +3745,19 @@ p_expr_ref      : '^' tLPAREN expr_value ')' {
 
 p_const         : tCOLON3 cname {
                     /*%%%*/
-                    $$ = support.new_colon3(lexer.tokline, $2);
+                    $$ = p.new_colon3(lexer.tokline, $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
                 | p_const tCOLON2 cname {
                     /*%%%*/
-                    $$ = support.new_colon2(lexer.tokline, $1, $3);
+                    $$ = p.new_colon2(lexer.tokline, $1, $3);
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    $$ = new ConstNode(lexer.tokline, support.symbolID($1));
+                    $$ = new ConstNode(lexer.tokline, p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -3767,14 +3766,14 @@ opt_rescue      : k_rescue exc_list exc_var then compstmt opt_rescue {
                     /*%%%*/
                     Node node;
                     if ($3 != null) {
-                        node = support.appendToBlock(node_assign($3, new GlobalVarNode($1, support.symbolID(lexer.DOLLAR_BANG))), $5);
+                        node = p.appendToBlock(node_assign($3, new GlobalVarNode($1, p.symbolID(lexer.DOLLAR_BANG))), $5);
                         if ($5 != null) {
                             node.setLine($1);
                         }
                     } else {
                         node = $5;
                     }
-                    Node body = support.makeNullNil(node);
+                    Node body = p.makeNullNil(node);
                     $$ = new RescueBodyNode($1, $2, body, $6);
                     /*% %*/
                     /*% ripper: rescue!(escape_Qundef($2), escape_Qundef($3), escape_Qundef($5), escape_Qundef($6)) %*/
@@ -3785,13 +3784,13 @@ opt_rescue      : k_rescue exc_list exc_var then compstmt opt_rescue {
 
 exc_list        : arg_value {
                     /*%%%*/
-                    $$ = support.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode($1.getLine(), $1);
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
                 | mrhs {
                     /*%%%*/
-                    $$ = support.splat_array($1);
+                    $$ = p.splat_array($1);
                     if ($$ == null) $$ = $1; // ArgsCat or ArgsPush
                     /*% %*/
                     /*% ripper: $1 %*/
@@ -3835,7 +3834,7 @@ string          : tCHAR {
                 }
                 | string string1 {
                     /*%%%*/
-                    $$ = support.literal_concat($1, $2);
+                    $$ = p.literal_concat($1, $2);
                     /*% %*/
                     /*% ripper: string_concat!($1, $2) %*/
                 }
@@ -3851,7 +3850,7 @@ string1         : tSTRING_BEG string_contents tSTRING_END {
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     /*%%%*/
-                    int line = support.getPosition($2);
+                    int line = p.getPosition($2);
 
                     lexer.heredoc_dedent($2);
 		    lexer.setHeredocIndent(0);
@@ -3872,7 +3871,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 }
 
 regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
-                    $$ = support.newRegexpNode(support.getPosition($2), $2, (RegexpNode) $3);
+                    $$ = p.newRegexpNode(p.getPosition($2), $2, (RegexpNode) $3);
                 }
 
 // [!null] - ListNode
@@ -3904,7 +3903,7 @@ word            : string_content {
                 }
                 | word string_content {
                     /*%%%*/
-                    $$ = support.literal_concat($1, $<Node>2);
+                    $$ = p.literal_concat($1, $<Node>2);
                     /*% %*/
                     /*% ripper: word_add!($1, $2) %*/
                 }
@@ -3924,7 +3923,7 @@ symbol_list     : /* none */ {
                 }
                 | symbol_list word ' ' {
                     /*%%%*/
-                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getLine()).add($2) : support.asSymbol($1.getLine(), $2));
+                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getLine()).add($2) : p.asSymbol($1.getLine(), $2));
                     /*% %*/
                     /*% ripper: symbols_add!($1, $2) %*/
                 }
@@ -3969,7 +3968,7 @@ qsym_list      : /* none */ {
                 }
                 | qsym_list tSTRING_CONTENT ' ' {
                     /*%%%*/
-                    $$ = $1.add(support.asSymbol($1.getLine(), $2));
+                    $$ = $1.add(p.asSymbol($1.getLine(), $2));
                     /*% %*/
                     /*% ripper: qsymbols_add!($1, $2) %*/
                 }
@@ -3988,7 +3987,7 @@ string_contents : /* none */ {
                 }
                 | string_contents string_content {
                     /*%%%*/
-                    $$ = support.literal_concat($1, $<Node>2);
+                    $$ = p.literal_concat($1, $<Node>2);
                     /*% %*/
                     /*% ripper: string_add!($1, $2) %*/
                     /*%%%*/
@@ -4012,7 +4011,7 @@ xstring_contents: /* none */ {
                 }
                 | xstring_contents string_content {
                     /*%%%*/
-                    $$ = support.literal_concat($1, $<Node>2);
+                    $$ = p.literal_concat($1, $<Node>2);
                     /*% %*/
                     /*% ripper: xstring_add!($1, $2) %*/
                 }
@@ -4030,7 +4029,7 @@ regexp_contents: /* none */ {
                 | regexp_contents string_content {
     // FIXME: mri is different here.
                     /*%%%*/
-                    $$ = support.literal_concat($1, $<Node>2);
+                    $$ = p.literal_concat($1, $<Node>2);
                     /*% 
 			VALUE s1 = 1, s2 = 0, n1 = $1, n2 = $2;
 			if (ripper_is_node_yylval(n1)) {
@@ -4060,7 +4059,7 @@ string_content  : tSTRING_CONTENT {
                 } string_dvar {
                     /*%%%*/
                     lexer.setStrTerm($<StrTerm>2);
-                    $$ = new EvStrNode(support.getPosition($3), $3);
+                    $$ = new EvStrNode(p.getPosition($3), $3);
                     /*% %*/
                     /*% ripper: string_dvar!($3) %*/
                 }
@@ -4089,26 +4088,26 @@ string_content  : tSTRING_CONTENT {
 
                    /*%%%*/
                    if ($6 != null) $6.unsetNewline();
-                   $$ = support.newEvStrNode(support.getPosition($6), $6);
+                   $$ = p.newEvStrNode(p.getPosition($6), $6);
                    /*% %*/
                    /*% ripper: string_embexpr!($7) %*/
                 }
 
 string_dvar     : tGVAR {
                     /*%%%*/
-                    $$ = new GlobalVarNode(lexer.getRubySourceline(), support.symbolID($1));
+                    $$ = new GlobalVarNode(lexer.getRubySourceline(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstVarNode(lexer.getRubySourceline(), support.symbolID($1));
+                    $$ = new InstVarNode(lexer.getRubySourceline(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarNode(lexer.getRubySourceline(), support.symbolID($1));
+                    $$ = new ClassVarNode(lexer.getRubySourceline(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -4122,7 +4121,7 @@ symbol          : ssym
 ssym            : tSYMBEG sym {
                     lexer.setState(EXPR_END);
                     /*%%%*/
-                    $$ = support.asSymbol(lexer.getRubySourceline(), $2);
+                    $$ = p.asSymbol(lexer.getRubySourceline(), $2);
                     /*% %*/
                     /*% ripper: symbol_literal!(symbol!($2)) %*/
                 }
@@ -4149,11 +4148,11 @@ dsym            : tSYMBEG string_contents tSTRING_END {
                     // EvStrNode :"#{some expression}"
                     // Ruby 1.9 allows empty strings as symbols
                     if ($2 == null) {
-                        $$ = support.asSymbol(lexer.getRubySourceline(), new ByteList(new byte[] {}));
+                        $$ = p.asSymbol(lexer.getRubySourceline(), new ByteList(new byte[] {}));
                     } else if ($2 instanceof DStrNode) {
                         $$ = new DSymbolNode($2.getLine(), $<DStrNode>2);
                     } else if ($2 instanceof StrNode) {
-                        $$ = support.asSymbol($2.getLine(), $2);
+                        $$ = p.asSymbol($2.getLine(), $2);
                     } else {
                         $$ = new DSymbolNode($2.getLine());
                         $<DSymbolNode>$.add($2);
@@ -4167,7 +4166,7 @@ numeric         : simple_numeric {
                 }
                 | tUMINUS_NUM simple_numeric %prec tLOWEST {
                     /*%%%*/
-                    $$ = support.negateNumeric($2);
+                    $$ = p.negateNumeric($2);
                     /*% %*/
                 }
 
@@ -4191,7 +4190,7 @@ simple_numeric  : tINTEGER {
 // [!null]
 var_ref         : tIDENTIFIER { // mri:user_variable
                     /*%%%*/
-                    $$ = support.declareIdentifier($1);
+                    $$ = p.declareIdentifier($1);
                     /*% 
 			if (id_is_var(p, get_id($1))) {
 			    $$ = dispatch1(var_ref, $1);
@@ -4203,7 +4202,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstVarNode(lexer.tokline, support.symbolID($1));
+                    $$ = new InstVarNode(lexer.tokline, p.symbolID($1));
                     /*% 
 			if (id_is_var(p, get_id($1))) {
 			    $$ = dispatch1(var_ref, $1);
@@ -4215,7 +4214,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalVarNode(lexer.tokline, support.symbolID($1));
+                    $$ = new GlobalVarNode(lexer.tokline, p.symbolID($1));
                     /*% 
 			if (id_is_var(p, get_id($1))) {
 			    $$ = dispatch1(var_ref, $1);
@@ -4227,7 +4226,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    $$ = new ConstNode(lexer.tokline, support.symbolID($1));
+                    $$ = new ConstNode(lexer.tokline, p.symbolID($1));
                     /*% 
 			if (id_is_var(p, get_id($1))) {
 			    $$ = dispatch1(var_ref, $1);
@@ -4239,7 +4238,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarNode(lexer.tokline, support.symbolID($1));
+                    $$ = new ClassVarNode(lexer.tokline, p.symbolID($1));
                     /*% 
 			if (id_is_var(p, get_id($1))) {
 			    $$ = dispatch1(var_ref, $1);
@@ -4276,7 +4275,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 | keyword__FILE__ {
                     /*%%%*/
                     $$ = new FileNode(lexer.tokline, new ByteList(lexer.getFile().getBytes(),
-                    support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
+                    p.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -4296,81 +4295,81 @@ var_ref         : tIDENTIFIER { // mri:user_variable
 // [!null]
 var_lhs         : tIDENTIFIER { // mri:user_variable
                     /*%%%*/
-                    $$ = support.assignableLabelOrIdentifier($1, null);
+                    $$ = p.assignableLabelOrIdentifier($1, null);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new InstAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new GlobalAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) support.compile_error("dynamic constant assignment");
+                    if (lexer.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.tokline, support.symbolID($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.tokline, p.symbolID($1), null, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 } // mri:user_variable
                 | keyword_nil { // mri:keyword_variable
                     /*%%%*/
-                    support.compile_error("Can't assign to nil");
+                    p.compile_error("Can't assign to nil");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_self {
                     /*%%%*/
-                    support.compile_error("Can't change the value of self");
+                    p.compile_error("Can't change the value of self");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_true {
                     /*%%%*/
-                    support.compile_error("Can't assign to true");
+                    p.compile_error("Can't assign to true");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword_false {
                     /*%%%*/
-                    support.compile_error("Can't assign to false");
+                    p.compile_error("Can't assign to false");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __FILE__");
+                    p.compile_error("Can't assign to __FILE__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __LINE__");
+                    p.compile_error("Can't assign to __LINE__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
-                    support.compile_error("Can't assign to __ENCODING__");
+                    p.compile_error("Can't assign to __ENCODING__");
                     $$ = null;
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
@@ -4400,8 +4399,8 @@ superclass      : '<' {
 f_opt_paren_args: f_paren_args
                 | none {
                     lexer.getLexContext().in_argdef = false;
-                    $$ = support.new_args(lexer.tokline, null, null, null, null, 
-                                          support.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null));
+                    $$ = p.new_args(lexer.tokline, null, null, null, null, 
+                                          p.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null));
                 }
 
 f_paren_args    : '(' f_args rparen {
@@ -4435,74 +4434,74 @@ f_arglist       : f_paren_args {
 
 
 args_tail       : f_kwarg ',' f_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail($1.getLine(), $1, $3, $4);
+                    $$ = p.new_args_tail($1.getLine(), $1, $3, $4);
                 }
                 | f_kwarg opt_f_block_arg {
-                    $$ = support.new_args_tail($1.getLine(), $1, (ByteList) null, $2);
+                    $$ = p.new_args_tail($1.getLine(), $1, (ByteList) null, $2);
                 }
                 | f_any_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail(lexer.getRubySourceline(), null, $1, $2);
+                    $$ = p.new_args_tail(lexer.getRubySourceline(), null, $1, $2);
                 }
                 | f_block_arg {
-                    $$ = support.new_args_tail($1.getLine(), null, (ByteList) null, $1);
+                    $$ = p.new_args_tail($1.getLine(), null, (ByteList) null, $1);
                 }
                 | args_forward {
-                    support.add_forwarding_args();
-                    $$ = support.new_args_tail(lexer.tokline, null, $1, new BlockArgNode(support.arg_var(FWD_BLOCK)));
+                    p.add_forwarding_args();
+                    $$ = p.new_args_tail(lexer.tokline, null, $1, new BlockArgNode(p.arg_var(FWD_BLOCK)));
                 }
 
 opt_args_tail   : ',' args_tail {
                     $$ = $2;
                 }
                 | /* none */ {
-                    $$ = support.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null);
+                    $$ = p.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null);
                 }
 
 // [!null]
 f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, $3, $5, null, $6);
+                    $$ = p.new_args($1.getLine(), $1, $3, $5, null, $6);
                 }
                 | f_arg ',' f_optarg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, $3, $5, $7, $8);
+                    $$ = p.new_args($1.getLine(), $1, $3, $5, $7, $8);
                 }
                 | f_arg ',' f_optarg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, $3, null, null, $4);
+                    $$ = p.new_args($1.getLine(), $1, $3, null, null, $4);
                 }
                 | f_arg ',' f_optarg ',' f_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, $3, null, $5, $6);
+                    $$ = p.new_args($1.getLine(), $1, $3, null, $5, $6);
                 }
                 | f_arg ',' f_rest_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, null, $3, null, $4);
+                    $$ = p.new_args($1.getLine(), $1, null, $3, null, $4);
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, null, $3, $5, $6);
+                    $$ = p.new_args($1.getLine(), $1, null, $3, $5, $6);
                 }
                 | f_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), $1, null, null, null, $2);
+                    $$ = p.new_args($1.getLine(), $1, null, null, null, $2);
                 }
                 | f_optarg ',' f_rest_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), null, $1, $3, null, $4);
+                    $$ = p.new_args($1.getLine(), null, $1, $3, null, $4);
                 }
                 | f_optarg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), null, $1, $3, $5, $6);
+                    $$ = p.new_args($1.getLine(), null, $1, $3, $5, $6);
                 }
                 | f_optarg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), null, $1, null, null, $2);
+                    $$ = p.new_args($1.getLine(), null, $1, null, null, $2);
                 }
                 | f_optarg ',' f_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), null, $1, null, $3, $4);
+                    $$ = p.new_args($1.getLine(), null, $1, null, $3, $4);
                 }
                 | f_rest_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), null, null, $1, null, $2);
+                    $$ = p.new_args($1.getLine(), null, null, $1, null, $2);
                 }
                 | f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = support.new_args($1.getLine(), null, null, $1, $3, $4);
+                    $$ = p.new_args($1.getLine(), null, null, $1, $3, $4);
                 }
                 | args_tail {
-                    $$ = support.new_args($1.getLine(), null, null, null, null, $1);
+                    $$ = p.new_args($1.getLine(), null, null, null, null, $1);
                 }
                 | /* none */ {
-                    $$ = support.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
+                    $$ = p.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
                 }
 
 // [!null] - ByteList
@@ -4515,25 +4514,25 @@ args_forward    : tBDOT3 {
 
 f_bad_arg       : tCONSTANT {
                     /*%%%*/
-                    support.yyerror("formal argument cannot be a constant");
+                    p.yyerror("formal argument cannot be a constant");
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
                 }
                 | tIVAR {
                     /*%%%*/
-                    support.yyerror("formal argument cannot be an instance variable");
+                    p.yyerror("formal argument cannot be an instance variable");
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                    support.yyerror("formal argument cannot be a global variable");
+                    p.yyerror("formal argument cannot be a global variable");
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    support.yyerror("formal argument cannot be a class variable");
+                    p.yyerror("formal argument cannot be a class variable");
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
                 }
@@ -4543,13 +4542,13 @@ f_norm_arg      : f_bad_arg {
                     $$ = $1; // Not really reached
                 }
                 | tIDENTIFIER {
-                    $$ = support.formal_argument($1);
-                    support.ordinalMaxNumParam();
+                    $$ = p.formal_argument($1);
+                    p.ordinalMaxNumParam();
                 }
 
 f_arg_asgn      : f_norm_arg {
                     lexer.setCurrentArg($1);
-                    $$ = support.arg_var($1);
+                    $$ = p.arg_var($1);
                 }
 
 f_arg_item      : f_arg_asgn {
@@ -4580,9 +4579,9 @@ f_arg           : f_arg_item {
                 }
 
 f_label 	: tLABEL {
-                    support.arg_var(support.formal_argument($1));
+                    p.arg_var(p.formal_argument($1));
                     lexer.setCurrentArg($1);
-                    support.ordinalMaxNumParam();
+                    p.ordinalMaxNumParam();
                     lexer.getLexContext().in_argdef = false;
                     $$ = $1;
                 }
@@ -4592,7 +4591,7 @@ f_kw            : f_label arg_value {
                     lexer.setCurrentArg(null);
                     lexer.getLexContext().in_argdef = true;
                     /*%%%*/
-                    $$ = new KeywordArgNode($2.getLine(), support.assignableKeyword($1, $2));
+                    $$ = new KeywordArgNode($2.getLine(), p.assignableKeyword($1, $2));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
                 }
@@ -4600,7 +4599,7 @@ f_kw            : f_label arg_value {
                     lexer.setCurrentArg(null);
                     lexer.getLexContext().in_argdef = true;
                     /*%%%*/
-                    $$ = new KeywordArgNode(lexer.getRubySourceline(), support.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
+                    $$ = new KeywordArgNode(lexer.getRubySourceline(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
                 }
@@ -4608,14 +4607,14 @@ f_kw            : f_label arg_value {
 f_block_kw      : f_label primary_value {
                     lexer.getLexContext().in_argdef = true;
                     /*%%%*/
-                    $$ = new KeywordArgNode(support.getPosition($2), support.assignableKeyword($1, $2));
+                    $$ = new KeywordArgNode(p.getPosition($2), p.assignableKeyword($1, $2));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
                 }
                 | f_label {
                     lexer.getLexContext().in_argdef = true;
                     /*%%%*/
-                    $$ = new KeywordArgNode(lexer.getRubySourceline(), support.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
+                    $$ = new KeywordArgNode(lexer.getRubySourceline(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
                 }
@@ -4663,7 +4662,7 @@ f_no_kwarg      : kwrest_mark keyword_nil {
                 }
 
 f_kwrest        : kwrest_mark tIDENTIFIER {
-                    support.shadowing_lvar($2);
+                    p.shadowing_lvar($2);
                     /*%%%*/
                     $$ = $2;
                     /*% %*/
@@ -4671,7 +4670,7 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                 }
                 | kwrest_mark {
                     /*%%%*/
-                    $$ = support.INTERNAL_ID;
+                    $$ = p.INTERNAL_ID;
                     /*% %*/
                     /*% ripper: kwrest_param!(Qnil) %*/
                 }
@@ -4680,7 +4679,7 @@ f_opt           : f_arg_asgn f_eq arg_value {
                     /*%%%*/
                     lexer.setCurrentArg(null);
                     lexer.getLexContext().in_argdef = true;
-                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
+                    $$ = new OptArgNode(p.getPosition($3), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
                 }
@@ -4689,7 +4688,7 @@ f_block_opt     : f_arg_asgn f_eq primary_value {
                     lexer.getLexContext().in_argdef = true;
                     lexer.setCurrentArg(null);
                     /*%%%*/
-                    $$ = new OptArgNode(support.getPosition($3), support.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
+                    $$ = new OptArgNode(p.getPosition($3), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
                 }
@@ -4702,7 +4701,7 @@ f_block_optarg  : f_block_opt {
                 }
                 | f_block_optarg ',' f_block_opt {
                     /*%%%*/
-                    $$ = support.appendToBlock($1, $3);
+                    $$ = p.appendToBlock($1, $3);
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($3)) %*/
                 }
@@ -4715,7 +4714,7 @@ f_optarg        : f_opt {
                 }
                 | f_optarg ',' f_opt {
                     /*%%%*/
-                    $$ = support.appendToBlock($1, $3);
+                    $$ = p.appendToBlock($1, $3);
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($3)) %*/
                 }
@@ -4729,10 +4728,10 @@ restarg_mark    : '*' {
 
 // [!null]
 f_rest_arg      : restarg_mark tIDENTIFIER {
-                    if (!support.is_local_id($2)) {
-                        support.yyerror("rest argument must be local variable");
+                    if (!p.is_local_id($2)) {
+                        p.yyerror("rest argument must be local variable");
                     }
-                    $$ = support.arg_var(support.shadowing_lvar($2));
+                    $$ = p.arg_var(p.shadowing_lvar($2));
                     /*%%%*/
                     $$ = new RestArgNode($<ArgumentNode>$);
                     /*% %*/
@@ -4740,7 +4739,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                 }
                 | restarg_mark {
                     /*%%%*/
-                    $$ = new UnnamedRestArgNode(lexer.getRubySourceline(), support.symbolID(CommonByteLists.EMPTY), support.getCurrentScope().addVariable("*"));
+                    $$ = new UnnamedRestArgNode(lexer.getRubySourceline(), p.symbolID(CommonByteLists.EMPTY), p.getCurrentScope().addVariable("*"));
                     /*% %*/
                     /*% ripper: rest_param!(Qnil) %*/
                 }
@@ -4755,17 +4754,17 @@ blkarg_mark     : '&' {
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg     : blkarg_mark tIDENTIFIER {
-                    if (!support.is_local_id($2)) {
-                        support.yyerror("block argument must be local variable");
+                    if (!p.is_local_id($2)) {
+                        p.yyerror("block argument must be local variable");
                     }
-                    $$ = support.arg_var(support.shadowing_lvar($2));
+                    $$ = p.arg_var(p.shadowing_lvar($2));
                     /*%%%*/
                     $$ = new BlockArgNode($<ArgumentNode>$);
                     /*% %*/
                     /*% ripper: blockarg!($2) %*/
                 }
                 | blkarg_mark {
-                    $$ = support.arg_var(support.shadowing_lvar(FWD_BLOCK));
+                    $$ = p.arg_var(p.shadowing_lvar(FWD_BLOCK));
                     /*%%%*/
                     $$ = new BlockArgNode($<ArgumentNode>$);
                     /*% 
@@ -4782,7 +4781,7 @@ opt_f_block_arg : ',' f_block_arg {
                 }
 
 singleton       : var_ref {
-                    support.value_expr(lexer, $1);
+                    p.value_expr(lexer, $1);
                     $$ = $1;
                 }
                 | '(' {
@@ -4790,11 +4789,11 @@ singleton       : var_ref {
                 } expr rparen {
                     /*%%%*/
                     if ($3 == null) {
-                        support.yyerror("can't define single method for ().");
+                        p.yyerror("can't define single method for ().");
                     } else if ($3 instanceof ILiteralNode) {
-                        support.yyerror("can't define single method for literals.");
+                        p.yyerror("can't define single method for literals.");
                     }
-                    support.value_expr(lexer, $3);
+                    p.value_expr(lexer, $3);
                     $$ = $3;
                     /*% %*/
                     /*% ripper: paren!($3) %*/
@@ -4807,7 +4806,7 @@ assoc_list      : none {
                 }
                 | assocs trailer {
                     /*%%%*/
-                    $$ = support.remove_duplicate_keys($1);
+                    $$ = p.remove_duplicate_keys($1);
                     /*% %*/
                     /*% ripper: assoclist_from_args!($1) %*/
                 }
@@ -4826,23 +4825,23 @@ assocs          : assoc {
 // Cons: [!null]
 assoc           : arg_value tASSOC arg_value {
                     /*%%%*/
-                    $$ = support.createKeyValue($1, $3);
+                    $$ = p.createKeyValue($1, $3);
                     /*% %*/
                     /*% ripper: assoc_new!($1, $3) %*/
                 }
                 | tLABEL arg_value {
                     /*%%%*/
-                    Node label = support.asSymbol(support.getPosition($2), $1);
-                    $$ = support.createKeyValue(label, $2);
+                    Node label = p.asSymbol(p.getPosition($2), $1);
+                    $$ = p.createKeyValue(label, $2);
                     /*% %*/
                     /*% ripper: assoc_new!($1, $2) %*/
                 }
                 | tLABEL {
                     /*%%%*/
-                    Node label = support.asSymbol(lexer.tokline, $1);
-                    Node var = support.gettable($1);
+                    Node label = p.asSymbol(lexer.tokline, $1);
+                    Node var = p.gettable($1);
                     if (var == null) var = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
-                    $$ = support.createKeyValue(label, var);
+                    $$ = p.createKeyValue(label, var);
                     /*% %*/
                     /*% ripper: assoc_new!($1, Qnil) %*/
                 }
@@ -4850,20 +4849,20 @@ assoc           : arg_value tASSOC arg_value {
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     /*%%%*/
                     if ($2 instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(support.getPosition($2), lexer.getEncoding());
+                        DStrNode dnode = new DStrNode(p.getPosition($2), lexer.getEncoding());
                         dnode.add($2);
-                        $$ = support.createKeyValue(new DSymbolNode(support.getPosition($2), dnode), $4);
+                        $$ = p.createKeyValue(new DSymbolNode(p.getPosition($2), dnode), $4);
                     } else if ($2 instanceof DStrNode) {
-                        $$ = support.createKeyValue(new DSymbolNode(support.getPosition($2), $<DStrNode>2), $4);
+                        $$ = p.createKeyValue(new DSymbolNode(p.getPosition($2), $<DStrNode>2), $4);
                     } else {
-                        support.compile_error("Uknown type for assoc in strings: " + $2);
+                        p.compile_error("Uknown type for assoc in strings: " + $2);
                     }
                     /*% %*/
 
                 }
                 | tDSTAR arg_value {
                     /*%%%*/
-                    $$ = support.createKeyValue(null, $2);
+                    $$ = p.createKeyValue(null, $2);
                     /*% %*/
                     /*% ripper: assoc_splat!($2) %*/
                 }
