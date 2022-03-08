@@ -159,38 +159,17 @@ import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
-import static org.jruby.parser.ParserSupport.arg_blk_pass;
-import static org.jruby.parser.ParserSupport.node_assign;
+import static org.jruby.parser.RubyParserBase.arg_blk_pass;
+import static org.jruby.parser.RubyParserBase.node_assign;
 
  
-public class RubyParser {
-    protected ParserSupport support;
-    protected RubyLexer lexer;
-
+public class RubyParser extends RubyParserBase {
     public RubyParser(LexerSource source, IRubyWarnings warnings) {
-        this.support = new ParserSupport();
-        this.lexer = new RubyLexer(support, source, warnings);
-        support.setLexer(lexer);
-        support.setWarnings(warnings);
+        super();
+        setLexer(new RubyLexer(this, source, warnings));
+        setWarnings(warnings);
     }
-
-    @Deprecated
-    public RubyParser(LexerSource source) {
-        this(new ParserSupport(), source);
-    }
-
-    @Deprecated
-    public RubyParser(ParserSupport support, LexerSource source) {
-        this.support = support;
-        lexer = new RubyLexer(support, source);
-        support.setLexer(lexer);
-    }
-
-    public void setWarnings(IRubyWarnings warnings) {
-        support.setWarnings(warnings);
-        lexer.setWarnings(warnings);
-    }
-					// line 194 "-"
+					// line 173 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -1972,7 +1951,7 @@ public class RubyParser {
                 switch (yyErrorFlag) {
   
                 case 0:
-                    support.yyerror("syntax error", yyExpecting(yystate), yyNames[yytoken]);
+                    yyerror("syntax error", yyExpecting(yystate), yyNames[yytoken]);
                     if (yydebug != null) yydebug.error("syntax error");
                     // falls through...
                 case 1: case 2:
@@ -1991,11 +1970,11 @@ public class RubyParser {
                         if (yydebug != null) yydebug.pop(yystates[yytop].state);
                     } while (--yytop >= 0);
                     if (yydebug != null) yydebug.reject();
-                    support.yyerror("irrecoverable syntax error"); // throws
+                    yyerror("irrecoverable syntax error"); // throws
                 case 3:
                     if (yytoken == 0) {
                         if (yydebug != null) yydebug.reject();
-                        support.yyerror("irrecoverable syntax error at end-of-file");
+                        yyerror("irrecoverable syntax error at end-of-file");
                     }
                     if (yydebug != null) yydebug.discard(yystate, yytoken, yyName(yytoken), yyLex.value());
                     yytoken = NEEDS_TOKEN;
@@ -2013,7 +1992,7 @@ public class RubyParser {
             int count = yyLen[yyn];
             start = yystates[yytop - count + 1].start;
             end = yystates[yytop].end;
-            yyVal = parserState.execute(support, lexer, yyVal, yystates, yytop, count, yytoken);
+            yyVal = parserState.execute(this, lexer, yyVal, yystates, yytop, count, yytoken);
         }
 // ACTIONS_END (line used by optimize_parser)
         yytop -= yyLen[yyn];
@@ -2050,12 +2029,12 @@ public class RubyParser {
 
 static ParserState[] states = new ParserState[818];
 static {
-states[1] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[1] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   lexer.setState(EXPR_BEG);
                   support.initTopLocalVariables();
   return yyVal;
 };
-states[2] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[2] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                   Node expr = ((Node)yyVals[0+yyTop].value);
                   if (expr != null && !support.getConfiguration().isEvalParse()) {
@@ -2073,40 +2052,40 @@ states[2] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSta
                   /*% ripper[final]: program!($2) %*/
   return yyVal;
 };
-states[3] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[3] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   yyVal = support.void_stmts(((Node)yyVals[-1+yyTop].value));
   return yyVal;
 };
-states[4] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[4] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                   yyVal = null;
                   /*% %*/
                   /*% ripper: stmts_add!(stmts_new!, void_stmt!) %*/
   return yyVal;
 };
-states[5] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[5] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                   yyVal = support.newline_node(((Node)yyVals[0+yyTop].value), support.getPosition(((Node)yyVals[0+yyTop].value)));
                   /*% %*/
                   /*% ripper: stmts_add!(stmts_new!, $1) %*/
   return yyVal;
 };
-states[6] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[6] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                   yyVal = support.appendToBlock(((Node)yyVals[-2+yyTop].value), support.newline_node(((Node)yyVals[0+yyTop].value), support.getPosition(((Node)yyVals[0+yyTop].value))));
                   /*% %*/
                   /*% ripper: stmts_add!($1, $3) %*/
   return yyVal;
 };
-states[7] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[7] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   yyVal = support.remove_begin(((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[9] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[9] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   yyVal = null;
   return yyVal;
 };
-states[10] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[10] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                   support.getResult().addBeginNode(new PreExe19Node(yyVals[yyTop - count + 1].start(), support.getCurrentScope(), ((Node)yyVals[-1+yyTop].value), lexer.getRubySourceline()));
                   /*                  $$ = new BeginNode(yyVals[yyTop - count + 1].start(), support.makeNullNil($2));*/
@@ -2115,105 +2094,105 @@ states[10] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                   /*% ripper: BEGIN!($2) %*/
   return yyVal;
 };
-states[11] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[11] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    if (((RescueBodyNode)yyVals[-1+yyTop].value) == null) support.yyerror("else without rescue is useless"); 
   return yyVal;
 };
-states[12] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[12] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                    yyVal = support.new_bodystmt(((Node)yyVals[-5+yyTop].value), ((RescueBodyNode)yyVals[-4+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                   /*% %*/
                   /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($2), escape_Qundef($5), escape_Qundef($6)) %*/
   return yyVal;
 };
-states[13] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[13] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   /*%%%*/
                    yyVal = support.new_bodystmt(((Node)yyVals[-2+yyTop].value), ((RescueBodyNode)yyVals[-1+yyTop].value), null, ((Node)yyVals[0+yyTop].value));
                   /*% %*/
                   /*% ripper: bodystmt!(escape_Qundef($1), escape_Qundef($2), Qnil, escape_Qundef($3)) %*/
   return yyVal;
 };
-states[14] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[14] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.void_stmts(((Node)yyVals[-1+yyTop].value));
   return yyVal;
 };
-states[15] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[15] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    /*%%%*/
                    yyVal = null;
                    /*% %*/
                    /*% ripper: stmts_add!(stmts_new!, void_stmt!) %*/
   return yyVal;
 };
-states[16] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[16] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    /*%%%*/
                     yyVal = support.newline_node(((Node)yyVals[0+yyTop].value), support.getPosition(((Node)yyVals[0+yyTop].value)));
                    /*% %*/
                    /*% ripper: stmts_add!(stmts_new!, $1) %*/
   return yyVal;
 };
-states[17] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[17] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    /*%%%*/
                     yyVal = support.appendToBlock(((Node)yyVals[-2+yyTop].value), support.newline_node(((Node)yyVals[0+yyTop].value), support.getPosition(((Node)yyVals[0+yyTop].value))));
                    /*% %*/
                    /*% ripper: stmts_add!($1, $3) %*/
   return yyVal;
 };
-states[18] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[18] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[19] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[19] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[20] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[20] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    support.yyerror("BEGIN is permitted only at toplevel");
   return yyVal;
 };
-states[21] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[21] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[22] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[22] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_FNAME|EXPR_FITEM);
   return yyVal;
 };
-states[23] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[23] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ParserSupport.newAlias(((Integer)yyVals[-3+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    yyVal = newAlias(((Integer)yyVals[-3+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: alias!($2, $4) %*/
   return yyVal;
 };
-states[24] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[24] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new VAliasNode(((Integer)yyVals[-2+yyTop].value), support.symbolID(((ByteList)yyVals[-1+yyTop].value)), support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: var_alias!($2, $3) %*/
   return yyVal;
 };
-states[25] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[25] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new VAliasNode(((Integer)yyVals[-2+yyTop].value), support.symbolID(((ByteList)yyVals[-1+yyTop].value)), support.symbolID(((BackRefNode)yyVals[0+yyTop].value).getByteName()));
                     /*% %*/
                     /*% ripper: var_alias!($2, $3) %*/
   return yyVal;
 };
-states[26] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[26] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.yyerror("can't make alias for the number variables");
                     /*% %*/
                     /*% ripper[error]: alias_error!(ERR_MESG(), $3) %*/
   return yyVal;
 };
-states[27] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[27] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[0+yyTop].value);
                     /*% %*/
                     /*% ripper: undef!($2) %*/
   return yyVal;
 };
-states[28] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[28] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_if(support.getPosition(((Node)yyVals[-2+yyTop].value)), support.cond(((Node)yyVals[0+yyTop].value)), support.remove_begin(((Node)yyVals[-2+yyTop].value)), null);
                     support.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
@@ -2221,7 +2200,7 @@ states[28] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: if_mod!($3, $1) %*/
   return yyVal;
 };
-states[29] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[29] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_if(support.getPosition(((Node)yyVals[-2+yyTop].value)), support.cond(((Node)yyVals[0+yyTop].value)), null, support.remove_begin(((Node)yyVals[-2+yyTop].value)));
                     support.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
@@ -2229,7 +2208,7 @@ states[29] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: unless_mod!($3, $1) %*/
   return yyVal;
 };
-states[30] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[30] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-2+yyTop].value) != null && ((Node)yyVals[-2+yyTop].value) instanceof BeginNode) {
                         yyVal = new WhileNode(support.getPosition(((Node)yyVals[-2+yyTop].value)), support.cond(((Node)yyVals[0+yyTop].value)), ((BeginNode)yyVals[-2+yyTop].value).getBodyNode(), false);
@@ -2240,7 +2219,7 @@ states[30] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: while_mod!($3, $1) %*/
   return yyVal;
 };
-states[31] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[31] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-2+yyTop].value) != null && ((Node)yyVals[-2+yyTop].value) instanceof BeginNode) {
                         yyVal = new UntilNode(support.getPosition(((Node)yyVals[-2+yyTop].value)), support.cond(((Node)yyVals[0+yyTop].value)), ((BeginNode)yyVals[-2+yyTop].value).getBodyNode(), false);
@@ -2251,14 +2230,14 @@ states[31] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: until_mod!($3, $1) %*/
   return yyVal;
 };
-states[32] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[32] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newRescueModNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rescue_mod!($1, $3) %*/
   return yyVal;
 };
-states[33] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[33] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    if (lexer.getLexContext().in_def) {
                        support.warn(ID.END_IN_METHOD, ((Integer)yyVals[-3+yyTop].value), "END in method; use at_exit");
                     }
@@ -2268,14 +2247,14 @@ states[33] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: END!($3) %*/
   return yyVal;
 };
-states[35] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[35] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = node_assign(((MultipleAsgnNode)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: massign!($1, $4) %*/
   return yyVal;
 };
-states[36] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[36] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = node_assign(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -2283,21 +2262,21 @@ states[36] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: assign!($1, $4) %*/
   return yyVal;
 };
-states[37] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[37] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = node_assign(((MultipleAsgnNode)yyVals[-5+yyTop].value), support.newRescueModNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: massign!($1, rescue_mod!($4, $6)) %*/
   return yyVal;
 };
-states[38] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[38] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = node_assign(((MultipleAsgnNode)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: massign!($1, $4) %*/
   return yyVal;
 };
-states[40] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[40] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = node_assign(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -2305,7 +2284,7 @@ states[40] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: assign!($1, $4) %*/
   return yyVal;
 };
-states[41] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[41] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_op_assign(((AssignableNode)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -2313,7 +2292,7 @@ states[41] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: opassign!($1, $2, $4) %*/
   return yyVal;
 };
-states[42] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[42] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_ary_op_assign(((Node)yyVals[-6+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -2321,7 +2300,7 @@ states[42] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: opassign!(aref_field!($1, escape_Qundef($3)), $5, $7) %*/
   return yyVal;
 };
-states[43] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[43] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_attr_op_assign(((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-4+yyTop].value), ((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value));
@@ -2329,7 +2308,7 @@ states[43] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
   return yyVal;
 };
-states[44] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[44] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_attr_op_assign(((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-4+yyTop].value), ((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value));
@@ -2337,7 +2316,7 @@ states[44] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
   return yyVal;
 };
-states[45] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[45] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     int line = ((Node)yyVals[-5+yyTop].value).getLine();
                     yyVal = support.new_const_op_assign(line, support.new_colon2(line, ((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-3+yyTop].value)), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -2345,7 +2324,7 @@ states[45] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: opassign!(const_path_field!($1, $3), $4, $6) %*/
   return yyVal;
 };
-states[46] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[46] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_attr_op_assign(((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-4+yyTop].value), ((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value));
@@ -2353,7 +2332,7 @@ states[46] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: opassign!(field!($1, ID2VAL(idCOLON2), $3), $4, $6) %*/
   return yyVal;
 };
-states[47] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[47] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.endless_method_name(((DefHolder)yyVals[-3+yyTop].value));
                     support.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     /*%%%*/
@@ -2364,7 +2343,7 @@ states[47] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     support.popCurrentScope();
   return yyVal;
 };
-states[48] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[48] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.endless_method_name(((DefHolder)yyVals[-5+yyTop].value));
                     support.restore_defun(((DefHolder)yyVals[-5+yyTop].value));
                     /*%%%*/
@@ -2377,7 +2356,7 @@ states[48] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     support.popCurrentScope();
   return yyVal;
 };
-states[49] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[49] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.endless_method_name(((DefHolder)yyVals[-3+yyTop].value));
                     support.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     /*%%%*/
@@ -2390,7 +2369,7 @@ states[49] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     support.popCurrentScope();
   return yyVal;
 };
-states[50] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[50] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.endless_method_name(((DefHolder)yyVals[-5+yyTop].value));
                     support.restore_defun(((DefHolder)yyVals[-5+yyTop].value));
                     /*%%%*/
@@ -2404,40 +2383,40 @@ states[50] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     support.popCurrentScope();
   return yyVal;
 };
-states[51] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[51] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.backrefAssignError(((Node)yyVals[-3+yyTop].value));
                     /*% %*/
                     /*% ripper[error]: backref_error(p, RNODE($1), assign!(var_field(p, $1), $4)) %*/
   return yyVal;
 };
-states[52] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[52] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[53] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[53] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[-2+yyTop].value));
                     yyVal = support.newRescueModNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[56] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[56] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.newAndNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[57] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[57] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.newOrNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[58] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[58] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.getOperatorCallNode(support.method_cond(((Node)yyVals[0+yyTop].value)), lexer.BANG);
   return yyVal;
 };
-states[59] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[59] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.getOperatorCallNode(support.method_cond(((Node)yyVals[0+yyTop].value)), BANG);
   return yyVal;
 };
-states[60] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[60] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[-1+yyTop].value));
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
@@ -2447,11 +2426,11 @@ states[60] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     ctxt.in_kwarg = true;
   return yyVal;
 };
-states[61] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[61] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.push_pvtbl();
   return yyVal;
 };
-states[62] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[62] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pvtbl(((Set)yyVals[-1+yyTop].value));
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = ((Boolean)yyVals[-2+yyTop].value);
@@ -2461,7 +2440,7 @@ states[62] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
   return yyVal;
 };
-states[63] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[63] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[-1+yyTop].value));
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
@@ -2470,11 +2449,11 @@ states[63] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     ctxt.in_kwarg = true;
   return yyVal;
 };
-states[64] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[64] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.push_pvtbl();
   return yyVal;
 };
-states[65] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[65] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pvtbl(((Set)yyVals[-1+yyTop].value));
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = ((Boolean)yyVals[-2+yyTop].value);
@@ -2484,7 +2463,7 @@ states[65] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
   return yyVal;
 };
-states[67] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[67] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pushLocalScope();
                     LexContext ctxt = lexer.getLexContext();
                     RubySymbol name = support.symbolID(((ByteList)yyVals[0+yyTop].value));
@@ -2498,59 +2477,59 @@ states[67] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     %*/
   return yyVal;
 };
-states[68] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[68] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     ((DefHolder)yyVals[0+yyTop].value).line = ((Integer)yyVals[-1+yyTop].value);
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[69] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[69] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_FNAME); 
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_argdef = true;
   return yyVal;
 };
-states[70] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[70] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_ENDFN|EXPR_LABEL);
                     ((DefHolder)yyVals[0+yyTop].value).line = ((Integer)yyVals[-4+yyTop].value);
                     ((DefHolder)yyVals[0+yyTop].value).setSingleton(((Node)yyVals[-3+yyTop].value));
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[71] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[71] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[72] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[72] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getConditionState().push1();
   return yyVal;
 };
-states[73] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[73] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getConditionState().pop();
                     yyVal = ((Node)yyVals[-1+yyTop].value);
   return yyVal;
 };
-states[77] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[77] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, $3), $4) %*/
   return yyVal;
 };
-states[78] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[78] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IterNode)yyVals[-1+yyTop].value);
                     /*%%%*/
                     /* FIXME: Missing loc stuff here.*/
                     /*% %*/
   return yyVal;
 };
-states[79] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[79] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_fcall(((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: $1 %*/
   return yyVal;
 };
-states[80] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[80] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.frobnicate_fcall_args(((FCallNode)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null);
                     yyVal = ((FCallNode)yyVals[-1+yyTop].value);
@@ -2558,7 +2537,7 @@ states[80] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: command!($1, $2) %*/
   return yyVal;
 };
-states[81] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[81] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.frobnicate_fcall_args(((FCallNode)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value));
                     yyVal = ((FCallNode)yyVals[-2+yyTop].value);
@@ -2566,214 +2545,214 @@ states[81] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionSt
                     /*% ripper: method_add_block!(command!($1, $2), $3) %*/
   return yyVal;
 };
-states[82] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[82] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
                     /*% %*/
                     /*% ripper: command_call!($1, $2, $3, $4) %*/
   return yyVal;
 };
-states[83] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[83] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
 };
-states[84] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[84] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: command_call!($1, ID2VAL(idCOLON2), $3, $4) %*/
   return yyVal;
 };
-states[85] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[85] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, ID2VAL(idCOLON2), $3, $4), $5) %*/
   return yyVal;
 };
-states[86] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[86] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_super(((Integer)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: super!($2) %*/
   return yyVal;
 };
-states[87] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[87] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_yield(((Integer)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: yield!($2) %*/
   return yyVal;
 };
-states[88] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[88] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ReturnNode(((Integer)yyVals[-1+yyTop].value), support.ret_args(((Node)yyVals[0+yyTop].value), ((Integer)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: return!($2) %*/
   return yyVal;
 };
-states[89] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[89] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new BreakNode(((Integer)yyVals[-1+yyTop].value), support.ret_args(((Node)yyVals[0+yyTop].value), ((Integer)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: break!($2) %*/
   return yyVal;
 };
-states[90] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[90] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new NextNode(((Integer)yyVals[-1+yyTop].value), support.ret_args(((Node)yyVals[0+yyTop].value), ((Integer)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: next!($2) %*/
   return yyVal;
 };
-states[92] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[92] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: mlhs_paren!($2) %*/
   return yyVal;
 };
-states[93] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[93] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((MultipleAsgnNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[94] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[94] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((Integer)yyVals[-2+yyTop].value), support.newArrayNode(((Integer)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value)), null, null);
                     /*% %*/
                     /*% ripper: mlhs_paren!($2) %*/
   return yyVal;
 };
-states[95] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[95] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[0+yyTop].value).getLine(), ((ListNode)yyVals[0+yyTop].value), null, null);
                     /*% %*/
                     /*% ripper: $1 %*/
   return yyVal;
 };
-states[96] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[96] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[-1+yyTop].value).getLine(), ((ListNode)yyVals[-1+yyTop].value).add(((Node)yyVals[0+yyTop].value)), null, null);
                     /*% %*/
                     /*% ripper: mlhs_add!($1, $2) %*/
   return yyVal;
 };
-states[97] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[97] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[-2+yyTop].value).getLine(), ((ListNode)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value), (ListNode) null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!($1, $3) %*/
   return yyVal;
 };
-states[98] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[98] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[-4+yyTop].value).getLine(), ((ListNode)yyVals[-4+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((ListNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!($1, $3), $5) %*/
   return yyVal;
 };
-states[99] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[99] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[-1+yyTop].value).getLine(), ((ListNode)yyVals[-1+yyTop].value), new StarNode(lexer.getRubySourceline()), null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!($1, Qnil) %*/
   return yyVal;
 };
-states[100] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[100] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[-3+yyTop].value).getLine(), ((ListNode)yyVals[-3+yyTop].value), new StarNode(lexer.getRubySourceline()), ((ListNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!($1, Qnil), $4) %*/
   return yyVal;
 };
-states[101] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[101] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((Node)yyVals[0+yyTop].value).getLine(), null, ((Node)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!(mlhs_new!, $2) %*/
   return yyVal;
 };
-states[102] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[102] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((Node)yyVals[-2+yyTop].value).getLine(), null, ((Node)yyVals[-2+yyTop].value), ((ListNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!(mlhs_new!, $2), $4) %*/
   return yyVal;
 };
-states[103] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[103] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(lexer.getRubySourceline(), null, new StarNode(lexer.getRubySourceline()), null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!(mlhs_new!, Qnil) %*/
   return yyVal;
 };
-states[104] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[104] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(lexer.getRubySourceline(), null, new StarNode(lexer.getRubySourceline()), ((ListNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!(mlhs_new!, Qnil), $3) %*/
   return yyVal;
 };
-states[106] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[106] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: mlhs_paren!($2) %*/
   return yyVal;
 };
-states[107] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[107] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newArrayNode(((Node)yyVals[-1+yyTop].value).getLine(), ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
   return yyVal;
 };
-states[108] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[108] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add!($1, $2) %*/
   return yyVal;
 };
-states[109] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[109] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newArrayNode(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
   return yyVal;
 };
-states[110] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[110] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add!($1, $3) %*/
   return yyVal;
 };
-states[111] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[111] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                    yyVal = support.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[112] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[112] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                    yyVal = new InstAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[113] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[113] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                    yyVal = new GlobalAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[114] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[114] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) support.compile_error("dynamic constant assignment");
                     yyVal = new ConstDeclNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), null, NilImplicitNode.NIL);
@@ -2781,14 +2760,14 @@ states[114] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[115] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[115] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[116] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[116] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to nil");
                     yyVal = null;
@@ -2796,7 +2775,7 @@ states[116] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[117] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[117] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't change the value of self");
                     yyVal = null;
@@ -2804,7 +2783,7 @@ states[117] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[118] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[118] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to true");
                     yyVal = null;
@@ -2812,7 +2791,7 @@ states[118] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[119] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[119] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to false");
                     yyVal = null;
@@ -2820,7 +2799,7 @@ states[119] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[120] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[120] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __FILE__");
                     yyVal = null;
@@ -2828,7 +2807,7 @@ states[120] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[121] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[121] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __LINE__");
                     yyVal = null;
@@ -2836,7 +2815,7 @@ states[121] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[122] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[122] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __ENCODING__");
                     yyVal = null;
@@ -2844,14 +2823,14 @@ states[122] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[123] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[123] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.aryset(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: aref_field!($1, escape_Qundef($3)) %*/
   return yyVal;
 };
-states[124] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[124] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     if (((ByteList)yyVals[-1+yyTop].value) == AMPERSAND_DOT) {
                         support.compile_error("&. inside multiple assignment destination");
                     }
@@ -2861,14 +2840,14 @@ states[124] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: field!($1, $2, $3) %*/
   return yyVal;
 };
-states[125] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[125] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: const_path_field!($1, $3) %*/
   return yyVal;
 };
-states[126] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[126] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     if (((ByteList)yyVals[-1+yyTop].value) == AMPERSAND_DOT) {
                         support.compile_error("&. inside multiple assignment destination");
                     }
@@ -2878,7 +2857,7 @@ states[126] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: field!($1, $2, $3) %*/
   return yyVal;
 };
-states[127] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[127] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) support.yyerror("dynamic constant assignment");
 
@@ -2889,7 +2868,7 @@ states[127] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: const_decl(p, const_path_field!($1, $3)) %*/
   return yyVal;
 };
-states[128] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[128] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) {
                         support.yyerror("dynamic constant assignment");
@@ -2902,35 +2881,35 @@ states[128] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: const_decl(p, top_const_field!($2)) %*/
   return yyVal;
 };
-states[129] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[129] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.backrefAssignError(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper[error]: backref_error(p, RNODE($1), var_field(p, $1)) %*/
   return yyVal;
 };
-states[130] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[130] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[131] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[131] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new InstAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[132] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[132] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new GlobalAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[133] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[133] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) support.compile_error("dynamic constant assignment");
 
@@ -2939,14 +2918,14 @@ states[133] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[134] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[134] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[135] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[135] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to nil");
                     yyVal = null;
@@ -2954,7 +2933,7 @@ states[135] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[136] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[136] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't change the value of self");
                     yyVal = null;
@@ -2962,7 +2941,7 @@ states[136] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[137] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[137] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to true");
                     yyVal = null;
@@ -2970,7 +2949,7 @@ states[137] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[138] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[138] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to false");
                     yyVal = null;
@@ -2978,7 +2957,7 @@ states[138] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[139] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[139] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __FILE__");
                     yyVal = null;
@@ -2986,7 +2965,7 @@ states[139] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[140] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[140] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __LINE__");
                     yyVal = null;
@@ -2994,7 +2973,7 @@ states[140] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[141] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[141] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __ENCODING__");
                     yyVal = null;
@@ -3002,35 +2981,35 @@ states[141] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[142] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[142] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.aryset(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: aref_field!($1, escape_Qundef($3)) %*/
   return yyVal;
 };
-states[143] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[143] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: field!($1, $2, $3) %*/
   return yyVal;
 };
-states[144] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[144] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: field!($1, ID2VAL(idCOLON2), $3) %*/
   return yyVal;
 };
-states[145] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[145] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.attrset(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: field!($1, $2, $3) %*/
   return yyVal;
 };
-states[146] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[146] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) {
                         support.yyerror("dynamic constant assignment");
@@ -3043,7 +3022,7 @@ states[146] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: const_decl(p, const_path_field!($1, $3)) %*/
   return yyVal;
 };
-states[147] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[147] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) {
                         support.yyerror("dynamic constant assignment");
@@ -3056,67 +3035,67 @@ states[147] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: const_decl(p, top_const_field!($2)) %*/
   return yyVal;
 };
-states[148] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[148] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.backrefAssignError(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper[error]: backref_error(p, RNODE($1), var_field(p, $1)) %*/
   return yyVal;
 };
-states[149] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[149] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.yyerror("class/module name must be CONSTANT", yyVals[yyTop - count + 1]);
                     /*% %*/
                     /*% ripper[error]: class_name_error!(ERR_MESG(), $1) %*/
   return yyVal;
 };
-states[150] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[150] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[151] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[151] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_colon3(lexer.tokline, ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
   return yyVal;
 };
-states[152] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[152] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_colon2(lexer.tokline, null, ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: const_ref!($1) %*/
   return yyVal;
 };
-states[153] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[153] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_colon2(support.getPosition(((Node)yyVals[-2+yyTop].value)), ((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
   return yyVal;
 };
-states[154] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[154] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[155] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[155] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[156] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[156] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[157] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[157] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    lexer.setState(EXPR_ENDFN);
                    yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[158] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[158] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[159] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[159] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal =  new LiteralNode(lexer.getRubySourceline(), support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
@@ -3124,469 +3103,469 @@ states[159] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 
   return yyVal;
 };
-states[160] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[160] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[161] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[161] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ParserSupport.newUndef(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
+                    yyVal = newUndef(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[162] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[162] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_FNAME|EXPR_FITEM);
   return yyVal;
 };
-states[163] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[163] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = support.appendToBlock(((Node)yyVals[-3+yyTop].value), ParserSupport.newUndef(((Node)yyVals[-3+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value)));
+                    yyVal = support.appendToBlock(((Node)yyVals[-3+yyTop].value), newUndef(((Node)yyVals[-3+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($4)) %*/
   return yyVal;
 };
-states[164] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[164] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = OR;
                      /*% %*/
   return yyVal;
 };
-states[165] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[165] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = CARET;
                      /*% %*/
   return yyVal;
 };
-states[166] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[166] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = AMPERSAND;
                      /*% %*/
   return yyVal;
 };
-states[167] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[167] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[168] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[168] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[169] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[169] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[170] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[170] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[171] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[171] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[172] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[172] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = GT;
                      /*% %*/
   return yyVal;
 };
-states[173] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[173] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[174] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[174] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = LT;
                      /*% %*/
   return yyVal;
 };
-states[175] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[175] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[176] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[176] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[177] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[177] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[178] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[178] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[179] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[179] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = PLUS;
                      /*% %*/
   return yyVal;
 };
-states[180] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[180] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = MINUS;
                      /*% %*/
   return yyVal;
 };
-states[181] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[181] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = STAR;
                      /*% %*/
   return yyVal;
 };
-states[182] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[182] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[183] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[183] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = SLASH;
                      /*% %*/
   return yyVal;
 };
-states[184] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[184] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = PERCENT;
                      /*% %*/
   return yyVal;
 };
-states[185] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[185] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[186] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[186] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[187] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[187] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = BANG;
                      /*% %*/
   return yyVal;
 };
-states[188] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[188] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = TILDE;
                      /*% %*/
   return yyVal;
 };
-states[189] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[189] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[190] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[190] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[191] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[191] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[192] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[192] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = ((ByteList)yyVals[0+yyTop].value);
                      /*% %*/
   return yyVal;
 };
-states[193] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[193] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = BACKTICK;
                      /*% %*/
   return yyVal;
 };
-states[194] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[194] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.__LINE__.bytes;
                     /*% %*/
   return yyVal;
 };
-states[195] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[195] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.__FILE__.bytes;
                     /*% %*/
   return yyVal;
 };
-states[196] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[196] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.__ENCODING__.bytes;
                     /*% %*/
   return yyVal;
 };
-states[197] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[197] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.LBEGIN.bytes;
                     /*% %*/
   return yyVal;
 };
-states[198] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[198] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.LEND.bytes;
                     /*% %*/
   return yyVal;
 };
-states[199] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[199] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.ALIAS.bytes;
                     /*% %*/
   return yyVal;
 };
-states[200] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[200] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.AND.bytes;
                     /*% %*/
   return yyVal;
 };
-states[201] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[201] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.BEGIN.bytes;
                     /*% %*/
   return yyVal;
 };
-states[202] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[202] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.BREAK.bytes;
                     /*% %*/
   return yyVal;
 };
-states[203] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[203] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.CASE.bytes;
                     /*% %*/
   return yyVal;
 };
-states[204] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[204] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.CLASS.bytes;
                     /*% %*/
   return yyVal;
 };
-states[205] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[205] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.DEF.bytes;
                     /*% %*/
   return yyVal;
 };
-states[206] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[206] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.DEFINED_P.bytes;
                     /*% %*/
   return yyVal;
 };
-states[207] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[207] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.DO.bytes;
                     /*% %*/
   return yyVal;
 };
-states[208] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[208] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      /*%%%*/
                      yyVal = RubyLexer.Keyword.ELSE.bytes;
                     /*% %*/
   return yyVal;
 };
-states[209] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[209] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.ELSIF.bytes;
                     /*% %*/
   return yyVal;
 };
-states[210] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[210] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.END.bytes;
                     /*% %*/
   return yyVal;
 };
-states[211] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[211] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.ENSURE.bytes;
                     /*% %*/
   return yyVal;
 };
-states[212] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[212] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.FALSE.bytes;
                     /*% %*/
   return yyVal;
 };
-states[213] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[213] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.FOR.bytes;
                     /*% %*/
   return yyVal;
 };
-states[214] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[214] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.IN.bytes;
                     /*% %*/
   return yyVal;
 };
-states[215] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[215] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.MODULE.bytes;
                     /*% %*/
   return yyVal;
 };
-states[216] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[216] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.NEXT.bytes;
                     /*% %*/
   return yyVal;
 };
-states[217] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[217] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.NIL.bytes;
                     /*% %*/
   return yyVal;
 };
-states[218] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[218] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.NOT.bytes;
                     /*% %*/
   return yyVal;
 };
-states[219] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[219] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.OR.bytes;
                     /*% %*/
   return yyVal;
 };
-states[220] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[220] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.REDO.bytes;
                     /*% %*/
   return yyVal;
 };
-states[221] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[221] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.RESCUE.bytes;
                     /*% %*/
   return yyVal;
 };
-states[222] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[222] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.RETRY.bytes;
                     /*% %*/
   return yyVal;
 };
-states[223] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[223] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.RETURN.bytes;
                     /*% %*/
   return yyVal;
 };
-states[224] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[224] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.SELF.bytes;
                     /*% %*/
   return yyVal;
 };
-states[225] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[225] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.SUPER.bytes;
                     /*% %*/
   return yyVal;
 };
-states[226] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[226] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.THEN.bytes;
                     /*% %*/
   return yyVal;
 };
-states[227] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[227] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.TRUE.bytes;
                     /*% %*/
   return yyVal;
 };
-states[228] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[228] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.UNDEF.bytes;
                     /*% %*/
   return yyVal;
 };
-states[229] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[229] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.WHEN.bytes;
                     /*% %*/
   return yyVal;
 };
-states[230] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[230] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.YIELD.bytes;
                     /*% %*/
   return yyVal;
 };
-states[231] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[231] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.IF.bytes;
                     /*% %*/
   return yyVal;
 };
-states[232] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[232] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.UNLESS.bytes;
                     /*% %*/
   return yyVal;
 };
-states[233] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[233] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.WHILE.bytes;
                     /*% %*/
   return yyVal;
 };
-states[234] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[234] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = RubyLexer.Keyword.UNTIL.bytes;
                     /*% %*/
   return yyVal;
 };
-states[235] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[235] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = node_assign(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
   return yyVal;
 };
-states[236] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[236] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_op_assign(((AssignableNode)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: opassign!($1, $2, $4) %*/
   return yyVal;
 };
-states[237] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[237] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_ary_op_assign(((Node)yyVals[-6+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -3594,7 +3573,7 @@ states[237] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: opassign!(aref_field!($1, escape_Qundef($3)), $5, $7) %*/
   return yyVal;
 };
-states[238] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[238] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_attr_op_assign(((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-4+yyTop].value), ((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value));
@@ -3602,7 +3581,7 @@ states[238] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
   return yyVal;
 };
-states[239] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[239] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_attr_op_assign(((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-4+yyTop].value), ((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value));
@@ -3610,7 +3589,7 @@ states[239] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
   return yyVal;
 };
-states[240] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[240] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_attr_op_assign(((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-4+yyTop].value), ((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value));
@@ -3618,7 +3597,7 @@ states[240] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: opassign!(field!($1, ID2VAL(idCOLON2), $3), $4, $6) %*/
   return yyVal;
 };
-states[241] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[241] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Integer pos = support.getPosition(((Node)yyVals[-5+yyTop].value));
                     yyVal = support.new_const_op_assign(pos, support.new_colon2(pos, ((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-3+yyTop].value)), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -3626,7 +3605,7 @@ states[241] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: opassign!(const_path_field!($1, $3), $4, $6) %*/
   return yyVal;
 };
-states[242] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[242] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Integer pos = lexer.getRubySourceline();
                     yyVal = support.new_const_op_assign(pos, new Colon3Node(pos, support.symbolID(((ByteList)yyVals[-3+yyTop].value))), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -3634,14 +3613,14 @@ states[242] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: opassign!(top_const_field!($2), $3, $5) %*/
   return yyVal;
 };
-states[243] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[243] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.backrefAssignError(((Node)yyVals[-3+yyTop].value));
                     /*% %*/
                     /*% ripper[error]: backref_error(p, RNODE($1), opassign!(var_field(p, $1), $2, $4)) %*/
   return yyVal;
 };
-states[244] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[244] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-2+yyTop].value));
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
@@ -3652,7 +3631,7 @@ states[244] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot2!($1, $3) %*/
   return yyVal;
 };
-states[245] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[245] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-2+yyTop].value));
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
@@ -3663,7 +3642,7 @@ states[245] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot3!($1, $3) %*/
   return yyVal;
 };
-states[246] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[246] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-1+yyTop].value));
 
@@ -3673,7 +3652,7 @@ states[246] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot2!($1, Qnil) %*/
   return yyVal;
 };
-states[247] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[247] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-1+yyTop].value));
 
@@ -3683,7 +3662,7 @@ states[247] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot3!($1, Qnil) %*/
   return yyVal;
 };
-states[248] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[248] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     boolean isLiteral = ((Node)yyVals[0+yyTop].value) instanceof FixnumNode;
@@ -3692,7 +3671,7 @@ states[248] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot2!(Qnil, $2) %*/
   return yyVal;
 };
-states[249] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[249] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     boolean isLiteral = ((Node)yyVals[0+yyTop].value) instanceof FixnumNode;
@@ -3701,170 +3680,170 @@ states[249] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot3!(Qnil, $2) %*/
   return yyVal;
 };
-states[250] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[250] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
   /* FIXME: call_bin_op() here so ripper/non-ripper call their thing*/
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), PLUS, ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[251] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[251] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), MINUS, ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[252] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[252] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), STAR, ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[253] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[253] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), SLASH, ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[254] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[254] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), PERCENT, ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[255] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[255] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[256] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[256] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
   /* FIXME: call_uni_op() here so ripper/non-ripper call their thing*/
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((NumericNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline()), ((ByteList)yyVals[-3+yyTop].value));
                     /*% %*/
   return yyVal;
 };
-states[257] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[257] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-1+yyTop].value));
                     /*% %*/
   return yyVal;
 };
-states[258] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[258] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop].value), ((ByteList)yyVals[-1+yyTop].value));
                     /*% %*/
   return yyVal;
 };
-states[259] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[259] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), OR, ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[260] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[260] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), CARET, ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[261] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[261] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), AMPERSAND, ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[262] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[262] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[263] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[263] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[0+yyTop].value);
                     /*% %*/
   return yyVal;
 };
-states[264] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[264] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[265] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[265] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[266] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[266] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[267] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[267] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getMatchNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
   return yyVal;
 };
-states[268] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[268] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[269] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[269] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(support.method_cond(((Node)yyVals[0+yyTop].value)), BANG);
                     /*% %*/
   return yyVal;
 };
-states[270] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[270] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop].value), TILDE);
                     /*% %*/
   return yyVal;
 };
-states[271] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[271] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[272] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[272] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
                     /*% %*/
   return yyVal;
 };
-states[273] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[273] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newAndNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
   return yyVal;
 };
-states[274] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[274] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newOrNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
   return yyVal;
 };
-states[275] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[275] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_defined = true;
   return yyVal;
 };
-states[276] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[276] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     lexer.getLexContext().in_defined = false;                    
                     yyVal = new DefinedNode(((Integer)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
   return yyVal;
 };
-states[277] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[277] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-5+yyTop].value));
                     yyVal = support.new_if(support.getPosition(((Node)yyVals[-5+yyTop].value)), support.cond(((Node)yyVals[-5+yyTop].value)), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -3872,7 +3851,7 @@ states[277] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: ifop!($1, $3, $6) %*/
   return yyVal;
 };
-states[278] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[278] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.endless_method_name(((DefHolder)yyVals[-3+yyTop].value));
                     support.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     /*%%%*/
@@ -3884,7 +3863,7 @@ states[278] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: def!(get_value($1), $2, $4) %*/
   return yyVal;
 };
-states[279] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[279] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.endless_method_name(((DefHolder)yyVals[-5+yyTop].value));
                     support.restore_defun(((DefHolder)yyVals[-5+yyTop].value));
                     /*%%%*/
@@ -3897,7 +3876,7 @@ states[279] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: def!(get_value($1), $2, $4) %*/
   return yyVal;
 };
-states[280] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[280] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.endless_method_name(((DefHolder)yyVals[-3+yyTop].value));
                     support.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     /*%%%*/
@@ -3911,7 +3890,7 @@ states[280] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
   return yyVal;
 };
-states[281] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[281] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.endless_method_name(((DefHolder)yyVals[-5+yyTop].value));
                     support.restore_defun(((DefHolder)yyVals[-5+yyTop].value));
@@ -3925,83 +3904,83 @@ states[281] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
   return yyVal;
 };
-states[282] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[282] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[0+yyTop].value);
                     /*% %*/
   return yyVal;
 };
-states[283] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[283] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = GT;
   return yyVal;
 };
-states[284] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[284] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = LT;
   return yyVal;
 };
-states[285] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[285] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[286] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[286] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[287] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[287] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
   return yyVal;
 };
-states[288] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[288] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.warning(ID.MISCELLANEOUS, lexer.getRubySourceline(), "comparison '" + ((ByteList)yyVals[-1+yyTop].value) + "' after comparison");
                     yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
   return yyVal;
 };
-states[289] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[289] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = (LexContext) lexer.getLexContext().clone();
   return yyVal;
 };
-states[290] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[290] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = (LexContext) lexer.getLexContext().clone();
   return yyVal;
 };
-states[291] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[291] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.makeNullNil(((Node)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[293] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[293] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[-1+yyTop].value);
   return yyVal;
 };
-states[294] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[294] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.arg_append(((Node)yyVals[-3+yyTop].value), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: args_add!($1, bare_assoc_hash!($3)) %*/
   return yyVal;
 };
-states[295] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[295] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop].value).getLine(), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: args_add!(args_new!, bare_assoc_hash!($1)) %*/
   return yyVal;
 };
-states[296] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[296] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[297] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[297] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-2+yyTop].value));
                     yyVal = support.newRescueModNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -4009,14 +3988,14 @@ states[297] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rescue_mod!($1, $3) %*/
   return yyVal;
 };
-states[298] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[298] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: arg_paren!(escape_Qundef($2)) %*/
   return yyVal;
 };
-states[299] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[299] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     if (!support.check_forwarding_args()) {
                         yyVal = null;
                     } else {
@@ -4027,7 +4006,7 @@ states[299] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     }
   return yyVal;
 };
-states[300] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[300] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     if (!support.check_forwarding_args()) {
                         yyVal = null;
                     } else {
@@ -4038,25 +4017,25 @@ states[300] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     }
   return yyVal;
 };
-states[305] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[305] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[-1+yyTop].value);
   return yyVal;
 };
-states[306] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[306] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.arg_append(((Node)yyVals[-3+yyTop].value), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: args_add!($1, bare_assoc_hash!($3)) %*/
   return yyVal;
 };
-states[307] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[307] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop].value).getLine(), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: args_add!(args_new!, bare_assoc_hash!($1)) %*/
   return yyVal;
 };
-states[308] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[308] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[0+yyTop].value)), ((Node)yyVals[0+yyTop].value));
@@ -4064,14 +4043,14 @@ states[308] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: args_add!(args_new!, $1) %*/
   return yyVal;
 };
-states[309] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[309] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = arg_blk_pass(((Node)yyVals[-1+yyTop].value), ((BlockPassNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: args_add_block!($1, $2) %*/
   return yyVal;
 };
-states[310] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[310] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newArrayNode(((HashNode)yyVals[-1+yyTop].value).getLine(), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop].value)));
                     yyVal = arg_blk_pass(((Node)yyVal), ((BlockPassNode)yyVals[0+yyTop].value));
@@ -4079,7 +4058,7 @@ states[310] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: args_add_block!(args_add!(args_new!, bare_assoc_hash!($1)), $2) %*/
   return yyVal;
 };
-states[311] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[311] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.arg_append(((Node)yyVals[-3+yyTop].value), support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop].value)));
                     yyVal = arg_blk_pass(((Node)yyVal), ((BlockPassNode)yyVals[0+yyTop].value));
@@ -4087,11 +4066,11 @@ states[311] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: args_add_block!(args_add!($1, bare_assoc_hash!($3)), $4) %*/
   return yyVal;
 };
-states[312] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[312] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*% ripper[brace]: args_add_block!(args_new!, $1) %*/
   return yyVal;
 };
-states[313] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[313] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     boolean lookahead = false;
                     switch (yychar) {
                     case '(': case tLPAREN: case tLPAREN_ARG: case '[': case tLBRACK:
@@ -4103,7 +4082,7 @@ states[313] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     if (lookahead) cmdarg.push0();
   return yyVal;
 };
-states[314] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[314] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     StackState cmdarg = lexer.getCmdArgumentState();
                     boolean lookahead = false;
                     switch (yychar) {
@@ -4117,14 +4096,14 @@ states[314] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[315] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[315] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new BlockPassNode(support.getPosition(((Node)yyVals[0+yyTop].value)), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: $2 %*/
   return yyVal;
 };
-states[316] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[316] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (!support.local_id(FWD_BLOCK)) support.compile_error("no anonymous block parameter");
                     yyVal = new BlockPassNode(lexer.tokline, support.arg_var(FWD_BLOCK));
@@ -4133,11 +4112,11 @@ states[316] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[317] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[317] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((BlockPassNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[319] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[319] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     int line = ((Node)yyVals[0+yyTop].value) instanceof NilImplicitNode ? lexer.getRubySourceline() : ((Node)yyVals[0+yyTop].value).getLine();
                     yyVal = support.newArrayNode(line, ((Node)yyVals[0+yyTop].value));
@@ -4145,14 +4124,14 @@ states[319] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: args_add!(args_new!, $1) %*/
   return yyVal;
 };
-states[320] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[320] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newSplatNode(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: args_add_star!(args_new!, $2) %*/
   return yyVal;
 };
-states[321] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[321] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node node = support.splat_array(((Node)yyVals[-2+yyTop].value));
 
@@ -4165,7 +4144,7 @@ states[321] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: args_add!($1, $3) %*/
   return yyVal;
 };
-states[322] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[322] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node node = null;
 
@@ -4174,21 +4153,21 @@ states[322] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                         (node = support.splat_array(((Node)yyVals[-3+yyTop].value))) != null) {
                         yyVal = support.list_concat(node, ((Node)yyVals[0+yyTop].value));
                     } else {
-                        yyVal = ParserSupport.arg_concat(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                        yyVal = arg_concat(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     }
                     /*% %*/
                     /*% ripper: args_add_star!($1, $4) %*/
   return yyVal;
 };
-states[323] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[323] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[324] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[324] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[325] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[325] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
 
                     Node node = support.splat_array(((Node)yyVals[-2+yyTop].value));
@@ -4202,7 +4181,7 @@ states[325] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: mrhs_add!(mrhs_new_from_args!($1), $3) %*/
   return yyVal;
 };
-states[326] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[326] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node node = null;
 
@@ -4210,47 +4189,47 @@ states[326] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                         (node = support.splat_array(((Node)yyVals[-3+yyTop].value))) != null) {
                         yyVal = support.list_concat(node, ((Node)yyVals[0+yyTop].value));
                     } else {
-                        yyVal = ParserSupport.arg_concat(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                        yyVal = arg_concat(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     }
                     /*% %*/
                     /*% ripper: mrhs_add_star!(mrhs_new_from_args!($1), $4) %*/
   return yyVal;
 };
-states[327] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[327] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newSplatNode(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mrhs_add_star!(mrhs_new!, $2) %*/
   return yyVal;
 };
-states[332] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[332] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((ListNode)yyVals[0+yyTop].value); /* FIXME: Why complaining without $$ = $1;*/
   return yyVal;
 };
-states[333] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[333] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((ListNode)yyVals[0+yyTop].value); /* FIXME: Why complaining without $$ = $1;*/
   return yyVal;
 };
-states[334] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[334] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((ListNode)yyVals[0+yyTop].value); /* FIXME: Why complaining without $$ = $1;*/
   return yyVal;
 };
-states[335] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[335] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((ListNode)yyVals[0+yyTop].value); /* FIXME: Why complaining without $$ = $1;*/
   return yyVal;
 };
-states[338] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[338] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_fcall(((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: method_add_arg!(fcall!($1), args_new!) %*/
   return yyVal;
 };
-states[339] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[339] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getCmdArgumentState().push0();
   return yyVal;
 };
-states[340] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[340] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getCmdArgumentState().pop();
                     /*%%%*/
                     yyVal = new BeginNode(((Integer)yyVals[-3+yyTop].value), support.makeNullNil(((Node)yyVals[-1+yyTop].value)));
@@ -4258,29 +4237,29 @@ states[340] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: begin!($3) %*/
   return yyVal;
 };
-states[341] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[341] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_ENDARG);
   return yyVal;
 };
-states[342] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[342] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = null; /*FIXME: Should be implicit nil?*/
                     /*% %*/
                     /*% ripper: paren!(0) %*/
   return yyVal;
 };
-states[343] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[343] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_ENDARG); 
   return yyVal;
 };
-states[344] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[344] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[-2+yyTop].value);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
   return yyVal;
 };
-states[345] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[345] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-1+yyTop].value) != null) {
                         /* compstmt position includes both parens around it*/
@@ -4293,21 +4272,21 @@ states[345] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: paren!($2) %*/
   return yyVal;
 };
-states[346] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[346] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_colon2(support.getPosition(((Node)yyVals[-2+yyTop].value)), ((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
   return yyVal;
 };
-states[347] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[347] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_colon3(lexer.tokline, ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
   return yyVal;
 };
-states[348] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[348] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Integer position = support.getPosition(((Node)yyVals[-1+yyTop].value));
                     if (((Node)yyVals[-1+yyTop].value) == null) {
@@ -4319,7 +4298,7 @@ states[348] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: array!(escape_Qundef($2)) %*/
   return yyVal;
 };
-states[349] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[349] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((HashNode)yyVals[-1+yyTop].value);
                     ((HashNode)yyVal).setIsLiteral();
@@ -4327,52 +4306,52 @@ states[349] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: hash!(escape_Qundef($2)) %*/
   return yyVal;
 };
-states[350] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[350] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ReturnNode(((Integer)yyVals[0+yyTop].value), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: return0! %*/
   return yyVal;
 };
-states[351] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[351] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_yield(((Integer)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: yield!(paren!($3)) %*/
   return yyVal;
 };
-states[352] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[352] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new YieldNode(((Integer)yyVals[-2+yyTop].value), null);
                     /*% %*/
                     /*% ripper: yield!(paren!(args_new!)) %*/
   return yyVal;
 };
-states[353] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[353] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new YieldNode(((Integer)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: yield0! %*/
   return yyVal;
 };
-states[354] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[354] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_defined = true;
   return yyVal;
 };
-states[355] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[355] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_defined = false;
                     yyVal = new DefinedNode(((Integer)yyVals[-5+yyTop].value), ((Node)yyVals[-1+yyTop].value));
   return yyVal;
 };
-states[356] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[356] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.getOperatorCallNode(support.method_cond(((Node)yyVals[-1+yyTop].value)), lexer.BANG);
   return yyVal;
 };
-states[357] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[357] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.getOperatorCallNode(support.method_cond(NilImplicitNode.NIL), lexer.BANG);
   return yyVal;
 };
-states[358] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[358] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.frobnicate_fcall_args(((FCallNode)yyVals[-1+yyTop].value), null, ((IterNode)yyVals[0+yyTop].value));
                     yyVal = ((FCallNode)yyVals[-1+yyTop].value);                    
@@ -4380,7 +4359,7 @@ states[358] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: method_add_block!(method_add_arg!(fcall!($1), args_new!), $2) %*/
   return yyVal;
 };
-states[360] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[360] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-1+yyTop].value) != null && 
                           ((BlockAcceptingNode)yyVals[-1+yyTop].value).getIterNode() instanceof BlockPassNode) {
@@ -4392,44 +4371,44 @@ states[360] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: method_add_block!($1, $2) %*/
   return yyVal;
 };
-states[361] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[361] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((LambdaNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[362] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[362] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_if(((Integer)yyVals[-5+yyTop].value), support.cond(((Node)yyVals[-4+yyTop].value)), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
 };
-states[363] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[363] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_if(((Integer)yyVals[-5+yyTop].value), support.cond(((Node)yyVals[-4+yyTop].value)), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[-2+yyTop].value));
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
 };
-states[364] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[364] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new WhileNode(((Integer)yyVals[-3+yyTop].value), support.cond(((Node)yyVals[-2+yyTop].value)), support.makeNullNil(((Node)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: while!($2, $3) %*/
   return yyVal;
 };
-states[365] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[365] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new UntilNode(((Integer)yyVals[-3+yyTop].value), support.cond(((Node)yyVals[-2+yyTop].value)), support.makeNullNil(((Node)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: until!($2, $3) %*/
   return yyVal;
 };
-states[366] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[366] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.case_labels;
                     support.case_labels = support.getConfiguration().getRuntime().getNil();
   return yyVal;
 };
-states[367] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[367] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newCaseNode(((Integer)yyVals[-5+yyTop].value), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-1+yyTop].value));
                     support.fixpos(((Node)yyVal), ((Node)yyVals[-4+yyTop].value));
@@ -4437,33 +4416,33 @@ states[367] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: case!($2, $5) %*/
   return yyVal;
 };
-states[368] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[368] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.case_labels;
                     support.case_labels = null;
   return yyVal;
 };
-states[369] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[369] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newCaseNode(((Integer)yyVals[-4+yyTop].value), null, ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: case!(Qnil, $4) %*/
   return yyVal;
 };
-states[370] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[370] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newPatternCaseNode(((Integer)yyVals[-4+yyTop].value), ((Node)yyVals[-3+yyTop].value), ((InNode)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: case!($2, $4) %*/
   return yyVal;
 };
-states[371] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[371] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ForNode(((Integer)yyVals[-5+yyTop].value), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[-2+yyTop].value), support.getCurrentScope(), 111);
                     /*% %*/
                     /*% ripper: for!($2, $4, $5) %*/
   return yyVal;
 };
-states[372] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[372] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = lexer.getLexContext();
                     if (ctxt.in_def) {
                         support.yyerror("class definition in method body");
@@ -4472,7 +4451,7 @@ states[372] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     support.pushLocalScope();
   return yyVal;
 };
-states[373] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[373] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node body = support.makeNullNil(((Node)yyVals[-1+yyTop].value));
 
@@ -4485,14 +4464,14 @@ states[373] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     ctxt.shareable_constant_value = ((LexContext)yyVals[-5+yyTop].value).shareable_constant_value;
   return yyVal;
 };
-states[374] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[374] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_def = false;
                     ctxt.in_class = false;
                     support.pushLocalScope();
   return yyVal;
 };
-states[375] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[375] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node body = support.makeNullNil(((Node)yyVals[-1+yyTop].value));
 
@@ -4506,7 +4485,7 @@ states[375] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     support.popCurrentScope();
   return yyVal;
 };
-states[376] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[376] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = lexer.getLexContext();
                     if (ctxt.in_def) { 
                         support.yyerror("module definition in method body");
@@ -4515,7 +4494,7 @@ states[376] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     support.pushLocalScope();
   return yyVal;
 };
-states[377] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[377] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node body = support.makeNullNil(((Node)yyVals[-1+yyTop].value));
 
@@ -4528,7 +4507,7 @@ states[377] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     ctxt.shareable_constant_value = ((LexContext)yyVals[-4+yyTop].value).shareable_constant_value;
   return yyVal;
 };
-states[378] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[378] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     Node body = support.reduce_nodes(support.remove_begin(support.makeNullNil(((Node)yyVals[-1+yyTop].value))));
@@ -4538,7 +4517,7 @@ states[378] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: def!(get_value($1), $2, $3) %*/
   return yyVal;
 };
-states[379] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[379] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     Node body = support.reduce_nodes(support.remove_begin(support.makeNullNil(((Node)yyVals[-1+yyTop].value))));
@@ -4551,7 +4530,7 @@ states[379] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $3) %*/
   return yyVal;
 };
-states[380] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[380] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.isNextBreak = true;
                     yyVal = new BreakNode(((Integer)yyVals[0+yyTop].value), NilImplicitNode.NIL);
@@ -4559,7 +4538,7 @@ states[380] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: break!(args_new!) %*/
   return yyVal;
 };
-states[381] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[381] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.isNextBreak = true;
                     yyVal = new NextNode(((Integer)yyVals[0+yyTop].value), NilImplicitNode.NIL);
@@ -4567,101 +4546,101 @@ states[381] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: next!(args_new!) %*/
   return yyVal;
 };
-states[382] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[382] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new RedoNode(((Integer)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: redo! %*/
   return yyVal;
 };
-states[383] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[383] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new RetryNode(((Integer)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: retry! %*/
   return yyVal;
 };
-states[384] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[384] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = ((Node)yyVals[0+yyTop].value);
                     if (yyVal == null) yyVal = NilImplicitNode.NIL;
   return yyVal;
 };
-states[385] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[385] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
   /* FIXME: token_info_push*/
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[386] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[386] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[387] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[387] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[388] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[388] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[389] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[389] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[390] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[390] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[391] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[391] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[392] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[392] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = (LexContext) lexer.getLexContext().clone();
   return yyVal;
 };
-states[393] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[393] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = (LexContext) lexer.getLexContext().clone();  
   return yyVal;
 };
-states[394] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[394] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
                     lexer.getLexContext().in_argdef = true;
   return yyVal;
 };
-states[395] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[395] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[396] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[396] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[397] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[397] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[398] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[398] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[399] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[399] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[400] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[400] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[401] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[401] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[402] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[402] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[403] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[403] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = lexer.getLexContext();
                     if (ctxt.in_class && !ctxt.in_def && !support.getCurrentScope().isBlockScope()) {
                         lexer.compile_error("Invalid return in class/module body");
@@ -4669,210 +4648,210 @@ states[403] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     yyVal = ((Integer)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[410] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[410] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_if(((Integer)yyVals[-4+yyTop].value), support.cond(((Node)yyVals[-3+yyTop].value)), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
 };
-states[412] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[412] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[0+yyTop].value) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop].value);
                     /*% %*/
                     /*% ripper: else!($2) %*/
   return yyVal;
 };
-states[414] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[414] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
   return yyVal;
 };
-states[415] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[415] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.assignableInCurr(((ByteList)yyVals[0+yyTop].value), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, $1) %*/
   return yyVal;
 };
-states[416] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[416] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: mlhs_paren!($2) %*/
   return yyVal;
 };
-states[417] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[417] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newArrayNode(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
   return yyVal;
 };
-states[418] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[418] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add!($1, $3) %*/
   return yyVal;
 };
-states[419] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[419] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[0+yyTop].value).getLine(), ((ListNode)yyVals[0+yyTop].value), null, null);
                     /*% %*/
                     /*% ripper: $1 %*/
   return yyVal;
 };
-states[420] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[420] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[-2+yyTop].value).getLine(), ((ListNode)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!($1, $3) %*/
   return yyVal;
 };
-states[421] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[421] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(((ListNode)yyVals[-4+yyTop].value).getLine(), ((ListNode)yyVals[-4+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((ListNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!($1, $3), $5) %*/
   return yyVal;
 };
-states[422] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[422] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(lexer.getRubySourceline(), null, ((Node)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!(mlhs_new!, $1) %*/
   return yyVal;
 };
-states[423] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[423] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new MultipleAsgnNode(lexer.getRubySourceline(), null, ((Node)yyVals[-2+yyTop].value), ((ListNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!(mlhs_new!, $1), $3) %*/
   return yyVal;
 };
-states[424] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[424] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.assignableInCurr(((ByteList)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: assignable(p, $2) %*/
   return yyVal;
 };
-states[425] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[425] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new StarNode(lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: Qnil %*/
   return yyVal;
 };
-states[427] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[427] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = LexingCommon.NIL;
   return yyVal;
 };
-states[428] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[428] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_argdef = false;
   return yyVal;
 };
-states[430] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[430] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(((ListNode)yyVals[-3+yyTop].value).getLine(), ((ListNode)yyVals[-3+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((BlockArgNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[431] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[431] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(((ListNode)yyVals[-1+yyTop].value).getLine(), ((ListNode)yyVals[-1+yyTop].value), (ByteList) null, ((BlockArgNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[432] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[432] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(lexer.getRubySourceline(), null, ((ByteList)yyVals[-1+yyTop].value), ((BlockArgNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[433] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[433] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(((BlockArgNode)yyVals[0+yyTop].value).getLine(), null, (ByteList) null, ((BlockArgNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[434] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[434] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ArgsTailHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[435] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[435] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null);
   return yyVal;
 };
-states[436] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[436] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = null;
                     /*% %*/
                     /*% ripper: excessed_comma! %*/
   return yyVal;
 };
-states[437] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[437] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-5+yyTop].value).getLine(), ((ListNode)yyVals[-5+yyTop].value), ((ListNode)yyVals[-3+yyTop].value), ((RestArgNode)yyVals[-1+yyTop].value), null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[438] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[438] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-7+yyTop].value).getLine(), ((ListNode)yyVals[-7+yyTop].value), ((ListNode)yyVals[-5+yyTop].value), ((RestArgNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[439] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[439] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-3+yyTop].value).getLine(), ((ListNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), null, null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[440] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[440] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-5+yyTop].value).getLine(), ((ListNode)yyVals[-5+yyTop].value), ((ListNode)yyVals[-3+yyTop].value), null, ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[441] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[441] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-3+yyTop].value).getLine(), ((ListNode)yyVals[-3+yyTop].value), null, ((RestArgNode)yyVals[-1+yyTop].value), null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[442] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[442] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     RestArgNode rest = new UnnamedRestArgNode(((ListNode)yyVals[-1+yyTop].value).getLine(), null, support.getCurrentScope().addVariable("*"));
                     yyVal = support.new_args(((ListNode)yyVals[-1+yyTop].value).getLine(), ((ListNode)yyVals[-1+yyTop].value), null, rest, null, (ArgsTailHolder) null);
   return yyVal;
 };
-states[443] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[443] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-5+yyTop].value).getLine(), ((ListNode)yyVals[-5+yyTop].value), null, ((RestArgNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[444] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[444] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-1+yyTop].value).getLine(), ((ListNode)yyVals[-1+yyTop].value), null, null, null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[445] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[445] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(support.getPosition(((ListNode)yyVals[-3+yyTop].value)), null, ((ListNode)yyVals[-3+yyTop].value), ((RestArgNode)yyVals[-1+yyTop].value), null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[446] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[446] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(support.getPosition(((ListNode)yyVals[-5+yyTop].value)), null, ((ListNode)yyVals[-5+yyTop].value), ((RestArgNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[447] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[447] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(support.getPosition(((ListNode)yyVals[-1+yyTop].value)), null, ((ListNode)yyVals[-1+yyTop].value), null, null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[448] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[448] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-3+yyTop].value).getLine(), null, ((ListNode)yyVals[-3+yyTop].value), null, ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[449] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[449] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((RestArgNode)yyVals[-1+yyTop].value).getLine(), null, null, ((RestArgNode)yyVals[-1+yyTop].value), null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[450] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[450] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((RestArgNode)yyVals[-3+yyTop].value).getLine(), null, null, ((RestArgNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[451] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[451] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ArgsTailHolder)yyVals[0+yyTop].value).getLine(), null, null, null, null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[452] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[452] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
   return yyVal;
 };
-states[453] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[453] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.commandStart = true;
                     yyVal = ((ArgsNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[454] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[454] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setCurrentArg(null);
                     support.ordinalMaxNumParam();
                     lexer.getLexContext().in_argdef = false;
@@ -4882,7 +4861,7 @@ states[454] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: block_var!(params!(Qnil,Qnil,Qnil,Qnil,Qnil,Qnil,Qnil), escape_Qundef($2)) %*/
   return yyVal;
 };
-states[455] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[455] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setCurrentArg(null);
                     support.ordinalMaxNumParam();
                     lexer.getLexContext().in_argdef = false;
@@ -4892,55 +4871,55 @@ states[455] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: block_var!(escape_Qundef($2), escape_Qundef($3)) %*/
   return yyVal;
 };
-states[456] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[456] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null;
   return yyVal;
 };
-states[457] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[457] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = null;
                     /*% %*/
                     /*% ripper: $3 %*/
   return yyVal;
 };
-states[458] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[458] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null;
                     /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[459] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[459] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null;
                     /*% ripper[brace]: rb_ary_push($1, get_value($3)) %*/
   return yyVal;
 };
-states[460] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[460] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.new_bv(((ByteList)yyVals[0+yyTop].value));
                     /*% ripper: get_value($1) %*/
   return yyVal;
 };
-states[461] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[461] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null;
   return yyVal;
 };
-states[462] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[462] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pushBlockScope();
                     yyVal = lexer.getLeftParenBegin();
                     lexer.setLeftParenBegin(lexer.getParenNest());
   return yyVal;
 };
-states[463] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[463] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.resetMaxNumParam();
   return yyVal;
 };
-states[464] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[464] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.numparam_push();
   return yyVal;
 };
-states[465] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[465] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getCmdArgumentState().push0();
   return yyVal;
 };
-states[466] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[466] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     int max_numparam = support.restoreMaxNumParam(((Integer)yyVals[-4+yyTop].value));
                     ArgsNode args = support.args_with_numbered(((ArgsNode)yyVals[-2+yyTop].value), max_numparam);
                     lexer.getCmdArgumentState().pop();
@@ -4953,7 +4932,7 @@ states[466] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     support.popCurrentScope();
   return yyVal;
 };
-states[467] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[467] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_argdef = false;
                     /*%%%*/
                     yyVal = ((ArgsNode)yyVals[-2+yyTop].value);
@@ -4962,7 +4941,7 @@ states[467] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: paren!($2) %*/
   return yyVal;
 };
-states[468] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[468] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_argdef = false;
                     /*%%%*/
                     if (!support.isArgsInfoEmpty(((ArgsNode)yyVals[0+yyTop].value))) {
@@ -4972,21 +4951,21 @@ states[468] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     yyVal = ((ArgsNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[469] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[469] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[-1+yyTop].value);
   return yyVal;
 };
-states[470] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[470] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[-1+yyTop].value);
   return yyVal;
 };
-states[471] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[471] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IterNode)yyVals[-1+yyTop].value);
                     /*%%%*/
                     /*% %*/
   return yyVal;
 };
-states[472] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[472] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /* Workaround for JRUBY-2326 (MRI does not enter this production for some reason)*/
                     /*%%%*/
                     if (((Node)yyVals[-1+yyTop].value) instanceof YieldNode) {
@@ -5006,28 +4985,28 @@ states[472] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: method_add_block!($1, $2) %*/
   return yyVal;
 };
-states[473] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[473] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
   return yyVal;
 };
-states[474] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[474] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
 };
-states[475] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[475] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
 };
-states[476] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[476] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.frobnicate_fcall_args(((FCallNode)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null);
                     yyVal = ((FCallNode)yyVals[-1+yyTop].value);
@@ -5035,56 +5014,56 @@ states[476] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: method_add_arg!(fcall!($1), $2) %*/
   return yyVal;
 };
-states[477] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[477] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
   return yyVal;
 };
-states[478] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[478] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, ID2VAL(idCOLON2), $3), $4) %*/
   return yyVal;
 };
-states[479] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[479] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value), null, null);
                     /*% %*/
                     /*% ripper: call!($1, ID2VAL(idCOLON2), $3) %*/
   return yyVal;
 };
-states[480] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[480] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), LexingCommon.CALL, ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
   return yyVal;
 };
-states[481] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[481] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_call(((Node)yyVals[-2+yyTop].value), LexingCommon.CALL, ((Node)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, ID2VAL(idCOLON2), ID2VAL(idCall)), $3) %*/
   return yyVal;
 };
-states[482] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[482] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_super(((Integer)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: super!($2) %*/
   return yyVal;
 };
-states[483] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[483] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ZSuperNode(((Integer)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: zsuper! %*/
   return yyVal;
 };
-states[484] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[484] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-3+yyTop].value) instanceof SelfNode) {
                         yyVal = support.new_fcall(LexingCommon.LBRACKET_RBRACKET);
@@ -5096,32 +5075,32 @@ states[484] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: aref!($1, escape_Qundef($3)) %*/
   return yyVal;
 };
-states[485] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[485] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IterNode)yyVals[-1+yyTop].value);
                     /*%%%*/
                     /* FIXME: empty pairs of comments are missing some pos stuff on MRI side*/
                     /*% %*/
   return yyVal;
 };
-states[486] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[486] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IterNode)yyVals[-1+yyTop].value);
                     /*%%%*/
                     /*% %*/
   return yyVal;
 };
-states[487] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[487] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pushBlockScope();
   return yyVal;
 };
-states[488] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[488] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.resetMaxNumParam();
   return yyVal;
 };
-states[489] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[489] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.numparam_push();
   return yyVal;
 };
-states[490] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[490] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     int max_numparam = support.restoreMaxNumParam(((Integer)yyVals[-3+yyTop].value));
                     ArgsNode args = support.args_with_numbered(((ArgsNode)yyVals[-1+yyTop].value), max_numparam);
                     /*%%%*/
@@ -5132,20 +5111,20 @@ states[490] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     support.popCurrentScope();                    
   return yyVal;
 };
-states[491] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[491] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pushBlockScope();
   return yyVal;
 };
-states[492] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[492] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.resetMaxNumParam();
   return yyVal;
 };
-states[493] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[493] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.numparam_push();
                     lexer.getCmdArgumentState().push0();
   return yyVal;
 };
-states[494] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[494] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     int max_numparam = support.restoreMaxNumParam(((Integer)yyVals[-3+yyTop].value));
                     ArgsNode args = support.args_with_numbered(((ArgsNode)yyVals[-1+yyTop].value), max_numparam);
                     /*%%%*/
@@ -5157,7 +5136,7 @@ states[494] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     support.popCurrentScope();
   return yyVal;
 };
-states[495] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[495] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.check_literal_when(((Node)yyVals[0+yyTop].value));
                     yyVal = support.newArrayNode(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
@@ -5165,14 +5144,14 @@ states[495] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: args_add!(args_new!, $1) %*/
   return yyVal;
 };
-states[496] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[496] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newSplatNode(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: args_add_star!(args_new!, $2) %*/
   return yyVal;
 };
-states[497] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[497] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.check_literal_when(((Node)yyVals[0+yyTop].value));
                     yyVal = support.last_arg_append(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -5180,21 +5159,21 @@ states[497] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: args_add!($1, $3) %*/
   return yyVal;
 };
-states[498] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[498] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.rest_arg_append(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: args_add_star!($1, $4) %*/
   return yyVal;
 };
-states[499] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[499] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newWhenNode(((Integer)yyVals[-4+yyTop].value), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: when!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
 };
-states[502] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[502] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_BEG|EXPR_LABEL);
                     lexer.commandStart = false;
                     LexContext ctxt = (LexContext) lexer.getLexContext();
@@ -5203,28 +5182,28 @@ states[502] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     yyVal = support.push_pvtbl();
   return yyVal;
 };
-states[503] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[503] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.push_pktbl();
   return yyVal;
 };
-states[504] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[504] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     support.pop_pvtbl(((Set)yyVals[-3+yyTop].value));
                     lexer.getLexContext().in_kwarg = ((Boolean)yyVals[-4+yyTop].value);
   return yyVal;
 };
-states[505] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[505] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newIn(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: in!($4, $7, escape_Qundef($8)) %*/
   return yyVal;
 };
-states[507] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[507] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((InNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[509] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[509] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), ((Node)yyVals[-2+yyTop].value), null);
                     support.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
@@ -5232,7 +5211,7 @@ states[509] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: if_mod!($3, $1) %*/
   return yyVal;
 };
-states[510] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[510] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), null, ((Node)yyVals[-2+yyTop].value));
                     support.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
@@ -5240,53 +5219,53 @@ states[510] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: unless_mod!($3, $1) %*/
   return yyVal;
 };
-states[512] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[512] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), null, ((Node)yyVals[-1+yyTop].value),
                                                    support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), null, true, null, null));
   return yyVal;
 };
-states[513] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[513] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), null, ((Node)yyVals[-2+yyTop].value), ((ArrayPatternNode)yyVals[0+yyTop].value));
                     /*%%%*/
                     support.nd_set_first_loc(((Node)yyVal), yyVals[yyTop - count + 1].start());
                     /*% %*/
   return yyVal;
 };
-states[514] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[514] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_find_pattern(null, ((FindPatternNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[515] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[515] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), null, null, ((ArrayPatternNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[516] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[516] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_hash_pattern(null, ((HashPatternNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[518] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[518] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new HashNode(yyVals[yyTop - count + 1].start(), new KeyValuePair(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM((id_assoc)), $3) %*/
   return yyVal;
 };
-states[520] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[520] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newOrNode(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
   return yyVal;
 };
-states[522] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[522] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.push_pktbl();
   return yyVal;
 };
-states[523] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[523] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.push_pktbl();
   return yyVal;
 };
-states[526] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[526] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-3+yyTop].value), null, ((ArrayPatternNode)yyVals[-1+yyTop].value));
                     /*%%%*/
@@ -5294,7 +5273,7 @@ states[526] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% %*/
   return yyVal;
 };
-states[527] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[527] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     yyVal = support.new_find_pattern(((Node)yyVals[-3+yyTop].value), ((FindPatternNode)yyVals[-1+yyTop].value));
                     /*%%%*/
@@ -5302,7 +5281,7 @@ states[527] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% %*/
   return yyVal;
 };
-states[528] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[528] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     yyVal = support.new_hash_pattern(((Node)yyVals[-3+yyTop].value), ((HashPatternNode)yyVals[-1+yyTop].value));
                     /*%%%*/
@@ -5310,12 +5289,12 @@ states[528] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% %*/
   return yyVal;
 };
-states[529] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[529] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-2+yyTop].value), null,
                                                     support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), null, false, null, null));
   return yyVal;
 };
-states[530] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[530] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-3+yyTop].value), null, ((ArrayPatternNode)yyVals[-1+yyTop].value));
                     /*%%%*/
@@ -5323,7 +5302,7 @@ states[530] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% %*/
   return yyVal;
 };
-states[531] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[531] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     yyVal = support.new_find_pattern(((Node)yyVals[-3+yyTop].value), ((FindPatternNode)yyVals[-1+yyTop].value));
                     /*%%%*/
@@ -5331,7 +5310,7 @@ states[531] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% %*/
   return yyVal;
 };
-states[532] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[532] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     yyVal = support.new_hash_pattern(((Node)yyVals[-3+yyTop].value), ((HashPatternNode)yyVals[-1+yyTop].value));
                     /*%%%*/
@@ -5339,51 +5318,51 @@ states[532] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% %*/
   return yyVal;
 };
-states[533] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[533] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-2+yyTop].value), null,
                             support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), null, false, null, null));
   return yyVal;
 };
-states[534] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[534] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), null, null, ((ArrayPatternNode)yyVals[-1+yyTop].value));
   return yyVal;
 };
-states[535] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[535] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_find_pattern(null, ((FindPatternNode)yyVals[-1+yyTop].value));
   return yyVal;
 };
-states[536] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[536] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_array_pattern(yyVals[yyTop - count + 1].start(), null, null,
                             support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), null, false, null, null));
   return yyVal;
 };
-states[537] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[537] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.push_pktbl();
                     LexContext ctxt = lexer.getLexContext();
                     yyVals[0+yyTop].value = ctxt.in_kwarg;
                     ctxt.in_kwarg = false;
   return yyVal;
 };
-states[538] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[538] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     lexer.getLexContext().in_kwarg = ((Boolean)yyVals[-3+yyTop].value);
                     yyVal = support.new_hash_pattern(null, ((HashPatternNode)yyVals[-1+yyTop].value));
   return yyVal;
 };
-states[539] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[539] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_hash_pattern(null, support.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, null));
   return yyVal;
 };
-states[540] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[540] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.push_pktbl();
   return yyVal;
 };
-states[541] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[541] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.pop_pktbl(((Set)yyVals[-2+yyTop].value));
                     yyVal = ((Node)yyVals[-1+yyTop].value);
   return yyVal;
 };
-states[542] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[542] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     ListNode preArgs = support.newArrayNode(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
                     yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), preArgs, false, null, null);
@@ -5392,11 +5371,11 @@ states[542] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[543] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[543] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), ((ListNode)yyVals[0+yyTop].value), true, null, null);
   return yyVal;
 };
-states[544] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[544] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), support.list_concat(((ListNode)yyVals[-1+yyTop].value), ((ListNode)yyVals[0+yyTop].value)), false, null, null);
                     /*%
@@ -5405,96 +5384,96 @@ states[544] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[545] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[545] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), ((ListNode)yyVals[-2+yyTop].value), true, ((ByteList)yyVals[0+yyTop].value), null);
   return yyVal;
 };
-states[546] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[546] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), ((ListNode)yyVals[-4+yyTop].value), true, ((ByteList)yyVals[-2+yyTop].value), ((ListNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[547] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[547] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), ((ListNode)yyVals[-1+yyTop].value), true, null, null);
   return yyVal;
 };
-states[548] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[548] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), ((ListNode)yyVals[-3+yyTop].value), true, null, ((ListNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[549] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[549] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((ArrayPatternNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[550] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[550] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((ListNode)yyVals[-1+yyTop].value);
   return yyVal;
 };
-states[551] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[551] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.list_concat(((ListNode)yyVals[-2+yyTop].value), ((ListNode)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_concat($1, get_value($2)) %*/
   return yyVal;
 };
-states[552] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[552] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), null, true, ((ByteList)yyVals[0+yyTop].value), null);
   return yyVal;
 };
-states[553] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[553] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = support.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), null, true, ((ByteList)yyVals[-2+yyTop].value), ((ListNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[554] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[554] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = support.new_find_pattern_tail(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[-4+yyTop].value), ((ListNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                      support.warn_experimental(yyVals[yyTop - count + 1].start(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
   return yyVal;
 };
-states[555] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[555] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[556] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[556] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null;
   return yyVal;
 };
-states[558] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[558] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.list_concat(((ListNode)yyVals[-2+yyTop].value), ((ListNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_concat($1, get_value($3)) %*/
   return yyVal;
 };
-states[559] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[559] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newArrayNode(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_new_from_args(1, get_value($1)) %*/
   return yyVal;
 };
-states[560] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[560] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((HashNode)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[561] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[561] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((HashNode)yyVals[0+yyTop].value), null);
   return yyVal;
 };
-states[562] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[562] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), ((HashNode)yyVals[-1+yyTop].value), null);
   return yyVal;
 };
-states[563] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[563] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_hash_pattern_tail(yyVals[yyTop - count + 1].start(), null, ((ByteList)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[564] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[564] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new HashNode(yyVals[yyTop - count + 1].start(), ((KeyValuePair)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper[brace]: rb_ary_new_from_args(1, $1) %*/
   return yyVal;
 };
-states[565] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[565] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     ((HashNode)yyVals[-2+yyTop].value).add(((KeyValuePair)yyVals[0+yyTop].value));
                     yyVal = ((HashNode)yyVals[-2+yyTop].value);
@@ -5502,7 +5481,7 @@ states[565] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_ary_push($1, $3) %*/
   return yyVal;
 };
-states[566] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[566] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.error_duplicate_pattern_key(((ByteList)yyVals[-1+yyTop].value));
                     /*%%%*/
                     Node label = support.asSymbol(yyVals[yyTop - count + 1].start(), ((ByteList)yyVals[-1+yyTop].value));
@@ -5512,7 +5491,7 @@ states[566] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_ary_new_from_args(2, get_value($1), get_value($2)) %*/
   return yyVal;
 };
-states[567] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[567] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.error_duplicate_pattern_key(((ByteList)yyVals[0+yyTop].value));
                     if (((ByteList)yyVals[0+yyTop].value) != null && !support.is_local_id(((ByteList)yyVals[0+yyTop].value))) {
                         support.yyerror("key must be valid as local variables");
@@ -5526,7 +5505,7 @@ states[567] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_ary_new_from_args(2, get_value($1), Qnil) %*/
   return yyVal;
 };
-states[569] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[569] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-1+yyTop].value) == null || ((Node)yyVals[-1+yyTop].value) instanceof StrNode) {
                         yyVal = ((StrNode)yyVals[-1+yyTop].value).getValue();
@@ -5546,23 +5525,23 @@ states[569] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     }
   return yyVal;
 };
-states[570] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[570] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[571] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[571] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null;
   return yyVal;
 };
-states[572] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[572] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null;
   return yyVal;
 };
-states[574] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[574] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.KWNOREST;
   return yyVal;
 };
-states[576] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[576] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-2+yyTop].value));
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
@@ -5572,7 +5551,7 @@ states[576] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot2!($1, $3) %*/
   return yyVal;
 };
-states[577] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[577] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-2+yyTop].value));
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
@@ -5582,7 +5561,7 @@ states[577] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot3!($1, $3) %*/
   return yyVal;
 };
-states[578] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[578] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-1+yyTop].value));
                     boolean isLiteral = ((Node)yyVals[-1+yyTop].value) instanceof FixnumNode;
@@ -5591,7 +5570,7 @@ states[578] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot2!($1, Qnil) %*/
   return yyVal;
 };
-states[579] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[579] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[-1+yyTop].value));
                     boolean isLiteral = ((Node)yyVals[-1+yyTop].value) instanceof FixnumNode;
@@ -5600,7 +5579,7 @@ states[579] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot3!($1, Qnil) %*/
   return yyVal;
 };
-states[583] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[583] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     boolean isLiteral = ((Node)yyVals[0+yyTop].value) instanceof FixnumNode;
@@ -5609,7 +5588,7 @@ states[583] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot2!(Qnil, $2) %*/
   return yyVal;
 };
-states[584] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[584] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     boolean isLiteral = ((Node)yyVals[0+yyTop].value) instanceof FixnumNode;
@@ -5618,51 +5597,51 @@ states[584] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dot3!(Qnil, $2) %*/
   return yyVal;
 };
-states[589] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[589] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ListNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[590] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[590] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ListNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[591] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[591] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ListNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[592] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[592] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ListNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[593] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[593] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new NilNode(lexer.tokline);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[594] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[594] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new SelfNode(lexer.tokline);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[595] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[595] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new TrueNode(lexer.tokline);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[596] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[596] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new FalseNode(lexer.tokline);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[597] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[597] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new FileNode(lexer.tokline, new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
@@ -5670,25 +5649,25 @@ states[597] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[598] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[598] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new FixnumNode(lexer.tokline, lexer.tokline+1);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[599] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[599] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new EncodingNode(lexer.tokline, lexer.getEncoding());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[600] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[600] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((LambdaNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[601] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[601] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.error_duplicate_pattern_variable(((ByteList)yyVals[0+yyTop].value));
                     yyVal = support.assignableInCurr(((ByteList)yyVals[0+yyTop].value), null);
@@ -5696,7 +5675,7 @@ states[601] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[602] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[602] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node n = support.gettable(((ByteList)yyVals[0+yyTop].value));
                     if (!(n instanceof LocalVarNode || n instanceof DVarNode)) {
@@ -5707,7 +5686,7 @@ states[602] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: var_ref!($2) %*/
   return yyVal;
 };
-states[603] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[603] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.gettable(((ByteList)yyVals[0+yyTop].value));
                     if (yyVal == null) yyVal = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
@@ -5715,35 +5694,35 @@ states[603] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: var_ref!($2) %*/
   return yyVal;
 };
-states[604] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[604] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new BeginNode(lexer.tokline, ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: begin!($3) %*/
   return yyVal;
 };
-states[605] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[605] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_colon3(lexer.tokline, ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
   return yyVal;
 };
-states[606] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[606] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.new_colon2(lexer.tokline, ((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
   return yyVal;
 };
-states[607] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[607] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ConstNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[608] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[608] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node node;
                     if (((Node)yyVals[-3+yyTop].value) != null) {
@@ -5760,18 +5739,18 @@ states[608] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rescue!(escape_Qundef($2), escape_Qundef($3), escape_Qundef($5), escape_Qundef($6)) %*/
   return yyVal;
 };
-states[609] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[609] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null; 
   return yyVal;
 };
-states[610] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[610] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.newArrayNode(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[611] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[611] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.splat_array(((Node)yyVals[0+yyTop].value));
                     if (yyVal == null) yyVal = ((Node)yyVals[0+yyTop].value); /* ArgsCat or ArgsPush*/
@@ -5779,48 +5758,48 @@ states[611] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: $1 %*/
   return yyVal;
 };
-states[613] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[613] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[615] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[615] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[0+yyTop].value);
                     /*% %*/
                     /*% ripper: ensure!($2) %*/
   return yyVal;
 };
-states[617] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[617] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((NumericNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[618] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[618] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[619] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[619] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[0+yyTop].value) instanceof EvStrNode ? new DStrNode(((Node)yyVals[0+yyTop].value).getLine(), lexer.getEncoding()).add(((Node)yyVals[0+yyTop].value)) : ((Node)yyVals[0+yyTop].value);
                     /*% %*/
                     /*% ripper: $1 %*/
   return yyVal;
 };
-states[620] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[620] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((StrNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[621] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[621] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[622] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[622] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.literal_concat(((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: string_concat!($1, $2) %*/
   return yyVal;
 };
-states[623] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[623] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     lexer.heredoc_dedent(((Node)yyVals[-1+yyTop].value));
 		    lexer.setHeredocIndent(0);
@@ -5829,7 +5808,7 @@ states[623] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
   return yyVal;
 };
-states[624] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[624] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     int line = support.getPosition(((Node)yyVals[-1+yyTop].value));
 
@@ -5851,107 +5830,107 @@ states[624] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: xstring_literal!(heredoc_dedent(p, $2)) %*/
   return yyVal;
 };
-states[625] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[625] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.newRegexpNode(support.getPosition(((Node)yyVals[-1+yyTop].value)), ((Node)yyVals[-1+yyTop].value), (RegexpNode) ((RegexpNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[626] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[626] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
 };
-states[627] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[627] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                      yyVal = new ArrayNode(lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: words_new! %*/
   return yyVal;
 };
-states[628] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[628] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                      yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[-1+yyTop].value) instanceof EvStrNode ? new DStrNode(((ListNode)yyVals[-2+yyTop].value).getLine(), lexer.getEncoding()).add(((Node)yyVals[-1+yyTop].value)) : ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: words_add!($1, $2) %*/
   return yyVal;
 };
-states[629] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[629] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((Node)yyVals[0+yyTop].value);
                      /*% ripper[brace]: word_add!(word_new!, $1) %*/
   return yyVal;
 };
-states[630] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[630] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.literal_concat(((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: word_add!($1, $2) %*/
   return yyVal;
 };
-states[631] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[631] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
 };
-states[632] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[632] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ArrayNode(lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: symbols_new! %*/
   return yyVal;
 };
-states[633] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[633] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[-1+yyTop].value) instanceof EvStrNode ? new DSymbolNode(((ListNode)yyVals[-2+yyTop].value).getLine()).add(((Node)yyVals[-1+yyTop].value)) : support.asSymbol(((ListNode)yyVals[-2+yyTop].value).getLine(), ((Node)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: symbols_add!($1, $2) %*/
   return yyVal;
 };
-states[634] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[634] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
 };
-states[635] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[635] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
 };
-states[636] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[636] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ArrayNode(lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: qwords_new! %*/
   return yyVal;
 };
-states[637] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[637] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: qwords_add!($1, $2) %*/
   return yyVal;
 };
-states[638] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[638] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ArrayNode(lexer.getRubySourceline());
                     /*% %*/
                     /*% ripper: qsymbols_new! %*/
   return yyVal;
 };
-states[639] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[639] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(support.asSymbol(((ListNode)yyVals[-2+yyTop].value).getLine(), ((Node)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: qsymbols_add!($1, $2) %*/
   return yyVal;
 };
-states[640] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[640] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     ByteList aChar = ByteList.create("");
                     aChar.setEncoding(lexer.getEncoding());
@@ -5964,7 +5943,7 @@ states[640] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[641] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[641] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.literal_concat(((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
@@ -5980,7 +5959,7 @@ states[641] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[642] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[642] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     ByteList aChar = ByteList.create("");
                     aChar.setEncoding(lexer.getEncoding());
@@ -5989,14 +5968,14 @@ states[642] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: xstring_new! %*/
   return yyVal;
 };
-states[643] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[643] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.literal_concat(((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: xstring_add!($1, $2) %*/
   return yyVal;
 };
-states[644] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[644] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = null;
                     /*% %*/
@@ -6007,7 +5986,7 @@ states[644] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[645] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[645] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
     /* FIXME: mri is different here.*/
                     /*%%%*/
                     yyVal = support.literal_concat(((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
@@ -6028,18 +6007,18 @@ states[645] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[646] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[646] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
                     /*% ripper[brace]: ripper_new_yylval(p, 0, get_value($1), $1) %*/
   return yyVal;
 };
-states[647] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[647] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = lexer.getStrTerm();
                     lexer.setStrTerm(null);
                     lexer.setState(EXPR_BEG);
   return yyVal;
 };
-states[648] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[648] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     lexer.setStrTerm(((StrTerm)yyVals[-1+yyTop].value));
                     yyVal = new EvStrNode(support.getPosition(((Node)yyVals[0+yyTop].value)), ((Node)yyVals[0+yyTop].value));
@@ -6047,29 +6026,29 @@ states[648] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: string_dvar!($3) %*/
   return yyVal;
 };
-states[649] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[649] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = lexer.getStrTerm();
                    lexer.setStrTerm(null);
                    lexer.getConditionState().push0();
                    lexer.getCmdArgumentState().push0();
   return yyVal;
 };
-states[650] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[650] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = lexer.getState();
                    lexer.setState(EXPR_BEG);
   return yyVal;
 };
-states[651] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[651] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = lexer.getBraceNest();
                    lexer.setBraceNest(0);
   return yyVal;
 };
-states[652] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[652] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = lexer.getHeredocIndent();
                    lexer.setHeredocIndent(0);
   return yyVal;
 };
-states[653] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[653] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    lexer.getConditionState().pop();
                    lexer.getCmdArgumentState().pop();
                    lexer.setStrTerm(((StrTerm)yyVals[-5+yyTop].value));
@@ -6085,28 +6064,28 @@ states[653] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                    /*% ripper: string_embexpr!($7) %*/
   return yyVal;
 };
-states[654] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[654] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new GlobalVarNode(lexer.getRubySourceline(), support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[655] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[655] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new InstVarNode(lexer.getRubySourceline(), support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[656] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[656] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarNode(lexer.getRubySourceline(), support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[660] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[660] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_END);
                     /*%%%*/
                     yyVal = support.asSymbol(lexer.getRubySourceline(), ((ByteList)yyVals[0+yyTop].value));
@@ -6114,19 +6093,19 @@ states[660] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: symbol_literal!(symbol!($2)) %*/
   return yyVal;
 };
-states[662] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[662] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[663] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[663] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[664] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[664] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[665] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[665] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_END);
 
                     /*%%%*/
@@ -6148,33 +6127,33 @@ states[665] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: dyna_symbol!($2) %*/
   return yyVal;
 };
-states[666] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[666] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((NumericNode)yyVals[0+yyTop].value);  
   return yyVal;
 };
-states[667] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[667] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.negateNumeric(((NumericNode)yyVals[0+yyTop].value));
                     /*% %*/
   return yyVal;
 };
-states[671] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[671] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[672] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[672] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((FloatNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[673] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[673] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((RationalNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[674] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[674] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                      yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[675] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[675] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.declareIdentifier(((ByteList)yyVals[0+yyTop].value));
                     /*% 
@@ -6187,7 +6166,7 @@ states[675] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[676] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[676] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new InstVarNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% 
@@ -6200,7 +6179,7 @@ states[676] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[677] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[677] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new GlobalVarNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% 
@@ -6213,7 +6192,7 @@ states[677] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[678] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[678] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ConstNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% 
@@ -6226,7 +6205,7 @@ states[678] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[679] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[679] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*% 
@@ -6239,35 +6218,35 @@ states[679] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[680] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[680] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new NilNode(lexer.tokline);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[681] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[681] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new SelfNode(lexer.tokline);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[682] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[682] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new TrueNode(lexer.tokline);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[683] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[683] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new FalseNode(lexer.tokline);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[684] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[684] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new FileNode(lexer.tokline, new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
@@ -6275,42 +6254,42 @@ states[684] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[685] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[685] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new FixnumNode(lexer.tokline, lexer.tokline+1);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[686] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[686] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new EncodingNode(lexer.tokline, lexer.getEncoding());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
-states[687] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[687] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.assignableLabelOrIdentifier(((ByteList)yyVals[0+yyTop].value), null);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[688] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[688] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new InstAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[689] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[689] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new GlobalAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[690] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[690] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (lexer.getLexContext().in_def) support.compile_error("dynamic constant assignment");
 
@@ -6319,14 +6298,14 @@ states[690] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[691] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[691] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop].value)), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[692] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[692] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to nil");
                     yyVal = null;
@@ -6334,7 +6313,7 @@ states[692] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[693] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[693] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't change the value of self");
                     yyVal = null;
@@ -6342,7 +6321,7 @@ states[693] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[694] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[694] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to true");
                     yyVal = null;
@@ -6350,7 +6329,7 @@ states[694] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[695] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[695] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to false");
                     yyVal = null;
@@ -6358,7 +6337,7 @@ states[695] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[696] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[696] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __FILE__");
                     yyVal = null;
@@ -6366,7 +6345,7 @@ states[696] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[697] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[697] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __LINE__");
                     yyVal = null;
@@ -6374,7 +6353,7 @@ states[697] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[698] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[698] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.compile_error("Can't assign to __ENCODING__");
                     yyVal = null;
@@ -6382,37 +6361,37 @@ states[698] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
   return yyVal;
 };
-states[699] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[699] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[700] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[700] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[701] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[701] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    lexer.setState(EXPR_BEG);
                    lexer.commandStart = true;
   return yyVal;
 };
-states[702] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[702] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((Node)yyVals[-1+yyTop].value);
   return yyVal;
 };
-states[703] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[703] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = null;
                     /*% %*/
                     /*% ripper: Qnil %*/
   return yyVal;
 };
-states[705] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[705] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_argdef = false;
                     yyVal = support.new_args(lexer.tokline, null, null, null, null, 
                                           support.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null));
   return yyVal;
 };
-states[706] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[706] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ArgsNode)yyVals[-1+yyTop].value);
                     /*% %*/
@@ -6422,11 +6401,11 @@ states[706] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     lexer.commandStart = true;
   return yyVal;
 };
-states[707] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[707] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = ((ArgsNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[708] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[708] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = lexer.getLexContext();
                     yyVal = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
@@ -6434,7 +6413,7 @@ states[708] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     lexer.setState(lexer.getState() | EXPR_LABEL);
   return yyVal;
 };
-states[709] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[709] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = lexer.getLexContext();
                     ctxt.in_kwarg = ((Boolean)yyVals[-2+yyTop].value);
                     ctxt.in_argdef = false;
@@ -6443,145 +6422,145 @@ states[709] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     lexer.commandStart = true;
   return yyVal;
 };
-states[710] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[710] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(((ListNode)yyVals[-3+yyTop].value).getLine(), ((ListNode)yyVals[-3+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((BlockArgNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[711] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[711] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(((ListNode)yyVals[-1+yyTop].value).getLine(), ((ListNode)yyVals[-1+yyTop].value), (ByteList) null, ((BlockArgNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[712] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[712] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(lexer.getRubySourceline(), null, ((ByteList)yyVals[-1+yyTop].value), ((BlockArgNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[713] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[713] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(((BlockArgNode)yyVals[0+yyTop].value).getLine(), null, (ByteList) null, ((BlockArgNode)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[714] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[714] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.add_forwarding_args();
                     yyVal = support.new_args_tail(lexer.tokline, null, ((ByteList)yyVals[0+yyTop].value), new BlockArgNode(support.arg_var(FWD_BLOCK)));
   return yyVal;
 };
-states[715] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[715] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ArgsTailHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[716] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[716] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null);
   return yyVal;
 };
-states[717] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[717] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-5+yyTop].value).getLine(), ((ListNode)yyVals[-5+yyTop].value), ((ListNode)yyVals[-3+yyTop].value), ((RestArgNode)yyVals[-1+yyTop].value), null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[718] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[718] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-7+yyTop].value).getLine(), ((ListNode)yyVals[-7+yyTop].value), ((ListNode)yyVals[-5+yyTop].value), ((RestArgNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[719] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[719] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-3+yyTop].value).getLine(), ((ListNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), null, null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[720] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[720] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-5+yyTop].value).getLine(), ((ListNode)yyVals[-5+yyTop].value), ((ListNode)yyVals[-3+yyTop].value), null, ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[721] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[721] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-3+yyTop].value).getLine(), ((ListNode)yyVals[-3+yyTop].value), null, ((RestArgNode)yyVals[-1+yyTop].value), null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[722] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[722] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-5+yyTop].value).getLine(), ((ListNode)yyVals[-5+yyTop].value), null, ((RestArgNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[723] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[723] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-1+yyTop].value).getLine(), ((ListNode)yyVals[-1+yyTop].value), null, null, null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[724] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[724] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-3+yyTop].value).getLine(), null, ((ListNode)yyVals[-3+yyTop].value), ((RestArgNode)yyVals[-1+yyTop].value), null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[725] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[725] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-5+yyTop].value).getLine(), null, ((ListNode)yyVals[-5+yyTop].value), ((RestArgNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[726] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[726] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-1+yyTop].value).getLine(), null, ((ListNode)yyVals[-1+yyTop].value), null, null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[727] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[727] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ListNode)yyVals[-3+yyTop].value).getLine(), null, ((ListNode)yyVals[-3+yyTop].value), null, ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[728] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[728] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((RestArgNode)yyVals[-1+yyTop].value).getLine(), null, null, ((RestArgNode)yyVals[-1+yyTop].value), null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[729] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[729] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((RestArgNode)yyVals[-3+yyTop].value).getLine(), null, null, ((RestArgNode)yyVals[-3+yyTop].value), ((ListNode)yyVals[-1+yyTop].value), ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[730] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[730] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(((ArgsTailHolder)yyVals[0+yyTop].value).getLine(), null, null, null, null, ((ArgsTailHolder)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[731] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[731] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
   return yyVal;
 };
-states[732] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[732] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = FWD_KWREST;
                     /*% %*/
                     /*% ripper: args_forward! %*/
   return yyVal;
 };
-states[733] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[733] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.yyerror("formal argument cannot be a constant");
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
   return yyVal;
 };
-states[734] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[734] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.yyerror("formal argument cannot be an instance variable");
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
   return yyVal;
 };
-states[735] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[735] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.yyerror("formal argument cannot be a global variable");
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
   return yyVal;
 };
-states[736] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[736] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     support.yyerror("formal argument cannot be a class variable");
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
   return yyVal;
 };
-states[737] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[737] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value); /* Not really reached*/
   return yyVal;
 };
-states[738] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[738] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.formal_argument(((ByteList)yyVals[0+yyTop].value));
                     support.ordinalMaxNumParam();
   return yyVal;
 };
-states[739] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[739] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setCurrentArg(((ByteList)yyVals[0+yyTop].value));
                     yyVal = support.arg_var(((ByteList)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[740] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[740] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setCurrentArg(null);
                     /*%%%*/
                     yyVal = ((ArgumentNode)yyVals[0+yyTop].value);
@@ -6589,19 +6568,19 @@ states[740] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: get_value($1) %*/
   return yyVal;
 };
-states[741] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[741] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: mlhs_paren!($2) %*/
   return yyVal;
 };
-states[742] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[742] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = new ArrayNode(lexer.getRubySourceline(), ((Node)yyVals[0+yyTop].value));
                     /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[743] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[743] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[0+yyTop].value));
                     yyVal = ((ListNode)yyVals[-2+yyTop].value);
@@ -6609,7 +6588,7 @@ states[743] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_ary_push($1, get_value($3)) %*/
   return yyVal;
 };
-states[744] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[744] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.arg_var(support.formal_argument(((ByteList)yyVals[0+yyTop].value)));
                     lexer.setCurrentArg(((ByteList)yyVals[0+yyTop].value));
                     support.ordinalMaxNumParam();
@@ -6617,7 +6596,7 @@ states[744] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[745] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[745] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setCurrentArg(null);
                     lexer.getLexContext().in_argdef = true;
                     /*%%%*/
@@ -6626,7 +6605,7 @@ states[745] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
   return yyVal;
 };
-states[746] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[746] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setCurrentArg(null);
                     lexer.getLexContext().in_argdef = true;
                     /*%%%*/
@@ -6635,7 +6614,7 @@ states[746] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
   return yyVal;
 };
-states[747] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[747] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_argdef = true;
                     /*%%%*/
                     yyVal = new KeywordArgNode(support.getPosition(((Node)yyVals[0+yyTop].value)), support.assignableKeyword(((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value)));
@@ -6643,7 +6622,7 @@ states[747] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
   return yyVal;
 };
-states[748] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[748] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_argdef = true;
                     /*%%%*/
                     yyVal = new KeywordArgNode(lexer.getRubySourceline(), support.assignableKeyword(((ByteList)yyVals[0+yyTop].value), new RequiredKeywordArgumentValueNode()));
@@ -6651,50 +6630,50 @@ states[748] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
   return yyVal;
 };
-states[749] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[749] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ArrayNode(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[750] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[750] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($3)) %*/
   return yyVal;
 };
-states[751] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[751] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ArrayNode(((KeywordArgNode)yyVals[0+yyTop].value).getLine(), ((KeywordArgNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[752] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[752] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((KeywordArgNode)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($3)) %*/
   return yyVal;
 };
-states[753] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[753] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[754] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[754] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[755] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[755] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Integer)yyVals[0+yyTop].value);
                     /*% %*/
                     /*% ripper: nokw_param!(Qnil) %*/
   return yyVal;
 };
-states[756] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[756] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.shadowing_lvar(((ByteList)yyVals[0+yyTop].value));
                     /*%%%*/
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
@@ -6702,14 +6681,14 @@ states[756] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: kwrest_param!($2) %*/
   return yyVal;
 };
-states[757] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[757] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.INTERNAL_ID;
                     /*% %*/
                     /*% ripper: kwrest_param!(Qnil) %*/
   return yyVal;
 };
-states[758] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[758] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     lexer.setCurrentArg(null);
                     lexer.getLexContext().in_argdef = true;
@@ -6718,7 +6697,7 @@ states[758] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
   return yyVal;
 };
-states[759] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[759] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.getLexContext().in_argdef = true;
                     lexer.setCurrentArg(null);
                     /*%%%*/
@@ -6727,43 +6706,43 @@ states[759] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
   return yyVal;
 };
-states[760] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[760] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new BlockNode(((Node)yyVals[0+yyTop].value).getLine()).add(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[761] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[761] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.appendToBlock(((ListNode)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($3)) %*/
   return yyVal;
 };
-states[762] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[762] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new BlockNode(((Node)yyVals[0+yyTop].value).getLine()).add(((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[763] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[763] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.appendToBlock(((ListNode)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($3)) %*/
   return yyVal;
 };
-states[764] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[764] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = STAR;
   return yyVal;
 };
-states[765] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[765] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[766] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[766] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     if (!support.is_local_id(((ByteList)yyVals[0+yyTop].value))) {
                         support.yyerror("rest argument must be local variable");
                     }
@@ -6774,22 +6753,22 @@ states[766] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: rest_param!($2) %*/
   return yyVal;
 };
-states[767] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[767] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new UnnamedRestArgNode(lexer.getRubySourceline(), support.symbolID(CommonByteLists.EMPTY), support.getCurrentScope().addVariable("*"));
                     /*% %*/
                     /*% ripper: rest_param!(Qnil) %*/
   return yyVal;
 };
-states[768] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[768] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = AMPERSAND;
   return yyVal;
 };
-states[769] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[769] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[770] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[770] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     if (!support.is_local_id(((ByteList)yyVals[0+yyTop].value))) {
                         support.yyerror("block argument must be local variable");
                     }
@@ -6800,7 +6779,7 @@ states[770] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: blockarg!($2) %*/
   return yyVal;
 };
-states[771] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[771] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = support.arg_var(support.shadowing_lvar(FWD_BLOCK));
                     /*%%%*/
                     yyVal = new BlockArgNode(((ArgumentNode)yyVal));
@@ -6809,24 +6788,24 @@ states[771] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     %*/
   return yyVal;
 };
-states[772] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[772] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((BlockArgNode)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[773] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[773] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = null;
   return yyVal;
 };
-states[774] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[774] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     support.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = ((Node)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[775] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[775] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     lexer.setState(EXPR_BEG);
   return yyVal;
 };
-states[776] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[776] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-1+yyTop].value) == null) {
                         support.yyerror("can't define single method for ().");
@@ -6839,37 +6818,37 @@ states[776] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: paren!($3) %*/
   return yyVal;
 };
-states[777] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[777] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = new HashNode(lexer.getRubySourceline());
                     /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
-states[778] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[778] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.remove_duplicate_keys(((HashNode)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: assoclist_from_args!($1) %*/
   return yyVal;
 };
-states[779] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[779] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = new HashNode(lexer.getRubySourceline(), ((KeyValuePair)yyVals[0+yyTop].value));
   return yyVal;
 };
-states[780] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[780] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((HashNode)yyVals[-2+yyTop].value).add(((KeyValuePair)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($3)) %*/
   return yyVal;
 };
-states[781] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[781] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.createKeyValue(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: assoc_new!($1, $3) %*/
   return yyVal;
 };
-states[782] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[782] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node label = support.asSymbol(support.getPosition(((Node)yyVals[0+yyTop].value)), ((ByteList)yyVals[-1+yyTop].value));
                     yyVal = support.createKeyValue(label, ((Node)yyVals[0+yyTop].value));
@@ -6877,7 +6856,7 @@ states[782] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assoc_new!($1, $2) %*/
   return yyVal;
 };
-states[783] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[783] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     Node label = support.asSymbol(lexer.tokline, ((ByteList)yyVals[0+yyTop].value));
                     Node var = support.gettable(((ByteList)yyVals[0+yyTop].value));
@@ -6887,7 +6866,7 @@ states[783] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
                     /*% ripper: assoc_new!($1, Qnil) %*/
   return yyVal;
 };
-states[784] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[784] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-2+yyTop].value) instanceof StrNode) {
                         DStrNode dnode = new DStrNode(support.getPosition(((Node)yyVals[-2+yyTop].value)), lexer.getEncoding());
@@ -6902,107 +6881,107 @@ states[784] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionS
 
   return yyVal;
 };
-states[785] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[785] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = support.createKeyValue(null, ((Node)yyVals[0+yyTop].value));
                     /*% %*/
                     /*% ripper: assoc_splat!($2) %*/
   return yyVal;
 };
-states[786] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[786] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[787] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[787] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[788] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[788] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[789] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[789] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[790] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[790] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[791] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[791] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[792] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[792] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[793] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[793] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[794] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[794] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[795] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[795] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[796] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[796] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = DOT;
   return yyVal;
 };
-states[797] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[797] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[798] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[798] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = DOT;
   return yyVal;
 };
-states[799] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[799] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[801] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[801] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
-states[806] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[806] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = RPAREN;
   return yyVal;
 };
-states[807] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[807] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = RBRACKET;
   return yyVal;
 };
-states[808] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[808] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = RCURLY;
   return yyVal;
 };
-states[816] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[816] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                       yyVal = null;
   return yyVal;
 };
-states[817] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+states[817] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   yyVal = null;
   return yyVal;
 };
 }
-					// line 4971 "RubyParser.y"
+					// line 4950 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
     public RubyParserResult parse(ParserConfiguration configuration) throws IOException {
-        support.reset();
-        support.setConfiguration(configuration);
-        support.setResult(new RubyParserResult());
+        reset();
+        setConfiguration(configuration);
+        setResult(new RubyParserResult());
         
         yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
-        return support.getResult();
+        return getResult();
     }
 }
-					// line 14756 "-"
+					// line 14735 "-"

@@ -61,7 +61,7 @@ class PostProcessor
   end
 
   def generate_action_body_method(state, code_body)
-    @out.puts "states[#{state}] = (ParserSupport support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {" 
+    @out.puts "states[#{state}] = (RubyParser support, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {" 
     code_body.each { |line| @out.puts frob_yyVals(line) }
     @out.puts "  return yyVal;"
     @out.puts "};"

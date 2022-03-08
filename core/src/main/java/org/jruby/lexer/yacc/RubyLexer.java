@@ -63,7 +63,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
-import org.jruby.parser.ParserSupport;
+import org.jruby.parser.RubyParserBase;
 import org.jruby.parser.ProductionState;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
@@ -271,13 +271,13 @@ public class RubyLexer extends LexingCommon {
         return map.get(str);
     }
     
-    private ParserSupport parserSupport;
+    private RubyParserBase parser;
 
     // What handles warnings
     private IRubyWarnings warnings;
 
     public Ruby getRuntime() {
-        return parserSupport.getConfiguration().getRuntime();
+        return parser.getConfiguration().getRuntime();
     }
 
     public int tokenize_ident(int result) {
@@ -285,7 +285,7 @@ public class RubyLexer extends LexingCommon {
         ByteList value = createTokenByteList();
         String id = getRuntime().newSymbol(value).idString();
 
-        if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(id) >= 0) {
+        if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(id) >= 0) {
             setState(EXPR_END);
         }
 
@@ -295,17 +295,10 @@ public class RubyLexer extends LexingCommon {
 
     private StrTerm lex_strterm;
 
-    public RubyLexer(ParserSupport support, LexerSource source, IRubyWarnings warnings) {
+    public RubyLexer(RubyParserBase parser, LexerSource source, IRubyWarnings warnings) {
         super(source);
-        this.parserSupport = support;
+        this.parser = parser;
         this.warnings = warnings;
-        reset();
-    }
-
-    @Deprecated
-    public RubyLexer(ParserSupport support, LexerSource source) {
-        super(source);
-        this.parserSupport = support;
         reset();
     }
     
@@ -549,7 +542,7 @@ public class RubyLexer extends LexingCommon {
 
         // Enebo: This is a hash in MRI for multiple potential compile options but we currently only support one.
         // I am just going to set it and when a second is done we will reevaluate how they are populated.
-        parserSupport.getConfiguration().setFrozenStringLiteral(b == 1);
+        parser.getConfiguration().setFrozenStringLiteral(b == 1);
     }
 
     @Override
@@ -678,13 +671,13 @@ public class RubyLexer extends LexingCommon {
                 // Do nothing like MRI
             } else if (getEncoding() == USASCII_ENCODING &&
                     bufferEncoding != UTF8_ENCODING) {
-                codeRange = ParserSupport.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
+                codeRange = RubyParserBase.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
             }
         }
 
         StrNode newStr = new StrNode(ruby_sourceline, buffer, codeRange);
 
-        if (parserSupport.getConfiguration().isFrozenStringLiteral()) newStr.setFrozen(true);
+        if (parser.getConfiguration().isFrozenStringLiteral()) newStr.setFrozen(true);
 
         return newStr;
     }
@@ -821,7 +814,7 @@ public class RubyLexer extends LexingCommon {
 
             switch (newline) {
                 case 1:
-                    parserSupport.warn(ID.USELESS_EXPRESSION, ruby_sourceline, "here document identifier ends with a newline");
+                    parser.warn(ID.USELESS_EXPRESSION, ruby_sourceline, "here document identifier ends with a newline");
                     markerValue.setRealSize(markerValue.realSize() - 1);
                     if (markerValue.get(markerValue.realSize() - 1) == '\r') markerValue.setRealSize(markerValue.realSize() - 1);
                     break;
@@ -1189,7 +1182,7 @@ public class RubyLexer extends LexingCommon {
 
         if (result == RubyParser.tCONSTANT && !symbol.validConstantName()) result = RubyParser.tIDENTIFIER;
         if (result == RubyParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
-                parserSupport.getCurrentScope().isDefined(id) >= 0) {
+                parser.getCurrentScope().isDefined(id) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 

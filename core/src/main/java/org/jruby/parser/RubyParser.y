@@ -156,36 +156,15 @@ import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
-import static org.jruby.parser.ParserSupport.arg_blk_pass;
-import static org.jruby.parser.ParserSupport.node_assign;
+import static org.jruby.parser.RubyParserBase.arg_blk_pass;
+import static org.jruby.parser.RubyParserBase.node_assign;
 
  
-public class RubyParser {
-    protected ParserSupport support;
-    protected RubyLexer lexer;
-
+public class RubyParser extends RubyParserBase {
     public RubyParser(LexerSource source, IRubyWarnings warnings) {
-        this.support = new ParserSupport();
-        this.lexer = new RubyLexer(support, source, warnings);
-        support.setLexer(lexer);
-        support.setWarnings(warnings);
-    }
-
-    @Deprecated
-    public RubyParser(LexerSource source) {
-        this(new ParserSupport(), source);
-    }
-
-    @Deprecated
-    public RubyParser(ParserSupport support, LexerSource source) {
-        this.support = support;
-        lexer = new RubyLexer(support, source);
-        support.setLexer(lexer);
-    }
-
-    public void setWarnings(IRubyWarnings warnings) {
-        support.setWarnings(warnings);
-        lexer.setWarnings(warnings);
+        super();
+        setLexer(new RubyLexer(this, source, warnings));
+        setWarnings(warnings);
     }
 %}
 
@@ -555,7 +534,7 @@ stmt            : keyword_alias fitem {
                     lexer.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     /*%%%*/
-                    $$ = ParserSupport.newAlias($1, $2, $4);
+                    $$ = newAlias($1, $2, $4);
                     /*% %*/
                     /*% ripper: alias!($2, $4) %*/
                 }
@@ -1427,7 +1406,7 @@ fitem           : fname {  // LiteralNode
 
 undef_list      : fitem {
                     /*%%%*/
-                    $$ = ParserSupport.newUndef($1.getLine(), $1);
+                    $$ = newUndef($1.getLine(), $1);
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
@@ -1435,7 +1414,7 @@ undef_list      : fitem {
                     lexer.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     /*%%%*/
-                    $$ = support.appendToBlock($1, ParserSupport.newUndef($1.getLine(), $4));
+                    $$ = support.appendToBlock($1, newUndef($1.getLine(), $4));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($4)) %*/
                 }
@@ -2342,7 +2321,7 @@ args            : arg_value { // ArrayNode
                         (node = support.splat_array($1)) != null) {
                         $$ = support.list_concat(node, $4);
                     } else {
-                        $$ = ParserSupport.arg_concat($1, $4);
+                        $$ = arg_concat($1, $4);
                     }
                     /*% %*/
                     /*% ripper: args_add_star!($1, $4) %*/
@@ -2377,7 +2356,7 @@ mrhs            : args ',' arg_value {
                         (node = support.splat_array($1)) != null) {
                         $$ = support.list_concat(node, $4);
                     } else {
-                        $$ = ParserSupport.arg_concat($1, $4);
+                        $$ = arg_concat($1, $4);
                     }
                     /*% %*/
                     /*% ripper: mrhs_add_star!(mrhs_new_from_args!($1), $4) %*/
@@ -4973,12 +4952,12 @@ none_block_pass : {
      * structure
      */
     public RubyParserResult parse(ParserConfiguration configuration) throws IOException {
-        support.reset();
-        support.setConfiguration(configuration);
-        support.setResult(new RubyParserResult());
+        reset();
+        setConfiguration(configuration);
+        setResult(new RubyParserResult());
         
         yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
-        return support.getResult();
+        return getResult();
     }
 }

@@ -73,14 +73,14 @@ import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.lexer.yacc.RubyLexer.Keyword.*;
-import static org.jruby.parser.ParserSupport.IDType.*;
+import static org.jruby.parser.RubyParserBase.IDType.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
 
 /** 
  *
  */
-public class ParserSupport {
+public class RubyParserBase {
     // Parser states:
     protected StaticScope currentScope;
     protected ScopedParserState scopedParserState;
@@ -1294,6 +1294,7 @@ public class ParserSupport {
 
     public void setWarnings(IRubyWarnings warnings) {
         this.warnings = warnings;
+        lexer.setWarnings(warnings);
     }
 
     public void setLexer(RubyLexer lexer) {
