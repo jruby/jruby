@@ -128,7 +128,9 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
+import static org.jruby.lexer.yacc.RubyLexer.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND;
+import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
 import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
@@ -140,6 +142,7 @@ import static org.jruby.lexer.LexingCommon.LT;
 import static org.jruby.lexer.LexingCommon.MINUS;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
+import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.lexer.LexingCommon.PLUS;
 import static org.jruby.lexer.LexingCommon.RBRACKET;
 import static org.jruby.lexer.LexingCommon.RCURLY;
@@ -550,8 +553,9 @@ stmt            : keyword_alias fitem {
                     /*% ripper: var_alias!($2, $3) %*/
                 }
                 | keyword_alias tGVAR tNTH_REF {
+                    String message = "can't make alias for the number variables";
                     /*%%%*/
-                    p.yyerror("can't make alias for the number variables");
+                    p.yyerror(message);
                     /*% %*/
                     /*% ripper[error]: alias_error!(ERR_MESG(), $3) %*/
                 }
@@ -714,7 +718,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.endless_method_name($1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     /*% 
                        $1 = get_value($1);
                     %*/
@@ -727,7 +731,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.restore_defun($1);
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
+                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     /*% 
                        $1 = get_value($1);
                     %*/
@@ -756,16 +760,16 @@ command_rhs     : command_call %prec tOP_ASGN {
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr keyword_and expr {
-                    $$ = p.newAndNode($1, $3);
+                    $$ = p.logop($1, AMPERSAND_AMPERSAND, $3);
                 }
                 | expr keyword_or expr {
-                    $$ = p.newOrNode($1, $3);
+                    $$ = p.logop($1, OR_OR, $3);
                 }
                 | keyword_not opt_nl expr {
-                    $$ = p.getOperatorCallNode(p.method_cond($3), lexer.BANG);
+                    $$ = p.call_uni_op(p.method_cond($3), lexer.BANG);
                 }
                 | '!' command_call {
-                    $$ = p.getOperatorCallNode(p.method_cond($2), BANG);
+                    $$ = p.call_uni_op(p.method_cond($2), BANG);
                 }
                 | arg tASSOC {
                     p.value_expr(lexer, $1);
@@ -806,8 +810,8 @@ expr            : command_call
                 }
 		| arg %prec tLBRACE_ARG
 
-// FIXME:  If we ever want to match MRI's AST mode we may need to make a node
-// [!null] - RubySymbol
+/* note[ripper]: We use DefHolder and we ignore MRI ripper code */
+// [!null] - DefHolder
 def_name        : fname {
                     p.pushLocalScope();
                     LexContext ctxt = lexer.getLexContext();
@@ -816,20 +820,15 @@ def_name        : fname {
                     $$ = new DefHolder(p.symbolID($1), lexer.getCurrentArg(), (LexContext) ctxt.clone());
                     ctxt.in_def = true;
                     lexer.setCurrentArg(null);
-                    /*%%%*/
-                    /*% 
-                         $$ = NEW_RIPPER(fname, get_value($1), $$, &NULL_LOC);
-                    %*/
                 }
 
-// [!null] - DefnNode
+// [!null] - DefHolder
 defn_head       : k_def def_name {
                     $2.line = $1;
                     $$ = $2;
                 }
-// FIXME: defn/defs ripper is missing here
 
-// [!null] - DefsNode
+// [!null] - DefHolder
 defs_head       : k_def singleton dot_or_colon {
                     lexer.setState(EXPR_FNAME); 
                     LexContext ctxt = lexer.getLexContext();
@@ -838,6 +837,7 @@ defs_head       : k_def singleton dot_or_colon {
                     lexer.setState(EXPR_ENDFN|EXPR_LABEL);
                     $5.line = $1;
                     $5.setSingleton($2);
+                    $5.setDotOrColon($3);
                     $$ = $5;
                 }
 
@@ -1345,8 +1345,9 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 }
 
 cname           : tIDENTIFIER {
+                    String message = "class/module name must be CONSTANT";
                     /*%%%*/
-                    p.yyerror("class/module name must be CONSTANT", @1);
+                    p.yyerror(message, @1);
                     /*% %*/
                     /*% ripper[error]: class_name_error!(ERR_MESG(), $1) %*/
                 }
@@ -1420,361 +1421,219 @@ undef_list      : fitem {
 
 // ByteList:op
 op               : '|' {
-                     /*%%%*/
                      $$ = OR;
-                     /*% %*/
                  }
                  | '^' {
-                     /*%%%*/
                      $$ = CARET;
-                     /*% %*/
                  }
                  | '&' {
-                     /*%%%*/
                      $$ = AMPERSAND;
-                     /*% %*/
                  }
                  | tCMP {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tEQ {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tEQQ {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tMATCH {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tNMATCH {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | '>' {
-                     /*%%%*/
                      $$ = GT;
-                     /*% %*/
                  }
                  | tGEQ {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | '<' {
-                     /*%%%*/
                      $$ = LT;
-                     /*% %*/
                  }
                  | tLEQ {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tNEQ {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tLSHFT {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tRSHFT{
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | '+' {
-                     /*%%%*/
                      $$ = PLUS;
-                     /*% %*/
                  }
                  | '-' {
-                     /*%%%*/
                      $$ = MINUS;
-                     /*% %*/
                  }
                  | '*' {
-                     /*%%%*/
                      $$ = STAR;
-                     /*% %*/
                  }
                  | tSTAR {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | '/' {
-                     /*%%%*/
                      $$ = SLASH;
-                     /*% %*/
                  }
                  | '%' {
-                     /*%%%*/
                      $$ = PERCENT;
-                     /*% %*/
                  }
                  | tPOW {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tDSTAR {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | '!' {
-                     /*%%%*/
                      $$ = BANG;
-                     /*% %*/
                  }
                  | '~' {
-                     /*%%%*/
                      $$ = TILDE;
-                     /*% %*/
                  }
                  | tUPLUS {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tUMINUS {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tAREF {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | tASET {
-                     /*%%%*/
                      $$ = $1;
-                     /*% %*/
                  }
                  | '`' {
-                     /*%%%*/
                      $$ = BACKTICK;
-                     /*% %*/
                  }
  
-// String:op
+// ByteList: reswords
 reswords        : keyword__LINE__ {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.__LINE__.bytes;
-                    /*% %*/
+                    $$ = Keyword.__LINE__.bytes;
                 }
                 | keyword__FILE__ {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.__FILE__.bytes;
-                    /*% %*/
+                    $$ = Keyword.__FILE__.bytes;
                 }
                 | keyword__ENCODING__ {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.__ENCODING__.bytes;
-                    /*% %*/
+                    $$ = Keyword.__ENCODING__.bytes;
                 }
                 | keyword_BEGIN {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.LBEGIN.bytes;
-                    /*% %*/
+                    $$ = Keyword.LBEGIN.bytes;
                 }
                 | keyword_END {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.LEND.bytes;
-                    /*% %*/
+                    $$ = Keyword.LEND.bytes;
                 }
                 | keyword_alias {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.ALIAS.bytes;
-                    /*% %*/
+                    $$ = Keyword.ALIAS.bytes;
                 }
                 | keyword_and {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.AND.bytes;
-                    /*% %*/
+                    $$ = Keyword.AND.bytes;
                 }
                 | keyword_begin {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.BEGIN.bytes;
-                    /*% %*/
+                    $$ = Keyword.BEGIN.bytes;
                 }
                 | keyword_break {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.BREAK.bytes;
-                    /*% %*/
+                    $$ = Keyword.BREAK.bytes;
                 }
                 | keyword_case {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.CASE.bytes;
-                    /*% %*/
+                    $$ = Keyword.CASE.bytes;
                 }
                 | keyword_class {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.CLASS.bytes;
-                    /*% %*/
+                    $$ = Keyword.CLASS.bytes;
                 }
                 | keyword_def {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.DEF.bytes;
-                    /*% %*/
+                    $$ = Keyword.DEF.bytes;
                 }
                 | keyword_defined {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.DEFINED_P.bytes;
-                    /*% %*/
+                    $$ = Keyword.DEFINED_P.bytes;
                 }
                 | keyword_do {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.DO.bytes;
-                    /*% %*/
+                    $$ = Keyword.DO.bytes;
                 }
                 | keyword_else {
-                     /*%%%*/
-                     $$ = RubyLexer.Keyword.ELSE.bytes;
-                    /*% %*/
+                     $$ = Keyword.ELSE.bytes;
                 }
                 | keyword_elsif {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.ELSIF.bytes;
-                    /*% %*/
+                    $$ = Keyword.ELSIF.bytes;
                 }
                 | keyword_end {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.END.bytes;
-                    /*% %*/
+                    $$ = Keyword.END.bytes;
                 }
                 | keyword_ensure {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.ENSURE.bytes;
-                    /*% %*/
+                    $$ = Keyword.ENSURE.bytes;
                 }
                 | keyword_false {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.FALSE.bytes;
-                    /*% %*/
+                    $$ = Keyword.FALSE.bytes;
                 }
                 | keyword_for {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.FOR.bytes;
-                    /*% %*/
+                    $$ = Keyword.FOR.bytes;
                 }
                 | keyword_in {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.IN.bytes;
-                    /*% %*/
+                    $$ = Keyword.IN.bytes;
                 }
                 | keyword_module {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.MODULE.bytes;
-                    /*% %*/
+                    $$ = Keyword.MODULE.bytes;
                 }
                 | keyword_next {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.NEXT.bytes;
-                    /*% %*/
+                    $$ = Keyword.NEXT.bytes;
                 }
                 | keyword_nil {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.NIL.bytes;
-                    /*% %*/
+                    $$ = Keyword.NIL.bytes;
                 }
                 | keyword_not {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.NOT.bytes;
-                    /*% %*/
+                    $$ = Keyword.NOT.bytes;
                 }
                 | keyword_or {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.OR.bytes;
-                    /*% %*/
+                    $$ = Keyword.OR.bytes;
                 }
                 | keyword_redo {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.REDO.bytes;
-                    /*% %*/
+                    $$ = Keyword.REDO.bytes;
                 }
                 | keyword_rescue {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.RESCUE.bytes;
-                    /*% %*/
+                    $$ = Keyword.RESCUE.bytes;
                 }
                 | keyword_retry {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.RETRY.bytes;
-                    /*% %*/
+                    $$ = Keyword.RETRY.bytes;
                 }
                 | keyword_return {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.RETURN.bytes;
-                    /*% %*/
+                    $$ = Keyword.RETURN.bytes;
                 }
                 | keyword_self {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.SELF.bytes;
-                    /*% %*/
+                    $$ = Keyword.SELF.bytes;
                 }
                 | keyword_super {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.SUPER.bytes;
-                    /*% %*/
+                    $$ = Keyword.SUPER.bytes;
                 }
                 | keyword_then {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.THEN.bytes;
-                    /*% %*/
+                    $$ = Keyword.THEN.bytes;
                 }
                 | keyword_true {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.TRUE.bytes;
-                    /*% %*/
+                    $$ = Keyword.TRUE.bytes;
                 }
                 | keyword_undef {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.UNDEF.bytes;
-                    /*% %*/
+                    $$ = Keyword.UNDEF.bytes;
                 }
                 | keyword_when {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.WHEN.bytes;
-                    /*% %*/
+                    $$ = Keyword.WHEN.bytes;
                 }
                 | keyword_yield {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.YIELD.bytes;
-                    /*% %*/
+                    $$ = Keyword.YIELD.bytes;
                 }
                 | keyword_if {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.IF.bytes;
-                    /*% %*/
+                    $$ = Keyword.IF.bytes;
                 }
                 | keyword_unless {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.UNLESS.bytes;
-                    /*% %*/
+                    $$ = Keyword.UNLESS.bytes;
                 }
                 | keyword_while {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.WHILE.bytes;
-                    /*% %*/
+                    $$ = Keyword.WHILE.bytes;
                 }
                 | keyword_until {
-                    /*%%%*/
-                    $$ = RubyLexer.Keyword.UNTIL.bytes;
-                    /*% %*/
+                    $$ = Keyword.UNTIL.bytes;
                 }
 
 arg             : lhs '=' lex_ctxt arg_rhs {
@@ -1892,139 +1751,85 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     /*% ripper: dot3!(Qnil, $2) %*/
                 }
                 | arg '+' arg {
-  // FIXME: call_bin_op() here so ripper/non-ripper call their thing
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, PLUS, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, PLUS, $3, lexer.getRubySourceline());
                 }
                 | arg '-' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, MINUS, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, MINUS, $3, lexer.getRubySourceline());
                 }
                 | arg '*' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, STAR, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, STAR, $3, lexer.getRubySourceline());
                 }
                 | arg '/' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, SLASH, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, SLASH, $3, lexer.getRubySourceline());
                 }
                 | arg '%' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, PERCENT, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, PERCENT, $3, lexer.getRubySourceline());
                 }
                 | arg tPOW arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
                 | tUMINUS_NUM simple_numeric tPOW arg {
-  // FIXME: call_uni_op() here so ripper/non-ripper call their thing
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode(p.getOperatorCallNode($2, $3, $4, lexer.getRubySourceline()), $1);
-                    /*% %*/
+                    $$ = p.call_uni_op(p.call_bin_op($2, $3, $4, lexer.getRubySourceline()), $1);
                 }
                 | tUPLUS arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($2, $1);
-                    /*% %*/
+                    $$ = p.call_uni_op($2, $1);
                 }
                 | tUMINUS arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($2, $1);
-                    /*% %*/
+                    $$ = p.call_uni_op($2, $1);
                 }
                 | arg '|' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, OR, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, OR, $3, lexer.getRubySourceline());
                 }
                 | arg '^' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, CARET, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, CARET, $3, lexer.getRubySourceline());
                 }
                 | arg '&' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, AMPERSAND, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, AMPERSAND, $3, lexer.getRubySourceline());
                 }
                 | arg tCMP arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
                 | rel_expr   %prec tCMP {
-                    /*%%%*/
                     $$ = $1;
-                    /*% %*/
                 }
                 | arg tEQ arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
                 | arg tEQQ arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
                 | arg tNEQ arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
                 | arg tMATCH arg {
-                    /*%%%*/
-                    $$ = p.getMatchNode($1, $3);
-                    /*% %*/
+                    $$ = p.match_op($1, $3);
                 }
                 | arg tNMATCH arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
                 | '!' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode(p.method_cond($2), BANG);
-                    /*% %*/
+                    $$ = p.call_uni_op(p.method_cond($2), BANG);
                 }
                 | '~' arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($2, TILDE);
-                    /*% %*/
+                    $$ = p.call_uni_op($2, TILDE);
                 }
                 | arg tLSHFT arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
                 | arg tRSHFT arg {
-                    /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
-                    /*% %*/
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
                 | arg tANDOP arg {
-                    /*%%%*/
-                    $$ = p.newAndNode($1, $3);
-                    /*% %*/
+                    $$ = p.logop($1, $2, $3);
                 }
                 | arg tOROP arg {
-                    /*%%%*/
-                    $$ = p.newOrNode($1, $3);
-                    /*% %*/
+                    $$ = p.logop($1, $2, $3);
                 }
                 | keyword_defined opt_nl {
                     lexer.getLexContext().in_defined = true;
                 } arg {
-                    /*%%%*/
                     lexer.getLexContext().in_defined = false;                    
-                    $$ = new DefinedNode($1, $4);
-                    /*% %*/
+                    $$ = p.new_defined($1, $4);
                 }
                 | arg '?' arg opt_nl ':' arg {
                     /*%%%*/
@@ -2060,7 +1865,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.endless_method_name($1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     p.popCurrentScope();
                     /*% 
@@ -2074,7 +1879,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.endless_method_name($1);
                     p.restore_defun($1);
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
+                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();                    p.popCurrentScope();
                     /*% 
                         $1 = get_value($1);
@@ -2083,9 +1888,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
                 }
                 | primary {
-                    /*%%%*/
                     $$ = $1;
-                    /*% %*/
                 }
  
 relop           : '>' {
@@ -2107,12 +1910,12 @@ relop           : '>' {
 
 rel_expr        : arg relop arg   %prec '>' {
                     /*%%%*/
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
 		| rel_expr relop arg   %prec '>' {
                     /*%%%*/
                     p.warning(ID.MISCELLANEOUS, lexer.getRubySourceline(), "comparison '" + $2 + "' after comparison");
-                    $$ = p.getOperatorCallNode($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
 
 lex_ctxt        : tSP {
@@ -2489,10 +2292,10 @@ primary         : literal
                     $$ = new DefinedNode($1, $5);
                 }
                 | keyword_not '(' expr rparen {
-                    $$ = p.getOperatorCallNode(p.method_cond($3), lexer.BANG);
+                    $$ = p.call_uni_op(p.method_cond($3), lexer.BANG);
                 }
                 | keyword_not '(' rparen {
-                    $$ = p.getOperatorCallNode(p.method_cond(NilImplicitNode.NIL), lexer.BANG);
+                    $$ = p.call_uni_op(p.method_cond(NilImplicitNode.NIL), lexer.BANG);
                 }
                 | fcall brace_block {
                     /*%%%*/
@@ -2640,7 +2443,7 @@ primary         : literal
                     /*%%%*/
                     p.restore_defun($1);
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($3)));
-                    $$ = new DefsNode($1.line, $1.singleton, $1.name, $2, p.getCurrentScope(), body, @4.end());
+                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @4.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     p.popCurrentScope();
                     /*%
@@ -2681,8 +2484,8 @@ primary_value   : primary {
                     if ($$ == null) $$ = NilImplicitNode.NIL;
                 }
 
+// FIXME: token_info_push
 k_begin         : keyword_begin {
-  // FIXME: token_info_push
                     $$ = $1;
                 }
 
@@ -3170,6 +2973,7 @@ brace_block     : '{' brace_body '}' {
                 | k_do do_body k_end {
                     $$ = $2;
                     /*%%%*/
+                    // FIXME: empty pairs of comments are missing some pos stuff on MRI side
                     /*% %*/
                 }
 
@@ -3322,7 +3126,7 @@ p_as            : p_expr tASSOC p_variable {
 
 p_alt           : p_alt '|' p_expr_basic {
                     /*%%%*/
-                    $$ = p.newOrNode($1, $3);
+                    $$ = p.logop($1, OR_OR, $3);
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
                 }
@@ -3973,17 +3777,13 @@ qsym_list      : /* none */ {
                     /*% ripper: qsymbols_add!($1, $2) %*/
                 }
 
+/* note: we differ from MRI in that we just use same RubyString logic
+   vs their ripper_new_yyval code. */
 string_contents : /* none */ {
-                    /*%%%*/
                     ByteList aChar = ByteList.create("");
                     aChar.setEncoding(lexer.getEncoding());
                     $$ = lexer.createStr(aChar, 0);
-                    /*% %*/
                     /*% ripper: string_content! %*/
-                    /*%%%*/
-                    /*% 
-                        $$ = ripper_new_yylval(p, 0, $$, 0);
-                    %*/
                 }
                 | string_contents string_content {
                     /*%%%*/
@@ -4047,10 +3847,11 @@ regexp_contents: /* none */ {
                     %*/
                 }
 
+/* note: We differ from MRI by not having any ripper for bare tSTRING_CONTENT.
+ * We already create a RubyString for yyval. */
 // [!null] - StrNode, EvStrNode
 string_content  : tSTRING_CONTENT {
                     $$ = $1;
-                    /*% ripper[brace]: ripper_new_yylval(p, 0, get_value($1), $1) %*/
                 }
                 | tSTRING_DVAR {
                     $$ = lexer.getStrTerm();
@@ -4187,65 +3988,41 @@ simple_numeric  : tINTEGER {
                      $$ = $1;
                 } 
 
+/* note[ripper]: We call a helper for user_variables instead of their code */
 // [!null]
 var_ref         : tIDENTIFIER { // mri:user_variable
                     /*%%%*/
                     $$ = p.declareIdentifier($1);
                     /*% 
-			if (id_is_var(p, get_id($1))) {
-			    $$ = dispatch1(var_ref, $1);
-			}
-			else {
-			    $$ = dispatch1(vcall, $1);
-			}
+                       $$ = p.dipatch_var_ref($1);
                     %*/
                 }
                 | tIVAR {
                     /*%%%*/
                     $$ = new InstVarNode(lexer.tokline, p.symbolID($1));
                     /*% 
-			if (id_is_var(p, get_id($1))) {
-			    $$ = dispatch1(var_ref, $1);
-			}
-			else {
-			    $$ = dispatch1(vcall, $1);
-			}
+                       $$ = p.dipatch_var_ref($1);
                     %*/
                 }
                 | tGVAR {
                     /*%%%*/
                     $$ = new GlobalVarNode(lexer.tokline, p.symbolID($1));
                     /*% 
-			if (id_is_var(p, get_id($1))) {
-			    $$ = dispatch1(var_ref, $1);
-			}
-			else {
-			    $$ = dispatch1(vcall, $1);
-			}
+                       $$ = p.dipatch_var_ref($1);
                     %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
                     $$ = new ConstNode(lexer.tokline, p.symbolID($1));
                     /*% 
-			if (id_is_var(p, get_id($1))) {
-			    $$ = dispatch1(var_ref, $1);
-			}
-			else {
-			    $$ = dispatch1(vcall, $1);
-			}
+                       $$ = p.dipatch_var_ref($1);
                     %*/
                 }
                 | tCVAR {
                     /*%%%*/
                     $$ = new ClassVarNode(lexer.tokline, p.symbolID($1));
                     /*% 
-			if (id_is_var(p, get_id($1))) {
-			    $$ = dispatch1(var_ref, $1);
-			}
-			else {
-			    $$ = dispatch1(vcall, $1);
-			}
+                       $$ = p.dipatch_var_ref($1);
                     %*/
                 } // mri:user_variable
                 | keyword_nil { // mri:keyword_variable
@@ -4513,26 +4290,30 @@ args_forward    : tBDOT3 {
                 }
 
 f_bad_arg       : tCONSTANT {
+                    String message = "formal argument cannot be a constant";
                     /*%%%*/
-                    p.yyerror("formal argument cannot be a constant");
+                    p.yyerror(message);
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
                 }
                 | tIVAR {
+                    String message = "formal argument cannot be an instance variable";
                     /*%%%*/
-                    p.yyerror("formal argument cannot be an instance variable");
+                    p.yyerror(message);
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
                 }
                 | tGVAR {
+                    String message = "formal argument cannot be a global variable";
                     /*%%%*/
-                    p.yyerror("formal argument cannot be a global variable");
+                    p.yyerror(message);
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
                 }
                 | tCVAR {
+                    String message = "formal argument cannot be a class variable";
                     /*%%%*/
-                    p.yyerror("formal argument cannot be a class variable");
+                    p.yyerror(message);
                     /*% %*/
                     /*% ripper[error]: param_error!(ERR_MESG(), $1) %*/
                 }

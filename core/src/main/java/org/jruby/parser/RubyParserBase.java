@@ -480,17 +480,17 @@ public class RubyParserBase {
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
 
-    public Node getOperatorCallNode(Node firstNode, ByteList operator) {
+    public Node call_uni_op(Node firstNode, ByteList operator) {
         value_expr(lexer, firstNode);
 
         return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), null, null, false);
     }
     
-    public Node getOperatorCallNode(Node firstNode, ByteList operator, Node secondNode) {
+    public Node call_bin_op(Node firstNode, ByteList operator, Node secondNode) {
         return getOperatorCallNodeInner(firstNode, operator, secondNode);
     }
 
-    public Node getOperatorCallNode(Node firstNode, ByteList operator, Node secondNode, int defaultPosition) {
+    public Node call_bin_op(Node firstNode, ByteList operator, Node secondNode, int defaultPosition) {
         firstNode = checkForNilNode(firstNode, defaultPosition);
         secondNode = checkForNilNode(secondNode, defaultPosition);
 
@@ -504,7 +504,11 @@ public class RubyParserBase {
         return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), new ArrayNode(secondNode.getLine(), secondNode), null, false);
     }
 
-    public Node getMatchNode(Node firstNode, Node secondNode) {
+    public Node new_defined(int line, Node node) {
+        return new DefinedNode(line, node);
+    }
+
+    public Node match_op(Node firstNode, Node secondNode) {
         if (firstNode instanceof DRegexpNode) {
             return new Match2Node(firstNode.getLine(), firstNode, secondNode);
         } else if (firstNode instanceof RegexpNode) {
@@ -523,7 +527,7 @@ public class RubyParserBase {
             return new Match3Node(firstNode.getLine(), firstNode, secondNode);
         }
 
-        return getOperatorCallNode(firstNode, CommonByteLists.EQUAL_TILDE, secondNode);
+        return call_bin_op(firstNode, CommonByteLists.EQUAL_TILDE, secondNode);
     }
 
     /**
@@ -964,7 +968,7 @@ public class RubyParserBase {
 
         if (node instanceof FixnumNode) {
             warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
-            return getOperatorCallNode(node, EQ_EQ, new GlobalVarNode(node.getLine(), symbolID(DOLLAR_DOT)));
+            return call_bin_op(node, EQ_EQ, new GlobalVarNode(node.getLine(), symbolID(DOLLAR_DOT)));
         } 
 
         return node;
@@ -992,19 +996,16 @@ public class RubyParserBase {
         return one == null ? two.getLine() : one.getLine();
     }
 
-    public AndNode newAndNode(Node left, Node right) {
+    public Node logop(Node left, ByteList op, Node right) {
         value_expr(lexer, left);
 
-        if (left == null && right == null) return new AndNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
-        
-        return new AndNode(position(left, right), makeNullNil(left), makeNullNil(right));
-    }
+        if (op == AMPERSAND_AMPERSAND) {
+            if (left == null && right == null) return new AndNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
 
-    public OrNode newOrNode(Node left, Node right) {
-        value_expr(lexer, left);
-
+            return new AndNode(position(left, right), makeNullNil(left), makeNullNil(right));
+        }
         if (left == null && right == null) return new OrNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
-        
+
         return new OrNode(position(left, right), makeNullNil(left), makeNullNil(right));
     }
 
@@ -1116,7 +1117,7 @@ public class RubyParserBase {
             receiverNode.setValueNode(valueNode);
             return new OpAsgnAndNode(line, gettable2(receiverNode), receiverNode);
         } else {
-            receiverNode.setValueNode(getOperatorCallNode(gettable2(receiverNode), operatorName, valueNode));
+            receiverNode.setValueNode(call_bin_op(gettable2(receiverNode), operatorName, valueNode));
             receiverNode.setLine(line);
             return receiverNode;
         }

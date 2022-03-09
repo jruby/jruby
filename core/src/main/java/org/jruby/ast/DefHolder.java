@@ -10,7 +10,8 @@ public class DefHolder {
     public final LexContext ctxt;
 
     public int line;
-    public Node singleton = null;
+    public Object singleton = null;
+    public ByteList dotOrColon;
 
     public DefHolder(RubySymbol name, ByteList currentArg, LexContext ctxt) {
         this.name = name;
@@ -18,7 +19,12 @@ public class DefHolder {
         this.ctxt = ctxt;
     }
 
-    public void setSingleton(Node singleton) {
+    // Node for parser and IRubyObject for ripper.
+    public void setSingleton(Object singleton) {
         this.singleton = singleton;
+    }
+
+    public void setDotOrColon(ByteList dotOrColon) {
+        this.dotOrColon = dotOrColon;
     }
 }
