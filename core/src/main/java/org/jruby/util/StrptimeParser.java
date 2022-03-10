@@ -448,7 +448,7 @@ public class StrptimeParser {
                     }
                     case FORMAT_DAY_YEAR: { // %j - Day of the year (001..366)
                         final long day = readDigits(3);
-                        if (!validRange(day, 1, 365)) {
+                        if (!validRange(day, 1, 366)) {
                             fail = true;
                         }
                         bag.yDay = (int)day;
