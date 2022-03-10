@@ -103,6 +103,7 @@ public class RbConfigLibrary implements Library {
         String architecture = Platform.ARCH;
         if (architecture == null) architecture = "unknown";
         if ("amd64".equals(architecture)) architecture = "x86_64";
+        if ("aarch64".equals(architecture) && Platform.IS_MAC) architecture = "arm64";
 
         return architecture;
     }
