@@ -177,6 +177,16 @@ public final class ArgsUtil {
         return null;
     }
 
+    public static IRubyObject extractKeywordArg(ThreadContext context, IRubyObject maybeKwargs, String validKey) {
+        IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, maybeKwargs);
+
+        if (options instanceof RubyHash) {
+            return extractKeywordArg(context, (RubyHash) options, validKey);
+        }
+
+        return null;
+    }
+
     /**
      * Same as {@link #extractKeywordArgs(ThreadContext, RubyHash, String...)}.
      * @param context

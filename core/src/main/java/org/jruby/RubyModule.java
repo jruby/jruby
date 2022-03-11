@@ -5321,18 +5321,18 @@ public class RubyModule extends RubyObject {
                 if (getBaseName() == null) { // anonymous
                     // MRI 2.2.2 does get ugly ... as it skips this logic :
                     // RuntimeError: can't modify frozen #<Class:#<Class:0x0000000095a920>>
-                    throw getRuntime().newFrozenError(getName());
+                    throw getRuntime().newFrozenError(getName(), this);
                 }
-                throw getRuntime().newFrozenError("#<Class:" + getName() + '>');
+                throw getRuntime().newFrozenError("#<Class:" + getName() + '>', this);
             }
-            throw getRuntime().newFrozenError("Module");
+            throw getRuntime().newFrozenError("Module", this);
         }
     }
 
     @Override
     public final void checkFrozen() {
        if ( isFrozen() ) {
-           throw getRuntime().newFrozenError(isClass() ? "class" : "module");
+           throw getRuntime().newFrozenError(isClass() ? "class" : "module", this);
        }
     }
 

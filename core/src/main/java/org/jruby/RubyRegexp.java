@@ -1004,7 +1004,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // rb_reg_initialize_str
     private RubyRegexp regexpInitializeString(RubyString str, RegexpOptions options) {
-        if (isLiteral()) throw metaClass.runtime.newFrozenError(getMetaClass());
+        if (isLiteral()) throw metaClass.runtime.newFrozenError(this);
         ByteList bytes = str.getByteList();
         Encoding enc = bytes.getEncoding();
         if (options.isEncodingNone()) {

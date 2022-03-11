@@ -4213,16 +4213,14 @@ public final class Ruby implements Constantizable {
         return loadError;
     }
 
-    public RaiseException newFrozenError(String objectType) {
-        return newFrozenError(objectType, false);
+    public RaiseException newFrozenError(String objectType, IRubyObject receiver) {
+        return RubyFrozenError.newFrozenError(getCurrentContext(), newString("can't modify frozen " + objectType), receiver)
+                .toThrowable();
     }
 
-    public RaiseException newFrozenError(RubyModule type) {
-        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", types(this, type)));
-    }
-
-    public RaiseException newFrozenError(String objectType, boolean runtimeError) {
-        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", ids(this, objectType)));
+    public RaiseException newFrozenError(IRubyObject receiver) {
+        return RubyFrozenError.newFrozenError(getCurrentContext(), newString("can't modify frozen " + receiver.getType()), receiver)
+                .toThrowable();
     }
 
     public RaiseException newSystemStackError(String message) {
@@ -5855,6 +5853,21 @@ public final class Ruby implements Constantizable {
     @Deprecated
     public RaiseException newErrnoEADDRFromBindException(BindException be) {
         return newErrnoEADDRFromBindException(be, null);
+    }
+
+    @Deprecated
+    public RaiseException newFrozenError(String objectType) {
+        return newFrozenError(objectType, null);
+    }
+
+    @Deprecated
+    public RaiseException newFrozenError(RubyModule type) {
+        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", types(this, type)));
+    }
+
+    @Deprecated
+    public RaiseException newFrozenError(String objectType, boolean runtimeError) {
+        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", ids(this, objectType)));
     }
 
 }

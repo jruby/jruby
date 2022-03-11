@@ -601,7 +601,7 @@ public class RubyTime extends RubyObject {
         boolean zoneOk = zone.equals(dt.getZone());
         if (zoneOk && isTzRelative == this.isTzRelative) return this;
         if (isFrozen()) {
-            throw runtime.newFrozenError("Time", true);
+            throw runtime.newFrozenError("Time", this);
         }
         if (!zoneOk) dt = dt.withZone(zone);
         setIsTzRelative(isTzRelative);

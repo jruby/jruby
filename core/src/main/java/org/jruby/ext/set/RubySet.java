@@ -1235,7 +1235,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     protected final void modifyCheck(final Ruby runtime) {
-        if ((flags & FROZEN_F) != 0) throw runtime.newFrozenError("Set");
+        if ((flags & FROZEN_F) != 0) throw runtime.newFrozenError("Set", this);
     }
 
     // java.util.Set

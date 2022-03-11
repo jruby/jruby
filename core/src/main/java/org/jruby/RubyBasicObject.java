@@ -266,7 +266,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    protected final void testFrozen(String message) {
        if (isFrozen()) {
-           throw getRuntime().newFrozenError(message);
+           throw getRuntime().newFrozenError(message, this);
        }
    }
 
@@ -277,7 +277,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    protected final void testFrozen() {
        if (isFrozen()) {
-           throw getRuntime().newFrozenError((isClass() ? "Class: " : (isModule() ? "Module: " : "object: ")) + inspect());
+           throw getRuntime().newFrozenError((isClass() ? "Class: " : (isModule() ? "Module: " : "object: ")) + inspect(), this);
        }
    }
 
@@ -1563,9 +1563,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     private void raiseFrozenError() throws RaiseException {
         if (this instanceof RubyModule) {
-            throw getRuntime().newFrozenError("class/module ");
+            throw getRuntime().newFrozenError("class/module ", this);
         } else {
-            throw getRuntime().newFrozenError(getMetaClass());
+            throw getRuntime().newFrozenError(this);
         }
     }
 
