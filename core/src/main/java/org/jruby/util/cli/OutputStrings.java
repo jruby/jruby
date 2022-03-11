@@ -144,8 +144,8 @@ public class OutputStrings {
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
                 Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
                 Options.COMPILE_MODE.load().shouldJIT() ? " +jit" : "",
-                RbConfigLibrary.getOSName(),
-                RbConfigLibrary.getArchitecture()
+                RbConfigLibrary.getArchitecture(),
+                RbConfigLibrary.getOSName()
         );
     }
 

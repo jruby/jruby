@@ -68,6 +68,7 @@ import org.jruby.RubyThread;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.StandardError;
@@ -461,6 +462,11 @@ public class LoadService {
                 destroyLock = true;
 
                 return state;
+            } catch (LoadError le) {
+                // LoadError should be considered a completed load and remove the lock
+                destroyLock = true;
+
+                throw le;
             } catch (StandardError se) {
                 // standard error, consider file not loaded
                 destroyLock = false;
