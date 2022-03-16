@@ -138,7 +138,7 @@ public class RubyObjectSpecializer {
 
             // TODO: this just ends up reifying the first N variables it finds, which may not be the most valuable
             for (String name : foundVariables) {
-                klass.getVariableTableManager().getVariableAccessorForVar(
+                klass.getVariableTableManager().getVariableAccessorForRubyVar(
                         name,
                         LOOKUP.findGetter(cna.cls, "var" + offset, Object.class),
                         LOOKUP.findSetter(cna.cls, "var" + offset, Object.class));

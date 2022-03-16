@@ -345,8 +345,8 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public RubyArray collectCommon(ThreadContext context, Block block) {
-        if (!packed()) return super.collectCommon(context, block);
+    public RubyArray collectArray(ThreadContext context, Block block) {
+        if (!packed()) return super.collectArray(context, block);
 
         if (!block.isGiven()) return makeShared();
 

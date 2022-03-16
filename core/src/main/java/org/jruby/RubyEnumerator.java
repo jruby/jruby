@@ -143,6 +143,11 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     /**
      * Transform object into an Enumerator with the given size
      */
+    public static <T extends IRubyObject> RubyEnumerator enumWithSize(ThreadContext context, final T object, String method, IRubyObject[] args, SizeFn<T> sizeFn) {
+        Ruby runtime = context.runtime;
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args, null, sizeFn);
+    }
+
     public static <T extends IRubyObject> IRubyObject enumeratorizeWithSize(ThreadContext context, final T object, String method, IRubyObject[] args, SizeFn<T> sizeFn) {
         Ruby runtime = context.runtime;
         return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args, null, sizeFn);
@@ -150,6 +155,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     public static <T extends IRubyObject> IRubyObject enumeratorizeWithSize(ThreadContext context, T object, String method, SizeFn<T> sizeFn) {
         return enumeratorizeWithSize(context, object, method, NULL_ARRAY, sizeFn);
+    }
+
+    public static <T extends IRubyObject> RubyEnumerator enumWithSize(ThreadContext context, T object, String method, SizeFn<T> sizeFn) {
+        return enumWithSize(context, object, method, NULL_ARRAY, sizeFn);
     }
 
     public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method, IRubyObject arg, IRubyObject size) {
