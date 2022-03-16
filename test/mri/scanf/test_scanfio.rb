@@ -17,12 +17,5 @@ class TestScanfIO < Test::Unit::TestCase
   ensure
     fh.close
   end
-
-  def test_pipe_scanf
-    r, w = IO.pipe
-    w.write('a')
-    w.close
-    assert_equal([], r.scanf('a'))
-  end
 end
 

@@ -44,20 +44,35 @@ cgi/test_cgi_util.rb
 
 coverage/test_coverage.rb
 
-csv/test_csv_parsing.rb
-csv/test_csv_writing.rb
 csv/test_data_converters.rb
 csv/test_encodings.rb
 csv/test_features.rb
-csv/test_headers.rb
-csv/test_interface.rb
 csv/test_row.rb
 csv/test_table.rb
+csv/write/test_general.rb
+csv/write/test_quote_empty.rb
+csv/write/test_converters.rb
+csv/parse/test_column_separator.rb
+csv/parse/test_convert.rb
+csv/parse/test_each.rb
+csv/parse/test_general.rb
+csv/parse/test_header.rb
+csv/parse/test_invalid.rb
+csv/parse/test_liberal_parsing.rb
+csv/parse/test_quote_char_nil.rb
+csv/parse/test_rewind.rb
+csv/parse/test_row_separator.rb
+csv/parse/test_skip_lines.rb
+csv/parse/test_strip.rb
+csv/parse/test_unconverted_fields.rb
+csv/interface/test_read.rb
+csv/interface/test_write.rb
+csv/interface/test_read_write.rb
+csv/interface/test_delegation.rb
 
 date/test_date.rb
 date/test_date_arith.rb
 date/test_date_attr.rb
-date/test_date_base.rb
 date/test_date_compat.rb
 date/test_date_conv.rb
 date/test_date_marshal.rb
@@ -197,10 +212,6 @@ socket/test_unix.rb
 stringio/test_stringio.rb
 
 strscan/test_stringscanner.rb
-
-thread/test_cv.rb
-thread/test_queue.rb
-thread/test_sync.rb
 
 zlib/test_zlib.rb
 

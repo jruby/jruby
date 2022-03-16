@@ -161,6 +161,10 @@ class TestRegexp < Test::Unit::TestCase
     s = "foo"
     s[/(?<bar>o)/, "bar"] = "baz"
     assert_equal("fbazo", s)
+
+    /.*/ =~ "abc"
+    "a".sub("a", "")
+    assert_raise(IndexError) {Regexp.last_match(:_id)}
   end
 
   def test_named_capture_with_nul
@@ -214,6 +218,17 @@ class TestRegexp < Test::Unit::TestCase
   def test_assign_named_capture_to_reserved_word
     /(?<nil>.)/ =~ "a"
     assert_not_include(local_variables, :nil, "[ruby-dev:32675]")
+
+    def (obj = Object.new).test(s, nil: :ng)
+      /(?<nil>.)/ =~ s
+      binding.local_variable_get(:nil)
+    end
+    assert_equal("b", obj.test("b"))
+
+    tap do |nil: :ng|
+      /(?<nil>.)/ =~ "c"
+      assert_equal("c", binding.local_variable_get(:nil))
+    end
   end
 
   def test_assign_named_capture_to_const
