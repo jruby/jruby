@@ -50,6 +50,7 @@ public class JavaClassConfiguration implements Cloneable {
     public Map<Class<?>, Map<String, Object>> classAnnotations;
     public Map<String, List<Class<?>[]>> methodSignatures;
     public Map<String, Class<?>> fieldSignatures;
+    public List<DirectFieldConfiguration> requestedStorageVariables; // Variable to map to fields if we are ever reified
 
     public boolean callInitialize = true;
     public boolean allMethods = true;
@@ -93,6 +94,7 @@ public class JavaClassConfiguration implements Cloneable {
         if (classAnnotations != null) other.classAnnotations = new HashMap<>(classAnnotations); // TOOD: deep clone
         if (methodSignatures != null) other.methodSignatures = new HashMap<>(methodSignatures); // TOOD: deep clone
         if (fieldSignatures != null) other.fieldSignatures = new HashMap<>(fieldSignatures); // TOOD: deep clone
+        if (requestedStorageVariables != null) other.requestedStorageVariables = new ArrayList<>(requestedStorageVariables);
 
         return other;
     }
@@ -123,5 +125,19 @@ public class JavaClassConfiguration implements Cloneable {
 
         included.add(name);
         excluded.remove(name);
+    }
+    
+    public static class DirectFieldConfiguration {
+        public String name;
+        public Class<?> fieldType;
+        public Boolean unwrap;
+        public Class<?> unwrapType;
+        public DirectFieldConfiguration(String name, Class<?> fieldType, Boolean unwrap, Class<?> unwrapType) {
+            this.name = name;
+            this.fieldType = fieldType;
+            this.unwrap = unwrap;
+            this.unwrapType = unwrapType;
+        }
+        
     }
 }
