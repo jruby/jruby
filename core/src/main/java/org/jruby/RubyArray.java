@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
 
-import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -90,6 +89,7 @@ import org.jruby.util.io.EncodingUtils;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyEnumerator.enumWithSize;
 import static org.jruby.RubyNumeric.checkInt;
 import static org.jruby.runtime.Helpers.addBufferLength;
 import static org.jruby.runtime.Helpers.arrayOf;
@@ -2611,10 +2611,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return new RubyArray(runtime, runtime.getArray(), vals);
     }
 
-    /** rb_ary_collect
+    /**
+     * Collect the contents of this array after filtering through block, or return a new equivalent array if the block
+     * is not given (!isGiven()).
      *
+     * @param context the current context
+     * @param block a block for filtering or NULL_BLOCK
+     * @return an array of the filtered or unfiltered results
      */
-    public RubyArray collectCommon(ThreadContext context, Block block) {
+    public RubyArray collectArray(ThreadContext context, Block block) {
         if (!block.isGiven()) return makeShared();
 
         final Ruby runtime = context.runtime;
@@ -2632,14 +2637,34 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return newArrayMayCopy(context.runtime, arr, 0, i);
     }
 
+    /**
+     * Produce a new enumerator that will filter the contents of this array using {@link #collectArray(ThreadContext, Block)}.
+     *
+     * @param context the current context
+     * @return an enumerator that will filter results
+     */
+    public RubyEnumerator collectEnum(ThreadContext context) {
+        return enumWithSize(context, this, "collect", RubyArray::size);
+    }
+
+    /**
+     * @see #collectArray(ThreadContext, Block)
+     */
+    public RubyArray collect(ThreadContext context, Block block) {
+        return collectArray(context, block);
+    }
+
+    /** rb_ary_collect
+     *
+     */
     @JRubyMethod(name = {"collect"})
-    public IRubyObject collect(ThreadContext context, Block block) {
-        return block.isGiven() ? collectCommon(context, block) : enumeratorizeWithSize(context, this, "collect", RubyArray::size);
+    public IRubyObject rbCollect(ThreadContext context, Block block) {
+        return block.isGiven() ? collectArray(context, block) : collectEnum(context);
     }
 
     @JRubyMethod(name = {"map"})
     public IRubyObject map(ThreadContext context, Block block) {
-        return block.isGiven() ? collectCommon(context, block) : enumeratorizeWithSize(context, this, "map", RubyArray::size);
+        return block.isGiven() ? collectArray(context, block) : enumeratorizeWithSize(context, this, "map", RubyArray::size);
     }
 
     /** rb_ary_collect_bang
@@ -5795,7 +5820,7 @@ float_loop:
 
     @Deprecated
     public IRubyObject collect19(ThreadContext context, Block block) {
-        return collect(context, block);
+        return rbCollect(context, block);
     }
 
     @Deprecated
