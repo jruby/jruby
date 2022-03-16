@@ -1,13 +1,13 @@
 class Object
   # :nodoc:
   # @deprecated
-  def java_import(*import_classes, &block)
-    warn "calling java_import on a non-Module object is deprecated"
-    Object.send :java_import, *import_classes, &block
+  unless respond_to?(:import)
+    def import(*import_classes, &block)
+      warn "import is deprecated; use java_import", uplevel: 1
+      Object.send :java_import, *import_classes, &block
+    end
+    private :import
   end
-  private :java_import
-
-  alias :import :java_import unless respond_to?(:import)
 
 end
 
