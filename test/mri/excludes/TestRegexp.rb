@@ -8,3 +8,4 @@ exclude :test_once_multithread, "Won't fix (GH-2798). Requires us to prevent mor
 exclude :test_to_s, "needs investigation"
 exclude :test_unescape, "needs investigation"
 exclude :test_union, "unfinished in initial 2.6 work, #6161"
+exclude :test_assign_named_capture_to_reserved_word, "needs investigation"

@@ -3,14 +3,16 @@ require 'test/unit'
 require 'tmpdir'
 require_relative '../lib/jit_support'
 
-return if RbConfig::CONFIG["MJIT_SUPPORT"] == 'no'
-
 # Test for --jit option
 class TestJIT < Test::Unit::TestCase
   include JITSupport
 
   IGNORABLE_PATTERNS = [
     /\ASuccessful MJIT finish\n\z/,
+  ]
+  MAX_CACHE_PATTERNS = [
+    /\AJIT compaction \([^)]+\): .+\n\z/,
+    /\ANo units can be unloaded -- .+\n\z/,
   ]
 
   # trace_* insns are not compiled for now...
@@ -567,6 +569,46 @@ class TestJIT < Test::Unit::TestCase
     assert_match(/^Successful MJIT finish$/, err)
   end
 
+  def test_nothing_to_unload_with_jit_wait
+    assert_eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", stdout: 'hello', success_count: 11, max_cache: 10, ignorable_patterns: MAX_CACHE_PATTERNS)
+    begin;
+      def a1() a2() end
+      def a2() a3() end
+      def a3() a4() end
+      def a4() a5() end
+      def a5() a6() end
+      def a6() a7() end
+      def a7() a8() end
+      def a8() a9() end
+      def a9() a10() end
+      def a10() a11() end
+      def a11() print('hello') end
+      a1
+    end;
+  end
+
+  def test_unload_units_on_fiber
+    assert_eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", stdout: 'hello', success_count: 12, max_cache: 10, ignorable_patterns: MAX_CACHE_PATTERNS)
+    begin;
+      def a1() a2(false); a2(true) end
+      def a2(a) a3(a) end
+      def a3(a) a4(a) end
+      def a4(a) a5(a) end
+      def a5(a) a6(a) end
+      def a6(a) a7(a) end
+      def a7(a) a8(a) end
+      def a8(a) a9(a) end
+      def a9(a) a10(a) end
+      def a10(a)
+        if a
+          Fiber.new { a11 }.resume
+        end
+      end
+      def a11() print('hello') end
+      a1
+    end;
+  end
+
   def test_unload_units_and_compaction
     Dir.mktmpdir("jit_test_unload_units_") do |dir|
       # MIN_CACHE_SIZE is 10
@@ -590,7 +632,7 @@ class TestJIT < Test::Unit::TestCase
         end
       end;
 
-      debug_info = "stdout:\n```\n#{out}\n```\n\nstderr:\n```\n#{err}```\n"
+      debug_info = %Q[stdout:\n"""\n#{out}\n"""\n\nstderr:\n"""\n#{err}"""\n]
       assert_equal('012345678910', out, debug_info)
       compactions, errs = err.lines.partition do |l|
         l.match?(/\AJIT compaction \(\d+\.\dms\): Compacted \d+ methods ->/)
@@ -697,6 +739,28 @@ class TestJIT < Test::Unit::TestCase
     end;
   end
 
+  def test_inlined_setivar_frozen
+    assert_eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", stdout: "FrozenError\n", success_count: 1, min_calls: 3)
+    begin;
+      class A
+        def a
+          @a = 1
+        end
+      end
+
+      a = A.new
+      a.a
+      a.a
+      a.a
+      a.freeze
+      begin
+        a.a
+      rescue FrozenError => e
+        p e.class
+      end
+    end;
+  end
+
   def test_attr_reader
     assert_eval_with_jit("#{<<~"begin;"}\n#{<<~"end;"}", stdout: "4nil\nnil\n6", success_count: 2, min_calls: 2)
     begin;
@@ -760,6 +824,16 @@ class TestJIT < Test::Unit::TestCase
       test(hoge) # JIT: compile with index=1
       test(fuga) # JIT -> VM: cc set index=2
       print test(hoge) # JIT: should use index=1, not index=2 in cc
+    end;
+  end
+
+  def test_jump_to_precompiled_branch
+    assert_eval_with_jit("#{<<~'begin;'}\n#{<<~'end;'}", stdout: ".0", success_count: 1, min_calls: 1)
+    begin;
+      def test(foo)
+        ".#{foo unless foo == 1}" if true
+      end
+      print test(0)
     end;
   end
 
@@ -895,26 +969,31 @@ class TestJIT < Test::Unit::TestCase
   end
 
   # The shortest way to test one proc
-  def assert_compile_once(script, result_inspect:, insns: [])
+  def assert_compile_once(script, result_inspect:, insns: [], uplevel: 1)
     if script.match?(/\A\n.+\n\z/m)
       script = script.gsub(/^/, '  ')
     else
       script = " #{script} "
     end
-    assert_eval_with_jit("p proc {#{script}}.call", stdout: "#{result_inspect}\n", success_count: 1, insns: insns, uplevel: 2)
+    assert_eval_with_jit("p proc {#{script}}.call", stdout: "#{result_inspect}\n", success_count: 1, insns: insns, uplevel: uplevel + 1)
   end
 
   # Shorthand for normal test cases
-  def assert_eval_with_jit(script, stdout: nil, success_count:, min_calls: 1, insns: [], uplevel: 3)
-    out, err = eval_with_jit(script, verbose: 1, min_calls: min_calls)
+  def assert_eval_with_jit(script, stdout: nil, success_count:, min_calls: 1, max_cache: 1000, insns: [], uplevel: 1, ignorable_patterns: [])
+    out, err = eval_with_jit(script, verbose: 1, min_calls: min_calls, max_cache: max_cache)
     actual = err.scan(/^#{JIT_SUCCESS_PREFIX}:/).size
+    # Add --jit-verbose=2 logs for cl.exe because compiler's error message is suppressed
+    # for cl.exe with --jit-verbose=1. See `start_process` in mjit_worker.c.
+    if RUBY_PLATFORM.match?(/mswin/) && success_count != actual
+      out2, err2 = eval_with_jit(script, verbose: 2, min_calls: min_calls, max_cache: max_cache)
+    end
 
     # Make sure that the script has insns expected to be tested
     used_insns = method_insns(script)
     insns.each do |insn|
       unless used_insns.include?(insn)
         $stderr.puts
-        warn "'#{insn}' insn is not included in the script. Actual insns are: #{used_insns.join(' ')}\n", uplevel: uplevel
+        warn "'#{insn}' insn is not included in the script. Actual insns are: #{used_insns.join(' ')}\n", uplevel: uplevel+2
       end
       TestJIT.untested_insns.delete(insn)
     end
@@ -922,13 +1001,15 @@ class TestJIT < Test::Unit::TestCase
     assert_equal(
       success_count, actual,
       "Expected #{success_count} times of JIT success, but succeeded #{actual} times.\n\n"\
-      "script:\n#{code_block(script)}\nstderr:\n#{code_block(err)}",
+      "script:\n#{code_block(script)}\nstderr:\n#{code_block(err)}#{(
+        "\nstdout(verbose=2 retry):\n#{code_block(out2)}\nstderr(verbose=2 retry):\n#{code_block(err2)}" if out2 || err2
+      )}",
     )
     if stdout
       assert_equal(stdout, out, "Expected stdout #{out.inspect} to match #{stdout.inspect} with script:\n#{code_block(script)}")
     end
     err_lines = err.lines.reject! do |l|
-      l.chomp.empty? || l.match?(/\A#{JIT_SUCCESS_PREFIX}/) || IGNORABLE_PATTERNS.any? { |pat| pat.match?(l) }
+      l.chomp.empty? || l.match?(/\A#{JIT_SUCCESS_PREFIX}/) || (IGNORABLE_PATTERNS + ignorable_patterns).any? { |pat| pat.match?(l) }
     end
     unless err_lines.empty?
       warn err_lines.join(''), uplevel: uplevel

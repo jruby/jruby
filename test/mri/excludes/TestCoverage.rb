@@ -16,3 +16,4 @@ exclude :test_method_coverage_for_define_method, "no support for coverage option
 exclude :test_method_coverage_for_singleton_class, "no support for coverage options yet (#5147)"
 exclude :test_nonpositive_linenumber, "requires RubyVM to compile iseq"
 exclude :test_oneshot_line_coverage, "no support for coverage options yet (#5147, #6149)"
+exclude :test_stop_wrong_peephole_optimization, "needs investigation"

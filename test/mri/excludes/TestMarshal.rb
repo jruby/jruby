@@ -21,3 +21,5 @@ exclude :test_unloadable_data, "we do not represent Time as T_DATA internally, s
 exclude :test_unloadable_userdef, "multibyte class names don't marshal properly (#3688)"
 exclude :test_unloadable_usrmarshal, "multibyte class names don't marshal properly (#3688)"
 exclude :test_userdef_encoding, "needs investigation"
+exclude :test_marshal_dump_removing_instance_variable, "no exception"
+exclude :test_marshal_dump_adding_instance_variable, "no exception"

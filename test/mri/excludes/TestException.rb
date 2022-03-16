@@ -23,3 +23,4 @@ exclude :test_too_many_args_in_eval, "MRI raises SystemStackError for huge numbe
 exclude :test_warning_warn, "we warn a line at a time"
 exclude :test_warning_warn_circular_require_backtrace, "we do not support #path objects in loaded features"
 exclude :test_wrong_backtrace, "improvements required for full_message to use #backtrace results (jruby/jruby#5510)"
+exclude :test_cause_exception_in_cause_message, "different backtrace"
