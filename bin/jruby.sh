@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=1007
 # -----------------------------------------------------------------------------
 # jruby.bash - Start Script for the JRuby interpreter
 # -----------------------------------------------------------------------------
@@ -442,7 +443,7 @@ readonly CP_DELIMITER
 # Scanning for args is aborted by '--'.
 # shellcheck disable=2086
 set -- $JRUBY_OPTS "$@"
-# shellcheck disable=354
+# shellcheck disable=3044
 [ "$BASH" ] && shopt -s expand_aliases
 # increment pointer, permute arguments
 while [ $# -gt 0 ]
@@ -606,6 +607,7 @@ fi
 JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
 
 # Don't quote JAVA_OPTS; we want it to expand
+# shellcheck disable=2086
 prepend java_args "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS"
 
 if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
@@ -628,7 +630,6 @@ append java_args -Djruby.home="$JRUBY_HOME" \
     "$java_class"
 extend java_args ruby_args
 
-# shellcheck disable=2086
 eval set -- "$java_args"
 
 add_log
