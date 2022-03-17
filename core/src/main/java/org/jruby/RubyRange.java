@@ -846,7 +846,7 @@ public class RubyRange extends RubyObject {
         if (iterable
                 || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), to_int_checked).isNil()
                 || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), to_int_checked).isNil()) {
-            return cover_p(context, val);
+            return RubyBoolean.newBoolean(context, rangeIncludes(context, val));
         } else if ((begin instanceof RubyString) || (end instanceof RubyString)) {
             if ((begin instanceof RubyString) && (end instanceof RubyString)) {
                 if (useStringCover) {
@@ -887,7 +887,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject eqq_p(ThreadContext context, IRubyObject obj) {
         IRubyObject result = includeCommon(context, obj, true);
         if (result != UNDEF) return result;
-        return callMethod(context, "cover?", obj);
+        return RubyBoolean.newBoolean(context, rangeIncludes(context, obj));
     }
 
     @JRubyMethod(name = "cover?")

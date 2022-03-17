@@ -5,3 +5,4 @@ exclude :test_redefinition_mismatch, "parser issue with Japanese identifiers (#3
 exclude :test_singleton_class_message, "error says class instead of Class"
 exclude :test_singleton_class_should_has_own_namespace, "new behavior for 2.3 (#3693)"
 exclude :test_uninitialized, "needs investigation"
+exclude :test_clone_singleton_class_exists, "needs investigation"
