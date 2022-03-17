@@ -11,7 +11,7 @@ elif command -v typeset >/dev/null; then
     # ksh93 has typeset but not local
     alias local=typeset
 else
-    echo "Error: Your shell does not support local variables. Re-run with one that does (e.g. bash, ksh)"
+    echo >&2 "Error: Your shell does not support local variables. Re-run this script with one that does (e.g. bash, ksh)"
     exit 1
 fi
 
@@ -26,6 +26,7 @@ fi
 esceval()
 {
     local escaped= unescaped= output=
+    result=
 
     [ $# -gt 0 ] || return 0
     while true; do
@@ -151,11 +152,11 @@ if [ -r "/dev/urandom" ]; then
 fi
 
 # Gather environment information as we go
-cr='
+readonly cr='
 '
 environment_log="JRuby Environment$cr================="
 add_log() {
-    environment_log="${environment_log}${cr}${1}"
+    environment_log="${environment_log}${cr}${*}"
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
@@ -443,8 +444,6 @@ readonly CP_DELIMITER
 # Scanning for args is aborted by '--'.
 # shellcheck disable=2086
 set -- $JRUBY_OPTS "$@"
-# shellcheck disable=3044
-[ "$BASH" ] && shopt -s expand_aliases
 # increment pointer, permute arguments
 while [ $# -gt 0 ]
 do
@@ -479,7 +478,7 @@ do
         # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
         -X*.*) append java_args -Djruby."${1#-X}" ;;
         # Match switches that take an argument
-        -C|-e|-I|-S)
+        -[CeIS])
             append ruby_args "$1" "$2"
             shift
             ;;
