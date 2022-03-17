@@ -101,6 +101,13 @@ preextend() {
     eval "$1=\"\${$2} \${$1}\""
 }
 
+# echo [STRING...]
+#
+# Dumb echo, i.e. print arguments joined by spaces with no further processing
+echo() {
+    printf "%s\n" "$*"
+}
+
 # ----- Set variable defaults -------------------------------------------------
 
 readonly java_class=org.jruby.Main
