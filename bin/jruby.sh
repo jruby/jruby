@@ -83,23 +83,12 @@ prepend() {
     eval "$listname=\"\${result} \${$listname}\""
 }
 
-# map FUNCNAME LISTNAME1 LISTNAME2
-#
-# Run FUNCNAME on LISTNAME1 and the list named by LISTNAME2
-map() {
-    local funcname="$1"
-    local listname="$2"
-    # Load contents of array named by $3
-    eval eval set -- "\"\${$3}\""
-    "$funcname" "$listname" "$@"
-}
-
 # extend LISTNAME1 LISTNAME2
 #
 # Append the elements stored in the list named by LISTNAME2
 # to the list named by LISTNAME1.
 extend() {
-    map append "$@"
+    eval "$1=\"\${$1} \${$2}\""
 }
 
 # preextend LISTNAME1 LISTNAME2
@@ -107,7 +96,7 @@ extend() {
 # Prepend the elements stored in the list named by LISTNAME2
 # to the named by LISTNAME1, preserving order.
 preextend() {
-    map prepend "$@"
+    eval "$1=\"\${$2} \${$1}\""
 }
 
 # ----- Set variable defaults -------------------------------------------------
