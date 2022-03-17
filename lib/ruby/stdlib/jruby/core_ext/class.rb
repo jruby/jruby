@@ -181,11 +181,7 @@ class Class
           raise ArgumentError, "to_java must be either false, or a valid java class"
         end
       end
-      JRuby.reference0(self).variable_table_manager.request_field_storage(
-        signature.name,
-          Class.__ensure_java_class(signature.return_type),
-          opts[:unwrap], 
-          Class.__ensure_java_class(opts[:type]))
+      JRuby.reference0(self).variable_table_manager.request_field_storage(signature.name, signature.return_type, opts[:unwrap], opts[:type])
     elsif to_java != nil
       raise ArgumentError, "to_java only affects java_field when instance_variable is true"
     end
@@ -194,14 +190,6 @@ class Class
     add_field_annotation signature.name, annotations if annotations
   end
   
-  def self.__ensure_java_class(clz)
-    if clz.is_a? java.lang.Class
-      clz
-    else
-      clz.java_class
-    end
-  end
-
   class JavaConfig
     
     def initialize(class_config)
