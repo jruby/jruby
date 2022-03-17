@@ -648,8 +648,6 @@ module TestTimeTZ::WithTZ
     m, s = (4000-utc_offset).divmod(60)
     h, m = m.divmod(60)
     assert_equal(time_class.utc(2018, 9, 1, 12+h, m, s), t)
-    assert_equal(6, t.wday)
-    assert_equal(244, t.yday)
   end
 
   def subtest_at(time_class, tz, tzarg, tzname, abbr, utc_offset)
@@ -786,16 +784,6 @@ else
     def tz
       @tz ||= TZInfo::Timezone.get(tzname)
     end
-  end
-
-  def test_fractional_second
-    x = Object.new
-    def x.local_to_utc(t); t + 8*3600; end
-    def x.utc_to_local(t); t - 8*3600; end
-
-    t1 = Time.new(2020,11,11,12,13,14.124r, '-08:00')
-    t2 = Time.new(2020,11,11,12,13,14.124r, x)
-    assert_equal(t1, t2)
   end
 end
 

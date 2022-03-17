@@ -475,6 +475,15 @@ class TestModule < Test::Unit::TestCase
     assert_not_include(mod.ancestor_list, BasicObject)
   end
 
+  def test_module_collected_extended_object
+    m1 = labeled_module("m1")
+    m2 = labeled_module("m2")
+    Object.new.extend(m1)
+    GC.start
+    m1.include(m2)
+    assert_equal([m1, m2], m1.ancestors)
+  end
+
   def test_dup
     OtherSetup.call
 
@@ -517,6 +526,16 @@ class TestModule < Test::Unit::TestCase
 
   def test_include_with_no_args
     assert_raise(ArgumentError) { Module.new { include } }
+  end
+
+  def test_include_before_initialize
+    m = Class.new(Module) do
+      def initialize(...)
+        include Enumerable
+        super
+      end
+    end.new
+    assert_equal(true, m < Enumerable)
   end
 
   def test_prepend_self
