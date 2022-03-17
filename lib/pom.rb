@@ -32,7 +32,7 @@ default_gems = [
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.12.2'],
     ['json', '2.5.1'],
-    ['logger', '1.3.0'],
+    ['logger', '1.5.1'],
     ['matrix', '0.3.0'],
     ['mutex_m', '0.1.0'],
     ['ostruct', '0.5.1'],
