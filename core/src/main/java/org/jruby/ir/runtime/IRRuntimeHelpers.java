@@ -583,6 +583,16 @@ public class IRRuntimeHelpers {
         // keyword arguments value is not used for arity checking.
         if (keywordArgs != null) argsLength -= 1;
 
+        // we have more arguments than we need and one valid reason for this is when we are passing along
+        // a keyword rest argument.  Note above that we already know we are not in a method which uses keywords.
+        if (!rest && argsLength > (required + opt)) {
+            IRubyObject lastArg = (IRubyObject) args[argsLength - 1];
+            if (lastArg instanceof RubyHash && ((RubyHash) lastArg).isKeywordRestArguments()) {
+                ((RubyHash) lastArg).setKeywordRestArguments(false);
+                argsLength -= 1;
+            }
+        }
+
         if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
             Arity.raiseArgumentError(context.runtime, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
         }
@@ -952,6 +962,7 @@ public class IRRuntimeHelpers {
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
 
         hash.modify();
+        hash.setKeywordRestArguments(true);
         final RubyHash otherHash = explicitKwarg.convertToHash();
 
         if (otherHash.empty_p(context).isTrue()) return hash;
