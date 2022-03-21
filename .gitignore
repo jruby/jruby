@@ -75,7 +75,7 @@ lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
 lib/ruby/stdlib/json*
 lib/ruby/stdlib/krypt*
-lib/ruby/stdlib/logger.rb
+lib/ruby/stdlib/logger*
 lib/ruby/stdlib/matrix*
 lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/mutex_m.rb
