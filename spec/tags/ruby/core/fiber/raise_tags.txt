@@ -1,0 +1,26 @@
+wip:Fiber#raise aborts execution
+wip:Fiber#raise accepts an exception that implements to_hash
+wip:Fiber#raise allows the message parameter to be a hash
+wip:Fiber#raise raises RuntimeError if no exception class is given
+wip:Fiber#raise raises a given Exception instance
+wip:Fiber#raise raises a RuntimeError if string given
+wip:Fiber#raise passes no arguments to the constructor when given only an exception class
+wip:Fiber#raise raises a TypeError when passed a non-Exception object
+wip:Fiber#raise raises a TypeError when passed true
+wip:Fiber#raise raises a TypeError when passed false
+wip:Fiber#raise raises a TypeError when passed nil
+wip:Fiber#raise re-raises a previously rescued exception without overwriting the backtrace
+wip:Fiber#raise allows Exception, message, and backtrace parameters
+wip:Fiber#raise raises RuntimeError by default
+wip:Fiber#raise raises FiberError if Fiber is not born
+wip:Fiber#raise raises FiberError if Fiber is dead
+wip:Fiber#raise accepts error class
+wip:Fiber#raise accepts error message
+wip:Fiber#raise does not accept array of backtrace information only
+wip:Fiber#raise does not accept integer
+wip:Fiber#raise accepts error class with error message
+wip:Fiber#raise accepts error class with with error message and backtrace information
+wip:Fiber#raise does not accept only error message and backtrace information
+wip:Fiber#raise raises a FiberError if invoked from a different Thread
+wip:Fiber#raise kills Fiber
+wip:Fiber#raise transfers and raises on a transferring fiber

@@ -1,3 +1,5 @@
 fails:Dir.glob raises an Encoding::CompatibilityError if the argument encoding is not compatible with US-ASCII
 fails:Dir.glob recursively matches files and directories in nested dot subdirectory with 'nested/**/*' from the current directory and option File::FNM_DOTMATCH
 fails:Dir.glob matches files with backslashes in their name
+wip:Dir.glob respects the order of {} expressions, expanding left most first
+wip:Dir.glob respects the optional nested {} expressions

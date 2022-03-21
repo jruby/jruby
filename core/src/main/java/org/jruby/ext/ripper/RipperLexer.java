@@ -1943,7 +1943,7 @@ public class RipperLexer extends LexingCommon {
             pushback(c);
             setState(EXPR_VALUE);
             return '?';
-        } else if (isASCII()) {
+        } else if (!isASCII()) {
             ByteList buffer = new ByteList(1);
             if (!tokenAddMBC(c, buffer)) return EOF;
 

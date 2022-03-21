@@ -2015,8 +2015,14 @@ public class RubyTime extends RubyObject {
         } else {
             p &= ~(1<<31);
             utc = ((p >>> 30 & 0x1) == 0x1);
-            dt = dt.withYear(((p >>> 14) & 0xFFFF) + 1900);
-            dt = dt.withMonthOfYear(((p >>> 10) & 0xF) + 1);
+            int year = ((p >>> 14) & 0xFFFF) + 1900;
+            int month = ((p >>> 10) & 0xF);
+            if (month >= 12) {
+                month -= 12;
+                year += 1;
+            }
+            dt = dt.withYear(year);
+            dt = dt.withMonthOfYear(month + 1);
             dt = dt.withDayOfMonth(((p >>> 5)  & 0x1F));
             dt = dt.withHourOfDay((p & 0x1F));
             dt = dt.withMinuteOfHour(((s >>> 26) & 0x3F));

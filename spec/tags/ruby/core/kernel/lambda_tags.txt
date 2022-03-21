@@ -1,1 +1,2 @@
 fails:Kernel.lambda does not create lambda-style Procs when captured with #method
+wip:Kernel.lambda when called without a literal block warns when proc isn't a lambda

@@ -1,0 +1,1 @@
+wip:Heredoc string raises SyntaxError if quoted HEREDOC identifier is ending not on same line

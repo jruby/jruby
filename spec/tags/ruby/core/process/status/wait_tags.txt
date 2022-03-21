@@ -1,0 +1,10 @@
+wip:Process::Status.wait returns a status with pid -1 if there are no child processes
+wip:Process::Status.wait returns a status with its child pid
+wip:Process::Status.wait should not set $? to the Process::Status
+wip:Process::Status.wait should not change the value of $?
+wip:Process::Status.wait waits for any child process if no pid is given
+wip:Process::Status.wait waits for a specific child if a pid is given
+wip:Process::Status.wait coerces the pid to an Integer
+wip:Process::Status.wait waits for a child whose process group ID is that of the calling process
+wip:Process::Status.wait doesn't block if no child is available when WNOHANG is used
+wip:Process::Status.wait always accepts flags=0

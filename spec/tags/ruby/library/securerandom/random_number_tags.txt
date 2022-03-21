@@ -1,0 +1,3 @@
+wip:SecureRandom.random_number generates a random (potentially bignum) integer value for bignum argument
+wip:SecureRandom.random_number generates a random value in given (float) range limits
+wip:SecureRandom.random_number raises ArgumentError if the argument is non-numeric

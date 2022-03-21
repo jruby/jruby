@@ -345,7 +345,9 @@ public class RubyRandom extends RubyObject {
 
     @JRubyMethod(name = "rand")
     public IRubyObject rand(ThreadContext context, IRubyObject arg) {
-        return randomRand(context, this, arg, random);
+        IRubyObject v = randomRand(context, this, arg, random);
+        checkRandomNumber(context, v, arg);
+        return v;
     }
 
     @JRubyMethod(name = "default", meta = true)
@@ -487,7 +489,6 @@ public class RubyRandom extends RubyObject {
     // c: rand_random
     private static IRubyObject randomRand(ThreadContext context, IRubyObject self, IRubyObject vmax, RandomType random) {
         IRubyObject v = randRandom(context, self, random, vmax);
-        checkRandomNumber(context, v, vmax);
         return v;
     }
 

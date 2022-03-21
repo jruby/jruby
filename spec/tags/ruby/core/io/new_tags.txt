@@ -4,3 +4,5 @@ windows:IO.new ingores the :encoding option when the :internal_encoding option i
 windows:IO.new raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode
 fails:IO.new ignores the :encoding option when the :external_encoding option is present
 fails:IO.new ignores the :encoding option when the :internal_encoding option is present
+wip:IO.new raises ArgumentError for nil options
+wip:IO.new raises ArgumentError if passed a hash for mode and nil for options

@@ -92,6 +92,10 @@ class MSpecScript
   get(:xtags) << 'hangs'
   get(:ci_xtags) << 'hangs'
 
+  # Specs we intend to pass but are still working on
+  get(:ci_xtags) << 'wip'
+
+  # Expected failures specific to a given Java version
   get(:ci_xtags) << "java#{ENV_JAVA['java.specification.version']}" # Java version
 
   unless $stdin.tty?

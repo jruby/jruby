@@ -43,6 +43,9 @@ describe "JRuby annotation processing:" do
 
       def baz; end
 
+      java_signature("@java.lang.SuppressWarnings(\"unchecked\") void biz()")
+      def biz; end
+
       become_java!
     end
 

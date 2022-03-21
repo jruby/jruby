@@ -24,7 +24,7 @@ fi
 # https://github.com/mentalisttraceur/esceval
 esceval()
 {
-    local escaped unescaped output
+    local escaped= unescaped= output=
 
     [ $# -gt 0 ] || return 0
     while true; do
@@ -52,7 +52,7 @@ esceval()
 # Assign ELEMENT to the list named by LISTNAME.
 assign() {
     local listname="$1"
-    local result
+    local result=
     shift
 
     esceval "$@"
@@ -64,7 +64,7 @@ assign() {
 # Append ELEMENT to the list named by LISTNAME.
 append() {
     local listname="$1"
-    local result
+    local result=
     shift
 
     esceval "$@"
@@ -76,7 +76,7 @@ append() {
 # Prepend ELEMENT to the list named by LISTNAME, preserving order.
 prepend() {
     local listname="$1"
-    local result
+    local result=
     shift
 
     esceval "$@"
@@ -90,7 +90,7 @@ map() {
     local funcname="$1"
     local listname="$2"
     # Load contents of array named by $3
-    eval eval set -- "\${$3}"
+    eval eval set -- "\"\${$3}\""
     "$funcname" "$listname" "$@"
 }
 
@@ -113,7 +113,7 @@ preextend() {
 # ----- Set variable defaults -------------------------------------------------
 
 readonly java_class=org.jruby.Main
-readonly JRUBY_SHELL=/bin/sh
+JRUBY_SHELL=/bin/sh
 
 # Detect cygwin and mingw environments
 cygwin=false
@@ -187,7 +187,7 @@ process_java_opts() {
 
 # Pure shell dirname/basename
 dir_name() {
-    local filename="$1" trail
+    local filename="$1" trail=
     case $filename in
         */*[!/]*)
             trail=${filename##*[!/]}
@@ -205,7 +205,7 @@ dir_name() {
 }
 
 base_name() {
-    local filename="$1" trail
+    local filename="$1" trail=
     case $filename in
         */*[!/]*)
             trail=${filename##*[!/]}
@@ -224,7 +224,7 @@ base_name() {
 
 # Resolve all symlinks in a chain
 resolve_symlinks() {
-    local cur_path sym sym_base dirname basename
+    local cur_path= sym= sym_base= dirname= basename=
     cur_path="$1"
     while [ -h "$cur_path" ]; do
         # 1) cd to directory of the symlink

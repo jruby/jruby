@@ -1,1 +1,4 @@
 fails:Proc#source_location returns the first line of a multi-line proc (i.e. the line containing 'proc do')
+wip:Proc#source_location works even if the proc was created on the same line
+wip:Proc#source_location returns the location of the proc's body; not necessarily the proc itself
+wip:Proc#source_location sets the last value to an Integer representing the line on which the proc was defined
