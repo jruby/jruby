@@ -157,7 +157,7 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
             }
             
         } catch (NoSuchMethodException |IllegalAccessException e) {
-            RaiseException r = Ruby.getGlobalRuntime().newRuntimeError("JRuby bug detected. Please file an issue if not already filed. Raw Field Accessor Setter gave errors: " + e.getMessage());
+            RaiseException r = realClass.getClassRuntime().newRuntimeError("JRuby bug detected. Please file an issue if not already filed. Raw Field Accessor Setter gave errors: " + e.getMessage());
             r.initCause(e);
             throw r;
         }
@@ -190,7 +190,7 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
             return temp;
             
         } catch (NoSuchMethodException |IllegalAccessException e) {
-            RaiseException r = Ruby.getGlobalRuntime().newRuntimeError("JRuby bug detected. Please file an issue if not already filed. Raw Field Accessor getter gave errors: " + e.getMessage());
+            RaiseException r = realClass.getClassRuntime().newRuntimeError("JRuby bug detected. Please file an issue if not already filed. Raw Field Accessor getter gave errors: " + e.getMessage());
             r.initCause(e);
             throw r;
         }
