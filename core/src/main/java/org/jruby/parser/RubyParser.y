@@ -1,4 +1,79 @@
 %{
+// We use ERB for ripper grammar and we need an alternative substitution value.
+/*@@=
+  SUBS = {
+    'import_ripper' => [
+         '',
+         'import org.jruby.util.KeyValuePair;'
+    ],
+    'program_production' => [
+         '',
+         '%type <IRubyObject> program'
+    ],
+    'ParserConstructorParams' => [
+        'LexerSource source, IRubyWarnings warnings',
+        'ThreadContext context, IRubyObject ripper, LexerSource source'
+    ],
+    'ParserConstructorBody' => [
+        'super(warnings); setLexer(new RubyLexer(this, source, warnings));',
+        'super(context, ripper, source);'
+    ],
+    'lexer' => [
+        'org.jruby.lexer.yacc.RubyLexer', 
+        'org.jruby.ext.ripper.RipperLexer'
+    ],
+    'package' => ['org.jruby.parser', 'org.jruby.ext.ripper'],
+    'lex_package' => ['org.jruby.lexer.yacc', 'org.jruby.ext.ripper'],
+    'Parser' => ['Ruby', 'Ripper'],
+    'keyword_type' => ['Integer', 'IRubyObject'],
+    'keyword_in_type' => ['Object', 'IRubyObject'],
+    'token_type' => ['ByteList', 'IRubyObject'],
+    'token_integer_type' => ['Node', 'IRubyObject'],
+    'token_float_type' => ['FloatNode', 'IRubyObject'],
+    'token_rational_type' => ['RationalNode', 'IRubyObject'],
+    'token_imaginary_type' => ['ComplexNode', 'IRubyObject'],
+    'token_char_type' => ['StrNode', 'IRubyObject'],
+    'token_nthref_type' => ['Node', 'IRubyObject'],
+    'token_backref_type' => ['Node', 'IRubyObject'],
+    'token_string_type' => ['Node', 'IRubyObject'],
+    'token_regexp_type' => ['RegexpNode', 'IRubyObject'],
+    'prod_type' => ['Node', 'IRubyObject'],
+    'prod_string_type' => ['Object', 'IRubyObject'],
+    'prod_words_type' => ['ListNode', 'IRubyObject'],
+    'prod_numeric_type' => ['NumericNode', 'IRubyObject'],
+    'prod_blockarg_type' => ['BlockPassNode', 'IRubyObject'],
+    'prod_fcall_type' => ['FCallNode', 'IRubyObject'],
+    'prod_rescue_type' => ['RescueBodyNode', 'IRubyObject'],
+    'prod_lhs_type' => ['AssignableNode', 'IRubyObject'],
+    'prod_block_optarg_type' => ['ListNode', 'RubyArray'],
+    'prod_args_type' => ['ArgsNode', 'IRubyObject'],
+    'prod_farg_type' => ['ListNode', 'RubyArray'],
+    'prod_marg_type' => ['ListNode', 'IRubyObject'],
+    'prod_assoc_list_type' => ['HashNode', 'IRubyObject'],
+    'prod_assocs_type' => ['HashNode', 'RubyArray'],
+    'prod_assoc_type' => ['KeyValuePair', 'IRubyObject'],
+    'prod_block_param_type' => ['ArgsNode', 'IRubyObject'],
+    'prod_f_kwarg_type' => ['ListNode', 'RubyArray'],
+    'prod_f_kw_type' => ['KeywordArgNode', 'IRubyObject'],
+    'prod_bvar_type' => ['ByteList', 'IRubyObject'],
+    'prod_lambda_type' => ['LambdaNode', 'IRubyObject'],
+    'prod_f_larglist_type' => ['ArgsNode', 'IRubyObject'],
+    'prod_brace_block_type' => ['IterNode', 'IRubyObject'],
+    'prod_mlhs_type' => ['MultipleAsgnNode', 'IRubyObject'],
+    'prod_mlhs_head_type' => ['ListNode', 'IRubyObject'],
+    'prod_p_case_body_type' => ['InNode', 'IRubyObject'],
+    'prod_p_find_type' => ['FindPatternNode', 'IRubyObject'],
+    'prod_p_args_type' => ['ArrayPatternNode', 'IRubyObject'],
+    'prod_p_args_head_type' => ['ListNode', 'RubyArray'],
+    'prod_p_arg_type' => ['ListNode', 'RubyArray'],
+    'prod_p_kwarg_type' => ['HashNode', 'RubyArray'],
+    'prod_p_kw_type' => ['KeyValuePair', 'RubyArray'],
+    'prod_f_rest_arg_type' => ['RestArgNode', 'RubyArray'],
+    'prod_f_block_arg_type' => ['BlockArgNode', 'RubyArray'],
+    'prod_f_arg_asgn_type' => ['ArgumentNode', 'IRubyObject'],
+    'prod_regexp_contents_type' => ['Node', 'KeyValuePair'],
+  }
+=@@*/
 /*
  **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
@@ -27,107 +102,28 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.parser;
+package @@package@@;
 
 import java.io.IOException;
 import java.util.Set;
 
 import org.jruby.RubySymbol;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.ArrayPatternNode;
-import org.jruby.ast.AssignableNode;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.BeginNode;
-import org.jruby.ast.BlockAcceptingNode;
-import org.jruby.ast.BlockArgNode;
-import org.jruby.ast.BlockNode;
-import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.BreakNode;
-import org.jruby.ast.ClassNode;
-import org.jruby.ast.ClassVarNode;
-import org.jruby.ast.ClassVarAsgnNode;
-import org.jruby.ast.Colon3Node;
-import org.jruby.ast.ConstNode;
-import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DefHolder;
-import org.jruby.ast.DefinedNode;
-import org.jruby.ast.DStrNode;
-import org.jruby.ast.DSymbolNode;
-import org.jruby.ast.DVarNode;
-import org.jruby.ast.DXStrNode;
-import org.jruby.ast.DefnNode;
-import org.jruby.ast.DefsNode;
-import org.jruby.ast.DotNode;
-import org.jruby.ast.EncodingNode;
-import org.jruby.ast.EnsureNode;
-import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FalseNode;
-import org.jruby.ast.FileNode;
-import org.jruby.ast.FindPatternNode;
-import org.jruby.ast.FCallNode;
-import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FloatNode;
-import org.jruby.ast.ForNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.HashNode;
-import org.jruby.ast.HashPatternNode;
-import org.jruby.ast.InNode;
-import org.jruby.ast.InstAsgnNode;
-import org.jruby.ast.InstVarNode;
-import org.jruby.ast.IterNode;
-import org.jruby.ast.KeywordArgNode;
-import org.jruby.ast.LambdaNode;
-import org.jruby.ast.ListNode;
-import org.jruby.ast.LiteralNode;
-import org.jruby.ast.LocalVarNode;
-import org.jruby.ast.ModuleNode;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.NextNode;
-import org.jruby.ast.NilImplicitNode;
-import org.jruby.ast.NilNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NonLocalControlFlowNode;
-import org.jruby.ast.NumericNode;
-import org.jruby.ast.OptArgNode;
-import org.jruby.ast.PostExeNode;
-import org.jruby.ast.PreExe19Node;
-import org.jruby.ast.RationalNode;
-import org.jruby.ast.RedoNode;
-import org.jruby.ast.RegexpNode;
-import org.jruby.ast.RequiredKeywordArgumentValueNode;
-import org.jruby.ast.RescueBodyNode;
-import org.jruby.ast.RestArgNode;
-import org.jruby.ast.RetryNode;
-import org.jruby.ast.ReturnNode;
-import org.jruby.ast.SClassNode;
-import org.jruby.ast.SelfNode;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.StrNode;
-import org.jruby.ast.TrueNode;
-import org.jruby.ast.UnnamedRestArgNode;
-import org.jruby.ast.UntilNode;
-import org.jruby.ast.VAliasNode;
-import org.jruby.ast.WhileNode;
-import org.jruby.ast.XStrNode;
-import org.jruby.ast.YieldNode;
-import org.jruby.ast.ZArrayNode;
-import org.jruby.ast.ZSuperNode;
-import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
-import org.jruby.lexer.yacc.LexContext;
-import org.jruby.lexer.yacc.RubyLexer;
-import org.jruby.lexer.yacc.StackState;
-import org.jruby.lexer.yacc.StrTerm;
+import @@lex_package@@.StrTerm;
+@@import_ripper@@
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
+import org.jruby.lexer.yacc.LexContext;
+import @@lex_package@@.@@Parser@@Lexer;
+import org.jruby.lexer.yacc.StackState;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.yacc.RubyLexer.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
@@ -159,180 +155,178 @@ import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
-import static org.jruby.parser.RubyParserBase.arg_blk_pass;
-import static org.jruby.parser.RubyParserBase.node_assign;
-
  
-public class RubyParser extends RubyParserBase {
-    public RubyParser(LexerSource source, IRubyWarnings warnings) {
-        super(warnings);
-        setLexer(new RubyLexer(this, source, warnings));
+ public class @@Parser@@Parser extends @@Parser@@ParserBase {
+    public @@Parser@@Parser(@@ParserConstructorParams@@) {
+        @@ParserConstructorBody@@
     }
 %}
 
 // patch_parser.rb will look for token lines with {{ and }} within it to put
 // in reasonable strings we expect during a parsing error.
-%token <Integer> keyword_class        /* {{`class''}} */
-%token <Integer> keyword_module       /* {{`module'}} */
-%token <Integer> keyword_def          /* {{`def'}} */
-%token <Integer> keyword_undef        /* {{`undef'}} */
-%token <Integer> keyword_begin        /* {{`begin'}} */
-%token <Integer> keyword_rescue       /* {{`rescue'}} */
-%token <Integer> keyword_ensure       /* {{`ensure'}} */
-%token <Integer> keyword_end          /* {{`end'}} */
-%token <Integer> keyword_if           /* {{`if'}} */
-%token <Integer> keyword_unless       /* {{`unless'}} */
-%token <Integer> keyword_then         /* {{`then'}} */
-%token <Integer> keyword_elsif        /* {{`elsif'}} */
-%token <Integer> keyword_else         /* {{`else'}} */
-%token <Integer> keyword_case         /* {{`case'}} */
-%token <Integer> keyword_when         /* {{`when'}} */
-%token <Integer> keyword_while        /* {{`while'}} */
-%token <Integer> keyword_until        /* {{`until'}} */
-%token <Integer> keyword_for          /* {{`for'}} */
-%token <Integer> keyword_break        /* {{`break'}} */
-%token <Integer> keyword_next         /* {{`next'}} */
-%token <Integer> keyword_redo         /* {{`redo'}} */
-%token <Integer> keyword_retry        /* {{`retry'}} */
-%token <Object> keyword_in           /* {{`in'}} */
-%token <Integer> keyword_do           /* {{`do'}} */
-%token <Integer> keyword_do_cond      /* {{`do' for condition}} */
-%token <Integer> keyword_do_block     /* {{`do' for block}} */
-%token <Integer> keyword_do_LAMBDA    /* {{`do' for lambda}} */
-%token <Integer> keyword_return       /* {{`return'}} */
-%token <Integer> keyword_yield        /* {{`yield'}} */
-%token <Integer> keyword_super        /* {{`super'}} */
-%token <Integer> keyword_self         /* {{`self'}} */
-%token <Integer> keyword_nil          /* {{`nil'}} */
-%token <Integer> keyword_true         /* {{`true'}} */
-%token <Integer> keyword_false        /* {{`false'}} */
-%token <Integer> keyword_and          /* {{`and'}} */
-%token <Integer> keyword_or           /* {{`or'}} */
-%token <Integer> keyword_not          /* {{`not'}} */
-%token <Integer> modifier_if          /* {{`if' modifier}} */
-%token <Integer> modifier_unless      /* {{`unless' modifier}} */
-%token <Integer> modifier_while       /* {{`while' modifier}} */
-%token <Integer> modifier_until       /* {{`until' modifier}} */
-%token <Integer> modifier_rescue      /* {{`rescue' modifier}} */
-%token <Integer> keyword_alias        /* {{`alias'}} */
-%token <Integer> keyword_defined      /* {{`defined'}} */
-%token <Integer> keyword_BEGIN        /* {{`BEGIN'}} */
-%token <Integer> keyword_END          /* {{`END'}} */
-%token <Integer> keyword__LINE__      /* {{`__LINE__'}} */
-%token <Integer> keyword__FILE__      /* {{`__FILE__'}} */
-%token <Integer> keyword__ENCODING__  /* {{`__ENCODING__'}} */
+%token <@@keyword_type@@> keyword_class        /* {{`class''}} */
+%token <@@keyword_type@@> keyword_module       /* {{`module'}} */
+%token <@@keyword_type@@> keyword_def          /* {{`def'}} */
+%token <@@keyword_type@@> keyword_undef        /* {{`undef'}} */
+%token <@@keyword_type@@> keyword_begin        /* {{`begin'}} */
+%token <@@keyword_type@@> keyword_rescue       /* {{`rescue'}} */
+%token <@@keyword_type@@> keyword_ensure       /* {{`ensure'}} */
+%token <@@keyword_type@@> keyword_end          /* {{`end'}} */
+%token <@@keyword_type@@> keyword_if           /* {{`if'}} */
+%token <@@keyword_type@@> keyword_unless       /* {{`unless'}} */
+%token <@@keyword_type@@> keyword_then         /* {{`then'}} */
+%token <@@keyword_type@@> keyword_elsif        /* {{`elsif'}} */
+%token <@@keyword_type@@> keyword_else         /* {{`else'}} */
+%token <@@keyword_type@@> keyword_case         /* {{`case'}} */
+%token <@@keyword_type@@> keyword_when         /* {{`when'}} */
+%token <@@keyword_type@@> keyword_while        /* {{`while'}} */
+%token <@@keyword_type@@> keyword_until        /* {{`until'}} */
+%token <@@keyword_type@@> keyword_for          /* {{`for'}} */
+%token <@@keyword_type@@> keyword_break        /* {{`break'}} */
+%token <@@keyword_type@@> keyword_next         /* {{`next'}} */
+%token <@@keyword_type@@> keyword_redo         /* {{`redo'}} */
+%token <@@keyword_type@@> keyword_retry        /* {{`retry'}} */
+%token <@@keyword_in_type@@> keyword_in        /* {{`in'}} */
+%token <@@keyword_type@@> keyword_do           /* {{`do'}} */
+%token <@@keyword_type@@> keyword_do_cond      /* {{`do' for condition}} */
+%token <@@keyword_type@@> keyword_do_block     /* {{`do' for block}} */
+%token <@@keyword_type@@> keyword_do_LAMBDA    /* {{`do' for lambda}} */
+%token <@@keyword_type@@> keyword_return       /* {{`return'}} */
+%token <@@keyword_type@@> keyword_yield        /* {{`yield'}} */
+%token <@@keyword_type@@> keyword_super        /* {{`super'}} */
+%token <@@keyword_type@@> keyword_self         /* {{`self'}} */
+%token <@@keyword_type@@> keyword_nil          /* {{`nil'}} */
+%token <@@keyword_type@@> keyword_true         /* {{`true'}} */
+%token <@@keyword_type@@> keyword_false        /* {{`false'}} */
+%token <@@keyword_type@@> keyword_and          /* {{`and'}} */
+%token <@@keyword_type@@> keyword_or           /* {{`or'}} */
+%token <@@keyword_type@@> keyword_not          /* {{`not'}} */
+%token <@@keyword_type@@> modifier_if          /* {{`if' modifier}} */
+%token <@@keyword_type@@> modifier_unless      /* {{`unless' modifier}} */
+%token <@@keyword_type@@> modifier_while       /* {{`while' modifier}} */
+%token <@@keyword_type@@> modifier_until       /* {{`until' modifier}} */
+%token <@@keyword_type@@> modifier_rescue      /* {{`rescue' modifier}} */
+%token <@@keyword_type@@> keyword_alias        /* {{`alias'}} */
+%token <@@keyword_type@@> keyword_defined      /* {{`defined'}} */
+%token <@@keyword_type@@> keyword_BEGIN        /* {{`BEGIN'}} */
+%token <@@keyword_type@@> keyword_END          /* {{`END'}} */
+%token <@@keyword_type@@> keyword__LINE__      /* {{`__LINE__'}} */
+%token <@@keyword_type@@> keyword__FILE__      /* {{`__FILE__'}} */
+%token <@@keyword_type@@> keyword__ENCODING__  /* {{`__ENCODING__'}} */
   
-%token <ByteList> tIDENTIFIER         /* {{local variable or method}} */
-%token <ByteList> tFID                /* {{method}} */
-%token <ByteList> tGVAR               /* {{global variable}} */
-%token <ByteList> tIVAR               /* {{instance variable}} */
-%token <ByteList> tCONSTANT           /* {{constant}} */
-%token <ByteList> tCVAR               /* {{class variable}} */
-%token <ByteList> tLABEL              /* {{label}} */
-%token <Node> tINTEGER                /* {{integer literal}} */
-%token <FloatNode> tFLOAT             /* {{float literal}} */
-%token <RationalNode> tRATIONAL       /* {{rational literal}} */
-%token <Node> tIMAGINARY              /* {{imaginary literal}} */
-%token <StrNode> tCHAR                /* {{char literal}} */
-%token <Node> tNTH_REF                /* {{numbered reference}} */
-%token <Node> tBACK_REF               /* {{back reference}} */
-%token <Node> tSTRING_CONTENT         /* {{literal content}} */
-%token <RegexpNode>  tREGEXP_END
+%token <@@token_type@@> tIDENTIFIER          /* {{local variable or method}} */
+%token <@@token_type@@> tFID                 /* {{method}} */
+%token <@@token_type@@> tGVAR                /* {{global variable}} */
+%token <@@token_type@@> tIVAR                /* {{instance variable}} */
+%token <@@token_type@@> tCONSTANT            /* {{constant}} */
+%token <@@token_type@@> tCVAR                /* {{class variable}} */
+%token <@@token_type@@> tLABEL               /* {{label}} */
+%token <@@token_integer_type@@> tINTEGER     /* {{integer literal}} */
+%token <@@token_float_type@@> tFLOAT         /* {{float literal}} */
+%token <@@token_rational_type@@> tRATIONAL   /* {{rational literal}} */
+%token <@@token_imaginary_type@@> tIMAGINARY /* {{imaginary literal}} */
+%token <@@token_char_type@@> tCHAR           /* {{char literal}} */
+%token <@@token_nthref_type@@> tNTH_REF      /* {{numbered reference}} */
+%token <@@token_backref_type@@> tBACK_REF    /* {{back reference}} */
+%token <@@token_string_type@@> tSTRING_CONTENT /* {{literal content}} */
+%token <@@token_regexp_type@@>  tREGEXP_END
 
-%type <Node> singleton strings string string1 xstring regexp
-%type <Node> string_contents xstring_contents regexp_contents
-%type <Object> string_content
-%type <ListNode> words symbols symbol_list qwords qsymbols
-%type <ListNode> word_list qword_list qsym_list  
-%type <Node> word 
-%type <Node> literal
-%type <NumericNode> numeric simple_numeric
-%type <Node> ssym dsym symbol cpath
+%type <@@prod_type@@> singleton strings string string1 xstring regexp
+%type <@@prod_type@@> string_contents xstring_contents
+%type <@@prod_regexp_contents_type@@> regexp_contents
+%type <@@prod_string_type@@> string_content
+%type <@@prod_words_type@@> words symbols symbol_list qwords qsymbols
+%type <@@prod_words_type@@> word_list qword_list qsym_list  
+%type <@@prod_type@@> word 
+%type <@@prod_type@@> literal
+%type <@@prod_numeric_type@@> numeric simple_numeric
+%type <@@prod_type@@> ssym dsym symbol cpath
 %type <DefHolder> def_name defn_head defs_head
-%type <Node> top_compstmt top_stmts top_stmt begin_block
-%type <Node> bodystmt compstmt stmts stmt_or_begin stmt expr arg primary command command_call method_call
-%type <Node> expr_value expr_value_do arg_value primary_value 
-%type <FCallNode> fcall
-%type <Node> rel_expr
-%type <Node> if_tail opt_else case_body case_args cases 
-%type <RescueBodyNode> opt_rescue
-%type <Node> exc_list exc_var opt_ensure
-%type <Node> args call_args opt_call_args 
-%type <Node> paren_args opt_paren_args
+%type <@@prod_type@@> top_compstmt top_stmts top_stmt begin_block
+%type <@@prod_type@@> bodystmt compstmt stmts stmt_or_begin stmt expr arg primary command command_call method_call
+%type <@@prod_type@@> expr_value expr_value_do arg_value primary_value 
+%type <@@prod_fcall_type@@> fcall
+%type <@@prod_type@@> rel_expr
+%type <@@prod_type@@> if_tail opt_else case_body case_args cases 
+%type <@@prod_rescue_type@@> opt_rescue
+%type <@@prod_type@@> exc_list exc_var opt_ensure
+%type <@@prod_type@@> args call_args opt_call_args 
+%type <@@prod_type@@> paren_args opt_paren_args
 %type <ArgsTailHolder> args_tail opt_args_tail block_args_tail opt_block_args_tail 
-%type <Node> command_args aref_args
-%type <BlockPassNode> opt_block_arg block_arg
-%type <Node> var_ref
-%type <AssignableNode> var_lhs
-%type <Node> command_rhs arg_rhs
-%type <Node> command_asgn mrhs mrhs_arg superclass block_call block_command
-%type <ListNode> f_block_optarg
-%type <Node> f_block_opt
-%type <ArgsNode> f_arglist f_opt_paren_args f_paren_args f_args
-%type <ListNode> f_arg
-%type <Node> f_arg_item
-%type <ListNode> f_optarg
-%type <Node> f_marg
-%type <ListNode> f_marg_list 
-%type <Node> f_margs f_rest_marg
-%type <HashNode> assoc_list assocs
-%type <KeyValuePair> assoc
-%type <Node> undef_list backref string_dvar for_var
-%type <ArgsNode> block_param opt_block_param block_param_def
-%type <Node> f_opt
-%type <ListNode> f_kwarg
-%type <KeywordArgNode> f_kw
-%type <ListNode> f_block_kwarg
-%type <Node> f_block_kw
-%type <Node> bv_decls opt_bv_decl 
-%type <ByteList> bvar
-%type <LambdaNode> lambda
-%type <ArgsNode> f_larglist
-%type <Node> lambda_body
-%type <IterNode> brace_body do_body
-%type <IterNode> brace_block cmd_brace_block do_block
-%type <Node> lhs none fitem
-%type <MultipleAsgnNode> mlhs
-%type <ListNode> mlhs_head
-%type <MultipleAsgnNode> mlhs_basic   
-%type <Node> mlhs_item mlhs_node
-%type <ListNode> mlhs_post
-%type <Node> mlhs_inner
-%type <InNode> p_case_body
-%type <Node> p_cases p_top_expr p_top_expr_body
-%type <Node> p_expr p_as p_alt p_expr_basic
-%type <FindPatternNode> p_find
-%type <ArrayPatternNode> p_args 
-%type <ListNode> p_args_head
-%type <ArrayPatternNode> p_args_tail
-%type <ListNode> p_args_post p_arg
-%type <Node> p_value p_primitive p_variable p_var_ref p_expr_ref p_const
+%type <@@prod_type@@> command_args aref_args
+%type <@@prod_blockarg_type@@> opt_block_arg block_arg
+%type <@@prod_type@@> var_ref
+%type <@@prod_lhs_type@@> var_lhs
+%type <@@prod_type@@> command_rhs arg_rhs
+%type <@@prod_type@@> command_asgn mrhs mrhs_arg superclass block_call block_command
+%type <@@prod_block_optarg_type@@> f_block_optarg
+%type <@@prod_type@@> f_block_opt
+%type <@@prod_args_type@@> f_arglist f_opt_paren_args f_paren_args f_args
+%type <@@prod_farg_type@@> f_arg
+%type <@@prod_type@@> f_arg_item
+%type <@@prod_farg_type@@> f_optarg
+%type <@@prod_type@@> f_marg
+%type <@@prod_marg_type@@> f_marg_list 
+%type <@@prod_type@@> f_margs f_rest_marg
+%type <@@prod_assoc_list_type@@> assoc_list
+%type <@@prod_assocs_type@@> assocs
+%type <@@prod_assoc_type@@> assoc
+%type <@@prod_type@@> undef_list backref string_dvar for_var
+%type <@@prod_block_param_type@@> block_param opt_block_param block_param_def
+%type <@@prod_type@@> f_opt
+%type <@@prod_f_kwarg_type@@> f_kwarg
+%type <@@prod_f_kw_type@@> f_kw
+%type <@@prod_f_kwarg_type@@> f_block_kwarg
+%type <@@prod_type@@> f_block_kw
+%type <@@prod_type@@> bv_decls opt_bv_decl 
+%type <@@prod_bvar_type@@> bvar
+%type <@@prod_lambda_type@@> lambda
+%type <@@prod_f_larglist_type@@> f_larglist
+%type <@@prod_type@@> lambda_body
+%type <@@prod_brace_block_type@@> brace_body do_body
+%type <@@prod_brace_block_type@@> brace_block cmd_brace_block do_block
+%type <@@prod_type@@> lhs none fitem
+%type <@@prod_mlhs_type@@> mlhs
+%type <@@prod_mlhs_head_type@@> mlhs_head
+%type <@@prod_mlhs_type@@> mlhs_basic   
+%type <@@prod_type@@> mlhs_item mlhs_node
+%type <@@prod_mlhs_head_type@@> mlhs_post
+%type <@@prod_type@@> mlhs_inner
+%type <@@prod_p_case_body_type@@> p_case_body
+%type <@@prod_type@@> p_cases p_top_expr p_top_expr_body
+%type <@@prod_type@@> p_expr p_as p_alt p_expr_basic
+%type <@@prod_p_find_type@@> p_find
+%type <@@prod_p_args_type@@> p_args 
+%type <@@prod_p_args_head_type@@> p_args_head
+%type <@@prod_p_args_type@@> p_args_tail
+%type <@@prod_p_arg_type@@> p_args_post p_arg
+%type <@@prod_type@@> p_value p_primitive p_variable p_var_ref p_expr_ref p_const
 %type <HashPatternNode> p_kwargs
-%type <HashNode> p_kwarg
-%type <KeyValuePair> p_kw
+%type <@@prod_p_kwarg_type@@> p_kwarg
+%type <@@prod_p_kw_type@@> p_kw
   /* keyword_variable + user_variable are inlined into the grammar */
-%type <ByteList> sym operation operation2 operation3
-%type <ByteList> cname op fname 
-%type <RestArgNode> f_rest_arg
-%type <BlockArgNode> f_block_arg opt_f_block_arg
-%type <ByteList> f_norm_arg f_bad_arg
-%type <ByteList> f_kwrest f_label 
-%type <ArgumentNode> f_arg_asgn
-%type <ByteList> call_op call_op2 reswords relop dot_or_colon
-%type <ByteList> p_rest p_kwrest p_kwnorest p_any_kwrest p_kw_label
-%type <ByteList> f_no_kwarg f_any_kwrest args_forward excessed_comma nonlocal_var
+%type <@@token_type@@> sym operation operation2 operation3
+%type <@@token_type@@> cname op fname 
+%type <@@prod_f_rest_arg_type@@> f_rest_arg
+%type <@@prod_f_block_arg_type@@> f_block_arg opt_f_block_arg
+%type <@@token_type@@> f_norm_arg f_bad_arg
+%type <@@token_type@@> f_kwrest f_label 
+%type <@@prod_f_arg_asgn_type@@> f_arg_asgn
+%type <@@token_type@@> call_op call_op2 reswords relop dot_or_colon
+%type <@@token_type@@> p_rest p_kwrest p_kwnorest p_any_kwrest p_kw_label
+%type <@@token_type@@> f_no_kwarg f_any_kwrest args_forward excessed_comma nonlocal_var
 %type <LexContext> lex_ctxt
 // Things not declared in MRI - start
-%type <ByteList> blkarg_mark restarg_mark kwrest_mark rparen rbracket
-%type <BlockPassNode> none_block_pass
-%type <Integer> k_return
+%type <@@token_type@@> blkarg_mark restarg_mark kwrest_mark rparen rbracket
+%type <@@prod_blockarg_type@@> none_block_pass
+%type <@@keyword_type@@> k_return
 %type <LexContext> k_class k_module
-%type <Integer> k_else k_when k_begin k_if k_do
-%type <Integer> k_do_block k_rescue k_ensure k_elsif
+%type <@@keyword_type@@> k_else k_when k_begin k_if k_do
+%type <@@keyword_type@@> k_do_block k_rescue k_ensure k_elsif
 %token <ByteList> tUMINUS_NUM
-%type <Integer> rbrace
-%type <Integer> k_def k_end k_while k_until k_for k_case k_unless
-%type <Node> p_lparen p_lbracket
+%type <@@keyword_type@@> rbrace
+%type <@@keyword_type@@> k_def k_end k_while k_until k_for k_case k_unless
+%type <@@prod_type@@> p_lparen p_lbracket
 // Things not declared in MRI - end  
 
 
@@ -342,52 +336,57 @@ public class RubyParser extends RubyParserBase {
 %token <Integer> '\f'                   /* {{escaped form feed}} */
 %token <Integer> '\r'                   /* {{escaped carriage return}} */
 %token <Integer> '\v'                   /* {{escaped vertical tab}} */
-%token <ByteList> tUPLUS               /* {{unary+}} */
-%token <ByteList> tUMINUS              /* {{unary-}} */
-%token <ByteList> tPOW                 /* {{**}} */
-%token <ByteList> tCMP                 /* {{<=>}} */
-%token <ByteList> tEQ                  /* {{==}} */
-%token <ByteList> tEQQ                 /* {{===}} */
-%token <ByteList> tNEQ                 /* {{!=}} */
-%token <ByteList> tGEQ                 /* {{>=}} */
-%token <ByteList> tLEQ                 /* {{<=}} */
-%token <ByteList> tANDOP               /* {{&&}}*/
-%token <ByteList> tOROP                /* {{||}} */
-%token <ByteList> tMATCH               /* {{=~}} */
-%token <ByteList> tNMATCH              /* {{!~}} */
-%token <ByteList> tDOT2                /* {{..}} */
-%token <ByteList> tDOT3                /* {{...}} */
-%token <ByteList> tBDOT2               /* {{(..}} */
-%token <ByteList> tBDOT3               /* {{(...}} */
-%token <ByteList> tAREF                /* {{[]}} */
-%token <ByteList> tASET                /* {{[]=}} */
-%token <ByteList> tLSHFT               /* {{<<}} */
-%token <ByteList> tRSHFT               /* {{>>}} */
-%token <ByteList> tANDDOT              /* {{&.}} */
-%token <ByteList> tCOLON2              /* {{::}} */
-%token <ByteList> tCOLON3              /* {{:: at EXPR_BEG}} */
-%token <ByteList> tOP_ASGN             /* {{operator assignment}} +=, etc. */
-%token <ByteList> tASSOC               /* {{=>}} */
+%token <@@token_type@@> tUPLUS               /* {{unary+}} */
+%token <@@token_type@@> tUMINUS              /* {{unary-}} */
+%token <@@token_type@@> tPOW                 /* {{**}} */
+%token <@@token_type@@> tCMP                 /* {{<=>}} */
+%token <@@token_type@@> tEQ                  /* {{==}} */
+%token <@@token_type@@> tEQQ                 /* {{===}} */
+%token <@@token_type@@> tNEQ                 /* {{!=}} */
+%token <@@token_type@@> tGEQ                 /* {{>=}} */
+%token <@@token_type@@> tLEQ                 /* {{<=}} */
+%token <@@token_type@@> tANDOP               /* {{&&}}*/
+%token <@@token_type@@> tOROP                /* {{||}} */
+%token <@@token_type@@> tMATCH               /* {{=~}} */
+%token <@@token_type@@> tNMATCH              /* {{!~}} */
+%token <@@token_type@@> tDOT2                /* {{..}} */
+%token <@@token_type@@> tDOT3                /* {{...}} */
+%token <@@token_type@@> tBDOT2               /* {{(..}} */
+%token <@@token_type@@> tBDOT3               /* {{(...}} */
+%token <@@token_type@@> tAREF                /* {{[]}} */
+%token <@@token_type@@> tASET                /* {{[]=}} */
+%token <@@token_type@@> tLSHFT               /* {{<<}} */
+%token <@@token_type@@> tRSHFT               /* {{>>}} */
+%token <@@token_type@@> tANDDOT              /* {{&.}} */
+%token <@@token_type@@> tCOLON2              /* {{::}} */
+%token <@@token_type@@> tCOLON3              /* {{:: at EXPR_BEG}} */
+%token <@@token_type@@> tOP_ASGN             /* {{operator assignment}} +=, etc. */
+%token <@@token_type@@> tASSOC               /* {{=>}} */
 %token <Integer> tLPAREN               /* {{(}} */
 %token <Integer> tLPAREN_ARG           /* {{( arg}} */
-%token <ByteList> tLBRACK              /* {{[}} */
+%token <@@token_type@@> tLBRACK              /* {{[}} */
 %token <Object> tLBRACE               /* {{{}} */
 %token <Integer> tLBRACE_ARG           /* {{{ arg}} */
-%token <ByteList> tSTAR                /* {{*}} */
-%token <ByteList> tDSTAR                /* {{**arg}} */
-%token <ByteList> tAMPER               /* {{&}} */
-%token <ByteList> tLAMBDA              /* {{->}} */
-%token <ByteList> tSYMBEG              /* {{symbol literal}} */
-%token <ByteList> tSTRING_BEG          /* {{string literal}} */
-%token <ByteList> tXSTRING_BEG         /* {{backtick literal}} */
-%token <ByteList> tREGEXP_BEG          /* {{regexp literal}} */
-%token <ByteList> tWORDS_BEG           /* {{word list}} */
-%token <ByteList> tQWORDS_BEG          /* {{verbatim work list}} */
-%token <ByteList> tSTRING_END          /* {{terminator}} */
-%token <ByteList> tSYMBOLS_BEG          /* {{symbol list}} */
-%token <ByteList> tQSYMBOLS_BEG         /* {{verbatim symbol list}} */
-%token <ByteList> tSTRING_DEND          /* {{'}'}} */
-%token <ByteList> tSTRING_DBEG tSTRING_DVAR tLAMBEG tLABEL_END
+%token <@@token_type@@> tSTAR                /* {{*}} */
+%token <@@token_type@@> tDSTAR                /* {{**arg}} */
+%token <@@token_type@@> tAMPER               /* {{&}} */
+%token <@@token_type@@> tLAMBDA              /* {{->}} */
+%token <@@token_type@@> tSYMBEG              /* {{symbol literal}} */
+%token <@@token_type@@> tSTRING_BEG          /* {{string literal}} */
+%token <@@token_type@@> tXSTRING_BEG         /* {{backtick literal}} */
+%token <@@token_type@@> tREGEXP_BEG          /* {{regexp literal}} */
+%token <@@token_type@@> tWORDS_BEG           /* {{word list}} */
+%token <@@token_type@@> tQWORDS_BEG          /* {{verbatim work list}} */
+%token <@@token_type@@> tSTRING_END          /* {{terminator}} */
+%token <@@token_type@@> tSYMBOLS_BEG          /* {{symbol list}} */
+%token <@@token_type@@> tQSYMBOLS_BEG         /* {{verbatim symbol list}} */
+%token <@@token_type@@> tSTRING_DEND          /* {{'}'}} */
+%token <@@token_type@@> tSTRING_DBEG tSTRING_DVAR tLAMBEG tLABEL_END
+/* RIPPER-ONY TOKENS { */
+%token <IRubyObject> tIGNORED_NL tCOMMENT tEMBDOC_BEG tEMBDOC tEMBDOC_END
+%token <IRubyObject> tHEREDOC_BEG tHEREDOC_END
+@@program_production@@
+/* } RIPPER-ONY TOKENS */
 
 
 /*
@@ -1892,43 +1891,34 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
  
 relop           : '>' {
-                    /*%%%*/
                     $$ = GT;
                 }
                 | '<' {
-                    /*%%%*/
                     $$ = LT;
                 }
                 | tGEQ {
-                    /*%%%*/
                     $$ = $1;
                 }
                 | tLEQ {
-                    /*%%%*/
                     $$ = $1;
                 }
 
 rel_expr        : arg relop arg   %prec '>' {
-                    /*%%%*/
                     $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
 		| rel_expr relop arg   %prec '>' {
-                    /*%%%*/
                     p.warning(ID.MISCELLANEOUS, lexer.getRubySourceline(), "comparison '" + $2 + "' after comparison");
                     $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
                 }
 
 lex_ctxt        : tSP {
-                    /*%%%*/
                     $$ = (LexContext) lexer.getLexContext().clone();
                 }
                 | none {
-                    /*%%%*/
                     $$ = (LexContext) lexer.getLexContext().clone();
                 }
  
 arg_value       : arg {
-                    /*%%%*/
                     p.value_expr(lexer, $1);
                     $$ = p.makeNullNil($1);
                 }
@@ -3225,8 +3215,9 @@ p_args          : p_expr {
                     /*%%%*/
                     ListNode preArgs = p.newArrayNode($1.getLine(), $1);
                     $$ = p.new_array_pattern_tail(@1.start(), preArgs, false, null, null);
+                    // JRuby Changed
                     /*% 
-                        $$ = new_array_pattern_tail(p, rb_ary_new_from_args(1, get_value($1)), 0, 0, Qnone, &@$);
+                        $$ = p.new_array_pattern_tail(@1.start(), p.new_array($1), false, null, null);
                     %*/
                 }
                 | p_args_head {
@@ -3235,9 +3226,10 @@ p_args          : p_expr {
                 | p_args_head p_arg {
                     /*%%%*/
                     $$ = p.new_array_pattern_tail(@1.start(), p.list_concat($1, $2), false, null, null);
+                    // JRuby Changed
                     /*%
-			VALUE pre_args = rb_ary_concat($1, get_value($2));
-			$$ = new_array_pattern_tail(p, pre_args, 0, 0, Qnone, &@$);
+			RubyArray pre_args = $1.push($2);
+			$$ = p.new_array_pattern_tail(@1.start(), pre_args, false, null, null);
                     %*/
                 }
                 | p_args_head tSTAR tIDENTIFIER {
@@ -3822,27 +3814,33 @@ regexp_contents: /* none */ {
                     /*% %*/
                     /*% ripper: xstring_new! %*/
                     /*%%%*/
+                    // JRuby changed
                     /*%
-                        $$ = ripper_new_yylval(p, 0, $$, 0);
+                        $$ = new KeyValuePair<IRubyObject, IRubyObject>($$, null);
                     %*/
                 }
                 | regexp_contents string_content {
-    // FIXME: mri is different here.
+                    // FIXME: mri is different here.
                     /*%%%*/
                     $$ = p.literal_concat($1, $<Node>2);
+                    // JRuby changed
                     /*% 
-			VALUE s1 = 1, s2 = 0, n1 = $1, n2 = $2;
-			if (ripper_is_node_yylval(n1)) {
-			    s1 = RNODE(n1)->nd_cval;
-			    n1 = RNODE(n1)->nd_rval;
+                        IRubyObject s1 = context.nil;
+                        IRubyObject s2 = null;
+                        Object n1 = $1;
+                        Object n2 = $2;
+
+			if (n1 instanceof KeyValuePair) {
+			    s1 = ((KeyValuePair) n1).getKey();
+			    n1 = ((KeyValuePair) n1).getPair();
 			}
-			if (ripper_is_node_yylval(n2)) {
-			    s2 = RNODE(n2)->nd_cval;
-			    n2 = RNODE(n2)->nd_rval;
+			if (n2 instanceof KeyValuePair) {
+			    s2 = ((KeyValuePair) n2).getKey();
+			    n2 = ((KeyValuePair) n2).getPair();
 			}
 			$$ = dispatch2(regexp_add, n1, n2);
 			if (!s1 && s2) {
-			    $$ = ripper_new_yylval(p, 0, $$, s2);
+			    $$ = new KeyValuePair<IRubyObject, IRubyObject>($$, s2);
 			}
                     %*/
                 }
@@ -4571,7 +4569,7 @@ singleton       : var_ref {
                     /*%%%*/
                     if ($3 == null) {
                         p.yyerror("can't define single method for ().");
-                    } else if ($3 instanceof ILiteralNode) {
+                    } else if ($3 instanceof LiteralNode) {
                         p.yyerror("can't define single method for literals.");
                     }
                     p.value_expr(lexer, $3);

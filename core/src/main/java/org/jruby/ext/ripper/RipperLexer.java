@@ -34,6 +34,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -238,6 +239,10 @@ public class RipperLexer extends LexingCommon {
     static final int STR_FUNC_INDENT=0x20;
 
     public RipperLexer(RipperParserBase parser, LexerSource src) {
+        this(parser, src, null);
+    }
+
+    public RipperLexer(RipperParserBase parser, LexerSource src, IRubyWarnings _warnings) {
         super(src);
         this.parser = parser;
         setState(0);

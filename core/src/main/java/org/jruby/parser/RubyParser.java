@@ -1,7 +1,8 @@
 // created by jay 1.0.2 (c) 2002-2004 ats@cs.rit.edu
 // skeleton Java 1.0 (c) 2002 ats@cs.rit.edu
 
-					// line 2 "RubyParser.y"
+					// line 2 "parse.y"
+// We use ERB for ripper grammar and we need an alternative substitution value.
 /*
  **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
@@ -36,101 +37,22 @@ import java.io.IOException;
 import java.util.Set;
 
 import org.jruby.RubySymbol;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.ArrayPatternNode;
-import org.jruby.ast.AssignableNode;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.BeginNode;
-import org.jruby.ast.BlockAcceptingNode;
-import org.jruby.ast.BlockArgNode;
-import org.jruby.ast.BlockNode;
-import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.BreakNode;
-import org.jruby.ast.ClassNode;
-import org.jruby.ast.ClassVarNode;
-import org.jruby.ast.ClassVarAsgnNode;
-import org.jruby.ast.Colon3Node;
-import org.jruby.ast.ConstNode;
-import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DefHolder;
-import org.jruby.ast.DefinedNode;
-import org.jruby.ast.DStrNode;
-import org.jruby.ast.DSymbolNode;
-import org.jruby.ast.DVarNode;
-import org.jruby.ast.DXStrNode;
-import org.jruby.ast.DefnNode;
-import org.jruby.ast.DefsNode;
-import org.jruby.ast.DotNode;
-import org.jruby.ast.EncodingNode;
-import org.jruby.ast.EnsureNode;
-import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FalseNode;
-import org.jruby.ast.FileNode;
-import org.jruby.ast.FindPatternNode;
-import org.jruby.ast.FCallNode;
-import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FloatNode;
-import org.jruby.ast.ForNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.HashNode;
-import org.jruby.ast.HashPatternNode;
-import org.jruby.ast.InNode;
-import org.jruby.ast.InstAsgnNode;
-import org.jruby.ast.InstVarNode;
-import org.jruby.ast.IterNode;
-import org.jruby.ast.KeywordArgNode;
-import org.jruby.ast.LambdaNode;
-import org.jruby.ast.ListNode;
-import org.jruby.ast.LiteralNode;
-import org.jruby.ast.LocalVarNode;
-import org.jruby.ast.ModuleNode;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.NextNode;
-import org.jruby.ast.NilImplicitNode;
-import org.jruby.ast.NilNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NonLocalControlFlowNode;
-import org.jruby.ast.NumericNode;
-import org.jruby.ast.OptArgNode;
-import org.jruby.ast.PostExeNode;
-import org.jruby.ast.PreExe19Node;
-import org.jruby.ast.RationalNode;
-import org.jruby.ast.RedoNode;
-import org.jruby.ast.RegexpNode;
-import org.jruby.ast.RequiredKeywordArgumentValueNode;
-import org.jruby.ast.RescueBodyNode;
-import org.jruby.ast.RestArgNode;
-import org.jruby.ast.RetryNode;
-import org.jruby.ast.ReturnNode;
-import org.jruby.ast.SClassNode;
-import org.jruby.ast.SelfNode;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.StrNode;
-import org.jruby.ast.TrueNode;
-import org.jruby.ast.UnnamedRestArgNode;
-import org.jruby.ast.UntilNode;
-import org.jruby.ast.VAliasNode;
-import org.jruby.ast.WhileNode;
-import org.jruby.ast.XStrNode;
-import org.jruby.ast.YieldNode;
-import org.jruby.ast.ZArrayNode;
-import org.jruby.ast.ZSuperNode;
-import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
-import org.jruby.lexer.yacc.LexContext;
-import org.jruby.lexer.yacc.RubyLexer;
-import org.jruby.lexer.yacc.StackState;
 import org.jruby.lexer.yacc.StrTerm;
+
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
+import org.jruby.lexer.yacc.LexContext;
+import org.jruby.lexer.yacc.RubyLexer;
+import org.jruby.lexer.yacc.StackState;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.yacc.RubyLexer.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
@@ -162,16 +84,12 @@ import static org.jruby.lexer.LexingCommon.EXPR_END;
 import static org.jruby.lexer.LexingCommon.EXPR_LABEL;
 import static org.jruby.util.CommonByteLists.FWD_BLOCK;
 import static org.jruby.util.CommonByteLists.FWD_KWREST;
-import static org.jruby.parser.RubyParserBase.arg_blk_pass;
-import static org.jruby.parser.RubyParserBase.node_assign;
-
  
-public class RubyParser extends RubyParserBase {
+ public class RubyParser extends RubyParserBase {
     public RubyParser(LexerSource source, IRubyWarnings warnings) {
-        super(warnings);
-        setLexer(new RubyLexer(this, source, warnings));
+        super(warnings); setLexer(new RubyLexer(this, source, warnings));
     }
-					// line 175 "-"
+					// line 93 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -289,7 +207,14 @@ public class RubyParser extends RubyParserBase {
   public static final int tSTRING_DVAR = 370;
   public static final int tLAMBEG = 371;
   public static final int tLABEL_END = 372;
-  public static final int tLOWEST = 373;
+  public static final int tIGNORED_NL = 373;
+  public static final int tCOMMENT = 374;
+  public static final int tEMBDOC_BEG = 375;
+  public static final int tEMBDOC = 376;
+  public static final int tEMBDOC_END = 377;
+  public static final int tHEREDOC_BEG = 378;
+  public static final int tHEREDOC_END = 379;
+  public static final int tLOWEST = 380;
   public static final int yyErrorCode = 256;
 
   /** number of final state.
@@ -989,7 +914,8 @@ public class RubyParser extends RubyParserBase {
 "'&'","->","symbol literal","string literal","backtick literal",
 "regexp literal","word list","verbatim work list","terminator","symbol list",
 "verbatim symbol list","'}'","tSTRING_DBEG","tSTRING_DVAR",
-    "tLAMBEG","tLABEL_END","tLOWEST",
+    "tLAMBEG","tLABEL_END","tIGNORED_NL","tCOMMENT","tEMBDOC_BEG",
+    "tEMBDOC","tEMBDOC_END","tHEREDOC_BEG","tHEREDOC_END","tLOWEST",
     };
 
   /** printable rules for debugging.
@@ -3714,48 +3640,39 @@ states[282] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yy
   return yyVal;
 };
 states[283] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     yyVal = GT;
   return yyVal;
 };
 states[284] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     yyVal = LT;
   return yyVal;
 };
 states[285] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[286] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[287] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
   return yyVal;
 };
 states[288] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     p.warning(ID.MISCELLANEOUS, lexer.getRubySourceline(), "comparison '" + ((ByteList)yyVals[-1+yyTop].value) + "' after comparison");
                     yyVal = p.call_bin_op(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), lexer.getRubySourceline());
   return yyVal;
 };
 states[289] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     yyVal = (LexContext) lexer.getLexContext().clone();
   return yyVal;
 };
 states[290] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     yyVal = (LexContext) lexer.getLexContext().clone();
   return yyVal;
 };
 states[291] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    /*%%%*/
                     p.value_expr(lexer, ((Node)yyVals[0+yyTop].value));
                     yyVal = p.makeNullNil(((Node)yyVals[0+yyTop].value));
   return yyVal;
@@ -5169,8 +5086,9 @@ states[542] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yy
                     /*%%%*/
                     ListNode preArgs = p.newArrayNode(((Node)yyVals[0+yyTop].value).getLine(), ((Node)yyVals[0+yyTop].value));
                     yyVal = p.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), preArgs, false, null, null);
+                    /* JRuby Changed*/
                     /*% 
-                        $$ = new_array_pattern_tail(p, rb_ary_new_from_args(1, get_value($1)), 0, 0, Qnone, &@$);
+                        $$ = p.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), p.new_array($1), false, null, null);
                     %*/
   return yyVal;
 };
@@ -5181,9 +5099,10 @@ states[543] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yy
 states[544] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), p.list_concat(((ListNode)yyVals[-1+yyTop].value), ((ListNode)yyVals[0+yyTop].value)), false, null, null);
+                    /* JRuby Changed*/
                     /*%
-			VALUE pre_args = rb_ary_concat($1, get_value($2));
-			$$ = new_array_pattern_tail(p, pre_args, 0, 0, Qnone, &@$);
+			RubyArray pre_args = $1.push($2);
+			$$ = p.new_array_pattern_tail(yyVals[yyTop - count + 1].start(), pre_args, false, null, null);
                     %*/
   return yyVal;
 };
@@ -5778,28 +5697,34 @@ states[644] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yy
                     /*% %*/
                     /*% ripper: xstring_new! %*/
                     /*%%%*/
+                    /* JRuby changed*/
                     /*%
-                        $$ = ripper_new_yylval(p, 0, $$, 0);
+                        $$ = new KeyValuePair<IRubyObject, IRubyObject>($$, null);
                     %*/
   return yyVal;
 };
 states[645] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-    /* FIXME: mri is different here.*/
+                    /* FIXME: mri is different here.*/
                     /*%%%*/
                     yyVal = p.literal_concat(((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    /* JRuby changed*/
                     /*% 
-			VALUE s1 = 1, s2 = 0, n1 = $1, n2 = $2;
-			if (ripper_is_node_yylval(n1)) {
-			    s1 = RNODE(n1)->nd_cval;
-			    n1 = RNODE(n1)->nd_rval;
+                        IRubyObject s1 = context.nil;
+                        IRubyObject s2 = null;
+                        Object n1 = $1;
+                        Object n2 = $2;
+
+			if (n1 instanceof KeyValuePair) {
+			    s1 = ((KeyValuePair) n1).getKey();
+			    n1 = ((KeyValuePair) n1).getPair();
 			}
-			if (ripper_is_node_yylval(n2)) {
-			    s2 = RNODE(n2)->nd_cval;
-			    n2 = RNODE(n2)->nd_rval;
+			if (n2 instanceof KeyValuePair) {
+			    s2 = ((KeyValuePair) n2).getKey();
+			    n2 = ((KeyValuePair) n2).getPair();
 			}
 			$$ = dispatch2(regexp_add, n1, n2);
 			if (!s1 && s2) {
-			    $$ = ripper_new_yylval(p, 0, $$, s2);
+			    $$ = new KeyValuePair<IRubyObject, IRubyObject>($$, s2);
 			}
                     %*/
   return yyVal;
@@ -5946,7 +5871,7 @@ states[673] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yy
   return yyVal;
 };
 states[674] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                     yyVal = ((Node)yyVals[0+yyTop].value);
+                     yyVal = ((ComplexNode)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[675] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6584,7 +6509,7 @@ states[776] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yy
                     /*%%%*/
                     if (((Node)yyVals[-1+yyTop].value) == null) {
                         p.yyerror("can't define single method for ().");
-                    } else if (((Node)yyVals[-1+yyTop].value) instanceof ILiteralNode) {
+                    } else if (((Node)yyVals[-1+yyTop].value) instanceof LiteralNode) {
                         p.yyerror("can't define single method for literals.");
                     }
                     p.value_expr(lexer, ((Node)yyVals[-1+yyTop].value));
@@ -6744,7 +6669,7 @@ states[817] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yy
   return yyVal;
 };
 }
-					// line 4730 "RubyParser.y"
+					// line 4654 "parse.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -6759,4 +6684,4 @@ states[817] = (RubyParser p, RubyLexer lexer, Object yyVal, ProductionState[] yy
         return getResult();
     }
 }
-					// line 14510 "-"
+					// line 14435 "-"
