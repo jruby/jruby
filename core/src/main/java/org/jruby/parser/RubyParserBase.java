@@ -36,11 +36,13 @@
 
 package org.jruby.parser;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -57,7 +59,10 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.RubyLexer;
+import org.jruby.lexer.yacc.StackState;
+import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -80,7 +85,7 @@ import static org.jruby.util.RubyStringBuilder.*;
 /** 
  *
  */
-public class RubyParserBase {
+public abstract class RubyParserBase {
     // Parser states:
     protected StaticScope currentScope;
     protected ScopedParserState scopedParserState;
@@ -481,7 +486,7 @@ public class RubyParserBase {
     }
 
     public Node call_uni_op(Node firstNode, ByteList operator) {
-        value_expr(lexer, firstNode);
+        value_expr(firstNode);
 
         return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), null, null, false);
     }
@@ -498,8 +503,8 @@ public class RubyParserBase {
     }
 
     private Node getOperatorCallNodeInner(Node firstNode, ByteList operator, Node secondNode) {
-        value_expr(lexer, firstNode);
-        value_expr(lexer, secondNode);
+        value_expr(firstNode);
+        value_expr(secondNode);
 
         return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), new ArrayNode(secondNode.getLine(), secondNode), null, false);
     }
@@ -538,7 +543,7 @@ public class RubyParserBase {
      * @return an AttrAssignNode
      */
     public Node aryset(Node receiver, Node index) {
-        value_expr(lexer, receiver);
+        value_expr(receiver);
 
         return new_attrassign(receiver.getLine(), receiver, CommonByteLists.ASET_METHOD, index, false);
     }
@@ -632,7 +637,7 @@ public class RubyParserBase {
         }
     }
 
-    public boolean value_expr(RubyLexer lexer, Node node) {
+    public boolean value_expr(Node node) {
         boolean conditional = false;
 
         while (node != null) {
@@ -649,7 +654,7 @@ public class RubyParserBase {
                     node = ((BeginNode) node).getBodyNode();
                     break;
                 case IFNODE:
-                    if (!value_expr(lexer, ((IfNode) node).getThenBody())) return false;
+                    if (!value_expr(((IfNode) node).getThenBody())) return false;
                     node = ((IfNode) node).getElseBody();
                     break;
                 case ANDNODE: case ORNODE:
@@ -997,7 +1002,7 @@ public class RubyParserBase {
     }
 
     public Node logop(Node left, ByteList op, Node right) {
-        value_expr(lexer, left);
+        value_expr(left);
 
         if (op == AMPERSAND_AMPERSAND) {
             if (left == null && right == null) return new AndNode(lexer.getRubySourceline(), makeNullNil(left), makeNullNil(right));
@@ -2018,5 +2023,116 @@ public class RubyParserBase {
 
     public void nd_set_first_loc(Node node, int line) {
         // FIXME: IMPL
+    }
+
+    /** The parse method use an lexer stream and parse it to an AST node
+     * structure
+     */
+    public RubyParserResult parse(ParserConfiguration configuration) throws IOException {
+        reset();
+        setConfiguration(configuration);
+        setResult(new RubyParserResult());
+
+        yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
+
+        return getResult();
+    }
+
+    protected abstract Object yyparse(RubyLexer lexer, Object yyDebug) throws IOException;
+
+    protected int tokline() {
+        return lexer.tokline;
+    }
+
+    protected LexContext getLexContext() {
+        return lexer.getLexContext();
+    }
+
+    protected int src_line() {
+        return lexer.getRubySourceline();
+    }
+
+    protected int getHeredocIndent() {
+        return lexer.getHeredocIndent();
+    }
+
+    protected void setHeredocIndent(int value) {
+        lexer.setHeredocIndent(value);
+    }
+
+    protected int getBraceNest() {
+        return lexer.getBraceNest();
+    }
+
+    protected void setBraceNest(int value) {
+        lexer.setBraceNest(value);
+    }
+
+    protected int getState() {
+        return lexer.getState();
+    }
+
+    protected void setState(int value) {
+        lexer.setState(value);
+    }
+
+    protected Encoding getEncoding() {
+        return lexer.getEncoding();
+    }
+
+    protected void setCommandStart(boolean value) {
+        lexer.commandStart = value;
+    }
+
+    protected ByteList getCurrentArg() {
+        return lexer.getCurrentArg();
+    }
+
+    protected void setCurrentArg(ByteList value) {
+        lexer.setCurrentArg(value);
+    }
+
+    protected StrNode createStr(ByteList buffer, int flags) {
+        return lexer.createStr(buffer, flags);
+    }
+
+    protected StackState getCmdArgumentState() {
+        return lexer.getCmdArgumentState();
+    }
+
+    protected StackState getConditionState() {
+        return lexer.getConditionState();
+    }
+
+    protected int getLeftParenBegin() {
+        return lexer.getLeftParenBegin();
+    }
+
+    protected int getParenNest() {
+        return lexer.getParenNest();
+    }
+
+    protected void setLeftParenBegin(int value) {
+        lexer.setLeftParenBegin(value);
+    }
+
+    protected String getFile() {
+        return lexer.getFile();
+    }
+
+    protected void heredoc_dedent(Node node) {
+        lexer.heredoc_dedent(node);
+    }
+
+    protected StrTerm getStrTerm() {
+        return lexer.getStrTerm();
+    }
+
+    protected void setStrTerm(StrTerm value) {
+        lexer.setStrTerm(value);
+    }
+
+    protected void setHeredocLineIndent(int indent) {
+        lexer.setHeredocLineIndent(indent);
     }
 }

@@ -131,8 +131,10 @@ import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
 import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
 import static org.jruby.lexer.LexingCommon.CARET;
+import static org.jruby.lexer.LexingCommon.DOLLAR_BANG;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.GT;
+import static org.jruby.lexer.LexingCommon.LBRACKET_RBRACKET;
 import static org.jruby.lexer.LexingCommon.LCURLY;
 import static org.jruby.lexer.LexingCommon.LT;
 import static org.jruby.lexer.LexingCommon.MINUS;
@@ -421,7 +423,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 
 %%
 program       : {
-                  lexer.setState(EXPR_BEG);
+                  p.setState(EXPR_BEG);
                   p.initTopLocalVariables();
               } top_compstmt {
                   /*%%%*/
@@ -474,7 +476,7 @@ top_stmt      : stmt
 
 begin_block   : '{' top_compstmt '}' {
                   /*%%%*/
-                  p.getResult().addBeginNode(new PreExe19Node(@1.start(), p.getCurrentScope(), $2, lexer.getRubySourceline()));
+                  p.getResult().addBeginNode(new PreExe19Node(@1.start(), p.getCurrentScope(), $2, p.src_line()));
                   //                  $$ = new BeginNode(@1.start(), p.makeNullNil($2));
                   $$ = null;
                   /*% %*/
@@ -532,7 +534,7 @@ stmt_or_begin   : stmt {
                 }
 
 stmt            : keyword_alias fitem {
-                    lexer.setState(EXPR_FNAME|EXPR_FITEM);
+                    p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     /*%%%*/
                     $$ = newAlias($1, $2, $4);
@@ -605,11 +607,11 @@ stmt            : keyword_alias fitem {
                     /*% ripper: rescue_mod!($1, $3) %*/
                 }
                 | keyword_END '{' compstmt '}' {
-                   if (lexer.getLexContext().in_def) {
+                   if (p.getLexContext().in_def) {
                        p.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
                     }
                     /*%%%*/
-                    $$ = new PostExeNode($1, $3, lexer.getRubySourceline());
+                    $$ = new PostExeNode($1, $3, p.src_line());
                     /*% %*/
                     /*% ripper: END!($3) %*/
                 }
@@ -622,7 +624,7 @@ stmt            : keyword_alias fitem {
                 }
                 | lhs '=' lex_ctxt mrhs {
                     /*%%%*/
-                    p.value_expr(lexer, $4);
+                    p.value_expr($4);
                     $$ = node_assign($1, $4);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
@@ -643,35 +645,35 @@ stmt            : keyword_alias fitem {
 
 command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $4);
+                    p.value_expr($4);
                     $$ = node_assign($1, $4);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 }
                 | var_lhs tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $4);
+                    p.value_expr($4);
                     $$ = p.new_op_assign($1, $2, $4);
                     /*% %*/
                     /*% ripper: opassign!($1, $2, $4) %*/
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $7);
+                    p.value_expr($7);
                     $$ = p.new_ary_op_assign($1, $5, $3, $7);
                     /*% %*/
                     /*% ripper: opassign!(aref_field!($1, escape_Qundef($3)), $5, $7) %*/
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $6);
+                    p.value_expr($6);
                     $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $6);
+                    p.value_expr($6);
                     $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
@@ -686,7 +688,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $6);
+                    p.value_expr($6);
                     $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, ID2VAL(idCOLON2), $3), $4, $6) %*/
@@ -746,11 +748,11 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                 }
 
 command_rhs     : command_call %prec tOP_ASGN {
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = $1;
                 }
 		| command_call modifier_rescue stmt {
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = p.newRescueModNode($1, $3);
                 }
 		| command_asgn
@@ -765,24 +767,24 @@ expr            : command_call
                     $$ = p.logop($1, OR_OR, $3);
                 }
                 | keyword_not opt_nl expr {
-                    $$ = p.call_uni_op(p.method_cond($3), lexer.BANG);
+                    $$ = p.call_uni_op(p.method_cond($3), BANG);
                 }
                 | '!' command_call {
                     $$ = p.call_uni_op(p.method_cond($2), BANG);
                 }
                 | arg tASSOC {
-                    p.value_expr(lexer, $1);
-                    lexer.setState(EXPR_BEG|EXPR_LABEL);
-                    lexer.commandStart = false;
+                    p.value_expr($1);
+                    p.setState(EXPR_BEG|EXPR_LABEL);
+                    p.setCommandStart(false);
                     // MRI 3.1 uses $2 but we want tASSOC typed?
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                 } {
                     $$ = p.push_pvtbl();
                 } p_top_expr_body {
                     p.pop_pvtbl($<Set>4);
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
                     $$ = p.newPatternCaseNode($1.getLine(), $1, p.newIn(@1.start(), $5, null, null));
@@ -790,20 +792,20 @@ expr            : command_call
                     /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
                 }
                 | arg keyword_in {
-                    p.value_expr(lexer, $1);
-                    lexer.setState(EXPR_BEG|EXPR_LABEL);
-                    lexer.commandStart = false;
-                    LexContext ctxt = lexer.getLexContext();
+                    p.value_expr($1);
+                    p.setState(EXPR_BEG|EXPR_LABEL);
+                    p.setCommandStart(false);
+                    LexContext ctxt = p.getLexContext();
                     $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                 } {
                     $$ = p.push_pvtbl();
                 } p_top_expr_body {
                     p.pop_pvtbl($<Set>4);
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode($1.getLine(), $1, p.newIn(@1.start(), $5, new TrueNode(lexer.tokline), new FalseNode(lexer.tokline)));
+                    $$ = p.newPatternCaseNode($1.getLine(), $1, p.newIn(@1.start(), $5, new TrueNode(p.tokline()), new FalseNode(p.tokline())));
                     /*% %*/
                     /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
                 }
@@ -813,12 +815,12 @@ expr            : command_call
 // [!null] - DefHolder
 def_name        : fname {
                     p.pushLocalScope();
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.symbolID($1);
                     p.numparam_name(name);
-                    $$ = new DefHolder(p.symbolID($1), lexer.getCurrentArg(), (LexContext) ctxt.clone());
+                    $$ = new DefHolder(p.symbolID($1), p.getCurrentArg(), (LexContext) ctxt.clone());
                     ctxt.in_def = true;
-                    lexer.setCurrentArg(null);
+                    p.setCurrentArg(null);
                 }
 
 // [!null] - DefHolder
@@ -829,11 +831,11 @@ defn_head       : k_def def_name {
 
 // [!null] - DefHolder
 defs_head       : k_def singleton dot_or_colon {
-                    lexer.setState(EXPR_FNAME); 
-                    LexContext ctxt = lexer.getLexContext();
+                    p.setState(EXPR_FNAME); 
+                    LexContext ctxt = p.getLexContext();
                     ctxt.in_argdef = true;
                 } def_name {
-                    lexer.setState(EXPR_ENDFN|EXPR_LABEL);
+                    p.setState(EXPR_ENDFN|EXPR_LABEL);
                     $5.line = $1;
                     $5.setSingleton($2);
                     $5.setDotOrColon($3);
@@ -841,13 +843,13 @@ defs_head       : k_def singleton dot_or_colon {
                 }
 
 expr_value      : expr {
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                 }
 
 expr_value_do   : {
-                    lexer.getConditionState().push1();
+                    p.getConditionState().push1();
                 } expr_value do {
-                    lexer.getConditionState().pop();
+                    p.getConditionState().pop();
                     $$ = $2;
                 }
 
@@ -996,13 +998,13 @@ mlhs_basic      : mlhs_head {
                 }
                 | mlhs_head tSTAR {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, new StarNode(lexer.getRubySourceline()), null);
+                    $$ = new MultipleAsgnNode($1.getLine(), $1, new StarNode(p.src_line()), null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!($1, Qnil) %*/
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, new StarNode(lexer.getRubySourceline()), $4);
+                    $$ = new MultipleAsgnNode($1.getLine(), $1, new StarNode(p.src_line()), $4);
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!($1, Qnil), $4) %*/
                 }
@@ -1020,13 +1022,13 @@ mlhs_basic      : mlhs_head {
                 }
                 | tSTAR {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode(lexer.getRubySourceline(), null, new StarNode(lexer.getRubySourceline()), null);
+                    $$ = new MultipleAsgnNode(p.src_line(), null, new StarNode(p.src_line()), null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!(mlhs_new!, Qnil) %*/
                 }
                 | tSTAR ',' mlhs_post {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode(lexer.getRubySourceline(), null, new StarNode(lexer.getRubySourceline()), $3);
+                    $$ = new MultipleAsgnNode(p.src_line(), null, new StarNode(p.src_line()), $3);
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!(mlhs_new!, Qnil), $3) %*/
                 }
@@ -1075,26 +1077,26 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | tIVAR {
                     /*%%%*/
-                   $$ = new InstAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                   $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                   $$ = new GlobalAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                   $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) p.compile_error("dynamic constant assignment");
-                    $$ = new ConstDeclNode(lexer.tokline, p.symbolID($1), null, NilImplicitNode.NIL);
+                    if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
+                    $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 } /*mri:user_variable*/
@@ -1179,7 +1181,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) p.yyerror("dynamic constant assignment");
+                    if (p.getLexContext().in_def) p.yyerror("dynamic constant assignment");
 
                     Integer position = p.getPosition($1);
 
@@ -1189,11 +1191,11 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | tCOLON3 tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) {
+                    if (p.getLexContext().in_def) {
                         p.yyerror("dynamic constant assignment");
                     }
 
-                    Integer position = lexer.tokline;
+                    Integer position = p.tokline();
 
                     $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon3(position, $2), NilImplicitNode.NIL);
                     /*% %*/
@@ -1215,27 +1217,27 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) p.compile_error("dynamic constant assignment");
+                    if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.tokline, p.symbolID($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 } /*mri:user_variable*/
@@ -1314,7 +1316,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) {
+                    if (p.getLexContext().in_def) {
                         p.yyerror("dynamic constant assignment");
                     }
 
@@ -1326,11 +1328,11 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | tCOLON3 tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) {
+                    if (p.getLexContext().in_def) {
                         p.yyerror("dynamic constant assignment");
                     }
 
-                    Integer position = lexer.tokline;
+                    Integer position = p.tokline();
 
                     $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon3(position, $2), NilImplicitNode.NIL);
                     /*% %*/
@@ -1356,13 +1358,13 @@ cname           : tIDENTIFIER {
 
 cpath           : tCOLON3 cname {
                     /*%%%*/
-                    $$ = p.new_colon3(lexer.tokline, $2);
+                    $$ = p.new_colon3(p.tokline(), $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
                 | cname {
                     /*%%%*/
-                    $$ = p.new_colon2(lexer.tokline, null, $1);
+                    $$ = p.new_colon2(p.tokline(), null, $1);
                     /*% %*/
                     /*% ripper: const_ref!($1) %*/
                 }
@@ -1384,7 +1386,7 @@ fname          : tIDENTIFIER {
                    $$ = $1;
                }
                | op {
-                   lexer.setState(EXPR_ENDFN);
+                   p.setState(EXPR_ENDFN);
                    $$ = $1;
                }
                | reswords {
@@ -1394,7 +1396,7 @@ fname          : tIDENTIFIER {
 // Node:fitem
 fitem           : fname {  // LiteralNode
                     /*%%%*/
-                    $$ =  new LiteralNode(lexer.getRubySourceline(), p.symbolID($1));
+                    $$ =  new LiteralNode(p.src_line(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: symbol_literal!($1) %*/
 
@@ -1410,7 +1412,7 @@ undef_list      : fitem {
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
                 | undef_list ',' {
-                    lexer.setState(EXPR_FNAME|EXPR_FITEM);
+                    p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     /*%%%*/
                     $$ = p.appendToBlock($1, newUndef($1.getLine(), $4));
@@ -1649,28 +1651,28 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $7);
+                    p.value_expr($7);
                     $$ = p.new_ary_op_assign($1, $5, $3, $7);
                     /*% %*/
                     /*% ripper: opassign!(aref_field!($1, escape_Qundef($3)), $5, $7) %*/
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $6);
+                    p.value_expr($6);
                     $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $6);
+                    p.value_expr($6);
                     $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    p.value_expr(lexer, $6);
+                    p.value_expr($6);
                     $$ = p.new_attr_op_assign($1, $2, $6, $3, $4);
                     /*% %*/
                     /*% ripper: opassign!(field!($1, ID2VAL(idCOLON2), $3), $4, $6) %*/
@@ -1684,7 +1686,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    Integer pos = lexer.getRubySourceline();
+                    Integer pos = p.src_line();
                     $$ = p.new_const_op_assign(pos, new Colon3Node(pos, p.symbolID($2)), $3, $5);
                     /*% %*/
                     /*% ripper: opassign!(top_const_field!($2), $3, $5) %*/
@@ -1697,8 +1699,8 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | arg tDOT2 arg {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
-                    p.value_expr(lexer, $3);
+                    p.value_expr($1);
+                    p.value_expr($3);
     
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
                     $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), p.makeNullNil($3), false, isLiteral);
@@ -1707,8 +1709,8 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | arg tDOT3 arg {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
-                    p.value_expr(lexer, $3);
+                    p.value_expr($1);
+                    p.value_expr($3);
 
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
                     $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), p.makeNullNil($3), true, isLiteral);
@@ -1717,7 +1719,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | arg tDOT2 {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
 
                     boolean isLiteral = $1 instanceof FixnumNode;
                     $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
@@ -1726,7 +1728,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | arg tDOT3 {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
 
                     boolean isLiteral = $1 instanceof FixnumNode;
                     $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
@@ -1735,7 +1737,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | tBDOT2 arg {
                     /*%%%*/
-                    p.value_expr(lexer, $2);
+                    p.value_expr($2);
                     boolean isLiteral = $2 instanceof FixnumNode;
                     $$ = new DotNode(@1.start(), NilImplicitNode.NIL, p.makeNullNil($2), false, isLiteral);
                     /*% %*/
@@ -1743,32 +1745,32 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | tBDOT3 arg {
                     /*%%%*/
-                    p.value_expr(lexer, $2);
+                    p.value_expr($2);
                     boolean isLiteral = $2 instanceof FixnumNode;
                     $$ = new DotNode(@1.start(), NilImplicitNode.NIL, p.makeNullNil($2), true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!(Qnil, $2) %*/
                 }
                 | arg '+' arg {
-                    $$ = p.call_bin_op($1, PLUS, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, PLUS, $3, p.src_line());
                 }
                 | arg '-' arg {
-                    $$ = p.call_bin_op($1, MINUS, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, MINUS, $3, p.src_line());
                 }
                 | arg '*' arg {
-                    $$ = p.call_bin_op($1, STAR, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, STAR, $3, p.src_line());
                 }
                 | arg '/' arg {
-                    $$ = p.call_bin_op($1, SLASH, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, SLASH, $3, p.src_line());
                 }
                 | arg '%' arg {
-                    $$ = p.call_bin_op($1, PERCENT, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, PERCENT, $3, p.src_line());
                 }
                 | arg tPOW arg {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
                 | tUMINUS_NUM simple_numeric tPOW arg {
-                    $$ = p.call_uni_op(p.call_bin_op($2, $3, $4, lexer.getRubySourceline()), $1);
+                    $$ = p.call_uni_op(p.call_bin_op($2, $3, $4, p.src_line()), $1);
                 }
                 | tUPLUS arg {
                     $$ = p.call_uni_op($2, $1);
@@ -1777,34 +1779,34 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.call_uni_op($2, $1);
                 }
                 | arg '|' arg {
-                    $$ = p.call_bin_op($1, OR, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, OR, $3, p.src_line());
                 }
                 | arg '^' arg {
-                    $$ = p.call_bin_op($1, CARET, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, CARET, $3, p.src_line());
                 }
                 | arg '&' arg {
-                    $$ = p.call_bin_op($1, AMPERSAND, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, AMPERSAND, $3, p.src_line());
                 }
                 | arg tCMP arg {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
                 | rel_expr   %prec tCMP {
                     $$ = $1;
                 }
                 | arg tEQ arg {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
                 | arg tEQQ arg {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
                 | arg tNEQ arg {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
                 | arg tMATCH arg {
                     $$ = p.match_op($1, $3);
                 }
                 | arg tNMATCH arg {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
                 | '!' arg {
                     $$ = p.call_uni_op(p.method_cond($2), BANG);
@@ -1813,10 +1815,10 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.call_uni_op($2, TILDE);
                 }
                 | arg tLSHFT arg {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
                 | arg tRSHFT arg {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
                 | arg tANDOP arg {
                     $$ = p.logop($1, $2, $3);
@@ -1825,14 +1827,14 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.logop($1, $2, $3);
                 }
                 | keyword_defined opt_nl {
-                    lexer.getLexContext().in_defined = true;
+                    p.getLexContext().in_defined = true;
                 } arg {
-                    lexer.getLexContext().in_defined = false;                    
+                    p.getLexContext().in_defined = false;                    
                     $$ = p.new_defined($1, $4);
                 }
                 | arg '?' arg opt_nl ':' arg {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = p.new_if(p.getPosition($1), p.cond($1), $3, $6);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
@@ -1904,22 +1906,22 @@ relop           : '>' {
                 }
 
 rel_expr        : arg relop arg   %prec '>' {
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
 		| rel_expr relop arg   %prec '>' {
-                    p.warning(ID.MISCELLANEOUS, lexer.getRubySourceline(), "comparison '" + $2 + "' after comparison");
-                    $$ = p.call_bin_op($1, $2, $3, lexer.getRubySourceline());
+                    p.warning(ID.MISCELLANEOUS, p.src_line(), "comparison '" + $2 + "' after comparison");
+                    $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
 
 lex_ctxt        : tSP {
-                    $$ = (LexContext) lexer.getLexContext().clone();
+                    $$ = (LexContext) p.getLexContext().clone();
                 }
                 | none {
-                    $$ = (LexContext) lexer.getLexContext().clone();
+                    $$ = (LexContext) p.getLexContext().clone();
                 }
  
 arg_value       : arg {
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = p.makeNullNil($1);
                 }
 
@@ -1941,12 +1943,12 @@ aref_args       : none
                 }
 
 arg_rhs         : arg %prec tOP_ASGN {
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = $1;
                 }
                 | arg modifier_rescue arg {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = p.newRescueModNode($1, $3);
                     /*% %*/
                     /*% ripper: rescue_mod!($1, $3) %*/
@@ -2003,7 +2005,7 @@ opt_call_args   : none
 // [!null] - ArgsCatNode, SplatNode, ArrayNode, HashNode, BlockPassNode
 call_args       : command {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = p.newArrayNode(p.getPosition($1), $1);
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
@@ -2039,12 +2041,12 @@ command_args    :  {
                     case '(': case tLPAREN: case tLPAREN_ARG: case '[': case tLBRACK:
                        lookahead = true;
                     }
-                    StackState cmdarg = lexer.getCmdArgumentState();
+                    StackState cmdarg = p.getCmdArgumentState();
                     if (lookahead) cmdarg.pop();
                     cmdarg.push1();
                     if (lookahead) cmdarg.push0();
                 } call_args {
-                    StackState cmdarg = lexer.getCmdArgumentState();
+                    StackState cmdarg = p.getCmdArgumentState();
                     boolean lookahead = false;
                     switch (yychar) {
                     case tLBRACE_ARG:
@@ -2066,7 +2068,7 @@ block_arg       : tAMPER arg_value {
                 | tAMPER {
                     /*%%%*/
                     if (!p.local_id(FWD_BLOCK)) p.compile_error("no anonymous block parameter");
-                    $$ = new BlockPassNode(lexer.tokline, p.arg_var(FWD_BLOCK));
+                    $$ = new BlockPassNode(p.tokline(), p.arg_var(FWD_BLOCK));
                     /*%
                     $$ = Qnil;
                     %*/
@@ -2081,7 +2083,7 @@ opt_block_arg   : ',' block_arg {
 // [!null]
 args            : arg_value { // ArrayNode
                     /*%%%*/
-                    int line = $1 instanceof NilImplicitNode ? lexer.getRubySourceline() : $1.getLine();
+                    int line = $1 instanceof NilImplicitNode ? p.src_line() : $1.getLine();
                     $$ = p.newArrayNode(line, $1);
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
@@ -2185,16 +2187,16 @@ primary         : literal
                     /*% ripper: method_add_arg!(fcall!($1), args_new!) %*/
                 }
                 | k_begin {
-                    lexer.getCmdArgumentState().push0();
+                    p.getCmdArgumentState().push0();
                 } bodystmt k_end {
-                    lexer.getCmdArgumentState().pop();
+                    p.getCmdArgumentState().pop();
                     /*%%%*/
                     $$ = new BeginNode($1, p.makeNullNil($3));
                     /*% %*/
                     /*% ripper: begin!($3) %*/
                 }
                 | tLPAREN_ARG {
-                    lexer.setState(EXPR_ENDARG);
+                    p.setState(EXPR_ENDARG);
                 } rparen {
                     /*%%%*/
                     $$ = null; //FIXME: Should be implicit nil?
@@ -2202,7 +2204,7 @@ primary         : literal
                     /*% ripper: paren!(0) %*/
                 }
                 | tLPAREN_ARG stmt {
-                    lexer.setState(EXPR_ENDARG); 
+                    p.setState(EXPR_ENDARG); 
                 } rparen {
                     /*%%%*/
                     $$ = $2;
@@ -2229,7 +2231,7 @@ primary         : literal
                 }
                 | tCOLON3 tCONSTANT {
                     /*%%%*/
-                    $$ = p.new_colon3(lexer.tokline, $2);
+                    $$ = p.new_colon3(p.tokline(), $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
@@ -2276,16 +2278,16 @@ primary         : literal
                     /*% ripper: yield0! %*/
                 }
                 | keyword_defined opt_nl '(' {
-                    lexer.getLexContext().in_defined = true;
+                    p.getLexContext().in_defined = true;
                 } expr rparen {
-                    lexer.getLexContext().in_defined = false;
+                    p.getLexContext().in_defined = false;
                     $$ = new DefinedNode($1, $5);
                 }
                 | keyword_not '(' expr rparen {
-                    $$ = p.call_uni_op(p.method_cond($3), lexer.BANG);
+                    $$ = p.call_uni_op(p.method_cond($3), BANG);
                 }
                 | keyword_not '(' rparen {
-                    $$ = p.call_uni_op(p.method_cond(NilImplicitNode.NIL), lexer.BANG);
+                    $$ = p.call_uni_op(p.method_cond(NilImplicitNode.NIL), BANG);
                 }
                 | fcall brace_block {
                     /*%%%*/
@@ -2299,7 +2301,7 @@ primary         : literal
                     /*%%%*/
                     if ($1 != null && 
                           $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                          lexer.compile_error("Both block arg and actual block given.");
+                          p.compile_error("Both block arg and actual block given.");
                     }
                     $$ = $<BlockAcceptingNode>1.setIterNode($2);
                     $<Node>$.setLine($1.getLine());
@@ -2365,7 +2367,7 @@ primary         : literal
                     /*% ripper: for!($2, $4, $5) %*/
                 }
                 | k_class cpath superclass {
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     if (ctxt.in_def) {
                         p.yyerror("class definition in method body");
                     }
@@ -2375,16 +2377,16 @@ primary         : literal
                     /*%%%*/
                     Node body = p.makeNullNil($5);
 
-                    $$ = new ClassNode(@1.start(), $<Colon3Node>2, p.getCurrentScope(), body, $3, lexer.getRubySourceline());
+                    $$ = new ClassNode(@1.start(), $<Colon3Node>2, p.getCurrentScope(), body, $3, p.src_line());
                     /*% %*/
                     /*% ripper: class!($2, $3, $5) %*/
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     p.popCurrentScope();
                     ctxt.in_class = $1.in_class;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | k_class tLSHFT expr {
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     ctxt.in_def = false;
                     ctxt.in_class = false;
                     p.pushLocalScope();
@@ -2392,17 +2394,17 @@ primary         : literal
                     /*%%%*/
                     Node body = p.makeNullNil($6);
 
-                    $$ = new SClassNode(@1.start(), $3, p.getCurrentScope(), body, lexer.getRubySourceline());
+                    $$ = new SClassNode(@1.start(), $3, p.getCurrentScope(), body, p.src_line());
                     /*% %*/
                     /*% ripper: sclass!($3, $6) %*/
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     ctxt.in_def = $1.in_def;
                     ctxt.in_class = $1.in_class;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                     p.popCurrentScope();
                 }
                 | k_module cpath {
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     if (ctxt.in_def) { 
                         p.yyerror("module definition in method body");
                     }
@@ -2412,11 +2414,11 @@ primary         : literal
                     /*%%%*/
                     Node body = p.makeNullNil($4);
 
-                    $$ = new ModuleNode(@1.start(), $<Colon3Node>2, p.getCurrentScope(), body, lexer.getRubySourceline());
+                    $$ = new ModuleNode(@1.start(), $<Colon3Node>2, p.getCurrentScope(), body, p.src_line());
                     /*% %*/
                     /*% ripper: module!($2, $4) %*/
                     p.popCurrentScope();
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     ctxt.in_class = $1.in_class;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
@@ -2469,7 +2471,7 @@ primary         : literal
                 }
 
 primary_value   : primary {
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = $1;
                     if ($$ == null) $$ = NilImplicitNode.NIL;
                 }
@@ -2504,16 +2506,16 @@ k_for           : keyword_for {
                 }
  
 k_class         : keyword_class {
-                    $$ = (LexContext) lexer.getLexContext().clone();
+                    $$ = (LexContext) p.getLexContext().clone();
                 }
 
 k_module        : keyword_module {
-                    $$ = (LexContext) lexer.getLexContext().clone();  
+                    $$ = (LexContext) p.getLexContext().clone();  
                 }
 
 k_def           : keyword_def {
                     $$ = $1;
-                    lexer.getLexContext().in_argdef = true;
+                    p.getLexContext().in_argdef = true;
                 }
 
 k_do            : keyword_do {
@@ -2549,9 +2551,9 @@ k_end           : keyword_end {
                 }
 
 k_return        : keyword_return {
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     if (ctxt.in_class && !ctxt.in_def && !p.getCurrentScope().isBlockScope()) {
-                        lexer.compile_error("Invalid return in class/module body");
+                        p.compile_error("Invalid return in class/module body");
                     }
                     $$ = $1;
                 }
@@ -2631,13 +2633,13 @@ f_margs         : f_marg_list {
                 }
                 | f_rest_marg {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode(lexer.getRubySourceline(), null, $1, null);
+                    $$ = new MultipleAsgnNode(p.src_line(), null, $1, null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!(mlhs_new!, $1) %*/
                 }
                 | f_rest_marg ',' f_marg_list {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode(lexer.getRubySourceline(), null, $1, $3);
+                    $$ = new MultipleAsgnNode(p.src_line(), null, $1, $3);
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!(mlhs_new!, $1), $3) %*/
                 }
@@ -2650,7 +2652,7 @@ f_rest_marg     : tSTAR f_norm_arg {
                 }
                 | tSTAR {
                     /*%%%*/
-                    $$ = new StarNode(lexer.getRubySourceline());
+                    $$ = new StarNode(p.src_line());
                     /*% %*/
                     /*% ripper: Qnil %*/
                 }
@@ -2661,7 +2663,7 @@ f_any_kwrest    : f_kwrest
                 }
 
 f_eq            : {
-                    lexer.getLexContext().in_argdef = false;
+                    p.getLexContext().in_argdef = false;
                 } '='
 
  
@@ -2672,7 +2674,7 @@ block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
                     $$ = p.new_args_tail($1.getLine(), $1, (ByteList) null, $2);
                 }
                 | f_any_kwrest opt_f_block_arg {
-                    $$ = p.new_args_tail(lexer.getRubySourceline(), null, $1, $2);
+                    $$ = p.new_args_tail(p.src_line(), null, $1, $2);
                 }
                 | f_block_arg {
                     $$ = p.new_args_tail($1.getLine(), null, (ByteList) null, $1);
@@ -2682,7 +2684,7 @@ opt_block_args_tail : ',' block_args_tail {
                     $$ = $2;
                 }
                 | {
-                    $$ = p.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null);
+                    $$ = p.new_args_tail(p.src_line(), null, (ByteList) null, null);
                 }
 
 excessed_comma  : ',' { // no need for this other than to look similar to MRI. 
@@ -2741,26 +2743,26 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
                 }
 
 opt_block_param : none {
-                    $$ = p.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
+                    $$ = p.new_args(p.src_line(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | block_param_def {
-                    lexer.commandStart = true;
+                    p.setCommandStart(true);
                     $$ = $1;
                 }
 
 block_param_def : '|' opt_bv_decl '|' {
-                    lexer.setCurrentArg(null);
+                    p.setCurrentArg(null);
                     p.ordinalMaxNumParam();
-                    lexer.getLexContext().in_argdef = false;
+                    p.getLexContext().in_argdef = false;
                     /*%%%*/
-                    $$ = p.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
+                    $$ = p.new_args(p.src_line(), null, null, null, null, (ArgsTailHolder) null);
                     /*% %*/
                     /*% ripper: block_var!(params!(Qnil,Qnil,Qnil,Qnil,Qnil,Qnil,Qnil), escape_Qundef($2)) %*/
                 }
                 | '|' block_param opt_bv_decl '|' {
-                    lexer.setCurrentArg(null);
+                    p.setCurrentArg(null);
                     p.ordinalMaxNumParam();
-                    lexer.getLexContext().in_argdef = false;
+                    p.getLexContext().in_argdef = false;
                     /*%%%*/
                     $$ = $2;
                     /*% %*/
@@ -2798,29 +2800,29 @@ bvar            : tIDENTIFIER {
 
 lambda          : tLAMBDA {
                     p.pushBlockScope();
-                    $$ = lexer.getLeftParenBegin();
-                    lexer.setLeftParenBegin(lexer.getParenNest());
+                    $$ = p.getLeftParenBegin();
+                    p.setLeftParenBegin(p.getParenNest());
                 } {
                     $$ = p.resetMaxNumParam();
                 } {
                     $$ = p.numparam_push();
                 } f_larglist {
-                    lexer.getCmdArgumentState().push0();
+                    p.getCmdArgumentState().push0();
                 } lambda_body {
                     int max_numparam = p.restoreMaxNumParam($<Integer>3);
                     ArgsNode args = p.args_with_numbered($5, max_numparam);
-                    lexer.getCmdArgumentState().pop();
+                    p.getCmdArgumentState().pop();
                     /*%%%*/
-                    $$ = new LambdaNode(@1.start(), args, $7, p.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new LambdaNode(@1.start(), args, $7, p.getCurrentScope(), p.src_line());
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
-                    lexer.setLeftParenBegin($<Integer>2);
+                    p.setLeftParenBegin($<Integer>2);
                     p.numparam_pop($<Node>4);
                     p.popCurrentScope();
                 }
 
 f_larglist      : '(' f_args opt_bv_decl ')' {
-                    lexer.getLexContext().in_argdef = false;
+                    p.getLexContext().in_argdef = false;
                     /*%%%*/
                     $$ = $2;
                     p.ordinalMaxNumParam();
@@ -2828,7 +2830,7 @@ f_larglist      : '(' f_args opt_bv_decl ')' {
                     /*% ripper: paren!($2) %*/
                 }
                 | f_args {
-                    lexer.getLexContext().in_argdef = false;
+                    p.getLexContext().in_argdef = false;
                     /*%%%*/
                     if (!p.isArgsInfoEmpty($1)) {
                         p.ordinalMaxNumParam();
@@ -2858,10 +2860,10 @@ block_call      : command do_block {
                     // Workaround for JRUBY-2326 (MRI does not enter this production for some reason)
                     /*%%%*/
                     if ($1 instanceof YieldNode) {
-                        lexer.compile_error("block given to yield");
+                        p.compile_error("block given to yield");
                     }
                     if ($1 instanceof BlockAcceptingNode && $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        lexer.compile_error("Both block arg and actual block given.");
+                        p.compile_error("Both block arg and actual block given.");
                     }
                     if ($1 instanceof NonLocalControlFlowNode) {
                         ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);
@@ -2945,10 +2947,10 @@ method_call     : fcall paren_args {
                 | primary_value '[' opt_call_args rbracket {
                     /*%%%*/
                     if ($1 instanceof SelfNode) {
-                        $$ = p.new_fcall(LexingCommon.LBRACKET_RBRACKET);
+                        $$ = p.new_fcall(LBRACKET_RBRACKET);
                         p.frobnicate_fcall_args($<FCallNode>$, $3, null);
                     } else {
-                        $$ = p.new_call($1, lexer.LBRACKET_RBRACKET, $3, null);
+                        $$ = p.new_call($1, LBRACKET_RBRACKET, $3, null);
                     }
                     /*% %*/
                     /*% ripper: aref!($1, escape_Qundef($3)) %*/
@@ -2977,7 +2979,7 @@ brace_body      : {
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
                     ArgsNode args = p.args_with_numbered($4, max_numparam);
                     /*%%%*/
-                    $$ = new IterNode(@1.start(), args, $5, p.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new IterNode(@1.start(), args, $5, p.getCurrentScope(), p.src_line());
                     /*% %*/
                     /*% ripper: brace_block!(escape_Qundef($4), $5) %*/
                     p.numparam_pop($<Node>3);
@@ -2990,15 +2992,15 @@ do_body 	: {
                     $$ = p.resetMaxNumParam();
                 } {
                     $$ = p.numparam_push();
-                    lexer.getCmdArgumentState().push0();
+                    p.getCmdArgumentState().push0();
                 } opt_block_param bodystmt {
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
                     ArgsNode args = p.args_with_numbered($4, max_numparam);
                     /*%%%*/
-                    $$ = new IterNode(@1.start(), args, $5, p.getCurrentScope(), lexer.getRubySourceline());
+                    $$ = new IterNode(@1.start(), args, $5, p.getCurrentScope(), p.src_line());
                     /*% %*/
                     /*% ripper: do_block!(escape_Qundef($4), $5) %*/
-                    lexer.getCmdArgumentState().pop();
+                    p.getCmdArgumentState().pop();
                     p.numparam_pop($<Node>3);
                     p.popCurrentScope();
                 }
@@ -3042,9 +3044,9 @@ cases           : opt_else
 
 // InNode - [!null]
 p_case_body     : keyword_in {
-                    lexer.setState(EXPR_BEG|EXPR_LABEL);
-                    lexer.commandStart = false;
-                    LexContext ctxt = (LexContext) lexer.getLexContext();
+                    p.setState(EXPR_BEG|EXPR_LABEL);
+                    p.setCommandStart(false);
+                    LexContext ctxt = (LexContext) p.getLexContext();
                     $1 = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                     $$ = p.push_pvtbl();
@@ -3053,7 +3055,7 @@ p_case_body     : keyword_in {
                 } p_top_expr then {
                     p.pop_pktbl($<Set>3);
                     p.pop_pvtbl($<Set>2);
-                    lexer.getLexContext().in_kwarg = $<Boolean>1;
+                    p.getLexContext().in_kwarg = $<Boolean>1;
                 } compstmt p_cases {
                     /*%%%*/
                     $$ = p.newIn(@1.start(), $4, $7, $8);
@@ -3193,12 +3195,12 @@ p_expr_basic    : p_value
                 }
                 | tLBRACE {
                     $$ = p.push_pktbl();
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     $1 = ctxt.in_kwarg;
                     ctxt.in_kwarg = false;
                 } p_kwargs rbrace {
                     p.pop_pktbl($<Set>2);
-                    lexer.getLexContext().in_kwarg = $<Boolean>1;
+                    p.getLexContext().in_kwarg = $<Boolean>1;
                     $$ = p.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
@@ -3353,19 +3355,10 @@ p_kw            : p_kw_label p_expr {
 // ByteList
 p_kw_label      : tLABEL
                 | tSTRING_BEG string_contents tLABEL_END {
-                    /*%%%*/
                     if ($2 == null || $2 instanceof StrNode) {
                         $$ = $<StrNode>2.getValue();
                     }
-		    /*%
-			if (ripper_is_node_yylval($2) && RNODE($2)->nd_cval) {
-			    VALUE label = RNODE($2)->nd_cval;
-			    VALUE rval = RNODE($2)->nd_rval;
-			    $$ = ripper_new_yylval(p, rb_intern_str(label), rval, label);
-			    RNODE($$)->nd_loc = loc;
-			}
-		    %*/
-
+                    // JRuby changed (removed)
                     else {
                         p.yyerror("symbol literal with interpolation is not allowed");
                         $$ = null;
@@ -3383,7 +3376,9 @@ p_kwnorest      : kwrest_mark keyword_nil {
                     $$ = null;
                 }
 
-p_any_kwrest    : p_kwrest
+p_any_kwrest    : p_kwrest {
+                    $$ = $1;
+                }
                 | p_kwnorest {
                     $$ = p.KWNOREST;
                 }
@@ -3391,8 +3386,8 @@ p_any_kwrest    : p_kwrest
 p_value         : p_primitive
                 | p_primitive tDOT2 p_primitive {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
-                    p.value_expr(lexer, $3);
+                    p.value_expr($1);
+                    p.value_expr($3);
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
                     $$ = new DotNode(@1.start(), p.makeNullNil($1), p.makeNullNil($3), false, isLiteral);
                     /*% %*/
@@ -3400,8 +3395,8 @@ p_value         : p_primitive
                 }
                 | p_primitive tDOT3 p_primitive {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
-                    p.value_expr(lexer, $3);
+                    p.value_expr($1);
+                    p.value_expr($3);
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
                     $$ = new DotNode(@1.start(), p.makeNullNil($1), p.makeNullNil($3), true, isLiteral);
                     /*% %*/
@@ -3409,7 +3404,7 @@ p_value         : p_primitive
                 }
                 | p_primitive tDOT2 {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     boolean isLiteral = $1 instanceof FixnumNode;
                     $$ = new DotNode(@1.start(), p.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
                     /*% %*/
@@ -3417,7 +3412,7 @@ p_value         : p_primitive
                 }
                 | p_primitive tDOT3 {
                     /*%%%*/
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     boolean isLiteral = $1 instanceof FixnumNode;
                     $$ = new DotNode(@1.start(), p.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
                     /*% %*/
@@ -3428,7 +3423,7 @@ p_value         : p_primitive
                 | p_const
                 | tBDOT2 p_primitive {
                     /*%%%*/
-                    p.value_expr(lexer, $2);
+                    p.value_expr($2);
                     boolean isLiteral = $2 instanceof FixnumNode;
                     $$ = new DotNode(@1.start(), NilImplicitNode.NIL, p.makeNullNil($2), false, isLiteral);
                     /*% %*/
@@ -3436,7 +3431,7 @@ p_value         : p_primitive
                 }
                 | tBDOT3 p_primitive {
                     /*%%%*/
-                    p.value_expr(lexer, $2);
+                    p.value_expr($2);
                     boolean isLiteral = $2 instanceof FixnumNode;
                     $$ = new DotNode(@1.start(), NilImplicitNode.NIL, p.makeNullNil($2), true, isLiteral);
                     /*% %*/
@@ -3461,44 +3456,44 @@ p_primitive     : literal
                 } 
                 | /*mri:keyword_variable*/ keyword_nil {
                     /*%%%*/
-                    $$ = new NilNode(lexer.tokline);
+                    $$ = new NilNode(p.tokline());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_self {
                     /*%%%*/
-                    $$ = new SelfNode(lexer.tokline);
+                    $$ = new SelfNode(p.tokline());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_true { 
                     /*%%%*/
-                    $$ = new TrueNode(lexer.tokline);
+                    $$ = new TrueNode(p.tokline());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_false {
                     /*%%%*/
-                    $$ = new FalseNode(lexer.tokline);
+                    $$ = new FalseNode(p.tokline());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
-                    $$ = new FileNode(lexer.tokline, new ByteList(lexer.getFile().getBytes(),
+                    $$ = new FileNode(p.tokline(), new ByteList(p.getFile().getBytes(),
                     p.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
-                    $$ = new FixnumNode(lexer.tokline, lexer.tokline+1);
+                    $$ = new FixnumNode(p.tokline(), p.tokline()+1);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
-                    $$ = new EncodingNode(lexer.tokline, lexer.getEncoding());
+                    $$ = new EncodingNode(p.tokline(), p.getEncoding());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 } /*mri:keyword_variable*/
@@ -3527,33 +3522,33 @@ p_var_ref       : '^' tIDENTIFIER {
                 | '^' nonlocal_var {
                     /*%%%*/
                     $$ = p.gettable($2);
-                    if ($$ == null) $$ = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
+                    if ($$ == null) $$ = new BeginNode(p.tokline(), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: var_ref!($2) %*/
                 }
 
 p_expr_ref      : '^' tLPAREN expr_value ')' {
                     /*%%%*/
-                    $$ = new BeginNode(lexer.tokline, $3);
+                    $$ = new BeginNode(p.tokline(), $3);
                     /*% %*/
                     /*% ripper: begin!($3) %*/
                 }
 
 p_const         : tCOLON3 cname {
                     /*%%%*/
-                    $$ = p.new_colon3(lexer.tokline, $2);
+                    $$ = p.new_colon3(p.tokline(), $2);
                     /*% %*/
                     /*% ripper: top_const_ref!($2) %*/
                 }
                 | p_const tCOLON2 cname {
                     /*%%%*/
-                    $$ = p.new_colon2(lexer.tokline, $1, $3);
+                    $$ = p.new_colon2(p.tokline(), $1, $3);
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    $$ = new ConstNode(lexer.tokline, p.symbolID($1));
+                    $$ = new ConstNode(p.tokline(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -3562,7 +3557,7 @@ opt_rescue      : k_rescue exc_list exc_var then compstmt opt_rescue {
                     /*%%%*/
                     Node node;
                     if ($3 != null) {
-                        node = p.appendToBlock(node_assign($3, new GlobalVarNode($1, p.symbolID(lexer.DOLLAR_BANG))), $5);
+                        node = p.appendToBlock(node_assign($3, new GlobalVarNode($1, p.symbolID(DOLLAR_BANG))), $5);
                         if ($5 != null) {
                             node.setLine($1);
                         }
@@ -3616,7 +3611,7 @@ literal         : numeric {
 
 strings         : string {
                     /*%%%*/
-                    $$ = $1 instanceof EvStrNode ? new DStrNode($1.getLine(), lexer.getEncoding()).add($1) : $1;
+                    $$ = $1 instanceof EvStrNode ? new DStrNode($1.getLine(), p.getEncoding()).add($1) : $1;
                     /*% %*/
                     /*% ripper: $1 %*/
                 }
@@ -3637,8 +3632,8 @@ string          : tCHAR {
 
 string1         : tSTRING_BEG string_contents tSTRING_END {
                     /*%%%*/
-                    lexer.heredoc_dedent($2);
-		    lexer.setHeredocIndent(0);
+                    p.heredoc_dedent($2);
+		    p.setHeredocIndent(0);
                     $$ = $2;
                     /*% %*/
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
@@ -3648,8 +3643,8 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     /*%%%*/
                     int line = p.getPosition($2);
 
-                    lexer.heredoc_dedent($2);
-		    lexer.setHeredocIndent(0);
+                    p.heredoc_dedent($2);
+		    p.setHeredocIndent(0);
 
                     if ($2 == null) {
                         $$ = new XStrNode(line, null, StringSupport.CR_7BIT);
@@ -3681,13 +3676,13 @@ words           : tWORDS_BEG ' ' word_list tSTRING_END {
 // [!null] - ListNode
 word_list       : /* none */ {
                     /*%%%*/
-                     $$ = new ArrayNode(lexer.getRubySourceline());
+                     $$ = new ArrayNode(p.src_line());
                     /*% %*/
                     /*% ripper: words_new! %*/
                 }
                 | word_list word ' ' {
                     /*%%%*/
-                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode($1.getLine(), lexer.getEncoding()).add($2) : $2);
+                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode($1.getLine(), p.getEncoding()).add($2) : $2);
                     /*% %*/
                     /*% ripper: words_add!($1, $2) %*/
                 }
@@ -3713,7 +3708,7 @@ symbols         : tSYMBOLS_BEG ' ' symbol_list tSTRING_END {
 
 symbol_list     : /* none */ {
                     /*%%%*/
-                    $$ = new ArrayNode(lexer.getRubySourceline());
+                    $$ = new ArrayNode(p.src_line());
                     /*% %*/
                     /*% ripper: symbols_new! %*/
                 }
@@ -3744,7 +3739,7 @@ qsymbols        : tQSYMBOLS_BEG ' ' qsym_list tSTRING_END {
 // [!null] - ListNode
 qword_list      : /* none */ {
                     /*%%%*/
-                    $$ = new ArrayNode(lexer.getRubySourceline());
+                    $$ = new ArrayNode(p.src_line());
                     /*% %*/
                     /*% ripper: qwords_new! %*/
                 }
@@ -3758,7 +3753,7 @@ qword_list      : /* none */ {
 // [!null] - ListNode
 qsym_list      : /* none */ {
                     /*%%%*/
-                    $$ = new ArrayNode(lexer.getRubySourceline());
+                    $$ = new ArrayNode(p.src_line());
                     /*% %*/
                     /*% ripper: qsymbols_new! %*/
                 }
@@ -3773,8 +3768,8 @@ qsym_list      : /* none */ {
    vs their ripper_new_yyval code. */
 string_contents : /* none */ {
                     ByteList aChar = ByteList.create("");
-                    aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStr(aChar, 0);
+                    aChar.setEncoding(p.getEncoding());
+                    $$ = p.createStr(aChar, 0);
                     /*% ripper: string_content! %*/
                 }
                 | string_contents string_content {
@@ -3782,22 +3777,14 @@ string_contents : /* none */ {
                     $$ = p.literal_concat($1, $<Node>2);
                     /*% %*/
                     /*% ripper: string_add!($1, $2) %*/
-                    /*%%%*/
-                    /*% 
-			if (ripper_is_node_yylval($1) && ripper_is_node_yylval($2) &&
-			    !RNODE($1)->nd_cval) {
-			    RNODE($1)->nd_cval = RNODE($2)->nd_cval;
-			    RNODE($1)->nd_rval = add_mark_object(p, $$);
-			    $$ = $1;
-			}
-                    %*/
+                    // JRuby changed (removed)
                 }
 
 xstring_contents: /* none */ {
                     /*%%%*/
                     ByteList aChar = ByteList.create("");
-                    aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStr(aChar, 0);
+                    aChar.setEncoding(p.getEncoding());
+                    $$ = p.createStr(aChar, 0);
                     /*% %*/
                     /*% ripper: xstring_new! %*/
                 }
@@ -3838,7 +3825,7 @@ regexp_contents: /* none */ {
 			    s2 = ((KeyValuePair) n2).getKey();
 			    n2 = ((KeyValuePair) n2).getPair();
 			}
-			$$ = dispatch2(regexp_add, n1, n2);
+			$$ = dispatch("on_regexp_add", n1, n2);
 			if (!s1 && s2) {
 			    $$ = new KeyValuePair<IRubyObject, IRubyObject>($$, s2);
 			}
@@ -3852,38 +3839,38 @@ string_content  : tSTRING_CONTENT {
                     $$ = $1;
                 }
                 | tSTRING_DVAR {
-                    $$ = lexer.getStrTerm();
-                    lexer.setStrTerm(null);
-                    lexer.setState(EXPR_BEG);
+                    $$ = p.getStrTerm();
+                    p.setStrTerm(null);
+                    p.setState(EXPR_BEG);
                 } string_dvar {
                     /*%%%*/
-                    lexer.setStrTerm($<StrTerm>2);
+                    p.setStrTerm($<StrTerm>2);
                     $$ = new EvStrNode(p.getPosition($3), $3);
                     /*% %*/
                     /*% ripper: string_dvar!($3) %*/
                 }
                 | tSTRING_DBEG {
-                   $$ = lexer.getStrTerm();
-                   lexer.setStrTerm(null);
-                   lexer.getConditionState().push0();
-                   lexer.getCmdArgumentState().push0();
+                   $$ = p.getStrTerm();
+                   p.setStrTerm(null);
+                   p.getConditionState().push0();
+                   p.getCmdArgumentState().push0();
                 } {
-                   $$ = lexer.getState();
-                   lexer.setState(EXPR_BEG);
+                   $$ = p.getState();
+                   p.setState(EXPR_BEG);
                 } {
-                   $$ = lexer.getBraceNest();
-                   lexer.setBraceNest(0);
+                   $$ = p.getBraceNest();
+                   p.setBraceNest(0);
                 } {
-                   $$ = lexer.getHeredocIndent();
-                   lexer.setHeredocIndent(0);
+                   $$ = p.getHeredocIndent();
+                   p.setHeredocIndent(0);
                 } compstmt tSTRING_DEND {
-                   lexer.getConditionState().pop();
-                   lexer.getCmdArgumentState().pop();
-                   lexer.setStrTerm($<StrTerm>2);
-                   lexer.setState($<Integer>3);
-                   lexer.setBraceNest($<Integer>4);
-                   lexer.setHeredocIndent($<Integer>5);
-                   lexer.setHeredocLineIndent(-1);
+                   p.getConditionState().pop();
+                   p.getCmdArgumentState().pop();
+                   p.setStrTerm($<StrTerm>2);
+                   p.setState($<Integer>3);
+                   p.setBraceNest($<Integer>4);
+                   p.setHeredocIndent($<Integer>5);
+                   p.setHeredocLineIndent(-1);
 
                    /*%%%*/
                    if ($6 != null) $6.unsetNewline();
@@ -3894,19 +3881,19 @@ string_content  : tSTRING_CONTENT {
 
 string_dvar     : tGVAR {
                     /*%%%*/
-                    $$ = new GlobalVarNode(lexer.getRubySourceline(), p.symbolID($1));
+                    $$ = new GlobalVarNode(p.src_line(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstVarNode(lexer.getRubySourceline(), p.symbolID($1));
+                    $$ = new InstVarNode(p.src_line(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarNode(lexer.getRubySourceline(), p.symbolID($1));
+                    $$ = new ClassVarNode(p.src_line(), p.symbolID($1));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -3918,9 +3905,9 @@ symbol          : ssym
 
 // [!null] - SymbolNode:symbol  
 ssym            : tSYMBEG sym {
-                    lexer.setState(EXPR_END);
+                    p.setState(EXPR_END);
                     /*%%%*/
-                    $$ = p.asSymbol(lexer.getRubySourceline(), $2);
+                    $$ = p.asSymbol(p.src_line(), $2);
                     /*% %*/
                     /*% ripper: symbol_literal!(symbol!($2)) %*/
                 }
@@ -3939,7 +3926,7 @@ sym             : fname
 
 // [!null] - SymbolNode, DSymbolNode 
 dsym            : tSYMBEG string_contents tSTRING_END {
-                    lexer.setState(EXPR_END);
+                    p.setState(EXPR_END);
 
                     /*%%%*/
                     // DStrNode: :"some text #{some expression}"
@@ -3947,7 +3934,7 @@ dsym            : tSYMBEG string_contents tSTRING_END {
                     // EvStrNode :"#{some expression}"
                     // Ruby 1.9 allows empty strings as symbols
                     if ($2 == null) {
-                        $$ = p.asSymbol(lexer.getRubySourceline(), new ByteList(new byte[] {}));
+                        $$ = p.asSymbol(p.src_line(), new ByteList(new byte[] {}));
                     } else if ($2 instanceof DStrNode) {
                         $$ = new DSymbolNode($2.getLine(), $<DStrNode>2);
                     } else if ($2 instanceof StrNode) {
@@ -3997,72 +3984,72 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstVarNode(lexer.tokline, p.symbolID($1));
+                    $$ = new InstVarNode(p.tokline(), p.symbolID($1));
                     /*% 
                        $$ = p.dipatch_var_ref($1);
                     %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalVarNode(lexer.tokline, p.symbolID($1));
+                    $$ = new GlobalVarNode(p.tokline(), p.symbolID($1));
                     /*% 
                        $$ = p.dipatch_var_ref($1);
                     %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    $$ = new ConstNode(lexer.tokline, p.symbolID($1));
+                    $$ = new ConstNode(p.tokline(), p.symbolID($1));
                     /*% 
                        $$ = p.dipatch_var_ref($1);
                     %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarNode(lexer.tokline, p.symbolID($1));
+                    $$ = new ClassVarNode(p.tokline(), p.symbolID($1));
                     /*% 
                        $$ = p.dipatch_var_ref($1);
                     %*/
                 } // mri:user_variable
                 | keyword_nil { // mri:keyword_variable
                     /*%%%*/
-                    $$ = new NilNode(lexer.tokline);
+                    $$ = new NilNode(p.tokline());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_self {
                     /*%%%*/
-                    $$ = new SelfNode(lexer.tokline);
+                    $$ = new SelfNode(p.tokline());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_true { 
                     /*%%%*/
-                    $$ = new TrueNode(lexer.tokline);
+                    $$ = new TrueNode(p.tokline());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword_false {
                     /*%%%*/
-                    $$ = new FalseNode(lexer.tokline);
+                    $$ = new FalseNode(p.tokline());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__FILE__ {
                     /*%%%*/
-                    $$ = new FileNode(lexer.tokline, new ByteList(lexer.getFile().getBytes(),
+                    $$ = new FileNode(p.tokline(), new ByteList(p.getFile().getBytes(),
                     p.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__LINE__ {
                     /*%%%*/
-                    $$ = new FixnumNode(lexer.tokline, lexer.tokline+1);
+                    $$ = new FixnumNode(p.tokline(), p.tokline()+1);
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
                 | keyword__ENCODING__ {
                     /*%%%*/
-                    $$ = new EncodingNode(lexer.tokline, lexer.getEncoding());
+                    $$ = new EncodingNode(p.tokline(), p.getEncoding());
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 } // mri:keyword_variable
@@ -4076,27 +4063,27 @@ var_lhs         : tIDENTIFIER { // mri:user_variable
                 }
                 | tIVAR {
                     /*%%%*/
-                    $$ = new InstAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new InstAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tGVAR {
                     /*%%%*/
-                    $$ = new GlobalAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new GlobalAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
-                    if (lexer.getLexContext().in_def) p.compile_error("dynamic constant assignment");
+                    if (p.getLexContext().in_def) p.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.tokline, p.symbolID($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(p.tokline(), p.symbolID($1), null, NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 }
                 | tCVAR {
                     /*%%%*/
-                    $$ = new ClassVarAsgnNode(lexer.tokline, p.symbolID($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(p.tokline(), p.symbolID($1), NilImplicitNode.NIL);
                     /*% %*/
                     /*% ripper: assignable(p, var_field(p, $1)) %*/
                 } // mri:user_variable
@@ -4159,8 +4146,8 @@ backref         : tNTH_REF {
                 }
 
 superclass      : '<' {
-                   lexer.setState(EXPR_BEG);
-                   lexer.commandStart = true;
+                   p.setState(EXPR_BEG);
+                   p.setCommandStart(true);
                 } expr_value term {
                     $$ = $3;
                 }
@@ -4173,9 +4160,9 @@ superclass      : '<' {
 
 f_opt_paren_args: f_paren_args
                 | none {
-                    lexer.getLexContext().in_argdef = false;
-                    $$ = p.new_args(lexer.tokline, null, null, null, null, 
-                                          p.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null));
+                    p.getLexContext().in_argdef = false;
+                    $$ = p.new_args(p.tokline(), null, null, null, null, 
+                                          p.new_args_tail(p.src_line(), null, (ByteList) null, null));
                 }
 
 f_paren_args    : '(' f_args rparen {
@@ -4183,9 +4170,9 @@ f_paren_args    : '(' f_args rparen {
                     $$ = $2;
                     /*% %*/
                     /*% ripper: paren!($2) %*/
-                    lexer.setState(EXPR_BEG);
-                    lexer.getLexContext().in_argdef = false;
-                    lexer.commandStart = true;
+                    p.setState(EXPR_BEG);
+                    p.getLexContext().in_argdef = false;
+                    p.setCommandStart(true);
                 }
 
 // [!null]
@@ -4193,18 +4180,18 @@ f_arglist       : f_paren_args {
                    $$ = $1;
                 }
                 | {
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     $$ = ctxt.in_kwarg;
                     ctxt.in_kwarg = true;
                     ctxt.in_argdef = true;
-                    lexer.setState(lexer.getState() | EXPR_LABEL);
+                    p.setState(p.getState() | EXPR_LABEL);
                 } f_args term {
-                    LexContext ctxt = lexer.getLexContext();
+                    LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $<Boolean>1;
                     ctxt.in_argdef = false;
                     $$ = $2;
-                    lexer.setState(EXPR_BEG);
-                    lexer.commandStart = true;
+                    p.setState(EXPR_BEG);
+                    p.setCommandStart(true);
                 }
 
 
@@ -4215,21 +4202,21 @@ args_tail       : f_kwarg ',' f_kwrest opt_f_block_arg {
                     $$ = p.new_args_tail($1.getLine(), $1, (ByteList) null, $2);
                 }
                 | f_any_kwrest opt_f_block_arg {
-                    $$ = p.new_args_tail(lexer.getRubySourceline(), null, $1, $2);
+                    $$ = p.new_args_tail(p.src_line(), null, $1, $2);
                 }
                 | f_block_arg {
                     $$ = p.new_args_tail($1.getLine(), null, (ByteList) null, $1);
                 }
                 | args_forward {
                     p.add_forwarding_args();
-                    $$ = p.new_args_tail(lexer.tokline, null, $1, new BlockArgNode(p.arg_var(FWD_BLOCK)));
+                    $$ = p.new_args_tail(p.tokline(), null, $1, new BlockArgNode(p.arg_var(FWD_BLOCK)));
                 }
 
 opt_args_tail   : ',' args_tail {
                     $$ = $2;
                 }
                 | /* none */ {
-                    $$ = p.new_args_tail(lexer.getRubySourceline(), null, (ByteList) null, null);
+                    $$ = p.new_args_tail(p.src_line(), null, (ByteList) null, null);
                 }
 
 // [!null]
@@ -4276,7 +4263,7 @@ f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail {
                     $$ = p.new_args($1.getLine(), null, null, null, null, $1);
                 }
                 | /* none */ {
-                    $$ = p.new_args(lexer.getRubySourceline(), null, null, null, null, (ArgsTailHolder) null);
+                    $$ = p.new_args(p.src_line(), null, null, null, null, (ArgsTailHolder) null);
                 }
 
 // [!null] - ByteList
@@ -4326,12 +4313,12 @@ f_norm_arg      : f_bad_arg {
                 }
 
 f_arg_asgn      : f_norm_arg {
-                    lexer.setCurrentArg($1);
+                    p.setCurrentArg($1);
                     $$ = p.arg_var($1);
                 }
 
 f_arg_item      : f_arg_asgn {
-                    lexer.setCurrentArg(null);
+                    p.setCurrentArg(null);
                     /*%%%*/
                     $$ = $1;
                     /*% %*/
@@ -4346,7 +4333,7 @@ f_arg_item      : f_arg_asgn {
 
 // [!null]
 f_arg           : f_arg_item {
-                    $$ = new ArrayNode(lexer.getRubySourceline(), $1);
+                    $$ = new ArrayNode(p.src_line(), $1);
                     /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
                 }
                 | f_arg ',' f_arg_item {
@@ -4359,41 +4346,41 @@ f_arg           : f_arg_item {
 
 f_label 	: tLABEL {
                     p.arg_var(p.formal_argument($1));
-                    lexer.setCurrentArg($1);
+                    p.setCurrentArg($1);
                     p.ordinalMaxNumParam();
-                    lexer.getLexContext().in_argdef = false;
+                    p.getLexContext().in_argdef = false;
                     $$ = $1;
                 }
 
 // KeywordArgNode - [!null]
 f_kw            : f_label arg_value {
-                    lexer.setCurrentArg(null);
-                    lexer.getLexContext().in_argdef = true;
+                    p.setCurrentArg(null);
+                    p.getLexContext().in_argdef = true;
                     /*%%%*/
                     $$ = new KeywordArgNode($2.getLine(), p.assignableKeyword($1, $2));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
                 }
                 | f_label {
-                    lexer.setCurrentArg(null);
-                    lexer.getLexContext().in_argdef = true;
+                    p.setCurrentArg(null);
+                    p.getLexContext().in_argdef = true;
                     /*%%%*/
-                    $$ = new KeywordArgNode(lexer.getRubySourceline(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
+                    $$ = new KeywordArgNode(p.src_line(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
                 }
 
 f_block_kw      : f_label primary_value {
-                    lexer.getLexContext().in_argdef = true;
+                    p.getLexContext().in_argdef = true;
                     /*%%%*/
                     $$ = new KeywordArgNode(p.getPosition($2), p.assignableKeyword($1, $2));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
                 }
                 | f_label {
-                    lexer.getLexContext().in_argdef = true;
+                    p.getLexContext().in_argdef = true;
                     /*%%%*/
-                    $$ = new KeywordArgNode(lexer.getRubySourceline(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
+                    $$ = new KeywordArgNode(p.src_line(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), 0) %*/
                 }
@@ -4456,16 +4443,16 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
 
 f_opt           : f_arg_asgn f_eq arg_value {
                     /*%%%*/
-                    lexer.setCurrentArg(null);
-                    lexer.getLexContext().in_argdef = true;
+                    p.setCurrentArg(null);
+                    p.getLexContext().in_argdef = true;
                     $$ = new OptArgNode(p.getPosition($3), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
                 }
 
 f_block_opt     : f_arg_asgn f_eq primary_value {
-                    lexer.getLexContext().in_argdef = true;
-                    lexer.setCurrentArg(null);
+                    p.getLexContext().in_argdef = true;
+                    p.setCurrentArg(null);
                     /*%%%*/
                     $$ = new OptArgNode(p.getPosition($3), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*% %*/
@@ -4518,7 +4505,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                 }
                 | restarg_mark {
                     /*%%%*/
-                    $$ = new UnnamedRestArgNode(lexer.getRubySourceline(), p.symbolID(CommonByteLists.EMPTY), p.getCurrentScope().addVariable("*"));
+                    $$ = new UnnamedRestArgNode(p.src_line(), p.symbolID(CommonByteLists.EMPTY), p.getCurrentScope().addVariable("*"));
                     /*% %*/
                     /*% ripper: rest_param!(Qnil) %*/
                 }
@@ -4560,11 +4547,11 @@ opt_f_block_arg : ',' f_block_arg {
                 }
 
 singleton       : var_ref {
-                    p.value_expr(lexer, $1);
+                    p.value_expr($1);
                     $$ = $1;
                 }
                 | '(' {
-                    lexer.setState(EXPR_BEG);
+                    p.setState(EXPR_BEG);
                 } expr rparen {
                     /*%%%*/
                     if ($3 == null) {
@@ -4572,7 +4559,7 @@ singleton       : var_ref {
                     } else if ($3 instanceof LiteralNode) {
                         p.yyerror("can't define single method for literals.");
                     }
-                    p.value_expr(lexer, $3);
+                    p.value_expr($3);
                     $$ = $3;
                     /*% %*/
                     /*% ripper: paren!($3) %*/
@@ -4580,7 +4567,7 @@ singleton       : var_ref {
 
 // HashNode: [!null]
 assoc_list      : none {
-                    $$ = new HashNode(lexer.getRubySourceline());
+                    $$ = new HashNode(p.src_line());
                     /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
                 }
                 | assocs trailer {
@@ -4592,7 +4579,7 @@ assoc_list      : none {
 
 // [!null]
 assocs          : assoc {
-                    $$ = new HashNode(lexer.getRubySourceline(), $1);
+                    $$ = new HashNode(p.src_line(), $1);
                 }
                 | assocs ',' assoc {
                     /*%%%*/
@@ -4617,9 +4604,9 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tLABEL {
                     /*%%%*/
-                    Node label = p.asSymbol(lexer.tokline, $1);
+                    Node label = p.asSymbol(p.tokline(), $1);
                     Node var = p.gettable($1);
-                    if (var == null) var = new BeginNode(lexer.tokline, NilImplicitNode.NIL);
+                    if (var == null) var = new BeginNode(p.tokline(), NilImplicitNode.NIL);
                     $$ = p.createKeyValue(label, var);
                     /*% %*/
                     /*% ripper: assoc_new!($1, Qnil) %*/
@@ -4628,7 +4615,7 @@ assoc           : arg_value tASSOC arg_value {
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     /*%%%*/
                     if ($2 instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(p.getPosition($2), lexer.getEncoding());
+                        DStrNode dnode = new DStrNode(p.getPosition($2), p.getEncoding());
                         dnode.add($2);
                         $$ = p.createKeyValue(new DSymbolNode(p.getPosition($2), dnode), $4);
                     } else if ($2 instanceof DStrNode) {
@@ -4726,16 +4713,4 @@ none_block_pass : {
 
 %%
 
-    /** The parse method use an lexer stream and parse it to an AST node 
-     * structure
-     */
-    public RubyParserResult parse(ParserConfiguration configuration) throws IOException {
-        reset();
-        setConfiguration(configuration);
-        setResult(new RubyParserResult());
-        
-        yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
-        
-        return getResult();
-    }
 }

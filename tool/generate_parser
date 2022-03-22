@@ -55,9 +55,9 @@ echo "applying ripper DSL"
 $RUBY $TOOL_DIR/preproc_ripper.rb ripper_parse.y > ripper_$PARSER_BASE.out
 
 # Generate grammar as intermediate file
-echo "generating parser using jar"
+echo "generating parser using jay"
 $JAY $DEBUG_FLAG parse.y < skeleton.parser | grep -v $DEBUG_STRIP > $PARSER_BASE.out
-echo "generating ripper using jar"
+echo "generating ripper using jay"
 $JAY $DEBUG_FLAG ripper_$PARSER_BASE.out < $RIPPER_DIR/skeleton.parser | grep -v $DEBUG_STRIP > ripper_$PARSER_BASE.out2
 
 # Patch file to get around Java static initialization issues plus extract
