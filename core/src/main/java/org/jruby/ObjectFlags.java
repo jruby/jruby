@@ -34,6 +34,7 @@ public interface ObjectFlags {
     int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
 
     int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
+    int KEYWORD_REST_ARGUMENTS_F = registry.newFlag(RubyHash.class);
     int PROCDEFAULT_HASH_F = registry.newFlag(RubyHash.class);
     int KEYWORD_ARGUMENTS_F = registry.newFlag(RubyHash.class);
     int RUBY2_KEYWORD_F = registry.newFlag(RubyHash.class);

@@ -59,7 +59,7 @@ default_gems = [
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.12.2'],
     ['json', '2.6.1'],
-    ['logger', '1.5.0'],
+    ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
     # Depends on io-wait via net-protocol
     # ['net-http', '0.2.0'],

@@ -363,6 +363,8 @@ public class RubyException extends RubyObject {
     }
 
     public void setCause(IRubyObject cause) {
+        checkCircularCause(cause);
+
         this.cause = cause;
 
         // don't do anything to throwable for null/nil cause to avoid forcing backtrace
@@ -379,6 +381,18 @@ public class RubyException extends RubyObject {
             } else if (cause instanceof ConcreteJavaProxy && (javaCause = ((ConcreteJavaProxy) cause).getObject()) instanceof Throwable) {
                 t.initCause((Throwable) javaCause);
             }
+        }
+    }
+
+    private void checkCircularCause(IRubyObject cause) {
+        IRubyObject currentCause = cause;
+        while (currentCause instanceof RubyException) {
+            if (currentCause == this) {
+                RaiseException runtimeError = getRuntime().newRuntimeError("circular causes");
+                runtimeError.getException().setCause(cause);
+                throw runtimeError;
+            }
+            currentCause = ((RubyException) currentCause).cause;
         }
     }
 

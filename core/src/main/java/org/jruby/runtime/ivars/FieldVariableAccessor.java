@@ -58,12 +58,11 @@ public class FieldVariableAccessor extends VariableAccessor {
         super(realClass, name, index, classId);
 
         this.getter = getter;
-        this.setter = wrapSetter(setter);
-    }
 
-    protected MethodHandle wrapSetter(MethodHandle setter) {
         // mix frozen check into setter
-        return MethodHandles.foldArguments(setter, ENSURE_SETTABLE.asType(setter.type()));
+        setter = MethodHandles.foldArguments(setter, ENSURE_SETTABLE.asType(setter.type()));
+        
+        this.setter = setter;
     }
 
     public MethodHandle getGetter() {

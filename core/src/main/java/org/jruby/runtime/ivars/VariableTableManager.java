@@ -31,21 +31,15 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
-import org.jruby.java.codegen.Reified;
-import org.jruby.javasupport.util.JavaClassConfiguration;
-import org.jruby.javasupport.util.JavaClassConfiguration.DirectFieldConfiguration;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -175,51 +169,6 @@ public class VariableTableManager {
     }
 
     /**
-     * This is internal API, don't call this directly if you aren't in the JRuby codebase, it may change
-     * Request that the listed ivars (no @ in name) have field storage when we are reified
-     */
-    public synchronized void requestFieldStorage(String name, Class<?> fieldType,  Boolean unwrap, Class<?> toType) {
-        DirectFieldConfiguration config = new JavaClassConfiguration.DirectFieldConfiguration(name, fieldType, unwrap, toType);
-        if (realClass.getReifiedClass() != null)
-            requestFieldStorage(config);
-        else {
-            if (realClass.getClassConfig().requestedStorageVariables == null)
-                realClass.getClassConfig().requestedStorageVariables = new ArrayList<>();
-            realClass.getClassConfig().requestedStorageVariables.add(config);
-        }
-    }
-
-    /**
-     * Actually requests field storage for the ivar once we are reified
-     * This is internal API, don't call this directly if you aren't in the JRuby codebase, it may change
-     */
-    public void requestFieldStorage(DirectFieldConfiguration config) {
-        try {
-            Class<? extends Reified> reifiedClass = realClass.getReifiedClass();
-            Class<?> fieldType = reifiedClass.getField(config.name).getType();
-            if (fieldType != config.fieldType)
-                throw realClass.getClassRuntime().newTypeError("java_field " + config.name + " has incorrectly specified types for @ivar mapping");
-            
-            // by default, unwrap if it's not assignable to IRO
-            boolean unwrap = config.unwrap == null ? !fieldType.isAssignableFrom(IRubyObject.class) : config.unwrap.booleanValue();
-            Class<?> unwrapType = config.unwrapType == null ? fieldType : config.unwrapType;
-            if (unwrap && !fieldType.isAssignableFrom(unwrapType))
-                throw realClass.getClassRuntime().newTypeError("java_field " + config.name + " has incorrectly specified unwrap type for @ivar mapping: type is incompatible");
-            
-            getVariableAccessorForJavaMappedVar("@" + config.name,
-                    unwrap,
-                    fieldType,
-                    unwrapType,
-                    RubyObjectSpecializer.LOOKUP.findGetter(reifiedClass, config.name, fieldType),
-                    RubyObjectSpecializer.LOOKUP.findSetter(reifiedClass, config.name, fieldType));
-        } catch (NoSuchFieldException e) {
-            throw realClass.getClassRuntime().newNameError("java_field " + config.name + " was marked for @ivar mapping, but wasn't found (was the class reifed already?)", config.name);
-        } catch (IllegalAccessException e) {
-            throw realClass.getClassRuntime().newSecurityError("Error in accessing java_field " +config.name+ ": " + e.getMessage());
-        }
-    }
-
-    /**
      * Get the variable accessor for the given name with intent to use it for
      * writing.
      *
@@ -227,26 +176,6 @@ public class VariableTableManager {
      * @return an accessor appropriate for writing
      */
     public VariableAccessor getVariableAccessorForWrite(String name) {
-        return getVariableAccessorWithBuilder(name, makeTableVariableAccessorBuilder(name));
-    }
-
-    public VariableAccessor getVariableAccessorForRubyVar(String name, MethodHandle getter, MethodHandle setter) {
-        return getVariableAccessorWithBuilder(name, makeRubyFieldAccessorBuilder(name, getter, setter));
-    }
-    
-    public VariableAccessor getVariableAccessorForJavaMappedVar(String name, boolean unwrap, Class<?> unwrapType, Class<?> fieldType, MethodHandle getter, MethodHandle setter) {
-        return getVariableAccessorWithBuilder(name, makeRawFieldAccessorBuilder(name, unwrap, unwrapType, fieldType, getter, setter));
-    }
-    
-    /**
-     * Get the variable accessor for the given name, or if it doesn't exist, create it 
-     * with the provided builder.
-     *
-     * @param name the name of the variable
-     * @param defaultAccessorBuilder a builder to use if the accessor doesn't exist yet
-     * @return an accessor
-     */
-    VariableAccessor getVariableAccessorWithBuilder(String name, Function<Integer, VariableAccessor> defaultAccessorBuilder) {
         VariableAccessor ivarAccessor = variableAccessors.get(name);
         if (ivarAccessor == null) {
 
@@ -256,7 +185,30 @@ public class VariableTableManager {
 
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
-                    ivarAccessor = allocateVariableAccessors(name, defaultAccessorBuilder);
+                    ivarAccessor = allocateVariableAccessor(name);
+                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
+
+                    newVariableAccessors.putAll(myVariableAccessors);
+                    newVariableAccessors.put(name, ivarAccessor);
+
+                    variableAccessors = newVariableAccessors;
+                }
+            }
+        }
+        return ivarAccessor;
+    }
+
+    public VariableAccessor getVariableAccessorForVar(String name, MethodHandle getter, MethodHandle setter) {
+        VariableAccessor ivarAccessor = variableAccessors.get(name);
+        if (ivarAccessor == null) {
+
+            synchronized (realClass) {
+                Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
+                ivarAccessor = myVariableAccessors.get(name);
+
+                if (ivarAccessor == null) {
+                    // allocate a new accessor and populate a new table
+                    ivarAccessor = allocateVariableAccessorForVar(name, getter, setter);
                     Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
 
                     newVariableAccessors.putAll(myVariableAccessors);
@@ -608,63 +560,45 @@ public class VariableTableManager {
      * @param name the name of the variable
      * @return the new VariableAccessor
      */
-    final VariableAccessor allocateVariableAccessor(String name) {
-        return allocateVariableAccessors(name, makeTableVariableAccessorBuilder(name));
-    }
-    
-    /**
-     * Makes a standard table accessor builder. Pass this into getVariableAccessorWithBuilder
-     */
-    final Function<Integer, VariableAccessor> makeTableVariableAccessorBuilder(String name) {
-        if (Options.VOLATILE_VARIABLES.load()) {
-            if (UnsafeHolder.U == null) {
-                return (newIndex) -> new SynchronizedVariableAccessor(realClass, name, newIndex, realClass.id);
-            } else {
-                return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
-            }
-        } else {
-            if (UnsafeHolder.U == null) {
-                return (newIndex) -> new NonvolatileVariableAccessor(realClass, name, newIndex, realClass.id);
-            } else {
-                // We still need safe updating of the vartable, so we fall back on sync here too.
-                return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
-            }
-        }
-    }
-
-    /**
-     * Makes a raw field accessor builder for reified classes with java_field. Pass this into getVariableAccessorWithBuilder
-     */
-    final Function<Integer, VariableAccessor> makeRawFieldAccessorBuilder(String name, boolean unwrap,Class<?> unwrapType, Class<?> fieldType, MethodHandle getter, MethodHandle setter)
-    {
-        return (newIndex) -> {
-            fieldVariables += 1;
-            return new RawFieldVariableAccessor(realClass, unwrap, unwrapType, fieldType, name, newIndex, realClass.id, getter, setter);
-        };
-    }
-
-    /**
-     * Makes an IRubyObject field accessor builder for reified classes. Pass this into getVariableAccessorWithBuilder
-     */
-    final Function<Integer, VariableAccessor> makeRubyFieldAccessorBuilder(String name, MethodHandle getter, MethodHandle setter)
-    {
-        return (newIndex) -> {
-            fieldVariables += 1;
-            return new FieldVariableAccessor(realClass, name, newIndex, realClass.id, getter, setter);
-        };
-    }
-
-    /**
-     * Allocation helper to map variables to names
-     */
-    synchronized final VariableAccessor allocateVariableAccessors(String name, Function<Integer, VariableAccessor> builder) {
+    synchronized final VariableAccessor allocateVariableAccessor(String name) {
+        int id = realClass.id;
 
         final String[] myVariableNames = variableNames;
         final int newIndex = myVariableNames.length;
 
-        VariableAccessor newVariableAccessor = builder.apply(newIndex);
+        VariableAccessor newVariableAccessor;
+        if (Options.VOLATILE_VARIABLES.load()) {
+            if (UnsafeHolder.U == null) {
+                newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
+            } else {
+                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+            }
+        } else {
+            if (UnsafeHolder.U == null) {
+                newVariableAccessor = new NonvolatileVariableAccessor(realClass, name, newIndex, id);
+            } else {
+                // We still need safe updating of the vartable, so we fall back on sync here too.
+                newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+            }
+        }
+
+        final String[] newVariableNames = new String[newIndex + 1];
+        ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);
+        newVariableNames[newIndex] = name;
+        variableNames = newVariableNames;
+
+        return newVariableAccessor;
+    }
+
+    synchronized final VariableAccessor allocateVariableAccessorForVar(String name, MethodHandle getter, MethodHandle setter) {
+        int id = realClass.id;
+
+        final String[] myVariableNames = variableNames;
+        final int newIndex = myVariableNames.length;
 
         fieldVariables += 1;
+
+        VariableAccessor newVariableAccessor = new FieldVariableAccessor(realClass, name, newIndex, id, getter, setter);
 
         final String[] newVariableNames = new String[newIndex + 1];
         ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);

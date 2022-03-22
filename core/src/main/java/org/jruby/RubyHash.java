@@ -120,6 +120,7 @@ public class RubyHash extends RubyObject implements Map {
 
     public static final int COMPARE_BY_IDENTITY_F = ObjectFlags.COMPARE_BY_IDENTITY_F;
     public static final int KEYWORD_ARGUMENTS_F = ObjectFlags.KEYWORD_ARGUMENTS_F;
+    public static final int KEYWORD_REST_ARGUMENTS_F = ObjectFlags.KEYWORD_REST_ARGUMENTS_F;
     public static final int RUBY2_KEYWORD_F = ObjectFlags.RUBY2_KEYWORD_F;
 
     public static RubyClass createHashClass(Ruby runtime) {
@@ -2591,6 +2592,14 @@ public class RubyHash extends RubyObject implements Map {
 
     public void setKeywordArguments(boolean value) {
         setFlag(KEYWORD_ARGUMENTS_F, value);
+    }
+
+    public boolean isKeywordRestArguments() {
+        return (flags & KEYWORD_REST_ARGUMENTS_F) != 0;
+    }
+
+    public void setKeywordRestArguments(boolean value) {
+        setFlag(KEYWORD_REST_ARGUMENTS_F, value);
     }
 
     private class BaseSet extends AbstractSet {
