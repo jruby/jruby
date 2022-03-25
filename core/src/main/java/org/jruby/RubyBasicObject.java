@@ -1642,8 +1642,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * A method to determine whether the method named by methodName is a builtin
-     * method.  This means a method with a JRubyMethod annotation written in
-     * Java.
+     * method, i.e. a method built-in to JRuby and loaded during its core boot process.
      *
      * @param methodName to look for.
      * @return true if so
