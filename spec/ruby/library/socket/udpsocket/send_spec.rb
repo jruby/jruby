@@ -16,13 +16,14 @@ describe "UDPSocket#send" do
           retry
         end
       ensure
-        @server.close if !@server.closed?
+        @server.close unless @server.closed?
       end
     end
     Thread.pass while @server_thread.status and !@port
   end
 
   after :each do
+    @server.close unless @server.closed
     @server_thread.join
   end
 

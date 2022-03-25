@@ -3911,6 +3911,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EAFNOSUPPORT"), message);
     }
 
+    public RaiseException newErrnoETIMEDOUTError() {
+        return newRaiseException(getErrno().getClass("ETIMEDOUT"), "Broken pipe");
+    }
+
     public RaiseException newErrnoFromLastPOSIXErrno() {
         RubyClass errnoClass = getErrno(getPosix().errno());
         if (errnoClass == null) errnoClass = systemCallError;

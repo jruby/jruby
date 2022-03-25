@@ -57,7 +57,7 @@ namespace :spec do
     mspec :command => "run",
           :compile_mode => "OFF",
           :format => "s",
-          :spec_target => "spec/ruby",
+          :spec_target => ":ci_files",
           :jruby_opts => "--dev",
           :spec_config => "spec/jruby.mspec",
           :tags => [:wip]
