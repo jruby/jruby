@@ -1,2 +1,1 @@
 slow:ARGF.gets reads all lines of stdin
-wip:ARGF.gets reads the contents of the file with default encoding
