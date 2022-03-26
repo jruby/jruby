@@ -156,19 +156,52 @@ class Class
   ##
   # java_field will take the argument and create a java field as defined
   # with the name, the Java type, and the annotation signatures.
+  #
+  # For advanced JVM integration, you can bind it to the corresponding instance
+  # variable via instance_variable: true. This changes the semantics of the
+  # corresponding variable to JVM semantics (freeze is not honored, @var.equals?(@var) may be false, etc)
   # 
   # :call-seq:
   #   java_field '@FXML int foo'
   #   java_field 'org.foo.Bar bar'
-  def java_field(signature_source)
+  def java_field(signature_source, instance_variable: false, to_java: nil)
     signature = JRuby::JavaSignature.parse "#{signature_source}()"
 
     add_field_signature signature.name, signature.return_type
+    
+    if instance_variable # request @ivar field binding
+      opts = {unwrap: nil, type: signature.return_type}
+      unless to_java == nil
+        if to_java == false
+          opts[:unwrap] = false
+        elsif to_java.is_a? Java::JavaLang::Class or to_java.is_a? Class
+          opts[:unwrap] = true
+          opts[:type] = to_java
+        else
+          raise ArgumentError, "to_java must be either false, or a valid java class"
+        end
+      end
+      JRuby.reference0(self).variable_table_manager.request_field_storage(
+        signature.name,
+          Class.__ensure_java_class(signature.return_type),
+          opts[:unwrap], 
+          Class.__ensure_java_class(opts[:type]))
+    elsif to_java != nil
+      raise ArgumentError, "to_java only affects java_field when instance_variable is true"
+    end
 
     annotations = signature.annotations
     add_field_annotation signature.name, annotations if annotations
   end
   
+  def self.__ensure_java_class(clz)
+    if clz.is_a? java.lang.Class
+      clz
+    else
+      clz.java_class
+    end
+  end
+
   class JavaConfig
     
     def initialize(class_config)
@@ -258,7 +291,6 @@ class Class
   def java_annotation(anno)
     warn "java_annotation is deprecated. Use java_signature '@#{anno} ...' instead. Called from: #{caller.first}"
   end
-  
 
   def add_field_signature(name, type)
     self_r = JRuby.reference0(self)

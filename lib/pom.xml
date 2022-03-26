@@ -463,7 +463,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>ostruct</artifactId>
-      <version>0.5.2</version>
+      <version>0.5.4</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -891,7 +891,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/observer-0.1.1*</include>
           <include>specifications/open-uri-0.1.0*</include>
           <include>specifications/optparse-0.2.0*</include>
-          <include>specifications/ostruct-0.5.2*</include>
+          <include>specifications/ostruct-0.5.4*</include>
           <include>specifications/pp-0.3.0*</include>
           <include>specifications/prettyprint-0.1.1*</include>
           <include>specifications/pstore-0.1.1*</include>
@@ -953,7 +953,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/observer-0.1.1*/**/*</include>
           <include>gems/open-uri-0.1.0*/**/*</include>
           <include>gems/optparse-0.2.0*/**/*</include>
-          <include>gems/ostruct-0.5.2*/**/*</include>
+          <include>gems/ostruct-0.5.4*/**/*</include>
           <include>gems/pp-0.3.0*/**/*</include>
           <include>gems/prettyprint-0.1.1*/**/*</include>
           <include>gems/pstore-0.1.1*/**/*</include>
@@ -1015,7 +1015,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/observer-0.1.1*</include>
           <include>cache/open-uri-0.1.0*</include>
           <include>cache/optparse-0.2.0*</include>
-          <include>cache/ostruct-0.5.2*</include>
+          <include>cache/ostruct-0.5.4*</include>
           <include>cache/pp-0.3.0*</include>
           <include>cache/prettyprint-0.1.1*</include>
           <include>cache/pstore-0.1.1*</include>
