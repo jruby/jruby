@@ -118,14 +118,14 @@ module SocketSpecs
 
         socket.send data, 0
       ensure
-        socket.close unless socket.closed?
+        socket.close
       end
     end
 
     def shutdown
       log "SpecTCPServer shutting down"
-      @server.close unless @server.closed?
       @thread.join
+      @server.close
     end
 
     def log(message)

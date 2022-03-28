@@ -105,7 +105,9 @@ describe "Kernel#define_singleton_method" do
     end
 
     -> {
-      cls.define(:foo) { :ok }
+      suppress_warning do
+        cls.define(:foo) { :ok }
+      end
       cls.foo.should == :ok
     }.should_not raise_error(NoMethodError)
   end
