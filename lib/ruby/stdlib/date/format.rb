@@ -463,6 +463,7 @@ class Date
 
   def self._rfc3339(str, limit: 128) # :nodoc:
     check_limit(str, limit)
+    str = str.to_s if Symbol === str
 
     if /\A\s*-?\d{4}-\d{2}-\d{2} # allow minus, anyway
         (t|\s)
@@ -528,6 +529,7 @@ class Date
 
   def self._rfc2822(str, limit: 128) # :nodoc:
     check_limit(str, limit)
+    str = str.to_s if Symbol === str
 
     if m = match(/\A\s*(?:(?:#{Format::ABBR_DAYS.keys.join('|')})\s*,\s+)?
         \d{1,2}\s+
@@ -579,6 +581,7 @@ class Date
 
   def self._jisx0301(str, limit: 128) # :nodoc:
     check_limit(str, limit)
+    str = str.to_s if Symbol === str
 
     if /\A\s*[mtsh]?\d{2}\.\d{2}\.\d{2}
         (t
@@ -607,9 +610,10 @@ class Date
       # ok
     elsif Symbol === str
       str = str.to_s
-    else
-      raise TypeError.new("no implicit conversion of #{str.class} into String") unless str.respond_to?(:to_str)
+    elsif str.respond_to?(:to_str)
       str = str.to_str
+    else
+      raise TypeError, "no implicit conversion of #{str.class.name} into String"
     end
 
     limit = 2 ** 64 if limit.nil?
