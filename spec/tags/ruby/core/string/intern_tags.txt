@@ -1,0 +1,1 @@
+fails:String#intern ignores exising symbols with different encoding

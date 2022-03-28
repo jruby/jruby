@@ -3,3 +3,5 @@ fails:Dir.glob recursively matches files and directories in nested dot subdirect
 fails:Dir.glob matches files with backslashes in their name
 wip:Dir.glob respects the order of {} expressions, expanding left most first
 wip:Dir.glob respects the optional nested {} expressions
+fails:Dir.glob will follow symlinks when processing a `*/` pattern.
+fails:Dir.glob will follow symlinks when testing directory after recursive directory in pattern

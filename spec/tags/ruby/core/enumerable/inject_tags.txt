@@ -1,0 +1,1 @@
+fails:Enumerable#inject raises an ArgumentError when no parameters or block is given

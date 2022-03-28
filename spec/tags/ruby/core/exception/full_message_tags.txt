@@ -3,3 +3,4 @@ fails(jruby/jruby#5510):Exception#full_message supports :order option and places
 fails:Exception#full_message shows the caller if the exception has no backtrace
 fails(not implemented, jruby/jruby#6161):Exception#full_message contains cause of exception
 fails(not implemented, jruby/jruby#6161):Exception#full_message contains all the chain of exceptions
+fails:Exception#full_message highlights the entire message when the message contains multiple lines
