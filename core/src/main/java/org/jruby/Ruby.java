@@ -3678,11 +3678,11 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newArgumentError(String name, int got, int min, int max) {
         if (min == max) {
-            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + ")")));
+            return newRaiseException(getArgumentError(), str(this, "`", ids(this, name), "': wrong number of arguments (given " + got + ", expected " + min + ")"));
         } else if (max == UNLIMITED_ARGUMENTS) {
-            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + "+)")));
+            return newRaiseException(getArgumentError(), str(this, "`", ids(this, name), "': wrong number of arguments (given " + got + ", expected " + min + "+)"));
         } else {
-            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + ".." + max + ")")));
+            return newRaiseException(getArgumentError(), str(this, "`", ids(this, name), "': wrong number of arguments (given " + got + ", expected " + min + ".." + max + ")"));
         }
     }
 
