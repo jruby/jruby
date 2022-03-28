@@ -24,3 +24,5 @@ wip:Fiber#raise does not accept only error message and backtrace information
 wip:Fiber#raise raises a FiberError if invoked from a different Thread
 wip:Fiber#raise kills Fiber
 wip:Fiber#raise transfers and raises on a transferring fiber
+fails:Fiber#raise allows extra keyword arguments for compatibility
+fails:Fiber#raise does not allow message and extra keyword arguments
