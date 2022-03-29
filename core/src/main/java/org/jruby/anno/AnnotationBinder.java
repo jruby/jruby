@@ -163,6 +163,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("        DynamicMethod moduleMethod, aliasedMethod;");
             if (hasMeta || hasModule) out.println("        RubyClass singletonClass = cls.getSingletonClass();");
             out.println("        Ruby runtime = cls.getRuntime();");
+            out.println("        boolean core = runtime.isBootingCore();");
 
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
@@ -329,6 +330,7 @@ public class AnnotationBinder extends AbstractProcessor {
                             quote(method.getSimpleName()),
                             isStatic,
                             anno.notImplemented(),
+                            "core",
                             ((TypeElement) method.getEnclosingElement()).getQualifiedName() + ".class",
                             quote(method.getSimpleName()),
                             method.getReturnType() + ".class",
@@ -365,6 +367,7 @@ public class AnnotationBinder extends AbstractProcessor {
                                 quote(method.getSimpleName()),
                                 isStatic,
                                 anno.notImplemented(),
+                                "core",
                                 ((TypeElement) method.getEnclosingElement()).getQualifiedName() + ".class",
                                 quote(method.getSimpleName()),
                                 method.getReturnType() + ".class",
