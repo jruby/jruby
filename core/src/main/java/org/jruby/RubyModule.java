@@ -5774,8 +5774,8 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * Return true if the given method is defined on this class and is a builtin
-     * (defined in Java at boot).
+     * Return true if the given method is defined on this class and is a builtin,
+     * i.e. a method built-in to JRuby and loaded during its core boot process.
      *
      * @param methodName
      * @return

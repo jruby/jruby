@@ -75,7 +75,7 @@ default_gems = [
     # ['open-uri', '0.2.0'],
     ['open-uri', '0.1.0'],
     ['optparse', '0.2.0'],
-    ['ostruct', '0.5.4'],
+    ['ostruct', '0.5.5'],
     # https://github.com/ruby/pathname/issues/17
     # ['pathname', '0.2.0'],
     ['pp', '0.3.0'],
