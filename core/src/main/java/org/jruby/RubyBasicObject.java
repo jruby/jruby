@@ -1681,7 +1681,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return singleton_method_undefined(context, recv, symbolId, block);
     }
 
-    @JRubyMethod(name = "method_missing", rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "method_missing", rest = true, module = true, omit = true, visibility = PRIVATE)
     public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
