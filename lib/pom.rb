@@ -35,7 +35,7 @@ default_gems = [
     ['logger', '1.5.1'],
     ['matrix', '0.3.0'],
     ['mutex_m', '0.1.0'],
-    ['ostruct', '0.5.4'],
+    ['ostruct', '0.5.5'],
     ['prime', '0.1.0'],
     ['psych', '3.3.2'],
     ['racc', '1.5.2'],
