@@ -705,14 +705,6 @@ public class Java implements Library {
                 default: matching = matchConstructor(context, constructors, arity, args);
             }
 
-            if (self instanceof JavaProxy)
-            {
-                //TODO: ensure this isn't being hit in any tests
-            	System.err.println("Failed nil Init for JavaProxy: " + self.anyToString());
-            	new RuntimeException("Backtrace").printStackTrace();
-            	context.runtime.newArgumentError("ahck").printStackTrace();
-            	return context.nil; 
-            }
             IRubyObject newObject = matching.newInstance(context.runtime, self, args);
             return JavaUtilities.set_java_object(self, self, newObject);
         }
