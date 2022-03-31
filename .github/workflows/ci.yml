@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         package-flags: ['-Ptest']
-        # dist, complete, and osgi do not pass on 16 yet
+        # dist, complete, and osgi do not pass on 17 yet
         java-version: ['11']
       fail-fast: false
 
@@ -80,7 +80,7 @@ jobs:
     strategy:
       matrix:
         package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
-        # dist, complete, and osgi do not pass on 16 yet
+        # dist, complete, and osgi do not pass on 17 yet
         java-version: ['8', '11']
       fail-fast: false
 
@@ -204,7 +204,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:mri:core:jit', 'spec:ruby:fast', 'spec:ruby:fast:jit', 'spec:ji', 'spec:ffi']
-        java-version: ['8', '11', '16']
+        java-version: ['8', '11', '17']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -236,7 +236,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:jruby', 'spec:compiler']
-        java-version: ['8', '11', '16']
+        java-version: ['8', '11', '17']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
