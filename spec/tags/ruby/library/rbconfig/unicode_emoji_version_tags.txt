@@ -1,0 +1,1 @@
+fails(we track latest unicode in jcodings):RbConfig::CONFIG['UNICODE_EMOJI_VERSION'] is 12.0 for Ruby 2.6.2+

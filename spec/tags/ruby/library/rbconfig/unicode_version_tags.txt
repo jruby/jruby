@@ -1,1 +1,1 @@
-fails:RbConfig::CONFIG['UNICODE_VERSION'] is 10.0.0 for Ruby 2.5
+fails(we track latest unicode in jcodings):RbConfig::CONFIG['UNICODE_VERSION'] is 12.1.0 for Ruby 2.6.3+, Ruby 2.7, and Ruby 3.0
