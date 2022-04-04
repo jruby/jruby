@@ -134,8 +134,10 @@ class Date
         g = 'T%02d' % (year - 1911)
       when 2424875...2447535
         g = 'S%02d' % (year - 1925)
-      else
+      when 2447535...2458605
         g = 'H%02d' % (year - 1988)
+      else
+        g = 'R%02d' % (year - 2018)
       end
       g + strftime('.%m.%d')
     end
@@ -169,8 +171,8 @@ class Date
   end
 
   def self._parse_jis(str, hash) # :nodoc:
-    if m = subs(str, /\b([mtsh])(\d+)\.(\d+)\.(\d+)/i)
-      era = { 'm'=>1867, 't'=>1911, 's'=>1925, 'h'=>1988 }[m[1].downcase]
+    if m = subs(str, /\b([mtshr])(\d+)\.(\d+)\.(\d+)/i)
+      era = { 'm'=>1867, 't'=>1911, 's'=>1925, 'h'=>1988, 'r'=>2018 }[m[1].downcase]
       hash[:year] = m[2].to_i + era
       hash[:mon] = m[3].to_i
       hash[:mday] = m[4].to_i
@@ -583,7 +585,7 @@ class Date
     check_limit(str, limit)
     str = str.to_s if Symbol === str
 
-    if /\A\s*[mtsh]?\d{2}\.\d{2}\.\d{2}
+    if /\A\s*[mtshr]?\d{2}\.\d{2}\.\d{2}
         (t
         (\d{2}:\d{2}(:\d{2}([,.]\d*)?)?
         (z|[-+]\d{2}(:?\d{2})?)?)?)?\s*\z/ix.match?(str)
