@@ -13,6 +13,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.parser.ProductionState;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -82,6 +83,8 @@ public abstract class LexingCommon {
     public int tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
+    public long start = 0;
+    public long end = 0;
 
     public static final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCIIEncoding.INSTANCE);
     public static final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCIIEncoding.INSTANCE);
@@ -139,8 +142,28 @@ public abstract class LexingCommon {
     public static final ByteList DOLLAR_UNDERSCORE = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
     public static final ByteList DOLLAR_DOT = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
 
+    public static final ByteList KWNOREST = new ByteList(new byte[] {});
+
     public int column() {
         return tokp - lex_pbeg;
+    }
+
+    protected void updateTokenPosition() {
+        int start_column = this.tokp - lex_pbeg;
+        int end_column = this.lex_p - lex_pbeg;
+
+        this.start = ProductionState.pack(ruby_sourceline, start_column);
+        this.end = ProductionState.pack(ruby_sourceline, end_column);
+    }
+
+    protected void updateStartPosition(int column) {
+        this.start = ProductionState.shift_line(ruby_sourceline) | column;
+    }
+
+    // similar to compile_error where yyloc passes in NULL.
+    public void compile_error_pos(String message) {
+        updateTokenPosition();
+        compile_error(message);
     }
 
     protected boolean comment_at_top() {
@@ -263,6 +286,10 @@ public abstract class LexingCommon {
 
     public int getLeftParenBegin() {
         return leftParenBegin;
+    }
+
+    protected boolean isLambdaBeginning() {
+        return getLeftParenBegin() == parenNest;
     }
 
     public int getLineOffset() {
@@ -1232,5 +1259,211 @@ public abstract class LexingCommon {
         if (optionEncoding == UTF8_ENCODING) return 'u';
 
         return ' ';
+    }
+
+    /**
+     * Read up to count hexadecimal digits.  If strict is provided then count number of hex
+     * digits must be present. If no digits can be read a syntax exception will be thrown.
+     */
+    protected int scanHex(int count, boolean strict, String errorMessage) {
+        int i = 0;
+        int hexValue = 0;
+
+        if (!strict) {
+            for (int c = nextc(); Character.isWhitespace((c)); c = nextc()) {
+                // do nothing
+            }
+            pushback(0);
+        }
+
+        for (; i < count; i++) {
+            int h1 = nextc();
+
+            if (!isHexChar(h1)) {
+                pushback(h1);
+                break;
+            }
+
+            hexValue <<= 4;
+            hexValue |= Integer.parseInt("" + (char) h1, 16) & 15;
+        }
+
+        // No hex value after the 'x'.
+        if (strict && count != i) compile_error(errorMessage);
+
+        if (i == 0) { // No hex digits read.
+            if (peek('}')) { // \ u { } empty case
+                return -1;
+            } else { // \ u { {gargbage} case
+                updateStartPosition(lex_p);
+                compile_error(errorMessage);
+            }
+        }
+
+        return hexValue;
+    }
+
+    public int readEscape() throws IOException {
+        int c = nextc();
+
+        switch (c) {
+            case '\\' : // backslash
+                return c;
+            case 'n' : // newline
+                return '\n';
+            case 't' : // horizontal tab
+                return '\t';
+            case 'r' : // carriage return
+                return '\r';
+            case 'f' : // form feed
+                return '\f';
+            case 'v' : // vertical tab
+                return '\u000B';
+            case 'a' : // alarm(bell)
+                return '\u0007';
+            case 'e' : // escape
+                return '\u001B';
+            case '0' : case '1' : case '2' : case '3' : // octal constant
+            case '4' : case '5' : case '6' : case '7' :
+                pushback(c);
+                return scanOct(3);
+            case 'x' : // hex constant
+                return tokHex(2, "invalid hex escape");
+            case 'b' : // backspace
+                return '\010';
+            case 's' : // space
+                return ' ';
+            case 'M' :
+                if ((c = nextc()) != '-') {
+                    compile_error_pos("Invalid escape character syntax");
+                } else if ((c = nextc()) == '\\') {
+                    return (char) (readEscape() | 0x80);
+                } else if (c == EOF) {
+                    compile_error_pos("Invalid escape character syntax");
+                }
+                return (char) ((c & 0xff) | 0x80);
+            case 'C' :
+                if (nextc() != '-') {
+                    compile_error_pos("Invalid escape character syntax");
+                }
+            case 'c' :
+                if ((c = nextc()) == '\\') {
+                    c = readEscape();
+                } else if (c == '?') {
+                    return '\177';
+                } else if (c == EOF) {
+                    compile_error_pos("Invalid escape character syntax");
+                }
+                return (char) (c & 0x9f);
+            case EOF :
+                compile_error("Invalid escape character syntax");
+            default :
+                return c;
+        }
+    }
+
+    /**
+     * Read up to count hexadecimal digits and store those digits in a token numberBuffer.  If strict is
+     * provided then count number of hex digits must be present. If no digits can be read a syntax
+     * exception will be thrown.  This will also return the codepoint as a value so codepoint
+     * ranges can be checked.
+     */
+    protected char scanHexLiteral(ByteList buffer, int count, boolean strict, String errorMessage) {
+        int i = 0;
+        char hexValue = '\0';
+
+        for (; i < count; i++) {
+            int h1 = nextc();
+
+            if (!isHexChar(h1)) {
+                pushback(h1);
+                break;
+            }
+
+            buffer.append(h1);
+
+            hexValue <<= 4;
+            hexValue |= Integer.parseInt(String.valueOf((char) h1), 16) & 15;
+        }
+
+        // No hex value after the 'x'.
+        if (strict && count != i) {
+            compile_error(errorMessage);
+        }
+
+        return hexValue;
+    }
+
+    protected int tokHex(int count, String errorMessage) {
+        return scanHex(count, false, errorMessage);
+    }
+
+    protected void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral, boolean[] encodingDetermined) throws IOException {
+        if (codepoint >= 0x80) {
+            if (encodingDetermined[0] && buffer.getEncoding() != UTF8Encoding.INSTANCE) {
+                compile_error("UTF-8 mixed within " + buffer.getEncoding() + " source");
+            }
+            buffer.setEncoding(UTF8_ENCODING);
+            encodingDetermined[0] = true;
+            if (stringLiteral) tokaddmbc(codepoint, buffer);
+        } else if (stringLiteral) {
+            buffer.append((char) codepoint);
+        }
+    }
+
+    // FIXME: This could be refactored into something cleaner
+    // MRI: parser_tokadd_utf8 sans regexp literal parsing
+    public int readUTFEscape(ByteList buffer, boolean stringLiteral, boolean[] encodingDetermined) throws IOException {
+        int codepoint;
+        int c;
+
+        if (peek('{')) { // handle \\u{...}
+            do {
+                nextc(); // Eat curly or whitespace
+                codepoint = scanHex(6, false, "invalid Unicode escape");
+                if (codepoint == -1 && peek('}')) {
+                    nextc();
+                    return 0;
+                }
+                if (codepoint > 0x10ffff) {
+                    compile_error("invalid Unicode codepoint (too large)");
+                }
+                if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral, encodingDetermined);
+            } while (peek(' ') || peek('\t'));
+
+            c = nextc();
+            if (c != '}') {
+                updateStartPosition(lex_p - 1);
+                compile_error("unterminated Unicode escape");
+            }
+        } else { // handle \\uxxxx
+            codepoint = scanHex(4, true, "Invalid Unicode escape");
+            if (buffer != null) readUTF8EscapeIntoBuffer(codepoint, buffer, stringLiteral, encodingDetermined);
+        }
+
+        return codepoint;
+    }
+
+    // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be
+    // called when string_literal and regexp_literal.
+    public void readUTFEscapeRegexpLiteral(ByteList buffer) {
+        buffer.append('\\');
+        buffer.append('u');
+
+        if (peek('{')) { // handle \\u{...}
+            do {
+                buffer.append(nextc());
+                if (scanHexLiteral(buffer, 6, false, "invalid Unicode escape") > 0x10ffff) {
+                    compile_error("invalid Unicode codepoint (too large)");
+                }
+            } while (peek(' ') || peek('\t'));
+
+            int c = nextc();
+            if (c != '}') compile_error("unterminated Unicode escape");
+
+            buffer.append((char) c);
+        } else { // handle \\uxxxx
+            scanHexLiteral(buffer, 4, true, "Invalid Unicode escape");
+        }
     }
 }

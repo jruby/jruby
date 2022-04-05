@@ -47,10 +47,11 @@ class DSL
   INDENT = "                    "
 
   def generate(indent = INDENT)
-    s = @code
+    s << "#{@type} #{(1..@vars).map {|v| %Q{v#{v}} }.join(', ')};\n" if @vars > 0
+    s << @code
     s << "#{indent}#@final = #@last_value;"
-    s << "\n#{indent}ripper_error(p);" if @error
-    s = "{#{ s }}" if @brace
+    s << "\n#{indent}p.error();" if @error
+    s = "{#{ s }}" #if @brace
     s
   end
 
@@ -128,13 +129,13 @@ class DSL
     @events[event] = args.size
     vars = args.map do |arg|
       new_var.tap do |v|
-        @code << "#{indent}#{@type} #{v} = #{translate_arg(arg)};\n"
+        @code << "#{indent}#{v} = #{translate_arg(arg)};\n"
       end
     end
     v = new_var
     d = dispatch(event, vars)
     d = "#{vars.last} == null ? #{vars.first} : #{d}" if qundef_check
-    @code << "#{indent}#{@type} #{v} = #{d};\n"
+    @code << "#{indent}#{v} = #{d};\n"
     v
   end
 
@@ -153,8 +154,12 @@ class DSL
       add_event(event, args)
     elsif args.empty? and /\Aid[A-Z_]/ =~ event.to_s
       event
+    elsif args.length > 0 && args[0] == "p"
+      "p.#{event}(#{args[1..-1].join(', ')})"
+    elsif event == 'get_value'
+      "p.get_value(#{translate_arg(args[0])})"
     else
-      "#{ event }(#{ args.join(", ") })"
+      "#{event}(#{args.join(', ')})"
     end
   end
 

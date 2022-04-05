@@ -30,39 +30,66 @@
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArrayPatternNode;
+import org.jruby.ast.DefHolder;
+import org.jruby.ast.FindPatternNode;
+import org.jruby.ast.HashNode;
+import org.jruby.ast.HashPatternNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.NilRestArgNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.RegexpNode;
+import org.jruby.ast.StarNode;
+import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.LexerSource;
+import org.jruby.lexer.yacc.LexContext;
+import org.jruby.parser.ScopedParserState;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.KeyValuePair;
+import org.jruby.util.StringSupport;
+
+import static org.jruby.util.CommonByteLists.*;
+import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  *
  */
 public class RipperParserBase {
-    private IRubyObject currentArg;
-
     public RipperParserBase(ThreadContext context, IRubyObject ripper, LexerSource source) {
         this.context = context;
         this.ripper = ripper;
-        this.lexer = new RipperLexer(this, source);
+        this.lexer = new RubyLexer(this, source);
     }
-    
+
+    public void initTopLocalVariables() {
+        scopedParserState = new ScopedParserState(null);
+    }
+
     public void reset() {
 //        inSingleton = 0;
      //   inDefinition = false;
     }  
     
-    public Object yyparse (RipperLexer yyLex) throws java.io.IOException {
+    public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
         return null;
     }
     
-    public Object yyparse (RipperLexer yyLex, Object debugger) throws java.io.IOException {
+    public Object yyparse (RubyLexer yyLex, Object debugger) throws java.io.IOException {
         return null;
     }        
     
@@ -86,6 +113,16 @@ public class RipperParserBase {
     }
 
     public IRubyObject arg_var(IRubyObject identifier) {
+        if (identifier instanceof RubySymbol) {
+            return arg_var(((RubySymbol) identifier).getBytes());
+        } else if (identifier instanceof RubyString) {
+            return arg_var(((RubyString) identifier).getByteList());
+        }
+
+        return null;
+    }
+
+    public IRubyObject arg_var(ByteList identifier) {
         String name = lexer.getIdent();
         StaticScope current = getCurrentScope();
 
@@ -102,7 +139,7 @@ public class RipperParserBase {
         
         current.addVariableThisScope(name);
                 
-        return identifier;
+        return symbolID(identifier);
     }
 
     public IRubyObject assignableConstant(IRubyObject value) {
@@ -169,14 +206,145 @@ public class RipperParserBase {
         return getCurrentScope().isDefined(ident) >= 0;
     }
     
-    public boolean is_local_id(String identifier) {
-        return lexer.isIdentifierChar(identifier.charAt(0));
+    public boolean is_local_id(IRubyObject id) {
+        String ident = id.asJavaString();
+        return lexer.isIdentifierChar(ident.charAt(0));
     }    
     
     public IRubyObject intern(String value) {
         return context.runtime.newSymbol(value);
     }
-    
+
+    public IRubyObject intern(ByteList value) {
+        return context.runtime.newSymbol(value);
+    }
+
+    protected IRubyObject new_defined(long _line, IRubyObject value) {
+        return dispatch("on_defined", value);
+    }
+
+    public IRubyObject new_regexp(int line, KeyValuePair<IRubyObject, IRubyObject> contents, IRubyObject _end) {
+        return dispatch("on_regexp_literal", contents.getKey(), contents.getValue());
+    }
+
+    protected IRubyObject match_op(IRubyObject left, IRubyObject right) {
+        return call_bin_op(left, EQUAL_TILDE, right, 0);
+    }
+
+    protected IRubyObject call_bin_op(IRubyObject left, IRubyObject id, IRubyObject right, int line) {
+        return dispatch("on_call", left, id, right);
+    }
+
+    protected IRubyObject call_bin_op(IRubyObject left, ByteList id, IRubyObject right, int line) {
+        return dispatch("on_call", left, intern(id), right);
+    }
+
+    protected IRubyObject call_uni_op(IRubyObject recv, IRubyObject id) {
+        return dispatch("on_unary", recv, id);
+    }
+
+    protected IRubyObject call_uni_op(IRubyObject recv, ByteList id) {
+        return dispatch("on_unary", recv, intern(id));
+    }
+
+    protected IRubyObject logop(IRubyObject left, ByteList id, IRubyObject right) {
+        return call_bin_op(left, intern(id), right, -1);
+    }
+
+    protected IRubyObject logop(IRubyObject left, IRubyObject id, IRubyObject right) {
+        return call_bin_op(left, id, right, -1);
+    }
+
+    public Set<ByteList> push_pvtbl() {
+        Set<ByteList> currentTable = variableTable;
+
+        variableTable = new HashSet<>();
+
+        return currentTable;
+    }
+
+    protected void pop_pvtbl(Set<ByteList> table) {
+        variableTable = table;
+    }
+
+    protected Set<ByteList> push_pktbl() {
+        Set<ByteList> currentTable = keyTable;
+
+        keyTable = new HashSet<>();
+
+        return currentTable;
+    }
+
+    protected void pop_pktbl(Set<ByteList> table) {
+        keyTable = table;
+    }
+
+    public Node numparam_push() {
+        Node inner = numParamInner;
+
+        if (numParamOuter == null) numParamOuter = numParamCurrent;
+
+        numParamInner = null;
+        numParamCurrent = null;
+
+        return inner;
+    }
+
+    public void numparam_pop(Node previousInner) {
+        if (previousInner != null) {
+            numParamInner = previousInner;
+        } else if (numParamCurrent != null) {
+            numParamInner = numParamCurrent;
+        }
+
+        if (maxNumParam > 0) {
+            numParamCurrent = numParamOuter;
+            numParamOuter = null;
+        } else {
+            numParamCurrent = null;
+        }
+
+    }
+
+    public int resetMaxNumParam() {
+        return restoreMaxNumParam(0);
+    }
+
+    public int restoreMaxNumParam(int maxNum) {
+        int temp = maxNumParam;
+
+        maxNumParam = maxNum;
+
+        return temp;
+    }
+
+    public void ordinalMaxNumParam() {
+        maxNumParam = -1;
+    }
+
+    protected int src_line() {
+        return lexer.getRubySourceline();
+    }
+
+    protected IRubyObject value_expr(IRubyObject value) {
+        return value;
+    }
+
+    protected IRubyObject assignable(IRubyObject value) {
+        // FIXME: Implement
+        return value;
+    }
+
+    protected int getParenNest() {
+        return lexer.getParenNest();
+    }
+
+    public void add_forwarding_args() {
+        arg_var(FWD_REST);
+        arg_var(FWD_KWREST);
+        arg_var(FWD_BLOCK);
+    }
+
     public IRubyObject method_optarg(IRubyObject method, IRubyObject arg) {
         if (arg == null) return method;
 
@@ -196,7 +364,7 @@ public class RipperParserBase {
         return array;
     }
 
-    public IRubyObject new_args(IRubyObject f, IRubyObject o, IRubyObject r, IRubyObject p, ArgsTailHolder tail) {
+    public IRubyObject new_args(int _line, IRubyObject f, IRubyObject o, IRubyObject r, IRubyObject p, ArgsTailHolder tail) {
         if (tail != null) {
             return dispatch("on_params", f, o, r, p, tail.getKeywordArgs(), tail.getKeywordRestArg(), tail.getBlockArg());
         }
@@ -204,12 +372,33 @@ public class RipperParserBase {
         return dispatch("on_params", f, o, r, p, null, null, null);
     }
 
-    public ArgsTailHolder new_args_tail(IRubyObject kwarg, IRubyObject kwargRest, IRubyObject block) {
+    public ArgsTailHolder new_args_tail(int line, IRubyObject kwarg, IRubyObject kwargRest, ByteList block) {
+        return new_args_tail(line, kwarg, kwargRest, symbolID(block));
+    }
+
+    public ArgsTailHolder new_args_tail(int _line, IRubyObject kwarg, IRubyObject kwargRest, IRubyObject block) {
         return new ArgsTailHolder(kwarg, kwargRest, block);
     }
 
-    public IRubyObject method_add_block(IRubyObject method, IRubyObject block) {
+    public ArgsTailHolder new_args_tail(int _line, IRubyObject kwarg, ByteList kwargRest, IRubyObject block) {
+        return new ArgsTailHolder(kwarg, symbolID(kwargRest), block);
+    }
+
+    protected ArgsTailHolder new_args_tail(int line, IRubyObject keywordArg,
+                                           ByteList keywordRestArgName, ByteList block) {
+        return new_args_tail(line, keywordArg, keywordRestArgName, symbolID(block));
+    }
+
+        public IRubyObject method_add_block(IRubyObject method, IRubyObject block) {
         return dispatch("on_method_add_block", method, block);
+    }
+
+    public Encoding getEncoding() {
+        return lexer.getEncoding();
+    }
+
+    public IRubyObject createStr(ByteList data, int flags) {
+        return lexer.createStr(data, flags);
     }
 
     public IRubyObject internalId() {
@@ -225,11 +414,14 @@ public class RipperParserBase {
     }    
     
     public IRubyObject new_bv(IRubyObject identifier) {
+        // FIXME: This should be a bytelist and not a string. (whole method needs to be rewritten)
         String ident = lexer.getIdent();
-        
-        if (!is_local_id(ident)) getterIdentifierError(ident);
+        RubyString string = getRuntime().newString(ident);
 
-        return arg_var(shadowing_lvar(identifier));
+        if (!is_local_id(string)) getterIdentifierError(ident);
+
+        shadowing_lvar(identifier);
+        return arg_var(string.getByteList());
     }
     
     public void popCurrentScope() {
@@ -267,7 +459,11 @@ public class RipperParserBase {
     public void setCommandStart(boolean value) {
         lexer.commandStart = value;
     }
-    
+
+    public IRubyObject shadowing_lvar(ByteList identifier) {
+        return shadowing_lvar(symbolID(identifier));
+    }
+
     public IRubyObject shadowing_lvar(IRubyObject identifier) {
        String name = lexer.getIdent();
 
@@ -334,6 +530,10 @@ public class RipperParserBase {
         this.isError = true;
     }
 
+    protected LexContext getLexContext() {
+        return lexer.getLexContext();
+    }
+
     public Integer getLeftParenBegin() {
         return lexer.getLeftParenBegin();
     }
@@ -370,12 +570,191 @@ public class RipperParserBase {
         lexer.setState(lexState);
     }
 
+    public void warning(int _line, String message) {
+        warning(message);
+    }
+
     public void warning(String message) {
         if (lexer.isVerbose()) lexer.warning(message);
     }
 
+    public void warn(int _line, String message) {
+        lexer.warn(message);
+    }
     public void warn(String message) {
         lexer.warn(message);
+    }
+
+    protected IRubyObject get_value(IRubyObject value) {
+        return value;
+    }
+
+    protected IRubyObject get_value(DefHolder holder) {
+        return holder.name;
+    }
+
+    public void endless_method_name(DefHolder name) {
+        // FIXME: IMPL
+    }
+
+    public void restore_defun(DefHolder holder) {
+        lexer.getLexContext().restore(holder);
+        lexer.setCurrentArg(holder.current_arg);
+    }
+
+    public RubySymbol symbolID(ByteList identifierValue) {
+        // FIXME: We walk this during identifier construction so we should calculate CR without having to walk twice.
+        if (RubyString.scanForCodeRange(identifierValue) == StringSupport.CR_BROKEN) {
+            Ruby runtime = getRuntime();
+            throw runtime.newEncodingError(str(runtime, "invalid symbol in encoding " + lexer.getEncoding() + " :\"", inspectIdentifierByteList(runtime, identifierValue), "\""));
+        }
+
+        return RubySymbol.newIDSymbol(getRuntime(), identifierValue);
+    }
+
+    public RubySymbol symbolID(IRubyObject ident) {
+        return (RubySymbol) ident;
+    }
+
+    public void numparam_name(RubySymbol name) {
+        String id = name.idString();
+        if (isNumParamId(id)) compile_error(id + " is reserved for numbered parameter");
+    }
+
+    private boolean isNumParamId(String id) {
+        if (id.length() != 2 || id.charAt(0) != '_') return false;
+
+        char one = id.charAt(1);
+        return one != '0' && Character.isDigit(one); // _1..._9
+    }
+
+    public IRubyObject new_array_pattern(int _line, IRubyObject constant, IRubyObject preArg, RubyArray arrayPattern) {
+        RubyArray preArgs = (RubyArray) arrayPattern.eltOk(0);
+        IRubyObject restArg = arrayPattern.eltOk(1);
+        IRubyObject postArgs = arrayPattern.eltOk(2);
+
+        if (preArg != null) {
+            if (preArgs != null) {
+                preArgs.push(preArg);
+            } else {
+                preArgs = RubyArray.newArray(getRuntime());
+                preArgs.concat(preArg);
+            }
+        }
+
+        return dispatch("on_array_pattern", constant, preArgs, restArg, postArgs);
+    }
+
+    public RubyArray new_array_pattern_tail(int _line, IRubyObject preArgs, boolean hasRest, IRubyObject restArg, RubyArray postArgs) {
+        if (hasRest) {
+            restArg = dispatch("on_var_field", restArg != null ? restArg : getRuntime().getNil());
+        } else {
+            restArg = getRuntime().getNil();
+        }
+
+        return RubyArray.newArray(getRuntime(), preArgs, restArg, postArgs);
+    }
+
+
+    public IRubyObject new_find_pattern(IRubyObject constant, RubyArray findPattern) {
+        RubyArray preArgs = (RubyArray) findPattern.eltOk(0);
+        IRubyObject restArg = findPattern.eltOk(1);
+        IRubyObject postArgs = findPattern.eltOk(2);
+
+        return dispatch("on_find_pattern", constant, preArgs, restArg, postArgs);
+    }
+
+    public RubyArray new_find_pattern_tail(int _line, IRubyObject preRestArg, IRubyObject args, IRubyObject postRestArg) {
+        preRestArg = dispatch("on_var_field", preRestArg != null ? preRestArg : context.nil);
+        postRestArg = dispatch("on_var_field", postRestArg != null ? postRestArg : context.nil);
+
+        return RubyArray.newArray(getRuntime(), preRestArg, args, postRestArg);
+    }
+
+
+    public IRubyObject new_hash_pattern(IRubyObject constant, RubyArray hashPattern) {
+        IRubyObject keywordArgs = hashPattern.eltOk(0);
+        IRubyObject keywordRestArgs = hashPattern.eltOk(1);
+
+        return dispatch("on_hash_pattern", constant, keywordArgs, keywordRestArgs);
+    }
+
+    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, ByteList keywordRestArg) {
+        IRubyObject restArg;
+
+        if (keywordRestArg != null) {
+            restArg = dispatch("on_var_field", symbolID(keywordRestArg));
+        } else {                                   // '**'
+            restArg = context.nil;
+        }
+
+        return RubyArray.newArray(getRuntime(), keywordArgs, restArg);
+    }
+
+    public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestArg) {
+        return new_hash_pattern_tail(_line, keywordArgs, extractByteList(keywordRestArg));
+    }
+
+    public IRubyObject makeNullNil(IRubyObject value) {
+        return value == null ? context.nil : value;
+    }
+
+    public boolean check_forwarding_args() {
+        // FIXME: Add local_id
+        /*
+        if (local_id(FWD_REST) &&
+                local_id(FWD_KWREST) &&
+                local_id(FWD_BLOCK)) return true;
+
+         */
+
+        compile_error("unexpected ...");
+        return false;
+    }
+
+    protected int tokline() {
+        return lexer.tokline;
+    }
+
+    public IRubyObject method_cond(IRubyObject value) {
+        return value;
+    }
+
+    public void error_duplicate_pattern_key(IRubyObject value) {
+        ByteList key = extractByteList(value);
+        // This is for bare one-line matches ({a: 1} => a:).
+        if (keyTable == null) keyTable = new HashSet<>();
+        if (keyTable.contains(key)) yyerror("duplicated key name");
+
+        keyTable.add(key);
+    }
+
+    protected void error_duplicate_pattern_variable(IRubyObject value) {
+        ByteList variable = extractByteList(value);
+        if (is_private_local_id(variable)) return;
+        if (variableTable.contains(variable)) yyerror("duplicated variable name");
+
+        variableTable.add(variable);
+    }
+
+    public static boolean is_private_local_id(ByteList name) {
+        if (name.realSize() == 1 && name.charAt(0) == '_') return true;
+        if (!is_local_id(name)) return false;
+
+        return name.charAt(0) == '_';
+    }
+
+    // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
+    public static boolean is_local_id(ByteList name) {
+        return org.jruby.lexer.yacc.RubyLexer.isIdentifierChar(name.charAt(0));
+    }
+
+    protected ByteList extractByteList(Object value) {
+        if (value instanceof ByteList) return (ByteList) value;
+        if (value instanceof RubyString) return ((RubyString) value).getByteList();
+        if (value instanceof RubySymbol) return ((RubySymbol) value).getBytes();
+
+        throw new RuntimeException("Got unexpected object: " + value);
     }
 
     public Integer incrementParenNest() {
@@ -407,12 +786,12 @@ public class RipperParserBase {
         return lexer.getEncoding();
     }
 
-    public IRubyObject getCurrentArg() {
+    public ByteList getCurrentArg() {
         return currentArg;
     }
 
     public void setCurrentArg(IRubyObject arg) {
-        this.currentArg = arg;
+        this.currentArg = extractByteList(arg);
     }
     
     public boolean getYYDebug() {
@@ -431,13 +810,37 @@ public class RipperParserBase {
         return isError;
     }
 
+    public IRubyObject nil() {
+        return context.nil;
+    }
+
+    public IRubyObject var_field(IRubyObject value) {
+        return dispatch("on_var_field", value);
+    }
+
+    public IRubyObject remove_begin(IRubyObject value) {
+        return value;
+    }
+
+    public IRubyObject void_stmts(IRubyObject value) {
+        return value;
+    }
+
+    protected void setHeredocLineIndent(int value) {
+        lexer.setHeredocIndent(value);
+    }
+
+    public void warn_experimental(int line, String message) {
+        lexer.warning(lexer.getFile(), message);
+    }
+
     public ThreadContext getContext() {
         return context;
     }
     
     protected IRubyObject ripper;
     protected ThreadContext context;
-    protected RipperLexer lexer;
+    protected RubyLexer lexer;
     protected StaticScope currentScope;
     protected boolean inDefinition;
     protected boolean inClass;
@@ -446,4 +849,14 @@ public class RipperParserBase {
     
     // Is the parser current within a singleton (value is number of nested singletons)
     protected int inSingleton;
+    private ByteList currentArg;
+    protected ScopedParserState scopedParserState;
+    private Set<ByteList> keyTable;
+    private Set<ByteList> variableTable;
+
+    private int maxNumParam = 0;
+    private Node numParamCurrent = null;
+    private Node numParamInner = null;
+    private Node numParamOuter = null;
+    public IRubyObject case_labels;
 }

@@ -4,7 +4,7 @@
   SUBS = {
     'import_ripper' => [
          '',
-         'import org.jruby.util.KeyValuePair;'
+         'import org.jruby.util.KeyValuePair; import org.jruby.RubyArray;'
     ],
     'program_production' => [
          '',
@@ -20,7 +20,7 @@
     ],
     'lexer' => [
         'org.jruby.lexer.yacc.RubyLexer', 
-        'org.jruby.ext.ripper.RipperLexer'
+        'org.jruby.ext.ripper.RubyLexer'
     ],
     'package' => ['org.jruby.parser', 'org.jruby.ext.ripper'],
     'lex_package' => ['org.jruby.lexer.yacc', 'org.jruby.ext.ripper'],
@@ -62,16 +62,18 @@
     'prod_mlhs_type' => ['MultipleAsgnNode', 'IRubyObject'],
     'prod_mlhs_head_type' => ['ListNode', 'IRubyObject'],
     'prod_p_case_body_type' => ['InNode', 'IRubyObject'],
-    'prod_p_find_type' => ['FindPatternNode', 'IRubyObject'],
-    'prod_p_args_type' => ['ArrayPatternNode', 'IRubyObject'],
+    'prod_p_find_type' => ['FindPatternNode', 'RubyArray'],
+    'prod_p_args_type' => ['ArrayPatternNode', 'RubyArray'],
     'prod_p_args_head_type' => ['ListNode', 'RubyArray'],
     'prod_p_arg_type' => ['ListNode', 'RubyArray'],
     'prod_p_kwarg_type' => ['HashNode', 'RubyArray'],
+    'prod_p_kwargs_type' => ['HashPatternNode', 'RubyArray'],
     'prod_p_kw_type' => ['KeyValuePair', 'RubyArray'],
     'prod_f_rest_arg_type' => ['RestArgNode', 'RubyArray'],
     'prod_f_block_arg_type' => ['BlockArgNode', 'RubyArray'],
     'prod_f_arg_asgn_type' => ['ArgumentNode', 'IRubyObject'],
     'prod_regexp_contents_type' => ['Node', 'KeyValuePair'],
+    'prod_excessed_comma_type' => ['RestArgNode', 'IRubyObject'],
   }
 =@@*/
 /*
@@ -120,8 +122,10 @@ import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
 import org.jruby.lexer.yacc.LexContext;
-import @@lex_package@@.@@Parser@@Lexer;
+import @@lex_package@@.RubyLexer;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.parser.ProductionState;
+import org.jruby.parser.ParserState;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.yacc.RubyLexer.*;
@@ -303,7 +307,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@prod_p_args_type@@> p_args_tail
 %type <@@prod_p_arg_type@@> p_args_post p_arg
 %type <@@prod_type@@> p_value p_primitive p_variable p_var_ref p_expr_ref p_const
-%type <HashPatternNode> p_kwargs
+%type <@@prod_p_kwargs_type@@> p_kwargs
 %type <@@prod_p_kwarg_type@@> p_kwarg
 %type <@@prod_p_kw_type@@> p_kw
   /* keyword_variable + user_variable are inlined into the grammar */
@@ -316,7 +320,9 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@prod_f_arg_asgn_type@@> f_arg_asgn
 %type <@@token_type@@> call_op call_op2 reswords relop dot_or_colon
 %type <@@token_type@@> p_rest p_kwrest p_kwnorest p_any_kwrest p_kw_label
-%type <@@token_type@@> f_no_kwarg f_any_kwrest args_forward excessed_comma nonlocal_var
+%type <@@token_type@@> f_no_kwarg f_any_kwrest args_forward
+%type <@@prod_excessed_comma_type@@> excessed_comma
+%type <@@token_type@@> nonlocal_var
 %type <LexContext> lex_ctxt
 // Things not declared in MRI - start
 %type <@@token_type@@> blkarg_mark restarg_mark kwrest_mark rparen rbracket
@@ -338,7 +344,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %token <Integer> '\f'                   /* {{escaped form feed}} */
 %token <Integer> '\r'                   /* {{escaped carriage return}} */
 %token <Integer> '\v'                   /* {{escaped vertical tab}} */
-%token <@@token_type@@> tUPLUS               /* {{unary+}} */
+%token <ByteList> tUPLUS               /* {{unary+}} */
 %token <@@token_type@@> tUMINUS              /* {{unary-}} */
 %token <@@token_type@@> tPOW                 /* {{**}} */
 %token <@@token_type@@> tCMP                 /* {{<=>}} */
@@ -360,7 +366,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %token <@@token_type@@> tLSHFT               /* {{<<}} */
 %token <@@token_type@@> tRSHFT               /* {{>>}} */
 %token <@@token_type@@> tANDDOT              /* {{&.}} */
-%token <@@token_type@@> tCOLON2              /* {{::}} */
+%token <ByteList> tCOLON2                    /* {{::}} */
 %token <@@token_type@@> tCOLON3              /* {{:: at EXPR_BEG}} */
 %token <@@token_type@@> tOP_ASGN             /* {{operator assignment}} +=, etc. */
 %token <@@token_type@@> tASSOC               /* {{=>}} */
@@ -455,13 +461,13 @@ top_stmts     : none {
               }
               | top_stmt {
                   /*%%%*/
-                  $$ = p.newline_node($1, p.getPosition($1));
+                  $$ = p.newline_node($1, @1.start());
                   /*% %*/
                   /*% ripper: stmts_add!(stmts_new!, $1) %*/
               }
               | top_stmts terms top_stmt {
                   /*%%%*/
-                  $$ = p.appendToBlock($1, p.newline_node($3, p.getPosition($3)));
+                  $$ = p.appendToBlock($1, p.newline_node($3, @3.start()));
                   /*% %*/
                   /*% ripper: stmts_add!($1, $3) %*/
               }
@@ -510,13 +516,13 @@ stmts           : none {
                 }
                 | stmt_or_begin {
                    /*%%%*/
-                    $$ = p.newline_node($1, p.getPosition($1));
+                    $$ = p.newline_node($1, @1.start());
                    /*% %*/
                    /*% ripper: stmts_add!(stmts_new!, $1) %*/
                 }
                 | stmts terms stmt_or_begin {
                    /*%%%*/
-                    $$ = p.appendToBlock($1, p.newline_node($3, p.getPosition($3)));
+                    $$ = p.appendToBlock($1, p.newline_node($3, @3.start()));
                    /*% %*/
                    /*% ripper: stmts_add!($1, $3) %*/
                 }
@@ -568,14 +574,14 @@ stmt            : keyword_alias fitem {
                 }
                 | stmt modifier_if expr_value {
                     /*%%%*/
-                    $$ = p.new_if(p.getPosition($1), p.cond($3), p.remove_begin($1), null);
+                    $$ = p.new_if(@1.start(), p.cond($3), p.remove_begin($1), null);
                     p.fixpos($<Node>$, $3);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
                 }
                 | stmt modifier_unless expr_value {
                     /*%%%*/
-                    $$ = p.new_if(p.getPosition($1), p.cond($3), null, p.remove_begin($1));
+                    $$ = p.new_if(@1.start(), p.cond($3), null, p.remove_begin($1));
                     p.fixpos($<Node>$, $3);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
@@ -583,9 +589,9 @@ stmt            : keyword_alias fitem {
                 | stmt modifier_while expr_value {
                     /*%%%*/
                     if ($1 != null && $1 instanceof BeginNode) {
-                        $$ = new WhileNode(p.getPosition($1), p.cond($3), $<BeginNode>1.getBodyNode(), false);
+                        $$ = new WhileNode(@1.start(), p.cond($3), $<BeginNode>1.getBodyNode(), false);
                     } else {
-                        $$ = new WhileNode(p.getPosition($1), p.cond($3), $1, true);
+                        $$ = new WhileNode(@1.start(), p.cond($3), $1, true);
                     }
                     /*% %*/
                     /*% ripper: while_mod!($3, $1) %*/
@@ -593,9 +599,9 @@ stmt            : keyword_alias fitem {
                 | stmt modifier_until expr_value {
                     /*%%%*/
                     if ($1 != null && $1 instanceof BeginNode) {
-                        $$ = new UntilNode(p.getPosition($1), p.cond($3), $<BeginNode>1.getBodyNode(), false);
+                        $$ = new UntilNode(@1.start(), p.cond($3), $<BeginNode>1.getBodyNode(), false);
                     } else {
-                        $$ = new UntilNode(p.getPosition($1), p.cond($3), $1, true);
+                        $$ = new UntilNode(@1.start(), p.cond($3), $1, true);
                     }
                     /*% %*/
                     /*% ripper: until_mod!($3, $1) %*/
@@ -608,7 +614,7 @@ stmt            : keyword_alias fitem {
                 }
                 | keyword_END '{' compstmt '}' {
                    if (p.getLexContext().in_def) {
-                       p.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
+                       p.warn("END in method; use at_exit");
                     }
                     /*%%%*/
                     $$ = new PostExeNode($1, $3, p.src_line());
@@ -680,7 +686,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
-                    int line = $1.getLine();
+                    int line = @1.start();
                     $$ = p.new_const_op_assign(line, p.new_colon2(line, $1, $3), $4, $6);
                     /*% %*/
                     /*% ripper: opassign!(const_path_field!($1, $3), $4, $6) %*/
@@ -720,9 +726,8 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.restore_defun($1);
                     /*%%%*/
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
-                    /*% 
-                       $1 = get_value($1);
-                    %*/
+                    // Changed from MRI (no more get_value)
+                    /*% %*/
                     /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
                     p.popCurrentScope();
@@ -733,9 +738,8 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
-                    /*% 
-                       $1 = get_value($1);
-                    %*/
+                    // Changed from MRI (no more get_value)                    
+                    /*% %*/
                     /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
                     p.popCurrentScope();
@@ -752,8 +756,11 @@ command_rhs     : command_call %prec tOP_ASGN {
                     $$ = $1;
                 }
 		| command_call modifier_rescue stmt {
+                    /*%%%*/
                     p.value_expr($1);
                     $$ = p.newRescueModNode($1, $3);
+                    /*% %*/
+                    /*% ripper: rescue_mod!($1, $3) %*/
                 }
 		| command_asgn
  
@@ -787,7 +794,7 @@ expr            : command_call
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode($1.getLine(), $1, p.newIn(@1.start(), $5, null, null));
+                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $5, null, null));
                     /*% %*/
                     /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
                 }
@@ -805,7 +812,7 @@ expr            : command_call
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $<Boolean>3;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode($1.getLine(), $1, p.newIn(@1.start(), $5, new TrueNode(p.tokline()), new FalseNode(p.tokline())));
+                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $5, new TrueNode(p.tokline()), new FalseNode(p.tokline())));
                     /*% %*/
                     /*% ripper: case!($1, in!($4, Qnil, Qnil)) %*/
                 }
@@ -825,7 +832,7 @@ def_name        : fname {
 
 // [!null] - DefHolder
 defn_head       : k_def def_name {
-                    $2.line = $1;
+                    $2.line = @1.start();
                     $$ = $2;
                 }
 
@@ -836,9 +843,9 @@ defs_head       : k_def singleton dot_or_colon {
                     ctxt.in_argdef = true;
                 } def_name {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
-                    $5.line = $1;
+                    $5.line = @1.start();
                     $5.setSingleton($2);
-                    $5.setDotOrColon($3);
+                    $5.setDotOrColon(p.extractByteList($3));
                     $$ = $5;
                 }
 
@@ -974,49 +981,49 @@ mlhs_inner      : mlhs_basic {
 // MultipleAssignNode:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
 mlhs_basic      : mlhs_head {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, null, null);
+                    $$ = new MultipleAsgnNode(@1.start(), $1, null, null);
                     /*% %*/
                     /*% ripper: $1 %*/
                 }
                 | mlhs_head mlhs_item {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1.add($2), null, null);
+                    $$ = new MultipleAsgnNode(@1.start(), $1.add($2), null, null);
                     /*% %*/
                     /*% ripper: mlhs_add!($1, $2) %*/
                 }
                 | mlhs_head tSTAR mlhs_node {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, $3, (ListNode) null);
+                    $$ = new MultipleAsgnNode(@1.start(), $1, $3, (ListNode) null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!($1, $3) %*/
                 }
                 | mlhs_head tSTAR mlhs_node ',' mlhs_post {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, $3, $5);
+                    $$ = new MultipleAsgnNode(@1.start(), $1, $3, $5);
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!($1, $3), $5) %*/
                 }
                 | mlhs_head tSTAR {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, new StarNode(p.src_line()), null);
+                    $$ = new MultipleAsgnNode(@1.start(), $1, new StarNode(p.src_line()), null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!($1, Qnil) %*/
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, new StarNode(p.src_line()), $4);
+                    $$ = new MultipleAsgnNode(@1.start(), $1, new StarNode(p.src_line()), $4);
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!($1, Qnil), $4) %*/
                 }
                 | tSTAR mlhs_node {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($2.getLine(), null, $2, null);
+                    $$ = new MultipleAsgnNode(@2.start(), null, $2, null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!(mlhs_new!, $2) %*/
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($2.getLine(), null, $2, $4);
+                    $$ = new MultipleAsgnNode(@2.start(), null, $2, $4);
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!(mlhs_new!, $2), $4) %*/
                 }
@@ -1044,7 +1051,7 @@ mlhs_item       : mlhs_node
 // Set of mlhs terms at front of mlhs (a, *b, d, e = arr  # a is head)
 mlhs_head       : mlhs_item ',' {
                     /*%%%*/
-                    $$ = p.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
                 }
@@ -1058,7 +1065,7 @@ mlhs_head       : mlhs_item ',' {
 // Set of mlhs terms at end of mlhs (a, *b, d, e = arr  # d,e is post)
 mlhs_post       : mlhs_item {
                     /*%%%*/
-                    $$ = p.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
                 }
@@ -1183,7 +1190,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     /*%%%*/
                     if (p.getLexContext().in_def) p.yyerror("dynamic constant assignment");
 
-                    Integer position = p.getPosition($1);
+                    Integer position = @1.start();
 
                     $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                     /*% %*/
@@ -1320,7 +1327,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         p.yyerror("dynamic constant assignment");
                     }
 
-                    Integer position = p.getPosition($1);
+                    Integer position = @1.start();
 
                     $$ = new ConstDeclNode(position, (RubySymbol) null, p.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                     /*% %*/
@@ -1370,7 +1377,7 @@ cpath           : tCOLON3 cname {
                 }
                 | primary_value tCOLON2 cname {
                     /*%%%*/
-                    $$ = p.new_colon2(p.getPosition($1), $1, $3);
+                    $$ = p.new_colon2(@1.start(), $1, $3);
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
                 }
@@ -1407,7 +1414,7 @@ fitem           : fname {  // LiteralNode
 
 undef_list      : fitem {
                     /*%%%*/
-                    $$ = newUndef($1.getLine(), $1);
+                    $$ = newUndef(@1.start(), $1);
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
@@ -1415,7 +1422,7 @@ undef_list      : fitem {
                     p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     /*%%%*/
-                    $$ = p.appendToBlock($1, newUndef($1.getLine(), $4));
+                    $$ = p.appendToBlock($1, newUndef(@1.start(), $4));
                     /*% %*/
                     /*% ripper: rb_ary_push($1, get_value($4)) %*/
                 }
@@ -1679,7 +1686,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
-                    Integer pos = p.getPosition($1);
+                    Integer pos = @1.start();
                     $$ = p.new_const_op_assign(pos, p.new_colon2(pos, $1, $3), $4, $6);
                     /*% %*/
                     /*% ripper: opassign!(const_path_field!($1, $3), $4, $6) %*/
@@ -1703,7 +1710,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.value_expr($3);
     
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), p.makeNullNil($3), false, isLiteral);
+                    $$ = new DotNode(@1.start(), p.makeNullNil($1), p.makeNullNil($3), false, isLiteral);
                     /*% %*/
                     /*% ripper: dot2!($1, $3) %*/
                 }
@@ -1713,7 +1720,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.value_expr($3);
 
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), p.makeNullNil($3), true, isLiteral);
+                    $$ = new DotNode(@1.start(), p.makeNullNil($1), p.makeNullNil($3), true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!($1, $3) %*/
                 }
@@ -1722,7 +1729,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.value_expr($1);
 
                     boolean isLiteral = $1 instanceof FixnumNode;
-                    $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
+                    $$ = new DotNode(@1.start(), p.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
                     /*% %*/
                     /*% ripper: dot2!($1, Qnil) %*/
                 }
@@ -1731,7 +1738,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.value_expr($1);
 
                     boolean isLiteral = $1 instanceof FixnumNode;
-                    $$ = new DotNode(p.getPosition($1), p.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
+                    $$ = new DotNode(@1.start(), p.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
                     /*% %*/
                     /*% ripper: dot3!($1, Qnil) %*/
                 }
@@ -1830,12 +1837,12 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.getLexContext().in_defined = true;
                 } arg {
                     p.getLexContext().in_defined = false;                    
-                    $$ = p.new_defined($1, $4);
+                    $$ = p.new_defined(@1.start(), $4);
                 }
                 | arg '?' arg opt_nl ':' arg {
                     /*%%%*/
                     p.value_expr($1);
-                    $$ = p.new_if(p.getPosition($1), p.cond($1), $3, $6);
+                    $$ = p.new_if(@1.start(), p.cond($1), $3, $6);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
                 }
@@ -1869,9 +1876,8 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     p.popCurrentScope();
-                    /*% 
-                        $1 = get_value($1);
-                    %*/
+                    // Changed from MRI (no more get_value)
+                    /*% %*/
                     /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
 		}
@@ -1882,9 +1888,8 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();                    p.popCurrentScope();
-                    /*% 
-                        $1 = get_value($1);
-                    %*/
+                    // Changed from MRI (no more get_value)
+                    /*% %*/
                     /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
                 }
@@ -1909,7 +1914,7 @@ rel_expr        : arg relop arg   %prec '>' {
                     $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
 		| rel_expr relop arg   %prec '>' {
-                    p.warning(ID.MISCELLANEOUS, p.src_line(), "comparison '" + $2 + "' after comparison");
+                    p.warning(p.src_line(), "comparison '" + $2 + "' after comparison");
                     $$ = p.call_bin_op($1, $2, $3, p.src_line());
                 }
 
@@ -1937,7 +1942,7 @@ aref_args       : none
                 }
                 | assocs trailer {
                     /*%%%*/
-                    $$ = p.newArrayNode($1.getLine(), p.remove_duplicate_keys($1));
+                    $$ = p.newArrayNode(@1.start(), p.remove_duplicate_keys($1));
                     /*% %*/
                     /*% ripper: args_add!(args_new!, bare_assoc_hash!($1)) %*/
                 }
@@ -1996,7 +2001,7 @@ opt_call_args   : none
                 }
                 | assocs ',' {
                     /*%%%*/
-                    $$ = p.newArrayNode($1.getLine(), p.remove_duplicate_keys($1));
+                    $$ = p.newArrayNode(@1.start(), p.remove_duplicate_keys($1));
                     /*% %*/
                     /*% ripper: args_add!(args_new!, bare_assoc_hash!($1)) %*/
                 }
@@ -2006,7 +2011,7 @@ opt_call_args   : none
 call_args       : command {
                     /*%%%*/
                     p.value_expr($1);
-                    $$ = p.newArrayNode(p.getPosition($1), $1);
+                    $$ = p.newArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
                 }
@@ -2018,7 +2023,7 @@ call_args       : command {
                 }
                 | assocs opt_block_arg {
                     /*%%%*/
-                    $$ = p.newArrayNode($1.getLine(), p.remove_duplicate_keys($1));
+                    $$ = p.newArrayNode(@1.start(), p.remove_duplicate_keys($1));
                     $$ = arg_blk_pass($<Node>$, $2);
                     /*% %*/
                     /*% ripper: args_add_block!(args_add!(args_new!, bare_assoc_hash!($1)), $2) %*/
@@ -2061,7 +2066,7 @@ command_args    :  {
 
 block_arg       : tAMPER arg_value {
                     /*%%%*/
-                    $$ = new BlockPassNode(p.getPosition($2), $2);
+                    $$ = new BlockPassNode(@2.start(), $2);
                     /*% %*/
                     /*% ripper: $2 %*/
                 }
@@ -2069,8 +2074,9 @@ block_arg       : tAMPER arg_value {
                     /*%%%*/
                     if (!p.local_id(FWD_BLOCK)) p.compile_error("no anonymous block parameter");
                     $$ = new BlockPassNode(p.tokline(), p.arg_var(FWD_BLOCK));
+                    // Changed from MRI
                     /*%
-                    $$ = Qnil;
+                    $$ = p.nil();
                     %*/
                 }
  
@@ -2083,7 +2089,7 @@ opt_block_arg   : ',' block_arg {
 // [!null]
 args            : arg_value { // ArrayNode
                     /*%%%*/
-                    int line = $1 instanceof NilImplicitNode ? p.src_line() : $1.getLine();
+                    int line = $1 instanceof NilImplicitNode ? p.src_line() : @1.start();
                     $$ = p.newArrayNode(line, $1);
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
@@ -2225,7 +2231,7 @@ primary         : literal
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     /*%%%*/
-                    $$ = p.new_colon2(p.getPosition($1), $1, $3);
+                    $$ = p.new_colon2(@1.start(), $1, $3);
                     /*% %*/
                     /*% ripper: const_path_ref!($1, $3) %*/
                 }
@@ -2237,7 +2243,7 @@ primary         : literal
                 }
                 | tLBRACK aref_args ']' {
                     /*%%%*/
-                    Integer position = p.getPosition($2);
+                    Integer position = @2.start();
                     if ($2 == null) {
                         $$ = new ZArrayNode(position); /* zero length array */
                     } else {
@@ -2281,13 +2287,13 @@ primary         : literal
                     p.getLexContext().in_defined = true;
                 } expr rparen {
                     p.getLexContext().in_defined = false;
-                    $$ = new DefinedNode($1, $5);
+                    $$ = p.new_defined(@1.start, $5);
                 }
                 | keyword_not '(' expr rparen {
                     $$ = p.call_uni_op(p.method_cond($3), BANG);
                 }
                 | keyword_not '(' rparen {
-                    $$ = p.call_uni_op(p.method_cond(NilImplicitNode.NIL), BANG);
+                    $$ = p.call_uni_op(p.method_cond(p.nil()), BANG);
                 }
                 | fcall brace_block {
                     /*%%%*/
@@ -2304,7 +2310,7 @@ primary         : literal
                           p.compile_error("Both block arg and actual block given.");
                     }
                     $$ = $<BlockAcceptingNode>1.setIterNode($2);
-                    $<Node>$.setLine($1.getLine());
+                    $<Node>$.setLine(@1.start());
                     /*% %*/
                     /*% ripper: method_add_block!($1, $2) %*/
                 }
@@ -2337,7 +2343,7 @@ primary         : literal
                 }
                 | k_case expr_value opt_terms {
                     $$ = p.case_labels;
-                    p.case_labels = p.getConfiguration().getRuntime().getNil();
+                    p.case_labels = p.getRuntime().getNil();
                 } case_body k_end {
                     /*%%%*/
                     $$ = p.newCaseNode($1, $2, $5);
@@ -2438,9 +2444,8 @@ primary         : literal
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @4.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     p.popCurrentScope();
-                    /*%
-                        $1 = get_value($1);
-                    %*/
+                    // Changed from MRI (no more get_value)
+                    /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $3) %*/
                 }
                 | keyword_break {
@@ -2473,7 +2478,7 @@ primary         : literal
 primary_value   : primary {
                     p.value_expr($1);
                     $$ = $1;
-                    if ($$ == null) $$ = NilImplicitNode.NIL;
+                    if ($$ == null) $$ = p.nil();
                 }
 
 // FIXME: token_info_push
@@ -2602,7 +2607,7 @@ f_marg          : f_norm_arg {
 // [!null]
 f_marg_list     : f_marg {
                     /*%%%*/
-                    $$ = p.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: mlhs_add!(mlhs_new!, $1) %*/
                 }
@@ -2615,19 +2620,19 @@ f_marg_list     : f_marg {
 
 f_margs         : f_marg_list {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, null, null);
+                    $$ = new MultipleAsgnNode(@1.start(), $1, null, null);
                     /*% %*/
                     /*% ripper: $1 %*/
                 }
                 | f_marg_list ',' f_rest_marg {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, $3, null);
+                    $$ = new MultipleAsgnNode(@1.start(), $1, $3, null);
                     /*% %*/
                     /*% ripper: mlhs_add_star!($1, $3) %*/
                 }
                 | f_marg_list ',' f_rest_marg ',' f_marg_list {
                     /*%%%*/
-                    $$ = new MultipleAsgnNode($1.getLine(), $1, $3, $5);
+                    $$ = new MultipleAsgnNode(@1.start(), $1, $3, $5);
                     /*% %*/
                     /*% ripper: mlhs_add_post!(mlhs_add_star!($1, $3), $5) %*/
                 }
@@ -2668,78 +2673,77 @@ f_eq            : {
 
  
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
-                    $$ = p.new_args_tail($1.getLine(), $1, $3, $4);
+                    $$ = p.new_args_tail(@1.start(), $1, $3, $4);
                 }
                 | f_block_kwarg opt_f_block_arg {
-                    $$ = p.new_args_tail($1.getLine(), $1, (ByteList) null, $2);
+                    $$ = p.new_args_tail(@1.start(), $1, (ByteList) null, $2);
                 }
                 | f_any_kwrest opt_f_block_arg {
                     $$ = p.new_args_tail(p.src_line(), null, $1, $2);
                 }
                 | f_block_arg {
-                    $$ = p.new_args_tail($1.getLine(), null, (ByteList) null, $1);
+                    $$ = p.new_args_tail(@1.start(), null, (ByteList) null, $1);
                 }
 
 opt_block_args_tail : ',' block_args_tail {
                     $$ = $2;
                 }
                 | {
-                    $$ = p.new_args_tail(p.src_line(), null, (ByteList) null, null);
+                    $$ = p.new_args_tail(p.src_line(), null, (ByteList) null, (ByteList) null);
                 }
 
 excessed_comma  : ',' { // no need for this other than to look similar to MRI. 
                     /*%%%*/
-                    $$ = null;
+                    $$ = new UnnamedRestArgNode(@1.start(), null, p.getCurrentScope().addVariable("*"));
                     /*% %*/
                     /*% ripper: excessed_comma! %*/
                 }
 
 // [!null]
 block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, $3, $5, null, $6);
+                    $$ = p.new_args(@1.start(), $1, $3, $5, null, $6);
                 }
                 | f_arg ',' f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, $3, $5, $7, $8);
+                    $$ = p.new_args(@1.start(), $1, $3, $5, $7, $8);
                 }
                 | f_arg ',' f_block_optarg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, $3, null, null, $4);
+                    $$ = p.new_args(@1.start(), $1, $3, null, null, $4);
                 }
                 | f_arg ',' f_block_optarg ',' f_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, $3, null, $5, $6);
+                    $$ = p.new_args(@1.start(), $1, $3, null, $5, $6);
                 }
                 | f_arg ',' f_rest_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, null, $3, null, $4);
+                    $$ = p.new_args(@1.start(), $1, null, $3, null, $4);
                 }
                 | f_arg excessed_comma {
-                    RestArgNode rest = new UnnamedRestArgNode($1.getLine(), null, p.getCurrentScope().addVariable("*"));
-                    $$ = p.new_args($1.getLine(), $1, null, rest, null, (ArgsTailHolder) null);
+                    $$ = p.new_args(@1.start(), $1, null, $2, null, (ArgsTailHolder) null);
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, null, $3, $5, $6);
+                    $$ = p.new_args(@1.start(), $1, null, $3, $5, $6);
                 }
                 | f_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, null, null, null, $2);
+                    $$ = p.new_args(@1.start(), $1, null, null, null, $2);
                 }
                 | f_block_optarg ',' f_rest_arg opt_block_args_tail {
-                    $$ = p.new_args(p.getPosition($1), null, $1, $3, null, $4);
+                    $$ = p.new_args(@1.start(), null, $1, $3, null, $4);
                 }
                 | f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = p.new_args(p.getPosition($1), null, $1, $3, $5, $6);
+                    $$ = p.new_args(@1.start(), null, $1, $3, $5, $6);
                 }
                 | f_block_optarg opt_block_args_tail {
-                    $$ = p.new_args(p.getPosition($1), null, $1, null, null, $2);
+                    $$ = p.new_args(@1.start(), null, $1, null, null, $2);
                 }
                 | f_block_optarg ',' f_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), null, $1, null, $3, $4);
+                    $$ = p.new_args(@1.start(), null, $1, null, $3, $4);
                 }
                 | f_rest_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), null, null, $1, null, $2);
+                    $$ = p.new_args(@1.start(), null, null, $1, null, $2);
                 }
                 | f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = p.new_args($1.getLine(), null, null, $1, $3, $4);
+                    $$ = p.new_args(@1.start(), null, null, $1, $3, $4);
                 }
                 | block_args_tail {
-                    $$ = p.new_args($1.getLine(), null, null, null, null, $1);
+                    $$ = p.new_args(@1.start(), null, null, null, null, $1);
                 }
 
 opt_block_param : none {
@@ -2810,9 +2814,10 @@ lambda          : tLAMBDA {
                     p.getCmdArgumentState().push0();
                 } lambda_body {
                     int max_numparam = p.restoreMaxNumParam($<Integer>3);
-                    ArgsNode args = p.args_with_numbered($5, max_numparam);
                     p.getCmdArgumentState().pop();
+                    // Changed from MRI args_with_numbered put into parser codepath and not used by ripper (since it is just a passthrough method and types do not match).
                     /*%%%*/
+                    ArgsNode args = p.args_with_numbered($5, max_numparam);
                     $$ = new LambdaNode(@1.start(), args, $7, p.getCurrentScope(), p.src_line());
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
@@ -2871,7 +2876,7 @@ block_call      : command do_block {
                         $<BlockAcceptingNode>1.setIterNode($2);
                     }
                     $$ = $1;
-                    $<Node>$.setLine($1.getLine());
+                    $<Node>$.setLine(@1.start());
                     /*% %*/
                     /*% ripper: method_add_block!($1, $2) %*/
                 }
@@ -2977,8 +2982,9 @@ brace_body      : {
                     $$ = p.numparam_push();
                 } opt_block_param compstmt {
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
-                    ArgsNode args = p.args_with_numbered($4, max_numparam);
+                    // Changed from MRI args_with_numbered put into parser codepath and not used by ripper (since it is just a passthrough method and types do not match).
                     /*%%%*/
+                    ArgsNode args = p.args_with_numbered($4, max_numparam);
                     $$ = new IterNode(@1.start(), args, $5, p.getCurrentScope(), p.src_line());
                     /*% %*/
                     /*% ripper: brace_block!(escape_Qundef($4), $5) %*/
@@ -2995,8 +3001,9 @@ do_body 	: {
                     p.getCmdArgumentState().push0();
                 } opt_block_param bodystmt {
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
-                    ArgsNode args = p.args_with_numbered($4, max_numparam);
+                    // Changed from MRI args_with_numbered put into parser codepath and not used by ripper (since it is just a passthrough method and types do not match).
                     /*%%%*/
+                    ArgsNode args = p.args_with_numbered($4, max_numparam);
                     $$ = new IterNode(@1.start(), args, $5, p.getCurrentScope(), p.src_line());
                     /*% %*/
                     /*% ripper: do_block!(escape_Qundef($4), $5) %*/
@@ -3008,7 +3015,7 @@ do_body 	: {
 case_args	: arg_value {
                     /*%%%*/
                     p.check_literal_when($1);
-                    $$ = p.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
                 }
@@ -3204,7 +3211,7 @@ p_expr_basic    : p_value
                     $$ = p.new_hash_pattern(null, $3);
                 }
                 | tLBRACE rbrace {
-                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), null, null));
+                    $$ = p.new_hash_pattern(null, p.new_hash_pattern_tail(@1.start(), null, (ByteList) null));
                 }
                 | tLPAREN {
                     $$ = p.push_pktbl();
@@ -3215,7 +3222,7 @@ p_expr_basic    : p_value
 
 p_args          : p_expr {
                     /*%%%*/
-                    ListNode preArgs = p.newArrayNode($1.getLine(), $1);
+                    ListNode preArgs = p.newArrayNode(@1.start(), $1);
                     $$ = p.new_array_pattern_tail(@1.start(), preArgs, false, null, null);
                     // JRuby Changed
                     /*% 
@@ -3294,7 +3301,7 @@ p_args_post     : p_arg
 // ListNode - [!null]
 p_arg           : p_expr {
                     /*%%%*/
-                    $$ = p.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: rb_ary_new_from_args(1, get_value($1)) %*/
                 }
@@ -3304,10 +3311,10 @@ p_kwargs        : p_kwarg ',' p_any_kwrest {
                     $$ = p.new_hash_pattern_tail(@1.start(), $1, $3);
                 }
 		| p_kwarg {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, (ByteList) null);
                 }
                 | p_kwarg ',' {
-                    $$ = p.new_hash_pattern_tail(@1.start(), $1, null);
+                    $$ = p.new_hash_pattern_tail(@1.start(), $1, (ByteList) null);
                 }
                 | p_any_kwrest {
                     $$ = p.new_hash_pattern_tail(@1.start(), null, $1);
@@ -3380,7 +3387,7 @@ p_any_kwrest    : p_kwrest {
                     $$ = $1;
                 }
                 | p_kwnorest {
-                    $$ = p.KWNOREST;
+                    $$ = KWNOREST;
                 }
 
 p_value         : p_primitive
@@ -3481,7 +3488,7 @@ p_primitive     : literal
                 | keyword__FILE__ {
                     /*%%%*/
                     $$ = new FileNode(p.tokline(), new ByteList(p.getFile().getBytes(),
-                    p.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
+                    p.getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -3575,7 +3582,7 @@ opt_rescue      : k_rescue exc_list exc_var then compstmt opt_rescue {
 
 exc_list        : arg_value {
                     /*%%%*/
-                    $$ = p.newArrayNode($1.getLine(), $1);
+                    $$ = p.newArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
@@ -3611,7 +3618,7 @@ literal         : numeric {
 
 strings         : string {
                     /*%%%*/
-                    $$ = $1 instanceof EvStrNode ? new DStrNode($1.getLine(), p.getEncoding()).add($1) : $1;
+                    $$ = $1 instanceof EvStrNode ? new DStrNode(@1.start(), p.getEncoding()).add($1) : $1;
                     /*% %*/
                     /*% ripper: $1 %*/
                 }
@@ -3641,7 +3648,7 @@ string1         : tSTRING_BEG string_contents tSTRING_END {
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     /*%%%*/
-                    int line = p.getPosition($2);
+                    int line = @2.start();
 
                     p.heredoc_dedent($2);
 		    p.setHeredocIndent(0);
@@ -3662,7 +3669,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 }
 
 regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
-                    $$ = p.newRegexpNode(p.getPosition($2), $2, (RegexpNode) $3);
+                    $$ = p.new_regexp(@2.start(), $2, $3);
                 }
 
 // [!null] - ListNode
@@ -3682,7 +3689,7 @@ word_list       : /* none */ {
                 }
                 | word_list word ' ' {
                     /*%%%*/
-                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode($1.getLine(), p.getEncoding()).add($2) : $2);
+                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode(@1.start(), p.getEncoding()).add($2) : $2);
                     /*% %*/
                     /*% ripper: words_add!($1, $2) %*/
                 }
@@ -3714,7 +3721,7 @@ symbol_list     : /* none */ {
                 }
                 | symbol_list word ' ' {
                     /*%%%*/
-                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getLine()).add($2) : p.asSymbol($1.getLine(), $2));
+                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode(@1.start()).add($2) : p.asSymbol(@1.start(), $2));
                     /*% %*/
                     /*% ripper: symbols_add!($1, $2) %*/
                 }
@@ -3759,7 +3766,7 @@ qsym_list      : /* none */ {
                 }
                 | qsym_list tSTRING_CONTENT ' ' {
                     /*%%%*/
-                    $$ = $1.add(p.asSymbol($1.getLine(), $2));
+                    $$ = $1.add(p.asSymbol(@1.start(), $2));
                     /*% %*/
                     /*% ripper: qsymbols_add!($1, $2) %*/
                 }
@@ -3803,7 +3810,7 @@ regexp_contents: /* none */ {
                     /*%%%*/
                     // JRuby changed
                     /*%
-                        $$ = new KeyValuePair<IRubyObject, IRubyObject>($$, null);
+                        $$ = new KeyValuePair<IRubyObject, IRubyObject>((IRubyObject) $$, null);
                     %*/
                 }
                 | regexp_contents string_content {
@@ -3812,22 +3819,22 @@ regexp_contents: /* none */ {
                     $$ = p.literal_concat($1, $<Node>2);
                     // JRuby changed
                     /*% 
-                        IRubyObject s1 = context.nil;
+                        IRubyObject s1 = p.nil();
                         IRubyObject s2 = null;
                         Object n1 = $1;
                         Object n2 = $2;
 
 			if (n1 instanceof KeyValuePair) {
-			    s1 = ((KeyValuePair) n1).getKey();
-			    n1 = ((KeyValuePair) n1).getPair();
+			    s1 = (IRubyObject) ((KeyValuePair) n1).getKey();
+			    n1 = ((KeyValuePair) n1).getValue();
 			}
 			if (n2 instanceof KeyValuePair) {
-			    s2 = ((KeyValuePair) n2).getKey();
-			    n2 = ((KeyValuePair) n2).getPair();
+			    s2 = (IRubyObject) ((KeyValuePair) n2).getKey();
+			    n2 = ((KeyValuePair) n2).getValue();
 			}
-			$$ = dispatch("on_regexp_add", n1, n2);
-			if (!s1 && s2) {
-			    $$ = new KeyValuePair<IRubyObject, IRubyObject>($$, s2);
+			$$ = p.dispatch("on_regexp_add", (IRubyObject) n1, (IRubyObject) n2);
+			if (s1 == null && s2 != null) {
+			    $$ = new KeyValuePair<IRubyObject, IRubyObject>($<IRubyObject>$, s2);
 			}
                     %*/
                 }
@@ -3845,7 +3852,7 @@ string_content  : tSTRING_CONTENT {
                 } string_dvar {
                     /*%%%*/
                     p.setStrTerm($<StrTerm>2);
-                    $$ = new EvStrNode(p.getPosition($3), $3);
+                    $$ = new EvStrNode(@3.start(), $3);
                     /*% %*/
                     /*% ripper: string_dvar!($3) %*/
                 }
@@ -3874,7 +3881,7 @@ string_content  : tSTRING_CONTENT {
 
                    /*%%%*/
                    if ($6 != null) $6.unsetNewline();
-                   $$ = p.newEvStrNode(p.getPosition($6), $6);
+                   $$ = p.newEvStrNode(@6.start(), $6);
                    /*% %*/
                    /*% ripper: string_embexpr!($7) %*/
                 }
@@ -3936,11 +3943,11 @@ dsym            : tSYMBEG string_contents tSTRING_END {
                     if ($2 == null) {
                         $$ = p.asSymbol(p.src_line(), new ByteList(new byte[] {}));
                     } else if ($2 instanceof DStrNode) {
-                        $$ = new DSymbolNode($2.getLine(), $<DStrNode>2);
+                        $$ = new DSymbolNode(@2.start(), $<DStrNode>2);
                     } else if ($2 instanceof StrNode) {
-                        $$ = p.asSymbol($2.getLine(), $2);
+                        $$ = p.asSymbol(@2.start(), $2);
                     } else {
-                        $$ = new DSymbolNode($2.getLine());
+                        $$ = new DSymbolNode(@2.start());
                         $<DSymbolNode>$.add($2);
                     }
                     /*% %*/
@@ -3978,37 +3985,32 @@ simple_numeric  : tINTEGER {
 var_ref         : tIDENTIFIER { // mri:user_variable
                     /*%%%*/
                     $$ = p.declareIdentifier($1);
-                    /*% 
-                       $$ = p.dipatch_var_ref($1);
-                    %*/
+                    /*%  %*/
+                    /*% ripper: var_ref!!($1) %*/
                 }
                 | tIVAR {
                     /*%%%*/
                     $$ = new InstVarNode(p.tokline(), p.symbolID($1));
-                    /*% 
-                       $$ = p.dipatch_var_ref($1);
-                    %*/
+                    /*%  %*/
+                    /*% ripper: var_ref!!($1) %*/
                 }
                 | tGVAR {
                     /*%%%*/
                     $$ = new GlobalVarNode(p.tokline(), p.symbolID($1));
-                    /*% 
-                       $$ = p.dipatch_var_ref($1);
-                    %*/
+                    /*%  %*/
+                    /*% ripper: var_ref!!($1) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
                     $$ = new ConstNode(p.tokline(), p.symbolID($1));
-                    /*% 
-                       $$ = p.dipatch_var_ref($1);
-                    %*/
+                    /*%  %*/
+                    /*% ripper: var_ref!!($1) %*/
                 }
                 | tCVAR {
                     /*%%%*/
                     $$ = new ClassVarNode(p.tokline(), p.symbolID($1));
-                    /*% 
-                       $$ = p.dipatch_var_ref($1);
-                    %*/
+                    /*%  %*/
+                    /*% ripper: var_ref!!($1) %*/
                 } // mri:user_variable
                 | keyword_nil { // mri:keyword_variable
                     /*%%%*/
@@ -4037,7 +4039,7 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                 | keyword__FILE__ {
                     /*%%%*/
                     $$ = new FileNode(p.tokline(), new ByteList(p.getFile().getBytes(),
-                    p.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
+                    p.getRuntime().getEncodingService().getLocaleEncoding()));
                     /*% %*/
                     /*% ripper: var_ref!($1) %*/
                 }
@@ -4162,7 +4164,7 @@ f_opt_paren_args: f_paren_args
                 | none {
                     p.getLexContext().in_argdef = false;
                     $$ = p.new_args(p.tokline(), null, null, null, null, 
-                                          p.new_args_tail(p.src_line(), null, (ByteList) null, null));
+                                    p.new_args_tail(p.src_line(), null, (ByteList) null, (ByteList) null));
                 }
 
 f_paren_args    : '(' f_args rparen {
@@ -4196,71 +4198,71 @@ f_arglist       : f_paren_args {
 
 
 args_tail       : f_kwarg ',' f_kwrest opt_f_block_arg {
-                    $$ = p.new_args_tail($1.getLine(), $1, $3, $4);
+                    $$ = p.new_args_tail(@1.start(), $1, $3, $4);
                 }
                 | f_kwarg opt_f_block_arg {
-                    $$ = p.new_args_tail($1.getLine(), $1, (ByteList) null, $2);
+                    $$ = p.new_args_tail(@1.start(), $1, (ByteList) null, $2);
                 }
                 | f_any_kwrest opt_f_block_arg {
                     $$ = p.new_args_tail(p.src_line(), null, $1, $2);
                 }
                 | f_block_arg {
-                    $$ = p.new_args_tail($1.getLine(), null, (ByteList) null, $1);
+                    $$ = p.new_args_tail(@1.start(), null, (ByteList) null, $1);
                 }
                 | args_forward {
                     p.add_forwarding_args();
-                    $$ = p.new_args_tail(p.tokline(), null, $1, new BlockArgNode(p.arg_var(FWD_BLOCK)));
+                    $$ = p.new_args_tail(p.tokline(), null, $1, FWD_BLOCK);
                 }
 
 opt_args_tail   : ',' args_tail {
                     $$ = $2;
                 }
                 | /* none */ {
-                    $$ = p.new_args_tail(p.src_line(), null, (ByteList) null, null);
+                    $$ = p.new_args_tail(p.src_line(), null, (ByteList) null, (ByteList) null);
                 }
 
 // [!null]
 f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, $3, $5, null, $6);
+                    $$ = p.new_args(@1.start(), $1, $3, $5, null, $6);
                 }
                 | f_arg ',' f_optarg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, $3, $5, $7, $8);
+                    $$ = p.new_args(@1.start(), $1, $3, $5, $7, $8);
                 }
                 | f_arg ',' f_optarg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, $3, null, null, $4);
+                    $$ = p.new_args(@1.start(), $1, $3, null, null, $4);
                 }
                 | f_arg ',' f_optarg ',' f_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, $3, null, $5, $6);
+                    $$ = p.new_args(@1.start(), $1, $3, null, $5, $6);
                 }
                 | f_arg ',' f_rest_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, null, $3, null, $4);
+                    $$ = p.new_args(@1.start(), $1, null, $3, null, $4);
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, null, $3, $5, $6);
+                    $$ = p.new_args(@1.start(), $1, null, $3, $5, $6);
                 }
                 | f_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), $1, null, null, null, $2);
+                    $$ = p.new_args(@1.start(), $1, null, null, null, $2);
                 }
                 | f_optarg ',' f_rest_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), null, $1, $3, null, $4);
+                    $$ = p.new_args(@1.start(), null, $1, $3, null, $4);
                 }
                 | f_optarg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), null, $1, $3, $5, $6);
+                    $$ = p.new_args(@1.start(), null, $1, $3, $5, $6);
                 }
                 | f_optarg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), null, $1, null, null, $2);
+                    $$ = p.new_args(@1.start(), null, $1, null, null, $2);
                 }
                 | f_optarg ',' f_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), null, $1, null, $3, $4);
+                    $$ = p.new_args(@1.start(), null, $1, null, $3, $4);
                 }
                 | f_rest_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), null, null, $1, null, $2);
+                    $$ = p.new_args(@1.start(), null, null, $1, null, $2);
                 }
                 | f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = p.new_args($1.getLine(), null, null, $1, $3, $4);
+                    $$ = p.new_args(@1.start(), null, null, $1, $3, $4);
                 }
                 | args_tail {
-                    $$ = p.new_args($1.getLine(), null, null, null, null, $1);
+                    $$ = p.new_args(@1.start(), null, null, null, null, $1);
                 }
                 | /* none */ {
                     $$ = p.new_args(p.src_line(), null, null, null, null, (ArgsTailHolder) null);
@@ -4333,7 +4335,9 @@ f_arg_item      : f_arg_asgn {
 
 // [!null]
 f_arg           : f_arg_item {
+                    /*%%%*/
                     $$ = new ArrayNode(p.src_line(), $1);
+                    /*% %*/
                     /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
                 }
                 | f_arg ',' f_arg_item {
@@ -4357,7 +4361,7 @@ f_kw            : f_label arg_value {
                     p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
-                    $$ = new KeywordArgNode($2.getLine(), p.assignableKeyword($1, $2));
+                    $$ = new KeywordArgNode(@2.start(), p.assignableKeyword($1, $2));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
                 }
@@ -4373,7 +4377,7 @@ f_kw            : f_label arg_value {
 f_block_kw      : f_label primary_value {
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
-                    $$ = new KeywordArgNode(p.getPosition($2), p.assignableKeyword($1, $2));
+                    $$ = new KeywordArgNode(@2.start(), p.assignableKeyword($1, $2));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($2)) %*/
                 }
@@ -4388,7 +4392,7 @@ f_block_kw      : f_label primary_value {
 
 f_block_kwarg   : f_block_kw {
                     /*%%%*/
-                    $$ = new ArrayNode($1.getLine(), $1);
+                    $$ = new ArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
@@ -4402,7 +4406,7 @@ f_block_kwarg   : f_block_kw {
 // ListNode - [!null]
 f_kwarg         : f_kw {
                     /*%%%*/
-                    $$ = new ArrayNode($1.getLine(), $1);
+                    $$ = new ArrayNode(@1.start(), $1);
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
@@ -4445,7 +4449,7 @@ f_opt           : f_arg_asgn f_eq arg_value {
                     /*%%%*/
                     p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
-                    $$ = new OptArgNode(p.getPosition($3), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
+                    $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
                 }
@@ -4454,14 +4458,14 @@ f_block_opt     : f_arg_asgn f_eq primary_value {
                     p.getLexContext().in_argdef = true;
                     p.setCurrentArg(null);
                     /*%%%*/
-                    $$ = new OptArgNode(p.getPosition($3), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
+                    $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*% %*/
                     /*% ripper: rb_assoc_new(get_value(assignable(p, $1)), get_value($3)) %*/
                 }
 
 f_block_optarg  : f_block_opt {
                     /*%%%*/
-                    $$ = new BlockNode($1.getLine()).add($1);
+                    $$ = new BlockNode(@1.start()).add($1);
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
@@ -4474,7 +4478,7 @@ f_block_optarg  : f_block_opt {
 
 f_optarg        : f_opt {
                     /*%%%*/
-                    $$ = new BlockNode($1.getLine()).add($1);
+                    $$ = new BlockNode(@1.start()).add($1);
                     /*% %*/
                     /*% ripper: rb_ary_new3(1, get_value($1)) %*/
                 }
@@ -4533,8 +4537,9 @@ f_block_arg     : blkarg_mark tIDENTIFIER {
                     $$ = p.arg_var(p.shadowing_lvar(FWD_BLOCK));
                     /*%%%*/
                     $$ = new BlockArgNode($<ArgumentNode>$);
+                    // Changed from MRI
                     /*% 
-                        $$ = dispatch1(blockarg, Qnil);
+                        $$ = p.dispatch("on_blockarg", p.nil());
                     %*/
                 }
 
@@ -4567,8 +4572,9 @@ singleton       : var_ref {
 
 // HashNode: [!null]
 assoc_list      : none {
+                    /*%%%*/
                     $$ = new HashNode(p.src_line());
-                    /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
+                    /*% %*/
                 }
                 | assocs trailer {
                     /*%%%*/
@@ -4579,7 +4585,9 @@ assoc_list      : none {
 
 // [!null]
 assocs          : assoc {
+                    /*%%%*/
                     $$ = new HashNode(p.src_line(), $1);
+                    /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
                 }
                 | assocs ',' assoc {
                     /*%%%*/
@@ -4597,7 +4605,7 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tLABEL arg_value {
                     /*%%%*/
-                    Node label = p.asSymbol(p.getPosition($2), $1);
+                    Node label = p.asSymbol(@2.start(), $1);
                     $$ = p.createKeyValue(label, $2);
                     /*% %*/
                     /*% ripper: assoc_new!($1, $2) %*/
@@ -4615,16 +4623,16 @@ assoc           : arg_value tASSOC arg_value {
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     /*%%%*/
                     if ($2 instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(p.getPosition($2), p.getEncoding());
+                        DStrNode dnode = new DStrNode(@2.start(), p.getEncoding());
                         dnode.add($2);
-                        $$ = p.createKeyValue(new DSymbolNode(p.getPosition($2), dnode), $4);
+                        $$ = p.createKeyValue(new DSymbolNode(@2.start(), dnode), $4);
                     } else if ($2 instanceof DStrNode) {
-                        $$ = p.createKeyValue(new DSymbolNode(p.getPosition($2), $<DStrNode>2), $4);
+                        $$ = p.createKeyValue(new DSymbolNode(@2.start(), $<DStrNode>2), $4);
                     } else {
                         p.compile_error("Uknown type for assoc in strings: " + $2);
                     }
                     /*% %*/
-
+                    /*% ripper: assoc_new!(dyna_symbol!($2), $4) %*/
                 }
                 | tDSTAR arg_value {
                     /*%%%*/

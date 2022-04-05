@@ -48,32 +48,36 @@ pushd $PARSER_DIR
 
 echo "processing parser"
 $RUBY $TOOL_DIR/preprocess_parser.rb < $PARSER_BASE.y > parse.y
-echo "processing ripper"
-$RUBY $TOOL_DIR/preprocess_parser.rb ripper < $PARSER_BASE.y  > ripper_parse.y
-
-echo "applying ripper DSL"
-$RUBY $TOOL_DIR/preproc_ripper.rb ripper_parse.y > ripper_$PARSER_BASE.out
 
 # Generate grammar as intermediate file
 echo "generating parser using jay"
 $JAY $DEBUG_FLAG parse.y < skeleton.parser | grep -v $DEBUG_STRIP > $PARSER_BASE.out
-echo "generating ripper using jay"
-$JAY $DEBUG_FLAG ripper_$PARSER_BASE.out < $RIPPER_DIR/skeleton.parser | grep -v $DEBUG_STRIP > ripper_$PARSER_BASE.out2
-
-# Patch file to get around Java static initialization issues plus extract
-# a bunch of stuff to seperate file (yytables)
 
 echo "patching parser"
 $RUBY $TOOL_DIR/patch_parser.rb $PARSER_BASE.out $YYTABLE_PREFIX $PARSER_BASE.y > $PARSER_BASE.out2
-echo "patching ripper"
-$RUBY $TOOL_DIR/patch_parser.rb ripper_$PARSER_BASE.out2 $YYTABLE_PREFIX ripper_$PARSER_BASE.out > ripper_$PARSER_BASE.out3
 
 echo "optimizing parser"
 $RUBY $TOOL_DIR/optimize_parser.rb $PARSER_BASE.out2 $YYTABLE_PREFIX > $PARSER_BASE.java
-echo "optimizing ripper"
-#$RUBY $TOOL_DIR/optimize_parser.rb ripper_$PARSER_BASE.out3 $YYTABLE_PREFIX > $RIPPER_DIR/RipperParser.java
 
 rm -f parse.y $PARSER_BASE.out $PARSER_BASE.out2
+
+echo "processing ripper"
+$RUBY $TOOL_DIR/preprocess_parser.rb ripper < $PARSER_BASE.y  > $RIPPER_DIR/ripper_parse.y
+
+cd $RIPPER_DIR
+
+echo "applying ripper DSL"
+$RUBY $TOOL_DIR/preproc_ripper.rb ripper_parse.y > ripper_$PARSER_BASE.out
+
+echo "generating ripper using jay"
+$JAY $DEBUG_FLAG ripper_$PARSER_BASE.out < skeleton.parser | grep -v $DEBUG_STR#IP > ripper_$PARSER_BASE.out2
+
+echo "patching ripper"
+$RUBY $TOOL_DIR/patch_parser.rb ripper_$PARSER_BASE.out2 $YYTABLE_PREFIX ripper_$PARSER_BASE.out > ripper_$PARSER_BASE.out3
+
+echo "optimizing ripper"
+$RUBY $TOOL_DIR/optimize_parser.rb ripper_$PARSER_BASE.out3 $YYTABLE_PREFIX > $RIPPER_DIR/RipperParser.java
+
 rm -f ripper_parse.y ripper_$PARSER_BASE.out ripper_$PARSER_BASE.out2 ripper_$PARSER_BASE.out3
 
 popd

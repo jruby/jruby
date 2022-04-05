@@ -509,8 +509,8 @@ public abstract class RubyParserBase {
         return new OperatorCallNode(firstNode.getLine(), firstNode, symbolID(operator), new ArrayNode(secondNode.getLine(), secondNode), null, false);
     }
 
-    public Node new_defined(int line, Node node) {
-        return new DefinedNode(line, node);
+    public Node new_defined(long line, Node node) {
+        return new DefinedNode((int) line, node);
     }
 
     public Node match_op(Node firstNode, Node secondNode) {
@@ -894,7 +894,7 @@ public abstract class RubyParserBase {
             case DSTRNODE:
             case EVSTRNODE:
             case STRNODE:
-                if (!method) warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "string literal in condition");
+                if (!method) warn(node.getLine(), "string literal in condition");
                 break;
             case DREGEXPNODE: {
                 int line = node.getLine();
@@ -922,7 +922,7 @@ public abstract class RubyParserBase {
                 if (!method && !configuration.isInlineSource()) {
                     if ((dotNode.getBeginNode() instanceof TrueNode && dotNode.getEndNode() instanceof FalseNode) ||
                             (dotNode.getBeginNode() instanceof FalseNode && dotNode.getEndNode() instanceof TrueNode)) {
-                        warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "range literal in condition");
+                        warn(node.getLine(), "range literal in condition");
                     }
 
                 }
@@ -935,7 +935,7 @@ public abstract class RubyParserBase {
             case SYMBOLNODE:
             case DSYMBOLNODE:
             case FIXNUMNODE:
-                if (!method) warn(ID.VOID_VALUE_EXPRESSION, node.getLine(), "literal in condition");
+                if (!method) warn(node.getLine(), "literal in condition");
                 break;
             case REGEXPNODE:
                 if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
@@ -1164,7 +1164,7 @@ public abstract class RubyParserBase {
             node = new RescueNode(getPosition(head), head, rescue, rescueElse);
         } else if (rescueElse != null) {
             // FIXME: MRI removed this...
-            warn(ID.ELSE_WITHOUT_RESCUE, lexer.tokline, "else without rescue is useless");
+            warn(lexer.tokline, "else without rescue is useless");
             node = appendToBlock(head, rescue);
         }
         if (ensure != null) {
@@ -1497,6 +1497,18 @@ public abstract class RubyParserBase {
         return new ArgsTailHolder(line, keywordArg, keywordRestArg, blockArg);
     }
 
+    protected ArgsTailHolder new_args_tail(int line, ListNode keywordArg,
+                                           ByteList keywordRestArgName, ByteList block) {
+        BlockArgNode blockArg = null;
+        if (block != null) {
+            ArgumentNode var = arg_var(block);
+            blockArg = new BlockArgNode(var);
+        }
+
+        return new_args_tail(line, keywordArg, keywordRestArgName, blockArg);
+    }
+
+
     public Node remove_duplicate_keys(HashNode hash) {
         List<Node> encounteredKeys = new ArrayList<>();
 
@@ -1552,13 +1564,17 @@ public abstract class RubyParserBase {
         return start != null ? start.getLine() : lexer.getRubySourceline();
     }
 
-    public void warn(ID id, int line, String message, Object... data) {
-        warnings.warn(id, lexer.getFile(), line, message);
+    public void warn(String message) {
+        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), src_line(), message);
+    }
+
+    public void warn(int line, String message) {
+        warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
     }
 
     // FIXME: Replace this with file/line version and stop using ISourcePosition
-    public void warning(ID id, int line, String message, Object... data) {
-        if (warnings.isVerbose()) warnings.warning(id, lexer.getFile(), line, message);
+    public void warning(int line, String message) {
+        if (warnings.isVerbose()) warnings.warning(ID.USELESS_EXPRESSION, lexer.getFile(), line, message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
@@ -1730,7 +1746,7 @@ public abstract class RubyParserBase {
         throw getConfiguration().getRuntime().newSyntaxError(errorMessage + message);
     }
 
-    public Node newRegexpNode(int line, Node contents, RegexpNode end) {
+    public Node new_regexp(int line, Node contents, RegexpNode end) {
         Ruby runtime = configuration.getRuntime();
         RegexpOptions options = end.getOptions();
         Encoding encoding = lexer.getEncoding();
@@ -1890,7 +1906,6 @@ public abstract class RubyParserBase {
         return hashPatternNode;
     }
 
-    public static ByteList KWNOREST = new ByteList(new byte[] {});
     public static ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
 
     public HashPatternNode new_hash_pattern_tail(int line, HashNode keywordArgs, ByteList keywordRestArg) {
@@ -2112,6 +2127,14 @@ public abstract class RubyParserBase {
         return lexer.getParenNest();
     }
 
+    protected ByteList extractByteList(Object value) {
+        if (value instanceof ByteList) return (ByteList) value;
+        if (value instanceof RubyString) return ((RubyString) value).getByteList();
+        if (value instanceof RubySymbol) return ((RubySymbol) value).getBytes();
+
+        throw new RuntimeException("Got unexpected object: " + value);
+    }
+
     protected void setLeftParenBegin(int value) {
         lexer.setLeftParenBegin(value);
     }
@@ -2134,5 +2157,13 @@ public abstract class RubyParserBase {
 
     protected void setHeredocLineIndent(int indent) {
         lexer.setHeredocLineIndent(indent);
+    }
+
+    public Ruby getRuntime() {
+        return lexer.getRuntime();
+    }
+
+    public Node nil() {
+        return NilImplicitNode.NIL;
     }
 }

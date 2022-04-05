@@ -62,9 +62,9 @@ class PostProcessor
 
   def generate_action_body_methods
     if RIPPER
-      @out.puts "static RipperParserState[] states = new RipperParserState[#{@max_case_number+1}];"
+      @out.puts "static ParserState<RipperParser>[] states = new ParserState[#{@max_case_number+1}];"
     else
-      @out.puts "static ParserState[] states = new ParserState[#{@max_case_number+1}];"
+      @out.puts "static ParserState<RubyParser>[] states = new ParserState[#{@max_case_number+1}];"
     end
     @out.puts "static {";
     @case_bodies.each do |state, code_body| 
@@ -78,7 +78,7 @@ class PostProcessor
   end
 
   def generate_ripper_action_body_method(state, code_body)
-    @out.puts "states[#{state}] = (RipperParser p, Object yyVal, Object[] yyVals, int yyTop, int yychar) -> {" 
+    @out.puts "states[#{state}] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {" 
     code_body.each { |line| @out.puts frob_yyVals(line) }
     @out.puts "  return yyVal;"
     @out.puts "};"

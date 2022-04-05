@@ -1,8 +1,8 @@
 package org.jruby.parser;
 
 public class ProductionState {
-    int state;
-    Object value;
+    public int state;
+    public Object value;
     public long start;
     public long end;
 
