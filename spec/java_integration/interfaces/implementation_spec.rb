@@ -331,7 +331,7 @@ describe "Single-method Java interfaces" do
     expect(UsesSingleMethodInterface.callIt(callable)).to eq(:callIt)
 
     # receives Object, but should return the coerced impl
-    cls = UsesSingleMethodInterface.getClass(callable)
+    cls = UsesSingleMethodInterface.getClassTyped(callable)
 
     # pull out interfaces from the resulting class
     interfaces = []
