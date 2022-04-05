@@ -69,6 +69,7 @@ import java.lang.reflect.Modifier;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.util.RubyStringBuilder.ids;
 
+@SuppressWarnings("deprecation")
 // @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject", include = "Comparable")
 public class JavaClass extends JavaObject {
 

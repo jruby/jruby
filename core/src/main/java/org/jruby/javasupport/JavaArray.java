@@ -43,7 +43,8 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
+@Deprecated
+// @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
 public class JavaArray extends JavaObject {
 
     private final JavaUtil.JavaConverter javaConverter;

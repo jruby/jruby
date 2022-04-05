@@ -161,8 +161,8 @@ public class Java implements Library {
 
         Java.defineAnnotatedMethods(Java.class);
 
-        final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
-        JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
+        //final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
+        //JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
 
         // set of utility methods for Java-based proxy objects
         JavaProxyMethods.createJavaProxyMethods(context);
@@ -170,9 +170,9 @@ public class Java implements Library {
         // the proxy (wrapper) type hierarchy
         JavaProxy.createJavaProxy(context);
         ArrayJavaProxyCreator.createArrayJavaProxyCreator(context);
-        ConcreteJavaProxy.createConcreteJavaProxy(context);
+        RubyClass _ConcreteJavaProxy = ConcreteJavaProxy.createConcreteJavaProxy(context);
         InterfaceJavaProxy.createInterfaceJavaProxy(context);
-        ArrayJavaProxy.createArrayJavaProxy(context);
+        RubyClass _ArrayJavaProxy = ArrayJavaProxy.createArrayJavaProxy(context);
 
         // creates ruby's hash methods' proxy for Map interface
         MapJavaProxy.createMapJavaProxy(runtime);
@@ -197,6 +197,11 @@ public class Java implements Library {
         if ( runtime.getObject().isConstantDefined("StringIO") ) {
             ((RubyClass) runtime.getObject().getConstant("StringIO")).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
         }
+
+        Java.defineConstant("JavaObject", _ConcreteJavaProxy); // obj.is_a?(Java::JavaObject) still works
+        Java.deprecateConstant(runtime, "JavaObject");
+        Java.defineConstant("JavaArray", _ArrayJavaProxy);
+        Java.deprecateConstant(runtime, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
 
         return Java;
     }
@@ -1349,6 +1354,7 @@ public class Java implements Library {
         return result != null ? result : context.nil;
     }
 
+    @Deprecated
     public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
         return getInstance(runtime, ((JavaObject) java_object).getValue());
     }

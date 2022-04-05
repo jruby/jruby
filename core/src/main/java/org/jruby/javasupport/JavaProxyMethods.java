@@ -26,9 +26,12 @@
 
 package org.jruby.javasupport;
 
+import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
@@ -50,19 +53,13 @@ public class JavaProxyMethods {
         return JavaProxy.getJavaClass(recv.getMetaClass().getRealClass());
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = { "java_object", "to_java_object" })
     public static IRubyObject java_object(ThreadContext context, IRubyObject recv) {
         Object javaObj = recv.dataGetStruct();
         if (javaObj instanceof IRubyObject) {
             return (IRubyObject) javaObj;
         }
-        if (javaObj == null) return context.nil;
         return Java.getInstance(context.runtime, javaObj);
-    }
-
-    @JRubyMethod
-    public static IRubyObject to_java_object(IRubyObject recv) {
-        return (JavaObject) recv.dataGetStruct();
     }
 
     @JRubyMethod(name = "eql?")
@@ -71,9 +68,10 @@ public class JavaProxyMethods {
     }
 
     @JRubyMethod(name = "==")
+    @SuppressWarnings("deprecation")
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (recv instanceof JavaProxy) {
-            return JavaObject.equals(context.runtime, ((JavaProxy) recv).getObject(), other);
+            return equals(context.runtime, ((JavaProxy) recv).getObject(), other);
         }
         // NOTE: only JavaProxy includes JavaProxyMethods
         // these is only here for 'manual' JavaObject wrapping :
@@ -82,11 +80,25 @@ public class JavaProxyMethods {
         }
         return context.nil;
     }
-    
+
+    static RubyBoolean equals(final Ruby runtime, final Object thisValue, final IRubyObject other) {
+        final Object otherValue = JavaUtil.unwrapJava(other, RubyBasicObject.NEVER);
+
+        if ( otherValue == RubyBasicObject.NEVER ) { // not a wrapped object
+            return runtime.getFalse();
+        }
+
+        if ( thisValue == null ) {
+            return runtime.newBoolean(otherValue == null);
+        }
+
+        return runtime.newBoolean(thisValue.equals(otherValue));
+    }
+
     @JRubyMethod
     public static IRubyObject to_s(ThreadContext context, IRubyObject recv) {
         if (recv instanceof JavaProxy) {
-            return JavaObject.to_s(context.runtime, ((JavaProxy) recv).getObject());
+            return to_s(context.runtime, ((JavaProxy) recv).getObject());
         }
         // NOTE: only JavaProxy includes JavaProxyMethods
         // these is only here for 'manual' JavaObject wrapping :
@@ -94,6 +106,15 @@ public class JavaProxyMethods {
             return ((RubyBasicObject) recv.dataGetStruct()).to_s();
         }
         return ((RubyBasicObject) recv).to_s();
+    }
+
+    static IRubyObject to_s(Ruby runtime, Object javaObject) {
+        if (javaObject != null) {
+            final String stringValue = javaObject.toString();
+            if ( stringValue == null ) return runtime.getNil();
+            return RubyString.newUnicodeString(runtime, stringValue);
+        }
+        return RubyString.newEmptyString(runtime);
     }
 
     @JRubyMethod

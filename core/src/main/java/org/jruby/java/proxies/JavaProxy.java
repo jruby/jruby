@@ -36,6 +36,7 @@ import org.jruby.java.invokers.StaticFieldGetter;
 import org.jruby.java.invokers.StaticFieldSetter;
 import org.jruby.java.invokers.StaticMethodInvoker;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaObject;
@@ -78,6 +79,22 @@ public class JavaProxy extends RubyObject {
         return JavaProxy;
     }
 
+    @Deprecated // Java::JavaObject compatibility
+    @JRubyMethod(meta = true)
+    public static IRubyObject wrap(final ThreadContext context, final IRubyObject self, final IRubyObject object) {
+        final Object value = JavaUtil.unwrapJava(object, null);
+        if (value == null) return context.nil;
+
+        final Ruby runtime = context.runtime;
+        if (value instanceof Class) {
+            return Java.getProxyClass(runtime, (Class<?>) value);
+        }
+        if (value.getClass().isArray()) {
+            return new ArrayJavaProxy(runtime, runtime.getClass("ArrayJavaProxy"), value);
+        }
+        return new ConcreteJavaProxy(runtime, runtime.getClass("ConcreteJavaProxy"), value);
+    }
+
     @JRubyMethod(meta = true)
     public static IRubyObject java_class(final IRubyObject self) {
         return getJavaClass((RubyClass) self);
@@ -117,6 +134,7 @@ public class JavaProxy extends RubyObject {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public final void dataWrapStruct(Object object) {
         if (object instanceof JavaObject) {
             this.object = ((JavaObject) object).getValue();
@@ -137,7 +155,7 @@ public class JavaProxy extends RubyObject {
 
     public Object unwrap() { return getObject(); }
 
-    @Deprecated
+    @Deprecated // not used
     @SuppressWarnings("deprecation")
     protected JavaObject asJavaObject(final Object object) {
         return JavaObject.wrap(getRuntime(), object);

@@ -58,11 +58,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyObjectInputStream;
 
+import static org.jruby.javasupport.JavaUtil.unwrapJava;
+
 /**
  *
  * @author  jpetersen
  */
-@JRubyClass(name="Java::JavaObject")
+@Deprecated
+// @JRubyClass(name="Java::JavaObject")
 public class JavaObject extends RubyObject {
 
     private static final Object NULL_LOCK = new Object();
@@ -109,7 +112,7 @@ public class JavaObject extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject wrap(final ThreadContext context,
         final IRubyObject self, final IRubyObject object) {
-        final Object objectValue = unwrapObject(object, NEVER);
+        final Object objectValue = unwrapJava(object, NEVER);
 
         if ( objectValue == NEVER ) return context.nil;
 
@@ -147,7 +150,7 @@ public class JavaObject extends RubyObject {
     public boolean equals(final Object other) {
         final Object otherValue;
         if ( other instanceof IRubyObject ) {
-            otherValue = unwrapObject((IRubyObject) other, NEVER);
+            otherValue = unwrapJava((IRubyObject) other, NEVER);
         }
         else {
             otherValue = other;
@@ -177,42 +180,23 @@ public class JavaObject extends RubyObject {
     }
 
     public static IRubyObject to_s(Ruby runtime, Object dataStruct) {
-        if (dataStruct != null) {
-            final String stringValue = dataStruct.toString();
-            if ( stringValue == null ) return runtime.getNil();
-            return RubyString.newUnicodeString(runtime, stringValue);
-        }
-        return RubyString.newEmptyString(runtime);
+        return JavaProxyMethods.to_s(runtime, dataStruct);
     }
 
     @JRubyMethod(name = {"==", "eql?"}, required = 1)
     public IRubyObject op_equal(final IRubyObject other) {
-        return equals(getRuntime(), getValue(), other);
+        return JavaProxyMethods.equals(getRuntime(), getValue(), other);
     }
 
     public static RubyBoolean op_equal(JavaProxy self, IRubyObject other) {
-        return equals(self.getRuntime(), self.getObject(), other);
-    }
-
-    static RubyBoolean equals(final Ruby runtime, final Object thisValue, final IRubyObject other) {
-        final Object otherValue = unwrapObject(other, NEVER);
-
-        if ( otherValue == NEVER ) { // not a wrapped object
-            return runtime.getFalse();
-        }
-
-        if ( thisValue == null ) {
-            return runtime.newBoolean(otherValue == null);
-        }
-
-        return runtime.newBoolean(thisValue.equals(otherValue));
+        return JavaProxyMethods.equals(self.getRuntime(), self.getObject(), other);
     }
 
     @JRubyMethod(name = "equal?", required = 1)
     public IRubyObject same(final IRubyObject other) {
         final Ruby runtime = getRuntime();
         final Object thisValue = getValue();
-        final Object otherValue = unwrapObject(other, NEVER);
+        final Object otherValue = unwrapJava(other, NEVER);
 
         if ( otherValue == NEVER ) { // not a wrapped object
             return runtime.getFalse();
@@ -221,17 +205,6 @@ public class JavaObject extends RubyObject {
         if ( ! (other instanceof JavaObject) ) return runtime.getFalse();
 
         return runtime.newBoolean(thisValue == otherValue);
-    }
-
-    private static Object unwrapObject(
-        final IRubyObject wrapped, final Object defaultValue) {
-        if ( wrapped instanceof JavaObject ) {
-            return ((JavaObject) wrapped).getValue();
-        }
-        if ( wrapped instanceof JavaProxy ) {
-            return ((JavaProxy) wrapped).getObject();
-        }
-        return defaultValue;
     }
 
     @JRubyMethod

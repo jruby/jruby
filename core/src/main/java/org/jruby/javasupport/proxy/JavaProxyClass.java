@@ -43,6 +43,7 @@ import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
 import org.jruby.java.proxies.ConcreteJavaProxy.StaticJCreateMethod;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
@@ -338,11 +339,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             }
 
             final IRubyObject invokee = args[0];
-            if ( ! ( invokee instanceof JavaObject ) ) {
-                throw runtime.newTypeError("invokee not a java object");
+            if ( ! ( invokee instanceof JavaProxy) ) {
+                throw runtime.newTypeError("not a java proxy: " + (invokee == null ? null : invokee.getClass()));
             }
 
-            Object receiver_value = ((JavaObject) invokee).getValue();
+            Object receiver_value = ((JavaProxy) invokee).getObject();
 
             final Object[] arguments = new Object[ args.length - 1 ];
 

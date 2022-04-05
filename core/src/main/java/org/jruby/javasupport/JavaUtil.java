@@ -277,6 +277,7 @@ public class JavaUtil {
      * @param object
      * @return true if the object is wrapping a Java object
      */
+    @SuppressWarnings("deprecation")
     public static boolean isJavaObject(final IRubyObject object) {
         return object instanceof JavaProxy || object.dataGetStruct() instanceof JavaObject;
     }
@@ -287,6 +288,7 @@ public class JavaUtil {
      * @return Java object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
+    @SuppressWarnings("deprecation")
     public static <T> T unwrapJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return (T) ((JavaProxy) object).getObject();
@@ -300,6 +302,7 @@ public class JavaUtil {
      * @return java object or passed object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
+    @SuppressWarnings("deprecation")
     public static <T> T unwrapIfJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return (T) ((JavaProxy) object).getObject();
@@ -338,12 +341,13 @@ public class JavaUtil {
      * @note Returns null if not a wrapped Java value.
      * @return unwrapped Java (object's) value
      */
-    public static Object unwrapJavaValue(final IRubyObject object) {
+    @SuppressWarnings("deprecation")
+    public static <T> T unwrapJavaValue(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
-            return ((JavaProxy) object).getObject();
+            return (T) ((JavaProxy) object).getObject();
         }
         if ( object instanceof JavaObject ) {
-            return ((JavaObject) object).getValue();
+            return (T) ((JavaObject) object).getValue();
         }
         final Object unwrap = object.dataGetStruct();
         if ( unwrap instanceof IRubyObject ) {
@@ -1673,6 +1677,27 @@ public class JavaUtil {
             }
         }
         return (JavaObject)obj;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static <T> T unwrapJava(final IRubyObject wrapped, final T defaultValue) {
+        if ( wrapped instanceof JavaProxy ) {
+            return (T) ((JavaProxy) wrapped).getObject();
+        }
+        if ( wrapped instanceof JavaObject ) {
+            return (T) ((JavaObject) wrapped).getValue();
+        }
+        return defaultValue;
+    }
+
+    public static <T> T unwrapJava(final IRubyObject wrapped) {
+        if (wrapped == null) throw new NullPointerException();
+
+        Object unwrap = unwrapJava(wrapped, RubyBasicObject.NEVER);
+        if (unwrap == RubyBasicObject.NEVER) {
+            throw wrapped.getRuntime().newTypeError(wrapped, "JavaProxy");
+        }
+        return (T) unwrap;
     }
 
     @Deprecated
