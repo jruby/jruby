@@ -140,17 +140,20 @@ public class JavaProxyMethods {
     
     @JRubyMethod(name = "synchronized")
     public static IRubyObject rbSynchronized(ThreadContext context, IRubyObject recv, Block block) {
-        if (recv instanceof JavaProxy) {
-            return JavaObject.ruby_synchronized(context, ((JavaProxy) recv).getObject(), block);
-        }
         final Object lock;
-        // NOTE: only JavaProxy includes JavaProxyMethods
-        // these is only here for 'manual' JavaObject wrapping :
-        if (recv.dataGetStruct() instanceof IRubyObject) {
-            lock = recv.dataGetStruct();
+        final IRubyObject value;
+        if (recv instanceof JavaProxy) {
+            lock = ((JavaProxy) recv).getObject();
+            value = recv;
         } else {
-            lock = recv;
+            // NOTE: only JavaProxy includes JavaProxyMethods
+            // these is only here for 'manual' JavaObject wrapping :
+            if (recv.dataGetStruct() instanceof IRubyObject) {
+                lock = value = (IRubyObject) recv.dataGetStruct();
+            } else {
+                lock = value = recv;
+            }
         }
-        synchronized (lock) { return block.yield(context, null); }
+        synchronized (lock) { return block.yield(context, value); }
     }
 }
