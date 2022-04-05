@@ -46,6 +46,7 @@ import org.jruby.javasupport.Java.JCreateMethod;
 import org.jruby.javasupport.Java.JCtorCache;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
@@ -208,13 +209,13 @@ public class ConcreteJavaProxy extends JavaProxy {
      */
     public static class StaticJCreateMethod extends JavaMethodNBlock {
 
-        private Constructor<? extends ReifiedJavaProxy> withBlock;
-        private DynamicMethod oldInit;
+        private final Constructor<? extends ReifiedJavaProxy> withBlock;
+        final DynamicMethod oldInit;
 
-        StaticJCreateMethod(RubyModule cls, Constructor<? extends ReifiedJavaProxy> withBlock2, DynamicMethod oldinit) {
+        StaticJCreateMethod(RubyModule cls, Constructor<? extends ReifiedJavaProxy> withBlock, DynamicMethod oldInit) {
             super(cls, PUBLIC, "__jcreate_static!");
-            this.withBlock = withBlock2;
-            this.oldInit = oldinit;
+            this.withBlock = withBlock;
+            this.oldInit = oldInit;
         }
 
         @Override
@@ -233,10 +234,6 @@ public class ConcreteJavaProxy extends JavaProxy {
                 throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
             }
             return self;
-        }
-
-        public DynamicMethod getOriginal() {
-            return oldInit;
         }
 
         public static void tryInstall(Ruby runtime, RubyClass clazz, JavaProxyClass proxyClass,
@@ -268,8 +265,8 @@ public class ConcreteJavaProxy extends JavaProxy {
 
             Constructor<? extends ReifiedJavaProxy> withBlock;
             try {
-                withBlock = reified.getConstructor(new Class[] { ConcreteJavaProxy.class, IRubyObject[].class,
-                        Block.class, Ruby.class, RubyClass.class });
+                withBlock = reified.getConstructor(
+                        ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
             } catch (SecurityException | NoSuchMethodException e) {
                 // ignore, don't install
                 withBlock = null;
@@ -286,8 +283,8 @@ public class ConcreteJavaProxy extends JavaProxy {
             }
 
             if (ctor == null) {
-                JavaObject jo = (JavaObject) initialize.call(context, self, clazz, "new", args);
-                return ((ReifiedJavaProxy) jo.getValue()).___jruby$rubyObject();
+                ReifiedJavaProxy proxy = JavaUtil.unwrapJava(initialize.call(context, self, clazz, "new", args));
+                return proxy.___jruby$rubyObject();
             } else {
 
                 // assume no easy conversions, use ruby fallback.
@@ -368,7 +365,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block blk, JCtorCache jcc) {
         String name = base.getClassConfig().javaCtorMethodName;
         DynamicMethod dm = base.searchMethod(name);
-        if (dm != null && (dm instanceof StaticJCreateMethod)) dm = ((StaticJCreateMethod) dm).getOriginal();
+        if (dm instanceof StaticJCreateMethod) dm = ((StaticJCreateMethod) dm).oldInit;
         DynamicMethod dm1 = base.searchMethodLateral(name); // only on ourself //TODO: missing default
 
         // jcreate is for nested ruby classes from a java class
