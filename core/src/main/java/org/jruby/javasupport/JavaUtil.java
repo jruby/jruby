@@ -1680,7 +1680,7 @@ public class JavaUtil {
     }
 
     @SuppressWarnings("deprecation")
-    public static <T> T unwrapJava(final IRubyObject wrapped, final T defaultValue) {
+    public static <T> T unwrapJava(final Object wrapped, final T defaultValue) {
         if ( wrapped instanceof JavaProxy ) {
             return (T) ((JavaProxy) wrapped).getObject();
         }

@@ -641,13 +641,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return the true Java class of this (Ruby) object
      */
     @Override
-    @SuppressWarnings("deprecation")
-    public Class getJavaClass() {
-        Object obj = dataGetStruct();
-        if (obj instanceof JavaObject) {
-            return ((JavaObject) obj).getValue().getClass();
-        }
-        return getClass();
+    public Class<?> getJavaClass() {
+        Object obj = JavaUtil.unwrapJava(dataGetStruct(), null);
+        return obj != null ? obj.getClass() : getClass();
     }
 
     /** rb_to_id
