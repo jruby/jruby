@@ -78,6 +78,7 @@ public class RipperParserBase {
 
     public void initTopLocalVariables() {
         scopedParserState = new ScopedParserState(null);
+        pushLocalScope();
     }
 
     public void reset() {

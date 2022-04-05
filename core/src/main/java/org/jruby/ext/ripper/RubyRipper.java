@@ -63,7 +63,7 @@ public class RubyRipper extends RubyObject {
 
     private static void defineLexStateConstants(Ruby runtime, RubyClass ripper) {
         for (int i = 0; i < lexStateNames.length; i++) {
-            ripper.defineConstant(lexStateNames[i], runtime.newFixnum(lexStateValues[i]));
+            ripper.defineConstant("EXPR_" + lexStateNames[i], runtime.newFixnum(lexStateValues[i]));
         }
     }
     
@@ -431,9 +431,9 @@ public class RubyRipper extends RubyObject {
     // Number of expr states which represent a distinct value.  unions expr values occur after these.
     private static int singleStateLexStateNames = 13; // EXPR_BEG -> EXPR_FITEM
     private static String[] lexStateNames = new String[] {
-            "EXPR_BEG", "EXPR_END", "EXPR_ENDARG", "EXPR_ENDFN", "EXPR_ARG", "EXPR_CMDARG", "EXPR_MID",
-            "EXPR_FNAME", "EXPR_DOT", "EXPR_CLASS", "EXPR_LABEL", "EXPR_LABELED", "EXPR_FITEM", // end of single states
-            "EXPR_VALUE", "EXPR_BEG_ANY", "EXPR_ARG_ANY", "EXPR_END_ANY"
+            "BEG", "END", "ENDARG", "ENDFN", "ARG", "CMDARG", "MID",
+            "FNAME", "DOT", "CLASS", "LABEL", "LABELED", "FITEM", // end of single states
+            "VALUE", "BEG_ANY", "ARG_ANY", "END_ANY"
     };
 
     private static int[] lexStateValues = new int[] {

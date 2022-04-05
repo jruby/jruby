@@ -2433,7 +2433,8 @@ primary         : literal
                     p.restore_defun($1);
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($3)));
                     $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @4.end());
-                    if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();                    p.popCurrentScope();
+                    if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
+                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, $3) %*/
                 }
