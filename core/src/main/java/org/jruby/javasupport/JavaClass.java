@@ -739,6 +739,7 @@ public class JavaClass extends JavaObject {
         return result;
     }
 
+    @Deprecated
     @JRubyMethod(rest = true)
     public JavaConstructor constructor(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = getRuntime();
@@ -746,13 +747,14 @@ public class JavaClass extends JavaObject {
             Class<?>[] parameterTypes = getArgumentTypes(context, args, 0);
             @SuppressWarnings("unchecked")
             Constructor<?> constructor = javaClass().getConstructor(parameterTypes);
-            return new JavaConstructor(runtime, constructor);
+            return JavaConstructor.create(runtime, constructor);
         }
         catch (NoSuchMethodException nsme) {
             throw runtime.newNameError("no matching java constructor", (String) null);
         }
     }
 
+    @Deprecated
     @JRubyMethod(rest = true)
     public JavaConstructor declared_constructor(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = getRuntime();
@@ -760,19 +762,21 @@ public class JavaClass extends JavaObject {
             Class<?>[] parameterTypes = getArgumentTypes(context, args, 0);
             @SuppressWarnings("unchecked")
             Constructor<?> constructor = javaClass().getDeclaredConstructor(parameterTypes);
-            return new JavaConstructor(runtime, constructor);
+            return JavaConstructor.create(runtime, constructor);
         }
         catch (NoSuchMethodException nsme) {
             throw runtime.newNameError("no matching java constructor", (String) null);
         }
     }
 
+    @Deprecated
     @JRubyMethod
     public JavaClass array_class() {
         final Class<?> arrayClass = Array.newInstance(javaClass(), 0).getClass();
         return JavaClass.get(getRuntime(), arrayClass);
     }
 
+    @Deprecated
     @JRubyMethod(required = 1)
     public JavaObject new_array(IRubyObject lengthArgument) {
         if (lengthArgument instanceof RubyInteger) {
@@ -817,6 +821,7 @@ public class JavaClass extends JavaObject {
      * @param additional
      * @return
      */
+    @Deprecated
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, JavaArray additional) {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional.getValue());
     }
@@ -829,15 +834,18 @@ public class JavaClass extends JavaObject {
      * @param additional
      * @return
      */
+    @Deprecated
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, IRubyObject additional) {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional);
     }
 
+    @Deprecated
     @JRubyMethod
     public RubyArray fields() {
         return buildFieldResults(getRuntime(), javaClass().getFields());
     }
 
+    @Deprecated
     @JRubyMethod
     public RubyArray declared_fields() {
         return buildFieldResults(getRuntime(), javaClass().getDeclaredFields());
@@ -851,6 +859,7 @@ public class JavaClass extends JavaObject {
         return result;
     }
 
+    @Deprecated
     @JRubyMethod(required = 1)
     public JavaField field(ThreadContext context, IRubyObject name) {
         Class<?> javaClass = javaClass();
@@ -870,6 +879,7 @@ public class JavaClass extends JavaObject {
          }
     }
 
+    @Deprecated
     @JRubyMethod(required = 1)
     public JavaField declared_field(ThreadContext context, IRubyObject name) {
         Class<?> javaClass = javaClass();
@@ -945,6 +955,7 @@ public class JavaClass extends JavaObject {
         return false;
     }
 
+    @Deprecated
     @JRubyMethod
     public JavaClass component_type() {
         if ( ! javaClass().isArray() ) {

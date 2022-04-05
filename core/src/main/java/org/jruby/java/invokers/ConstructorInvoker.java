@@ -23,7 +23,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
 
     @Override
     protected JavaCallable createCallable(Ruby ruby, Member member) {
-        return JavaConstructor.create(ruby, (Constructor)member);
+        return JavaConstructor.wrap((Constructor) member);
     }
 
     @Override

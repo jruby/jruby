@@ -2100,7 +2100,7 @@ public class RubyClass extends RubyModule {
             if (candidates.size() > 0) { // TODO: doc: implies javaConstructable?
                 List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
                 for (Constructor<?> constructor : candidates) {
-                    savedCtorsList.add(new JavaConstructor(runtime, constructor));
+                    savedCtorsList.add(JavaConstructor.wrap(constructor));
                 }
                 savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
             } else {

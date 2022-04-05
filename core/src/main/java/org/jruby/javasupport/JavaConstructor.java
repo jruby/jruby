@@ -43,30 +43,31 @@ import java.lang.reflect.Type;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
-// @JRubyClass(name="Java::JavaConstructor")
 public class JavaConstructor extends JavaCallable {
 
     private final Constructor<?> constructor;
-    //private final JavaUtil.JavaConverter objectConverter;
 
     public final Constructor getValue() { return constructor; }
 
-    public JavaConstructor(Ruby runtime, Constructor<?> constructor) {
+    JavaConstructor(Constructor<?> constructor) {
         super(constructor.getParameterTypes());
         this.constructor = constructor;
-        //this.objectConverter = JavaUtil.getJavaConverter(constructor.getDeclaringClass());
     }
 
+    @Deprecated
     public static JavaConstructor create(Ruby runtime, Constructor<?> constructor) {
-        return new JavaConstructor(runtime, constructor);
+        return new JavaConstructor(constructor);
+    }
+
+    public static JavaConstructor wrap(Constructor<?> constructor) {
+        return new JavaConstructor(constructor);
     }
 
     public static JavaConstructor getMatchingConstructor(final Ruby runtime,
         final Class<?> javaClass, final Class<?>[] argumentTypes) {
         try {
-            return create(runtime, javaClass.getConstructor(argumentTypes));
+            return wrap(javaClass.getConstructor(argumentTypes));
         }
         catch (NoSuchMethodException e) {
             final int argLength = argumentTypes.length;
@@ -78,7 +79,7 @@ public class JavaConstructor extends JavaCallable {
                 if ( ctorLength != argLength ) continue Search;
                 // for zero args case we can stop searching
                 if ( ctorLength == 0 && argLength == 0 ) {
-                    return create(runtime, ctor);
+                    return wrap(ctor);
                 }
 
                 boolean found = true;
@@ -93,7 +94,7 @@ public class JavaConstructor extends JavaCallable {
 
                 // if we get here, we found a matching method, use it
                 // TODO: choose narrowest method by continuing to search
-                if ( found ) return create(runtime, ctor);
+                if ( found ) return wrap(ctor);
             }
         }
         return null; // no matching ctor found
@@ -149,28 +150,6 @@ public class JavaConstructor extends JavaCallable {
 
     public AccessibleObject accessibleObject() {
         return constructor;
-    }
-
-    IRubyObject newInstanceExactArity(ThreadContext context, Object[] arguments) {
-        try {
-            Object result = constructor.newInstance(arguments);
-            return JavaObject.wrap(context.runtime, result);
-        }
-        catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(context, iae, constructor, false, arguments);
-        }
-        catch (IllegalAccessException iae) {
-            throw context.runtime.newTypeError("illegal access");
-        }
-        catch (InvocationTargetException ite) {
-            context.runtime.getJavaSupport().handleNativeException(ite.getTargetException(), constructor); // NOTE: we no longer unwrap
-            // not reached
-            assert false;
-            return null;
-        }
-        catch (InstantiationException ie) {
-            throw context.runtime.newTypeError("can't make instance of " + constructor.getDeclaringClass().getName());
-        }
     }
 
     public Object newInstanceDirect(ThreadContext context, Object... arguments) {
