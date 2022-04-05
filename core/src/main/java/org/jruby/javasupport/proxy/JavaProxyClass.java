@@ -550,28 +550,28 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
      */
     private static final ThreadLocal<Object[]> lookup = new ThreadLocal<>();
 
-    public static Integer addStaticInitLookup(Object... objects) {
+    public static int addStaticInitLookup(Object... objects) {
         // TODO: is this a log or an exception?
         if (objects != null) ensureStaticIntConsumed();
         lookup.set(objects);
-        if (objects == null) return 0;
-        int val = objects.hashCode();
-        return val;
+        return System.identityHashCode(objects); // 0 if null
     }
 
     public static void ensureStaticIntConsumed() {
         if (lookup.get() != null) {
-            throw new IllegalStateException("Thread local class wasn't consumed for class " + ((RubyClass)lookup.get()[1]).getName());
+            throw new IllegalStateException("Thread local class wasn't consumed for: " + lookup.get()[1]);
         }
     }
 
     // used by reified code in RubyClass
-    public static Object[] getStaticInitLookup(int id) {
-        if (lookup.get() == null) throw new IllegalStateException("Thread local class wasn't set up for reification");
-        if (lookup.get().hashCode() != id) throw new IllegalStateException("Thread local class wasn't was reification was expecting");
-        Object[] o = lookup.get();
+    public static Object[] getStaticInitLookup(final int id) {
+        final Object[] objects = lookup.get();
+        if (objects == null) throw new IllegalStateException("Thread local class wasn't set up for reification");
+        if (System.identityHashCode(objects) != id) {
+            throw new IllegalStateException("Thread local class wasn't what reification was expecting: " +  lookup.get()[1]);
+        }
         lookup.set(null);
-        return o;
+        return objects;
     }
 
     public static JavaProxyClass getProxyClass(final Ruby runtime, final RubyClass clazz) {

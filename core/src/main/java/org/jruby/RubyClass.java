@@ -1297,8 +1297,7 @@ public class RubyClass extends RubyModule {
      * @param useChildLoader whether to load the class into its own child classloader
      */
     public void reifyWithAncestors(String classDumpDir, boolean useChildLoader) {
-        boolean[] box = { false };
-        if (isReifiable(box)) {
+        if (isReifiable(new boolean[] { false })) {
             RubyClass realSuper = getSuperClass().getRealClass();
 
             if (realSuper.reifiedClass == null) realSuper.reifyWithAncestors(classDumpDir, useChildLoader);
@@ -1404,7 +1403,7 @@ public class RubyClass extends RubyModule {
         }
         catch (Exception ex) {
             if (nearEnd) throw (RuntimeException)ex;
-            JavaProxyClass.addStaticInitLookup((Object[])null); // wipe any local values not retrieved
+            JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
             logReifyException(ex, true);
         }
 
