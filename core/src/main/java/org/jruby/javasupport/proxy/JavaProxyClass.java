@@ -83,8 +83,8 @@ import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
  * @see java.lang.reflect.Proxy
  *
  */
+@JRubyClass(name="Java::JavaProxyClass")
 public class JavaProxyClass extends JavaProxyReflectionObject {
-
 
     private final Class proxyClass;
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();

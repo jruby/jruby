@@ -35,15 +35,11 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Java::JavaProxyClass")
 public class JavaProxyReflectionObject extends RubyObject {
 
     public JavaProxyReflectionObject(Ruby runtime, RubyClass metaClass) {
