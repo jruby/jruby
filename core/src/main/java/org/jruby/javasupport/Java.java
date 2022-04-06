@@ -657,7 +657,7 @@ public class Java implements Library {
          * @param runtime
          * @return Index of ctor in cache to call, or throws a new exception
          */
-        public static int forTypes(IRubyObject[] args, JCtorCache cache, Ruby runtime) {
+        public static int forTypes(Ruby runtime, IRubyObject[] args, JCtorCache cache) {
             JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache,
                     args.length, args);
             int index = cache.indexOf(ctor);

@@ -45,7 +45,6 @@ import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
 import org.jruby.java.proxies.ConcreteJavaProxy.StaticJCreateMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
