@@ -601,7 +601,7 @@ public class Java implements Library {
         subclass.setCacheProxy(true);
 
         final RubyClass subclassSingleton = subclass.getSingletonClass();
-        subclassSingleton.addReadWriteAttribute(context, "java_proxy_class");
+        subclassSingleton.addReadAttribute(context, "java_proxy_class");
         subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
