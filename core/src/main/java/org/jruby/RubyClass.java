@@ -1263,8 +1263,9 @@ public class RubyClass extends RubyModule {
         if (reifiedSuper != null) {
 
             // super must be Object, BasicObject, or a reified user class
-            boolean result = reifiedSuper == RubyObject.class || reifiedSuper == RubyBasicObject.class
-                    || Reified.class.isAssignableFrom(reifiedSuper);
+            boolean result = reifiedSuper == RubyObject.class ||
+                    reifiedSuper == RubyBasicObject.class ||
+                    Reified.class.isAssignableFrom(reifiedSuper);
             // TODO: check & test for nested java classes
             if (!result || ReifiedJavaProxy.class.isAssignableFrom(reifiedSuper)) java[0] = true;
 
@@ -1402,7 +1403,7 @@ public class RubyClass extends RubyModule {
             }
         }
         catch (Exception ex) {
-            if (nearEnd) throw (RuntimeException)ex;
+            if (nearEnd) Helpers.throwException(ex);
             JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
             logReifyException(ex, true);
         }
