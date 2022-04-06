@@ -668,11 +668,11 @@ public class Java implements Library {
             return index;
         }
 
-        private static JavaProxyClass getProxyClass(final IRubyObject self) {
+        private static JavaProxyClass getProxyClass(final ThreadContext context, final IRubyObject self) {
             final RubyClass metaClass = self.getMetaClass();
             IRubyObject proxyClass = metaClass.getInstanceVariable("@java_proxy_class");
             if (proxyClass == null || proxyClass.isNil()) { // lazy (proxy) class generation ... on JavaSubClass.new
-                proxyClass = JavaProxyClass.getProxyClass(self.getRuntime(), metaClass);
+                proxyClass = JavaProxyClass.getProxyClass(context.runtime, metaClass);
                 metaClass.setInstanceVariable("@java_proxy_class", proxyClass);
             }
             return (JavaProxyClass) proxyClass;
@@ -685,7 +685,7 @@ public class Java implements Library {
 
         @Override
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            final JavaProxyConstructor[] constructors = getProxyClass(self).getConstructors();
+            final JavaProxyConstructor[] constructors = getProxyClass(context, self).getConstructors();
 
             final JavaProxyConstructor matching;
             switch (constructors.length) {
@@ -702,7 +702,7 @@ public class Java implements Library {
         @Override
         public final IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             final int arity = args.length;
-            final JavaProxyConstructor[] constructors = getProxyClass(self).getConstructors();
+            final JavaProxyConstructor[] constructors = getProxyClass(context, self).getConstructors();
 
             final JavaProxyConstructor matching;
             switch (constructors.length) {
