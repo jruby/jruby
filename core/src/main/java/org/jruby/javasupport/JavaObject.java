@@ -37,7 +37,6 @@ package org.jruby.javasupport;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import org.jruby.Ruby;
@@ -49,7 +48,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyClass;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -64,8 +62,7 @@ import static org.jruby.javasupport.JavaUtil.unwrapJava;
  *
  * @author  jpetersen
  */
-@Deprecated
-// @JRubyClass(name="Java::JavaObject")
+@Deprecated // @JRubyClass(name="Java::JavaObject")
 public class JavaObject extends RubyObject {
 
     private static final Object NULL_LOCK = new Object();
@@ -92,10 +89,6 @@ public class JavaObject extends RubyObject {
         objectAccessor.set(this, object);
     }
 
-    protected JavaObject(Ruby runtime, Object value) {
-        this(runtime, runtime.getJavaSupport().getJavaObjectClass(), value);
-    }
-
     @Deprecated
     public static JavaObject wrap(final Ruby runtime, final Object value) {
         if ( value != null ) {
@@ -106,7 +99,7 @@ public class JavaObject extends RubyObject {
                 return new JavaArray(runtime, value);
             }
         }
-        return new JavaObject(runtime, value);
+        return new JavaObject(runtime, runtime.getJavaSupport().getJavaModule().getClass("JavaObject"), value);
     }
 
     @JRubyMethod(meta = true)
