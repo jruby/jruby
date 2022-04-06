@@ -8,6 +8,7 @@ import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaSupport;
+import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -106,7 +107,7 @@ public class MethodGatherer {
             staticNames = new HashMap<>(STATIC_RESERVED_NAMES);
             instanceNames = new HashMap<>(INSTANCE_RESERVED_NAMES);
         } else {
-            JavaSupport javaSupport = runtime.getJavaSupport();
+            JavaSupportImpl javaSupport = (JavaSupportImpl) runtime.getJavaSupport();
 
             Map<String, AssignedName> staticAssignedNames = javaSupport.getStaticAssignedNames().get(superClass);
             staticNames = new HashMap<>(staticAssignedNames.size() + STATIC_RESERVED_NAMES.size());
@@ -128,7 +129,7 @@ public class MethodGatherer {
 
         assignStaticAliases();
 
-        JavaSupport javaSupport = runtime.getJavaSupport();
+        JavaSupportImpl javaSupport = (JavaSupportImpl) runtime.getJavaSupport();
 
         javaSupport.getStaticAssignedNames().get(javaClass).putAll(staticNames);
 
