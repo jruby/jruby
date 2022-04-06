@@ -1391,20 +1391,21 @@ public class Java implements Library {
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
-    public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper, IRubyObject ifcs, Block block) {
-        IRubyObject[] javaClasses = ((RubyArray)ifcs).toJavaArray();
+    public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper,
+                                                  final IRubyObject interfaces, Block block) {
+        IRubyObject[] javaClasses = ((RubyArray) interfaces).toJavaArray();
 
         // Create list of interface names to proxy (and make sure they really are interfaces)
-        // Also build a hashcode from all classes to use for retrieving previously-created impl
-        Class[] interfaces = new Class[javaClasses.length];
+        Class[] unwrapped = new Class[javaClasses.length];
         for (int i = 0; i < javaClasses.length; i++) {
-            if (!(javaClasses[i] instanceof JavaClass) || !((JavaClass) javaClasses[i]).interface_p().isTrue()) {
-                throw recv.getRuntime().newArgumentError("Java interface expected. got: " + javaClasses[i]);
+            final Class<?> klass = JavaUtil.unwrapJava(javaClasses[i]); // TypeError if not a Java wrapper
+            if (!klass.isInterface()) {
+                throw recv.getRuntime().newArgumentError("Java interface expected, got: " + klass);
             }
-            interfaces[i] = ((JavaClass) javaClasses[i]).javaClass();
+            unwrapped[i] = klass;
         }
 
-        return getInstance(recv.getRuntime(), newInterfaceImpl(wrapper, interfaces));
+        return getInstance(recv.getRuntime(), newInterfaceImpl(wrapper, unwrapped));
     }
 
     public static Object newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {

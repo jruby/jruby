@@ -28,6 +28,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.java.invokers.InstanceMethodInvoker;
@@ -327,10 +328,14 @@ public class JavaProxy extends RubyObject {
         }
 
         // We could not find all of them print out first one (we could print them all?)
-        if ( ! fieldMap.isEmpty() ) {
-            throw JavaClass.undefinedFieldError(context.runtime, topModule.getName(), fieldMap.keySet().iterator().next());
+        if (!fieldMap.isEmpty()) {
+            throw undefinedFieldError(context, topModule.getName(), fieldMap.keySet().iterator().next());
         }
 
+    }
+
+    private static RaiseException undefinedFieldError(ThreadContext context, String javaClassName, String name) {
+        return context.runtime.newNameError("undefined field '" + name + "' for class '" + javaClassName + "'", name);
     }
 
     @JRubyMethod(meta = true, rest = true)

@@ -1684,7 +1684,7 @@ public class JavaUtil {
         if ( wrapped instanceof JavaProxy ) {
             return (T) ((JavaProxy) wrapped).getObject();
         }
-        if ( wrapped instanceof JavaObject ) {
+        if ( wrapped instanceof JavaObject ) { // handles JavaClass as well
             return (T) ((JavaObject) wrapped).getValue();
         }
         return defaultValue;

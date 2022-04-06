@@ -32,6 +32,7 @@ import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.exceptions.NoMethodError;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.javasupport.Java;
@@ -644,7 +645,13 @@ public abstract class JavaLang {
 
         @JRubyMethod(required = 1)
         public static IRubyObject extend_proxy(final ThreadContext context, IRubyObject self, IRubyObject extender) {
-            return JavaClass.extend_proxy(context, self, extender);
+            java.lang.Class<?> klass = Java.unwrapClassProxy(self);
+            RubyModule proxy = Java.getProxyClass(context.runtime, klass);
+            try {
+                return extender.callMethod(context, "extend_proxy", proxy);
+            } catch (NoMethodError ex) {
+                throw context.runtime.newTypeError("proxy extender must have an extend_proxy method");
+            }
         }
 
         //@JRubyMethod(name = "simple_name") // (legacy) compatibility with JavaClass

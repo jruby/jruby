@@ -69,8 +69,7 @@ import java.lang.reflect.Modifier;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.util.RubyStringBuilder.ids;
 
-@SuppressWarnings("deprecation")
-// @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject", include = "Comparable")
+@Deprecated
 public class JavaClass extends JavaObject {
 
     public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
@@ -99,26 +98,7 @@ public class JavaClass extends JavaObject {
     }
 
     public final RubyClass getProxyClass() {
-        return (RubyClass) Java.getProxyClass(getRuntime(), javaClass());
-    }
-
-    private static IRubyObject addProxyExtender(final ThreadContext context, final Class<?> klass, final IRubyObject extender) {
-        if ( ! extender.respondsTo("extend_proxy") ) {
-            throw context.runtime.newTypeError("proxy extender must have an extend_proxy method");
-        }
-        RubyModule proxy = Java.getProxyClass(context.runtime, klass);
-        return extender.callMethod(context, "extend_proxy", proxy);
-    }
-
-    @JRubyMethod(required = 1)
-    public static IRubyObject extend_proxy(final ThreadContext context, IRubyObject self, IRubyObject extender) {
-        if (self instanceof JavaClass) {
-            addProxyExtender(context, ((JavaClass) self).javaClass(), extender);
-        } else {
-            // NOTE: used by java.lang.Class as a JavaClass compatiblity layer
-            addProxyExtender(context, Java.unwrapClassProxy(self), extender);
-        }
-        return context.nil;
+        return (RubyClass) getProxyModule();
     }
 
     @Deprecated
@@ -138,23 +118,6 @@ public class JavaClass extends JavaObject {
             javaClasses[i] = get(runtime, classes[i]);
         }
         return RubyArray.newArrayMayCopy(runtime, javaClasses);
-    }
-
-    static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java, final RubyClass JavaObject) {
-        // TODO: Determine if a real allocator is needed here. Do people want to extend
-        // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should you be able to?
-        // NOTE: NOT_ALLOCATABLE_ALLOCATOR is probably OK here, since we don't intend for people to monkey with
-        // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass JavaClass = Java.defineClassUnder("JavaClass", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        JavaClass.includeModule(runtime.getModule("Comparable"));
-
-        JavaClass.defineAnnotatedMethods(JavaClass.class);
-
-        JavaClass.getMetaClass().undefineMethod("new");
-        JavaClass.getMetaClass().undefineMethod("allocate");
-
-        return JavaClass;
     }
 
     public final Class javaClass() {
@@ -215,15 +178,17 @@ public class JavaClass extends JavaObject {
      * @param type
      * @return Java proxy class, Java reified class or nil
      */
-    @Deprecated
-    public static IRubyObject java_class(final ThreadContext context, final RubyModule type) { // TODO avoid callers!
+    @Deprecated // not used
+    public static IRubyObject java_class(final ThreadContext context, final RubyModule type) {
         IRubyObject java_class = type.getInstanceVariable("@java_class");
-        if ( java_class == null ) { // || java_class.isNil()
+        if (java_class == null) {
             if ( type.respondsTo("java_class") ) { // NOTE: quite bad since built-in Ruby classes will return
                 // a Ruby Java proxy for java.lang.Class while Java proxies will return a JavaClass instance !
                 java_class = Helpers.invoke(context, type, "java_class");
+            } else {
+                java_class = JavaProxy.getJavaClass(type);
+                if (java_class == null) java_class = context.nil;
             }
-            else java_class = context.nil; // we return != null (just like callMethod would)
         }
         return java_class;
     }
@@ -261,6 +226,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
+    @Deprecated
     @JRubyMethod(name = "for_name", required = 1, meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
         return for_name(recv, name.asJavaString());
@@ -270,242 +236,9 @@ public class JavaClass extends JavaObject {
         return forNameVerbose(recv.getRuntime(), name);
     }
 
-    @JRubyMethod
-    public RubyModule ruby_class() {
-        // Java.getProxyClass deals with sync issues, so we won't duplicate the logic here
-        return Java.getProxyClass(getRuntime(), javaClass());
-    }
-
-    @JRubyMethod(name = "public?")
-    public RubyBoolean public_p() {
-        return getRuntime().newBoolean(Modifier.isPublic(javaClass().getModifiers()));
-    }
-
-    @JRubyMethod(name = "protected?")
-    public RubyBoolean protected_p() {
-        return getRuntime().newBoolean(Modifier.isProtected(javaClass().getModifiers()));
-    }
-
-    @JRubyMethod(name = "private?")
-    public RubyBoolean private_p() {
-        return getRuntime().newBoolean(Modifier.isPrivate(javaClass().getModifiers()));
-    }
-
-    @JRubyMethod(name = "final?")
-    public RubyBoolean final_p() {
-        return getRuntime().newBoolean(Modifier.isFinal(javaClass().getModifiers()));
-    }
-
-    @JRubyMethod(name = "interface?")
-    public RubyBoolean interface_p() {
-        return getRuntime().newBoolean(javaClass().isInterface());
-    }
-
-    @JRubyMethod(name = "array?")
-    public RubyBoolean array_p() {
-        return getRuntime().newBoolean(javaClass().isArray());
-    }
-
-    @JRubyMethod(name = "enum?")
-    public RubyBoolean enum_p() {
-        return getRuntime().newBoolean(javaClass().isEnum());
-    }
-
-    @JRubyMethod(name = "annotation?")
-    public RubyBoolean annotation_p() {
-        return getRuntime().newBoolean(javaClass().isAnnotation());
-    }
-
-    @JRubyMethod(name = "anonymous_class?")
-    public RubyBoolean anonymous_class_p() {
-        return getRuntime().newBoolean(javaClass().isAnonymousClass());
-    }
-
-    @JRubyMethod(name = "local_class?")
-    public RubyBoolean local_class_p() {
-        return getRuntime().newBoolean(javaClass().isLocalClass());
-    }
-
-    @JRubyMethod(name = "member_class?")
-    public RubyBoolean member_class_p() {
-        return getRuntime().newBoolean(javaClass().isMemberClass());
-    }
-
-    @JRubyMethod(name = "synthetic?")
-    public IRubyObject synthetic_p() {
-        return getRuntime().newBoolean(javaClass().isSynthetic());
-    }
-
-    @JRubyMethod(name = {"name", "to_s"})
-    public RubyString name() {
-        return getRuntime().newString(javaClass().getName());
-    }
-
     @Override
-    @JRubyMethod
     public RubyString inspect() {
         return getRuntime().newString("class " + javaClass().getName());
-    }
-
-    @JRubyMethod
-    public IRubyObject canonical_name() {
-        String canonicalName = javaClass().getCanonicalName();
-        if (canonicalName != null) {
-            return getRuntime().newString(canonicalName);
-        }
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod(name = "package")
-    public IRubyObject get_package() {
-        return Java.getInstance(getRuntime(), javaClass().getPackage());
-    }
-
-    @JRubyMethod
-    public IRubyObject class_loader() {
-        return Java.getInstance(getRuntime(), javaClass().getClassLoader());
-    }
-
-    @JRubyMethod
-    public IRubyObject protection_domain() {
-        return Java.getInstance(getRuntime(), javaClass().getProtectionDomain());
-    }
-
-    @JRubyMethod(required = 1)
-    public IRubyObject resource(IRubyObject name) {
-        return Java.getInstance(getRuntime(), javaClass().getResource(name.asJavaString()));
-    }
-
-    @JRubyMethod(required = 1)
-    public IRubyObject resource_as_stream(IRubyObject name) {
-        return Java.getInstance(getRuntime(), javaClass().getResourceAsStream(name.asJavaString()));
-    }
-
-    @JRubyMethod(required = 1)
-    public IRubyObject resource_as_string(IRubyObject name) {
-        InputStream in = javaClass().getResourceAsStream(name.asJavaString());
-        if (in == null) return getRuntime().getNil();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            int len;
-            byte[] buf = new byte[4096];
-            while ((len = in.read(buf)) >= 0) {
-                out.write(buf, 0, len);
-            }
-        } catch (IOException e) {
-            throw getRuntime().newIOErrorFromException(e);
-        } finally {
-            try {in.close();} catch (IOException ioe) {}
-        }
-        return getRuntime().newString(new ByteList(out.toByteArray(), false));
-    }
-
-    @SuppressWarnings("unchecked")
-    @JRubyMethod(required = 1)
-    public IRubyObject annotation(final IRubyObject annoClass) {
-        final Ruby runtime = getRuntime();
-        if ( ! ( annoClass instanceof JavaClass ) ) {
-            throw runtime.newTypeError(annoClass, runtime.getJavaSupport().getJavaClassClass());
-        }
-        final Class annotation = ((JavaClass) annoClass).javaClass();
-        return Java.getInstance(runtime, javaClass().getAnnotation(annotation));
-    }
-
-    @JRubyMethod
-    public IRubyObject annotations() {
-        // note: intentionally returning the actual array returned from Java, rather
-        // than wrapping it in a RubyArray. wave of the future, when java_class will
-        // return the actual class, rather than a JavaClass wrapper.
-        return Java.getInstance(getRuntime(), javaClass().getAnnotations());
-    }
-
-    @JRubyMethod(name = "annotations?")
-    public RubyBoolean annotations_p() {
-        return getRuntime().newBoolean(javaClass().getAnnotations().length > 0);
-    }
-
-    @JRubyMethod
-    public IRubyObject declared_annotations() {
-        // see note above re: return type
-        return Java.getInstance(getRuntime(), javaClass().getDeclaredAnnotations());
-    }
-
-    @JRubyMethod(name = "declared_annotations?")
-    public RubyBoolean declared_annotations_p() {
-        return getRuntime().newBoolean(javaClass().getDeclaredAnnotations().length > 0);
-    }
-
-    @SuppressWarnings("unchecked")
-    @JRubyMethod(name = "annotation_present?", required = 1)
-    public IRubyObject annotation_present_p(final IRubyObject annoClass) {
-        final Ruby runtime = getRuntime();
-        if ( ! ( annoClass instanceof JavaClass ) ) {
-            throw runtime.newTypeError(annoClass, runtime.getJavaSupport().getJavaClassClass());
-        }
-        final Class annotation = ((JavaClass) annoClass).javaClass();
-        return runtime.newBoolean( javaClass().isAnnotationPresent(annotation) );
-    }
-
-    @JRubyMethod
-    public IRubyObject modifiers() {
-        return getRuntime().newFixnum(javaClass().getModifiers());
-    }
-
-    @JRubyMethod
-    public IRubyObject declaring_class() {
-        Class<?> clazz = javaClass().getDeclaringClass();
-        if (clazz != null) {
-            return JavaClass.get(getRuntime(), clazz);
-        }
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod
-    public IRubyObject enclosing_class() {
-        return Java.getInstance(getRuntime(), javaClass().getEnclosingClass());
-    }
-
-    @JRubyMethod
-    public IRubyObject enclosing_constructor() {
-        Constructor<?> ctor = javaClass().getEnclosingConstructor();
-        if (ctor != null) {
-            return Java.getInstance(getRuntime(), ctor);
-        }
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod
-    public IRubyObject enclosing_method() {
-        Method meth = javaClass().getEnclosingMethod();
-        if (meth != null) {
-            return Java.getInstance(getRuntime(), meth);
-        }
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod
-    public IRubyObject enum_constants() {
-        return Java.getInstance(getRuntime(), javaClass().getEnumConstants());
-    }
-
-    @JRubyMethod
-    public IRubyObject generic_interfaces() {
-        return Java.getInstance(getRuntime(), javaClass().getGenericInterfaces());
-    }
-
-    @JRubyMethod
-    public IRubyObject generic_superclass() {
-        return Java.getInstance(getRuntime(), javaClass().getGenericSuperclass());
-    }
-
-    @JRubyMethod
-    public IRubyObject type_parameters() {
-        return Java.getInstance(getRuntime(), javaClass().getTypeParameters());
-    }
-
-    @JRubyMethod
-    public IRubyObject signers() {
-        return Java.getInstance(getRuntime(), javaClass().getSigners());
     }
 
     public static String getSimpleName(Class<?> clazz) {
@@ -526,135 +259,6 @@ public class JavaClass extends JavaObject {
  		return className.substring(className.lastIndexOf('.') + 1);
  	}
 
-    @JRubyMethod
-    public RubyString simple_name() {
-        return getRuntime().newString(getSimpleName(javaClass()));
-    }
-
-    @JRubyMethod
-    public IRubyObject superclass() {
-        Class<?> superclass = javaClass().getSuperclass();
-        if (superclass == null) {
-            return getRuntime().getNil();
-        }
-        return JavaClass.get(getRuntime(), superclass);
-    }
-
-    @JRubyMethod(name = "<=>", required = 1)
-    public IRubyObject op_cmp(IRubyObject other) {
-        final Class<?> thisClass = javaClass();
-        Class<?> otherClass = null;
-
-        // dig out the other class
-        if (other instanceof JavaClass) {
-            otherClass = ( (JavaClass) other ).javaClass();
-        }
-        else if (other instanceof ConcreteJavaProxy) {
-            ConcreteJavaProxy proxy = (ConcreteJavaProxy) other;
-            final Object wrapped = proxy.getObject();
-            if ( wrapped instanceof Class ) {
-                otherClass = (Class) wrapped;
-            }
-        }
-
-        if ( otherClass != null ) {
-            if ( thisClass == otherClass ) {
-                return getRuntime().newFixnum(0);
-            }
-            if ( otherClass.isAssignableFrom(thisClass) ) {
-                return getRuntime().newFixnum(-1);
-            }
-            if ( thisClass.isAssignableFrom(otherClass) ) {
-                return getRuntime().newFixnum(1);
-            }
-        }
-
-        // can't do a comparison
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod
-    public RubyArray java_instance_methods() {
-        return toJavaMethods(javaClass().getMethods(), false);
-    }
-
-    @JRubyMethod
-    public RubyArray declared_instance_methods() {
-        return toJavaMethods(javaClass().getDeclaredMethods(), false);
-    }
-
-    @JRubyMethod
-    public RubyArray java_class_methods() {
-        return toJavaMethods(javaClass().getMethods(), true);
-    }
-
-    @JRubyMethod
-    public RubyArray declared_class_methods() {
-        return toJavaMethods(javaClass().getDeclaredMethods(), true);
-    }
-
-    private RubyArray toJavaMethods(final Method[] methods, final boolean isStatic) {
-        final Ruby runtime = getRuntime();
-        final RubyArray result = runtime.newArray(methods.length);
-        for ( int i = 0; i < methods.length; i++ ) {
-            final Method method = methods[i];
-            if ( isStatic == Modifier.isStatic(method.getModifiers()) ) {
-                result.append(Java.getInstance(runtime, method));
-            }
-        }
-        return result;
-    }
-
-    @JRubyMethod(required = 1, rest = true)
-    public JavaMethod java_method(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = getRuntime();
-        if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
-
-        final String methodName = args[0].asJavaString();
-        try {
-            Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
-            @SuppressWarnings("unchecked")
-            final Method method = javaClass().getMethod(methodName, argumentTypes);
-            return new JavaMethod(runtime, method);
-        }
-        catch (NoSuchMethodException e) {
-            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass().getName()), false), methodName);
-        }
-    }
-
-    @JRubyMethod(required = 1, rest = true)
-    public JavaMethod declared_method(ThreadContext context, final IRubyObject[] args) {
-        final Ruby runtime = getRuntime();
-        if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
-
-        final String methodName = args[0].asJavaString();
-        try {
-            Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
-            @SuppressWarnings("unchecked")
-            final Method method = javaClass().getDeclaredMethod(methodName, argumentTypes);
-            return new JavaMethod(runtime, method);
-        }
-        catch (NoSuchMethodException e) {
-            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass().getName()), false), methodName);
-        }
-    }
-
-    @JRubyMethod(required = 1, rest = true)
-    public JavaCallable declared_method_smart(ThreadContext context, final IRubyObject[] args) {
-        final Ruby runtime = getRuntime();
-        if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
-
-        final String methodName = args[0].asJavaString();
-
-        Class<?>[] argumentTypes = getArgumentTypes(context, args, 1);
-
-        JavaCallable callable = getMatchingCallable(runtime, javaClass(), methodName, argumentTypes);
-
-        if ( callable != null ) return callable;
-
-        throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass().getName()), false), methodName);
-    }
-
     public static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         if ( methodName.length() == 6 && "<init>".equals(methodName) ) {
             return JavaConstructor.getMatchingConstructor(runtime, javaClass, argumentTypes);
@@ -673,138 +277,6 @@ public class JavaClass extends JavaObject {
             argumentTypes[ i - offset ] = Java.resolveClassType(context, args[i]);
         }
         return argumentTypes;
-    }
-
-    // caching constructors, as they're accessed for each new instance
-    private RubyArray constructors; // TODO seems not used that often?
-
-    @JRubyMethod
-    public RubyArray constructors() {
-        final RubyArray constructors = this.constructors;
-        if ( constructors != null) return constructors;
-        return this.constructors = buildConstructors(getRuntime(), javaClass().getConstructors());
-    }
-
-    @JRubyMethod
-    @SuppressWarnings("deprecation")
-    public RubyArray classes() {
-        return toRubyArray(getRuntime(), javaClass().getClasses());
-    }
-
-    @JRubyMethod
-    public RubyArray declared_classes() {
-        final Ruby runtime = getRuntime();
-        final Class<?> javaClass = javaClass();
-        try {
-            Class<?>[] classes = javaClass.getDeclaredClasses();
-            final RubyArray result = runtime.newArray(classes.length);
-            for (int i = 0; i < classes.length; i++) {
-                if (Modifier.isPublic(classes[i].getModifiers())) {
-                    result.append( get(runtime, classes[i]) );
-                }
-            }
-            return result;
-        }
-        catch (SecurityException e) {
-            // restrictive security policy; no matter, we only want public
-            // classes anyway
-            try {
-                Class<?>[] classes = javaClass.getClasses();
-                final RubyArray result = runtime.newArray(classes.length);
-                for (int i = 0; i < classes.length; i++) {
-                    if (javaClass == classes[i].getDeclaringClass()) {
-                        result.append( get(runtime, classes[i]) );
-                    }
-                }
-                return result;
-            }
-            catch (SecurityException e2) {
-                // very restrictive policy (disallows Member.PUBLIC)
-                // we'd never actually get this far in that case
-            }
-        }
-        return RubyArray.newEmptyArray(runtime);
-    }
-
-    @JRubyMethod
-    public RubyArray declared_constructors() {
-        return buildConstructors(getRuntime(), javaClass().getDeclaredConstructors());
-    }
-
-    private static RubyArray buildConstructors(final Ruby runtime, Constructor<?>[] constructors) {
-        RubyArray result = RubyArray.newArray(runtime, constructors.length);
-        for ( int i = 0; i < constructors.length; i++ ) {
-            result.append(Java.getInstance(runtime, constructors[i]));
-        }
-        return result;
-    }
-
-    @Deprecated
-    @JRubyMethod(rest = true)
-    public JavaConstructor constructor(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = getRuntime();
-        try {
-            Class<?>[] parameterTypes = getArgumentTypes(context, args, 0);
-            @SuppressWarnings("unchecked")
-            Constructor<?> constructor = javaClass().getConstructor(parameterTypes);
-            return JavaConstructor.create(runtime, constructor);
-        }
-        catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("no matching java constructor", (String) null);
-        }
-    }
-
-    @Deprecated
-    @JRubyMethod(rest = true)
-    public JavaConstructor declared_constructor(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = getRuntime();
-        try {
-            Class<?>[] parameterTypes = getArgumentTypes(context, args, 0);
-            @SuppressWarnings("unchecked")
-            Constructor<?> constructor = javaClass().getDeclaredConstructor(parameterTypes);
-            return JavaConstructor.create(runtime, constructor);
-        }
-        catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("no matching java constructor", (String) null);
-        }
-    }
-
-    @Deprecated
-    @JRubyMethod
-    public JavaClass array_class() {
-        final Class<?> arrayClass = Array.newInstance(javaClass(), 0).getClass();
-        return JavaClass.get(getRuntime(), arrayClass);
-    }
-
-    @Deprecated
-    @JRubyMethod(required = 1)
-    public JavaObject new_array(IRubyObject lengthArgument) {
-        if (lengthArgument instanceof RubyInteger) {
-            // one-dimensional array
-            int length = ((RubyInteger) lengthArgument).getIntValue();
-            return new JavaArray(getRuntime(), Array.newInstance(javaClass(), length));
-        }
-        else if (lengthArgument instanceof RubyArray) {
-            // n-dimensional array
-            IRubyObject[] aryLengths = ((RubyArray)lengthArgument).toJavaArrayMaybeUnsafe();
-            final int length = aryLengths.length;
-            if (length == 0) {
-                throw getRuntime().newArgumentError("empty dimensions specifier for java array");
-            }
-            final int[] dimensions = new int[length];
-            for (int i = length; --i >= 0; ) {
-                IRubyObject dimLength = aryLengths[i];
-                if ( ! ( dimLength instanceof RubyInteger ) ) {
-                    throw getRuntime().newTypeError(dimLength, getRuntime().getInteger());
-                }
-                dimensions[i] = ((RubyInteger) dimLength).getIntValue();
-            }
-            return new JavaArray(getRuntime(), Array.newInstance(javaClass(), dimensions));
-        }
-        else {
-            throw getRuntime().newArgumentError(
-                "invalid length or dimensions specifier for java array - must be Integer or Array of Integer");
-        }
     }
 
     public IRubyObject emptyJavaArray(ThreadContext context) {
@@ -839,93 +311,6 @@ public class JavaClass extends JavaObject {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional);
     }
 
-    @Deprecated
-    @JRubyMethod
-    public RubyArray fields() {
-        return buildFieldResults(getRuntime(), javaClass().getFields());
-    }
-
-    @Deprecated
-    @JRubyMethod
-    public RubyArray declared_fields() {
-        return buildFieldResults(getRuntime(), javaClass().getDeclaredFields());
-    }
-
-    private static RubyArray buildFieldResults(final Ruby runtime, Field[] fields) {
-        RubyArray result = runtime.newArray( fields.length );
-        for ( int i = 0; i < fields.length; i++ ) {
-            result.append(Java.getInstance(runtime, fields[i]));
-        }
-        return result;
-    }
-
-    @Deprecated
-    @JRubyMethod(required = 1)
-    public JavaField field(ThreadContext context, IRubyObject name) {
-        Class<?> javaClass = javaClass();
-        Ruby runtime = context.runtime;
-        String stringName = name.asJavaString();
-
-        try {
-            return new JavaField(runtime, javaClass.getField(stringName));
-        } catch (NoSuchFieldException nsfe) {
-            String newName = JavaUtil.getJavaCasedName(stringName);
-            if(newName != null) {
-                try {
-                    return new JavaField(runtime, javaClass.getField(newName));
-                } catch (NoSuchFieldException nsfe2) {}
-            }
-            throw undefinedFieldError(runtime, javaClass.getName(), stringName);
-         }
-    }
-
-    @Deprecated
-    @JRubyMethod(required = 1)
-    public JavaField declared_field(ThreadContext context, IRubyObject name) {
-        Class<?> javaClass = javaClass();
-        Ruby runtime = context.runtime;
-        String stringName = name.asJavaString();
-
-        try {
-            return new JavaField(runtime, javaClass.getDeclaredField(stringName));
-        } catch (NoSuchFieldException nsfe) {
-            String newName = JavaUtil.getJavaCasedName(stringName);
-            if(newName != null) {
-                try {
-                    return new JavaField(runtime, javaClass.getDeclaredField(newName));
-                } catch (NoSuchFieldException nsfe2) {}
-            }
-            throw undefinedFieldError(runtime, javaClass.getName(), stringName);
-        }
-    }
-
-    public static RaiseException undefinedFieldError(Ruby runtime, String javaClassName, String name) {
-        return runtime.newNameError("undefined field '" + name + "' for class '" + javaClassName + "'", name);
-    }
-
-    @JRubyMethod
-    @SuppressWarnings("deprecation")
-    public RubyArray interfaces() {
-        return toRubyArray(getRuntime(), javaClass().getInterfaces());
-    }
-
-    @JRubyMethod(name = "primitive?")
-    public RubyBoolean primitive_p() {
-        return getRuntime().newBoolean( isPrimitive() );
-    }
-
-    boolean isPrimitive() { return javaClass().isPrimitive(); }
-
-    @JRubyMethod(name = "assignable_from?", required = 1)
-    public RubyBoolean assignable_from_p(IRubyObject other) {
-        if ( ! (other instanceof JavaClass) ) {
-            throw getRuntime().newTypeError("assignable_from requires JavaClass (" + other.getType() + " given)");
-        }
-
-        Class<?> otherClass = ((JavaClass) other).javaClass();
-        return isAssignableFrom(otherClass) ? getRuntime().getTrue() : getRuntime().getFalse();
-    }
-
     public final boolean isAssignableFrom(final Class<?> clazz) {
         return assignable(javaClass(), clazz);
     }
@@ -953,15 +338,6 @@ public class JavaClass extends JavaObject {
             }
         }
         return false;
-    }
-
-    @Deprecated
-    @JRubyMethod
-    public JavaClass component_type() {
-        if ( ! javaClass().isArray() ) {
-            throw getRuntime().newTypeError("not a java array-class");
-        }
-        return JavaClass.get(getRuntime(), javaClass().getComponentType());
     }
 
     public static Constructor[] getConstructors(final Class<?> clazz) {
