@@ -900,8 +900,8 @@ public final class ArrayJavaProxy extends JavaProxy {
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
             final Ruby runtime = context.runtime;
 
-            if ( ! ( arg0 instanceof JavaArray ) ) {
-                throw runtime.newTypeError(arg0, runtime.getJavaSupport().getJavaArrayClass());
+            if (!(arg0 instanceof ArrayJavaProxy)) {
+                throw runtime.newTypeError(arg0, "ArrayJavaProxy");
             }
 
             IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy");
