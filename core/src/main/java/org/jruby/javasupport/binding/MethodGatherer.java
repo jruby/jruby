@@ -536,7 +536,6 @@ public class MethodGatherer {
 
     @SuppressWarnings("deprecation")
     void setupFieldsAndConstants(Class<?> javaClass) {
-        boolean isInterface = javaClass.isInterface();
         Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
         for (Field field : fields) {
