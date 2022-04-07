@@ -58,6 +58,7 @@ import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
@@ -1068,7 +1069,7 @@ public class Helpers {
             return true;
         }
 
-        if (catchable instanceof RubyClass && JavaClass.isProxyType(context, (RubyClass) catchable)) {
+        if (catchable instanceof RubyClass && Java.isProxyType((RubyClass) catchable)) {
             if ( ex instanceof ReifiedJavaProxy ) { // Ruby sub-class of a Java exception type
                 final IRubyObject target = ((ReifiedJavaProxy) ex).___jruby$rubyObject();
                 if ( target != null ) return ((RubyClass) catchable).isInstance(target);
