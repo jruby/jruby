@@ -746,7 +746,7 @@ public class RubyGlobal {
         }
 
         protected static IRubyObject newString(ThreadContext context, RubyString value, Encoding encoding) {
-            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.getByteList(), encoding);
+            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.strDup(context.runtime).getByteList(), encoding);
 
             result.setFrozen(true);
 
