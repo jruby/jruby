@@ -50,7 +50,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,6 +58,7 @@ import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
+import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
@@ -351,10 +351,10 @@ public class Java implements Library {
         return (RubyClass) getProxyClass(runtime, object.getClass());
     }
 
-    public static Class<?> resolveClassType(final ThreadContext context, final IRubyObject type) {
+    public static Class<?> resolveClassType(final ThreadContext context, final IRubyObject type) throws TypeError {
         RubyModule proxyClass = Java.resolveType(context.runtime, type);
         if (proxyClass == null) throw context.runtime.newTypeError("unable to convert to type: " + type);
-        return JavaClass.getJavaClass(context, proxyClass);
+        return JavaUtil.getJavaClass(proxyClass);
     }
 
     public static RubyModule resolveType(final Ruby runtime, final IRubyObject type) {
@@ -430,6 +430,7 @@ public class Java implements Library {
         return null;
     }
 
+    @Deprecated
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
         return getProxyClass(runtime, javaClass.javaClass());
     }
@@ -439,6 +440,11 @@ public class Java implements Library {
         RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
         if (proxy != null) return proxy;
         return runtime.getJavaSupport().getProxyClassFromCache(clazz);
+    }
+
+    // expected to handle Java proxy (Ruby) sub-classes as well
+    public static boolean isProxyType(final RubyModule proxy) {
+        return JavaUtil.getJavaClass(proxy, null) != null;
     }
 
     @SuppressWarnings("deprecation")

@@ -59,6 +59,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -68,7 +69,7 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
-import org.jruby.RubyInstanceConfig;
+import org.jruby.exceptions.TypeError;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -95,9 +96,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.cli.Options;
 
 public class JavaUtil {
+
     public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects) {
         if ( objects == null || objects.length == 0 ) return IRubyObject.NULL_ARRAY;
 
@@ -1698,6 +1699,48 @@ public class JavaUtil {
             throw wrapped.getRuntime().newTypeError(wrapped, "JavaProxy");
         }
         return (T) unwrap;
+    }
+
+    /**
+     * Get the associated JavaClass for a Java proxy module/class or wrapper.
+     *
+     * @note Works best when passed module/class is assumed to be a Java proxy wrapper.
+     *
+     * @param type
+     * @return class
+     */
+    public static Class<?> getJavaClass(final RubyModule type) throws TypeError {
+        return getJavaClass(type, () -> {
+            throw type.getRuntime().newTypeError("wrong argument type (not a Java proxy nor does respond to java_class) " + type);
+        });
+    }
+
+    /**
+     * Get the associated JavaClass for a Java proxy module/class or wrapper.
+     *
+     * @param type
+     * @param ifNone fallback if none Java class wrapper
+     * @return class or the result of the supplier function
+     */
+    // Class objects have a java_class method but they're not considered Java proxies
+    public static Class<?> getJavaClass(final RubyModule type, final Supplier<Class<?>> ifNone) {
+        if (type.getJavaProxy()) return (Class<?>) type.dataGetStruct();
+
+        IRubyObject java_class = JavaProxy.getJavaClass(type); // always a JavaProxy
+        if (java_class != null) return (Class<?>) ((JavaProxy) java_class).getObject();
+
+        if (type.respondsTo("java_class")) {
+            // NOTE: built-in Ruby classes will return a Ruby Java proxy for java.lang.Class
+            java_class = Helpers.invoke(type.getRuntime().getCurrentContext(), type, "java_class");
+            if (java_class instanceof JavaProxy) {
+                return (Class<?>) ((JavaProxy) java_class).getObject();
+            }
+            if (java_class instanceof JavaClass) { // legacy
+                return ((JavaClass) java_class).javaClass();
+            }
+        }
+
+        return ifNone == null ? null : ifNone.get();
     }
 
     @Deprecated
