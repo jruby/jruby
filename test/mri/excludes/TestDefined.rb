@@ -1,2 +1,6 @@
 exclude :test_defined, "needs investigation"
 exclude :test_defined_impl_specific, "fails randomly on Travis, not reproducible"
+exclude :test_defined_undefined_argument, "needs investigation"
+exclude :test_defined_protected_method, "needs investigation"
+exclude :test_defined_matchdata, "needs investigation"
+exclude :test_defined_empty_paren_expr, "needs investigation"
