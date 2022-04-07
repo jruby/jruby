@@ -746,10 +746,12 @@ public class JavaProxy extends RubyObject {
             try {
                 return clazz.getMethod(name, argTypes);
             }
-            catch (NoSuchMethodException nsme) {
+            catch (NoSuchMethodException e) {
                 String prettyName = name + CodegenUtils.prettyParams(argTypes);
                 String errorName = clazz.getName() + '.' + prettyName;
-                throw context.runtime.newNameError("Java method not found: " + errorName, name);
+                RaiseException ex = context.runtime.newNameError("Java method not found: " + errorName, name);
+                ex.initCause(e);
+                throw ex;
             }
         }
 
