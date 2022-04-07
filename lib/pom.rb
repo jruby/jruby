@@ -57,9 +57,9 @@ default_gems = [
     ['irb', '1.4.1'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.11.0'],
+    ['jruby-openssl', '0.12.2'],
     ['json', '2.6.1'],
-    ['logger', '1.5.0'],
+    ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
     ['net-http', '0.2.0'],
     ['net-protocol', '0.1.1'],
@@ -73,7 +73,7 @@ default_gems = [
     # ['open-uri', '0.2.0'],
     ['open-uri', '0.1.0'],
     ['optparse', '0.2.0'],
-    ['ostruct', '0.5.2'],
+    ['ostruct', '0.5.5'],
     # https://github.com/ruby/pathname/issues/17
     # ['pathname', '0.2.0'],
     ['pp', '0.3.0'],
@@ -93,8 +93,7 @@ default_gems = [
     ['resolv-replace', '0.1.0'],
     ['rinda', '0.1.1'],
     ['ruby2_keywords', '0.0.5'],
-    # https://github.com/ruby/securerandom/issues/9
-    # ['securerandom', '0.1.1'],
+    ['securerandom', '0.2.0'],
     # https://github.com/ruby/set/issues/21
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
@@ -311,7 +310,7 @@ project 'JRuby Lib Setup' do
 
           # copy in new ones and mark writable for future updates (e.g. minitest)
           stdlib_locs = Dir[ require_files ].map do |f|
-            log " copying: #{f} to #{stdlib_dir}" if $VERBOSE
+            log " copying: #{f} to #{stdlib_dir}"# if $VERBOSE
             FileUtils.cp_r( f, stdlib_dir )
 
             stdlib_loc = f.sub( File.dirname(f), stdlib_dir )

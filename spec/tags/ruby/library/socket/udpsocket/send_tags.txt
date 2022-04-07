@@ -1,2 +1,3 @@
 hangs:UDPSocket#send using IPv4 using a connected socket with an explicit destination address sends the data to the given address instead
 hangs:UDPSocket#send using IPv6 using a connected socket with an explicit destination address sends the data to the given address instead
+wip(hangs on MacOS):UDPSocket#send sends data in ad hoc mode (with port given as a String)

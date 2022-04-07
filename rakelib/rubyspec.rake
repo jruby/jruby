@@ -52,6 +52,17 @@ namespace :spec do
           :jruby_opts => "--debug"
   end
 
+  desc "Run specs for work-in-progess features"
+  task :'ruby:wip' do
+    mspec :command => "run",
+          :compile_mode => "OFF",
+          :format => "s",
+          :spec_target => ":ci_files",
+          :jruby_opts => "--dev",
+          :spec_config => "spec/jruby.mspec",
+          :tags => [:wip]
+  end
+
   desc "Run rubyspecs expected to pass"
   task :ci => ['spec:tagged']
 

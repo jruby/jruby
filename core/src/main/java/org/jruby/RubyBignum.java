@@ -1150,13 +1150,9 @@ public class RubyBignum extends RubyInteger {
         }
 
         BigInteger value = new BigInteger(digits);
-        if (!positive) {
-            value = value.negate();
-        }
+        if (!positive) value = value.negate();
 
-        RubyNumeric result = bignorm(input.getRuntime(), value);
-        input.registerLinkTarget(result);
-        return result;
+        return bignorm(input.getRuntime(), value);
     }
 
     // MRI: rb_big_fdiv_double

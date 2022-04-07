@@ -1,0 +1,1 @@
+wip:Kernel#initialize_clone accepts a :freeze keyword argument for obj.clone(freeze: value)

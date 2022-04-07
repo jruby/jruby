@@ -33,7 +33,9 @@ package org.jruby.ext.socket;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -46,7 +48,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NoRouteToHostException;
-import java.net.Socket;
+import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -69,13 +71,10 @@ public class RubyTCPSocket extends RubyIPSocket {
     }
 
 
-    private SocketChannel attemptConnect(ThreadContext context, IRubyObject host, String localHost, int localPort,
-                                         String remoteHost, int remotePort) throws IOException {
+    private SocketChannel attemptConnect(ThreadContext context, String localHost, int localPort,
+                                         String remoteHost, int remotePort, RubyHash opts) throws IOException {
         for (InetAddress address: InetAddress.getAllByName(remoteHost)) {
-            // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
-            // (2) Socket.getChannel() seems to return null in some cases
             SocketChannel channel = SocketChannel.open();
-            Socket socket = channel.socket();
 
             openFile = null; // Second or later attempts will have non-closeable failed attempt to connect.
 
@@ -85,45 +84,111 @@ public class RubyTCPSocket extends RubyIPSocket {
             channel.configureBlocking(false);
 
             if (localHost != null) {
-                socket.setReuseAddress(true);
-                socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
+                channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+                channel.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
             }
             try {
                 channel.connect(new InetSocketAddress(address, remotePort));
 
+                long timeout = -1;
+                if (opts != null) {
+                    IRubyObject timeoutObj = ArgsUtil.extractKeywordArg(context, opts, "connect_timeout");
+                    if (!timeoutObj.isNil()) {
+                        timeout = (long) (timeoutObj.convertToFloat().getDoubleValue() * 1000);
+                    }
+                }
+
                 // wait for connection
-                while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
-                    context.pollThreadEvents();
+                if (context.getThread().select(channel, this, SelectionKey.OP_CONNECT, timeout)) {
+                    // complete connection
+                    while (!channel.finishConnect()) {
+                        context.pollThreadEvents();
+                    }
+
+                    channel.configureBlocking(true);
+
+                    return channel;
                 }
 
-                // complete connection
-                while (!channel.finishConnect()) {
-                    context.pollThreadEvents();
-                }
-
-                channel.configureBlocking(true);
-
-                return channel;
+                throw context.runtime.newErrnoETIMEDOUTError();
             } catch (ConnectException e) {
                 // fall through and try next valid address for the host.
             }
         }
 
         // did not complete and only path out is n repeated ConnectExceptions
-        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
+        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + localHost + " port " + remotePort);
     }
 
-    @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject host, IRubyObject port) {
+        final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
+        final int remotePort = SocketUtils.getPortFrom(context, port);
+
+        return initialize(context, remoteHost, remotePort, null, 0, null);
+    }
+
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject host, IRubyObject port, IRubyObject localOrOpts) {
+        final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
+        final int remotePort = SocketUtils.getPortFrom(context, port);
+
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, localOrOpts);
+        if (!opts.isNil()) {
+            return initialize(context, remoteHost, remotePort, null, 0, (RubyHash) opts);
+        }
+
+        String localHost = localOrOpts.isNil() ? null : localOrOpts.convertToString().toString();
+
+        return initialize(context, remoteHost, remotePort, localHost, 0, null);
+
+    }
+
+    @JRubyMethod(required = 2, optional = 3, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
+        String localHost = null;
+        int localPort = 0;
+        IRubyObject maybeOpts;
+        RubyHash opts = null;
+
+        switch (args.length) {
+            case 2:
+                return initialize(context, args[0], args[1]);
+            case 3:
+                return initialize(context, args[0], args[1], args[2]);
+        }
+
+        // cut switch in half to evaluate early args first
         IRubyObject host = args[0];
         IRubyObject port = args[1];
 
         final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
         final int remotePort = SocketUtils.getPortFrom(context, port);
 
-        String localHost = (args.length >= 3 && !args[2].isNil()) ? args[2].convertToString().toString() : null;
-        int localPort = (args.length == 4 && !args[3].isNil()) ? SocketUtils.getPortFrom(context, args[3]) : 0;
+        switch (args.length) {
+            case 4:
+                if (!args[2].isNil()) localHost = args[2].convertToString().toString();
+
+                maybeOpts = ArgsUtil.getOptionsArg(context.runtime, args[3]);
+                if (!maybeOpts.isNil()) {
+                    opts = (RubyHash) maybeOpts;
+                } else if (!args[3].isNil()) {
+                    localPort = SocketUtils.getPortFrom(context, args[3]);
+                }
+
+                break;
+            case 5:
+                if (!args[4].isNil()) opts = (RubyHash) ArgsUtil.getOptionsArg(context.runtime, args[4], true);
+                break;
+            default:
+                throw context.runtime.newArgumentError(args.length, 2, 4);
+        }
+
+        return initialize(context, remoteHost, remotePort, localHost, localPort, opts);
+    }
+
+    public IRubyObject initialize(ThreadContext context, String remoteHost, int remotePort, String localHost, int localPort, RubyHash opts) {
+        Ruby runtime = context.runtime;
 
         // try to ensure the socket closes if it doesn't succeed
         boolean success = false;
@@ -131,7 +196,7 @@ public class RubyTCPSocket extends RubyIPSocket {
 
         try {
             try {
-                channel = attemptConnect(context, host, localHost, localPort, remoteHost, remotePort);
+                channel = attemptConnect(context, localHost, localPort, remoteHost, remotePort, opts);
                 success = true;
             } catch (BindException e) {
             	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ':' + remotePort);

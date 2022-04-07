@@ -71,6 +71,7 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -564,28 +565,7 @@ public class RubyRange extends RubyObject {
 
         if (isEndless) throw runtime.newRangeError("cannot convert endless range to an array");
 
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            long lim = ((RubyFixnum) end).getLongValue();
-            if (!isExclusive) {
-                lim++;
-            }
-
-            long base = ((RubyFixnum) begin).getLongValue();
-            long size = lim - base;
-            if (size > Integer.MAX_VALUE) {
-                throw runtime.newRangeError("Range size too large for to_a");
-            }
-            if (size < 0) {
-                return RubyArray.newEmptyArray(runtime);
-            }
-            IRubyObject[] array = new IRubyObject[(int) size];
-            for (int i = 0; i < size; i++) {
-                array[i] = RubyFixnum.newFixnum(runtime, base + i);
-            }
-            return RubyArray.newArrayMayCopy(runtime, array);
-        } else {
-            return RubyEnumerable.to_a(context, this);
-        }
+        return RubyEnumerable.to_a(context, this);
     }
 
     @Deprecated
@@ -866,7 +846,7 @@ public class RubyRange extends RubyObject {
         if (iterable
                 || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), to_int_checked).isNil()
                 || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), to_int_checked).isNil()) {
-            return cover_p(context, val);
+            return RubyBoolean.newBoolean(context, rangeIncludes(context, val));
         } else if ((begin instanceof RubyString) || (end instanceof RubyString)) {
             if ((begin instanceof RubyString) && (end instanceof RubyString)) {
                 if (useStringCover) {
@@ -891,7 +871,6 @@ public class RubyRange extends RubyObject {
     }
 
     private static boolean discreteObject(ThreadContext context, IRubyObject obj) {
-        if (obj instanceof RubyTime) return false;
         return sites(context).respond_to_succ.respondsTo(context, obj, obj, false);
     }
 
@@ -908,7 +887,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject eqq_p(ThreadContext context, IRubyObject obj) {
         IRubyObject result = includeCommon(context, obj, true);
         if (result != UNDEF) return result;
-        return callMethod(context, "cover?", obj);
+        return RubyBoolean.newBoolean(context, rangeIncludes(context, obj));
     }
 
     @JRubyMethod(name = "cover?")
@@ -935,6 +914,11 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, Block block) {
+        return min(context, null, block);
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
         if (begin.isNil()) {
             throw context.runtime.newRangeError("cannot get the minimum of beginless range");
         }
@@ -943,15 +927,18 @@ public class RubyRange extends RubyObject {
             if (end.isNil()) {
                 throw context.runtime.newRangeError("cannot get the minimum of endless range with custom comparison method");
             }
-            return Helpers.invokeSuper(context, this, block);
-        }
 
-        int cmp = isEndless ? -1 : RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-        if (cmp > 0 || (cmp == 0 && isExclusive)) {
-            return context.nil;
-        }
+            return arg != null ? Helpers.invokeSuper(context, this, arg, block) : Helpers.invokeSuper(context, this, block);
+        } else if (arg != null) {
+            return first(context, arg);
+        } else {
+            int cmp = isEndless ? -1 : RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+            if (cmp > 0 || (cmp == 0 && isExclusive)) {
+                return context.nil;
+            }
 
-        return begin;
+            return begin;
+        }
     }
 
     @JRubyMethod(frame = true)
@@ -995,13 +982,6 @@ public class RubyRange extends RubyObject {
     }
 
     @JRubyMethod(frame = true)
-    public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
-        if (isEndless && block.isGiven()) throw context.runtime.newRangeError("cannot get the minimum of endless range with custom comparison method");
-        if (isEndless) return first(context, arg);
-        return Helpers.invokeSuper(context, this, arg, block);
-    }
-
-    @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, IRubyObject arg, Block block) {
         if (isEndless) throw context.runtime.newRangeError("cannot get the maximum element of endless range");
         return Helpers.invokeSuper(context, this, arg, block);
@@ -1009,8 +989,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject first(ThreadContext context) {
-        if (isBeginless) throw context.runtime.newRangeError("cannot get the first element of beginless range");
-        return begin;
+        return first(context, null);
     }
 
     @JRubyMethod
@@ -1020,6 +999,10 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject first(ThreadContext context, IRubyObject arg) {
+        if (isBeginless) throw context.runtime.newRangeError("cannot get the first element of beginless range");
+
+        if (arg == null) return begin;
+
         final Ruby runtime = context.runtime;
         final int num = RubyNumeric.num2int(arg);
         if (num < 0) {
@@ -1077,7 +1060,53 @@ public class RubyRange extends RubyObject {
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject arg) {
         if (isEndless) throw context.runtime.newRangeError("cannot get the last element of endless range");
+
+        if ((begin instanceof RubyInteger) && (end instanceof RubyInteger)
+            && this.getMetaClass().checkMethodBasicDefinition("each")) {
+                return intRangeLast(context, arg);
+        }
+
         return ((RubyArray) RubyKernel.new_array(context, this, this)).last(arg);
+    }
+
+    // MRI rb_int_range_last
+    private RubyArray intRangeLast(ThreadContext context, IRubyObject arg) {
+        IRubyObject one = RubyInteger.int2fix(context.runtime, 1);
+        IRubyObject len1, len, nv, b;
+
+        len1 = ((RubyInteger)end).op_minus(context, begin);
+
+        if (((RubyInteger)len1).isZero() || Numeric.f_negative_p(context, (RubyInteger)len1)) {
+            return RubyArray.newEmptyArray(context.runtime);
+        }
+
+        if (isExclusive) {
+            end = ((RubyInteger)end).op_minus(context, one);
+            len = len1;
+        } else {
+            len = ((RubyInteger)len1).op_plus(context, one);
+        }
+
+        long n = RubyNumeric.num2long(arg);
+        if (n < 0) {
+            throw context.runtime.newArgumentError("negative array size");
+        }
+
+        nv = RubyInteger.int2fix(context.runtime, n);
+        if (Numeric.f_gt_p(context, nv, len)) {
+             nv = len;
+             n = RubyNumeric.num2long(nv);
+        }
+
+        RubyArray array = RubyArray.newArray(context.runtime, n);
+        b = ((RubyInteger)end).op_minus(context, nv);
+        while (n > 0) {
+            b = ((RubyInteger)b).op_plus(context, one);
+            array.push(b);
+            n--;
+        }
+
+        return array;
     }
 
     @JRubyMethod
@@ -1117,14 +1146,10 @@ public class RubyRange extends RubyObject {
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                UnmarshalStream unmarshalStream) throws IOException {
-            RubyRange range = (RubyRange) type.allocate();
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            RubyRange range = (RubyRange) input.entry(type.allocate());
 
-            unmarshalStream.registerLinkTarget(range);
-
-            // FIXME: Maybe we can just gank these off the line directly?
-            unmarshalStream.defaultVariablesUnmarshal(range);
+            input.ivar(null, range, null);
 
             IRubyObject excl = (IRubyObject) range.removeInternalVariable("excl");
             IRubyObject begin = (IRubyObject) range.removeInternalVariable("begin");
@@ -1236,6 +1261,36 @@ public class RubyRange extends RubyObject {
     private static IRubyObject rangeBeginLengthError(ThreadContext context, int beg, int end, boolean excludeEnd, int err) {
         if (err != 0) throw context.runtime.newRangeError(beg + ".." + (excludeEnd ? "." : "") + end + " out of range");
         return context.nil;
+    }
+
+    public static class RangeLike {
+        final IRubyObject begin;
+        final IRubyObject end;
+        final boolean excl;
+
+        RangeLike(IRubyObject begin, IRubyObject end, boolean excl) {
+            this.begin = begin;
+            this.end = end;
+            this.excl = excl;
+        }
+
+        IRubyObject getRange(ThreadContext context) {
+            return Helpers.invoke(context, end, "-", begin);
+        }
+    }
+
+    // MRI: rb_range_values
+    public static RangeLike rangeValues(ThreadContext context, IRubyObject range) {
+        if (range instanceof RubyRange) {
+            RubyRange vrange = (RubyRange) range;
+            return new RangeLike(vrange.begin(context), vrange.end(context), vrange.isExcludeEnd());
+        } else if (range instanceof RubyArithmeticSequence) {
+            return null;
+        } else if (range.respondsTo("begin") && range.respondsTo("end") && range.respondsTo("exclude_end?")) {
+            return new RangeLike(Helpers.invoke(context, range, "begin"), Helpers.invoke(context, range, "end"), Helpers.invoke(context, range, "exclude_end?").isTrue());
+        }
+
+        return null;
     }
 
     public static class BSearch {

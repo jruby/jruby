@@ -237,22 +237,23 @@ public class RubyTime extends RubyObject {
             RubyString tmpString = (RubyString) tmp;
             ByteList tmpBytes = tmpString.getByteList();
             int n = 0;
-            int s = 0;
+            int min = -1;
+            int sec = -1;
             if (!tmpBytes.getEncoding().isAsciiCompatible()) {
                 return null;
             }
             switch (tmpBytes.realSize()) {
                 case 1:
-                    if (tmpBytes.get(s) == 'Z') {
+                    if (tmpBytes.get(0) == 'Z') {
                         return DateTimeZone.UTC;
                     }
                     /* Military Time Zone Names */
-                    if (tmpBytes.get(s) >= 'A' && tmpBytes.get(s) <= 'I') {
-                        n = tmpBytes.get(s) - 'A' + 1;
-                    } else if (tmpBytes.get(s) >= 'K' && tmpBytes.get(s) <= 'M') {
-                        n = tmpBytes.get(s) - 'A';
-                    } else if (tmpBytes.get(s) >= 'N' && tmpBytes.get(s) <= 'Y') {
-                        n = 'M' - tmpBytes.get(s);
+                    if (tmpBytes.get(0) >= 'A' && tmpBytes.get(0) <= 'I') {
+                        n = tmpBytes.get(0) - 'A' + 1;
+                    } else if (tmpBytes.get(0) >= 'K' && tmpBytes.get(0) <= 'M') {
+                        n = tmpBytes.get(0) - 'A';
+                    } else if (tmpBytes.get(0) >= 'N' && tmpBytes.get(0) <= 'Y') {
+                        n = 'M' - tmpBytes.get(0);
                     } else {
                         return null;
                     }
@@ -262,26 +263,53 @@ public class RubyTime extends RubyObject {
                     if (tmpBytes.toByteString().equals("UTC")) {
                         return DateTimeZone.UTC;
                     }
-                    return null;
-                case 9:
-                    if (tmpBytes.get(s+6) != ':') return null;
-                    if (!Character.isDigit(tmpBytes.get(s+7)) || !Character.isDigit(tmpBytes.get(s+8))) return null;
-                    n += (tmpBytes.get(s+7) * 10 + tmpBytes.get(s+8) - '0' * 11);
-                    /* fall through */
+                    // +HH
+                    break;
+                case 5:
+                    // +HHMM
+                    min = 3;
+                    break;
                 case 6:
-                    if (tmpBytes.get(s) != '+' && tmpBytes.get(s+0) != '-') return null;
-                    if (!Character.isDigit(tmpBytes.get(s+1)) || !Character.isDigit(tmpBytes.get(s+2))) return null;
-                    if (tmpBytes.get(s+3) != ':') return null;
-                    if (!Character.isDigit(tmpBytes.get(s+4)) || !Character.isDigit(tmpBytes.get(s+5))) return null;
-                    if (tmpBytes.get(s+4) > '5') return null;
+                    // +HH:MM
+                    min = 4;
+                    break;
+                case 7:
+                    // +HHMMSS
+                    sec = 5;
+                    min = 3;
+                    break;
+                case 9:
+                    // +HH:MM:SS
+                    sec = 7;
+                    min = 4;
                     break;
                 default:
                     return null;
             }
-            n += (tmpBytes.get(s+1) * 10 + tmpBytes.get(s+2) - '0' * 11) * 3600;
-            n += (tmpBytes.get(s+4) * 10 + tmpBytes.get(s+5) - '0' * 11) * 60;
-            if (tmpBytes.get(s+0) == '-')
+
+            if (sec > -1) {
+                if (sec == 7 && tmpBytes.get(sec-1) != ':') return null;
+                if (!Character.isDigit(tmpBytes.get(sec)) || !Character.isDigit(tmpBytes.get(sec+1))) return null;
+                n += (tmpBytes.get(sec) * 10 + tmpBytes.get(sec+1) - '0' * 11);
+            }
+
+            if (min > -1) {
+                if (min == 4 && tmpBytes.get(min-1) != ':') return null;
+                if (!Character.isDigit(tmpBytes.get(min)) || !Character.isDigit(tmpBytes.get(min+1))) return null;
+                if (tmpBytes.get(min) > '5') return null;
+                n += (tmpBytes.get(min) * 10 + tmpBytes.get(min+1) - '0' * 11) * 60;
+            }
+
+            if (tmpBytes.get(0) != '+' && tmpBytes.get(0) != '-') return null;
+            if (!Character.isDigit(tmpBytes.get(1)) || !Character.isDigit(tmpBytes.get(2))) return null;
+
+            n += (tmpBytes.get(1) * 10 + tmpBytes.get(2) - '0' * 11) * 3600;
+
+            if (tmpBytes.get(0) == '-') {
+                if (n == 0) return DateTimeZone.UTC;
                 n = -n;
+            }
+
             dtz = getTimeZoneWithOffset(runtime, "", n * 1000);
         } else {
             RubyNumeric numericOffset = numExact(context, arg);
@@ -544,14 +572,6 @@ public class RubyTime extends RubyObject {
         return this;
     }
 
-    @JRubyMethod
-    public RubyTime succ() {
-        RubyTime time = newTime(getRuntime(), dt.plusSeconds(1));
-        time.setIsTzRelative(isTzRelative);
-        time.setZoneObject(zone);
-        return time;
-    }
-
     @JRubyMethod(name = {"gmtime", "utc", "to_time"})
     public RubyTime gmtime() {
         return adjustTimeZone(getRuntime(), DateTimeZone.UTC, false);
@@ -636,7 +656,7 @@ public class RubyTime extends RubyObject {
         }
 
         if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
-            if ((zone = findTimezone(context, zone)).isNil()) throw invalidUTCOffset(runtime);
+            if ((zone = findTimezone(context, zone)) == null) throw invalidUTCOffset(runtime);
             RubyTime t = (RubyTime) dup();
             if (!zoneLocalTime(context, zone, t)) throw invalidUTCOffset(runtime);
             return t;
@@ -1995,8 +2015,14 @@ public class RubyTime extends RubyObject {
         } else {
             p &= ~(1<<31);
             utc = ((p >>> 30 & 0x1) == 0x1);
-            dt = dt.withYear(((p >>> 14) & 0xFFFF) + 1900);
-            dt = dt.withMonthOfYear(((p >>> 10) & 0xF) + 1);
+            int year = ((p >>> 14) & 0xFFFF) + 1900;
+            int month = ((p >>> 10) & 0xF);
+            if (month >= 12) {
+                month -= 12;
+                year += 1;
+            }
+            dt = dt.withYear(year);
+            dt = dt.withMonthOfYear(month + 1);
             dt = dt.withDayOfMonth(((p >>> 5)  & 0x1F));
             dt = dt.withHourOfDay((p & 0x1F));
             dt = dt.withMinuteOfHour(((s >>> 26) & 0x3F));

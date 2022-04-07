@@ -1,0 +1,1 @@
+fails:String#to_sym ignores exising symbols with different encoding

@@ -1186,19 +1186,16 @@ public class RubyFloat extends RubyNumeric {
 
     public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         ByteList value = input.unmarshalString();
-        RubyFloat result;
+
         if (value.equals(NAN_BYTELIST)) {
-            result = RubyFloat.newFloat(input.getRuntime(), RubyFloat.NAN);
+            return RubyFloat.newFloat(input.getRuntime(), RubyFloat.NAN);
         } else if (value.equals(NEGATIVE_INFINITY_BYTELIST)) {
-            result = RubyFloat.newFloat(input.getRuntime(), Double.NEGATIVE_INFINITY);
+            return RubyFloat.newFloat(input.getRuntime(), Double.NEGATIVE_INFINITY);
         } else if (value.equals(INFINITY_BYTELIST)) {
-            result = RubyFloat.newFloat(input.getRuntime(), Double.POSITIVE_INFINITY);
+            return RubyFloat.newFloat(input.getRuntime(), Double.POSITIVE_INFINITY);
         } else {
-            result = RubyFloat.newFloat(input.getRuntime(),
-                    ConvertDouble.byteListToDouble19(value, false));
+            return RubyFloat.newFloat(input.getRuntime(), ConvertDouble.byteListToDouble19(value, false));
         }
-        input.registerLinkTarget(result);
-        return result;
     }
 
     private static final ByteList NAN_BYTELIST = new ByteList("nan".getBytes());

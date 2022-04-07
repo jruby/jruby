@@ -93,8 +93,6 @@ import java.util.stream.Stream;
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubySocket extends RubyBasicSocket {
 
-    private static final String[] IP_6_CONSTANTS = {"AF_INET6", "IPPROTO_ICMPV6", "IPPROTO_IPV6", "PF_INET6", "SOL_IPV6"};
-
     static void createSocket(Ruby runtime) {
         RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), RubySocket::new);
 
@@ -112,15 +110,6 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, TCP.class);
         runtime.loadConstantSet(rb_mConstants, NameInfo.class);
         runtime.loadConstantSet(rb_mConstants, SocketMessage.class);
-
-        // if IPv6 is not available, reset appropriate constants to nil
-        if (!supportsIPv6()) {
-            for (String ip6Constant : IP_6_CONSTANTS) {
-                if (rb_mConstants.hasConstant(ip6Constant)) {
-                    rb_mConstants.setConstant(ip6Constant, runtime.getNil());
-                }
-            }
-        }
 
         // this value seems to be hardcoded in MRI to 5 when not defined, but
         // it is 128 on OS X. We use 128 for now until we can get it added to
@@ -716,18 +705,6 @@ public class RubySocket extends RubyBasicSocket {
         Channel channel = getChannel();
 
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
-    }
-
-    private static boolean supportsIPv6() {
-        try {
-            return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
-                    .map(NetworkInterface::getInterfaceAddresses)
-                    .flatMap(Collection::stream)
-                    .map(InterfaceAddress::getAddress)
-                    .anyMatch(((Predicate<InetAddress>) InetAddress::isLoopbackAddress).negate().and(address -> address instanceof Inet6Address));
-        } catch (SocketException se) {
-            return false;
-        }
     }
 
     @Deprecated

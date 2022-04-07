@@ -1618,7 +1618,7 @@ public class RubyNumeric extends RubyObject {
         }
 
         IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) arg, "freeze");
-        if (ret != null && !ret.isTrue()) throw context.runtime.newArgumentError("can't unfreeze " + getType());
+        if (ret == context.fals) throw context.runtime.newArgumentError("can't unfreeze " + getType());
 
         return this;
     }

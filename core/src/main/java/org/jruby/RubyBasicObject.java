@@ -1582,8 +1582,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * A method to determine whether the method named by methodName is a builtin
-     * method.  This means a method with a JRubyMethod annotation written in
-     * Java.
+     * method, i.e. a method built-in to JRuby and loaded during its core boot process.
      *
      * @param methodName to look for.
      * @return true if so
@@ -1622,7 +1621,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return singleton_method_undefined(context, recv, symbolId, block);
     }
 
-    @JRubyMethod(name = "method_missing", rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "method_missing", rest = true, module = true, omit = true, visibility = PRIVATE)
     public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();

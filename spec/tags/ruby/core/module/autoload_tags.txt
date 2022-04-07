@@ -1,2 +1,4 @@
 fails(conflicting state changes for failed load and autoload):Module#autoload does not remove the constant from Module#constants if load raises a RuntimeError and keeps it as an autoload
 hangs(incompatible locking in autoload):Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and returns the path in other threads for Module#autoload?
+wip:Module#autoload removes the constant from Module#constants if the loaded file does not define it
+wip:Module#autoload after autoloading searches for the constant like the original lookup looks up in parent scope after failed autoload

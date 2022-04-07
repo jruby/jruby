@@ -1,0 +1,12 @@
+wip:Fiber.blocking? root Fiber of the main thread returns false
+wip:Fiber.blocking? root Fiber of the main thread returns false for blocking: false
+wip:Fiber.blocking? root Fiber of a new thread returns false
+wip:Fiber.blocking? root Fiber of a new thread returns false for blocking: false
+wip:Fiber.blocking? when fiber is blocking root Fiber of the main thread returns 1 for blocking: true
+wip:Fiber.blocking? when fiber is blocking root Fiber of a new thread returns 1 for blocking: true
+wip:Fiber#blocking? root Fiber of the main thread returns false
+wip:Fiber#blocking? root Fiber of the main thread returns false for blocking: false
+wip:Fiber#blocking? root Fiber of a new thread returns false
+wip:Fiber#blocking? root Fiber of a new thread returns false for blocking: false
+wip:Fiber#blocking? when fiber is blocking root Fiber of the main thread returns true for blocking: true
+wip:Fiber#blocking? when fiber is blocking root Fiber of a new thread returns true for blocking: true

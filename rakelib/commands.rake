@@ -55,6 +55,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   java_options[:dir] ||= BASE_DIR
   java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
 
+  mspec_options[:command] ||= 'ci'
   mspec_options[:compile_mode] ||= 'OFF'
   mspec_options[:jit_threshold] ||= 20
   mspec_options[:jit_max] ||= -1
@@ -84,7 +85,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     # add . to load path so mspec config is found
     arg :line => "-I ."
 
-    arg :line => "#{MSPEC_BIN} ci"
+    arg :line => "#{MSPEC_BIN} #{ms[:command]}"
     arg :line => "-T -J-ea"
     arg :line => "-T -J-Djruby.launch.inproc=false"
     arg :line => "-T -J-Djruby.compile.mode=#{ms[:compile_mode]}"
@@ -100,6 +101,9 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-f #{ms[:format]}"
     arg :line => "--timeout #{ms[:timeout]}"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
+    (ms[:tags] || []).each do |tag|
+      arg :line => "-g #{tag}"
+    end
     arg :line => "#{ms[:spec_target]}" if ms[:spec_target]
   end
 end

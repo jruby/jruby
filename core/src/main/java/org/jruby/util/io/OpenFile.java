@@ -1318,6 +1318,11 @@ public class OpenFile implements Finalizable {
         public int run(ThreadContext context, OpenFile fptr, byte[] buffer, int start, int length) throws InterruptedException {
             ChannelFD fd = fptr.fd;
 
+            if (fd == null) {
+                // stream was closed on its way in, raise appropriate error
+                throw context.runtime.newErrnoEBADFError();
+            }
+
             assert fptr.lockedByMe();
 
             fptr.unlock();
@@ -1337,11 +1342,18 @@ public class OpenFile implements Finalizable {
     final static RubyThread.ReadWrite<OpenFile> WRITE_TASK = new RubyThread.ReadWrite<OpenFile>() {
         @Override
         public int run(ThreadContext context, OpenFile fptr, byte[] bytes, int start, int length) throws InterruptedException {
+            ChannelFD fd = fptr.fd;
+
+            if (fd == null) {
+                // stream was closed on its way in, raise appropriate error
+                throw context.runtime.newErrnoEBADFError();
+            }
+
             assert fptr.lockedByMe();
 
             fptr.unlock();
             try {
-                return fptr.posix.write(fptr.fd, bytes, start, length, fptr.nonblock);
+                return fptr.posix.write(fd, bytes, start, length, fptr.nonblock);
             } finally {
                 fptr.lock();
             }
@@ -1368,6 +1380,11 @@ public class OpenFile implements Finalizable {
             case since MRI does not do a select here at all I believe correct logic is to skip the select when
             working with any native descriptor.
          */
+
+        if (fd == null) {
+            // stream was closed on its way in, raise appropriate error
+            throw context.runtime.newErrnoEBADFError();
+        }
 
         fptr.unlock();
         try {

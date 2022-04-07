@@ -132,10 +132,22 @@ public abstract class DynamicMethod {
         return serialNumber;
     }
 
+    /**
+     * Whether this method is a builtin method, i.e. a method built-in to JRuby and
+     * loaded during its core boot process.
+     *
+     * @return true if this is a core built-in method, false otherwise
+     */
     public boolean isBuiltin() {
         return (flags & BUILTIN_FLAG) == BUILTIN_FLAG;
     }
 
+    /**
+     * Force this method to be treated as a core built-in method if true,
+     * or as a normal non-core method otherwise.
+     *
+     * @param isBuiltin true if this is a core built-in method, false otherwise
+     */
     public void setIsBuiltin(boolean isBuiltin) {
         if (isBuiltin) {
             flags |= BUILTIN_FLAG;

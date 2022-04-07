@@ -103,6 +103,7 @@ public class RbConfigLibrary implements Library {
         String architecture = Platform.ARCH;
         if (architecture == null) architecture = "unknown";
         if ("amd64".equals(architecture)) architecture = "x86_64";
+        if ("aarch64".equals(architecture) && Platform.IS_MAC) architecture = "arm64";
 
         return architecture;
     }
@@ -424,8 +425,11 @@ public class RbConfigLibrary implements Library {
         String ldflags = ""; // + soflags;
         String dldflags = "";
         String ldsharedflags = " -shared ";
+        String arch = getArchitecture();
+        String archflags = "";
 
-        String archflags = " -m" + (IS_64_BIT ? "64" : "32");
+        if (arch.equals("x86_64") || arch.equals("i386"))
+            archflags += " -m" + (IS_64_BIT ? "64" : "32");
 
         String hdr_dir = newFile(normalizedHome, "lib/native/include/").getPath();
 
@@ -440,7 +444,7 @@ public class RbConfigLibrary implements Library {
         } else if (Platform.IS_MAC) {
             ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
             cflags = " -DTARGET_RT_MAC_CFM=0 " + cflags;
-            archflags = " -arch " + getArchitecture();
+            archflags = " -arch " + arch;
             cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE " + cppflags;
             setConfig(context, mkmfHash, "DLEXT", "bundle");
 	        setConfig(context, mkmfHash, "EXEEXT", "");

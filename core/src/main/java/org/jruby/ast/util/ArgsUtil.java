@@ -154,7 +154,7 @@ public final class ArgsUtil {
         options.visitAll(context, new RubyHash.Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 if (!validKeySet.containsKey(key)) {
-                    throw context.runtime.newArgumentError("unknown keyword: " + key);
+                    throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
                 }
             }
         }, null);
@@ -192,7 +192,7 @@ public final class ArgsUtil {
         if (ret == null || options.size() > 1) { // other (unknown) keys in options
             options.visitAll(context, new RubyHash.Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
-                    throw context.runtime.newArgumentError("unknown keyword: " + key);
+                    throw context.runtime.newArgumentError("unknown keyword: " + key.inspect());
                 }
             }, null);
         }
@@ -244,4 +244,15 @@ public final class ArgsUtil {
         return extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
+    public static RubyHash extractKeywords(IRubyObject possiblyKeywordArg) {
+        if (possiblyKeywordArg instanceof RubyHash) {
+            RubyHash maybeKwarg = (RubyHash) possiblyKeywordArg;
+            if (maybeKwarg.isKeywordArguments()) {
+                maybeKwarg.setKeywordArguments(false);
+                return maybeKwarg;
+            }
+        }
+
+        return null;
+    }
 }

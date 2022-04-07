@@ -14,10 +14,106 @@ else
     exit 1
 fi
 
+# ----- Helper functions ------------------------------------------------------
+
+# esceval [ARGUMENT...]
+#
+# Escape ARGUMENT for safe use with eval
+# Returns escaped arguments via $result
+# Thanks to @mentalisttraceur for original implementation:
+# https://github.com/mentalisttraceur/esceval
+esceval()
+{
+    local escaped= unescaped= output=
+
+    [ $# -gt 0 ] || return 0
+    while true; do
+        escaped=\'
+        unescaped=$1
+        while true; do
+            case $unescaped in
+                (*\'*)
+                    escaped="$escaped${unescaped%%\'*}'\''"
+                    unescaped=${unescaped#*\'}
+                    ;;
+                (*) break ;;
+            esac
+        done
+        escaped=$escaped$unescaped\'
+        shift
+        [ $# -gt 0 ] || break
+        output="$output $escaped"
+    done
+    result="$output $escaped"
+}
+
+# assign LISTNAME ELEMENT [ELEMENT...]
+#
+# Assign ELEMENT to the list named by LISTNAME.
+assign() {
+    local listname="$1"
+    local result=
+    shift
+
+    esceval "$@"
+    eval "$listname=\"\${result}\""
+}
+
+# append LISTNAME ELEMENT [ELEMENT...]
+#
+# Append ELEMENT to the list named by LISTNAME.
+append() {
+    local listname="$1"
+    local result=
+    shift
+
+    esceval "$@"
+    eval "$listname=\"\${$listname} \${result}\""
+}
+
+# prepend LISTNAME ELEMENT [ELEMENT...]
+#
+# Prepend ELEMENT to the list named by LISTNAME, preserving order.
+prepend() {
+    local listname="$1"
+    local result=
+    shift
+
+    esceval "$@"
+    eval "$listname=\"\${result} \${$listname}\""
+}
+
+# map FUNCNAME LISTNAME1 LISTNAME2
+#
+# Run FUNCNAME on LISTNAME1 and the list named by LISTNAME2
+map() {
+    local funcname="$1"
+    local listname="$2"
+    # Load contents of array named by $3
+    eval eval set -- "\"\${$3}\""
+    "$funcname" "$listname" "$@"
+}
+
+# extend LISTNAME1 LISTNAME2
+#
+# Append the elements stored in the list named by LISTNAME2
+# to the list named by LISTNAME1.
+extend() {
+    map append "$@"
+}
+
+# preextend LISTNAME1 LISTNAME2
+#
+# Prepend the elements stored in the list named by LISTNAME2
+# to the named by LISTNAME1, preserving order.
+preextend() {
+    map prepend "$@"
+}
+
 # ----- Set variable defaults -------------------------------------------------
 
 readonly java_class=org.jruby.Main
-readonly JRUBY_SHELL=/bin/sh
+JRUBY_SHELL=/bin/sh
 
 # Detect cygwin and mingw environments
 cygwin=false
@@ -91,7 +187,7 @@ process_java_opts() {
 
 # Pure shell dirname/basename
 dir_name() {
-    local filename="$1" trail
+    local filename="$1" trail=
     case $filename in
         */*[!/]*)
             trail=${filename##*[!/]}
@@ -109,7 +205,7 @@ dir_name() {
 }
 
 base_name() {
-    local filename="$1" trail
+    local filename="$1" trail=
     case $filename in
         */*[!/]*)
             trail=${filename##*[!/]}
@@ -128,7 +224,7 @@ base_name() {
 
 # Resolve all symlinks in a chain
 resolve_symlinks() {
-    local cur_path sym sym_base dirname basename
+    local cur_path= sym= sym_base= dirname= basename=
     cur_path="$1"
     while [ -h "$cur_path" ]; do
         # 1) cd to directory of the symlink
@@ -157,6 +253,7 @@ resolve_symlinks() {
 
 # get the absolute path of the executable
 if [ "$BASH" ]; then
+    # shellcheck disable=2128,3028
     script_src="$BASH_SOURCE"
 else
     script_src="$0"
@@ -348,12 +445,12 @@ readonly CP_DELIMITER
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
+# shellcheck disable=2086
 set -- $JRUBY_OPTS "$@"
-i=1
+# shellcheck disable=354
 [ "$BASH" ] && shopt -s expand_aliases
 # increment pointer, permute arguments
-alias cycle='i=$((i + 1)); set -- "$@" "$1"; shift'
-while [ $i -le $# ]
+while [ $# -gt 0 ]
 do
     case $1 in
         # Stuff after '-J' in this argument goes to JVM
@@ -372,31 +469,31 @@ do
         -J-classpath|-J-cp)
             CP="$CP$CP_DELIMITER$2"
             CLASSPATH=""
-            cycle
+            shift
             ;;
         -J-ea*)
             VERIFY_JRUBY=true
-            java_args="$java_args \${$i#-J}"
+            append java_args "${1#-J}"
             ;;
         -J-Djava.security.egd=*) JAVA_SECURITY_EGD=${1#-J-Djava.security.egd=} ;;
         # This must be the last check for -J
-        -J*) java_args="$java_args \${$i#-J}" ;;
+        -J*) append java_args "${1#-J}" ;;
         # Pass -X... and -X? search options through
-        -X*...|-X*\?) ruby_args="$ruby_args \${$i}" ;;
+        -X*...|-X*\?) append ruby_args "$1" ;;
         # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
-        -X*.*) java_args="$java_args -Djruby.\${$i#-X}" ;;
+        -X*.*) append java_args -Djruby."${1#-X}" ;;
         # Match switches that take an argument
         -C|-e|-I|-S)
-            ruby_args="$ruby_args \${$i} \${$((i + 1))}"
-            cycle
+            append ruby_args "$1" "$2"
+            shift
             ;;
         # Run with JMX management enabled
         --manage)
-            java_args="$java_args -Dcom.sun.management.jmxremote"
-            java_args="$java_args -Djruby.management.enabled=true"
+            append java_args -Dcom.sun.management.jmxremote
+            append java_args -Djruby.management.enabled=true
             ;;
         # Don't launch a GUI window, no matter what
-        --headless) java_args="$java_args -Djava.awt.headless=true" ;;
+        --headless) append java_args -Djava.awt.headless=true ;;
         # Run under JDB
         --jdb)
             if [ -z "$JAVA_HOME" ]; then
@@ -409,20 +506,20 @@ do
                 fi
             fi
             JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
-            java_args="$java_args -sourcepath \$JDB_SOURCEPATH"
-            ruby_args="$ruby_args -X+C"
+            append java_args -sourcepath "$JDB_SOURCEPATH"
+            append ruby_args -X+C
             ;;
         --client|--server|--noclient)
-            echo "Warning: the $flag flag is deprecated and has no effect most JVMs" 1>&2
+            echo "Warning: the $1 flag is deprecated and has no effect most JVMs" 1>&2
             ;;
         --dev)
             process_java_opts "$dev_mode_opts_file"
             # For OpenJ9 use environment variable to enable quickstart and shareclasses
             export OPENJ9_JAVA_OPTIONS="-Xquickstart -Xshareclasses"
             ;;
-        --sample) java_args="$java_args -Xprof" ;;
+        --sample) append java_args -Xprof ;;
         --record)
-            java_args="$java_args -XX:+FlightRecorder -XX:StartFlightRecording=dumponexit=true"
+            append java_args -XX:+FlightRecorder -XX:StartFlightRecording=dumponexit=true
             ;;
         --no-bootclasspath) NO_BOOTCLASSPATH=true ;;
         --ng*)
@@ -435,25 +532,20 @@ do
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
-        -*) ruby_args="$ruby_args \${$i}" ;;
+        -*) append ruby_args "$1" ;;
         # Abort processing on first non-opt arg
         *) break ;;
     esac
-    cycle
+    shift
 done
 
 # Force JDK to use specified java.security.egd rand source
 if [ -n "$JAVA_SECURITY_EGD" ]; then
-    java_args="$java_args -Djava.security.egd=\$JAVA_SECURITY_EGD"
+    append java_args "-Djava.security.egd=$JAVA_SECURITY_EGD"
 fi
 
 # The rest of the arguments are for ruby
-while [ $i -le $# ]; do
-    ruby_args="$ruby_args \${$i}"
-    cycle
-done
-
-unalias cycle
+append ruby_args "$@"
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 
@@ -463,21 +555,21 @@ CLASSPATH="${CP}${CP_DELIMITER}${CLASSPATH}"
 
 # ----- Tweak console environment for cygwin ----------------------------------
 
-for arg in $ruby_args; do
-    eval "ruby_arg1=$arg"
-    break
-done
-readonly ruby_arg1
-
 if $cygwin; then
     use_exec=false
     JRUBY_HOME="$(cygpath --mixed "$JRUBY_HOME")"
     JRUBY_SHELL="$(cygpath --mixed "$JRUBY_SHELL")"
 
-    case $ruby_arg1 in
+    eval set -- "$ruby_args"
+
+    case $1 in
         /*)
-            if [ -f "$ruby_arg1" ] || [ -d "$ruby_arg1" ]; then
-                ruby_args='$(cygpath -w "$ruby_arg1") '"${ruby_args#*"$ruby_arg1"}"
+            if [ -f "$1" ] || [ -d "$1" ]; then
+                # replace first element of ruby_args with cygwin form
+                win_arg="$(cygpath -w "$1")"
+                shift
+                set -- "$win_arg" "$@"
+                assign ruby_args "$@"
             fi
             ;;
     esac
@@ -518,33 +610,35 @@ fi
 # Include all options from files at the beginning of the Java command line
 JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
 
+# Don't quote JAVA_OPTS; we want it to expand
+prepend java_args "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS"
+
 if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
     if $use_modules; then
         # Use module path instead of classpath for the jruby libs
-        java_args="$java_args"' --module-path $JRUBY_CP -classpath $CLASSPATH'
+        append java_args --module-path "$JRUBY_CP" -classpath "$CLASSPATH"
     else
-        java_args="$java_args"' -classpath $JRUBY_CP$CP_DELIMITER$CLASSPATH'
+        append java_args -classpath "$JRUBY_CP$CP_DELIMITER$CLASSPATH"
     fi
 else
-    java_args="$java_args"' -Xbootclasspath/a:$JRUBY_CP
-        -classpath $CLASSPATH -Djruby.home=$JRUBY_HOME'
+    append java_args -Xbootclasspath/a:"$JRUBY_CP"
+    append java_args -classpath "$CLASSPATH"
+    append java_args -Djruby.home="$JRUBY_HOME"
 fi
 
-java_args="$java_args"' -Djruby.home=$JRUBY_HOME
-    -Djruby.lib=$JRUBY_HOME/lib -Djruby.script=jruby
-    -Djruby.shell=$JRUBY_SHELL
-    $java_class '"$ruby_args"
+append java_args -Djruby.home="$JRUBY_HOME" \
+    -Djruby.lib="$JRUBY_HOME/lib" \
+    -Djruby.script=jruby \
+    -Djruby.shell="$JRUBY_SHELL" \
+    "$java_class"
+extend java_args ruby_args
 
-jvm_command_line="$JAVACMD $JAVA_OPTS $JFFI_OPTS"
-for arg in $java_args; do
-    eval "jvm_command_line=\"\$jvm_command_line $arg\""
-done
+# shellcheck disable=2086
+eval set -- "$java_args"
 
 add_log
 add_log "Java command line:"
-add_log "  $jvm_command_line"
-
-unset jvm_command_line
+add_log "  $*"
 
 if $print_environment_log; then
     echo "$environment_log"
@@ -552,14 +646,6 @@ if $print_environment_log; then
 fi
 
 # ----- Run JRuby! ------------------------------------------------------------
-
-original_argc=$#
-# Don't quote JAVA_OPTS; we want it to expand
-set -- "$@" "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS"
-for arg in $java_args; do
-    eval 'set -- "$@" '" \"$arg\" "
-done
-shift $original_argc
 
 if $use_exec; then
     exec "$@"

@@ -177,14 +177,10 @@ public class RubyException extends RubyObject {
         }
 
         @Override
-        public RubyException unmarshalFrom(Ruby runtime, RubyClass type,
-                                           UnmarshalStream unmarshalStream) throws IOException {
-            RubyException exc = (RubyException) type.allocate();
+        public RubyException unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            RubyException exc = (RubyException) input.entry(type.allocate());
 
-            unmarshalStream.registerLinkTarget(exc);
-            // FIXME: Can't just pull these off the wire directly? Or maybe we should
-            // just use real vars all the time for these?
-            unmarshalStream.defaultVariablesUnmarshal(exc);
+            input.ivar(null, exc, null);
 
             exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
             exc.set_backtrace((IRubyObject) exc.removeInternalVariable("bt"));
@@ -367,6 +363,8 @@ public class RubyException extends RubyObject {
     }
 
     public void setCause(IRubyObject cause) {
+        checkCircularCause(cause);
+
         this.cause = cause;
 
         // don't do anything to throwable for null/nil cause to avoid forcing backtrace
@@ -383,6 +381,18 @@ public class RubyException extends RubyObject {
             } else if (cause instanceof ConcreteJavaProxy && (javaCause = ((ConcreteJavaProxy) cause).getObject()) instanceof Throwable) {
                 t.initCause((Throwable) javaCause);
             }
+        }
+    }
+
+    private void checkCircularCause(IRubyObject cause) {
+        IRubyObject currentCause = cause;
+        while (currentCause instanceof RubyException) {
+            if (currentCause == this) {
+                RaiseException runtimeError = getRuntime().newRuntimeError("circular causes");
+                runtimeError.getException().setCause(cause);
+                throw runtimeError;
+            }
+            currentCause = ((RubyException) currentCause).cause;
         }
     }
 

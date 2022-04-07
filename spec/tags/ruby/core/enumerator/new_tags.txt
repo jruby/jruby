@@ -1,0 +1,1 @@
+wip:Enumerator.new no block given raises

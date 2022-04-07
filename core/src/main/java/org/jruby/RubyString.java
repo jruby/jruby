@@ -6382,9 +6382,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyString result = newString(input.getRuntime(), input.unmarshalString());
-        input.registerLinkTarget(result);
-        return result;
+        return newString(input.getRuntime(), input.unmarshalString());
     }
 
     /**

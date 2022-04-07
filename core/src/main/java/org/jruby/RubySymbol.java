@@ -928,14 +928,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         // Need symbol to register before encoding, so pass in a lambda for remaining unmarshal logic
         RubySymbol result = newSymbol(input.getRuntime(), byteList,
                 (sym, newSym) -> {
-                    input.registerLinkTarget(sym);
-
                     // get encoding from stream and set into symbol
-                    if (state.isIvarWaiting()) {
+                    if (state != null && state.isIvarWaiting()) {
                         try {
                             input.unmarshalInt(); // throw-away, always single ivar of encoding
+                            IRubyObject value = input.unmarshalObject();
 
-                            Encoding enc = input.getEncodingFromUnmarshaled(input.unmarshalObject());
+                            Encoding enc = input.symbolToEncoding(sym, value);
                             if (enc == null) throw new RuntimeException("BUG: No encoding found in marshal stream");
 
                             // only change encoding if the symbol has been newly-created

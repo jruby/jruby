@@ -66,6 +66,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.encoding.MarshalEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.runtime.marshal.MarshalCommon.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -78,15 +79,7 @@ public class MarshalStream extends FilterOutputStream {
     private final Ruby runtime;
     private final MarshalCache cache;
     private final int depthLimit;
-
     private int depth = 0;
-
-    private final static char TYPE_IVAR = 'I';
-    private final static char TYPE_USRMARSHAL = 'U';
-    private final static char TYPE_USERDEF = 'u';
-    private final static char TYPE_UCLASS = 'C';
-    public final static String SYMBOL_ENCODING_SPECIAL = "E";
-    private final static String SYMBOL_ENCODING = "encoding";
 
     public MarshalStream(Ruby runtime, OutputStream out, int depthLimit) throws IOException {
         super(out);

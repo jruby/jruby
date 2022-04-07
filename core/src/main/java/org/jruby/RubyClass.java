@@ -71,6 +71,7 @@ import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.util.JavaClassConfiguration;
+import org.jruby.javasupport.util.JavaClassConfiguration.DirectFieldConfiguration;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
@@ -84,6 +85,7 @@ import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
@@ -1252,29 +1254,23 @@ public class RubyClass extends RubyModule {
 
     public static RubyClass unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
-        RubyClass result = UnmarshalStream.getClassFromPath(input.getRuntime(), name);
-        input.registerLinkTarget(result);
-        return result;
+        return UnmarshalStream.getClassFromPath(input.getRuntime(), name);
     }
 
     protected static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
         @Override
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
-                              MarshalStream marshalStream) throws IOException {
-            IRubyObject object = (IRubyObject)obj;
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException {
+            IRubyObject object = (IRubyObject) obj;
 
             marshalStream.registerLinkTarget(object);
             marshalStream.dumpVariables(object.getVariableList());
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
-            IRubyObject result = type.allocate();
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            IRubyObject result = input.entry(type.allocate());
 
-            unmarshalStream.registerLinkTarget(result);
-
-            unmarshalStream.defaultVariablesUnmarshal(result);
+            input.ivar(null, result, null);
 
             return result;
         }
@@ -1418,12 +1414,16 @@ public class RubyClass extends RubyModule {
 
                 this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
                 JavaProxy.setJavaClass(this, result);
+                reifiedClassJava = Boolean.TRUE;
             } else {
                 setRubyClassAllocator(result);
+                reifiedClassJava = Boolean.FALSE;
             }
             reifiedClass = result;
             nearEnd = true;
             JavaProxyClass.ensureStaticIntConsumed();
+            if (javaClassConfiguration.requestedStorageVariables != null)
+                javaClassConfiguration.requestedStorageVariables.forEach(variableTableManager::requestFieldStorage);
             return; // success
         }
         catch (LinkageError error) { // fall through to failure path
@@ -2272,6 +2272,14 @@ public class RubyClass extends RubyModule {
             throw runtime.newTypeError("Attempted to get a Java class for a Ruby class");
         else
             return (Class<? extends ReifiedJavaProxy>) reifiedClass;
+    }
+
+    /**
+     * If the current class is reified (null otherwise) and if it extends java
+     * @return Null if not reified, true if a concrete extension class, and false if a ruby class
+     */
+    public Boolean getIsReifiedExtendedJavaClass() {
+        return reifiedClassJava;
     }
 
     public static Class<?> nearestReifiedClass(final RubyClass klass) {

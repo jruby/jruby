@@ -6,13 +6,81 @@ env:
   JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
 
 jobs:
+
+  mvn-test-m1:
+    runs-on: [self-hosted, macos, aarch64]
+
+    strategy:
+      matrix:
+        package-flags: ['-Ptest']
+        # dist, complete, and osgi do not pass on 17 yet
+        java-version: ['11']
+      fail-fast: false
+
+    name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }} Apple aarch64)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          architecture: arm
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: mvn package ${{ matrix.package-flags }}
+        run: tool/maven-ci-script.sh
+        env:
+          PHASE: 'package ${{ matrix.package-flags }}'
+
+  spec-m1:
+    runs-on: [self-hosted, macos, aarch64]
+    
+    strategy:
+      matrix:
+        target: ['spec:ffi']
+        java-version: ['11']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} Apple aarch64)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.rb') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          architecture: arm
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby --dev -S rake ${{ matrix.target }}
+
   mvn-test:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
-        # dist, complete, and osgi do not pass on 16 yet
+        # dist, complete, and osgi do not pass on 17 yet
         java-version: ['8', '11']
       fail-fast: false
 
@@ -136,7 +204,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:mri:core:jit', 'spec:ruby:fast', 'spec:ruby:fast:jit', 'spec:ji', 'spec:ffi']
-        java-version: ['8', '11', '16']
+        java-version: ['8', '11', '17']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -168,7 +236,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:jruby', 'spec:compiler']
-        java-version: ['8', '11', '16']
+        java-version: ['8', '11', '17']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
@@ -202,7 +270,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:mri:core:int', 'test:mri:extra', 'test:jruby:int', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
+        target: ['test:mri:core:int', 'test:mri:extra', 'test:jruby:int', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'spec:ruby:wip', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java 8)
