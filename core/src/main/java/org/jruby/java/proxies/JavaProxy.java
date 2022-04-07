@@ -182,7 +182,7 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(name = "[]", meta = true, rest = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final Class<?> type = JavaClass.getJavaClass(context, (RubyModule) self);
+        final Class<?> type = JavaUtil.getJavaClass((RubyModule) self);
         if ( args.length > 0 ) { // construct new array proxy (ArrayJavaProxy)
             return new ArrayJavaProxyCreator(context, type, args); // e.g. Byte[64]
         }
@@ -192,7 +192,7 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject len) {
-        final Class<?> componentType = JavaClass.getJavaClass(context, (RubyModule) self);
+        final Class<?> componentType = JavaUtil.getJavaClass((RubyModule) self);
         final int length = (int) len.convertToInteger().getLongValue();
         return ArrayJavaProxy.newArray(context.runtime, componentType, length);
     }
@@ -742,7 +742,7 @@ public class JavaProxy extends RubyObject {
 
         private static Method getMethodFromClass(final ThreadContext context, final IRubyObject proxyClass,
             final String name, final Class... argTypes) {
-            final Class<?> clazz = JavaClass.getJavaClass(context, (RubyModule) proxyClass);
+            final Class<?> clazz = JavaUtil.getJavaClass((RubyModule) proxyClass);
             try {
                 return clazz.getMethod(name, argTypes);
             }

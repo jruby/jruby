@@ -1729,17 +1729,6 @@ public class JavaUtil {
         IRubyObject java_class = JavaProxy.getJavaClass(type); // always a JavaProxy
         if (java_class != null) return (Class<?>) ((JavaProxy) java_class).getObject();
 
-        if (type.respondsTo("java_class")) {
-            // NOTE: built-in Ruby classes will return a Ruby Java proxy for java.lang.Class
-            java_class = Helpers.invoke(type.getRuntime().getCurrentContext(), type, "java_class");
-            if (java_class instanceof JavaProxy) {
-                return (Class<?>) ((JavaProxy) java_class).getObject();
-            }
-            if (java_class instanceof JavaClass) { // legacy
-                return ((JavaClass) java_class).javaClass();
-            }
-        }
-
         return ifNone == null ? null : ifNone.get();
     }
 

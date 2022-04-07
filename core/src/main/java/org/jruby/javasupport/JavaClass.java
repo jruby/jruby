@@ -39,35 +39,20 @@ package org.jruby.javasupport;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-
-import static org.jruby.RubyModule.undefinedMethodMessage;
-import static org.jruby.util.RubyStringBuilder.ids;
+import java.util.function.Supplier;
 
 @Deprecated
 public class JavaClass extends JavaObject {
@@ -125,49 +110,25 @@ public class JavaClass extends JavaObject {
     }
 
     /**
-     * Get the associated JavaClass for a proxy module.
-     *
-     * The passed module/class is assumed to be a Java proxy module/class!
-     * @param context
-     * @param proxy
-     * @return class
+     * @see JavaUtil#getJavaClass(RubyModule)
      */
-    // NOTE: API still used, need a better place for it after whole class is deprecated
+    @Deprecated // no longer used
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
         return getJavaClassIfProxy(context, proxy);
     }
 
     /**
-     * Retieve a JavaClass if the passed module/class is a Java proxy.
-     * @param context
-     * @param type
-     * @return class or null if not a Java proxy
-     *
-     * @note Class objects have a java_class method but they're not considered Java proxies!
+     * @see JavaUtil#getJavaClass(RubyModule, Supplier)
      */
-    // NOTE: API still used, need a better place for it after whole class is deprecated
+    @Deprecated // no longer used
     public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule type) {
-        if (type.getJavaProxy()) return (Class) type.dataGetStruct();
-
-        Object java_class = JavaProxy.getJavaClass(type);
-        if (java_class instanceof JavaProxy) {
-            return (Class<?>) ((JavaProxy) java_class).getObject();
-        }
-
-        if (java_class == null) { // NOTE: old java_class(context, proxy) impl
-            if (type.respondsTo("java_class")) { // NOTE: quite bad since built-in Ruby classes will return
-                // a Ruby Java proxy for java.lang.Class while Java proxies will return a JavaClass instance !
-                java_class = Helpers.invoke(context, type, "java_class");
-            }
-            if (java_class instanceof JavaClass) { // legacy
-                return ((JavaClass) java_class).javaClass();
-            }
-        }
-
-        return null;
+        return JavaUtil.getJavaClass(type, null);
     }
 
-    // expected to handle Java proxy (Ruby) sub-classes as well
+    /**
+     * @note Interal API
+     * @see Java#isProxyType(RubyModule)
+     */
     public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
         return getJavaClassIfProxy(context, proxy) != null;
     }
@@ -273,7 +234,6 @@ public class JavaClass extends JavaObject {
         if ( length == offset ) return EMPTY_CLASS_ARRAY;
         final Class<?>[] argumentTypes = new Class[length - offset];
         for ( int i = offset; i < length; i++ ) {
-            final IRubyObject arg = args[i];
             argumentTypes[ i - offset ] = Java.resolveClassType(context, args[i]);
         }
         return argumentTypes;
