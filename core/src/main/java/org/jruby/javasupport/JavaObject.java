@@ -59,7 +59,12 @@ import org.jruby.util.JRubyObjectInputStream;
 import static org.jruby.javasupport.JavaUtil.unwrapJava;
 
 /**
+ * Java::JavaObject wrapping is no longer used with JRuby.
+ * The (automatic) Java proxy wrapping has been the preferred method for a while.
+ * Just keep using <code>java.lang.Object.new</code> as usual, without the manual
+ * <code>JavaObject.wrap java_object</code>.
  *
+ * @deprecated since 9.4
  * @author  jpetersen
  */
 @Deprecated // @JRubyClass(name="Java::JavaObject")

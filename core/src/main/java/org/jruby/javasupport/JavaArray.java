@@ -39,6 +39,13 @@ import org.jruby.RubyInteger;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * Java::JavaArray wrapping is no longer used with JRuby.
+ * The (automatic) Java proxy wrapping has been the preferred method for a while and
+ * works with arrays, use <code>java.lang.Object[2].new</code> as usual.
+ *
+ * @deprecated since 9.4
+ */
 @Deprecated // @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
 public class JavaArray extends JavaObject {
 

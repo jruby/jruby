@@ -323,6 +323,7 @@ public class Java implements Library {
         return getProxyClass(runtime, resolveJavaClassArgument(runtime, java_class));
     }
 
+    @SuppressWarnings("deprecation")
     private static Class<?> resolveJavaClassArgument(final Ruby runtime, final IRubyObject java_class) {
         if (java_class instanceof RubyString) {
             return getJavaClass(runtime, java_class.asJavaString());

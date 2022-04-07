@@ -323,6 +323,7 @@ public class MethodGatherer {
         }
     };
 
+    @SuppressWarnings("deprecation")
     protected void installInnerClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
         Class<?>[] classes = JavaClass.getDeclaredClasses(javaClass);
@@ -446,6 +447,7 @@ public class MethodGatherer {
         getStaticInstallers().forEach(($, value) -> value.install(proxy));
     }
 
+    @SuppressWarnings("deprecation")
     void installConstructors(Class<?> javaClass, final RubyModule proxy) {
         Constructor[] constructors = JavaClass.getConstructors(javaClass);
 
@@ -532,6 +534,7 @@ public class MethodGatherer {
         return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap() : instanceInstallers;
     }
 
+    @SuppressWarnings("deprecation")
     void setupFieldsAndConstants(Class<?> javaClass) {
         boolean isInterface = javaClass.isInterface();
         Field[] fields = JavaClass.getDeclaredFields(javaClass);

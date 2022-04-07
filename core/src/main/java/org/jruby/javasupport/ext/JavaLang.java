@@ -660,6 +660,7 @@ public abstract class JavaLang {
         //    return context.runtime.newString(JavaClass.getSimpleName(klass));
         //}
 
+        @SuppressWarnings("deprecation")
         @JRubyMethod(required = 1, rest = true)
         public static IRubyObject java_method(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
             final java.lang.Class klass = unwrapJavaObject(self);
@@ -675,6 +676,7 @@ public abstract class JavaLang {
             }
         }
 
+        @SuppressWarnings("deprecation")
         @JRubyMethod(required = 1, rest = true)
         public static IRubyObject declared_method(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
             final java.lang.Class klass = unwrapJavaObject(self);
@@ -708,6 +710,7 @@ public abstract class JavaLang {
             throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, klass.getName()), false), methodName);
         }
 
+        @SuppressWarnings("deprecation")
         @JRubyMethod(rest = true)
         public static IRubyObject constructor(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             final java.lang.Class klass = unwrapJavaObject(self);
@@ -721,6 +724,7 @@ public abstract class JavaLang {
             }
         }
 
+        @SuppressWarnings("deprecation")
         @JRubyMethod(rest = true)
         public static IRubyObject declared_constructor(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             final java.lang.Class klass = unwrapJavaObject(self);

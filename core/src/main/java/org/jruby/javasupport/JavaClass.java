@@ -54,6 +54,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
+/**
+ * Java::JavaClass wrapping is no longer used with JRuby.
+ * The (automatic) Java proxy wrapping works with Java classes, use the <code>java.lang.Class</code> with JRuby's
+ * Java scripting capabilities.
+ *
+ * @deprecated since 9.3
+ * @author  jpetersen
+ */
 @Deprecated
 public class JavaClass extends JavaObject {
 
