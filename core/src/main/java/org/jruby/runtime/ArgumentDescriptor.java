@@ -3,7 +3,9 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.internal.runtime.methods.DescriptorInfo;
 
 import java.util.Arrays;
 
@@ -42,6 +44,31 @@ public class ArgumentDescriptor {
         return argType.toArrayForm(runtime, name);
     }
 
+    public RubyString asParameterName(ThreadContext context) {
+        switch (type) {
+            case req:
+                return name.asString();
+            case opt:
+                return ((RubyString) name.asString().dup()).catString("=...");
+            case key:
+                return ((RubyString) name.asString().dup()).catString(": ...");
+            case keyreq:
+                return ((RubyString) name.asString().dup()).catString(":");
+            case keyrest:
+                return context.runtime.newString("**").cat(name.asString());
+            case block:
+                return context.runtime.newString("&").cat(name.asString());
+            case rest:
+                return context.runtime.newString("*").cat(name.asString());
+
+            case anonreq:
+            case anonopt:
+            case anonrest:
+            case anonkeyrest:
+                // Ignore?
+        }
+        return null;
+    }
     /**
      * Allow JIT/AOT to store argument descriptors as a single String constant.
      *

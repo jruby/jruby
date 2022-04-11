@@ -51,6 +51,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
+import java.util.List;
+
 /** 
  * The RubyMethod class represents a RubyMethod object.
  * 
@@ -294,7 +296,25 @@ public class RubyMethod extends AbstractRubyMethod {
         if (method.isNotImplemented()) {
             str.catString(" (not-implemented)");
         }
-        str.catString("()");
+
+        str.catString("(");
+        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(method);
+        if (descriptors.length > 0) {
+            RubyString desc = descriptors[0].asParameterName(context);
+
+            if (desc != null) {
+                str.cat(desc);
+                for (int i = 1; i < descriptors.length; i++) {
+                    desc = descriptors[i].asParameterName(context);
+
+                    if (desc != null) {
+                        str.catString(", ");
+                        str.cat(desc);
+                    }
+                }
+            }
+        }
+        str.catString(")");
         String fileName = getFilename();
         if (fileName != null) { // Only Ruby Methods will have this info.
             str.catString(" ");
