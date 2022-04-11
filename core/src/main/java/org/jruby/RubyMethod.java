@@ -279,7 +279,15 @@ public class RubyMethod extends AbstractRubyMethod {
                 sharp = ".";
             }
         } else {
-            str.catString(mklass.getName());
+            if (receiver instanceof RubyClass) {
+                str.catString("#<");
+                str.catString(mklass.getName());
+                str.catString(":");
+                str.catString(((RubyClass) receiver).getName());
+                str.catString(">");
+            } else {
+                str.catString(mklass.getName());
+            }
             if (definedClass != mklass) {
                 str.catString("(");
                 str.catString(definedClass.getName());
