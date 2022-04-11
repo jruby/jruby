@@ -61,13 +61,15 @@ public class ArgumentDescriptor {
             case rest:
                 return context.runtime.newString("*").cat(name.asString());
             case anonrest:
-                return context.runtime.newString("*");
+                return context.runtime.newString("");
             case anonkeyrest:
-                return context.runtime.newString("**");
+                return context.runtime.newString("");
             case anonreq:
             case anonopt:
-                // Ignore?
+                return context.runtime.newString("_");
         }
+
+        // not reached
         return null;
     }
     /**

@@ -255,8 +255,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
         if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
             definedClass = method.getRealMethod().getDefinedClass();
-        }
-        else {
+        } else {
             definedClass = method.getDefinedClass();
         }
 
@@ -281,24 +280,24 @@ public class RubyMethod extends AbstractRubyMethod {
         } else {
             if (receiver instanceof RubyClass) {
                 str.catString("#<");
-                str.catString(mklass.getName());
+                str.cat(mklass.rubyName());
                 str.catString(":");
-                str.catString(((RubyClass) receiver).getName());
+                str.cat(((RubyClass) receiver).rubyName());
                 str.catString(">");
             } else {
-                str.catString(mklass.getName());
+                str.cat(mklass.rubyName());
             }
             if (definedClass != mklass) {
                 str.catString("(");
-                str.catString(definedClass.getName());
+                str.cat(definedClass.rubyName());
                 str.catString(")");
             }
         }
         str.catString(sharp);
-        str.catString(this.methodName);
+        str.cat(runtime.newSymbol(this.methodName).asString());
         if (!methodName.equals(method.getName())) {
             str.catString("(");
-            str.catString(method.getRealMethod().getName());
+            str.cat(runtime.newSymbol(method.getRealMethod().getName()).asString());
             str.catString(")");
         }
         if (method.isNotImplemented()) {
@@ -310,16 +309,12 @@ public class RubyMethod extends AbstractRubyMethod {
         if (descriptors.length > 0) {
             RubyString desc = descriptors[0].asParameterName(context);
 
-            if (desc != null) {
-                str.cat(desc);
-                for (int i = 1; i < descriptors.length; i++) {
-                    desc = descriptors[i].asParameterName(context);
+            str.cat(desc);
+            for (int i = 1; i < descriptors.length; i++) {
+                desc = descriptors[i].asParameterName(context);
 
-                    if (desc != null) {
-                        str.catString(", ");
-                        str.cat(desc);
-                    }
-                }
+                str.catString(", ");
+                str.cat(desc);
             }
         }
         str.catString(")");
