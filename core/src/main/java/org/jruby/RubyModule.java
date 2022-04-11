@@ -4144,7 +4144,8 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject name, IRubyObject value) {
-        return setConstant(validateConstant(name), value);
+        ThreadContext context = getRuntime().getCurrentContext();
+        return setConstant(validateConstant(name), value, context.getFile(), context.getLine() + 1);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
