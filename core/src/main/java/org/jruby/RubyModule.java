@@ -4771,15 +4771,19 @@ public class RubyModule extends RubyObject {
      *
      * @param name The name to assign
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
+     * @param hidden whether a constant is private (hidden).  This parameter is only for asserting it is explicitly
+     *               private.  If it is false the entry may still remain private if the constant was already private
+     *               and its value is being updated.
      * @return The result of setting the variable.
      */
     private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn, String file, int line) {
-        IRubyObject oldValue = fetchConstant(name);
+        ConstantEntry oldEntry = fetchConstantEntry(name, true);
 
         setParentForModule(name, value);
 
-        if (oldValue != null) {
-            boolean notAutoload = oldValue != UNDEF;
+        if (oldEntry != null) {
+            hidden |= oldEntry.hidden; // Already private constants will stay constant.
+            boolean notAutoload = oldEntry.value != UNDEF;
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
                     if (this.equals(getRuntime().getObject())) {
@@ -5180,6 +5184,20 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fetchConstant(String name, boolean includePrivate) {
+        ConstantEntry entry = fetchConstantEntry(name, includePrivate);
+
+        return entry != null ? entry.value : null;
+    }
+
+    /**
+     * The equivalent for fetchConstant but is useful for extra state like whether the constant is
+     * private or not.
+     *
+     * @param name of the constant.
+     * @param includePrivate include private/hidden constants
+     * @return the entry for the constant.
+     */
+    public ConstantEntry fetchConstantEntry(String name, boolean includePrivate) {
         ConstantEntry entry = constantEntryFetch(name);
 
         if (entry == null) return null;
@@ -5198,7 +5216,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return entry.value;
+        return entry;
     }
 
     @Deprecated
