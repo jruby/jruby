@@ -12,6 +12,16 @@
 $dollar = "$$"
 alias $$ $dollar
 
+Qnil = 'null'
+$__1__ = '$1'
+$__2__ = '$2'
+$__3__ = '$3'
+$__4__ = '$4'
+$__5__ = '$5'
+$__6__ = '$6'
+$__7__ = '$7'
+$__8__ = '$8'
+
 class DSL
   def initialize(code, options, type: "IRubyObject", supports_overloads: false)
     @events = {}
@@ -35,7 +45,11 @@ class DSL
     @code = ""
     @type = type
     @supports_overloads = supports_overloads
+
+    code.gsub!(/\$(\d+)/, '$__\1__')
+
     @last_value = eval(code)
+#    $stderr.puts("LAST VALUE: #{@last_value}")
   end
 
   attr_reader :events
@@ -47,9 +61,10 @@ class DSL
   INDENT = "                    "
 
   def generate(indent = INDENT)
+    s = ""
     s << "#{@type} #{(1..@vars).map {|v| %Q{v#{v}} }.join(', ')};\n" if @vars > 0
     s << @code
-    s << "#{indent}#@final = #@last_value;"
+    s << "#{indent}#@final = #{@last_value};"
     s << "\n#{indent}p.error();" if @error
     s = "{#{ s }}" #if @brace
     s
@@ -67,6 +82,8 @@ class DSL
     'Qnil' => 'p.nil()',
     '0' => 'null',
     'ERR_MESG()' => 'p.intern(message)',
+    'id_assoc' => 'EQ_GT',
+    'idOr' => 'OR',
   }
 
   def id_value(value)
@@ -92,7 +109,7 @@ class DSL
     elsif arg =~ /^rb_assoc_new\(([^,]+), ([^\)]+)\)/
       two = $2
       two = "null" if two == "0"
-      "p.new_assoc(#{translate_arg($1)}, #{translate_arg(two)})"
+      "p.new_assoc(#{translate_arg($1)}, #{translate_arg($2)})"
     elsif arg =~ /^rb_ary_new3\(1, ([^\)]+)\)/
       "p.new_array(#{translate_arg($1)})"
     elsif arg =~ /^rb_ary_push\($1, ([^\)]+)\)/
@@ -125,10 +142,12 @@ class DSL
   end
 
   def add_event(event, args, qundef_check = false, indent = INDENT)
+#    $stderr.puts "ARGS #{args.inspect}"
     event = event.to_s.sub(/!\z/, "")
     @events[event] = args.size
     vars = args.map do |arg|
       new_var.tap do |v|
+#    $stderr.puts "ARG: #{arg}, TRANS: #{translate_arg(arg)}"
         @code << "#{indent}#{v} = #{translate_arg(arg)};\n"
       end
     end
@@ -150,14 +169,54 @@ class DSL
   end
 
   def method_missing(event, *args)
-    if event.to_s =~ /!\z/
+    event = event.to_s
+#    $stderr.puts "AAAARGS: #{args.join(',')}"
+
+    replacement = TRANSLATIONS[event]
+
+    return replacement if replacement
+
+    if event =~ /!\z/
+#      $stderr.puts("EVENT: #{event} LEN: #{args.size}, ARGS: #{args.join(',')}")
       add_event(event, args)
-    elsif args.empty? and /\Aid[A-Z_]/ =~ event.to_s
+    elsif args.empty? and /\Aid[A-Z_]/ =~ event
       event
     elsif args.length > 0 && args[0] == "p"
       "p.#{event}(#{args[1..-1].join(', ')})"
+    elsif event == 'RNODE'
+      '$1'
+    elsif event == 'STATIC_ID2SYM'
+      "p.symbolID(#{translate_arg(args[0])})"
     elsif event == 'get_value'
       "p.get_value(#{translate_arg(args[0])})"
+    elsif event == 'backref_error'
+      "p.backref_err(#{translate_arg(args[1])}, #{translate_arg(args[2])})"
+    elsif event == 'rb_ary_new3'
+      "p.new_array(#{translate_arg(args[1])})"
+    elsif event == 'rb_ary_push' || event == 'rb_ary_concat'
+      "#{args[0]}.push(#{translate_arg(args[1])});"
+    elsif event == 'rb_assoc_new'
+      two = args[1]
+      two = "null" if two == "0"
+      "p.new_assoc(#{translate_arg(args[0])}, #{translate_arg(args[1])})"
+    elsif event == 'escape_Qundef'
+      "p.escape(#{args[0]})"
+    elsif event == 'assignable'
+      "p.assignable(#{translate_arg(args[1])})"
+    elsif event == 'rb_ary_new_from_args'
+      if args[0] == 1
+        "p.new_array(#{translate_arg(args[1])})"
+      elsif args[0] == 2
+        "p.new_array(#{translate_arg(args[1])},  #{translate_arg(args[2])})"
+      else
+        "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR NEW_FROM_ARGS"
+      end
+    elsif event == 'var_field'
+      "p.dispatch(args[0])"
+    elsif event == 'ID2VAL'
+      "p.intern(#{id_value(args[0])})"
+    elsif event == 'AREF'
+      "$1.eltOk(#{args[1]})"
     else
       "#{event}(#{args.join(', ')})"
     end

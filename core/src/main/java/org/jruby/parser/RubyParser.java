@@ -2270,9 +2270,9 @@ states[47] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     p.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     /*%%%*/
                     yyVal = new DefnNode(((DefHolder)yyVals[-3+yyTop].value).line, ((DefHolder)yyVals[-3+yyTop].value).name, ((ArgsNode)yyVals[-2+yyTop].value), p.getCurrentScope(), p.reduce_nodes(p.remove_begin(((Node)yyVals[0+yyTop].value))), yyVals[yyTop - count + 4].end());
+                    /* Changed from MRI*/
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
-                    /*% ripper: def!(get_value($1), $2, $4) %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
   return yyVal;
 };
@@ -2282,9 +2282,9 @@ states[48] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value))));
                     yyVal = new DefnNode(((DefHolder)yyVals[-5+yyTop].value).line, ((DefHolder)yyVals[-5+yyTop].value).name, ((ArgsNode)yyVals[-4+yyTop].value), p.getCurrentScope(), body, yyVals[yyTop - count + 6].end());
+                    /* Changed from MRI (cmobined two stmts)*/
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
-                    /*% ripper: def!(get_value($1), $2, $4) %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
 
                     p.popCurrentScope();
   return yyVal;
@@ -2294,10 +2294,9 @@ states[49] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     p.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     /*%%%*/
                     yyVal = new DefsNode(((DefHolder)yyVals[-3+yyTop].value).line, (Node) ((DefHolder)yyVals[-3+yyTop].value).singleton, ((DefHolder)yyVals[-3+yyTop].value).name, ((ArgsNode)yyVals[-2+yyTop].value), p.getCurrentScope(), p.reduce_nodes(p.remove_begin(((Node)yyVals[0+yyTop].value))), yyVals[yyTop - count + 4].end());
-                    /* Changed from MRI (no more get_value)*/
+                    /* Changed from MRI (no more get_value) combined two stmts*/
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
-                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
   return yyVal;
 };
@@ -2307,10 +2306,9 @@ states[50] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value))));
                     yyVal = new DefsNode(((DefHolder)yyVals[-5+yyTop].value).line, (Node) ((DefHolder)yyVals[-5+yyTop].value).singleton, ((DefHolder)yyVals[-5+yyTop].value).name, ((ArgsNode)yyVals[-4+yyTop].value), p.getCurrentScope(), body, yyVals[yyTop - count + 6].end());
-                    /* Changed from MRI (no more get_value)                    */
+                    /* Changed from MRI (no more get_value) (combined two stmts)*/
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
-                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
   return yyVal;
 };
@@ -2402,13 +2400,16 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.symbolID(((ByteList)yyVals[0+yyTop].value));
                     p.numparam_name(name);
+                    /*%%%*/
                     yyVal = new DefHolder(p.symbolID(((ByteList)yyVals[0+yyTop].value)), p.getCurrentArg(), (LexContext) ctxt.clone());
+                    /*% 
+                        $$ = p.new_array($1); // FIXME: No ctxt. no current arg
+                    %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
   return yyVal;
 };
 states[68] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
@@ -2420,10 +2421,15 @@ states[69] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[70] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
+                    yyVal = ((DefHolder)yyVals[0+yyTop].value);
+                    /*%%%*/
                     ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
                     ((DefHolder)yyVals[0+yyTop].value).setSingleton(((Node)yyVals[-3+yyTop].value));
                     ((DefHolder)yyVals[0+yyTop].value).setDotOrColon(p.extractByteList(((ByteList)yyVals[-2+yyTop].value)));
-                    yyVal = ((DefHolder)yyVals[0+yyTop].value);
+                    /* Changed from MRI*/
+                    /*%
+                       $$ = p.new_array($2, $3, $5);
+                    %*/
   return yyVal;
 };
 states[71] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3594,9 +3600,9 @@ states[278] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new DefnNode(((DefHolder)yyVals[-3+yyTop].value).line, ((DefHolder)yyVals[-3+yyTop].value).name, ((ArgsNode)yyVals[-2+yyTop].value), p.getCurrentScope(), p.reduce_nodes(p.remove_begin(((Node)yyVals[0+yyTop].value))), yyVals[yyTop - count + 4].end());
                     if (p.isNextBreak) ((DefnNode)yyVal).setContainsNextBreak();
                     p.popCurrentScope();
+                    /* Changed from MRI (combined two stmts)*/
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
-                    /*% ripper: def!(get_value($1), $2, $4) %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
   return yyVal;
 };
 states[279] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3607,9 +3613,9 @@ states[279] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new DefnNode(((DefHolder)yyVals[-5+yyTop].value).line, ((DefHolder)yyVals[-5+yyTop].value).name, ((ArgsNode)yyVals[-4+yyTop].value), p.getCurrentScope(), body, yyVals[yyTop - count + 6].end());
                     if (p.isNextBreak) ((DefnNode)yyVal).setContainsNextBreak();
                     p.popCurrentScope();
+                    /* Changed from MRI (combined two stmts)*/
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
-                    /*% ripper: def!(get_value($1), $2, $4) %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
   return yyVal;
 };
 states[280] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3619,10 +3625,9 @@ states[280] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     yyVal = new DefsNode(((DefHolder)yyVals[-3+yyTop].value).line, (Node) ((DefHolder)yyVals[-3+yyTop].value).singleton, ((DefHolder)yyVals[-3+yyTop].value).name, ((ArgsNode)yyVals[-2+yyTop].value), p.getCurrentScope(), p.reduce_nodes(p.remove_begin(((Node)yyVals[0+yyTop].value))), yyVals[yyTop - count + 4].end());
                     if (p.isNextBreak) ((DefsNode)yyVal).setContainsNextBreak();
                     p.popCurrentScope();
-                    /* Changed from MRI (no more get_value)*/
+                    /* Changed from MRI (no more get_value)(combined two stmts)*/
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
-                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
   return yyVal;
 };
 states[281] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3632,10 +3637,9 @@ states[281] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value))));
                     yyVal = new DefsNode(((DefHolder)yyVals[-5+yyTop].value).line, (Node) ((DefHolder)yyVals[-5+yyTop].value).singleton, ((DefHolder)yyVals[-5+yyTop].value).name, ((ArgsNode)yyVals[-4+yyTop].value), p.getCurrentScope(), body, yyVals[yyTop - count + 6].end());
                     if (p.isNextBreak) ((DefsNode)yyVal).setContainsNextBreak();                    p.popCurrentScope();
-                    /* Changed from MRI (no more get_value)*/
+                    /* Changed from MRI (no more get_value)(combined two stmts)*/
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
-                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
   return yyVal;
 };
 states[282] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4236,7 +4240,8 @@ states[378] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.restore_defun(((DefHolder)yyVals[-3+yyTop].value));
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil(((Node)yyVals[-1+yyTop].value))));
                     yyVal = new DefnNode(((DefHolder)yyVals[-3+yyTop].value).line, ((DefHolder)yyVals[-3+yyTop].value).name, ((ArgsNode)yyVals[-2+yyTop].value), p.getCurrentScope(), body, yyVals[yyTop - count + 4].end());
-                    if (p.isNextBreak) ((DefnNode)yyVal).setContainsNextBreak();                    p.popCurrentScope();
+                    if (p.isNextBreak) ((DefnNode)yyVal).setContainsNextBreak();
+                    p.popCurrentScope();
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, $3) %*/
   return yyVal;
@@ -5870,35 +5875,35 @@ states[675] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = p.declareIdentifier(((ByteList)yyVals[0+yyTop].value));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[676] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new InstVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[677] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new GlobalVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[678] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ConstNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[679] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new ClassVarNode(p.tokline(), p.symbolID(((ByteList)yyVals[0+yyTop].value)));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
   return yyVal;
 };
 states[680] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6524,6 +6529,7 @@ states[778] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[779] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = new HashNode(p.src_line(), ((KeyValuePair)yyVals[0+yyTop].value));
+                    /*% %*/
                     /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
   return yyVal;
 };
@@ -6662,7 +6668,7 @@ states[817] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4647 "parse.y"
+					// line 4654 "parse.y"
 
 }
-					// line 14418 "-"
+					// line 14424 "-"

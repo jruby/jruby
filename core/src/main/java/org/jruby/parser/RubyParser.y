@@ -26,7 +26,6 @@
     'lex_package' => ['org.jruby.lexer.yacc', 'org.jruby.ext.ripper'],
     'Parser' => ['Ruby', 'Ripper'],
     'keyword_type' => ['Integer', 'IRubyObject'],
-    'keyword_in_type' => ['Object', 'IRubyObject'],
     'token_type' => ['ByteList', 'IRubyObject'],
     'token_integer_type' => ['Node', 'IRubyObject'],
     'token_float_type' => ['FloatNode', 'IRubyObject'],
@@ -37,6 +36,9 @@
     'token_backref_type' => ['Node', 'IRubyObject'],
     'token_string_type' => ['Node', 'IRubyObject'],
     'token_regexp_type' => ['RegexpNode', 'IRubyObject'],
+    'prod_def_type' => ['DefHolder', 'RubyArray'],
+    'prod_undef_list_type' => ['Node', 'RubyArray'],
+    'prod_bv_decls_type' => ['Node', 'RubyArray'],
     'prod_type' => ['Node', 'IRubyObject'],
     'prod_string_type' => ['Object', 'IRubyObject'],
     'prod_words_type' => ['ListNode', 'IRubyObject'],
@@ -192,7 +194,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %token <@@keyword_type@@> keyword_next         /* {{`next'}} */
 %token <@@keyword_type@@> keyword_redo         /* {{`redo'}} */
 %token <@@keyword_type@@> keyword_retry        /* {{`retry'}} */
-%token <@@keyword_in_type@@> keyword_in        /* {{`in'}} */
+%token <Object> keyword_in                     /* {{`in'}} */
 %token <@@keyword_type@@> keyword_do           /* {{`do'}} */
 %token <@@keyword_type@@> keyword_do_cond      /* {{`do' for condition}} */
 %token <@@keyword_type@@> keyword_do_block     /* {{`do' for block}} */
@@ -247,7 +249,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@prod_type@@> literal
 %type <@@prod_numeric_type@@> numeric simple_numeric
 %type <@@prod_type@@> ssym dsym symbol cpath
-%type <DefHolder> def_name defn_head defs_head
+%type <@@prod_def_type@@> def_name defn_head defs_head
 %type <@@prod_type@@> top_compstmt top_stmts top_stmt begin_block
 %type <@@prod_type@@> bodystmt compstmt stmts stmt_or_begin stmt expr arg primary command command_call method_call
 %type <@@prod_type@@> expr_value expr_value_do arg_value primary_value 
@@ -277,14 +279,15 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@prod_assoc_list_type@@> assoc_list
 %type <@@prod_assocs_type@@> assocs
 %type <@@prod_assoc_type@@> assoc
-%type <@@prod_type@@> undef_list backref string_dvar for_var
+%type <@@prod_undef_list_type@@> undef_list
+%type <@@prod_type@@> backref string_dvar for_var
 %type <@@prod_block_param_type@@> block_param opt_block_param block_param_def
 %type <@@prod_type@@> f_opt
 %type <@@prod_f_kwarg_type@@> f_kwarg
 %type <@@prod_f_kw_type@@> f_kw
 %type <@@prod_f_kwarg_type@@> f_block_kwarg
 %type <@@prod_type@@> f_block_kw
-%type <@@prod_type@@> bv_decls opt_bv_decl 
+%type <@@prod_bv_decls_type@@> bv_decls opt_bv_decl 
 %type <@@prod_bvar_type@@> bvar
 %type <@@prod_lambda_type@@> lambda
 %type <@@prod_f_larglist_type@@> f_larglist
@@ -704,9 +707,9 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.restore_defun($1);
                     /*%%%*/
                     $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    // Changed from MRI
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
-                    /*% ripper: def!(get_value($1), $2, $4) %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
                 }
                 | defn_head f_opt_paren_args '=' command modifier_rescue arg {
@@ -715,9 +718,9 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @6.end());
+                    // Changed from MRI (cmobined two stmts)
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
-                    /*% ripper: def!(get_value($1), $2, $4) %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
 
                     p.popCurrentScope();
                 }
@@ -726,10 +729,9 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.restore_defun($1);
                     /*%%%*/
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
-                    // Changed from MRI (no more get_value)
+                    // Changed from MRI (no more get_value) combined two stmts
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
-                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
                 }
                 | defs_head f_opt_paren_args '=' command modifier_rescue arg {
@@ -738,10 +740,9 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
-                    // Changed from MRI (no more get_value)                    
+                    // Changed from MRI (no more get_value) (combined two stmts)
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
-                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
                 }
                 | backref tOP_ASGN lex_ctxt command_rhs {
@@ -825,14 +826,17 @@ def_name        : fname {
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.symbolID($1);
                     p.numparam_name(name);
+                    /*%%%*/
                     $$ = new DefHolder(p.symbolID($1), p.getCurrentArg(), (LexContext) ctxt.clone());
+                    /*% 
+                        $$ = p.new_array($1); // FIXME: No ctxt. no current arg
+                    %*/
                     ctxt.in_def = true;
                     p.setCurrentArg(null);
                 }
 
 // [!null] - DefHolder
 defn_head       : k_def def_name {
-                    $2.line = @1.start();
                     $$ = $2;
                 }
 
@@ -843,10 +847,15 @@ defs_head       : k_def singleton dot_or_colon {
                     ctxt.in_argdef = true;
                 } def_name {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
+                    $$ = $5;
+                    /*%%%*/
                     $5.line = @1.start();
                     $5.setSingleton($2);
                     $5.setDotOrColon(p.extractByteList($3));
-                    $$ = $5;
+                    // Changed from MRI
+                    /*%
+                       $$ = p.new_array($2, $3, $5);
+                    %*/
                 }
 
 expr_value      : expr {
@@ -1853,9 +1862,9 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     p.popCurrentScope();
+                    // Changed from MRI (combined two stmts)
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
-                    /*% ripper: def!(get_value($1), $2, $4) %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
 		}
                 | defn_head f_opt_paren_args '=' arg modifier_rescue arg {
                     p.endless_method_name($1);
@@ -1865,9 +1874,9 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     p.popCurrentScope();
+                    // Changed from MRI (combined two stmts)
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
-                    /*% ripper: def!(get_value($1), $2, $4) %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
 		}
                 | defs_head f_opt_paren_args '=' arg {
                     p.endless_method_name($1);
@@ -1876,10 +1885,9 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     p.popCurrentScope();
-                    // Changed from MRI (no more get_value)
+                    // Changed from MRI (no more get_value)(combined two stmts)
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!($4, Qnil, Qnil, Qnil) %*/
-                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
 		}
                 | defs_head f_opt_paren_args '=' arg modifier_rescue arg {
                     /*%%%*/
@@ -1888,10 +1896,9 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     Node body = p.reduce_nodes(p.remove_begin(p.rescued_expr(@1.start(), $4, $6)));
                     $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @6.end());
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();                    p.popCurrentScope();
-                    // Changed from MRI (no more get_value)
+                    // Changed from MRI (no more get_value)(combined two stmts)
                     /*% %*/
-                    /*% ripper[$4]: bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil) %*/
-                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, $4) %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!(rescue_mod!($4, $6), Qnil, Qnil, Qnil)) %*/
                 }
                 | primary {
                     $$ = $1;
@@ -3987,31 +3994,31 @@ var_ref         : tIDENTIFIER { // mri:user_variable
                     /*%%%*/
                     $$ = p.declareIdentifier($1);
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
                 }
                 | tIVAR {
                     /*%%%*/
                     $$ = new InstVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
                 }
                 | tGVAR {
                     /*%%%*/
                     $$ = new GlobalVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
                 }
                 | tCONSTANT {
                     /*%%%*/
                     $$ = new ConstNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
                 }
                 | tCVAR {
                     /*%%%*/
                     $$ = new ClassVarNode(p.tokline(), p.symbolID($1));
                     /*%  %*/
-                    /*% ripper: var_ref!!($1) %*/
+                    /*% ripper: var_ref!($1) %*/
                 } // mri:user_variable
                 | keyword_nil { // mri:keyword_variable
                     /*%%%*/
@@ -4588,6 +4595,7 @@ assoc_list      : none {
 assocs          : assoc {
                     /*%%%*/
                     $$ = new HashNode(p.src_line(), $1);
+                    /*% %*/
                     /*% ripper[brace]: rb_ary_new3(1, get_value($1)) %*/
                 }
                 | assocs ',' assoc {

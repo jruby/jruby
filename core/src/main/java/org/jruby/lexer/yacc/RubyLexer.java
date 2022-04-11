@@ -45,7 +45,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.BackRefNode;
@@ -198,13 +197,13 @@ public class RubyLexer extends LexingCommon {
         WHILE ("while", new ByteList(new byte[] {'w', 'h', 'i', 'l', 'e'}, USASCII_ENCODING), keyword_while, modifier_while, EXPR_BEG),
         ALIAS ("alias", new ByteList(new byte[] {'a', 'l', 'i', 'a', 's'}, USASCII_ENCODING), keyword_alias, keyword_alias, EXPR_FNAME|EXPR_FITEM),
         __ENCODING__("__ENCODING__", new ByteList(new byte[] {'_', '_', 'E', 'N', 'C', 'O', 'D', 'I', 'N', 'G', '_', '_'}, USASCII_ENCODING), keyword__ENCODING__, keyword__ENCODING__, EXPR_END);
-        
+
         public final String name;
         public final ByteList bytes;
         public final int id0;
         public final int id1;
         public final int state;
-        
+
         Keyword(String name, ByteList bytes, int id0, int id1, int state) {
             this.name = name;
             this.bytes = bytes;

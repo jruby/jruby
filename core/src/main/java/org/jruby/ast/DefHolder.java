@@ -2,8 +2,11 @@ package org.jruby.ast;
 
 import org.jruby.RubySymbol;
 import org.jruby.lexer.yacc.LexContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+// Note: jay grammar does not support generics so we there is a special
+// method getRipperSingleton() to work around this.
 public class DefHolder {
     public final RubySymbol name;
     public final ByteList current_arg;
@@ -17,6 +20,10 @@ public class DefHolder {
         this.name = name;
         this.current_arg = currentArg;
         this.ctxt = ctxt;
+    }
+
+    public IRubyObject getRipperSingleton() {
+        return (IRubyObject) singleton;
     }
 
     // Node for parser and IRubyObject for ripper.

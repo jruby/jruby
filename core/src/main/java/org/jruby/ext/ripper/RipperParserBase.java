@@ -38,18 +38,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArrayPatternNode;
 import org.jruby.ast.DefHolder;
-import org.jruby.ast.FindPatternNode;
-import org.jruby.ast.HashNode;
-import org.jruby.ast.HashPatternNode;
-import org.jruby.ast.ListNode;
-import org.jruby.ast.NilRestArgNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.RegexpNode;
-import org.jruby.ast.StarNode;
-import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.parser.ScopedParserState;
@@ -336,6 +326,13 @@ public class RipperParserBase {
         return value;
     }
 
+    protected IRubyObject backref_error(IRubyObject ref, IRubyObject expr) {
+        RubyString str = getRuntime().newString("Can't set variable ");
+        str = str.append(ref);
+
+        return dispatch("on_assign_error",  str, expr);
+    }
+
     protected int getParenNest() {
         return lexer.getParenNest();
     }
@@ -406,10 +403,10 @@ public class RipperParserBase {
         return null;
     }
     
-    public IRubyObject new_array(IRubyObject arg) {
-        return context.runtime.newArray(arg);
+    public IRubyObject new_array(IRubyObject ...args) {
+        return context.runtime.newArray(args);
     }
-    
+
     public IRubyObject new_assoc(IRubyObject key, IRubyObject value) {
         return RubyArray.newArray(context.runtime, key, value);
     }    
@@ -451,10 +448,10 @@ public class RipperParserBase {
         lexer.setHeredocIndent(indent);
     }
 
-    public void heredoc_dedent(IRubyObject array) {
-        if (lexer.getHeredocIndent() <= 0) return;
+    public IRubyObject heredoc_dedent(IRubyObject array) {
+        if (lexer.getHeredocIndent() <= 0) return null;
 
-        dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(lexer.getHeredocIndent()));
+        return dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(lexer.getHeredocIndent()));
     }
     
     public void setCommandStart(boolean value) {
@@ -594,13 +591,18 @@ public class RipperParserBase {
         return holder.name;
     }
 
-    public void endless_method_name(DefHolder name) {
+    protected IRubyObject get_value(RubyArray holder) {
+        return holder.eltOk(1);
+    }
+
+    public void endless_method_name(RubyArray name) {
         // FIXME: IMPL
     }
 
-    public void restore_defun(DefHolder holder) {
-        lexer.getLexContext().restore(holder);
-        lexer.setCurrentArg(holder.current_arg);
+    public void restore_defun(RubyArray holder) {
+        // FIXME:
+        //lexer.getLexContext().restore(holder);
+        //lexer.setCurrentArg(holder.current_arg);
     }
 
     public RubySymbol symbolID(ByteList identifierValue) {
@@ -672,6 +674,19 @@ public class RipperParserBase {
         return RubyArray.newArray(getRuntime(), preRestArg, args, postRestArg);
     }
 
+    protected IRubyObject const_decl(IRubyObject path) {
+        if (getLexContext().in_def) {
+            path = assign_error("dynamic constant assignment", path);
+        }
+
+        return path;
+    }
+
+    private IRubyObject assign_error(String message, IRubyObject value) {
+        value = dispatch("on_assign_error", getRuntime().newString(message), value);
+        error();
+        return value;
+    }
 
     public IRubyObject new_hash_pattern(IRubyObject constant, RubyArray hashPattern) {
         IRubyObject keywordArgs = hashPattern.eltOk(0);

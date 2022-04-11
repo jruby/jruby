@@ -409,6 +409,8 @@ public class RubyLexer extends LexingCommon {
             dispatchDelayedToken(token);
             return token == EOF ? 0 : token;
         }
+
+        System.out.println("YACCVALUE: " + yaccValue);
         
         if (token != EOF) dispatchScanEvent(token);
 
@@ -805,7 +807,7 @@ public class RubyLexer extends LexingCommon {
         //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);
         IRubyObject value = parser.getRuntime().newString(lexb.makeShared(tokp, lex_p - tokp));
         String event = tokenToEventId(token);
-        //System.out.println("EVENT: " + event + ", VALUE: " + value);
+        System.out.println("EVENT: " + event + ", VALUE: " + value);
         IRubyObject returnValue = parser.dispatch(event, value);
         flush();
         return returnValue;
