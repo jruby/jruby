@@ -1548,10 +1548,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetClassVariableInstr(GetClassVariableInstr getclassvariableinstr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf();
         visit(getclassvariableinstr.getSource());
         jvmAdapter().checkcast(p(RubyModule.class));
         jvmAdapter().ldc(getclassvariableinstr.getId());
-        jvmAdapter().invokevirtual(p(RubyModule.class), "getClassVar", sig(IRubyObject.class, String.class));
+        jvmMethod().invokeIRHelper("getClassVariable", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
         jvmStoreLocal(getclassvariableinstr.getResult());
     }
 
