@@ -52,7 +52,6 @@ import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.ext.stringio.StringIO.NEWLINE;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
