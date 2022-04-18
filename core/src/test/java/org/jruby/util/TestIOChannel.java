@@ -1,8 +1,6 @@
 package org.jruby.util;
 
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.ext.stringio.StringIO;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
