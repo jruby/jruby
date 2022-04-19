@@ -1,2 +1,0 @@
-wip:FrozenError.new should take optional receiver argument
-wip:FrozenError#receiver should return frozen object that modification was attempted on

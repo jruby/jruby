@@ -287,7 +287,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
-        if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice");
+        if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice", this);
         checkFrozen();
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
         this.isInited = true;
@@ -296,7 +296,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(required = 1, visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
-        if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice");
+        if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice", this);
 
         RubyRange other = (RubyRange) original;
         init(context, other.begin, other.end, other.isExclusive);
