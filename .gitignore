@@ -122,6 +122,7 @@ lib/ruby/stdlib/securerandom*
 lib/ruby/stdlib/shellwords*
 lib/ruby/stdlib/singleton*
 lib/ruby/stdlib/stringio*
+lib/ruby/stdlib/strscan*
 lib/ruby/stdlib/time.rb
 lib/ruby/stdlib/tracer*
 lib/ruby/stdlib/tsort*
