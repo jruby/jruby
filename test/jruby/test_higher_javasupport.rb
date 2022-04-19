@@ -1871,7 +1871,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue ArgumentError => e
       msg = e.message
-      assert msg.start_with?("wrong number of arguments calling `length` (given 1, expected 0)"), msg
+      assert msg.start_with?("`length': wrong number of arguments (given 1, expected 0)"), msg
     end
 
     begin # array proxy class

@@ -181,7 +181,7 @@ public class RubyGlobal {
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
         runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()), GLOBAL);
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$,", runtime.getNil()), GLOBAL);
+        runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$,", runtime.getNil()), GLOBAL);
 
         runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."), GLOBAL);
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"), FRAME);
@@ -746,7 +746,7 @@ public class RubyGlobal {
         }
 
         protected static IRubyObject newString(ThreadContext context, RubyString value, Encoding encoding) {
-            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.getByteList(), encoding);
+            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.strDup(context.runtime).getByteList(), encoding);
 
             result.setFrozen(true);
 
@@ -950,6 +950,21 @@ public class RubyGlobal {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
             }
             return super.set(value);
+        }
+    }
+
+    public static class DeprecatedStringGlobalVariable extends StringGlobalVariable {
+        public DeprecatedStringGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            IRubyObject result = super.set(value);
+
+            if (!value.isNil()) runtime.getWarnings().warnDeprecated(name);
+
+            return result;
         }
     }
 

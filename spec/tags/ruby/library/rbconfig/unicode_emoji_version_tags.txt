@@ -1,1 +1,0 @@
-wip:RbConfig::CONFIG['UNICODE_EMOJI_VERSION'] is 13.1 for Ruby 3.1

@@ -235,12 +235,12 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.ldc(scope.isRuby2Keywords());
             m.invokeIRHelper("frobnicateKwargsArgument", sig(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, int.class, boolean.class));
             m.storeArgs();
-        }
 
-        // FIXME: We would prefer a reference to live method vs staticscope.
-        m.adapter.aload(1);
-        m.loadArgs();
-        m.invokeIRHelper("markAsRuby2KeywordArg", sig(void.class, StaticScope.class, IRubyObject[].class));
+            // FIXME: We would prefer a reference to live method vs staticscope.
+            m.adapter.aload(1);
+            m.loadArgs();
+            m.invokeIRHelper("markAsRuby2KeywordArg", sig(void.class, StaticScope.class, IRubyObject[].class));
+        }
 
         for (BasicBlock bb: bbs) {
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
@@ -1548,10 +1548,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetClassVariableInstr(GetClassVariableInstr getclassvariableinstr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf();
         visit(getclassvariableinstr.getSource());
         jvmAdapter().checkcast(p(RubyModule.class));
         jvmAdapter().ldc(getclassvariableinstr.getId());
-        jvmAdapter().invokevirtual(p(RubyModule.class), "getClassVar", sig(IRubyObject.class, String.class));
+        jvmMethod().invokeIRHelper("getClassVariable", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
         jvmStoreLocal(getclassvariableinstr.getResult());
     }
 

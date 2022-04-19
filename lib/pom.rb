@@ -57,9 +57,9 @@ default_gems = [
     ['irb', '1.4.1'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.11.0'],
+    ['jruby-openssl', '0.12.2'],
     ['json', '2.6.1'],
-    ['logger', '1.5.0'],
+    ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
     # Depends on io-wait via net-protocol
     # ['net-http', '0.2.0'],
@@ -75,7 +75,7 @@ default_gems = [
     # ['open-uri', '0.2.0'],
     ['open-uri', '0.1.0'],
     ['optparse', '0.2.0'],
-    ['ostruct', '0.5.2'],
+    ['ostruct', '0.5.5'],
     # https://github.com/ruby/pathname/issues/17
     # ['pathname', '0.2.0'],
     ['pp', '0.3.0'],
@@ -100,8 +100,7 @@ default_gems = [
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    # https://github.com/ruby/stringio/pull/21
-    # ['stringio', '3.0.1'],
+    ['stringio', '3.0.2.pre1'],
     # https://github.com/ruby/strscan/pull/25
     # ['strscan', '3.0.1'],
     # https://github.com/ruby/syslog/issues/1

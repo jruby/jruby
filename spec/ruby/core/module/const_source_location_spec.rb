@@ -179,6 +179,13 @@ describe "Module#const_source_location" do
       ConstantSpecs.const_source_location("ClassA::CS_CONST10").should == [@constants_fixture_path, ConstantSpecs::ClassA::CS_CONST10_LINE]
     end
 
+    it "returns updated location from const_set" do
+      mod = Module.new
+      const_line = __LINE__ + 1
+      mod.const_set :Foo, 1
+      mod.const_source_location(:Foo).should == [__FILE__, const_line]
+    end
+
     it "raises a NameError if the name includes two successive scope separators" do
       -> { ConstantSpecs.const_source_location("ClassA::::CS_CONST10") }.should raise_error(NameError)
     end

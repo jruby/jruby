@@ -835,6 +835,8 @@ describe "Execution variable $:" do
   it "can be changed via <<" do
     $: << "foo"
     $:.should include("foo")
+  ensure
+    $:.delete("foo")
   end
 
   it "is read-only" do
@@ -849,6 +851,16 @@ describe "Execution variable $:" do
     -> {
       $-I = []
     }.should raise_error(NameError)
+  end
+
+  it "default $LOAD_PATH entries until sitelibdir included have @gem_prelude_index set" do
+    skip "no sense in ruby itself" if MSpecScript.instance_variable_defined?(:@testing_ruby)
+
+    $:.should.include?(RbConfig::CONFIG['sitelibdir'])
+    idx = $:.index(RbConfig::CONFIG['sitelibdir'])
+
+    $:[idx..-1].all? { |p| p.instance_variable_defined?(:@gem_prelude_index) }.should be_true
+    $:[0...idx].all? { |p| !p.instance_variable_defined?(:@gem_prelude_index) }.should be_true
   end
 end
 
@@ -1314,6 +1326,7 @@ ruby_version_is "2.7" do
 
     it "returns what will be loaded without actual loading, .so file" do
       require 'rbconfig'
+      skip "no dynamically loadable standard extension" if RbConfig::CONFIG["EXTSTATIC"] == "static"
 
       extension, path = $LOAD_PATH.resolve_feature_path('etc')
       extension.should == :so

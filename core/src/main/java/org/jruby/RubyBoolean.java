@@ -171,6 +171,11 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         @Override
+        public RubyString inspect() {
+            return getRuntime().getFalseString();
+        }
+
+        @Override
         public <T> T toJava(Class<T> target) {
             if (target.isAssignableFrom(Boolean.class) || target == boolean.class) {
                 return (T) Boolean.FALSE;
@@ -206,6 +211,11 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         @JRubyMethod(name = "to_s", alias = "inspect")
         public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
             return context.runtime.getTrueString();
+        }
+
+        @Override
+        public RubyString inspect() {
+            return getRuntime().getTrueString();
         }
 
         @Override

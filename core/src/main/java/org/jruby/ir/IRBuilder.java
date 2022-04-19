@@ -1119,6 +1119,12 @@ public class IRBuilder {
         RubySymbol name = methodName = callNode.getName();
 
         Node receiverNode = callNode.getReceiverNode();
+
+        // Ruby 2.7+ treats explicit self.call the same as if it was just call.  We transform rather than testing receiver.
+        if (receiverNode instanceof SelfNode) {
+            FCallNode fcall = new FCallNode(callNode.getLine(), callNode.getName(), callNode.getArgsNode(), callNode.getIterNode());
+            return buildFCall(aResult, fcall);
+        }
         String id = name.idString(); // ID Str ok here since compared strings are all 7-bit.
 
         if (Options.IR_STRING_FREEZE.load()) {

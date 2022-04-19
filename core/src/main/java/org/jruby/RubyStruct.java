@@ -423,7 +423,7 @@ public class RubyStruct extends RubyObject {
                     if (!(key instanceof RubySymbol))
                         key = context.runtime.newSymbol(key.convertToString().getByteList());
                     IRubyObject index = __members__.index(context, key);
-                    if (index.isNil()) throw context.runtime.newArgumentError("unknown keywords: " + key);
+                    if (index.isNil()) throw context.runtime.newArgumentError("unknown keywords: " + key.inspect());
                     values[index.convertToInteger().getIntValue()] = entry.getValue();
                 });
     }
