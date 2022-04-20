@@ -244,7 +244,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
+        public <T> void visitAll(ThreadContext context, VisitorWithStateI visitor) {
             final Ruby runtime = getRuntime();
             // NOTE: this is here to make maps act similar to Hash-es which allow modifications while
             // iterating (meant from the same thread) ... thus we avoid iterating entrySet() directly
@@ -254,8 +254,14 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             for ( Map.Entry entry : entries ) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
-                visitor.visit(context, this, key, value, index++, state);
+                visitor.visit(context, this, key, value, index++);
             }
+        }
+
+        @Override
+        public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
+            visitAll(context,
+                    (ctx, self, key, value, index) -> visitor.visit(ctx, self, key, value, index, state));
         }
 
         @Override
