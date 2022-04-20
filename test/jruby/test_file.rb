@@ -655,6 +655,13 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
+  # ensure that uri:file: and file: URIs are treated the same by File.directory?
+  def test_uri_file_directory_query
+    ["uri:file://", "uri:file:/#{Dir.pwd}"].each do |uri|
+      assert(File.directory?(uri), uri)
+    end
+  end
+
   def test_file_query # - file?
     assert(File.file?('test/jruby/test_file.rb'))
     assert(! File.file?('test'))
