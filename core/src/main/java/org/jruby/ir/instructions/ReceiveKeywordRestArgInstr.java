@@ -9,6 +9,8 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -16,8 +18,8 @@ import java.util.EnumSet;
 
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
 
-    public ReceiveKeywordRestArgInstr(Variable result) {
-        super(Operation.RECV_KW_REST_ARG, result, -1);
+    public ReceiveKeywordRestArgInstr(Variable result, Variable keyword) {
+        super(Operation.RECV_KW_REST_ARG, result, keyword, -1);
     }
 
     @Override
@@ -28,7 +30,7 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result));
+        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeyword()));
     }
 
     @Override
@@ -37,12 +39,14 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     }
 
     public static ReceiveKeywordRestArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordRestArgInstr(d.decodeVariable());
+        return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeVariable());
     }
 
-    @Override
-    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean usesKeywords) {
-        return IRRuntimeHelpers.receiveKeywordRestArg(context, args, usesKeywords);
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
+                                  Object[] temp, IRubyObject[] args, boolean keywordArgumentSupplied, boolean ruby2keyword) {
+        Object keyword = getKeyword().retrieve(context, self, currScope, currDynScope, temp);
+
+        return IRRuntimeHelpers.receiveKeywordRestArg(context, keyword);
     }
 
     @Override

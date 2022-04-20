@@ -2578,7 +2578,7 @@ public class RubyHash extends RubyObject implements Map {
         setFlag(COMPARE_BY_IDENTITY_F, comparedByIdentity);
     }
 
-    protected boolean isRuby2KeywordHash() {
+    public boolean isRuby2KeywordHash() {
         return (flags & RUBY2_KEYWORD_F) != 0;
     }
 

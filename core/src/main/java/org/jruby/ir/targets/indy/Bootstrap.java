@@ -316,7 +316,8 @@ public class Bootstrap {
 
     @JIT
     public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Block block, int req, int opt, boolean rest, boolean key, int keyrest) {
-        IRRuntimeHelpers.checkArity(context, scope, args, req, opt, rest, key, keyrest, block);
+        // FIXME: Need to get keyword.
+        IRRuntimeHelpers.checkArity(context, scope, args, null, req, opt, rest, key, keyrest, block);
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {

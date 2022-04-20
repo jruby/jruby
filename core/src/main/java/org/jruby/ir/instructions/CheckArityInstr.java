@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -10,17 +11,19 @@ import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
-public class CheckArityInstr extends NoOperandInstr implements FixedArityInstr {
+public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr {
     public final int required;
     public final int opt;
     public final boolean rest;
     public final boolean receivesKeywords;
     public final int restKey;
 
-    public CheckArityInstr(int required, int opt, boolean rest, boolean receivesKeywords, int restKey) {
-        super(Operation.CHECK_ARITY);
+    public CheckArityInstr(int required, int opt, boolean rest, boolean receivesKeywords, int restKey, Variable keyword) {
+        super(Operation.CHECK_ARITY, keyword);
 
         this.required = required;
         this.opt = opt;
@@ -31,12 +34,12 @@ public class CheckArityInstr extends NoOperandInstr implements FixedArityInstr {
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"req: " + required, "opt: " + opt, "*r: " + rest, "kw: " + receivesKeywords};
+        return new String[] {"req: " + required, "opt: " + opt, "*r: " + rest, "kw?: " + receivesKeywords};
     }
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, receivesKeywords, restKey);
+        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, receivesKeywords, restKey, (Variable) getOperand1());
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
         if (ii.canMapArgsStatically()) { // we can error on bad arity or remove check_arity
@@ -60,14 +63,16 @@ public class CheckArityInstr extends NoOperandInstr implements FixedArityInstr {
         e.encode(rest);
         e.encode(receivesKeywords);
         e.encode(restKey);
+        e.encode(getOperand1());
     }
 
     public static CheckArityInstr decode(IRReaderDecoder d) {
-        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeBoolean(), d.decodeInt());
+        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeBoolean(), d.decodeInt(), d.decodeVariable());
     }
 
-    public void checkArity(ThreadContext context, StaticScope scope, Object[] args, Block block) {
-        IRRuntimeHelpers.checkArity(context, scope, args, required, opt, rest, receivesKeywords, restKey, block);
+    public void checkArity(ThreadContext context, IRubyObject self, StaticScope scope, DynamicScope dynamicScope, IRubyObject[] args, Block block, Object[] temp) {
+        Object keyword = getOperand1().retrieve(context, self, scope, dynamicScope, temp);
+        IRRuntimeHelpers.checkArity(context, scope, args, keyword, required, opt, rest, receivesKeywords, restKey, block);
     }
 
     @Override

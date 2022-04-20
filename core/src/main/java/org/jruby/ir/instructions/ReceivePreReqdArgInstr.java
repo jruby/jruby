@@ -13,13 +13,13 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
  * Assign Argument passed into scope/method to a result variable
  */
 public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArityInstr {
-    public ReceivePreReqdArgInstr(Variable result, int argIndex) {
-        super(Operation.RECV_PRE_REQD_ARG, result, argIndex);
+    public ReceivePreReqdArgInstr(Variable result, Variable keywords, int argIndex) {
+        super(Operation.RECV_PRE_REQD_ARG, result, keywords, argIndex);
     }
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReceivePreReqdArgInstr(info.getRenamedVariable(result), argIndex);
+        if (info instanceof SimpleCloneInfo) return new ReceivePreReqdArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeyword()), argIndex);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
@@ -35,7 +35,7 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArity
     }
 
     public static ReceivePreReqdArgInstr decode(IRReaderDecoder d) {
-        return new ReceivePreReqdArgInstr(d.decodeVariable(), d.decodeInt());
+        return new ReceivePreReqdArgInstr(d.decodeVariable(), d.decodeVariable(), d.decodeInt());
     }
 
     @Override
