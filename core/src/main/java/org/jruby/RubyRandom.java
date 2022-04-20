@@ -289,7 +289,7 @@ public class RubyRandom extends RubyRandomBase {
         if (max.isZero()) {
             return randFloat(context, random);
         }
-        IRubyObject r = randInt(context, random, max, false);
+        IRubyObject r = randInt(context, self, random, max, false);
         return (r == context.nil) ? randFloat(context, random) : r;
     }
 
