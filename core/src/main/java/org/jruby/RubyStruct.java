@@ -53,6 +53,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -423,7 +424,7 @@ public class RubyStruct extends RubyObject {
                     if (!(key instanceof RubySymbol))
                         key = context.runtime.newSymbol(key.convertToString().getByteList());
                     IRubyObject index = __members__.index(context, key);
-                    if (index.isNil()) throw context.runtime.newArgumentError("unknown keywords: " + key);
+                    if (index.isNil()) throw context.runtime.newArgumentError(str(context.runtime, "unknown keywords: ", key));
                     values[index.convertToInteger().getIntValue()] = entry.getValue();
                 });
     }
