@@ -179,23 +179,20 @@ public class RubyRandomBase extends RubyObject {
     // c: random_ulong_limited_big
     private static RubyInteger randomUlongLimitedBig(ThreadContext context, IRubyObject self, RubyRandom.RandomType random, BigInteger limit) {
         if (random == null) {
-            int octets = limit.bitCount() / 8;
-            int extraBits = limit.bitCount() - (octets * 8);
+            int octets = (int) ((long) limit.bitLength() + 7) / 8;
 
-            byte[] octetBytes = objRandomBytes(context, self, limit.bitCount() / 8);
+            byte[] octetBytes = objRandomBytes(context, self, octets);
+            BigInteger randBig = new BigInteger(octetBytes);
 
-            if (extraBits > 0) {
-                // additional call for last partial octet, shifted to remaining bit count
-                byte[] extraOctet = objRandomBytes(context, self, limit.bitCount() / 8);
-                int extra = extraOctet[0] & 0xFF;
-                byte extraTrunc = (byte) (extra >>> (8 - extraBits));
-                byte[] all = new byte[octets + 1];
-                all[0] = extraTrunc;
-                System.arraycopy(octetBytes, 0, all, 1, octets);
-                octetBytes = all;
+            if (randBig.compareTo(BigInteger.ZERO) < 0) {
+                randBig = randBig.abs();
             }
 
-            return RubyBignum.newBignum(context.runtime, new BigInteger(octetBytes));
+            if (randBig.compareTo(limit) > 0) {
+                randBig = randBig.mod(limit);
+            }
+
+            return RubyBignum.bignorm(context.runtime, randBig);
         }
         return limitedBigRand(context, random, limit);
     }
