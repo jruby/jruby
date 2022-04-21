@@ -79,7 +79,7 @@ public class RubyFrozenError extends RubyRuntimeError {
     public IRubyObject initialize(ThreadContext context, IRubyObject messageOrKwargs) {
         IRubyObject receiver = ArgsUtil.extractKeywordArg(context, messageOrKwargs, "receiver");
 
-        if (receiver == null) return initialize(context, messageOrKwargs);
+        if (receiver == null) return super.initialize(context, messageOrKwargs);
 
         return super.initialize(context, null, message);
     }
