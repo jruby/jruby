@@ -119,8 +119,6 @@ class TestTime < Test::Unit::TestCase
     time =  Time.new(2000, 1, 1, 0, 0, 0, 0)
     assert_false time.utc?
     assert_false time.clone.utc?
-    assert_false time.succ.utc?
-    assert_false time.succ.utc?
     assert_false (time + 1).utc?
     assert_false (time - 1).utc?
   end

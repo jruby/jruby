@@ -27,13 +27,20 @@ class Pathname
     proc {|a, b| a == b}
   end
 
+  if RUBY_ENGINE == 'jruby'
+    # additional matching for paths that considers URI components to be roots
+    URI_ROOT_PAT = "|.+!/|[a-z:]+://?"
+  else
+    URI_ROOT_PAT = ""
+  end
+  private_constant :URI_ROOT_PAT
 
   if File::ALT_SEPARATOR
     SEPARATOR_LIST = "#{Regexp.quote File::ALT_SEPARATOR}#{Regexp.quote File::SEPARATOR}"
-    SEPARATOR_PAT = /[#{SEPARATOR_LIST}]/
+    SEPARATOR_PAT = /[#{SEPARATOR_LIST}]#{URI_ROOT_PAT}/
   else
     SEPARATOR_LIST = "#{Regexp.quote File::SEPARATOR}"
-    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}/
+    SEPARATOR_PAT = /#{Regexp.quote File::SEPARATOR}#{URI_ROOT_PAT}/
   end
 
   if File.dirname('A:') == 'A:.' # DOSish drive letter
