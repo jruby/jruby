@@ -415,6 +415,8 @@ public class RubyStruct extends RubyObject {
     }
 
     private void setupStructValuesFromHash(ThreadContext context, RubyHash kwArgs) {
+        Ruby runtime = context.runtime;
+
         RubyArray __members__ = __member__();
         Set<Map.Entry<IRubyObject, IRubyObject>> entries = kwArgs.directEntrySet();
 
@@ -422,9 +424,9 @@ public class RubyStruct extends RubyObject {
                 entry -> {
                     IRubyObject key = entry.getKey();
                     if (!(key instanceof RubySymbol))
-                        key = context.runtime.newSymbol(key.convertToString().getByteList());
+                        key = runtime.newSymbol(key.convertToString().getByteList());
                     IRubyObject index = __members__.index(context, key);
-                    if (index.isNil()) throw context.runtime.newArgumentError(str(context.runtime, "unknown keywords: ", key));
+                    if (index.isNil()) throw runtime.newArgumentError(str(runtime, "unknown keywords: ", key));
                     values[index.convertToInteger().getIntValue()] = entry.getValue();
                 });
     }
