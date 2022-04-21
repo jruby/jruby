@@ -44,7 +44,7 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     @Override
     public Instr clone(CloneInfo info) {
         int optArgIndex = this.argIndex;
-        if (info instanceof SimpleCloneInfo) return new ReceiveOptArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeyword()), requiredArgs, preArgs, optArgIndex);
+        if (info instanceof SimpleCloneInfo) return new ReceiveOptArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), requiredArgs, preArgs, optArgIndex);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
@@ -75,10 +75,10 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywordArgument, boolean ruby2keyword) {
-        Object keyword = getKeyword().retrieve(context, self, currScope, currDynScope, temp);
+                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+        Object keywords = getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.receiveOptArg(context, args, keyword, requiredArgs, preArgs, argIndex, acceptsKeywordArgument);
+        return IRRuntimeHelpers.receiveOptArg(context, args, keywords, requiredArgs, preArgs, argIndex, acceptsKeywords);
     }
 
     @Override

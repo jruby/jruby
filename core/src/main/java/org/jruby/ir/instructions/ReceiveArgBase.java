@@ -22,7 +22,7 @@ public abstract class ReceiveArgBase extends OneOperandResultBaseInstr implement
         this.argIndex = argIndex;
     }
 
-    public Variable getKeyword() {
+    public Variable getKeywords() {
         return (Variable) getOperand1();
     }
 

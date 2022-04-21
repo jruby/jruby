@@ -18,8 +18,8 @@ import java.util.EnumSet;
 
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
 
-    public ReceiveKeywordRestArgInstr(Variable result, Variable keyword) {
-        super(Operation.RECV_KW_REST_ARG, result, keyword, -1);
+    public ReceiveKeywordRestArgInstr(Variable result, Variable keywords) {
+        super(Operation.RECV_KW_REST_ARG, result, keywords, -1);
     }
 
     @Override
@@ -30,7 +30,7 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeyword()));
+        return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeywords()));
     }
 
     @Override
@@ -43,10 +43,10 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     }
 
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean keywordArgumentSupplied, boolean ruby2keyword) {
-        Object keyword = getKeyword().retrieve(context, self, currScope, currDynScope, temp);
+                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+        Object keywords = getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.receiveKeywordRestArg(context, keyword);
+        return IRRuntimeHelpers.receiveKeywordRestArg(context, keywords);
     }
 
     @Override

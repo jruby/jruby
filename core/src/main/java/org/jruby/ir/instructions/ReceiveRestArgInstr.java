@@ -33,7 +33,7 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReceiveRestArgInstr(info.getRenamedVariable(result), required, argIndex, info.getRenamedVariable(getKeyword()));
+        if (info instanceof SimpleCloneInfo) return new ReceiveRestArgInstr(info.getRenamedVariable(result), required, argIndex, info.getRenamedVariable(getKeywords()));
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
@@ -56,10 +56,10 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywordArgument, boolean ruby2keyword) {
-        Object keyword = getKeyword().retrieve(context, self, currScope, currDynScope, temp);
+                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+        Object keywords = getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.receiveRestArg(context, args, required, argIndex, acceptsKeywordArgument, keyword);
+        return IRRuntimeHelpers.receiveRestArg(context, args, required, argIndex, acceptsKeywords, keywords);
     }
 
     @Override

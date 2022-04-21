@@ -19,7 +19,7 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReceivePreReqdArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeyword()), argIndex);
+        if (info instanceof SimpleCloneInfo) return new ReceivePreReqdArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), argIndex);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 

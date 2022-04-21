@@ -714,23 +714,26 @@ public class IRRuntimeHelpers {
         }
     }
 
+    // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
+    // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
     public static IRubyObject receiveKeyword(ThreadContext context, Object[] args, boolean acceptsKeywords,
                                              boolean ruby2keywords) {
         if (args.length < 1) return UNDEFINED;
 
         IRubyObject last = (IRubyObject) args[args.length - 1];
 
+        if (!(last instanceof RubyHash)) return UNDEFINED;
 
+        RubyHash hash = (RubyHash) last;
 
-        boolean isRuby2Kwarg = last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash();
-        boolean isKwarg = last instanceof RubyHash && ((RubyHash) last).isKeywordArguments();
+        boolean isRuby2Kwarg = hash.isRuby2KeywordHash();
+        boolean isKwarg = hash.isKeywordArguments();
 
         // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
         // This means methods which don't just keep that marked hash around in case it is passed
         // onto another method which accepts keywords.
         if (isRuby2Kwarg && acceptsKeywords) {
             // FIXME: Should this dup?
-            RubyHash hash = (RubyHash) last;
             hash.setKeywordArguments(false);
             hash.setKeywordRestArguments(false);
             hash.setRuby2KeywordHash(false);
@@ -738,45 +741,32 @@ public class IRRuntimeHelpers {
         } else if (ruby2keywords && isKwarg) {
             // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
             // So it can be used similarly to an ordinary hash passed in this way.
-            ((RubyHash) last).setKeywordArguments(false);
-            ((RubyHash) last).setKeywordRestArguments(false);
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
 
-            RubyHash hash = ((RubyHash) last).dupFast(context);
-
+            hash = hash.dupFast(context);
             hash.setRuby2KeywordHash(true);
 
             args[args.length - 1] = hash;
             return UNDEFINED;
         } else {
-            // We pass as undefined and not null since null gets auto-converted to nil.
-            if (!(last instanceof RubyHash)) return UNDEFINED;
-
-            RubyHash keywords = (RubyHash) last;
-
             // This is kwrest passed to a method which does not accept kwargs
-            if (!acceptsKeywords && keywords.isKeywordRestArguments()) {
-                keywords.setKeywordArguments(false);
-                keywords.setKeywordRestArguments(false);
+            if (!acceptsKeywords && hash.isKeywordRestArguments()) {
+                hash.setKeywordArguments(false);
+                hash.setKeywordRestArguments(false);
 
                 // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
                 // This complicates check_arity but empty ** is special case.
-                return keywords.isEmpty() ? keywords.dupFast(context) : UNDEFINED;
-            }
-
-            // literal kwargs passed to a method which does not accept kwargs
-            if (!acceptsKeywords && keywords.isKeywordArguments()) {
-                keywords.setKeywordArguments(false);
-                keywords.setKeywordRestArguments(false);
-                return UNDEFINED;
+                return hash.isEmpty() ? hash.dupFast(context) : UNDEFINED;
             }
 
             // This is just an ordinary hash as last argument
-            if (!keywords.isKeywordArguments()) return UNDEFINED;
+            if (!isKwarg) return UNDEFINED;
 
-            keywords.setKeywordArguments(false);
-            keywords.setKeywordRestArguments(false);
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
 
-            return keywords.dupFast(context);
+            return !acceptsKeywords ? UNDEFINED : hash.dupFast(context);
         }
     }
 
@@ -1265,10 +1255,10 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject receiveKeywordArg(ThreadContext context, Object keyword, RubySymbol key) {
         if (keyword == UNDEFINED) return UNDEFINED;
-        if (((RubyHash) keyword).fastARef(key) == null) return UNDEFINED;
 
-        // SSS FIXME: Can we use an internal delete here?
-        return ((RubyHash) keyword).delete(context, key, Block.NULL_BLOCK);
+        IRubyObject value = ((RubyHash) keyword).delete(key);
+
+        return value == null ? UNDEFINED : value;
     }
 
     public static IRubyObject markAsKwarg(ThreadContext context, IRubyObject arg) {

@@ -4,7 +4,6 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
-import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -21,24 +20,24 @@ import org.jruby.runtime.builtin.IRubyObject;
  * as individual keyword instructions execute.  After all individual instructions have
  * executed anything left is either kwrest or an arity error.
  */
-public class ReceiveKeywordInstr extends NoOperandResultBaseInstr implements ArgReceiver {
-    public ReceiveKeywordInstr(Variable result) {
+public class ReceiveKeywordsInstr extends NoOperandResultBaseInstr implements ArgReceiver {
+    public ReceiveKeywordsInstr(Variable result) {
         super(Operation.RECV_KW, result);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordInstr(ii.getRenamedVariable(result));
+        return new ReceiveKeywordsInstr(ii.getRenamedVariable(result));
     }
 
-    public static ReceiveKeywordInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordInstr(d.decodeVariable());
+    public static ReceiveKeywordsInstr decode(IRReaderDecoder d) {
+        return new ReceiveKeywordsInstr(d.decodeVariable());
     }
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywordArgument, boolean ruby2keywords) {
-        return IRRuntimeHelpers.receiveKeyword(context, args, acceptsKeywordArgument, ruby2keywords);
+                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keywords) {
+        return IRRuntimeHelpers.receiveKeyword(context, args, acceptsKeywords, ruby2keywords);
     }
 
     @Override

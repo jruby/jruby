@@ -2935,7 +2935,7 @@ public class IRBuilder {
      *
      */
     public void receiveArgs(final ArgsNode argsNode) {
-        Variable keywords = addResultInstr(new ReceiveKeywordInstr(temp()));
+        Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp()));
 
         // 1.9 pre, opt, rest, post args
         receiveNonBlockArgs(argsNode, keywords);
@@ -4892,7 +4892,7 @@ public class IRBuilder {
 
     private static void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
         // FIXME: this instr should not extend receiveargbase or we should change how this works
-        if (instr instanceof ReceiveKeywordInstr) {
+        if (instr instanceof ReceiveKeywordsInstr) {
             // Do nothing
         } else if (instr instanceof ReceiveKeywordRestArgInstr) {
             // Always add the keyword rest arg to the beginning

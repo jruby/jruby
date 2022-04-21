@@ -48,7 +48,7 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeyword()), getKey(), required);
+        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeywords()), getKey(), required);
     }
 
     @Override
@@ -64,10 +64,10 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywordArgument, boolean ruby2keyword) {
-        Object keyword = getKeyword().retrieve(context, self, currScope, currDynScope, temp);
+                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+        Object keywords = getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.receiveKeywordArg(context, keyword, getKey());
+        return IRRuntimeHelpers.receiveKeywordArg(context, keywords, getKey());
     }
 
     @Override

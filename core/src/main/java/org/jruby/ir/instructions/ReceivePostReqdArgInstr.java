@@ -50,7 +50,7 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
     @Override
     public Instr clone(CloneInfo info) {
         if (info instanceof SimpleCloneInfo) {
-            return new ReceivePostReqdArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeyword()), argIndex, preReqdArgsCount, optArgsCount, restArg, postReqdArgsCount);
+            return new ReceivePostReqdArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), argIndex, preReqdArgsCount, optArgsCount, restArg, postReqdArgsCount);
         }
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
@@ -86,11 +86,11 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
     }
 
     public IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                          Object[] temp, IRubyObject[] args, boolean acceptsKeywordArgument, boolean ruby2keyword) {
-        Object keywords = getKeyword().retrieve(context, self, currScope, currDynScope, temp);
+                                          Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+        Object keywords = getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.receivePostReqdArg(context, args, keywords, preReqdArgsCount, optArgsCount, restArg,
-                postReqdArgsCount, argIndex, acceptsKeywordArgument);
+                postReqdArgsCount, argIndex, acceptsKeywords);
     }
 
     @Override
