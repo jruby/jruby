@@ -720,7 +720,7 @@ public class IRRuntimeHelpers {
      *   - def foo(**kwargs) we eliminate ruby2_keywords hash with a dup'd value
      *   - def foo(*args) same
      */
-    private static void callSiteFunging(ThreadContext context, StaticScope staticScope, Object[] args,
+    private static void callSiteFunging(ThreadContext context, IRubyObject[] args,
                                         boolean acceptsKeywords, boolean ruby2keywords) {
         // Force reset so we do not leave stale value behind.
         boolean callSplats = context.callSplats;
@@ -729,7 +729,7 @@ public class IRRuntimeHelpers {
         if (ruby2keywords || !callSplats) return;
 
         if (args.length > 0 && !acceptsKeywords) {
-            IRubyObject last = (IRubyObject) args[args.length - 1];
+            IRubyObject last = args[args.length - 1];
 
             if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
                 RubyHash newHash = ((RubyHash) last).dupFast(context);
@@ -743,10 +743,10 @@ public class IRRuntimeHelpers {
 
     // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
     // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
-    public static IRubyObject receiveKeywords(ThreadContext context, StaticScope staticScope, Object[] args,
+    public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args,
                                               boolean acceptsKeywords, boolean ruby2keywords) {
 
-        callSiteFunging(context, staticScope, args, acceptsKeywords, ruby2keywords);
+        callSiteFunging(context, args, acceptsKeywords, ruby2keywords);
 
         if (args.length < 1) return UNDEFINED;
 
@@ -1199,7 +1199,7 @@ public class IRRuntimeHelpers {
         return RubyBoolean.newBoolean(context,  ((Block) blk).isGiven() );
     }
 
-    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, boolean acceptsKeywordArguments, Object keywords) {
+    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, IRubyObject keywords) {
         return constructRestArg(context, args, keywords, required, argIndex);
     }
 
@@ -1227,9 +1227,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, Object keywords,
-                                                 int pre, int opt, boolean rest, int post,
-                                                 int argIndex, boolean acceptsKeywordArgument) {
+    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, IRubyObject keywords,
+                                                 int pre, int opt, boolean rest, int post, int argIndex) {
         int required = pre + post;
         // FIXME: Once we extract kwargs from rest of args processing we can delete this extract and n calc.
         int n = keywords != UNDEFINED ? args.length - 1 : args.length;
@@ -1255,7 +1254,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject receiveOptArg(ThreadContext context, IRubyObject[] args, Object keywords, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
+    public static IRubyObject receiveOptArg(IRubyObject[] args, IRubyObject keywords, int requiredArgs, int preArgs, int argIndex) {
         int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
         int argsLength = keywords != UNDEFINED ? args.length - 1 : args.length;
 
@@ -1283,7 +1282,7 @@ public class IRRuntimeHelpers {
         return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
     }
 
-    public static IRubyObject receiveKeywordArg(ThreadContext context, Object keyword, RubySymbol key) {
+    public static IRubyObject receiveKeywordArg(IRubyObject keyword, RubySymbol key) {
         if (keyword == UNDEFINED) return UNDEFINED;
 
         IRubyObject value = ((RubyHash) keyword).delete(key);
@@ -1300,7 +1299,7 @@ public class IRRuntimeHelpers {
         return arg;
     }
 
-    public static IRubyObject receiveKeywordRestArg(ThreadContext context, Object keywords) {
+    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject keywords) {
         return keywords == UNDEFINED ? RubyHash.newSmallHash(context.runtime) : (RubyHash) keywords;
     }
 

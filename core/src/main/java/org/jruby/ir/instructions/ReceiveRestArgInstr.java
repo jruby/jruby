@@ -57,9 +57,9 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
                                   Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
-        Object keywords = getKeywords().retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject keywords = (IRubyObject) getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.receiveRestArg(context, args, required, argIndex, acceptsKeywords, keywords);
+        return IRRuntimeHelpers.receiveRestArg(context, args, required, argIndex, keywords);
     }
 
     @Override

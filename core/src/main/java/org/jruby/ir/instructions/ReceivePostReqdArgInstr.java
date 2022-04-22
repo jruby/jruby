@@ -87,10 +87,10 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
 
     public IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
                                           Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
-        Object keywords = getKeywords().retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject keywords = (IRubyObject) getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.receivePostReqdArg(context, args, keywords, preReqdArgsCount, optArgsCount, restArg,
-                postReqdArgsCount, argIndex, acceptsKeywords);
+                postReqdArgsCount, argIndex);
     }
 
     @Override
