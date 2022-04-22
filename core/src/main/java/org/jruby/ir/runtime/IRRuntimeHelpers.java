@@ -1092,7 +1092,10 @@ public class IRRuntimeHelpers {
         hash.setKeywordRestArguments(true);
         final RubyHash otherHash = explicitKwarg.convertToHash();
 
-        if (otherHash.empty_p(context).isTrue()) return hash;
+        // If all the kwargs are empty let's discard them
+        if (otherHash.empty_p(context).isTrue()) {
+            return hash.isEmpty() ? UNDEFINED : hash;
+        }
 
         otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
 
@@ -1980,6 +1983,11 @@ public class IRRuntimeHelpers {
         }
         else if (true /**RTEST(flag)**/) { // this logic is only used for bare splat, and MRI dups
             tmp = ((RubyArray)tmp).aryDup();
+
+            // We have concat'd an empty keyword rest.   This comes from MERGE_KEYWORDS noticing it is empty.
+            if (((RubyArray) tmp).last() == UNDEFINED) {
+                ((RubyArray) tmp).pop(context);
+            }
         }
         return (RubyArray)tmp;
     }
