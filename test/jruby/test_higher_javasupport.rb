@@ -1278,15 +1278,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert !defined?(OuterClass::PrivateInstanceInnerClass)
   end
 
-  # Test the new "import" syntax
-  def test_import
-
-    assert_nothing_raised {
-      import java.nio.ByteBuffer
-      ByteBuffer.allocate(10)
-    }
-  end
-
   def test_java_exception_handling
     list = ArrayList.new
     begin

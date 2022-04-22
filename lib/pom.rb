@@ -100,10 +100,8 @@ default_gems = [
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    # https://github.com/ruby/stringio/pull/21
-    # ['stringio', '3.0.1'],
-    # https://github.com/ruby/strscan/pull/25
-    # ['strscan', '3.0.1'],
+    ['stringio', '3.0.2.pre1'],
+    ['strscan', '3.0.2.pre1'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.1.0'],
     # https://github.com/ruby/tempfile/issues/7

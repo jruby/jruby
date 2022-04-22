@@ -31,17 +31,6 @@
 
 package org.jruby.runtime;
 
-import org.jruby.FlagRegistry;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyHash;
-import org.jruby.RubyMatchData;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.ext.stringio.StringIO;
-
-import java.util.Arrays;
-
 public final class Constants {
     public static final String PLATFORM = "java";
 

@@ -657,6 +657,32 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>stringio</artifactId>
+      <version>3.0.2.pre1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>strscan</artifactId>
+      <version>3.0.2.pre1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>time</artifactId>
       <version>0.1.0</version>
       <type>gem</type>
@@ -906,6 +932,8 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/securerandom-0.2.0*</include>
           <include>specifications/shellwords-0.1.0*</include>
           <include>specifications/singleton-0.1.1*</include>
+          <include>specifications/stringio-3.0.2.pre1*</include>
+          <include>specifications/strscan-3.0.2.pre1*</include>
           <include>specifications/time-0.1.0*</include>
           <include>specifications/tsort-0.1.0*</include>
           <include>specifications/un-0.2.0*</include>
@@ -968,6 +996,8 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/securerandom-0.2.0*/**/*</include>
           <include>gems/shellwords-0.1.0*/**/*</include>
           <include>gems/singleton-0.1.1*/**/*</include>
+          <include>gems/stringio-3.0.2.pre1*/**/*</include>
+          <include>gems/strscan-3.0.2.pre1*/**/*</include>
           <include>gems/time-0.1.0*/**/*</include>
           <include>gems/tsort-0.1.0*/**/*</include>
           <include>gems/un-0.2.0*/**/*</include>
@@ -1030,6 +1060,8 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/securerandom-0.2.0*</include>
           <include>cache/shellwords-0.1.0*</include>
           <include>cache/singleton-0.1.1*</include>
+          <include>cache/stringio-3.0.2.pre1*</include>
+          <include>cache/strscan-3.0.2.pre1*</include>
           <include>cache/time-0.1.0*</include>
           <include>cache/tsort-0.1.0*</include>
           <include>cache/un-0.2.0*</include>

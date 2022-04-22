@@ -2113,7 +2113,7 @@ public class Helpers {
         }
 
         if (receiver.isFrozen()) {
-            throw runtime.newFrozenError("object");
+            throw runtime.newFrozenError("object", receiver);
         }
 
         RubyClass rubyClass = receiver.getSingletonClass();

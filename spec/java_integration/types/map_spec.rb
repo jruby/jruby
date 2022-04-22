@@ -129,7 +129,6 @@ describe "a java.util.Map instance" do
 
     test_ok(h.clear.empty?)
 
-    # Java 8 adds a replace method to Map that takes a key and value
     h.ruby_replace({1=>100})
 
     test_equal({1=>100}, h)
@@ -159,12 +158,7 @@ describe "a java.util.Map instance" do
     h1.put("a", 100); h1.put("b", 200)
     h2 = java.util.LinkedHashMap.new
     h2.put("b", 254); h2.put("c", 300)
-    # Java 8 adds a merge method to Map used for merging multiple values for a given key in-place
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.merge(h2))
-    else
-      test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.ruby_merge(h2))
-    end
+    test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.ruby_merge(h2))
     test_equal({"a"=>100, "b"=>454, "c"=>300}, h1.ruby_merge(h2) { |k, o, n| o+n })
     expect( h1.inspect ).to include "{\"a\"=>100, \"b\"=>200}"
 
@@ -179,19 +173,13 @@ describe "a java.util.Map instance" do
     test_equal({1=>100, 2=>200}, h.reject! { |k, v| k > 2 })
     expect( h.inspect ).to include "{1=>100, 2=>200}"
 
-    # Java 8 adds a replace method to Map that takes a key and value
     test_equal({"c"=>300, "d"=>400, "e"=>500}, h.ruby_replace({"c"=>300, "d"=>400, "e"=>500}))
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
 
     test_equal({"d"=>400, "e"=>500}, h.select {|k,v| k > "c"})
     test_equal({"c"=>300}, h.select {|k,v| v < 400})
 
-    # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      h.replace({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
-    else
-      h.ruby_replace({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
-    end
+    h.ruby_replace({"a"=>20, "d"=>10, "c"=>30, "b"=>0})
     test_equal([["a", 20], ["b", 0], ["c", 30], ["d", 10]], h.sort)
     test_equal([["b", 0], ["d", 10], ["a", 20], ["c", 30]], h.sort { |a, b| a[1]<=>b[1] })
 
@@ -210,7 +198,6 @@ describe "a java.util.Map instance" do
     test_equal([true, false, false, false, false], h.collect { |k, v| k == "a" })
     test_equal([["a", 20], ["d", 10]], h.take(2))
 
-    # Java 8 adds a replace method to Map that takes a key and value
     h.ruby_replace({"a"=>100, "b"=>200})
 
     h2 = {"b"=>254, "c"=>300}
