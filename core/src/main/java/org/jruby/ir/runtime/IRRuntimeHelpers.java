@@ -714,10 +714,40 @@ public class IRRuntimeHelpers {
         }
     }
 
+    /*
+     * If the callsite splats the argument list then we might manipulate the incoming arguments.
+     * For `foo(*args) at the sight:
+     *   - def foo(**kwargs) we eliminate ruby2_keywords hash with a dup'd value
+     *   - def foo(*args) same
+     */
+    private static void callSiteFunging(ThreadContext context, StaticScope staticScope, Object[] args,
+                                        boolean acceptsKeywords, boolean ruby2keywords) {
+        // Force reset so we do not leave stale value behind.
+        boolean callSplats = context.callSplats;
+        if (callSplats) context.callSplats = false;
+
+        if (ruby2keywords || !callSplats) return;
+
+        if (args.length > 0 && !acceptsKeywords) {
+            IRubyObject last = (IRubyObject) args[args.length - 1];
+
+            if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
+                RubyHash newHash = ((RubyHash) last).dupFast(context);
+
+                newHash.setRuby2KeywordHash(false);
+
+                args[args.length - 1] = newHash;
+            }
+        }
+    }
+
     // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
     // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
-    public static IRubyObject receiveKeyword(ThreadContext context, Object[] args, boolean acceptsKeywords,
-                                             boolean ruby2keywords) {
+    public static IRubyObject receiveKeywords(ThreadContext context, StaticScope staticScope, Object[] args,
+                                              boolean acceptsKeywords, boolean ruby2keywords) {
+
+        callSiteFunging(context, staticScope, args, acceptsKeywords, ruby2keywords);
+
         if (args.length < 1) return UNDEFINED;
 
         IRubyObject last = (IRubyObject) args[args.length - 1];
@@ -736,7 +766,10 @@ public class IRRuntimeHelpers {
             // FIXME: Should this dup?
             hash.setKeywordArguments(false);
             hash.setKeywordRestArguments(false);
+
+            hash = hash.dupFast(context);
             hash.setRuby2KeywordHash(false);
+
             return hash;
         } else if (ruby2keywords && isKwarg) {
             // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
@@ -1163,11 +1196,6 @@ public class IRRuntimeHelpers {
         return RubyBoolean.newBoolean(context,  ((Block) blk).isGiven() );
     }
 
-    public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArguments);
-        return constructRestArg(context, args, keywordArguments, required, argIndex);
-    }
-
     public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, boolean acceptsKeywordArguments, Object keywords) {
         return constructRestArg(context, args, keywords, required, argIndex);
     }
@@ -1183,8 +1211,7 @@ public class IRRuntimeHelpers {
 
     private static IRubyObject constructRestArg(ThreadContext context, IRubyObject[] args, Object keywords,
                                                 int required, int argIndex) {
-        int argsLength = args.length;
-        if (keywords != UNDEFINED) argsLength = args.length - 1;
+        int argsLength = args.length + (keywords != UNDEFINED ? -1 : 0);
 
         if (required == 0 && argsLength == args.length ) {
             return RubyArray.newArray(context.runtime, args);
@@ -1972,6 +1999,8 @@ public class IRRuntimeHelpers {
         } else if (dupArray) {
             tmp = ((RubyArray) tmp).aryDup();
         }
+
+        context.callSplats = true;
 
         return (RubyArray) tmp;
     }

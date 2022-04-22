@@ -37,7 +37,7 @@ public class ReceiveKeywordsInstr extends NoOperandResultBaseInstr implements Ar
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
                                   Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keywords) {
-        return IRRuntimeHelpers.receiveKeyword(context, args, acceptsKeywords, ruby2keywords);
+        return IRRuntimeHelpers.receiveKeywords(context, currScope, args, acceptsKeywords, ruby2keywords);
     }
 
     @Override
