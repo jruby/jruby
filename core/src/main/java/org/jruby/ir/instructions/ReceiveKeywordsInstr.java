@@ -42,6 +42,6 @@ public class ReceiveKeywordsInstr extends NoOperandResultBaseInstr implements Ar
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.ReceiveKeywordInstr(this);
+        visitor.ReceiveKeywordsInstr(this);
     }
 }

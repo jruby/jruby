@@ -163,7 +163,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
                         (IRubyObject) operands[3].retrieve(context, self, currScope, currDynScope, temp));
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,
-                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp), acceptsKwargs);
+                        (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));
             case ARRAY_LENGTH:
                 return IRRuntimeHelpers.arrayLength((RubyArray) arg1);
         }

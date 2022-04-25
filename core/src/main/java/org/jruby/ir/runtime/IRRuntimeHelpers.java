@@ -743,6 +743,7 @@ public class IRRuntimeHelpers {
 
     // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
     // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
+    @JIT @Interp
     public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args,
                                               boolean acceptsKeywords, boolean ruby2keywords) {
 
@@ -1084,7 +1085,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg, boolean _acceptsKwargs) {
+    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
 
         hash.modify();
@@ -1199,21 +1200,8 @@ public class IRRuntimeHelpers {
         return RubyBoolean.newBoolean(context,  ((Block) blk).isGiven() );
     }
 
-    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, IRubyObject keywords) {
-        return constructRestArg(context, args, keywords, required, argIndex);
-    }
-
-    public static IRubyObject constructRestArg(ThreadContext context, Object[] args, RubyHash keywordArguments, int required, int argIndex) {
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
-        int remainingArguments = argsLength - required;
-
-        if (remainingArguments <= 0) return context.runtime.newEmptyArray();
-
-        return RubyArray.newArrayMayCopy(context.runtime, (IRubyObject[]) args, argIndex, remainingArguments);
-    }
-
-    private static IRubyObject constructRestArg(ThreadContext context, IRubyObject[] args, Object keywords,
-                                                int required, int argIndex) {
+    @JIT @Interp
+    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, IRubyObject keywords, int required, int argIndex) {
         int argsLength = args.length + (keywords != UNDEFINED ? -1 : 0);
 
         if (required == 0 && argsLength == args.length ) {
@@ -1253,8 +1241,9 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
-    public static IRubyObject receiveOptArg(IRubyObject[] args, IRubyObject keywords, int requiredArgs, int preArgs, int argIndex) {
+    @JIT @Interp
+    public static IRubyObject receiveOptArg(IRubyObject[] args, IRubyObject keywords, int requiredArgs,
+                                            int preArgs, int argIndex) {
         int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
         int argsLength = keywords != UNDEFINED ? args.length - 1 : args.length;
 
@@ -1269,23 +1258,18 @@ public class IRRuntimeHelpers {
         return result;
     }
 
-    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String id, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArgument);
+    @JIT
+    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject keywords, String id) {
+        RubySymbol key = context.runtime.newSymbol(id);
 
-        if (keywordArguments == null) return UNDEFINED;
-
-        RubySymbol keywordName = context.runtime.newSymbol(id);
-
-        if (keywordArguments.fastARef(keywordName) == null) return UNDEFINED;
-
-        // SSS FIXME: Can we use an internal delete here?
-        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
+        return receiveKeywordArg(keywords, key);
     }
 
-    public static IRubyObject receiveKeywordArg(IRubyObject keyword, RubySymbol key) {
-        if (keyword == UNDEFINED) return UNDEFINED;
+    @Interp
+    public static IRubyObject receiveKeywordArg(IRubyObject keywords, RubySymbol key) {
+        if (keywords == UNDEFINED) return UNDEFINED;
 
-        IRubyObject value = ((RubyHash) keyword).delete(key);
+        IRubyObject value = ((RubyHash) keywords).delete(key);
 
         return value == null ? UNDEFINED : value;
     }
@@ -1299,6 +1283,7 @@ public class IRRuntimeHelpers {
         return arg;
     }
 
+    @JIT @Interp
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject keywords) {
         return keywords == UNDEFINED ? RubyHash.newSmallHash(context.runtime) : (RubyHash) keywords;
     }
