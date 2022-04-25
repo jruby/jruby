@@ -1241,7 +1241,7 @@ public class JVMVisitor extends IRVisitor {
         if (jvm.methodData().specificArity >= 0) {
             // no arity check in specific arity path
         } else {
-            checkArity(checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.receivesKeywords, checkarityinstr.restKey);
+            checkArity(checkarityinstr.getKeywords(), checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.receivesKeywords, checkarityinstr.restKey);
         }
     }
 
@@ -1249,10 +1249,24 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmMethod().loadArgs();
+        jvmMethod().invokeIRHelper("undefined", sig(IRubyObject.class));
         jvmMethod().loadSelfBlock();
         jvmAdapter().invokedynamic(
                 "checkArity",
-                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class),
+                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
+                Bootstrap.CHECK_ARITY,
+                required, opt, rest ? 1 : 0, receivesKeywords ? 1 : 0, restKey);
+    }
+
+    private void checkArity(Operand keywords, int required, int opt, boolean rest, boolean receivesKeywords, int restKey) {
+        jvmMethod().loadContext();
+        jvmMethod().loadStaticScope();
+        jvmMethod().loadArgs();
+        visit(keywords);
+        jvmMethod().loadSelfBlock();
+        jvmAdapter().invokedynamic(
+                "checkArity",
+                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
                 Bootstrap.CHECK_ARITY,
                 required, opt, rest ? 1 : 0, receivesKeywords ? 1 : 0, restKey);
     }
