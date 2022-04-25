@@ -12,3 +12,4 @@ fails:Keyword arguments delegation works with zsuper
 fails:Keyword arguments delegation works with yield(*ruby2_keyword_args)
 fails:Keyword arguments delegation does not work with (*args)
 fails:Keyword arguments delegation works with call(*ruby2_keyword_args) with missing ruby2_keywords in between due to CRuby bug #18625
+fails:Keyword arguments handle * and ** at the same call site
