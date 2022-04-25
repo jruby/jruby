@@ -22,14 +22,18 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
     public final boolean receivesKeywords;
     public final int restKey;
 
-    public CheckArityInstr(int required, int opt, boolean rest, boolean receivesKeywords, int restKey, Variable keyword) {
-        super(Operation.CHECK_ARITY, keyword);
+    public CheckArityInstr(int required, int opt, boolean rest, boolean receivesKeywords, int restKey, Variable keywords) {
+        super(Operation.CHECK_ARITY, keywords);
 
         this.required = required;
         this.opt = opt;
         this.rest = rest;
         this.receivesKeywords = receivesKeywords;
         this.restKey = restKey;
+    }
+
+    public Variable getKeywords() {
+        return (Variable) getOperand1();
     }
 
     @Override
