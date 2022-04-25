@@ -4891,10 +4891,7 @@ public class IRBuilder {
 
 
     private static void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
-        // FIXME: this instr should not extend receiveargbase or we should change how this works
-        if (instr instanceof ReceiveKeywordsInstr) {
-            // Do nothing
-        } else if (instr instanceof ReceiveKeywordRestArgInstr) {
+        if (instr instanceof ReceiveKeywordRestArgInstr) {
             // Always add the keyword rest arg to the beginning
             keywordArgs.add(0, new KeyValuePair<>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
         } else if (instr instanceof ReceiveKeywordArgInstr) {
