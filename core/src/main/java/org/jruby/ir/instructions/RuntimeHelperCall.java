@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyArray;
-import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
