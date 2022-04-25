@@ -741,6 +741,10 @@ public class IRRuntimeHelpers {
         }
     }
 
+    public static IRubyObject undefined() {
+        return UNDEFINED;
+    }
+
     // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
     // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
     @JIT @Interp

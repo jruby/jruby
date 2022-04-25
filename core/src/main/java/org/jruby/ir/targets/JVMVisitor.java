@@ -2004,11 +2004,15 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveKeywordsInstr(ReceiveKeywordsInstr instr) {
-        jvmMethod().loadContext();
-        jvmMethod().loadArgs();
-        jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-        jvmAdapter().ldc(jvm.methodData().scope.isRuby2Keywords());
-        jvmMethod().invokeIRHelper("receiveKeywords", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, boolean.class, boolean.class));
+        if (jvm.methodData().specificArity >= 0) {
+            jvmMethod().invokeIRHelper("undefined", sig(IRubyObject.class));
+        } else {
+            jvmMethod().loadContext();
+            jvmMethod().loadArgs();
+            jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
+            jvmAdapter().ldc(jvm.methodData().scope.isRuby2Keywords());
+            jvmMethod().invokeIRHelper("receiveKeywords", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, boolean.class, boolean.class));
+        }
         jvmStoreLocal(instr.getResult());
     }
 
