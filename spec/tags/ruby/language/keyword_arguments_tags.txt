@@ -1,0 +1,2 @@
+fails:Keyword arguments delegation works with call(*ruby2_keyword_args) with missing ruby2_keywords in between due to CRuby bug #18625
+
