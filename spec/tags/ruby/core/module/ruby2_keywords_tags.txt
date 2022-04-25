@@ -1,2 +1,4 @@
 fails:Module#ruby2_keywords makes a copy of the hash and only marks the copy as keyword hash
 fails:Module#ruby2_keywords makes a copy and unmark at the call site when calling with marked *args
+fails:Module#ruby2_keywords makes a copy and unmark the Hash when calling a method taking (arg)
+fails:Module#ruby2_keywords does NOT copy the Hash when calling a method taking (*args)
