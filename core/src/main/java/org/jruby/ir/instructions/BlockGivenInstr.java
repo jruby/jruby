@@ -33,12 +33,6 @@ public class BlockGivenInstr extends OneOperandResultBaseInstr implements FixedA
         return new BlockGivenInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii));
     }
 
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getBlockArg());
-    }
-
     public static BlockGivenInstr decode(IRReaderDecoder d) {
         return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
     }

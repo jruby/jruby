@@ -29,7 +29,7 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
     // Constant caching
     private final ConstantLookupSite site;
 
-    public SearchConstInstr(Variable result, RubySymbol constantName, Operand startingScope, boolean noPrivateConsts) {
+    public SearchConstInstr(Variable result,  Operand startingScope, RubySymbol constantName, boolean noPrivateConsts) {
         super(Operation.SEARCH_CONST, result, startingScope);
 
         assert result != null: "SearchConstInstr result is null";
@@ -58,19 +58,18 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new SearchConstInstr(ii.getRenamedVariable(result), constantName, getStartingScope().cloneForInlining(ii), noPrivateConsts);
+        return new SearchConstInstr(ii.getRenamedVariable(result), getStartingScope().cloneForInlining(ii), constantName, noPrivateConsts);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getName());
-        e.encode(getStartingScope());
         e.encode(isNoPrivateConsts());
     }
 
     public static SearchConstInstr decode(IRReaderDecoder d) {
-        return new SearchConstInstr(d.decodeVariable(), d.decodeSymbol(), d.decodeOperand(), d.decodeBoolean());
+        return new SearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol(), d.decodeBoolean());
     }
 
     @Override

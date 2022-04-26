@@ -19,7 +19,7 @@ import java.util.EnumSet;
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
 
     public ReceiveKeywordRestArgInstr(Variable result, Variable keywords) {
-        super(Operation.RECV_KW_REST_ARG, result, keywords, -1);
+        super(Operation.RECV_KW_REST_ARG, result, keywords);
     }
 
     @Override
@@ -31,11 +31,6 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     @Override
     public Instr clone(CloneInfo ii) {
         return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeywords()));
-    }
-
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
     }
 
     public static ReceiveKeywordRestArgInstr decode(IRReaderDecoder d) {

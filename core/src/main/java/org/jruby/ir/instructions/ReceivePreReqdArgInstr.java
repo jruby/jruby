@@ -12,7 +12,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 /*
  * Assign Argument passed into scope/method to a result variable
  */
-public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArityInstr {
+public class ReceivePreReqdArgInstr extends ReceiveIndexedArgBase implements FixedArityInstr {
     public ReceivePreReqdArgInstr(Variable result, Variable keywords, int argIndex) {
         super(Operation.RECV_PRE_REQD_ARG, result, keywords, argIndex);
     }
@@ -25,13 +25,7 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArity
 
         if (ii.canMapArgsStatically()) return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex));
 
-        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), -1, -1, argIndex);
-    }
-
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getArgIndex());
+        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, -1, -1);
     }
 
     public static ReceivePreReqdArgInstr decode(IRReaderDecoder d) {

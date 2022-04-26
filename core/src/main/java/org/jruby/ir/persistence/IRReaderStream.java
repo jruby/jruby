@@ -333,6 +333,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case REIFY_CLOSURE: return ReifyClosureInstr.decode(this);
             case RECV_RUBY_EXC: return ReceiveRubyExceptionInstr.decode(this);
             case RECV_JRUBY_EXC: return ReceiveJRubyExceptionInstr.decode(this);
+            case RECV_KW: return ReceiveKeywordsInstr.decode(this);
             case RECV_KW_ARG: return ReceiveKeywordArgInstr.decode(this);
             case RECV_KW_REST_ARG: return ReceiveKeywordRestArgInstr.decode(this);
             case RECV_OPT_ARG: return ReceiveOptArgInstr.decode(this);

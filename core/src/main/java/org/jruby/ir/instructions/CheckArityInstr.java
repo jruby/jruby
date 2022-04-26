@@ -67,7 +67,7 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
         e.encode(rest);
         e.encode(receivesKeywords);
         e.encode(restKey);
-        e.encode(getOperand1());
+        e.encode(getKeywords());
     }
 
     public static CheckArityInstr decode(IRReaderDecoder d) {

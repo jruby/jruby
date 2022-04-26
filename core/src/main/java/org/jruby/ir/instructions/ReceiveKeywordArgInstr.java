@@ -22,7 +22,7 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     public final int required;
 
     public ReceiveKeywordArgInstr(Variable result, Variable keyword, RubySymbol key, int required) {
-        super(Operation.RECV_KW_ARG, result, keyword, -1);
+        super(Operation.RECV_KW_ARG, result, keyword);
         this.key = key;
         this.required = required;
     }

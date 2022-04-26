@@ -59,7 +59,6 @@ public class DefineMetaClassInstr extends OneOperandResultBaseInstr implements F
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getObject());
         e.encode(getMetaClassBody());
     }
 

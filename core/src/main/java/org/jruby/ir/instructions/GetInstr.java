@@ -33,7 +33,6 @@ public abstract class GetInstr extends OneOperandResultBaseInstr implements Fixe
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getSource());
         e.encode(getName());
     }
 

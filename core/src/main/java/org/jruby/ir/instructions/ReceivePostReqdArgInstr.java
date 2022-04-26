@@ -21,7 +21,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * based on how many arguments have already been accounted for by parameters
  * present earlier in the list.
  */
-public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArityInstr {
+public class ReceivePostReqdArgInstr extends ReceiveIndexedArgBase implements FixedArityInstr {
     /** The method/block parameter list has these many required parameters before opt+rest args*/
     public final int preReqdArgsCount;
 
@@ -68,13 +68,12 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
             return new CopyInstr(ii.getRenamedVariable(result), argVal);
         }
 
-        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preReqdArgsCount, postReqdArgsCount, argIndex);
+        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, preReqdArgsCount, postReqdArgsCount);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getArgIndex());
         e.encode(preReqdArgsCount);
         e.encode(optArgsCount);
         e.encode(restArg);

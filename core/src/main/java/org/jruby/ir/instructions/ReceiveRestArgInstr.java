@@ -17,11 +17,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * Assign rest arg passed into method to a result variable
  */
-public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
+public class ReceiveRestArgInstr extends ReceiveIndexedArgBase implements FixedArityInstr {
     /** Number of arguments already accounted for */
     public final int required;
 
-    public ReceiveRestArgInstr(Variable result, int required, int argIndex, Variable keywords) {
+    public ReceiveRestArgInstr(Variable result, Variable keywords, int required, int argIndex) {
         super(Operation.RECV_REST_ARG, result, keywords, argIndex);
         this.required = required;
     }
@@ -33,25 +33,24 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReceiveRestArgInstr(info.getRenamedVariable(result), required, argIndex, info.getRenamedVariable(getKeywords()));
+        if (info instanceof SimpleCloneInfo) return new ReceiveRestArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), required, argIndex);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
         // FIXME: Check this
         if (ii.canMapArgsStatically()) return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex, true));
 
-        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, (required - argIndex), argIndex);
+        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, argIndex, required - argIndex);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(required);
-        e.encode(getArgIndex());
     }
 
     public static ReceiveRestArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveRestArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeVariable());
+        return new ReceiveRestArgInstr(d.decodeVariable(), d.decodeVariable(), d.decodeInt(), d.decodeInt());
     }
 
     @Override

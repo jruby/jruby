@@ -168,7 +168,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     for (Iterator<LocalVariable> iter = reqdLoads.iterator(); iter.hasNext();) {
                         LocalVariable v = iter.next();
                         if (clfic.definesLocalVariable(v)) {
-                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
+                            it.add(new LoadLocalVarInstr(getLocalVarReplacement(v, fic, varRenameMap), v, scope));
                             it.previous();
                             iter.remove();
                         }
@@ -180,7 +180,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 if (scopeBindingHasEscaped) {
                     it.next();
                     for (LocalVariable v: reqdLoads) {
-                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
+                        it.add(new LoadLocalVarInstr(getLocalVarReplacement(v, fic, varRenameMap), v, scope));
                         it.previous();
                     }
                     it.previous();
@@ -193,7 +193,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     for (Iterator<LocalVariable> iter = reqdLoads.iterator(); iter.hasNext();) {
                         LocalVariable v = iter.next();
                         if (!fic.definesLocalVariable(v)) {
-                            it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
+                            it.add(new LoadLocalVarInstr(getLocalVarReplacement(v, fic, varRenameMap), v, scope));
                             it.previous();
                             iter.remove();
                         }
@@ -209,7 +209,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 // 2. Threads can update bindings, so we treat thread poll boundaries the same way.
                 it.next();
                 for (LocalVariable v : reqdLoads) {
-                    it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
+                    it.add(new LoadLocalVarInstr(getLocalVarReplacement(v, fic, varRenameMap), v, scope));
                     it.previous();
                 }
                 it.previous();
@@ -244,7 +244,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
         // Add loads on entry of a rescue block.
         if (basicBlock.isRescueEntry()) {
             for (LocalVariable v : reqdLoads) {
-                it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
+                it.add(new LoadLocalVarInstr(getLocalVarReplacement(v, fic, varRenameMap), v, scope));
             }
         }
 
@@ -255,7 +255,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             for (LocalVariable v : reqdLoads) {
                 if (fic.usesLocalVariable(v) || fic.definesLocalVariable(v)) {
                     if (isEvalScript || !(v instanceof ClosureLocalVariable) || ((ClosureLocalVariable)v).isOuterScopeVar()) {
-                        it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, fic, varRenameMap), v));
+                        it.add(new LoadLocalVarInstr(getLocalVarReplacement(v, fic, varRenameMap), v, scope));
                     }
                 }
             }

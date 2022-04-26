@@ -812,7 +812,7 @@ public class IRBuilder {
             // For example, for-nodes
             // FIXME: We can have keywords here but this is more complicated to get here
             Variable keywords = copy(UndefinedValue.UNDEFINED);
-            addInstr(isSplat ? new ReceiveRestArgInstr(v, argIndex, argIndex, keywords) : new ReceivePreReqdArgInstr(v, keywords, argIndex));
+            addInstr(isSplat ? new ReceiveRestArgInstr(v, keywords, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, keywords, argIndex));
         }
     }
 
@@ -2153,7 +2153,7 @@ public class IRBuilder {
     }
 
     private Operand searchConst(RubySymbol name) {
-        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, CurrentScope.INSTANCE, false));
+        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), CurrentScope.INSTANCE, name, false));
     }
 
     public Operand buildColon2(final Colon2Node colon2) {
@@ -2842,7 +2842,7 @@ public class IRBuilder {
                 Variable argVar = argumentResult(argName);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(argVar, keywords, signature.required(), signature.pre(), j));
+                addInstr(new ReceiveOptArgInstr(argVar, keywords, j, signature.required(), signature.pre()));
                 addInstr(BNEInstr.create(variableAssigned, argVar, UndefinedValue.UNDEFINED));
                 // We add this extra nil copy because we do not know if we have a circular defininition of
                 // argVar: proc { |a=a| } or proc { |a = foo(bar(a))| }.
@@ -2871,7 +2871,7 @@ public class IRBuilder {
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
-            addInstr(new ReceiveRestArgInstr(argumentResult(argName), signature.required() + opt, argIndex, keywords));
+            addInstr(new ReceiveRestArgInstr(argumentResult(argName), keywords, signature.required() + opt, argIndex));
         }
 
         // Post(-opt and rest) required args
@@ -3004,23 +3004,23 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 v = getArgVariable(dynamicAsgn.getName(), dynamicAsgn.getDepth());
-                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
+                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
+                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
                 break;
             }
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 v = getArgVariable(localVariable.getName(), localVariable.getDepth());
-                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
+                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
+                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
                 break;
             }
             case MULTIPLEASGNNODE: {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 if (!isMasgnRoot) {
                     v = createTemporaryVariable();
-                    if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                    else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
+                    if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
+                    else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
                     Variable tmp = createTemporaryVariable();
                     addInstr(new ToAryInstr(tmp, v));
                     argsArray = tmp;
@@ -3065,7 +3065,7 @@ public class IRBuilder {
                 buildArgsMasgn(restNode, argsArray, false, i, postArgsCount, 0, true); // rest of the argument array!
             } else {
                 Variable rhsVal = createTemporaryVariable();
-                addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, 0));
+                addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, 0, i, postArgsCount));
                 assigns.add(new Tuple<>(restNode, rhsVal)); // rest of the argument array!
             }
         }
@@ -3079,7 +3079,7 @@ public class IRBuilder {
                     buildArgsMasgn(an, argsArray, false, i, postArgsCount, j, false);
                 } else {
                     Variable rhsVal = createTemporaryVariable();
-                    addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, j));  // Fetch from the end
+                    addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, j, i, postArgsCount));  // Fetch from the end
                     assigns.add(new Tuple<>(an, rhsVal));
                 }
                 j++;
@@ -3829,7 +3829,7 @@ public class IRBuilder {
         //System.out.println("MODULE IS " +  (executesOnce ? "" : "NOT") + " SINGLE USE:"  + moduleName +  ", " +  scope.getFile() + ":" + moduleNode.getEndLine());
 
         IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope(), executesOnce);
-        Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
+        Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), container, body));
 
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
         return bodyResult;

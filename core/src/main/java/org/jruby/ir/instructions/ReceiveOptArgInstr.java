@@ -15,14 +15,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInstr {
+public class ReceiveOptArgInstr extends ReceiveIndexedArgBase implements FixedArityInstr {
     /** opt args follow pre args **/
     public final int preArgs;
 
     /** total number of required args (pre + post) **/
     public final int requiredArgs;
 
-    public ReceiveOptArgInstr(Variable result, Variable keywords, int requiredArgs, int preArgs, int optArgIndex) {
+    public ReceiveOptArgInstr(Variable result, Variable keywords, int optArgIndex, int requiredArgs, int preArgs) {
         super(Operation.RECV_OPT_ARG, result, keywords, optArgIndex);
         this.preArgs = preArgs;
         this.requiredArgs = requiredArgs;
@@ -44,7 +44,7 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     @Override
     public Instr clone(CloneInfo info) {
         int optArgIndex = this.argIndex;
-        if (info instanceof SimpleCloneInfo) return new ReceiveOptArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), requiredArgs, preArgs, optArgIndex);
+        if (info instanceof SimpleCloneInfo) return new ReceiveOptArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), optArgIndex, requiredArgs, preArgs);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
@@ -66,7 +66,6 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
         super.encode(e);
         e.encode(requiredArgs);
         e.encode(getPreArgs());
-        e.encode(getArgIndex());
     }
 
     public static ReceiveOptArgInstr decode(IRReaderDecoder d) {
