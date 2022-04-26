@@ -2022,7 +2022,7 @@ public class RubyModule extends RubyObject {
         CacheEntry entry = searchForAliasMethod(runtime, oldName);
 
         DynamicMethod method = getMethods().get(name);
-        if (method != null) {
+        if (method != null && entry.method.getRealMethod() != method.getRealMethod()) {
             // warn if overwriting an existing method on this module
             runtime.getWarnings().warning("method redefined; discarding old " + name);
 
