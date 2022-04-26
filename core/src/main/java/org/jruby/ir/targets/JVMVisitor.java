@@ -2034,7 +2034,7 @@ public class JVMVisitor extends IRVisitor {
     public void ReceiveKeywordArgInstr(ReceiveKeywordArgInstr instr) {
         jvmMethod().loadContext();
         visit(instr.getKeywords());
-        jvmAdapter().ldc(instr.getKey());
+        jvmAdapter().ldc(instr.getId());
         jvmMethod().invokeIRHelper("receiveKeywordArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
         jvmStoreLocal(instr.getResult());
     }
