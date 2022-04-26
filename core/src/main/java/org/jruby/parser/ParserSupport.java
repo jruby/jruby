@@ -1464,7 +1464,7 @@ public class ParserSupport {
                     return argsNode;
                 }
                 int slot = getCurrentScope().addVariableThisScope(FWD_REST.toString());
-                rest = new UnnamedRestArgNode(line, null, slot);
+                rest = new UnnamedRestArgNode(line, symbolID(FWD_REST), slot);
             }
 
             argsNode = new ArgsNode(line, pre, optional, rest, post,
@@ -1974,13 +1974,13 @@ public class ParserSupport {
 
     public Node new_args_forward_call(int line, Node leadingArgs) {
         RubySymbol splatName = symbolID(FWD_REST);
-        int splatLoc = getCurrentScope().exists(splatName.idString());
+        int splatLoc = getCurrentScope().isDefined(splatName.idString());
         Node splatNode = new SplatNode(line, new LocalVarNode(line, splatLoc, splatName));
         RubySymbol kwRestName = symbolID(FWD_KWREST);
-        int kwRestLoc = getCurrentScope().exists(kwRestName.idString());
+        int kwRestLoc = getCurrentScope().isDefined(kwRestName.idString());
         Node restNode = new LocalVarNode(line, kwRestLoc, kwRestName);
         RubySymbol blockName = symbolID(FWD_BLOCK);
-        int blockLoc = getCurrentScope().exists(blockName.idString());
+        int blockLoc = getCurrentScope().isDefined(blockName.idString());
         BlockPassNode block = new BlockPassNode(line, new LocalVarNode(line, blockLoc, blockName));
         Node args = leadingArgs != null ? rest_arg_append(leadingArgs, splatNode) : splatNode;
         args = arg_append(args, new HashNode(line, new KeyValuePair<>(null, restNode)));
