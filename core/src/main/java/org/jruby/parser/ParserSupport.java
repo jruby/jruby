@@ -1301,9 +1301,7 @@ public class ParserSupport {
     }
 
     public DStrNode createDStrNode(int line) {
-        DStrNode dstr = new DStrNode(line, lexer.getEncoding());
-        if (getConfiguration().isFrozenStringLiteral()) dstr.setFrozen(true);
-        return dstr;
+        return new DStrNode(line, lexer.getEncoding());
     }
 
     public KeyValuePair<Node, Node> createKeyValue(Node key, Node value) {
