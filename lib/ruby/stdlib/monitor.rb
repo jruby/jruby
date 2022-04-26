@@ -226,7 +226,7 @@ module MonitorMixin
   # of this constructor.  Have look at the examples above to understand how to
   # use this module.
   def initialize(...)
-    super
+    super(...)
     mon_initialize
   end
 
