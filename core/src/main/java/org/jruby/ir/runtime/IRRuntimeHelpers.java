@@ -91,6 +91,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import static org.jruby.RubyClass.CS_NAMES.length;
+import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -456,7 +458,7 @@ public class IRRuntimeHelpers {
 
     // partially: vm_insnhelper.c - vm_check_match + check_match
     public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite callSite, boolean splattedValue) {
-        boolean isUndefValue = value == UndefinedValue.UNDEFINED;
+        boolean isUndefValue = value == UNDEFINED;
 
         if (splattedValue && receiver instanceof RubyArray) {       // multiple value when
             RubyArray testVals = (RubyArray) receiver;
@@ -584,26 +586,16 @@ public class IRRuntimeHelpers {
         return last instanceof RubyHash && ((RubyHash) last).isKeywordArguments() ? (RubyHash) last : null;
     }
 
-    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, int required, int opt, boolean rest,
+    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords, int required, int opt, boolean rest,
                                   boolean receivesKwargs, int restKey, Block block) {
-        RubyHash keywordArgs = kwargsArg(args, receivesKwargs);
-        int argsLength = args.length - (keywordArgs != null ? 1: 0);
-
-        // we have more arguments than we need and one valid reason for this is when we are passing along
-        // a keyword rest argument.  Note above that we already know we are not in a method which uses keywords.
-        if (!rest && argsLength > (required + opt)) {
-            IRubyObject lastArg = (IRubyObject) args[argsLength - 1];
-            if (lastArg instanceof RubyHash && ((RubyHash) lastArg).isKeywordRestArguments()) {
-                ((RubyHash) lastArg).setKeywordRestArguments(false);
-                argsLength -= 1;
-            }
-        }
+        int argsLength = args.length - (keywords != UNDEFINED ? 1: 0);
 
         if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
+            //System.out.println("C: " + context.getFile() + ":" + context.getLine());
             Arity.raiseArgumentError(context.runtime, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
         }
 
-        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, scope, keywordArgs);
+        if (restKey == -1 && keywords != UNDEFINED) checkForExtraUnwantedKeywordArgs(context, scope, (RubyHash) keywords);
     }
 
     /**
@@ -632,7 +624,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
         // FIXME: JIT on block circular args test in spec:compiler is passing in a null value for args.  It does not do this for methods so a bandaid for now.
-        if (args == null) return args;
+        if (args == null) return null;
 
         int length = args.length;
 
@@ -719,6 +711,100 @@ public class IRRuntimeHelpers {
 
             // FIXME: Should this to_hash if not a hash?
             if (last instanceof RubyHash) ((RubyHash) last).setRuby2KeywordHash(true);
+        }
+    }
+
+    /*
+     * If the callsite splats the argument list then we might manipulate the incoming arguments.
+     * For `foo(*args) at the sight:
+     *   - def foo(**kwargs) we eliminate ruby2_keywords hash with a dup'd value
+     *   - def foo(*args) same
+     */
+    private static void callSiteFunging(ThreadContext context, IRubyObject[] args,
+                                        boolean acceptsKeywords, boolean ruby2keywords) {
+        // Force reset so we do not leave stale value behind.
+        boolean callSplats = context.callSplats;
+        if (callSplats) context.callSplats = false;
+
+        if (ruby2keywords || !callSplats) return;
+
+        if (args.length > 0 && !acceptsKeywords) {
+            IRubyObject last = args[args.length - 1];
+
+            if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
+                RubyHash newHash = ((RubyHash) last).dupFast(context);
+
+                newHash.setRuby2KeywordHash(false);
+
+                args[args.length - 1] = newHash;
+            }
+        }
+    }
+
+    public static IRubyObject undefined() {
+        return UNDEFINED;
+    }
+
+    // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
+    // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
+    @JIT @Interp
+    public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args,
+                                              boolean acceptsKeywords, boolean ruby2keywords) {
+
+        callSiteFunging(context, args, acceptsKeywords, ruby2keywords);
+
+        if (args.length < 1) return UNDEFINED;
+
+        IRubyObject last = (IRubyObject) args[args.length - 1];
+
+        if (!(last instanceof RubyHash)) return UNDEFINED;
+
+        RubyHash hash = (RubyHash) last;
+
+        boolean isRuby2Kwarg = hash.isRuby2KeywordHash();
+        boolean isKwarg = hash.isKeywordArguments();
+
+        // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
+        // This means methods which don't just keep that marked hash around in case it is passed
+        // onto another method which accepts keywords.
+        if (isRuby2Kwarg && acceptsKeywords) {
+            // FIXME: Should this dup?
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
+
+            hash = hash.dupFast(context);
+            hash.setRuby2KeywordHash(false);
+
+            return hash;
+        } else if (ruby2keywords && isKwarg) {
+            // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
+            // So it can be used similarly to an ordinary hash passed in this way.
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
+
+            hash = hash.dupFast(context);
+            hash.setRuby2KeywordHash(true);
+
+            args[args.length - 1] = hash;
+            return UNDEFINED;
+        } else {
+            // This is kwrest passed to a method which does not accept kwargs
+            if (!acceptsKeywords && hash.isKeywordRestArguments()) {
+                hash.setKeywordArguments(false);
+                hash.setKeywordRestArguments(false);
+
+                // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
+                // This complicates check_arity but empty ** is special case.
+                return hash.isEmpty() ? hash.dupFast(context) : UNDEFINED;
+            }
+
+            // This is just an ordinary hash as last argument
+            if (!isKwarg) return UNDEFINED;
+
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
+
+            return !acceptsKeywords ? UNDEFINED : hash.dupFast(context);
         }
     }
 
@@ -838,6 +924,7 @@ public class IRRuntimeHelpers {
 
         public void raiseIfError(ThreadContext context) {
             if (invalidKwargs != null) {
+                //System.out.println("RAISEEEEE: " + context.getFile() + ":" + context.getLine());
                 RubyString errorMessage = (RubyString) invalidKwargs.join(context, context.runtime.newString(", "));
                 String prefix = invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ";
 
@@ -856,7 +943,7 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject extractOptionalArgument(RubyArray rubyArray, int minArgsLength, int index) {
         int n = rubyArray.getLength();
-        return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
+        return minArgsLength < n ? rubyArray.entry(index) : UNDEFINED;
     }
 
     @JIT @Interp
@@ -1002,7 +1089,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg, boolean _acceptsKwargs) {
+    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
 
         hash.modify();
@@ -1010,7 +1097,10 @@ public class IRRuntimeHelpers {
         hash.setKeywordRestArguments(true);
         final RubyHash otherHash = explicitKwarg.convertToHash();
 
-        if (otherHash.empty_p(context).isTrue()) return hash;
+        // If all the kwargs are empty let's discard them
+        if (otherHash.empty_p(context).isTrue()) {
+            return hash.isEmpty() ? UNDEFINED : hash;
+        }
 
         otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
 
@@ -1114,44 +1204,11 @@ public class IRRuntimeHelpers {
         return RubyBoolean.newBoolean(context,  ((Block) blk).isGiven() );
     }
 
-    public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArguments);
-        return constructRestArg(context, args, keywordArguments, required, argIndex);
-    }
+    @JIT @Interp
+    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, IRubyObject keywords, int required, int argIndex) {
+        int argsLength = args.length + (keywords != UNDEFINED ? -1 : 0);
 
-    public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArguments);
-        return constructRestArg(context, args, keywordArguments, required, argIndex);
-    }
-
-    public static IRubyObject constructRestArg(ThreadContext context, Object[] args, RubyHash keywordArguments, int required, int argIndex) {
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
-        int remainingArguments = argsLength - required;
-
-        if (remainingArguments <= 0) return context.runtime.newEmptyArray();
-
-        return RubyArray.newArrayMayCopy(context.runtime, (IRubyObject[]) args, argIndex, remainingArguments);
-    }
-
-    private static IRubyObject constructRestArg(ThreadContext context, IRubyObject[] args, RubyHash keywordArguments, int required, int argIndex) {
-        int argsLength = args.length;
-        if (keywordArguments != null) {
-            argsLength = args.length - 1;
-        } else if (args.length >= 1) {
-            // FIXME: maybe? vvvvv
-            // This is gross.  rest args will accept passed in kwargs as last ordinary argument if the method itself
-            // does not accept kwargs...unless the last arg is an empty kwargs hash.  It seems we cannot know until
-            // we reach the calling method whether there is a kwarg or not.
-            //
-            // This is a big comment because I am wondering if on empty kwargs at callside we just never pass it to
-            // begin with?  That would eliminate this code.
-            IRubyObject lastArg = args[args.length - 1];
-            if (lastArg instanceof RubyHash && ((RubyHash) lastArg).isKeywordArguments() && ((RubyHash) lastArg).isEmpty()) {
-                argsLength = args.length - 1;
-            }
-        }
-
-        if ( required == 0 && argsLength == args.length ) {
+        if (required == 0 && argsLength == args.length ) {
             return RubyArray.newArray(context.runtime, args);
         }
         int remainingArguments = argsLength - required;
@@ -1162,13 +1219,11 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, int pre,
-                                                 int opt, boolean rest, int post,
-                                                 int argIndex, boolean acceptsKeywordArgument) {
+    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, IRubyObject keywords,
+                                                 int pre, int opt, boolean rest, int post, int argIndex) {
         int required = pre + post;
         // FIXME: Once we extract kwargs from rest of args processing we can delete this extract and n calc.
-        boolean kwargs = kwargsArg(args, acceptsKeywordArgument) != null;
-        int n = kwargs ? args.length - 1 : args.length;
+        int n = keywords != UNDEFINED ? args.length - 1 : args.length;
         int remaining = n - pre;       // we know we have received all pre args by post receives.
 
         if (remaining < post) {        // less args available than post args need
@@ -1190,24 +1245,13 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @JIT
-    public static IRubyObject receiveOptArg(ThreadContext context, IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
+    @JIT @Interp
+    public static IRubyObject receiveOptArg(IRubyObject[] args, IRubyObject keywords, int requiredArgs,
+                                            int preArgs, int argIndex) {
         int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
-        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArgument);
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+        int argsLength = keywords != UNDEFINED ? args.length - 1 : args.length;
 
-        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
-
-        return args[preArgs + optArgIndex];
-    }
-
-    @Deprecated // not used
-    public static IRubyObject receiveOptArg(IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
-        int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
-        RubyHash keywordArguments = extractKwargsHash(args, requiredArgs, acceptsKeywordArgument);
-        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
-
-        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
+        if (requiredArgs + optArgIndex >= argsLength) return UNDEFINED; // No more args left
 
         return args[preArgs + optArgIndex];
     }
@@ -1218,30 +1262,20 @@ public class IRRuntimeHelpers {
         return result;
     }
 
-    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String id, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArgument);
+    @JIT
+    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject keywords, String id) {
+        RubySymbol key = context.runtime.newSymbol(id);
 
-        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
-
-        RubySymbol keywordName = context.runtime.newSymbol(id);
-
-        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
-
-        // SSS FIXME: Can we use an internal delete here?
-        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
-        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
+        return receiveKeywordArg(keywords, key);
     }
 
-    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, RubySymbol key, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = kwargsArg(args, acceptsKeywordArgument);
+    @Interp
+    public static IRubyObject receiveKeywordArg(IRubyObject keywords, RubySymbol key) {
+        if (keywords == UNDEFINED) return UNDEFINED;
 
-        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
+        IRubyObject value = ((RubyHash) keywords).delete(key);
 
-        if (keywordArguments.fastARef(key) == null) return UndefinedValue.UNDEFINED;
-
-        // SSS FIXME: Can we use an internal delete here?
-        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
-        return keywordArguments.delete(context, key, Block.NULL_BLOCK);
+        return value == null ? UNDEFINED : value;
     }
 
     public static IRubyObject markAsKwarg(ThreadContext context, IRubyObject arg) {
@@ -1249,20 +1283,13 @@ public class IRRuntimeHelpers {
         // **foo where foo is an object which responds to to_hash or dies tryin.
         if (!(arg instanceof RubyHash)) arg = TypeConverter.convertToType(arg, context.runtime.getHash(), "to_hash");
         ((RubyHash) arg).setKeywordArguments(true);
+        ((RubyHash) arg).setKeywordRestArguments(true);
         return arg;
     }
 
-    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, boolean usesKeywords) {
-        RubyHash keywordArguments = kwargsArg(args, usesKeywords);
-
-        if (keywordArguments == null) {
-            keywordArguments = RubyHash.newSmallHash(context.runtime);
-        } else {
-            keywordArguments = (RubyHash) keywordArguments.dup();
-            keywordArguments.setKeywordArguments(false);
-        }
-
-        return keywordArguments;
+    @JIT @Interp
+    public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject keywords) {
+        return keywords == UNDEFINED ? RubyHash.newSmallHash(context.runtime) : (RubyHash) keywords;
     }
 
     public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String id) {
@@ -1612,7 +1639,7 @@ public class IRRuntimeHelpers {
         IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
 
         if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
+            constant = UNDEFINED;
         }
 
         return constant;
@@ -1623,7 +1650,7 @@ public class IRRuntimeHelpers {
         IRubyObject constant = staticScope.getConstantInner(constName);
 
         if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
+            constant = UNDEFINED;
         }
 
         return constant;
@@ -1702,7 +1729,7 @@ public class IRRuntimeHelpers {
         if (!(container instanceof RubyModule)) throw runtime.newTypeError("no outer class/module");
 
         RubyClass sc;
-        if (superClass == UndefinedValue.UNDEFINED) {
+        if (superClass == UNDEFINED) {
             sc = null;
         } else {
             RubyClass.checkInheritable((IRubyObject) superClass);
@@ -1944,6 +1971,11 @@ public class IRRuntimeHelpers {
         }
         else if (true /**RTEST(flag)**/) { // this logic is only used for bare splat, and MRI dups
             tmp = ((RubyArray)tmp).aryDup();
+
+            // We have concat'd an empty keyword rest.   This comes from MERGE_KEYWORDS noticing it is empty.
+            if (((RubyArray) tmp).last() == UNDEFINED) {
+                ((RubyArray) tmp).pop(context);
+            }
         }
         return (RubyArray)tmp;
     }
@@ -1963,6 +1995,8 @@ public class IRRuntimeHelpers {
         } else if (dupArray) {
             tmp = ((RubyArray) tmp).aryDup();
         }
+
+        context.callSplats = true;
 
         return (RubyArray) tmp;
     }

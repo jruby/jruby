@@ -2,21 +2,28 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /*
  * Argument receive in IRExecution scopes.
  */
-public abstract class ReceiveArgBase extends NoOperandResultBaseInstr {
+public abstract class ReceiveArgBase extends OneOperandResultBaseInstr implements ArgReceiver {
     protected int argIndex;
 
-    public ReceiveArgBase(Operation op, Variable result, int argIndex) {
-        super(op, result);
+    public ReceiveArgBase(Operation op, Variable result, Variable keywords, int argIndex) {
+        super(op, result, keywords);
 
         assert result != null: "ReceiveArgBase result is null";
 
         this.argIndex = argIndex;
+    }
+
+    public Variable getKeywords() {
+        return (Variable) getOperand1();
     }
 
     public int getArgIndex() {
@@ -24,11 +31,18 @@ public abstract class ReceiveArgBase extends NoOperandResultBaseInstr {
     }
 
     @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArgIndex());
+    }
+
+    @Override
     public String[] toStringNonOperandArgs() {
         return new String[] { "i:" + argIndex };
     }
 
-    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
+                                  Object[] temp, IRubyObject[] args, boolean keywordArgumentSupplied, boolean ruby2keyword) {
         throw new RuntimeException("ReceiveArgBase.interpret called! " + this.getClass().getName() + " does not define receiveArg");
     }
 }

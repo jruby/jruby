@@ -10,6 +10,8 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -19,8 +21,8 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     public final RubySymbol key;
     public final int required;
 
-    public ReceiveKeywordArgInstr(Variable result, RubySymbol key, int required) {
-        super(Operation.RECV_KW_ARG, result, -1);
+    public ReceiveKeywordArgInstr(Variable result, Variable keyword, RubySymbol key, int required) {
+        super(Operation.RECV_KW_ARG, result, keyword, -1);
         this.key = key;
         this.required = required;
     }
@@ -46,7 +48,7 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), getKey(), required);
+        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getKeywords()), getKey(), required);
     }
 
     @Override
@@ -57,12 +59,15 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     }
 
     public static ReceiveKeywordArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeSymbol(), d.decodeInt());
+        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeVariable(), d.decodeSymbol(), d.decodeInt());
     }
 
     @Override
-    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        return IRRuntimeHelpers.receiveKeywordArg(context, args, required, getKey(), acceptsKeywordArgument);
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
+                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+        IRubyObject keywords = (IRubyObject) getKeywords().retrieve(context, self, currScope, currDynScope, temp);
+
+        return IRRuntimeHelpers.receiveKeywordArg(keywords, getKey());
     }
 
     @Override

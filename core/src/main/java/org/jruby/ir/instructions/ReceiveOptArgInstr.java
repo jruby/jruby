@@ -10,6 +10,8 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -20,8 +22,8 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     /** total number of required args (pre + post) **/
     public final int requiredArgs;
 
-    public ReceiveOptArgInstr(Variable result, int requiredArgs, int preArgs, int optArgIndex) {
-        super(Operation.RECV_OPT_ARG, result, optArgIndex);
+    public ReceiveOptArgInstr(Variable result, Variable keywords, int requiredArgs, int preArgs, int optArgIndex) {
+        super(Operation.RECV_OPT_ARG, result, keywords, optArgIndex);
         this.preArgs = preArgs;
         this.requiredArgs = requiredArgs;
     }
@@ -42,7 +44,7 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     @Override
     public Instr clone(CloneInfo info) {
         int optArgIndex = this.argIndex;
-        if (info instanceof SimpleCloneInfo) return new ReceiveOptArgInstr(info.getRenamedVariable(result), requiredArgs, preArgs, optArgIndex);
+        if (info instanceof SimpleCloneInfo) return new ReceiveOptArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), requiredArgs, preArgs, optArgIndex);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
@@ -68,12 +70,15 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     }
 
     public static ReceiveOptArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveOptArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+        return new ReceiveOptArgInstr(d.decodeVariable(),d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
     }
 
     @Override
-    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        return IRRuntimeHelpers.receiveOptArg(context, args, requiredArgs, preArgs, argIndex, acceptsKeywordArgument);
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
+                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+        IRubyObject keywords = (IRubyObject) getKeywords().retrieve(context, self, currScope, currDynScope, temp);
+
+        return IRRuntimeHelpers.receiveOptArg(args, keywords, requiredArgs, preArgs, argIndex);
     }
 
     @Override

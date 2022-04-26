@@ -1889,11 +1889,18 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
         modify();
 
-        final RubyHashEntry entry = internalDelete(key);
-        if (entry != NO_ENTRY) return entry.value;
+        IRubyObject value = delete(key);
+        if (value != null) return value;
 
-        if (block.isGiven()) return block.yield(context, key);
-        return context.nil;
+        return block.isGiven() ? block.yield(context, key) : context.nil;
+    }
+
+    /**
+     * Delete entry or null.
+     */
+    public IRubyObject delete(IRubyObject key) {
+        RubyHashEntry entry = internalDelete(key);
+        return entry != NO_ENTRY ? entry.value : null;
     }
 
     public IRubyObject delete(ThreadContext context, IRubyObject key) {
@@ -2578,7 +2585,7 @@ public class RubyHash extends RubyObject implements Map {
         setFlag(COMPARE_BY_IDENTITY_F, comparedByIdentity);
     }
 
-    protected boolean isRuby2KeywordHash() {
+    public boolean isRuby2KeywordHash() {
         return (flags & RUBY2_KEYWORD_F) != 0;
     }
 

@@ -1,2 +1,0 @@
-wip:Proc#ruby2_keywords marks the final hash argument as keyword hash
-wip:Proc#ruby2_keywords applies to the underlying method and applies across duplication
