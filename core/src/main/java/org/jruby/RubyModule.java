@@ -2949,7 +2949,7 @@ public class RubyModule extends RubyObject {
             runtime.getWarnings().warning(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
             boolean writeable = args[1].isTrue();
             RubySymbol sym = TypeConverter.checkID(args[0]);
-            addAccessor(context, sym, context.getCurrentVisibility(), args[0].isTrue(), writeable);
+            addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable);
 
             RubyArray result;
             if (writeable) {
@@ -2982,7 +2982,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_reader", rest = true, reads = VISIBILITY)
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = getCurrentVisibilityForDefineMethod(context);
         IRubyObject[] result = new IRubyObject[args.length];
 
         for (int i = 0; i < args.length; i++) {
@@ -3001,7 +3001,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_writer", rest = true, reads = VISIBILITY)
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = getCurrentVisibilityForDefineMethod(context);
         IRubyObject[] result = new IRubyObject[args.length];
 
         for (int i = 0; i < args.length; i++) {
@@ -3029,7 +3029,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_accessor", rest = true, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = getCurrentVisibilityForDefineMethod(context);
         IRubyObject[] result = new IRubyObject[2 * args.length];
 
         for (int i = 0; i < args.length; i++) {
