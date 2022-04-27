@@ -638,16 +638,12 @@ public class IRBuilder {
         return ret;
     }
 
-    protected Variable copyAndReturnValue(Operand val) {
-        return addResultInstr(new CopyInstr(createTemporaryVariable(), val));
-    }
-
     protected Operand buildWithOrder(Node node, boolean preserveOrder) {
         Operand value = build(node);
 
         // We need to preserve order in cases (like in presence of assignments) except that immutable
         // literals can never change value so we can still emit these out of order.
-        return preserveOrder && !(value instanceof ImmutableLiteral) ? copyAndReturnValue(value) : value;
+        return preserveOrder && !(value instanceof ImmutableLiteral) ? copy(value) : value;
     }
 
     protected Operand buildLazyWithOrder(CallNode node, Label lazyLabel, Label endLabel, boolean preserveOrder) {
@@ -655,13 +651,13 @@ public class IRBuilder {
 
         // We need to preserve order in cases (like in presence of assignments) except that immutable
         // literals can never change value so we can still emit these out of order.
-        return preserveOrder && !(value instanceof ImmutableLiteral) ? copyAndReturnValue(value) : value;
+        return preserveOrder && !(value instanceof ImmutableLiteral) ? copy(value) : value;
     }
 
     protected Variable getValueInTemporaryVariable(Operand val) {
         if (val != null && val instanceof TemporaryVariable) return (Variable) val;
 
-        return copyAndReturnValue(val);
+        return copy(val);
     }
 
     // Return the last argument in the list as this represents rhs of the overall attrassign expression
@@ -933,7 +929,7 @@ public class IRBuilder {
         }
 
         Operand array = new Array(elts);
-        return operandOnly ? array : copyAndReturnValue(array);
+        return operandOnly ? array : copy(array);
     }
 
     public Operand buildArgsCat(final ArgsCatNode argsCatNode) {
@@ -3230,7 +3226,7 @@ public class IRBuilder {
         boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
         addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), estimatedSize, false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
 
-        return copyAndReturnValue(new DynamicSymbol(result));
+        return copy(new DynamicSymbol(result));
     }
 
     public Operand buildDVar(DVarNode node) {
@@ -3414,7 +3410,7 @@ public class IRBuilder {
             return result;
         }
 
-        Variable splatValue = copyAndReturnValue(new Hash(new ArrayList<>()));
+        Variable splatValue = copy(new Hash(new ArrayList<>()));
         for (KeyValuePair<Node, Node> pair: pairs) {
             Operand splat = buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment());
             addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat }));
@@ -3565,7 +3561,7 @@ public class IRBuilder {
 
             if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
-                    hash = copyAndReturnValue(new Hash(args, hashNode.isLiteral()));
+                    hash = copy(new Hash(args, hashNode.isLiteral()));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
@@ -3582,7 +3578,7 @@ public class IRBuilder {
         }
 
         if (hash == null) {           // non-**arg ordinary hash
-            hash = copyAndReturnValue(new Hash(args, hashNode.isLiteral()));
+            hash = copy(new Hash(args, hashNode.isLiteral()));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
         }
@@ -3874,7 +3870,7 @@ public class IRBuilder {
     }
 
     public Operand buildNthRef(NthRefNode nthRefNode) {
-        return copyAndReturnValue(new NthRef(scope, nthRefNode.getMatchNumber()));
+        return copy(new NthRef(scope, nthRefNode.getMatchNumber()));
     }
 
     public Operand buildNil() {
@@ -4227,7 +4223,7 @@ public class IRBuilder {
     public Operand buildRegexp(RegexpNode reNode) {
         // SSS FIXME: Rather than throw syntax error at runtime, we should detect
         // regexp syntax errors at build time and add an exception-throwing instruction instead
-        return copyAndReturnValue(new Regexp(reNode.getValue(), reNode.getOptions()));
+        return copy(new Regexp(reNode.getValue(), reNode.getOptions()));
     }
 
     public Operand buildRescue(RescueNode node) {
@@ -4542,7 +4538,7 @@ public class IRBuilder {
     public Operand buildStr(StrNode strNode) {
         Operand literal = buildStrRaw(strNode);
 
-        return literal instanceof FrozenString ? literal : copyAndReturnValue(literal);
+        return literal instanceof FrozenString ? literal : copy(literal);
     }
 
     public Operand buildStrRaw(StrNode strNode) {
@@ -4583,8 +4579,7 @@ public class IRBuilder {
     }
 
     public Operand buildSValue(SValueNode node) {
-        // SSS FIXME: Required? Verify with Tom/Charlie
-        return copyAndReturnValue(new SValue(build(node.getValue())));
+        return copy(new SValue(build(node.getValue())));
     }
 
     public Operand buildSymbol(SymbolNode node) {
