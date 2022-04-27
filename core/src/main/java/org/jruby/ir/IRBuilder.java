@@ -1180,11 +1180,16 @@ public class IRBuilder {
 
             if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
                 Operand splatValue = buildRestKeywordArgs(keywordArgs);
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
                 Operand block = setupCallClosure(callNode.getIterNode());
                 determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-                receiveBreakException(block,
-                        determineIfProcNew(receiverNode,
-                                CallInstr.create(scope, NORMAL, result, name, receiver, addArg(args, splatValue), block)));
+                if_else(test, manager.getTrue(),
+                        () -> receiveBreakException(block,
+                                determineIfProcNew(receiverNode,
+                                        CallInstr.create(scope, NORMAL, result, name, receiver, args, block))),
+                        () -> receiveBreakException(block,
+                                determineIfProcNew(receiverNode,
+                                        CallInstr.create(scope, NORMAL, result, name, receiver, addArg(args, splatValue), block))));
             } else {  // {a: 1, b: 2}
                 List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
                 Operand block = setupCallClosure(callNode.getIterNode());
@@ -3430,8 +3435,12 @@ public class IRBuilder {
 
             if (keywordArgs.hasOnlyRestKwargs()) {  // {**k}, {**{}, **k}, etc...
                 Operand splatValue = buildRestKeywordArgs(keywordArgs);
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
                 Operand block = setupCallClosure(fcallNode.getIterNode());
-                receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), addArg(args, splatValue), block));
+                if_else(test, manager.getTrue(),
+                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block)),
+                        () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), addArg(args, splatValue), block)));
+
             } else {  // {a: 1, b: 2}
                 List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
                 Operand block = setupCallClosure(fcallNode.getIterNode());

@@ -2266,6 +2266,12 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "markAsKwarg", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
+            case IS_HASH_EMPTY:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isHashEmpty", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             default:
                 throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }

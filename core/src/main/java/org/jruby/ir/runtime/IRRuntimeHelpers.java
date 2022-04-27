@@ -1282,8 +1282,12 @@ public class IRRuntimeHelpers {
         // FIXME: Can this also happen in more elaborate merge_kwargs scenarios?
         // **foo where foo is an object which responds to to_hash or dies tryin.
         if (!(arg instanceof RubyHash)) arg = TypeConverter.convertToType(arg, context.runtime.getHash(), "to_hash");
-        ((RubyHash) arg).setKeywordArguments(true);
-        ((RubyHash) arg).setKeywordRestArguments(true);
+
+        // We only mark is non-empty kwrest since an empty one is not destined to make it past the callsite.
+        if (!((RubyHash) arg).isEmpty()) {
+            ((RubyHash) arg).setKeywordArguments(true);
+            ((RubyHash) arg).setKeywordRestArguments(true);
+        }
         return arg;
     }
 
