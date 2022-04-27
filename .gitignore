@@ -91,8 +91,8 @@ lib/ruby/stdlib/logger*
 lib/ruby/stdlib/matrix*
 lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/mutex_m.rb
-lib/ruby/stdlib/net-telnet.rb
-lib/ruby/stdlib/net/telnet*
+lib/ruby/stdlib/net/protocol*
+lib/ruby/stdlib/net/http*
 lib/ruby/stdlib/observer*
 lib/ruby/stdlib/open-uri*
 lib/ruby/stdlib/optparse*
