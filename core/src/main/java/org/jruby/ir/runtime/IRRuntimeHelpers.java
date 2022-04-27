@@ -755,7 +755,7 @@ public class IRRuntimeHelpers {
 
         if (args.length < 1) return UNDEFINED;
 
-        IRubyObject last = (IRubyObject) args[args.length - 1];
+        IRubyObject last = args[args.length - 1];
 
         if (!(last instanceof RubyHash)) return UNDEFINED;
 
@@ -795,7 +795,7 @@ public class IRRuntimeHelpers {
 
                 // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
                 // This complicates check_arity but empty ** is special case.
-                return hash.isEmpty() ? hash.dupFast(context) : UNDEFINED;
+                return UNDEFINED;
             }
 
             // This is just an ordinary hash as last argument
