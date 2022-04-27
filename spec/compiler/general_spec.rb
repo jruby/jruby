@@ -779,24 +779,24 @@ modes.each do |mode|
 
     it "assigns the result of a terminated loop to LHS variable" do
       # variable assignment of various types from loop results
-      run("a = while true; break 1; end; a") {|result| expect(result).to eq 1 }
-      run("@a = while true; break 1; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = while true; break 1; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = while true; break 1; end; $a") {|result| expect(result).to eq 1 }
-      run("a = until false; break 1; end; a") {|result| expect(result).to eq 1 }
-      run("@a = until false; break 1; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = until false; break 1; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = until false; break 1; end; $a") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = while true; break 1; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = while true; break 1; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = while true; break 1; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = while true; break 1; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = until false; break 1; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = until false; break 1; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = until false; break 1; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = until false; break 1; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
 
       # same assignments but loop is within a begin
-      run("a = begin; while true; break 1; end; end; a") {|result| expect(result).to eq 1 }
-      run("@a = begin; while true; break 1; end; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = begin; while true; break 1; end; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = begin; while true; break 1; end; end; $a") {|result| expect(result).to eq 1 }
-      run("a = begin; until false; break 1; end; end; a") {|result| expect(result).to eq 1 }
-      run("@a = begin; until false; break 1; end; end; @a") {|result| expect(result).to eq 1 }
-      run("@@a = begin; until false; break 1; end; end; @@a") {|result| expect(result).to eq 1 }
-      run("$a = begin; until false; break 1; end; end; $a") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = begin; while true; break 1; end; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = begin; while true; break 1; end; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = begin; while true; break 1; end; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = begin; while true; break 1; end; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; a = begin; until false; break 1; end; end; a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @a = begin; until false; break 1; end; end; @a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; @@a = begin; until false; break 1; end; end; @@a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
+      run("class Loupe; def loupe; $a = begin; until false; break 1; end; end; $a; end; end; Loupe.new.loupe") {|result| expect(result).to eq 1 }
 
       # other contexts that require while to preserve stack
       run("1 + while true; break 1; end") {|result| expect(result).to eq 2 }
@@ -1133,29 +1133,6 @@ modes.each do |mode|
       run('[__FILE__, __LINE__]', 'foobar.rb', 1) do |x, y|
         expect(x).to eq('foobar.rb')
         expect(y).to eq(1)
-      end
-    end
-
-    it "handles circular optional argument assignment" do
-      begin
-        verbose = $VERBOSE
-        $VERBOSE = nil
-
-        run('def foo(a = a, b = b, c = c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-        run('def foo; yield; end; foo {|a = a, b = b, c = c|; [a.inspect, b.inspect, c.inspect]}') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-
-        run('def foo(a: a, b: b, c: c); [a.inspect, b.inspect, c.inspect]; end; foo') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-        run('def foo; yield; end; foo {|a: a, b: b, c: c|; [a.inspect, b.inspect, c.inspect]}') do |x|
-          expect(x).to eq(["nil", "nil", "nil"])
-        end
-      ensure
-        $VERBOSE = verbose
       end
     end
 

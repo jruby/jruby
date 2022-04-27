@@ -810,7 +810,9 @@ public class IRBuilder {
         } else {
             // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
             // For example, for-nodes
-            addInstr(isSplat ? new ReceiveRestArgInstr(v, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, argIndex));
+            // FIXME: We can have keywords here but this is more complicated to get here
+            Variable keywords = copy(UndefinedValue.UNDEFINED);
+            addInstr(isSplat ? new ReceiveRestArgInstr(v, keywords, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, keywords, argIndex));
         }
     }
 
@@ -1119,6 +1121,12 @@ public class IRBuilder {
         RubySymbol name = methodName = callNode.getName();
 
         Node receiverNode = callNode.getReceiverNode();
+
+        // Ruby 2.7+ treats explicit self.call the same as if it was just call.  We transform rather than testing receiver.
+        if (receiverNode instanceof SelfNode) {
+            FCallNode fcall = new FCallNode(callNode.getLine(), callNode.getName(), callNode.getArgsNode(), callNode.getIterNode());
+            return buildFCall(aResult, fcall);
+        }
         String id = name.idString(); // ID Str ok here since compared strings are all 7-bit.
 
         if (Options.IR_STRING_FREEZE.load()) {
@@ -1174,7 +1182,6 @@ public class IRBuilder {
                 Operand splatValue = buildRestKeywordArgs(keywordArgs);
                 Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
                 Operand block = setupCallClosure(callNode.getIterNode());
-
                 determineIfWeNeedLineNumber(callNode); // buildOperand for fcall was papered over by args operand building so we check once more.
                 if_else(test, manager.getTrue(),
                         () -> receiveBreakException(block,
@@ -2151,7 +2158,7 @@ public class IRBuilder {
     }
 
     private Operand searchConst(RubySymbol name) {
-        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, CurrentScope.INSTANCE, false));
+        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), CurrentScope.INSTANCE, name, false));
     }
 
     public Operand buildColon2(final Colon2Node colon2) {
@@ -2747,13 +2754,13 @@ public class IRBuilder {
         return scope instanceof IRFor ? getLocalVariable(name, depth) : getNewLocalVariable(name, 0);
     }
 
-    private void addArgReceiveInstr(Variable v, int argIndex, Signature signature) {
+    private void addArgReceiveInstr(Variable v, Variable keywords, int argIndex, Signature signature) {
         boolean post = signature != null;
 
         if (post) {
-            addInstr(new ReceivePostReqdArgInstr(v, argIndex, signature.pre(), signature.opt(), signature.hasRest(), signature.post()));
+            addInstr(new ReceivePostReqdArgInstr(v, keywords, argIndex, signature.pre(), signature.opt(), signature.hasRest(), signature.post()));
         } else {
-            addInstr(new ReceivePreReqdArgInstr(v, argIndex));
+            addInstr(new ReceivePreReqdArgInstr(v, keywords, argIndex));
         }
     }
 
@@ -2772,20 +2779,20 @@ public class IRBuilder {
         }
     }
 
-    public void receiveRequiredArg(Node node, int argIndex, Signature signature) {
+    public void receiveRequiredArg(Node node, Variable keywords, int argIndex, Signature signature) {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
                 RubySymbol argName = ((ArgumentNode)node).getName();
 
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
 
-                addArgReceiveInstr(argumentResult(argName), argIndex, signature);
+                addArgReceiveInstr(argumentResult(argName), keywords, argIndex, signature);
                 break;
             }
             case MULTIPLEASGNNODE: {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 Variable v = createTemporaryVariable();
-                addArgReceiveInstr(v, argIndex, signature);
+                addArgReceiveInstr(v, keywords, argIndex, signature);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.anonreq, null);
                 Variable tmp = createTemporaryVariable();
                 addInstr(new ToAryInstr(tmp, v));
@@ -2796,7 +2803,7 @@ public class IRBuilder {
         }
     }
 
-    protected void receiveNonBlockArgs(final ArgsNode argsNode) {
+    protected void receiveNonBlockArgs(final ArgsNode argsNode, Variable keywords) {
         Signature signature = scope.getStaticScope().getSignature();
 
         // For closures, we don't need the check arity call
@@ -2808,12 +2815,12 @@ public class IRBuilder {
             // But later, perhaps can make this implicit in the method setup preamble?
 
             addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(), argsNode.hasKwargs(),
-                    signature.keyRest()));
+                    signature.keyRest(), keywords));
         } else if (scope instanceof IRClosure && argsNode.hasKwargs()) {
             // FIXME: This is added to check for kwargs correctness but bypass regular correctness.
             // Any other arity checking currently happens within Java code somewhere (RubyProc.call?)
             addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(), argsNode.hasKwargs(),
-                    signature.keyRest()));
+                    signature.keyRest(), keywords));
         }
 
         // Other args begin at index 0
@@ -2823,7 +2830,7 @@ public class IRBuilder {
         Node[] args = argsNode.getArgs();
         int preCount = signature.pre();
         for (int i = 0; i < preCount; i++, argIndex++) {
-            receiveRequiredArg(args[i], argIndex, null);
+            receiveRequiredArg(args[i], keywords, argIndex, null);
         }
 
         // Fixup opt/rest
@@ -2840,7 +2847,7 @@ public class IRBuilder {
                 Variable argVar = argumentResult(argName);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
-                addInstr(new ReceiveOptArgInstr(argVar, signature.required(), signature.pre(), j));
+                addInstr(new ReceiveOptArgInstr(argVar, keywords, j, signature.required(), signature.pre()));
                 addInstr(BNEInstr.create(variableAssigned, argVar, UndefinedValue.UNDEFINED));
                 // We add this extra nil copy because we do not know if we have a circular defininition of
                 // argVar: proc { |a=a| } or proc { |a = foo(bar(a))| }.
@@ -2869,14 +2876,14 @@ public class IRBuilder {
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
-            addInstr(new ReceiveRestArgInstr(argumentResult(argName), signature.required() + opt, argIndex));
+            addInstr(new ReceiveRestArgInstr(argumentResult(argName), keywords, signature.required() + opt, argIndex));
         }
 
         // Post(-opt and rest) required args
         int postCount = argsNode.getPostCount();
         int postIndex = argsNode.getPostIndex();
         for (int i = 0; i < postCount; i++) {
-            receiveRequiredArg(args[postIndex + i], i, signature);
+            receiveRequiredArg(args[postIndex + i], keywords, i, signature);
         }
     }
 
@@ -2933,8 +2940,10 @@ public class IRBuilder {
      *
      */
     public void receiveArgs(final ArgsNode argsNode) {
+        Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp()));
+
         // 1.9 pre, opt, rest, post args
-        receiveNonBlockArgs(argsNode);
+        receiveNonBlockArgs(argsNode, keywords);
 
         // 2.0 keyword args
         Node[] args = argsNode.getArgs();
@@ -2949,7 +2958,7 @@ public class IRBuilder {
                 Variable av = getNewLocalVariable(key, 0);
                 Label l = getNewLabel();
                 if (scope instanceof IRMethod) addKeyArgDesc(kasgn, key);
-                addInstr(new ReceiveKeywordArgInstr(av, key, required));
+                addInstr(new ReceiveKeywordArgInstr(av, keywords, key, required));
                 addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
@@ -2974,7 +2983,7 @@ public class IRBuilder {
 
             Variable av = getNewLocalVariable(key, 0);
             if (scope instanceof IRMethod) addArgumentDescription(type, key);
-            addInstr(new ReceiveKeywordRestArgInstr(av));
+            addInstr(new ReceiveKeywordRestArgInstr(av, keywords));
         }
 
         // Block arg
@@ -3000,23 +3009,23 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 v = getArgVariable(dynamicAsgn.getName(), dynamicAsgn.getDepth());
-                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
+                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
+                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
                 break;
             }
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 v = getArgVariable(localVariable.getName(), localVariable.getDepth());
-                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
+                if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
+                else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
                 break;
             }
             case MULTIPLEASGNNODE: {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 if (!isMasgnRoot) {
                     v = createTemporaryVariable();
-                    if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                    else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
+                    if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
+                    else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, index, preArgsCount, postArgsCount));
                     Variable tmp = createTemporaryVariable();
                     addInstr(new ToAryInstr(tmp, v));
                     argsArray = tmp;
@@ -3061,7 +3070,7 @@ public class IRBuilder {
                 buildArgsMasgn(restNode, argsArray, false, i, postArgsCount, 0, true); // rest of the argument array!
             } else {
                 Variable rhsVal = createTemporaryVariable();
-                addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, 0));
+                addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, 0, i, postArgsCount));
                 assigns.add(new Tuple<>(restNode, rhsVal)); // rest of the argument array!
             }
         }
@@ -3075,7 +3084,7 @@ public class IRBuilder {
                     buildArgsMasgn(an, argsArray, false, i, postArgsCount, j, false);
                 } else {
                     Variable rhsVal = createTemporaryVariable();
-                    addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, j));  // Fetch from the end
+                    addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, j, i, postArgsCount));  // Fetch from the end
                     assigns.add(new Tuple<>(an, rhsVal));
                 }
                 j++;
@@ -3428,11 +3437,10 @@ public class IRBuilder {
                 Operand splatValue = buildRestKeywordArgs(keywordArgs);
                 Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { splatValue }));
                 Operand block = setupCallClosure(fcallNode.getIterNode());
-
-                determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
                 if_else(test, manager.getTrue(),
                         () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), args, block)),
                         () -> receiveBreakException(block, CallInstr.create(scope, FUNCTIONAL, result, name, buildSelf(), addArg(args, splatValue), block)));
+
             } else {  // {a: 1, b: 2}
                 List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
                 Operand block = setupCallClosure(fcallNode.getIterNode());
@@ -3830,7 +3838,7 @@ public class IRBuilder {
         //System.out.println("MODULE IS " +  (executesOnce ? "" : "NOT") + " SINGLE USE:"  + moduleName +  ", " +  scope.getFile() + ":" + moduleNode.getEndLine());
 
         IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope(), executesOnce);
-        Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
+        Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), container, body));
 
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
         return bodyResult;

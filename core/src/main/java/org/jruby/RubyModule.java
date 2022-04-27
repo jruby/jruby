@@ -2022,7 +2022,7 @@ public class RubyModule extends RubyObject {
         CacheEntry entry = searchForAliasMethod(runtime, oldName);
 
         DynamicMethod method = getMethods().get(name);
-        if (method != null) {
+        if (method != null && entry.method.getRealMethod() != method.getRealMethod()) {
             // warn if overwriting an existing method on this module
             runtime.getWarnings().warning("method redefined; discarding old " + name);
 
@@ -2949,7 +2949,7 @@ public class RubyModule extends RubyObject {
             runtime.getWarnings().warning(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
             boolean writeable = args[1].isTrue();
             RubySymbol sym = TypeConverter.checkID(args[0]);
-            addAccessor(context, sym, context.getCurrentVisibility(), args[0].isTrue(), writeable);
+            addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable);
 
             RubyArray result;
             if (writeable) {
@@ -2982,7 +2982,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_reader", rest = true, reads = VISIBILITY)
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = getCurrentVisibilityForDefineMethod(context);
         IRubyObject[] result = new IRubyObject[args.length];
 
         for (int i = 0; i < args.length; i++) {
@@ -3001,7 +3001,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_writer", rest = true, reads = VISIBILITY)
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = getCurrentVisibilityForDefineMethod(context);
         IRubyObject[] result = new IRubyObject[args.length];
 
         for (int i = 0; i < args.length; i++) {
@@ -3029,7 +3029,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr_accessor", rest = true, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = getCurrentVisibilityForDefineMethod(context);
         IRubyObject[] result = new IRubyObject[2 * args.length];
 
         for (int i = 0; i < args.length; i++) {
@@ -4144,7 +4144,8 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject name, IRubyObject value) {
-        return setConstant(validateConstant(name), value);
+        ThreadContext context = getRuntime().getCurrentContext();
+        return setConstant(validateConstant(name), value, context.getFile(), context.getLine() + 1);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
@@ -4771,15 +4772,19 @@ public class RubyModule extends RubyObject {
      *
      * @param name The name to assign
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
+     * @param hidden whether a constant is private (hidden).  This parameter is only for asserting it is explicitly
+     *               private.  If it is false the entry may still remain private if the constant was already private
+     *               and its value is being updated.
      * @return The result of setting the variable.
      */
     private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn, String file, int line) {
-        IRubyObject oldValue = fetchConstant(name);
+        ConstantEntry oldEntry = fetchConstantEntry(name, true);
 
         setParentForModule(name, value);
 
-        if (oldValue != null) {
-            boolean notAutoload = oldValue != UNDEF;
+        if (oldEntry != null) {
+            hidden |= oldEntry.hidden; // Already private constants will stay constant.
+            boolean notAutoload = oldEntry.value != UNDEF;
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
                     if (this.equals(getRuntime().getObject())) {
@@ -5180,6 +5185,20 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fetchConstant(String name, boolean includePrivate) {
+        ConstantEntry entry = fetchConstantEntry(name, includePrivate);
+
+        return entry != null ? entry.value : null;
+    }
+
+    /**
+     * The equivalent for fetchConstant but is useful for extra state like whether the constant is
+     * private or not.
+     *
+     * @param name of the constant.
+     * @param includePrivate include private/hidden constants
+     * @return the entry for the constant.
+     */
+    public ConstantEntry fetchConstantEntry(String name, boolean includePrivate) {
         ConstantEntry entry = constantEntryFetch(name);
 
         if (entry == null) return null;
@@ -5198,7 +5217,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return entry.value;
+        return entry;
     }
 
     @Deprecated
@@ -5321,18 +5340,18 @@ public class RubyModule extends RubyObject {
                 if (getBaseName() == null) { // anonymous
                     // MRI 2.2.2 does get ugly ... as it skips this logic :
                     // RuntimeError: can't modify frozen #<Class:#<Class:0x0000000095a920>>
-                    throw getRuntime().newFrozenError(getName());
+                    throw getRuntime().newFrozenError(getName(), this);
                 }
-                throw getRuntime().newFrozenError("#<Class:" + getName() + '>');
+                throw getRuntime().newFrozenError("#<Class:" + getName() + '>', this);
             }
-            throw getRuntime().newFrozenError("Module");
+            throw getRuntime().newFrozenError("Module", this);
         }
     }
 
     @Override
     public final void checkFrozen() {
        if ( isFrozen() ) {
-           throw getRuntime().newFrozenError(isClass() ? "class" : "module");
+           throw getRuntime().newFrozenError(isClass() ? "class" : "module", this);
        }
     }
 

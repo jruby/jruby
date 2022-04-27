@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class LoadLocalVarInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final IRScope scope;
 
-    public LoadLocalVarInstr(IRScope scope, TemporaryLocalVariable result, LocalVariable lvar) {
+    public LoadLocalVarInstr(TemporaryLocalVariable result, LocalVariable lvar, IRScope scope) {
         super(Operation.BINDING_LOAD, result, lvar);
 
         assert result != null: "LoadLocalVarInstr result is null";
@@ -57,20 +57,18 @@ public class LoadLocalVarInstr extends OneOperandResultBaseInstr implements Fixe
     @Override
     public Instr clone(CloneInfo ii) {
         // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
-        return new LoadLocalVarInstr(scope, (TemporaryLocalVariable)ii.getRenamedVariable(result),
-                (LocalVariable)ii.getRenamedVariable(getLocalVar()));
+        return new LoadLocalVarInstr((TemporaryLocalVariable)ii.getRenamedVariable(result),
+                (LocalVariable)ii.getRenamedVariable(getLocalVar()), scope);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getScope());
-        e.encode(getLocalVar());
     }
 
     public static LoadLocalVarInstr decode(IRReaderDecoder d) {
-        TemporaryLocalVariable result = (TemporaryLocalVariable) d.decodeVariable();
-        return new LoadLocalVarInstr(d.decodeScope(), result, (LocalVariable) d.decodeVariable());
+        return new LoadLocalVarInstr((TemporaryLocalVariable) d.decodeVariable(), (LocalVariable) d.decodeVariable(), d.decodeScope());
     }
 
     @Interp

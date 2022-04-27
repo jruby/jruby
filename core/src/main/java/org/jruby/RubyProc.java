@@ -263,7 +263,7 @@ public class RubyProc extends RubyObject implements DataType {
         if (body.isRubyBlock()) {
             Signature signature = body.getSignature();
             if (signature.hasRest() && !signature.hasKwargs()) {
-                ((IRBlockBody) body).setRuby2Keywords();
+                ((IRBlockBody) body).getScope().setRuby2Keywords();
             } else {
                 context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
             }

@@ -1,1 +1,0 @@
-fails:A lambda expression 'lambda { ... }' with an implicit block can be created

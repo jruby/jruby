@@ -64,7 +64,9 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
@@ -80,6 +82,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.StringSupport;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -212,6 +215,7 @@ public class LoadService {
      */
     public void init(List<String> prependDirectories) {
         loadPath = RubyArray.newArray(runtime);
+        loadPath.getMetaClass().defineAnnotatedMethods(LoadPathMethods.class);
 
         String jrubyHome = runtime.getJRubyHome();
 
@@ -297,6 +301,43 @@ public class LoadService {
             // Do not add duplicated paths
             if (loadPath.includes(runtime.getCurrentContext(), pathToAdd)) return;
             loadPath.append(pathToAdd);
+        }
+    }
+
+    public static class LoadPathMethods {
+        @JRubyMethod(required = 1)
+        public static IRubyObject resolve_feature_path(ThreadContext context, IRubyObject self, IRubyObject pathArg) {
+            Ruby runtime = context.runtime;
+            RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, pathArg));
+            String file = path.toString();
+            LibrarySearcher.FoundLibrary[] libraryHolder = {null};
+            char extension = runtime.getLoadService().searchForRequire(file, libraryHolder);
+
+            if (extension == 0) return context.nil;
+
+            RubySymbol ext;
+            switch (extension) {
+                case 'r':
+                    ext = runtime.newSymbol("rb");
+                    break;
+                case 's':
+                    ext = runtime.newSymbol("so"); // FIXME: should this be so or jar?
+                    break;
+                default:
+                    ext = runtime.newSymbol("unknown");
+                    break;
+            }
+
+            RubyString name;
+            if (libraryHolder[0] == null) {
+                // FIXME: Our builtin libraries are returning 'r' is ext but has no loader.
+                ext = runtime.newSymbol("so"); // FIXME: should this be so or jar?
+                name = path;
+            } else {
+                name = runtime.newString(libraryHolder[0].getLoadName());
+            }
+
+            return runtime.newArray(ext, name);
         }
     }
 

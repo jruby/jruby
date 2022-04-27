@@ -109,6 +109,7 @@ public final class ThreadContext {
 
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
+    public boolean callSplats;
 
     private RubyThread thread;
     private static final WeakReference<ThreadFiber> NULL_FIBER_REF = new WeakReference<ThreadFiber>(null);

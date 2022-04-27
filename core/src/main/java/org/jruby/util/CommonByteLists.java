@@ -27,7 +27,7 @@ public class CommonByteLists {
     public static final ByteList MINUS = new ByteList(new byte[] {'-'});
     public static final ByteList FREEZE_METHOD = new ByteList(new byte[] {'f', 'r', 'e', 'e', 'z', 'e'});
     public static final ByteList NEW = new ByteList(new byte[] {'n', 'e', 'w'});
-    public static final ByteList NEWLINE = new ByteList(new byte[] {'\\', 'n'});
+    public static final ByteList NEWLINE = new ByteList(new byte[] {'\n'});
     public static final ByteList NEW_METHOD = NEW;
     public static final ByteList NOT_IMPLEMENTED_ERROR = new ByteList(new byte[] {'N', 'o', 't', 'I', 'm', 'p', 'l', 'e', 'm', 'e', 'n', 't', 'e', 'd', 'E', 'r', 'r', 'o', 'r'});
     public static final ByteList OR_OR = new ByteList(new byte[] {'|', '|'});

@@ -821,9 +821,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         String filename = basename(context, recv, arg).getUnicodeValue();
 
         int dotIndex = filename.lastIndexOf('.');
-        if (dotIndex > 0 && !(dotIndex == (filename.length() - 1) && Platform.IS_WINDOWS)) {
-            // Dot is not at beginning and not at end of filename.
-            return RubyString.newString(context.runtime, filename.substring(dotIndex));
+
+        if (dotIndex > 0) {
+            if (dotIndex < filename.length() - 1 ||
+                    !(Platform.IS_WINDOWS || filename.equals(".."))) {
+                // Dot is not at beginning and not at end of filename.
+                return RubyString.newString(context.runtime, filename.substring(dotIndex));
+            }
         }
 
         return RubyString.newEmptyString(context.runtime);

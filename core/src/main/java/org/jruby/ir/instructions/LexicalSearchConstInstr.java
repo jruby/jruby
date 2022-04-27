@@ -62,7 +62,6 @@ public class LexicalSearchConstInstr extends OneOperandResultBaseInstr implement
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getDefiningScope());
         e.encode(getName());
     }
 

@@ -1,13 +1,2 @@
-fails:Keyword arguments are separated from positional arguments
-fails:Keyword arguments empty kwargs are treated as if they were not passed when calling a method
-fails:Keyword arguments empty kwargs are treated as if they were not passed when yielding to a block
-fails:Keyword arguments ** copies the given Hash for a method taking (**kwargs)
-fails:Keyword arguments delegation works with (*args, **kwargs)
-fails:Keyword arguments delegation works with proc { |*args, **kwargs| }
-fails:Keyword arguments delegation works with -> (*args, **kwargs) {}
-fails:Keyword arguments delegation works with (...)
-fails:Keyword arguments delegation works with call(*ruby2_keyword_args)
-fails:Keyword arguments delegation works with super(*ruby2_keyword_args)
-fails:Keyword arguments delegation works with zsuper
-fails:Keyword arguments delegation works with yield(*ruby2_keyword_args)
-fails:Keyword arguments delegation does not work with (*args)
+fails:Keyword arguments delegation works with call(*ruby2_keyword_args) with missing ruby2_keywords in between due to CRuby bug #18625
+

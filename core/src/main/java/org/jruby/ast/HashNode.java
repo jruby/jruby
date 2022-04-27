@@ -153,7 +153,11 @@ public class HashNode extends Node implements ILiteralNode {
 
     @Override
     public String toStringExtraInfo() {
-        return isLiteral() ? "literal" : "kwarg";
+        return isLiteral() ?
+                "literal" :
+                (hasRestKwarg() ?
+                        (hasOnlyRestKwargs() ? "onlykwrest" : "mixedkwrest") :
+                        "kwarg");
     }
 
     public boolean hasOnlySymbolKeys() {

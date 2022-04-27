@@ -46,12 +46,6 @@ public class ReifyClosureInstr extends OneOperandResultBaseInstr implements Fixe
         return new CopyInstr(ii.getRenamedVariable(result), ii.getRenamedVariable(getSource()));
     }
 
-    @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getSource());
-    }
-
     public static ReifyClosureInstr decode(IRReaderDecoder d) {
         return new ReifyClosureInstr(d.decodeVariable(), d.decodeVariable());
     }

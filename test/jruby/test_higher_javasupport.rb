@@ -1278,15 +1278,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert !defined?(OuterClass::PrivateInstanceInnerClass)
   end
 
-  # Test the new "import" syntax
-  def test_import
-
-    assert_nothing_raised {
-      import java.nio.ByteBuffer
-      ByteBuffer.allocate(10)
-    }
-  end
-
   def test_java_exception_handling
     list = ArrayList.new
     begin
@@ -1871,7 +1862,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue ArgumentError => e
       msg = e.message
-      assert msg.start_with?("wrong number of arguments calling `length` (given 1, expected 0)"), msg
+      assert msg.start_with?("`length': wrong number of arguments (given 1, expected 0)"), msg
     end
 
     begin # array proxy class

@@ -1,7 +1,7 @@
 # frozen_string_literal: false
 require 'test/unit'
-require '-test-/rb_call_super_kw'
-require '-test-/iter'
+#require '-test-/rb_call_super_kw'
+#require '-test-/iter'
 
 class TestKeywordArguments < Test::Unit::TestCase
   def f1(str: "foo", num: 424242)

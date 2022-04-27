@@ -51,6 +51,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
+import java.util.List;
+
 /** 
  * The RubyMethod class represents a RubyMethod object.
  * 
@@ -253,8 +255,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
         if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
             definedClass = method.getRealMethod().getDefinedClass();
-        }
-        else {
+        } else {
             definedClass = method.getDefinedClass();
         }
 
@@ -277,24 +278,46 @@ public class RubyMethod extends AbstractRubyMethod {
                 sharp = ".";
             }
         } else {
-            str.catString(mklass.getName());
+            if (receiver instanceof RubyClass) {
+                str.catString("#<");
+                str.cat(mklass.rubyName());
+                str.catString(":");
+                str.cat(((RubyClass) receiver).rubyName());
+                str.catString(">");
+            } else {
+                str.cat(mklass.rubyName());
+            }
             if (definedClass != mklass) {
                 str.catString("(");
-                str.catString(definedClass.getName());
+                str.cat(definedClass.rubyName());
                 str.catString(")");
             }
         }
         str.catString(sharp);
-        str.catString(this.methodName);
+        str.cat(runtime.newSymbol(this.methodName).asString());
         if (!methodName.equals(method.getName())) {
             str.catString("(");
-            str.catString(method.getRealMethod().getName());
+            str.cat(runtime.newSymbol(method.getRealMethod().getName()).asString());
             str.catString(")");
         }
         if (method.isNotImplemented()) {
             str.catString(" (not-implemented)");
         }
-        str.catString("()");
+
+        str.catString("(");
+        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(method);
+        if (descriptors.length > 0) {
+            RubyString desc = descriptors[0].asParameterName(context);
+
+            str.cat(desc);
+            for (int i = 1; i < descriptors.length; i++) {
+                desc = descriptors[i].asParameterName(context);
+
+                str.catString(", ");
+                str.cat(desc);
+            }
+        }
+        str.catString(")");
         String fileName = getFilename();
         if (fileName != null) { // Only Ruby Methods will have this info.
             str.catString(" ");

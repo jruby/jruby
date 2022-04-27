@@ -71,7 +71,7 @@ public class RubyTCPSocket extends RubyIPSocket {
     }
 
 
-    private SocketChannel attemptConnect(ThreadContext context, String localHost, int localPort,
+    private SocketChannel attemptConnect(ThreadContext context, IRubyObject host, String localHost, int localPort,
                                          String remoteHost, int remotePort, RubyHash opts) throws IOException {
         for (InetAddress address: InetAddress.getAllByName(remoteHost)) {
             SocketChannel channel = SocketChannel.open();
@@ -117,7 +117,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         }
 
         // did not complete and only path out is n repeated ConnectExceptions
-        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + localHost + " port " + remotePort);
+        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -125,7 +125,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
         final int remotePort = SocketUtils.getPortFrom(context, port);
 
-        return initialize(context, remoteHost, remotePort, null, 0, null);
+        return initialize(context, remoteHost, remotePort, host, null, 0, null);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -135,12 +135,12 @@ public class RubyTCPSocket extends RubyIPSocket {
 
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, localOrOpts);
         if (!opts.isNil()) {
-            return initialize(context, remoteHost, remotePort, null, 0, (RubyHash) opts);
+            return initialize(context, remoteHost, remotePort, host, null, 0, (RubyHash) opts);
         }
 
         String localHost = localOrOpts.isNil() ? null : localOrOpts.convertToString().toString();
 
-        return initialize(context, remoteHost, remotePort, localHost, 0, null);
+        return initialize(context, remoteHost, remotePort, host, localHost, 0, null);
 
     }
 
@@ -184,10 +184,10 @@ public class RubyTCPSocket extends RubyIPSocket {
                 throw context.runtime.newArgumentError(args.length, 2, 4);
         }
 
-        return initialize(context, remoteHost, remotePort, localHost, localPort, opts);
+        return initialize(context, remoteHost, remotePort, host, localHost, localPort, opts);
     }
 
-    public IRubyObject initialize(ThreadContext context, String remoteHost, int remotePort, String localHost, int localPort, RubyHash opts) {
+    public IRubyObject initialize(ThreadContext context, String remoteHost, int remotePort, IRubyObject host, String localHost, int localPort, RubyHash opts) {
         Ruby runtime = context.runtime;
 
         // try to ensure the socket closes if it doesn't succeed
@@ -196,7 +196,7 @@ public class RubyTCPSocket extends RubyIPSocket {
 
         try {
             try {
-                channel = attemptConnect(context, localHost, localPort, remoteHost, remotePort, opts);
+                channel = attemptConnect(context, host, localHost, localPort, remoteHost, remotePort, opts);
                 success = true;
             } catch (BindException e) {
             	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ':' + remotePort);

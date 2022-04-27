@@ -119,7 +119,14 @@ public class RubyNameError extends RubyStandardError {
                 description = RubyString.newStringShared(runtime, RubyBoolean.FALSE_BYTES); // "false"
             } else {
                 try {
-                    description = RubyObject.inspect(context, object).asString();
+                    // FIXME: MRI eagerly calculates name but #to_s and #inspect do not seem to do this call to name.
+                    if (object instanceof RubyModule && ((RubyModule) object).respondsTo("name")) {
+                        IRubyObject name = ((RubyModule) object).callMethod("name");
+
+                        if (!name.isNil()) description = name.asString();
+                    }
+
+                    if (description == null) description = RubyObject.inspect(context, object).asString();
                 } catch (JumpException e) {
                     context.setErrorInfo(context.nil);
                 }

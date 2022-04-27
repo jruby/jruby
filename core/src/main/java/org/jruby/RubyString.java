@@ -959,7 +959,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 }
             }
 
-            throw getRuntime().newFrozenError("String", runtimeError);
+            throw getRuntime().newFrozenError("String", this);
         }
     }
 
