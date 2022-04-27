@@ -61,7 +61,7 @@ default_gems = [
     ['json', '2.6.1'],
     ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
-    ['net-http', '0.2.0'],
+    ['net-http', '0.2.1.pre1'],
     ['net-protocol', '0.1.1'],
     # Partial implementation in JRuby, unsure whether this is important
     # ['nkf', '0.1.1'],
@@ -128,8 +128,7 @@ bundled_gems = [
     ['matrix', '0.4.2'],
     ['minitest', '5.15.0'],
     ['net-ftp', '0.1.3'],
-    # Depends on strscan
-    # ['net-imap', '0.2.2'],
+    ['net-imap', '0.2.2'],
     ['net-pop', '0.1.1'],
     ['net-smtp', '0.3.1'],
     ['prime', '0.1.2'],
