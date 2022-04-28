@@ -1090,12 +1090,19 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explicitKwarg) {
+        // We are in a weird place (**{**{}, **{a: 1}}) where we have merged once
+        if (restKwarg == UNDEFINED) {
+            RubyHash otherHash = explicitKwarg.convertToHash();
+
+            return otherHash.isEmpty() ? UNDEFINED : (RubyHash) otherHash.dup();
+        }
+
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
 
         hash.modify();
         hash.setKeywordArguments(true);
         hash.setKeywordRestArguments(true);
-        final RubyHash otherHash = explicitKwarg.convertToHash();
+        RubyHash otherHash = explicitKwarg.convertToHash();
 
         // If all the kwargs are empty let's discard them
         if (otherHash.empty_p(context).isTrue()) {
@@ -1279,10 +1286,12 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject markAsKwarg(ThreadContext context, IRubyObject arg) {
-        // FIXME: Can this also happen in more elaborate merge_kwargs scenarios?
-        // **foo where foo is an object which responds to to_hash or dies tryin.
-        if (!(arg instanceof RubyHash)) arg = TypeConverter.convertToType(arg, context.runtime.getHash(), "to_hash");
+        // In a complicated chain of rest splatting (**{**{}. **{}, **{}}) LHS of this series of splats
+        // may have already ended up undefined.
+        if (arg == UNDEFINED) return RubyHash.newSmallHash(context.runtime);
 
+        if (!(arg instanceof RubyHash)) arg = TypeConverter.convertToType(arg, context.runtime.getHash(), "to_hash");
+        
         // We only mark is non-empty kwrest since an empty one is not destined to make it past the callsite.
         if (!((RubyHash) arg).isEmpty()) {
             ((RubyHash) arg).setKeywordArguments(true);
