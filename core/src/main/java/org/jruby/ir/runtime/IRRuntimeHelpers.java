@@ -705,15 +705,6 @@ public class IRRuntimeHelpers {
                 context.tru : context.fals;
     }
 
-    public static void markAsRuby2KeywordArg(StaticScope scope, IRubyObject[] args) {
-        if (scope.getIRScope().isRuby2Keywords() && args.length >= 1) {
-            IRubyObject last = args[args.length - 1];
-
-            // FIXME: Should this to_hash if not a hash?
-            if (last instanceof RubyHash) ((RubyHash) last).setRuby2KeywordHash(true);
-        }
-    }
-
     /*
      * If the callsite splats the argument list then we might manipulate the incoming arguments.
      * For `foo(*args) at the sight:
@@ -730,24 +721,71 @@ public class IRRuntimeHelpers {
 
         if (args.length > 0 && !acceptsKeywords) {
             IRubyObject last = args[args.length - 1];
+            IRubyObject unmarked = maybeUnmarkLast(context, last);
 
-            if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
-                RubyHash newHash = ((RubyHash) last).dupFast(context);
-
-                newHash.setRuby2KeywordHash(false);
-
-                args[args.length - 1] = newHash;
-            }
+            if (unmarked != null) args[args.length - 1] = unmarked;
         }
+    }
+
+    private static IRubyObject maybeUnmarkLast(ThreadContext context, IRubyObject last) {
+        if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
+            RubyHash newHash = ((RubyHash) last).dupFast(context);
+
+            newHash.setRuby2KeywordHash(false);
+
+            return newHash;
+        }
+
+        return null;
     }
 
     public static IRubyObject undefined() {
         return UNDEFINED;
     }
 
+    @JIT // Only used for specificArity JITted methods with at least one parameter
+    public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, StaticScope staticScope, IRubyObject last) {
+        IRScope scope = staticScope.getIRScope();
+        boolean callSplats = context.callSplats;
+        if (callSplats) context.callSplats = false;
+
+        if (!(last instanceof RubyHash)) return last;
+
+        RubyHash hash = (RubyHash) last;
+
+        boolean isKwarg = hash.isRuby2KeywordHash();
+
+        if (scope.isRuby2Keywords() && isKwarg) {
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
+
+            RubyHash newHash = hash.dupFast(context);
+            newHash.setRuby2KeywordHash(true);
+
+            return newHash;
+        } else if (hash.isRuby2KeywordHash()) {
+            RubyHash newHash = hash.dupFast(context);
+
+            newHash.setRuby2KeywordHash(false);
+            hash.setKeywordArguments(false);
+            hash.setKeywordRestArguments(false);
+
+            return newHash;
+        }
+
+        return last;
+    }
+
+    @JIT
+    public static IRubyObject receiveKeywords(ThreadContext context, StaticScope staticScope, IRubyObject[] args) {
+        IRScope scope = staticScope.getIRScope();
+
+        return receiveKeywords(context, args, scope.receivesKeywordArgs(), scope.isRuby2Keywords());
+    }
+
     // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
     // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
-    @JIT @Interp
+    @Interp
     public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args,
                                               boolean acceptsKeywords, boolean ruby2keywords) {
 

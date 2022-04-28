@@ -2018,14 +2018,21 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveKeywordsInstr(ReceiveKeywordsInstr instr) {
-        if (jvm.methodData().specificArity >= 0) {
+        int argsLength = jvm.methodData().specificArity;
+        if (argsLength >= 0) {
+            if (argsLength > 0) {
+                jvmMethod().loadContext();
+                jvmMethod().loadStaticScope();
+                jvmAdapter().aload(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
+                jvmMethod().invokeIRHelper("receiveSpecificArityKeywords", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, IRubyObject.class));
+                jvmAdapter().astore(3 + argsLength - 1); // 3 - 0-2 are not args // FIXME: This should get abstracted
+            }
             jvmMethod().invokeIRHelper("undefined", sig(IRubyObject.class));
         } else {
             jvmMethod().loadContext();
+            jvmMethod().loadStaticScope();
             jvmMethod().loadArgs();
-            jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
-            jvmAdapter().ldc(jvm.methodData().scope.isRuby2Keywords());
-            jvmMethod().invokeIRHelper("receiveKeywords", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, boolean.class, boolean.class));
+            jvmMethod().invokeIRHelper("receiveKeywords", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, IRubyObject[].class));
         }
         jvmStoreLocal(instr.getResult());
     }
