@@ -2880,6 +2880,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack();
         modify();
 
+        boolean modified = false;
         final Ruby runtime = context.runtime;
         final int len = realLength; final int beg = begin;
 
@@ -2893,7 +2894,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 IRubyObject value = safeArrayRef(runtime, values, begin + i1);
 
                 if (!block.yield(context, value).isTrue()) {
-                    modifyCheck();
+                    modified = true;
                     continue;
                 }
 
@@ -2903,6 +2904,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return (i1 == i2) ? context.nil : this;
         }
         finally {
+            if (modified) checkFrozen();
             selectBangEnsure(runtime, len, beg, len0, len1);
         }
     }
