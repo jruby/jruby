@@ -2574,10 +2574,8 @@ class TestArray < Test::Unit::TestCase
     assert_raise(StopIteration) { e.next }
 
     o = Object.new
-    class << o; self; end.class_eval do
-      define_method(:==) {|x| a.clear; false }
-    end
     a = [nil, o]
+    o.define_singleton_method(:==) { |x| a.clear; false }
     assert_equal(nil, a.rindex(0))
   end
 
