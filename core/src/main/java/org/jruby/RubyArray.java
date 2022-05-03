@@ -3041,18 +3041,18 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 // See JRUBY-5434
                 IRubyObject value = safeArrayRef(runtime, values, beg + i1);
 
-                if (block.yield(context, value).isTrue()) {
-                    modifyCheck();
-                    continue;
-                }
+                if (block.yield(context, value).isTrue()) continue;
 
-                if (i1 != i2) safeArraySet(runtime, values, beg + i2, value);
+                if (i1 != i2) {
+                    safeArraySet(runtime, values, beg + i2, value);
+                }
                 len1 = ++i2;
             }
 
             return (i1 == i2) ? context.nil : this;
         }
         finally {
+            modifyCheck();
             selectBangEnsure(runtime, realLength, beg, len0, len1);
         }
     }
