@@ -2892,7 +2892,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 // AIOOBE from the yield (see JRUBY-5434)
                 IRubyObject value = safeArrayRef(runtime, values, begin + i1);
 
-                if (!block.yield(context, value).isTrue()) continue;
+                if (!block.yield(context, value).isTrue()) {
+                    modifyCheck();
+                    continue;
+                }
 
                 if (i1 != i2) safeArraySet(runtime, values, beg + i2, value);
                 len1 = ++i2;
