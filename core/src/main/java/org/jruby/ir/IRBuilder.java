@@ -747,6 +747,13 @@ public class IRBuilder {
         return newArgs;
     }
 
+    // No bounds checks.  Only call this when you know you have an arg to remove.
+    public static Operand[] removeArg(Operand[] args) {
+        Operand[] newArgs = new Operand[args.length - 1];
+        System.arraycopy(args, 0, newArgs, 0, args.length - 1);
+        return newArgs;
+    }
+
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, Variable rhsVal) {
         switch (node.getNodeType()) {
@@ -924,12 +931,28 @@ public class IRBuilder {
         Node[] nodes = node.children();
         Operand[] elts = new Operand[nodes.length];
         boolean containsAssignments = node.containsVariableAssignment();
+        Operand keywordRestSplat = null;
         for (int i = 0; i < nodes.length; i++) {
             elts[i] = buildWithOrder(nodes[i], containsAssignments);
+            if (nodes[i] instanceof HashNode && ((HashNode) nodes[i]).hasOnlyRestKwargs()) keywordRestSplat = elts[i];
         }
 
-        Operand array = new Array(elts);
-        return operandOnly ? array : copy(array);
+        // We have some amount of ** on the end of this array construction.  This is handled in IR since we
+        // do not want arrays to have to know if it has an UNDEFINED on the end and then not include it.  Also
+        // since we must evaluate array values left to right we cannot look at last argument first to eliminate
+        // complicating the array sizes computation.  Luckily, this is a rare feature to see used in actual code
+        // so externalizing this in IR should not be a big deal.
+        if (keywordRestSplat != null) {
+            Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[]{ keywordRestSplat }));
+            final Variable result = temp();
+            if_else(test, manager.getTrue(),
+                    () -> copy(result, new Array(removeArg(elts))),
+                    () -> copy(result, new Array(elts)));
+            return result;
+        } else {
+            Operand array = new Array(elts);
+            return operandOnly ? array : copy(array);
+        }
     }
 
     public Operand buildArgsCat(final ArgsCatNode argsCatNode) {

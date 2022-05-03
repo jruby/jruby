@@ -700,8 +700,9 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hashArg) {
-        return hashArg instanceof RubyHash && ((RubyHash) hashArg).size() == 0 ?
+    public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hash) {
+        return hash == UNDEFINED ||
+                hash instanceof RubyHash && ((RubyHash) hash).size() == 0 ?
                 context.tru : context.fals;
     }
 
