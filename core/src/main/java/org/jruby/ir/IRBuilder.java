@@ -4574,6 +4574,45 @@ public class IRBuilder {
         return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
     }
 
+    private Operand buildSuperInstr(Operand block) {
+        List<Operand> callArgs = new ArrayList<>(5);
+        List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
+        determineZSuperCallArgs(scope, this, callArgs, keywordArgs);
+
+        boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
+        boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
+        Variable zsuperResult = createTemporaryVariable();
+        if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
+            Operand kwargRestValue = keywordArgs.get(0).getValue();
+            Operand[] args = callArgs.toArray(new Operand[callArgs.size()]);
+            Variable keywordRest = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), MARK_KWARG, new Operand[] { kwargRestValue }));
+            Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
+            if_else(test, manager.getTrue(),
+                    () -> receiveBreakException(block,
+                            determineSuperInstr(zsuperResult, args, block, inClassBody, isInstanceMethod)),
+                    () -> receiveBreakException(block,
+                            determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, inClassBody, isInstanceMethod)));
+        } else {
+            Operand[] args = getCallOperands(scope, callArgs, keywordArgs);
+            receiveBreakException(block,
+                    determineSuperInstr(zsuperResult, args, block, inClassBody, isInstanceMethod));
+        }
+
+        return zsuperResult;
+    }
+
+    private CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, boolean inClassBody, boolean isInstanceMethod) {
+        return inClassBody ?
+                isInstanceMethod ?
+                        new InstanceSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements()) :
+                        new ClassSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements()) :
+                // We dont always know the method name we are going to be invoking if the super occurs in a closure.
+                // This is because the super can be part of a block that will be used by 'define_method' to define
+                // a new method.  In that case, the method called by super will be determined by the 'name' argument
+                // to 'define_method'.
+                new UnresolvedSuperInstr(scope, result, buildSelf(), args, block, scope.maybeUsingRefinements());
+    }
+
     private Operand buildSuperInstr(Operand block, Operand[] args) {
         CallInstr superInstr;
         Variable ret = createTemporaryVariable();
@@ -4737,7 +4776,7 @@ public class IRBuilder {
     }
 
     private Operand buildZSuperIfNest(final Operand block) {
-        int depthFromSuper = 0;
+        int depthFrom = 0;
         IRBuilder superBuilder = this;
         IRScope superScope = scope;
 
@@ -4749,14 +4788,30 @@ public class IRBuilder {
             // We may run out of live builds and walk int already built scopes if zsuper in an eval
             superBuilder = superBuilder != null && superBuilder.parent != null ? superBuilder.parent : null;
             superScope = superScope.getLexicalParent();
-            depthFromSuper++;
+            depthFrom++;
         }
+
+        final int depthFromSuper = depthFrom;
 
         // If we hit a method, this is known to always succeed
         Variable zsuperResult = createTemporaryVariable();
         if (superScope instanceof IRMethod && !defineMethod) {
-            Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-            addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
+            List<Operand> callArgs = new ArrayList<>(5);
+            List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
+            determineZSuperCallArgs(superScope, superBuilder, callArgs, keywordArgs);
+
+            if (keywordArgs.size() == 1 && keywordArgs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
+                Operand kwargRestValue = ((DepthCloneable) keywordArgs.get(0).getValue()).cloneForDepth(depthFromSuper);
+                Operand[] args = adjustVariableDepth(callArgs.toArray(new Operand[callArgs.size()]), depthFromSuper);
+                Variable keywordRest = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), MARK_KWARG, new Operand[] { kwargRestValue }));
+                Variable test = addResultInstr(new RuntimeHelperCall(createTemporaryVariable(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
+                if_else(test, manager.getTrue(),
+                        () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements())),
+                        () -> addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), addArg(args, keywordRest), block, scope.maybeUsingRefinements())));
+            } else {
+                Operand[] args = adjustVariableDepth(getCallOperands(scope, callArgs, keywordArgs), depthFromSuper);
+                addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
+            }
         } else {
             // We will not have a zsuper show up since we won't emit it but we still need to toggle it.
             // define_method optimization will try and create a method from a closure but it should not in this case.
@@ -4800,11 +4855,7 @@ public class IRBuilder {
         Operand block = setupCallClosure(zsuperNode.getIterNode());
         if (block == null) block = getYieldClosureVariable();
 
-        if (scope instanceof IRMethod) {
-            return buildSuperInstr(block, getCallArgs(scope, this));
-        } else {
-            return buildZSuperIfNest(block);
-        }
+        return scope instanceof IRMethod ? buildSuperInstr(block) : buildZSuperIfNest(block);
     }
 
     /*
@@ -4812,6 +4863,8 @@ public class IRBuilder {
      * super.  This fixup is only currently happening in supers nested in closures.
      */
     private Operand[] adjustVariableDepth(Operand[] args, int depthFromSuper) {
+        if (depthFromSuper == 0) return args;
+
         Operand[] newArgs = new Operand[args.length];
 
         for (int i = 0; i < args.length; i++) {
@@ -4916,6 +4969,17 @@ public class IRBuilder {
         return getCallOperands(scope, callArgs, keywordArgs);
     }
 
+    public static void determineZSuperCallArgs(IRScope scope, IRBuilder builder, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
+        if (builder != null) {  // Still in currently building scopes
+            for (Instr instr : builder.instructions) {
+                extractCallOperands(callArgs, keywordArgs, instr);
+            }
+        } else {               // walked out past the eval to already build scopes
+            for (Instr instr : scope.interpreterContext.getInstructions()) {
+                extractCallOperands(callArgs, keywordArgs, instr);
+            }
+        }
+    }
 
     private static void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
         if (instr instanceof ReceiveKeywordRestArgInstr) {
