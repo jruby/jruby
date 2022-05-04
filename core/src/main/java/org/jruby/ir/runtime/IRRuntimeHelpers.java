@@ -1133,7 +1133,14 @@ public class IRRuntimeHelpers {
         if (restKwarg == UNDEFINED) {
             RubyHash otherHash = explicitKwarg.convertToHash();
 
-            return otherHash.isEmpty() ? UNDEFINED : (RubyHash) otherHash.dup();
+            if (otherHash.isEmpty()) return UNDEFINED;
+
+            RubyHash hash = (RubyHash) otherHash.dup();
+
+            hash.setKeywordArguments(true);
+            hash.setKeywordRestArguments(true);
+
+            return hash;
         }
 
         RubyHash hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg).dup();
