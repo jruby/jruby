@@ -2624,6 +2624,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public IRubyObject rindex(ThreadContext context, IRubyObject obj) {
+        unpack();
+        
         Ruby runtime = context.runtime;
         int i = realLength;
 
