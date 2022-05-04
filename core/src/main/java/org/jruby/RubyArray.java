@@ -3032,6 +3032,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         final Ruby runtime = context.runtime;
         final int beg = begin;
 
+        boolean modified = false;
+
         int len0 = 0, len1 = 0;
         try {
             int i1, i2;
@@ -3041,15 +3043,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 // See JRUBY-5434
                 IRubyObject value = safeArrayRef(runtime, values, beg + i1);
 
-                if (block.yield(context, value).isTrue()) continue;
+                if (block.yield(context, value).isTrue()) {
+                    modified = true;
+                    continue;
+                }
 
-                if (i1 != i2) safeArraySet(runtime, values, beg + i2, value);
+                if (i1 != i2) {
+                    safeArraySet(runtime, values, beg + i2, value);
+                }
                 len1 = ++i2;
             }
 
             return (i1 == i2) ? context.nil : this;
         }
         finally {
+            if (modified) checkFrozen();
             selectBangEnsure(runtime, realLength, beg, len0, len1);
         }
     }
