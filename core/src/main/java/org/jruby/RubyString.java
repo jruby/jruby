@@ -4575,7 +4575,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
 
             if (skip) {
-                if (enc.isSpace(c)) {
+                // MRI uses rb_isspace
+                if (ASCII.isSpace(c)) {
                     b = p - ptr;
                 } else {
                     e = p - ptr;
@@ -4583,7 +4584,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     if (limit && lim <= i) break;
                 }
             } else {
-                if (enc.isSpace(c)) {
+                // MRI uses rb_isspace
+                if (ASCII.isSpace(c)) {
                     result.append(makeSharedString(runtime, b, e - b));
                     skip = true;
                     b = p - ptr;
