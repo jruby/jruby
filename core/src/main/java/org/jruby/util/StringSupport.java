@@ -535,7 +535,11 @@ public final class StringSupport {
                 p += cl;
             } else {
                 cr = CR_BROKEN;
-                p++;
+                if (p + enc.minLength() <= end) {
+                    p += enc.minLength();
+                } else {
+                    p = end;
+                }
             }
         }
         return pack(c, cr == 0 ? CR_7BIT : cr);
