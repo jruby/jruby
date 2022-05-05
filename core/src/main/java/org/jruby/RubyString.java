@@ -4464,6 +4464,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             result = awkSplit(context.runtime, limit, lim, i);
         } else {
             spat = getPatternQuoted(context, spat, false);
+            if (!context.runtime.getGlobalVariables().get("$;").isNil()) {
+                context.runtime.getWarnings().warn("$; is set to non-nil value");
+            }
             if (spat instanceof RubyString) {
                 ByteList spatValue = ((RubyString)spat).value;
                 int len = spatValue.getRealSize();
