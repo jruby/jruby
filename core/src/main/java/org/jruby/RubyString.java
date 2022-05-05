@@ -6400,6 +6400,22 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public RubyArray unpack(ThreadContext context, IRubyObject obj, IRubyObject opt, Block block) {
+        long offset = unpackOffset(context, opt);
+        return Pack.unpackWithBlock(context, this, stringValue(obj).value, offset, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject unpack1(ThreadContext context, IRubyObject obj, Block block) {
+        return Pack.unpack1WithBlock(context, this, stringValue(obj).value, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject unpack1(ThreadContext context, IRubyObject obj, IRubyObject opt, Block block) {
+        long offset = unpackOffset(context, opt);
+        return Pack.unpack1WithBlock(context, this, stringValue(obj).value, offset, block);
+    }
+
+    private static long unpackOffset(ThreadContext context, IRubyObject opt) {
         if (!(opt instanceof RubyHash)) throw context.runtime.newArgumentError(2, 1);
 
         RubyHash options = (RubyHash) opt;
@@ -6411,12 +6427,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
         // FIXME: keyword arg processing incomplete.  We need a better system.
 
-        return Pack.unpackWithBlock(context, this, stringValue(obj).value, offset, block);
-    }
-
-    @JRubyMethod
-    public IRubyObject unpack1(ThreadContext context, IRubyObject obj, Block block) {
-        return Pack.unpack1WithBlock(context, this, stringValue(obj).value, block);
+        return offset;
     }
 
     @Deprecated // not used

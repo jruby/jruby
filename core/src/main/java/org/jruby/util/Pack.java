@@ -896,6 +896,10 @@ public class Pack {
     }
 
     public static IRubyObject unpack1WithBlock(ThreadContext context, RubyString encoded, ByteList formatString, Block block) {
+        return unpack1WithBlock(context, encoded, formatString, 0, block);
+    }
+
+    public static IRubyObject unpack1WithBlock(ThreadContext context, RubyString encoded, ByteList formatString, long offset, Block block) {
         int formatLength = formatString.realSize();
 
         // Strict m0 is commmonly used in cookie handling so it has a fast path.
@@ -911,7 +915,7 @@ public class Pack {
             }
         }
 
-        return unpackInternal(context, encoded, formatString, UNPACK_1, 0, block);
+        return unpackInternal(context, encoded, formatString, UNPACK_1, offset, block);
     }
 
     private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, long offset, Block block) {
