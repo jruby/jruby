@@ -1,1 +1,0 @@
-wip:SecureRandom.random_number generates a random (potentially bignum) integer value for bignum argument
