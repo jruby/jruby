@@ -10,6 +10,7 @@ import org.jruby.util.Random;
 import org.jruby.util.TypeConverter;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.TypeConverter.toFloat;
@@ -301,7 +302,7 @@ public class RubyRandomBase extends RubyObject {
             }
         }
 
-        return randRange(context, vmax, rnd);
+        return randRange(context, obj, vmax, rnd);
     }
 
     private static double floatValue(ThreadContext context, IRubyObject v) {
@@ -316,7 +317,7 @@ public class RubyRandomBase extends RubyObject {
         throw context.runtime.newErrnoEDOMError();
     }
 
-    private static IRubyObject randRange(ThreadContext context, IRubyObject vmax, RubyRandom.RandomType random) {
+    private static IRubyObject randRange(ThreadContext context, IRubyObject obj, IRubyObject vmax, RubyRandom.RandomType random) {
         IRubyObject v;
         IRubyObject nil = context.nil;
         IRubyObject beg;
@@ -381,10 +382,14 @@ public class RubyRandomBase extends RubyObject {
             }
             v = nil;
             if (max > 0.0) {
-                if (excl) {
-                    r = random.genrandReal();
+                if (random == null) {
+                    byte[] bytes = objRandomBytes(context, obj, 8);
+                    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                    int a = buffer.getInt();
+                    int b = buffer.getInt();
+                    r = excl ? Random.intPairToRealExclusive(a, b) : Random.intPairToRealInclusive(a, b);
                 } else {
-                    r = random.genrandReal2();
+                    r = random.genrandReal(excl);
                 }
                 if (scale > 1) {
                     return runtime.newFloat(+(+(+(r - 0.5) * max) * scale) + mid);
