@@ -270,7 +270,7 @@ public class RubyRandomBase extends RubyObject {
         }
     }
 
-    private static void invalidArgument(ThreadContext context, IRubyObject arg0) {
+    static void invalidArgument(ThreadContext context, IRubyObject arg0) {
         throw context.runtime.newArgumentError("invalid argument - " + arg0);
     }
 
