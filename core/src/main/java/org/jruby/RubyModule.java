@@ -4070,6 +4070,7 @@ public class RubyModule extends RubyObject {
             throw runtime.newNameError("wrong constant name ", fullName);
         }
 
+        boolean firstConstant = true;
         while ( ( sep = name.indexOf("::") ) != -1 ) {
             final String segment = name.substring(0, sep);
             IRubyObject obj = mod.getConstant(validateConstant(segment, symbol), inherit, inherit);
@@ -4079,9 +4080,10 @@ public class RubyModule extends RubyObject {
                 throw runtime.newTypeError(segment + " does not refer to class/module");
             }
             name = name.substring(sep + 2);
+            firstConstant = false;
         }
 
-        return mod.getConstant(validateConstant(name, symbol), inherit, inherit);
+        return mod.getConstant(validateConstant(name, symbol), firstConstant && inherit, firstConstant && inherit);
     }
 
     @JRubyMethod(required = 1, optional = 1)

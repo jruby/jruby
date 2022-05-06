@@ -1,1 +1,0 @@
-fails:Module#const_get raises a NameError when the nested constant does not exist on the module but exists in Object
