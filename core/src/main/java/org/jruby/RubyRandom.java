@@ -443,7 +443,7 @@ public class RubyRandom extends RubyRandomBase {
             RandomType rnd = tryGetRandomType(context, self);
             IRubyObject v = randRandom(context, self, rnd, arg0);
             if (v.isNil()) v = randRandom(context, self, rnd);
-            checkRandomNumber(context, v, arg0);
+            else if (v == context.fals) invalidArgument(context, arg0);
             return v;
         }
 
