@@ -893,7 +893,7 @@ public class RubyBignum extends RubyInteger {
                 }
                 break;
             } else if (other instanceof RubyBignum) {
-                if (value == BigInteger.ZERO) {
+                if (value.signum() == 0) {
                     return RubyFixnum.zero(context.runtime);
                 }
 
