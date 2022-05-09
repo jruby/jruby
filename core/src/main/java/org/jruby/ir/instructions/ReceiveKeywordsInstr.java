@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -40,6 +41,13 @@ public class ReceiveKeywordsInstr extends NoOperandResultBaseInstr implements Ar
     public boolean acceptsKeywords() {
         return acceptsKeywords;
     }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(hasRestArg);
+        e.encode(acceptsKeywords);
+    }    
 
     @Override
     public Instr clone(CloneInfo ii) {
