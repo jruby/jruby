@@ -827,6 +827,38 @@ public class JRubyEngineTest extends BaseTest {
         assertNotNull( getVarMap(instance).getVariable("ARGV") );
     }
 
+    @Test
+    public void testRaiseDoesNotStackCause()
+            throws Exception
+    {
+        try
+        {
+            final ScriptEngine _jruby1 = new JRubyEngineFactory().getScriptEngine();
+            _jruby1.eval("raise 'foo'");
+        }
+        catch (Exception _e)
+        {
+            try (ByteArrayOutputStream _bos = new ByteArrayOutputStream();
+                 PrintStream _s = new PrintStream(_bos))
+            {
+                assertFalse("stack contains bar: " + _bos.toString(), _bos.toString().contains("bar"));
+            }
+        }
+        try
+        {
+            final ScriptEngine _jruby2 = new JRubyEngineFactory().getScriptEngine();
+            _jruby2.eval("raise 'bar'");
+        }
+        catch (Exception _e)
+        {
+            try (ByteArrayOutputStream _bos = new ByteArrayOutputStream();
+                 PrintStream _s = new PrintStream(_bos))
+            {
+                assertFalse("stack contains foo: " + _bos.toString(), _bos.toString().contains("foo"));
+            }
+        }
+    }
+
     private static BiVariableMap getVarMap(final ScriptEngine engine) {
         return ((JRubyEngine) engine).container.getVarMap();
     }
