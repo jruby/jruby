@@ -882,8 +882,21 @@ public class RubyBignum extends RubyInteger {
         for (;;) {
             if (other instanceof RubyFixnum) {
                 shift = ((RubyFixnum) other).value;
+                if (shift < 0) {
+                    if (value.bitLength() <= -shift ) {
+                        if (value.signum() >= 0) {
+                            return RubyFixnum.zero(context.runtime);
+                        } else {
+                            return RubyFixnum.minus_one(context.runtime);
+                        }
+                    }
+                }
                 break;
             } else if (other instanceof RubyBignum) {
+                if (value.signum() == 0) {
+                    return RubyFixnum.zero(context.runtime);
+                }
+
                 RubyBignum otherBignum = (RubyBignum) other;
                 if (otherBignum.value.signum() < 0) {
                     IRubyObject tmp = otherBignum.checkShiftDown(context, this);
@@ -913,8 +926,19 @@ public class RubyBignum extends RubyInteger {
         for (;;) {
             if (other instanceof RubyFixnum) {
                 shift = ((RubyFixnum) other).value;
+                if (value.bitLength() <= shift ) {
+                    if (value.signum() >= 0) {
+                        return RubyFixnum.zero(context.runtime);
+                    } else {
+                        return RubyFixnum.minus_one(context.runtime);
+                    }
+                }
                 break;
             } else if (other instanceof RubyBignum) {
+                if (value == BigInteger.ZERO) {
+                    return RubyFixnum.zero(context.runtime);
+                }
+
                 RubyBignum otherBignum = (RubyBignum) other;
                 if (otherBignum.value.signum() >= 0) {
                     IRubyObject tmp = otherBignum.checkShiftDown(context, this);

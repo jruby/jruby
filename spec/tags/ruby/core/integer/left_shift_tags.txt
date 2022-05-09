@@ -1,7 +1,1 @@
-fails:Integer#<< (with n << m) fixnum returns 0 when m < 0 and m is a Bignum
-fails:Integer#<< (with n << m) bignum returns 0 when m < 0 and m is a Bignum
-fails:Integer#<< (with n << m) fixnum calls #to_int to convert the argument to an Integer
-wip:Integer#<< (with n << m) when m is a bignum or larger than int returns -1 when m < 0 and n < 0
-wip:Integer#<< (with n << m) when m is a bignum or larger than int returns 0 when m < 0 and n >= 0
-wip:Integer#<< (with n << m) when m is a bignum or larger than int returns 0 when m > 0 bignum and n == 0
 wip:Integer#<< (with n << m) when m is a bignum or larger than int raises NoMemoryError when m > 0 and n != 0
