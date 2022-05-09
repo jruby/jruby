@@ -63,7 +63,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         if (canCallDirect()) {
             return callDirect(context, block, args, blockArg);
         }
-        return commonYieldPath(context, block, Block.Type.PROC, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+        return commonYieldPath(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
     }
 
     @Override
@@ -73,7 +73,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         } else {
             IRubyObject[] args = IRubyObject.NULL_ARRAY;
             if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
-            return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
+            return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
         }
     }
 
@@ -94,7 +94,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
                 // FIXME: arity error is against new args but actual error shows arity of original args.
                 if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
 
-                return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
+                return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
             } else {
                 return doYield(context, block, arg0);
             }
@@ -114,7 +114,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         }
         if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
 
-        return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
+        return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
     }
 
     @Override
@@ -151,7 +151,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
         signature.checkArity(context.runtime, args);
 
-        return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
+        return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
     }
 
     @Override
@@ -167,17 +167,17 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             args = toAry(context, value);
         }
 
-        return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
+        return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
 
-        return commonYieldPath(context, block, Block.Type.NORMAL, args, self, Block.NULL_BLOCK);
+        return commonYieldPath(context, block, args, self, Block.NULL_BLOCK);
     }
 
-    protected abstract IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) ;
+    protected abstract IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) ;
 
     static void postYield(ThreadContext context, InterpreterContext ic, Binding binding, Visibility oldVis, Frame prevFrame) {
         // IMPORTANT: Do not clear eval-type in case this is reused in bindings!

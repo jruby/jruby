@@ -156,7 +156,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
     }
 
     @Override
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         throw new UnsupportedOperationException("commonYieldPath not implemented");
     }
 

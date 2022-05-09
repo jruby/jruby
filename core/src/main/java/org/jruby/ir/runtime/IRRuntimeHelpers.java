@@ -2211,6 +2211,7 @@ public class IRRuntimeHelpers {
                 return prepareProcArgs(context, block, args);
         }
 
+        // FIXME: For NORMAL/THREAD but it is unclear if we really need any keyword logic in here anymore.
         org.jruby.runtime.Signature sig = block.getBody().getSignature();
         int arityValue = sig.arityValue();
         if (!sig.hasKwargs() && arityValue >= -1 && arityValue <= 1) {
@@ -2310,11 +2311,7 @@ public class IRRuntimeHelpers {
     // This is the placeholder for scenarios not handled by specialized instructions.
     @Interp @JIT
     public static IRubyObject[] prepareBlockArgs(ThreadContext context, Block block, IRubyObject[] args, boolean usesKwArgs, boolean ruby2Keywords) {
-        args = prepareBlockArgsInternal(context, block, args);
-        if (usesKwArgs) {
-            args = frobnicateKwargsArgument(context, args, block.getBody().getSignature().required(), ruby2Keywords);
-        }
-        return args;
+        return prepareBlockArgsInternal(context, block, args);
     }
 
     private static DynamicScope getNewBlockScope(Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
