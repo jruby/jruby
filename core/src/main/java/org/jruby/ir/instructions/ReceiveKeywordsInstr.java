@@ -21,23 +21,39 @@ import org.jruby.runtime.builtin.IRubyObject;
  * executed anything left is either kwrest or an arity error.
  */
 public class ReceiveKeywordsInstr extends NoOperandResultBaseInstr implements ArgReceiver {
-    public ReceiveKeywordsInstr(Variable result) {
+    // The signature this instr lives in can accept rest arguments (def foo(*args)).
+    final boolean hasRestArg;
+    // The signature this instr lives in accepts some kind of explicit kwargs (def foo(a: 1, b:, **c)).
+    final boolean acceptsKeywords;
+
+    public ReceiveKeywordsInstr(Variable result, boolean hasRestArg, boolean acceptsKeywords) {
         super(Operation.RECV_KW, result);
+
+        this.hasRestArg = hasRestArg;
+        this.acceptsKeywords = acceptsKeywords;
+    }
+
+    public boolean hasRestArg() {
+        return hasRestArg;
+    }
+
+    public boolean acceptsKeywords() {
+        return acceptsKeywords;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordsInstr(ii.getRenamedVariable(result));
+        return new ReceiveKeywordsInstr(ii.getRenamedVariable(result), hasRestArg, acceptsKeywords);
     }
 
     public static ReceiveKeywordsInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordsInstr(d.decodeVariable());
+        return new ReceiveKeywordsInstr(d.decodeVariable(), d.decodeBoolean(), d.decodeBoolean());
     }
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keywords) {
-        return IRRuntimeHelpers.receiveKeywords(context, args, acceptsKeywords, ruby2keywords);
+                                  Object[] temp, IRubyObject[] args, boolean ruby2keywords) {
+        return IRRuntimeHelpers.receiveKeywords(context, args, hasRestArg, acceptsKeywords, ruby2keywords);
     }
 
     @Override

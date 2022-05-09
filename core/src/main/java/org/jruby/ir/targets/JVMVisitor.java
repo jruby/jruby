@@ -2032,6 +2032,8 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             jvmMethod().loadStaticScope();
             jvmMethod().loadArgs();
+            jvmAdapter().ldc(instr.hasRestArg());
+            jvmAdapter().ldc(instr.acceptsKeywords());
             jvmMethod().invokeIRHelper("receiveKeywords", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, IRubyObject[].class));
         }
         jvmStoreLocal(instr.getResult());

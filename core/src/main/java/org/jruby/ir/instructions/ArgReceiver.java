@@ -7,5 +7,5 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public interface ArgReceiver {
     IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean keywordArgumentSupplied, boolean ruby2keywords);
+                                  Object[] temp, IRubyObject[] args,boolean ruby2keywords);
 }

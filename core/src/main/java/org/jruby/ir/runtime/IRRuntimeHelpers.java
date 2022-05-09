@@ -710,27 +710,26 @@ public class IRRuntimeHelpers {
      * If the callsite splats the argument list then we might manipulate the incoming arguments.
      * For `foo(*args) at the sight:
      *   - def foo(**kwargs) we eliminate ruby2_keywords hash with a dup'd value
-     *   - def foo(*args) same
+     *   - def foo(args) same
      */
-    private static void callSiteFunging(ThreadContext context, IRubyObject[] args,
-                                        boolean acceptsKeywords, boolean ruby2keywords) {
+    private static void callSiteFunging(ThreadContext context, IRubyObject[] args, RubyHash lastArg,
+                                        boolean hasRestArgs, boolean acceptsKeywords, boolean ruby2keywords) {
         // Force reset so we do not leave stale value behind.
         boolean callSplats = context.callSplats;
         if (callSplats) context.callSplats = false;
 
         if (ruby2keywords || !callSplats) return;
 
-        if (args.length > 0 && !acceptsKeywords) {
-            IRubyObject last = args[args.length - 1];
-            IRubyObject unmarked = maybeUnmarkLast(context, last);
+        if (acceptsKeywords || !hasRestArgs) {
+            IRubyObject unmarked = maybeUnmarkLast(context, lastArg);
 
             if (unmarked != null) args[args.length - 1] = unmarked;
         }
     }
 
-    private static IRubyObject maybeUnmarkLast(ThreadContext context, IRubyObject last) {
-        if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
-            RubyHash newHash = ((RubyHash) last).dupFast(context);
+    private static IRubyObject maybeUnmarkLast(ThreadContext context, RubyHash last) {
+        if (last.isRuby2KeywordHash()) {
+            RubyHash newHash = last.dupFast(context);
 
             newHash.setRuby2KeywordHash(false);
 
@@ -778,19 +777,17 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject receiveKeywords(ThreadContext context, StaticScope staticScope, IRubyObject[] args) {
+    public static IRubyObject receiveKeywords(ThreadContext context, StaticScope staticScope, IRubyObject[] args, boolean hasRestArgs, boolean acceptKeywords) {
         IRScope scope = staticScope.getIRScope();
 
-        return receiveKeywords(context, args, scope.receivesKeywordArgs(), scope.isRuby2Keywords());
+        return receiveKeywords(context, args, hasRestArgs, acceptKeywords, scope.isRuby2Keywords());
     }
 
     // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
     // temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
     @Interp
-    public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args,
+    public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
                                               boolean acceptsKeywords, boolean ruby2keywords) {
-
-        callSiteFunging(context, args, acceptsKeywords, ruby2keywords);
 
         if (args.length < 1) return UNDEFINED;
 
@@ -800,7 +797,11 @@ public class IRRuntimeHelpers {
 
         RubyHash hash = (RubyHash) last;
 
+        // We record before funging last arg because we may unmark and replace last arg.
         boolean isRuby2Kwarg = hash.isRuby2KeywordHash();
+
+        callSiteFunging(context, args, hash, hasRestArgs, acceptsKeywords, ruby2keywords);
+
         boolean isKwarg = hash.isKeywordArguments();
 
         // ruby2_keywords only get unmarked if it enters a method which accepts keywords.

@@ -91,7 +91,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
     }
 
     public Object callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self,
-                             Object[] temp, Block block, boolean acceptsKwargs) {
+                             Object[] temp, Block block) {
         Operand[] operands = getOperands();
 
         if (helperMethod == Methods.IS_DEFINED_BACKREF) {

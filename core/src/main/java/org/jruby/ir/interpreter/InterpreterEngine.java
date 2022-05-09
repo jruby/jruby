@@ -146,7 +146,7 @@ public class InterpreterEngine {
                         interpretFloatOp((AluInstr) instr, operation, floats, booleans);
                         break;
                     case ARG_OP:
-                        receiveArg(context, instr, operation, self, args, usesKeywords, ruby2Keywords, currScope, currDynScope, temp, exception, blockArg);
+                        receiveArg(context, instr, operation, self, args, ruby2Keywords, currScope, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
@@ -192,7 +192,7 @@ public class InterpreterEngine {
                         }
                         break;
                     case OTHER_OP:
-                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans, usesKeywords);
+                        processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self, floats, fixnums, booleans);
                         break;
                 }
             } catch (Throwable t) {
@@ -256,9 +256,8 @@ public class InterpreterEngine {
     }
 
     protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject self,
-                                     IRubyObject[] args, boolean usesKeywords, boolean ruby2Keywords,
-                                     StaticScope currScope, DynamicScope currDynScope, Object[] temp,
-                                     Object exception, Block blockArg) {
+                                     IRubyObject[] args, boolean ruby2Keywords, StaticScope currScope,
+                                     DynamicScope currDynScope, Object[] temp, Object exception, Block blockArg) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
 
@@ -269,7 +268,7 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_POST_REQD_ARG:
-                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, self, currDynScope, currScope, temp, args, usesKeywords, ruby2Keywords);
+                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, self, currDynScope, currScope, temp, args);
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_RUBY_EXC:
@@ -282,7 +281,7 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), blockArg);
                 return;
             default:
-                result = ((ArgReceiver) instr).receiveArg(context, self, currDynScope, currScope, temp, args, usesKeywords, ruby2Keywords);
+                result = ((ArgReceiver) instr).receiveArg(context, self, currDynScope, currScope, temp, args, ruby2Keywords);
                 setResult(temp, currDynScope, instr.getResult(), result);
         }
     }
@@ -455,7 +454,7 @@ public class InterpreterEngine {
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
                                          StaticScope currScope, Object[] temp, IRubyObject self,
-                                         double[] floats, long[] fixnums, boolean[] booleans, boolean usesKeywords) {
+                                         double[] floats, long[] fixnums, boolean[] booleans) {
         Object result;
         switch(operation) {
             case RECV_SELF:
@@ -477,7 +476,7 @@ public class InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, block, usesKeywords));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block));
                 break;
             }
 

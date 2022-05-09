@@ -20,7 +20,7 @@ public abstract class ReceiveArgBase extends OneOperandResultBaseInstr implement
     }
 
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean keywordArgumentSupplied, boolean ruby2keyword) {
+                                  Object[] temp, IRubyObject[] args, boolean ruby2keyword) {
         throw new RuntimeException("ReceiveArgBase.interpret called! " + this.getClass().getName() + " does not define receiveArg");
     }
 }

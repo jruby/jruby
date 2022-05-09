@@ -85,7 +85,7 @@ public class ReceivePostReqdArgInstr extends ReceiveIndexedArgBase implements Fi
     }
 
     public IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                          Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+                                          Object[] temp, IRubyObject[] args) {
         IRubyObject keywords = (IRubyObject) getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.receivePostReqdArg(context, args, keywords, preReqdArgsCount, optArgsCount, restArg,

@@ -64,7 +64,7 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope,
-                                  Object[] temp, IRubyObject[] args, boolean acceptsKeywords, boolean ruby2keyword) {
+                                  Object[] temp, IRubyObject[] args, boolean ruby2keyword) {
         IRubyObject keywords = (IRubyObject) getKeywords().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.receiveKeywordArg(keywords, getKey());

@@ -2959,7 +2959,8 @@ public class IRBuilder {
      *
      */
     public void receiveArgs(final ArgsNode argsNode) {
-        Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp()));
+        Signature signature = scope.getStaticScope().getSignature();
+        Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
 
         // 1.9 pre, opt, rest, post args
         receiveNonBlockArgs(argsNode, keywords);
