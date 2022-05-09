@@ -124,6 +124,9 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             return ret;
         }
         catch (RaiseException e) {
+            // Exception is about to be propagated out to Java, so clear $!
+            runtime.getCurrentContext().setErrorInfo(runtime.getNil());
+
             // handle exits as simple script termination
             if ( e.getException() instanceof RubySystemExit ) {
                 return ((RubySystemExit) e.getException()).status();
