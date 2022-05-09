@@ -52,7 +52,7 @@ default_gems = [
     ['io-console', '0.5.11'],
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.1.0'],
-    ['io-wait', '0.2.2.pre1'],
+    ['io-wait', '0.2.3'],
     ['ipaddr', '1.2.3'],
     ['irb', '1.4.1'],
     ['jar-dependencies', '0.4.1'],
@@ -61,7 +61,7 @@ default_gems = [
     ['json', '2.6.1'],
     ['logger', '1.5.1'],
     ['mutex_m', '0.1.1'],
-    ['net-http', '0.2.1.pre1'],
+    ['net-http', '0.2.2'],
     ['net-protocol', '0.1.1'],
     # Partial implementation in JRuby, unsure whether this is important
     # ['nkf', '0.1.1'],
@@ -98,8 +98,8 @@ default_gems = [
     # ['set', '1.0.2'],
     ['shellwords', '0.1.0'],
     ['singleton', '0.1.1'],
-    ['stringio', '3.0.2.pre1'],
-    ['strscan', '3.0.2.pre1'],
+    ['stringio', '3.0.2'],
+    ['strscan', '3.0.2'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.1.0'],
     # https://github.com/ruby/tempfile/issues/7
