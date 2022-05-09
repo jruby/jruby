@@ -302,22 +302,22 @@ public class Bootstrap {
             Opcodes.H_INVOKESTATIC,
             p(Bootstrap.class),
             "checkArity",
-            sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class, int.class, int.class),
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class, int.class),
             false);
 
     @JIT
-    public static CallSite checkArity(Lookup lookup, String name, MethodType type, int req, int opt, int rest, int key, int keyrest) {
-        return new ConstantCallSite(insertArguments(CHECK_ARITY_HANDLE, 5, req, opt, rest == 0 ? false : true, key == 0 ? false : true, keyrest));
+    public static CallSite checkArity(Lookup lookup, String name, MethodType type, int req, int opt, int rest, int keyrest) {
+        return new ConstantCallSite(insertArguments(CHECK_ARITY_HANDLE, 5, req, opt, rest == 0 ? false : true, keyrest));
     }
 
     private static final MethodHandle CHECK_ARITY_HANDLE =
             Binder
-                    .from(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class, int.class, int.class, boolean.class, boolean.class, int.class)
+                    .from(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class, int.class, int.class, boolean.class, int.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "checkArity");
 
     @JIT
-    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords, Block block, int req, int opt, boolean rest, boolean key, int keyrest) {
-        IRRuntimeHelpers.checkArity(context, scope, args, keywords, req, opt, rest, key, keyrest, block);
+    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords, Block block, int req, int opt, boolean rest, int keyrest) {
+        IRRuntimeHelpers.checkArity(context, scope, args, keywords, req, opt, rest, keyrest, block);
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {

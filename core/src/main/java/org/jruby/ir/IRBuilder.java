@@ -2833,12 +2833,12 @@ public class IRBuilder {
             // For now, we are going explicit instruction route.
             // But later, perhaps can make this implicit in the method setup preamble?
 
-            addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(), argsNode.hasKwargs(),
+            addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(),
                     signature.keyRest(), keywords));
         } else if (scope instanceof IRClosure && argsNode.hasKwargs()) {
             // FIXME: This is added to check for kwargs correctness but bypass regular correctness.
             // Any other arity checking currently happens within Java code somewhere (RubyProc.call?)
-            addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(), argsNode.hasKwargs(),
+            addInstr(new CheckArityInstr(signature.required(), signature.opt(), signature.hasRest(),
                     signature.keyRest(), keywords));
         }
 

@@ -19,16 +19,14 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
     public final int required;
     public final int opt;
     public final boolean rest;
-    public final boolean receivesKeywords;
     public final int restKey;
 
-    public CheckArityInstr(int required, int opt, boolean rest, boolean receivesKeywords, int restKey, Variable keywords) {
+    public CheckArityInstr(int required, int opt, boolean rest, int restKey, Variable keywords) {
         super(Operation.CHECK_ARITY, keywords);
 
         this.required = required;
         this.opt = opt;
         this.rest = rest;
-        this.receivesKeywords = receivesKeywords;
         this.restKey = restKey;
     }
 
@@ -38,12 +36,12 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"req: " + required, "opt: " + opt, "*r: " + rest, "kw?: " + receivesKeywords};
+        return new String[] {"req: " + required, "opt: " + opt, "*r: " + rest};
     }
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, receivesKeywords, restKey, (Variable) getOperand1());
+        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, restKey, (Variable) getOperand1());
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
         if (ii.canMapArgsStatically()) { // we can error on bad arity or remove check_arity
@@ -65,18 +63,17 @@ public class CheckArityInstr extends OneOperandInstr implements FixedArityInstr 
         e.encode(required);
         e.encode(opt);
         e.encode(rest);
-        e.encode(receivesKeywords);
         e.encode(restKey);
         e.encode(getKeywords());
     }
 
     public static CheckArityInstr decode(IRReaderDecoder d) {
-        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeBoolean(), d.decodeInt(), d.decodeVariable());
+        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt(), d.decodeVariable());
     }
 
     public void checkArity(ThreadContext context, IRubyObject self, StaticScope scope, DynamicScope dynamicScope, IRubyObject[] args, Block block, Object[] temp) {
         Object keyword = getOperand1().retrieve(context, self, scope, dynamicScope, temp);
-        IRRuntimeHelpers.checkArity(context, scope, args, keyword, required, opt, rest, receivesKeywords, restKey, block);
+        IRRuntimeHelpers.checkArity(context, scope, args, keyword, required, opt, rest, restKey, block);
     }
 
     @Override

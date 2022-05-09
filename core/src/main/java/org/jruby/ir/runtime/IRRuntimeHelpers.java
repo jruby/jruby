@@ -576,18 +576,8 @@ public class IRRuntimeHelpers {
         return block;
     }
 
-    public static RubyHash kwargsArg(Object[] args, boolean receivesKwargs) {
-        // We will continue to treat the kwarg as an ordinary hash if we are not expecting kwargs.
-        // FIXME: I think we should unmark the hash as a kwarg at this point???
-        if (!receivesKwargs) return null;
-        if (args.length < 1) return null;
-
-        Object last = args[args.length - 1];
-        return last instanceof RubyHash && ((RubyHash) last).isKeywordArguments() ? (RubyHash) last : null;
-    }
-
-    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords, int required, int opt, boolean rest,
-                                  boolean receivesKwargs, int restKey, Block block) {
+    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Object keywords,
+                                  int required, int opt, boolean rest, int restKey, Block block) {
         int argsLength = args.length - (keywords != UNDEFINED ? 1: 0);
 
         if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
@@ -596,78 +586,6 @@ public class IRRuntimeHelpers {
         }
 
         if (restKey == -1 && keywords != UNDEFINED) checkForExtraUnwantedKeywordArgs(context, scope, (RubyHash) keywords);
-    }
-
-    /**
-     * Process incoming args, preparing keyword arguments if given.
-     *
-     * @param context
-     * @param args
-     * @param requiredArgsCount
-     * @return
-     */
-    @JIT
-    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount, boolean ruby2Keywords) {
-        if (ruby2Keywords) return frobnicateKwargsArgument(context, args, requiredArgsCount);
-
-        return args;
-    }
-
-    /**
-     * Process the incoming arguments list according to Ruby 2.x keyword arguments behavior.
-     *
-     * @param context
-     * @param args
-     * @param requiredArgsCount
-     * @return
-     */
-    @JIT
-    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
-        // FIXME: JIT on block circular args test in spec:compiler is passing in a null value for args.  It does not do this for methods so a bandaid for now.
-        if (args == null) return null;
-
-        int length = args.length;
-
-        // No kwarg because required args slurp them up.
-        if (length <= requiredArgsCount) return args;
-
-        final IRubyObject maybeKwargs = toHash(context, args[length - 1]);
-
-        if (maybeKwargs != null) {
-            if (maybeKwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
-                return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
-            }
-
-            RubyHash kwargs = (RubyHash) maybeKwargs;
-
-            if (kwargs.allSymbols()) {
-                args[length - 1] = kwargs.dupFast(context);
-            } else {
-                args = homogenizeKwargs(context, args, kwargs);
-            }
-        }
-
-        return args;
-    }
-
-    private static IRubyObject[] homogenizeKwargs(ThreadContext context, IRubyObject[] args, RubyHash kwargs) {
-        DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
-
-        // We know toHash makes null, nil, or Hash
-        kwargs.visitAll(context, visitor, null);
-
-        if (visitor.syms == null) {
-            // no symbols, use empty kwargs hash
-            visitor.syms = RubyHash.newSmallHash(context.runtime);
-        }
-
-        if (visitor.others != null) { // rest args exists too expand args
-            args = ArraySupport.newCopy(args, args.length + 1);
-            args[args.length - 2] = visitor.others; // opt args
-        }
-        args[args.length - 1] = visitor.syms; // kwargs hash
-
-        return args;
     }
 
     /**
@@ -778,9 +696,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject receiveKeywords(ThreadContext context, StaticScope staticScope, IRubyObject[] args, boolean hasRestArgs, boolean acceptKeywords) {
-        IRScope scope = staticScope.getIRScope();
-
-        return receiveKeywords(context, args, hasRestArgs, acceptKeywords, scope.isRuby2Keywords());
+        return receiveKeywords(context, args, hasRestArgs, acceptKeywords, staticScope.getIRScope().isRuby2Keywords());
     }
 
     // We return as undefined and not null when no kwarg since null gets auto-converted to nil because
@@ -846,66 +762,6 @@ public class IRRuntimeHelpers {
 
             return !acceptsKeywords ? UNDEFINED : hash.dupFast(context);
         }
-    }
-
-    private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
-        RubyHash syms;
-        RubyHash others;
-
-        @Override
-        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object unused) {
-            if (key instanceof RubySymbol) {
-                if (syms == null) syms = RubyHash.newSmallHash(context.runtime);
-                syms.fastASetSmall(key, value);
-            } else {
-                if (others == null) others = RubyHash.newSmallHash(context.runtime);
-                others.fastASetSmall(key, value);
-            }
-        }
-    };
-
-    private static IRubyObject toHash(ThreadContext context, IRubyObject lastArg) {
-        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
-        if (lastArg.respondsTo("to_hash")) {
-            lastArg = lastArg.callMethod(context, "to_hash");
-            if (lastArg == context.nil) return lastArg;
-            TypeConverter.checkType(context, lastArg, context.runtime.getHash());
-            return (RubyHash) lastArg;
-        }
-        return null;
-    }
-
-    public static RubyHash extractKwargsHash(ThreadContext context, Object[] args, int requiredArgsCount, boolean receivesKwargs) {
-        if (!receivesKwargs) return null;
-        if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
-
-        Object lastArg = args[args.length - 1];
-
-        if (lastArg instanceof RubyHash && !((RubyHash) lastArg).isKeywordArguments()) {
-            return null;
-        }
-
-        if (lastArg instanceof IRubyObject) {
-            IRubyObject returnValue = toHash(context, (IRubyObject) lastArg);
-            if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
-        }
-
-        return null;
-    }
-
-    @Deprecated // not used
-    public static RubyHash extractKwargsHash(Object[] args, int requiredArgsCount, boolean receivesKwargs) {
-        if (!receivesKwargs) return null;
-        if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
-
-        Object lastArg = args[args.length - 1];
-
-        if (lastArg instanceof IRubyObject) {
-            IRubyObject returnValue = toHash(((IRubyObject) lastArg).getRuntime().getCurrentContext(), (IRubyObject) lastArg);
-            if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
-        }
-
-        return null;
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {

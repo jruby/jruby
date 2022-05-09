@@ -311,7 +311,7 @@ public class JVMVisitor extends IRVisitor {
 
         // check arity
         org.jruby.runtime.Signature scopeSig = scope.getStaticScope().getSignature();
-        checkArity(scopeSig.required(), scopeSig.opt(), scopeSig.hasRest(), scopeSig.hasKwargs(), scopeSig.keyRest());
+        checkArity(scopeSig.required(), scopeSig.opt(), scopeSig.hasRest(), scopeSig.keyRest());
 
         // push leading args
         m.loadContext();
@@ -1241,11 +1241,11 @@ public class JVMVisitor extends IRVisitor {
         if (jvm.methodData().specificArity >= 0) {
             // no arity check in specific arity path
         } else {
-            checkArity(checkarityinstr.getKeywords(), checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.receivesKeywords, checkarityinstr.restKey);
+            checkArity(checkarityinstr.getKeywords(), checkarityinstr.required, checkarityinstr.opt, checkarityinstr.rest, checkarityinstr.restKey);
         }
     }
 
-    private void checkArity(int required, int opt, boolean rest, boolean receivesKeywords, int restKey) {
+    private void checkArity(int required, int opt, boolean rest, int restKey) {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmMethod().loadArgs();
@@ -1255,10 +1255,10 @@ public class JVMVisitor extends IRVisitor {
                 "checkArity",
                 sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
                 Bootstrap.CHECK_ARITY,
-                required, opt, rest ? 1 : 0, receivesKeywords ? 1 : 0, restKey);
+                required, opt, rest ? 1 : 0, restKey);
     }
 
-    private void checkArity(Operand keywords, int required, int opt, boolean rest, boolean receivesKeywords, int restKey) {
+    private void checkArity(Operand keywords, int required, int opt, boolean rest, int restKey) {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmMethod().loadArgs();
@@ -1268,7 +1268,7 @@ public class JVMVisitor extends IRVisitor {
                 "checkArity",
                 sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Object.class, Block.class),
                 Bootstrap.CHECK_ARITY,
-                required, opt, rest ? 1 : 0, receivesKeywords ? 1 : 0, restKey);
+                required, opt, rest ? 1 : 0, restKey);
     }
 
     @Override
