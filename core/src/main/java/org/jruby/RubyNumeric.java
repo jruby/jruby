@@ -713,6 +713,10 @@ public class RubyNumeric extends RubyObject {
     @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
+        if (arg == this) return arg; // It cannot init copy it will still work if it is itself...fun times.
+
+        checkFrozen();
+
         final Ruby runtime = metaClass.runtime;
         throw runtime.newTypeError(str(runtime, "can't copy ", types(runtime, getType())));
     }

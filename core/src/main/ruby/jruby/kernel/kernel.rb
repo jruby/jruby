@@ -10,7 +10,7 @@ module Kernel
   end
 
   # Replaces Java version for better caching
-  def initialize_clone(original)
+  def initialize_clone(original, freeze: false)
     initialize_copy(original)
   end
 end
