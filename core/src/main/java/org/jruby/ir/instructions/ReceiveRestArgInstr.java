@@ -21,7 +21,7 @@ public class ReceiveRestArgInstr extends ReceiveIndexedArgBase implements FixedA
     /** Number of arguments already accounted for */
     public final int required;
 
-    public ReceiveRestArgInstr(Variable result, Variable keywords, int required, int argIndex) {
+    public ReceiveRestArgInstr(Variable result, Variable keywords, int argIndex, int required) {
         super(Operation.RECV_REST_ARG, result, keywords, argIndex);
         this.required = required;
     }
@@ -33,7 +33,7 @@ public class ReceiveRestArgInstr extends ReceiveIndexedArgBase implements FixedA
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new ReceiveRestArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), required, argIndex);
+        if (info instanceof SimpleCloneInfo) return new ReceiveRestArgInstr(info.getRenamedVariable(result), info.getRenamedVariable(getKeywords()), argIndex, required);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
