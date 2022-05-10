@@ -108,7 +108,7 @@ default_gems = [
     # ['time', '0.2.0'],
     ['time', '0.1.0'],
     # https://github.com/ruby/timeout/issues/11
-    # ['timeout', '0.2.0'],
+    ['timeout', '0.2.0'],
     # https://github.com/ruby/tmpdir/issues/13
     # ['tmpdir', '0.1.2'],
     ['tsort', '0.1.0'],
