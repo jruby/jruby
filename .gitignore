@@ -85,6 +85,8 @@ lib/ruby/stdlib/irb*
 lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
+# This file can be removed once https://github.com/ruby/strscan/issues/38 is merged and released and we update the gem
+lib/ruby/stdlib/jruby/strscan.rb
 lib/ruby/stdlib/json*
 lib/ruby/stdlib/krypt*
 lib/ruby/stdlib/logger*
