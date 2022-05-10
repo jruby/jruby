@@ -34,7 +34,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rubygems-update</artifactId>
-      <version>3.3.3</version>
+      <version>3.3.13</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -962,7 +962,7 @@ DO NOT MODIFIY - GENERATED CODE
         <directory>${gem.home}</directory>
         <includes>
           <include>specifications/default/*</include>
-          <include>specifications/rubygems-update-3.3.3*</include>
+          <include>specifications/rubygems-update-3.3.13*</include>
           <include>specifications/abbrev-0.1.0*</include>
           <include>specifications/base64-0.1.1*</include>
           <include>specifications/benchmark-0.2.0*</include>
@@ -1032,7 +1032,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>specifications/rexml-3.2.5*</include>
           <include>specifications/rss-0.2.9*</include>
           <include>specifications/test-unit-3.5.3*</include>
-          <include>gems/rubygems-update-3.3.3*/**/*</include>
+          <include>gems/rubygems-update-3.3.13*/**/*</include>
           <include>gems/abbrev-0.1.0*/**/*</include>
           <include>gems/base64-0.1.1*/**/*</include>
           <include>gems/benchmark-0.2.0*/**/*</include>
@@ -1102,7 +1102,7 @@ DO NOT MODIFIY - GENERATED CODE
           <include>gems/rexml-3.2.5*/**/*</include>
           <include>gems/rss-0.2.9*/**/*</include>
           <include>gems/test-unit-3.5.3*/**/*</include>
-          <include>cache/rubygems-update-3.3.3*</include>
+          <include>cache/rubygems-update-3.3.13*</include>
           <include>cache/abbrev-0.1.0*</include>
           <include>cache/base64-0.1.1*</include>
           <include>cache/benchmark-0.2.0*</include>
