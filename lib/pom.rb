@@ -23,7 +23,7 @@ default_gems = [
     ['benchmark', '0.2.0'],
     # https://github.com/ruby/bigdecimal/issues/169
     # ['bigdecimal', '3.1.1'],
-    ['bundler', '2.3.3'],
+    ['bundler', '2.3.13'],
     # https://github.com/ruby/cgi/pull/9
     # ['cgi', '0.3.1'],
     ['cgi', '0.2.0'],
