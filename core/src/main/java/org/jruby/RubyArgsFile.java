@@ -889,8 +889,7 @@ public class RubyArgsFile extends RubyObject {
             } else if(args.length >= 1) {
                 final int strLen = ((RubyString) str).getByteList().length();
                 if (strLen < len) {
-                    len -= strLen;
-                    args[0] = runtime.newFixnum(len);
+                    args[0] = runtime.newFixnum(len - strLen);
                     continue;
                 }
             }
